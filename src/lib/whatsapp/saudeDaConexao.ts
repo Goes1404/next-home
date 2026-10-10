@@ -36,6 +36,7 @@
  */
 
 import { diasDesdeConexao, limiteDiarioCampanha } from "./antiBan";
+import { motivoDaQueda, quedaPelaConta } from "./motivoDaQueda";
 
 export type GravidadeAviso = "perigo" | "alerta" | "info";
 
@@ -72,6 +73,13 @@ export interface FotoDaConexao {
    * desde então (`sessaoCaida.ts`). Ausente vale zero.
    */
   falhasDeSessao?: number;
+  /**
+   * A instância marcada com a sessão caída (0174). Vale mesmo sem lista: a
+   * marca na fila só existe para quem tem fila.
+   */
+  sessaoCaidaEm?: Date | null;
+  /** Código com que o WhatsApp derrubou a conexão, se soubermos (0174). */
+  motivoQuedaCodigo?: number | null;
   /**
    * O limite de hoje pelo uso (`limiteDoDia`, 0158), quando quem monta a foto
    * já o calculou. Sem ele vale o teto por idade, que é sempre maior ou igual.
@@ -163,14 +171,22 @@ export function avaliarSaudeDaConexao(foto: FotoDaConexao, agora: Date): AvisoDa
     const desde = foto.desconectadoEm ?? foto.conectadoEm;
     const tempo = desde ? haQuantoTempo(desde, agora) : null;
     const quando = desde ? ` em ${quandoEmSaoPaulo(desde)}${tempo ? ` — ${tempo}` : ""}` : "";
+    // O porquê, quando o WhatsApp disse (0174). Queda pela conta pede olhar
+    // o celular antes de reconectar: reconectar não desfaz uma restrição.
+    const motivo = motivoDaQueda(foto.motivoQuedaCodigo);
+    const porque = motivo ? ` Motivo informado pelo WhatsApp: ${motivo}.` : "";
+    const olheOCelular = quedaPelaConta(foto.motivoQuedaCodigo)
+      ? " Antes de reconectar, abra o WhatsApp no celular e veja se há aviso de restrição."
+      : "";
 
     return {
       tipo: "caiu",
       gravidade: "perigo",
       titulo: "Seu WhatsApp saiu do ar",
       detalhe:
-        `A conexão caiu${quando}. Ninguém está recebendo nem respondendo mensagem — ` +
+        `A conexão caiu${quando}.${porque} Ninguém está recebendo nem respondendo mensagem — ` +
         "nem a assistente, nem você." +
+        olheOCelular +
         trechoDaFila(foto.pendentes),
       acao: "Reconectar meu número",
       mereceEmail: true,
@@ -181,15 +197,16 @@ export function avaliarSaudeDaConexao(foto: FotoDaConexao, agora: Date): AvisoDa
   //    Os envios voltam com "Connection Closed", o disjuntor abre, e o aviso
   //    abaixo diria "volta sozinho" — não volta: sem reconectar, nada sai.
   //    Medido no número da Márcia, que passou o dia assim.
-  if ((foto.falhasDeSessao ?? 0) > 0) {
+  if ((foto.falhasDeSessao ?? 0) > 0 || foto.sessaoCaidaEm) {
     return {
       tipo: "sessao_caiu",
       gravidade: "perigo",
       titulo: "Seu WhatsApp parou de enviar",
       detalhe:
         "As mensagens estão falhando porque a conexão do WhatsApp com a plataforma caiu, mesmo com o número " +
-        "aparecendo como conectado. Em Minha IA → WhatsApp, toque em Desconectar e conecte o número de novo: " +
-        "a fila volta a sair sozinha assim que ele reconectar." +
+        "aparecendo como conectado. Enquanto isso, a plataforma não recebe as mensagens dele, e os clientes do " +
+        "site e do anúncio vão para outro corretor. Em Minha IA → WhatsApp, toque em Desconectar e conecte o " +
+        "número de novo: a fila volta a sair sozinha assim que ele reconectar." +
         trechoDaFila(foto.pendentes),
       acao: "Reconectar meu número",
       mereceEmail: true,

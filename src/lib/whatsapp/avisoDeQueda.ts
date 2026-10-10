@@ -47,10 +47,12 @@ interface LinhaInstancia {
   envios_campanha_data: string | null;
   envios_campanha_contador: number;
   aviso_queda_enviado_em: string | null;
+  sessao_caida_em: string | null;
+  motivo_queda_codigo: number | null;
 }
 
 const COLUNAS =
-  "id, corretor_id, status_conexao, conectado_em, desconectado_em, bloqueado_ate, envios_campanha_data, envios_campanha_contador, aviso_queda_enviado_em";
+  "id, corretor_id, status_conexao, conectado_em, desconectado_em, bloqueado_ate, envios_campanha_data, envios_campanha_contador, aviso_queda_enviado_em, sessao_caida_em, motivo_queda_codigo";
 
 function fotoDe(linha: LinhaInstancia, pendentes: number, falhasDeSessao = 0): FotoDaConexao {
   return {
@@ -62,6 +64,8 @@ function fotoDe(linha: LinhaInstancia, pendentes: number, falhasDeSessao = 0): F
     enviosCampanhaContador: linha.envios_campanha_contador ?? 0,
     pendentes,
     falhasDeSessao,
+    sessaoCaidaEm: linha.sessao_caida_em ? new Date(linha.sessao_caida_em) : null,
+    motivoQuedaCodigo: linha.motivo_queda_codigo,
   };
 }
 

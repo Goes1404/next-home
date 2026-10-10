@@ -89,7 +89,7 @@ import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
-import { candidatosTelefone, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
+import { candidatosTelefone, marcarSessaoViva, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -334,11 +334,23 @@ export async function POST(req: NextRequest) {
     const evento = String(payload.event || payload.type || "").toLowerCase().replace(/_/g, ".");
     const estadoConexao: string = payload.data?.state || payload.state || "";
 
+    /*
+     * Chegou evento de mensagem: a sessão deste número está viva, então ele
+     * volta ao rodízio do link se tinha ficado de fora por "Connection
+     * Closed" (0174). Em segundo plano, para não atrasar a resposta; sem
+     * marca, a atualização não muda nada.
+     */
+    if (evento !== "connection.update" && !estadoConexao) {
+      after(() => marcarSessaoViva(instancia.id));
+    }
+
     if (evento === "connection.update" || (!text && !sender && estadoConexao)) {
       await registrarEventoConexao({
         instanceName,
         estado: estadoConexao,
         telefone: (payload.data?.wuid || payload.data?.owner || "").replace(/\D/g, "") || null,
+        // Por que o WhatsApp derrubou a conexão (401, 403...). Era descartado (0174).
+        motivo: payload.data?.statusReason ?? payload.statusReason,
       });
       return NextResponse.json({ ok: true, action: "conexao_atualizada", estado: estadoConexao });
     }

@@ -25,6 +25,8 @@ export type CliqueLido = {
   user_agent: string | null;
   visitante: string | null;
   lead_id: string | null;
+  /** Toque de pessoa (0174). Ausente ou nulo: vale o filtro de navegador. */
+  de_pessoa?: boolean | null;
 };
 
 export type BarradoLido = {
@@ -66,7 +68,7 @@ export function montarFunilDoLink(p: {
   nomes: Record<string, string>;
   dias: number;
 }): FunilDoLink {
-  const dePessoa = p.cliques.filter((c) => ehClienteDePessoa(c.user_agent));
+  const dePessoa = p.cliques.filter((c) => c.de_pessoa ?? ehClienteDePessoa(c.user_agent));
   const chavePorClique = new Map<string, string>();
   const grupos = new Map<string, { doAnuncio: boolean; cliques: CliqueLido[] }>();
   for (const c of dePessoa) {

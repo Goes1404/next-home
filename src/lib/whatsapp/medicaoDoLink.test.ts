@@ -5,6 +5,7 @@ import {
   citaOImovel,
   diaEmSaoPauloISO,
   ehClienteDePessoa,
+  ehCliqueDePessoa,
   ipDaRequisicao,
   remetenteResumido,
   visitanteDoClique,
@@ -82,5 +83,55 @@ describe("a contagem do porteiro não grava texto (0159)", () => {
     expect(gravacao).not.toMatch(/\btexto\s*:|conteudo|p\.texto/);
     expect(gravacao).not.toMatch(/\btelefone\s*:/);
     expect(gravacao).toMatch(/remetenteResumido\(/);
+  });
+});
+
+describe("ehCliqueDePessoa (0174)", () => {
+  const CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
+  const base = {
+    userAgent: CHROME,
+    doSite: true,
+    secFetchSite: "same-origin",
+    secFetchUser: "?1",
+    referer: "https://www.nexthomeimoveis.com/empreendimentos/dom-parque",
+    host: "www.nexthomeimoveis.com",
+  };
+
+  it("toque no botão de uma página do site é pessoa", () => {
+    expect(ehCliqueDePessoa(base)).toBe(true);
+  });
+
+  /*
+   * O robô da semana de 03 a 09/10: navegador de computador comum, pediu os 4
+   * botões de cada imóvel direto pelo endereço. Sem página de origem e sem
+   * gesto, não é toque de pessoa.
+   */
+  it("o robô com navegador comum, pedindo o link direto, não é pessoa", () => {
+    expect(ehCliqueDePessoa({ ...base, secFetchSite: "none", secFetchUser: "?1", referer: null })).toBe(false);
+    expect(ehCliqueDePessoa({ ...base, secFetchSite: null, secFetchUser: null, referer: null })).toBe(false);
+  });
+
+  it("navegação de página do site sem gesto (script, pré-carregamento) não conta", () => {
+    expect(ehCliqueDePessoa({ ...base, secFetchUser: null })).toBe(false);
+  });
+
+  it("navegador antigo, sem Sec-Fetch, vale pela página de origem", () => {
+    expect(ehCliqueDePessoa({ ...base, secFetchSite: null, secFetchUser: null })).toBe(true);
+    expect(
+      ehCliqueDePessoa({ ...base, secFetchSite: null, secFetchUser: null, referer: "https://nexthomeimoveis.com/" }),
+    ).toBe(true);
+    expect(
+      ehCliqueDePessoa({ ...base, secFetchSite: null, secFetchUser: null, referer: "https://outro-site.com/" }),
+    ).toBe(false);
+  });
+
+  it("robô declarado nunca é pessoa, nem com cabeçalhos de navegador", () => {
+    expect(ehCliqueDePessoa({ ...base, userAgent: "Mozilla/5.0 (compatible; ClaudeBot/1.0)" })).toBe(false);
+  });
+
+  it("no anúncio vale o filtro de navegador, como antes", () => {
+    const android = "Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Chrome/153 Mobile Instagram 300";
+    expect(ehCliqueDePessoa({ ...base, doSite: false, userAgent: android, secFetchSite: "none", referer: null })).toBe(true);
+    expect(ehCliqueDePessoa({ ...base, doSite: false, userAgent: "facebookexternalhit/1.1" })).toBe(false);
   });
 });

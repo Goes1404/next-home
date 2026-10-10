@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao } from "@/lib/whatsapp/porteiro";
-import { diaEmSaoPauloISO, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
+import { diaEmSaoPauloISO, ehCliqueDePessoa, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +53,15 @@ export async function GET(req: Request) {
     pelo_porteiro: true,
     url_origem: url.pathname + url.search,
     user_agent: userAgent,
+    // A porta geral é sempre do site: vale o toque numa página nossa (0174).
+    de_pessoa: ehCliqueDePessoa({
+      userAgent,
+      doSite: true,
+      secFetchSite: req.headers.get("sec-fetch-site"),
+      secFetchUser: req.headers.get("sec-fetch-user"),
+      referer: req.headers.get("referer"),
+      host: url.host,
+    }),
     visitante: visitanteDoClique({
       ip: ipDaRequisicao(req.headers),
       userAgent,

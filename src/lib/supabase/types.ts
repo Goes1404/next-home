@@ -928,6 +928,7 @@ export type Database = {
           corretor_id: string | null
           consumido_em: string | null
           created_at: string
+          de_pessoa: boolean | null
           empreendimento_id: string | null
           id: string
           lead_id: string | null
@@ -941,6 +942,7 @@ export type Database = {
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
+          de_pessoa?: boolean | null
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null
@@ -954,6 +956,7 @@ export type Database = {
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
+          de_pessoa?: boolean | null
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null
@@ -1053,6 +1056,7 @@ export type Database = {
       }
       corretor_whatsapp_instancias: {
         Row: {
+          aquecimento_desde: string | null
           aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
           conectado_em: string | null
@@ -1066,12 +1070,16 @@ export type Database = {
           falhas_seguidas: number
           id: string
           instance_name: string
+          motivo_queda_codigo: number | null
+          motivo_queda_em: string | null
           modo_bot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente: string
           palavra_chave_ativacao: string | null
           palavra_chave_teste: string | null
           palavras_entrada_cliente: string | null
           qrcode_base64: string | null
+          queda_tratada_em: string | null
+          sessao_caida_em: string | null
           status_conexao: "desconectado" | "conectando" | "conectado"
           regras_da_ia: string | null
           telefone_conectado: string | null
@@ -1080,6 +1088,7 @@ export type Database = {
           webhook_secret: string | null
         }
         Insert: {
+          aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -1093,12 +1102,16 @@ export type Database = {
           falhas_seguidas?: number
           id?: string
           instance_name: string
+          motivo_queda_codigo?: number | null
+          motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
+          queda_tratada_em?: string | null
+          sessao_caida_em?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           regras_da_ia?: string | null
           telefone_conectado?: string | null
@@ -1107,6 +1120,7 @@ export type Database = {
           webhook_secret?: string | null
         }
         Update: {
+          aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -1120,12 +1134,16 @@ export type Database = {
           falhas_seguidas?: number
           id?: string
           instance_name?: string
+          motivo_queda_codigo?: number | null
+          motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
+          queda_tratada_em?: string | null
+          sessao_caida_em?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           regras_da_ia?: string | null
           telefone_conectado?: string | null

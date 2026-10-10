@@ -91,6 +91,28 @@ describe("limites do número: só para o lado conservador (09/10/2026)", () => {
     expect(cenarios).toBeGreaterThan(1000);
   });
 
+  it("a queda do número (0174) nunca aumenta o limite, só pode baixar", () => {
+    let cenarios = 0;
+    for (const dias of IDADES) {
+      for (const historico of HISTORICOS) {
+        const hist = historico.map((h) => ({ dia: diaAntes(h.offset), enviados: h.enviados }));
+        const sem = limiteDoDia({ diasDesdeConexao: dias, historico: hist, hoje: HOJE, recusasNaSemana: 0 });
+        for (const offset of [0, 1, 2, 5, 8]) {
+          const com = limiteDoDia({
+            diasDesdeConexao: dias,
+            historico: hist,
+            hoje: HOJE,
+            recusasNaSemana: 0,
+            recomecoDepoisDe: diaAntes(offset),
+          });
+          expect(com.limite, `${dias} dias, queda há ${offset}`).toBeLessThanOrEqual(sem.limite);
+          cenarios++;
+        }
+      }
+    }
+    expect(cenarios).toBeGreaterThan(100);
+  });
+
   it("o intervalo entre mensagens não fica menor que 1min30 a 2min", () => {
     expect(INTERVALO_MINIMO_SEGUNDOS).toBeGreaterThanOrEqual(90);
     expect(INTERVALO_MAXIMO_SEGUNDOS).toBeGreaterThanOrEqual(120);

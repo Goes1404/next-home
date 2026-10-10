@@ -14,7 +14,7 @@ codigo:
   - src/lib/whatsapp/avisoDeQueda.ts
   - src/app/corretor/(painel)/campanhas/acoes.ts
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 fonte: número da Márcia em 08/10/2026
 summary: 'Quando o envio volta com "Connection Closed", a sessão do WhatsApp caiu, mesmo com o banco dizendo "conectado". O disjuntor abria por 12h e o painel prometia que voltava sozinho. Agora a falha marca a fila, devolve a cota sem gastar tentativa, o painel e a tela de listas pedem para reconectar, e reconectar tira a marca e levanta a pausa.'
 ---
@@ -63,6 +63,7 @@ Só é preciso no caso em que o provedor ainda diz "open" com a sessão morta.
 Quando o provedor diz "close", basta conectar de novo, e a maturidade fica.
 
 ## Relacionadas
+- [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]] — desde a 0174 a sessão caída também tira o número do rodízio do link
 
 - [[numero-sem-whatsapp-nao-e-falha-nossa]] (a outra falha que não é do número)
 - `docs/MEMORIA.md`, seção "O aviso de queda do número (0071)": a faixa que este caso estende

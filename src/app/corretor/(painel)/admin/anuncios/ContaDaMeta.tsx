@@ -147,6 +147,8 @@ export async function ContaDaMeta() {
       .from("cliques_whatsapp")
       .select("id", { count: "exact", head: true })
       .like("origem", "anuncio/%")
+      // Só clique de pessoa (0174): o robô da Meta abre o link o tempo todo.
+      .not("de_pessoa", "is", false)
       .gte("created_at", corte.toISOString()),
     /*
      * Quando o gasto foi atualizado pela última vez — UMA linha, sem

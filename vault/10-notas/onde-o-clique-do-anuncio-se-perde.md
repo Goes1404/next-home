@@ -14,7 +14,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/DoCliqueAConversa.tsx
 fonte: docs/MEMORIA.md — Onde o clique do anúncio se perde (0159)
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-10
 summary: Em 7 dias, 679 cliques de pessoas no link do anúncio do Dom Parque viraram 5 leads, e o banco só sabia o total. A 0159 conta pessoas (resumo diário de IP + navegador) e quem escreveu ao corretor sem a mensagem pronta (o porteiro ignora; fica só a contagem, nunca o texto). O cartão "Do clique à conversa" na tela de Anúncios pagos mostra os degraus lado a lado, com a linha de comparação dos contatos que escrevem sem clique por perto.
 ---
 
@@ -65,6 +65,7 @@ que cita o imóvel.
 
 ## Relacionadas
 
+- [[clique-de-pessoa-pelo-sec-fetch]] — desde a 0174 o clique do site só conta como pessoa com Sec-Fetch de toque
 - [[clique-no-link-cadastra-quem-escreve]]
 - [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]]
 - [[link-de-anuncio-e-rodizio-aleatorio]]

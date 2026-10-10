@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
+import { protegerNumerosQueCairam } from "./quedaDoNumero";
 import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { site } from "@/lib/site";
@@ -46,6 +47,7 @@ import {
   obterOuCriarConversa,
   devolverCotaCampanha,
   liberarFilaDaSessao,
+  marcarSessaoCaida,
   registrarResultadoEnvio,
   reservarCotaCampanha,
   sincronizarConexaoInstancia,
@@ -223,6 +225,10 @@ export async function processarFilaCampanhas(params?: {
    * A varredura não lança e sai barata quando não há o que avisar.
    */
   await varrerQuedasDeNumero();
+  // Número fora do ar por 30 min: pausa as listas dele, recomeça o
+  // aquecimento e guarda o motivo da queda (0174). Mesmo motivo do aviso
+  // para rodar antes de tudo: não pode depender de janela nem de fila.
+  await protegerNumerosQueCairam();
 
   // Listas vivas (0155) ganham quem passou a se encaixar no critério. Só no
   // tique geral: o botão de um corretor não varre a equipe.
@@ -770,6 +776,8 @@ async function processarInstancia(ctx: {
       if (!envio.enviado && ehFalhaDeSessao(envio.detalhe)) {
         await devolverCotaCampanha(instancia.id);
         await registrarResultadoEnvio(instancia.id, false);
+        // Fora do rodízio do link até a sessão voltar (0174).
+        await marcarSessaoCaida(instancia.id);
         await supabase
           .from("whatsapp_campanhas_fila")
           .update({

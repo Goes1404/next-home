@@ -100,6 +100,28 @@ describe("montarFunilDoLink", () => {
   });
 });
 
+describe("clique classificado na hora (0174)", () => {
+  it("o robô com navegador comum, marcado como não pessoa, sai da conta", () => {
+    const f = montarFunilDoLink({
+      cliques: [clique("c1"), clique("r1", { de_pessoa: false, origem: "site/dom-parque" })],
+      barrados: [],
+      nomes: { "dom-parque": "Dom Parque" },
+      dias: 7,
+    });
+    expect(f.total.cliques).toBe(1);
+  });
+
+  it("clique antigo, sem classificação, segue pelo navegador", () => {
+    const f = montarFunilDoLink({
+      cliques: [clique("c1", { de_pessoa: null }), clique("r1", { de_pessoa: null, user_agent: ROBO })],
+      barrados: [],
+      nomes: {},
+      dias: 7,
+    });
+    expect(f.total.cliques).toBe(1);
+  });
+});
+
 describe("proporcao", () => {
   it("abaixo de 20 pessoas não vira porcentagem", () => {
     expect(proporcao(1, 10)).toBeNull();

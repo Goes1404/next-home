@@ -21,7 +21,9 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
-import { consultarEstadoConexao } from "./provider";
+import { consultarEstadoConexao, consultarMotivoDaQueda } from "./provider";
+import { diaDaQueda } from "./protecaoDaQueda";
+import { codigoDaQueda } from "./motivoDaQueda";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
 import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import { camposDaFicha } from "./fichaDoLead";
@@ -669,13 +671,15 @@ export async function registrarMensagemBarrada(p: {
     const supabase = createServiceClient();
     const { data: cliques } = await supabase
       .from("cliques_whatsapp")
-      .select("id, created_at, empreendimento_id, user_agent")
+      .select("id, created_at, empreendimento_id, user_agent, de_pessoa")
       .eq("corretor_id", p.corretorId)
       .eq("pelo_porteiro", true)
       .gte("created_at", new Date(Date.now() - 60 * 60_000).toISOString())
       .order("created_at", { ascending: false })
       .limit(20);
-    const clique = (cliques ?? []).find((c) => ehClienteDePessoa(c.user_agent)) ?? null;
+    // Só clique de pessoa (0174): o robô que pediu o botão do site no mesmo
+    // minuto contava como "clicou e escreveu outra coisa".
+    const clique = (cliques ?? []).find((c) => c.de_pessoa ?? ehClienteDePessoa(c.user_agent)) ?? null;
 
     let citou = false;
     if (clique?.empreendimento_id && p.texto) {
@@ -1806,13 +1810,13 @@ export async function calcularLimiteDoDia(instanciaId: string, conectadoEm: Date
   const desde = new Date(Date.now() - (DIAS_DE_USO_RECENTE + 1) * 86_400_000);
   const desdeDia = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(desde);
 
-  const [{ data: historico, error }, { data: instancia }] = await Promise.all([
+  const [{ data: historico, error }, instancia] = await Promise.all([
     supabase
       .from("whatsapp_envios_por_dia")
       .select("dia, enviados")
       .eq("instancia_id", instanciaId)
       .gte("dia", desdeDia),
-    supabase.from("corretor_whatsapp_instancias").select("corretor_id").eq("id", instanciaId).maybeSingle(),
+    instanciaParaOLimite(instanciaId),
   ]);
 
   let recusas = 0;
@@ -1830,7 +1834,32 @@ export async function calcularLimiteDoDia(instanciaId: string, conectadoEm: Date
     historico: error ? [] : (historico ?? []),
     hoje,
     recusasNaSemana: recusas,
+    // Depois de uma queda tratada, só conta o que saiu depois dela (0174).
+    recomecoDepoisDe: instancia?.aquecimento_desde ? diaDaQueda(new Date(instancia.aquecimento_desde)) : null,
   });
+}
+
+/**
+ * O dono do número e o marco do aquecimento. Se a coluna da 0174 ainda não
+ * existir, lê só o dono: perder o dono desligaria o freio por recusas, que é
+ * o lado errado de errar numa trava anti-ban.
+ */
+async function instanciaParaOLimite(
+  instanciaId: string,
+): Promise<{ corretor_id: string; aquecimento_desde: string | null } | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("corretor_id, aquecimento_desde")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  if (!error) return data;
+  const { data: soDono } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("corretor_id")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  return soDono ? { corretor_id: soDono.corretor_id, aquecimento_desde: null } : null;
 }
 
 export async function reservarCotaCampanha(
@@ -2022,6 +2051,37 @@ export async function marcarRespostaCampanha(lista: ListaRecenteDoLead): Promise
 }
 
 /**
+ * O envio voltou "Connection Closed" com o número ainda "conectado" (0174).
+ *
+ * A marca na fila (`MOTIVO_SESSAO_CAIU`) só existe para quem tem lista; o
+ * rodízio do link precisa saber pela instância. Sem isto o sorteio seguia
+ * mandando cliques para um número que a plataforma não enxerga: foram 42
+ * para o da Márcia em dois dias. Grava uma vez (o primeiro sinal) e nunca
+ * lança: quem chama está no meio de um ciclo de disparo.
+ */
+export async function marcarSessaoCaida(instanciaId: string): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("corretor_whatsapp_instancias")
+    .update({ sessao_caida_em: new Date().toISOString() })
+    .eq("id", instanciaId)
+    .is("sessao_caida_em", null);
+  if (error) console.error("[sessao] falha ao marcar a sessão caída:", error.message);
+}
+
+/**
+ * A sessão provou que funciona (reconectou, enviou ou recebeu mensagem):
+ * sai a marca, e o número volta ao rodízio. Sem marca, não muda nada.
+ */
+export async function marcarSessaoViva(instanciaId: string): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("corretor_whatsapp_instancias")
+    .update({ sessao_caida_em: null })
+    .eq("id", instanciaId)
+    .not("sessao_caida_em", "is", null);
+  if (error) console.error("[sessao] falha ao tirar a marca da sessão:", error.message);
+}
+
+/**
  * A sessão do WhatsApp voltou a funcionar: as mensagens que esperavam por
  * ela perdem a marca (`MOTIVO_SESSAO_CAIU`) e, quando quem chama é a
  * reconexão, a pausa que essas falhas abriram cai junto (ver
@@ -2038,6 +2098,9 @@ export async function liberarFilaDaSessao(params: {
   levantarPausa: boolean;
 }): Promise<number> {
   const supabase = createServiceClient();
+
+  // A sessão funciona de novo: o número volta ao rodízio do link (0174).
+  await marcarSessaoViva(params.instanciaId);
 
   let corretorId = params.corretorId ?? null;
   if (!corretorId) {
@@ -2460,14 +2523,26 @@ export async function sincronizarConexaoInstancia(params: {
  *
  * Mesmo efeito da sincronização ativa, sem a ida à rede — aqui o estado
  * chegou de graça, junto do evento.
+ *
+ * Até 10/10/2026 este caminho só mudava o `status_conexao`: a reconexão não
+ * apagava o marco da queda anterior, e a queda não o carimbava. O número do
+ * Ramos caiu em 08/10, voltou pelo webhook, mandou 59 mensagens e caiu de
+ * novo em 09/10, e o painel seguiu dizendo "caiu em 08/10". O aviso da
+ * segunda queda também não sairia, porque a marca do aviso da primeira
+ * continuava lá. Hoje a reconexão faz o mesmo que a sincronização ativa
+ * (apaga marco e aviso) e a queda carimba o marco, uma vez, junto com o
+ * motivo que o WhatsApp mandou (0174).
  */
 export async function registrarEventoConexao(params: {
   instanceName: string;
   estado: string;
   telefone?: string | null;
+  /** `statusReason` do evento: o código com que o WhatsApp derrubou a conexão. */
+  motivo?: unknown;
 }): Promise<void> {
   const supabase = createServiceClient();
   const conectado = params.estado === "open";
+  const agora = new Date().toISOString();
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
@@ -2491,9 +2566,11 @@ export async function registrarEventoConexao(params: {
       // Só carimba na primeira vez: uma reconexão (queda de internet, troca
       // de celular) não pode zerar a curva de aquecimento de um número que
       // já vinha maduro. A exceção é a troca de número, tratada acima.
-      ...(conectado && !instancia.conectado_em ? { conectado_em: new Date().toISOString() } : {}),
+      ...(conectado && !instancia.conectado_em ? { conectado_em: agora } : {}),
       ...(conectado && params.telefone ? { telefone_conectado: params.telefone } : {}),
-      ...(conectado ? { falhas_seguidas: 0 } : {}),
+      // O número voltou: apaga o marco da queda e a marca do aviso, como a
+      // sincronização ativa faz. É o que arma o alerta da PRÓXIMA queda.
+      ...(conectado ? { falhas_seguidas: 0, desconectado_em: null, aviso_queda_enviado_em: null } : {}),
       ...(reset
         ? {
             conectado_em: reset.conectado_em,
@@ -2502,7 +2579,7 @@ export async function registrarEventoConexao(params: {
             bloqueado_ate: reset.bloqueado_ate,
           }
         : {}),
-      updated_at: new Date().toISOString(),
+      updated_at: agora,
     })
     .eq("id", instancia.id);
 
@@ -2512,8 +2589,32 @@ export async function registrarEventoConexao(params: {
     );
   }
 
-  // A sessão voltou: a fila que esperava por ela anda (ver `sessaoCaida.ts`).
-  if (conectado) await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
+  if (conectado) {
+    // A sessão voltou: a fila que esperava por ela anda, e o número volta ao
+    // rodízio do link (ver `sessaoCaida.ts`).
+    await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
+    return;
+  }
+
+  // Número que nunca conectou não caiu: está sendo pareado agora.
+  if (!instancia.conectado_em) return;
+
+  // O marco da queda, uma vez (ver `sincronizarConexaoInstancia`).
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({ desconectado_em: agora })
+    .eq("id", instancia.id)
+    .is("desconectado_em", null);
+
+  const codigo = codigoDaQueda(params.motivo);
+  if (codigo !== null) {
+    const { error } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ motivo_queda_codigo: codigo, motivo_queda_em: agora })
+      .eq("id", instancia.id);
+    if (error) console.error("[whatsapp] falha ao guardar o motivo da queda:", error.message);
+    console.warn(`[whatsapp] ${params.instanceName} caiu com o código ${codigo}.`);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
-import { diaEmSaoPauloISO, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
+import { diaEmSaoPauloISO, ehCliqueDePessoa, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,6 +63,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   // Fire-and-forget seria perder o clique se a função for congelada logo
   // após o redirect; o insert é aguardado de propósito (custa ~1 RTT).
   const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
+  // Toque de pessoa ou robô (0174): só muda a contagem, o destino é o mesmo.
+  const dePessoa = ehCliqueDePessoa({
+    userAgent,
+    doSite,
+    secFetchSite: req.headers.get("sec-fetch-site"),
+    secFetchUser: req.headers.get("sec-fetch-user"),
+    referer: req.headers.get("referer"),
+    host: url.host,
+  });
   const registrarClique = async (corretorId: string | null) => {
     await supabase.from("cliques_whatsapp").insert({
       corretor_id: corretorId,
@@ -72,6 +81,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
       pelo_porteiro: true,
       url_origem: url.pathname + url.search,
       user_agent: userAgent,
+      de_pessoa: dePessoa,
       // Conta pessoas, não cliques: um clique repetido é a mesma pessoa (0159).
       visitante: visitanteDoClique({
         ip: ipDaRequisicao(req.headers),

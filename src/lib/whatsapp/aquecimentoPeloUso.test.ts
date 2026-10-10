@@ -138,3 +138,57 @@ describe("quem usa o limite", () => {
     expect(corpo).toContain("insert into public.whatsapp_envios_por_dia");
   });
 });
+
+/**
+ * A queda recomeça o aquecimento (0174, 10/10/2026). O caso real: o número da
+ * Bruna mandou 15, 23, 35, 41 e 50 de 04 a 08/10, foi restringido pelo
+ * WhatsApp e caiu em 08/10. Sem a regra, ao voltar ele seguiria no ritmo de
+ * antes (50 × 1,5).
+ */
+describe("limite do dia depois de uma queda", () => {
+  const historicoDaBruna = [
+    { dia: "2026-10-04", enviados: 15 },
+    { dia: "2026-10-05", enviados: 23 },
+    { dia: "2026-10-06", enviados: 35 },
+    { dia: "2026-10-07", enviados: 41 },
+    { dia: "2026-10-08", enviados: 50 },
+  ];
+
+  it("ignora o que saiu até o dia da queda e volta ao piso", () => {
+    const sem = limiteDoDia({ diasDesdeConexao: velho, historico: historicoDaBruna, hoje: "2026-10-11", recusasNaSemana: 0 });
+    const com = limiteDoDia({
+      diasDesdeConexao: velho,
+      historico: historicoDaBruna,
+      hoje: "2026-10-11",
+      recusasNaSemana: 0,
+      recomecoDepoisDe: "2026-10-08",
+    });
+    expect(sem.limite).toBe(75);
+    expect(com.limite).toBe(PISO_POR_USO);
+    expect(com.motivo).toBe("queda");
+    expect(fraseDoLimite(com)).toContain("saiu do ar");
+  });
+
+  it("depois da queda, sobe de novo com o uso", () => {
+    const l = limiteDoDia({
+      diasDesdeConexao: velho,
+      historico: [...historicoDaBruna, { dia: "2026-10-12", enviados: 15 }],
+      hoje: "2026-10-13",
+      recusasNaSemana: 0,
+      recomecoDepoisDe: "2026-10-08",
+    });
+    expect(l.limite).toBe(23);
+  });
+
+  it("queda antiga, fora da semana, não muda nada", () => {
+    const sem = limiteDoDia({ diasDesdeConexao: velho, historico: historicoDaBruna, hoje: "2026-10-11", recusasNaSemana: 0 });
+    const com = limiteDoDia({
+      diasDesdeConexao: velho,
+      historico: historicoDaBruna,
+      hoje: "2026-10-11",
+      recusasNaSemana: 0,
+      recomecoDepoisDe: "2026-09-01",
+    });
+    expect(com).toEqual(sem);
+  });
+});

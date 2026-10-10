@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-09
+updated: 2026-10-10
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -113,7 +113,7 @@ pendentes da perdedora com o texto da vencedora. Ver
 [[aprimoramentos-das-oito-funcionalidades]].
 
 Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
-`varrerQuedasDeNumero` → `alimentarListasVivas` (só no tique geral, 1x/hora
+`varrerQuedasDeNumero` → `protegerNumerosQueCairam` (0174: motivo da queda, e queda de 30+ min pausa as listas e recomeça o aquecimento; [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]) → `alimentarListasVivas` (só no tique geral, 1x/hora
 por lista) → instância a instância: bloqueio → conexão → listas
 `em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
@@ -122,7 +122,7 @@ arquivado, perdido, transferido, comprou) → guarda de 24h → **texto conferid
 (`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de
 abertura e de pergunta, e só quando A e B são diferentes de verdade; sem texto
 próprio, o item espera, o motivo vai para o log e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
-horário resolvidos agora → envio → **sessão caída** ("Connection Closed": cota devolvida, item marcado sem gastar tentativa, disjuntor, vez encerrada; [[sessao-caida-com-o-numero-conectado]]) → `classificarFalhaDeEnvio` → conversa, IA ligada,
+horário resolvidos agora → envio → **sessão caída** ("Connection Closed": cota devolvida, item marcado sem gastar tentativa, disjuntor, `sessao_caida_em` tira o número do rodízio do link, vez encerrada; [[sessao-caida-com-o-numero-conectado]]) → `classificarFalhaDeEnvio` → conversa, IA ligada,
 **fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
 [[lista-de-transmissao-visivel-e-controlavel]].
 

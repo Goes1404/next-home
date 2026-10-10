@@ -123,8 +123,9 @@ describe("o disparador com a sessão caída", () => {
 
 describe("a reconexão libera a fila e a pausa", () => {
   it("pelo evento do provedor e pela sincronização do painel", () => {
+    // Desde a 0174 a chamada mora num bloco (depois dela a queda é tratada).
     expect(corpoDe(repositorio, "export async function registrarEventoConexao(")).toMatch(
-      /if \(conectado\) await liberarFilaDaSessao\(\{ instanciaId: instancia\.id, levantarPausa: true \}\)/,
+      /if \(conectado\) \{?\s*await liberarFilaDaSessao\(\{ instanciaId: instancia\.id, levantarPausa: true \}\)/,
     );
     expect(corpoDe(repositorio, "export async function sincronizarConexaoInstancia(")).toMatch(
       /await liberarFilaDaSessao\(\{ instanciaId: params\.instanciaId, levantarPausa: true \}\)/,

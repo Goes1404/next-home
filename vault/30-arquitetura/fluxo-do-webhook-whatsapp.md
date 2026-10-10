@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-09
+updated: 2026-10-10
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -16,7 +16,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
-2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa.
+2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa. Desde a 0174 o `connection.update` também apaga o marco da queda ao reconectar, carimba a queda uma vez e guarda o `statusReason`; qualquer outro evento tira a marca de sessão caída em segundo plano ([[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]).
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).

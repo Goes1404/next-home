@@ -437,6 +437,34 @@ export async function consultarEstadoConexao(instanceName: string): Promise<Esta
 }
 
 /**
+ * O que a Evolution guardou sobre a última queda da instância (0174):
+ * `GET /instance/fetchInstances?instanceName=`. Devolve a resposta crua; quem
+ * decide se o código vale para a queda atual é `motivoGuardadoNaEvolution`.
+ *
+ * Timeout curto de propósito: roda na varredura de cada minuto do cron, e um
+ * provedor lento não pode comer o tempo do disparo. Falha devolve `null`, e a
+ * queda fica sem motivo conhecido.
+ */
+export async function consultarMotivoDaQueda(instanceName: string): Promise<unknown | null> {
+  const config = configDoProvedor();
+  if (!config || !instanceName) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(
+      `${config.baseUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`,
+      { method: "GET", headers: { apikey: config.apiKey }, signal: controller.signal },
+    );
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    return await res.json().catch(() => null);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Mostra "digitando..." no WhatsApp do cliente por `duracaoMs`.
  *
  * Silenciosa de propósito: é um detalhe cosmético entre balões de uma

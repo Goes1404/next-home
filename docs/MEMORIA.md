@@ -9952,3 +9952,39 @@ Nota: [[primeira-semana-em-producao]]. Consultas em
   Ramos) e a sessão da Márcia caída; a lista dela (36, criada em 07/10) nunca
   mandou nada. Ninguém foi avisado fora do painel: o e-mail precisa de
   `RESEND_API_KEY` e o aviso por WhatsApp sai do número que caiu.
+
+## A queda do número protege a lista, e o robô sai da conta (0174, 10/10/2026)
+
+Notas: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]],
+[[clique-de-pessoa-pelo-sec-fetch]]. Saíram do relatório da primeira semana.
+
+- **A reconexão pelo webhook não apagava a queda anterior.** Só a
+  sincronização ativa limpava `desconectado_em`. O Ramos aparecia como "caiu
+  em 08/10 17h37" e mandou 59 mensagens depois disso; caiu de novo em 09/10,
+  depois das 12h53. Agora `registrarEventoConexao` apaga o marco e a marca do
+  aviso ao voltar e carimba a queda uma vez. **Para conferir uma data de
+  queda, compare `desconectado_em` com a última mensagem que saiu do número.**
+- **O motivo da queda vinha e era descartado.** O `connection.update` traz
+  `statusReason` (401 = aparelho desconectado da conta, 403 = conexão
+  recusada). Quando o webhook não traz, a varredura pergunta uma vez por
+  queda à Evolution (`/instance/fetchInstances`, `disconnectionReasonCode`).
+  A Evolution guarda só a última queda que não reconecta sozinha: o código
+  só vale com `disconnectionAt` perto da nossa queda.
+- **Número fora do ar por 30 minutos pausa as listas dele e o limite volta a
+  15** (`aquecimento_desde`, `recomecoDepoisDe` no `limiteDoDia`). As quedas
+  de 10/10 não pausaram lista nenhuma, por decisão do dono da conta ("não
+  pause as listas"): a migration as marcou como tratadas e só recomeçou o
+  aquecimento. Sem isso a Bruna voltaria a 60–75 mensagens por dia logo
+  depois de cair.
+- **Sessão caída sai do rodízio do link** (`sessao_caida_em`). O
+  `sortear_corretor_whatsapp` só olhava `status_conexao`, e a Márcia
+  ("conectada" com a sessão morta) recebeu 42 cliques em dois dias.
+- **Robô disfarçado contava como pessoa.** Navegador de computador comum, em
+  3 versões, pediu exatamente 39 vezes cada um dos 4 botões (os 39 imóveis),
+  nenhum lead. O clique do site agora só é de pessoa com
+  `Sec-Fetch-Site: same-origin` + `Sec-Fetch-User: ?1` (ou `Referer` do
+  site em navegador antigo): `cliques_whatsapp.de_pessoa`. Não foi para o
+  `robots.txt`: o link do anúncio é `/wa/<imóvel>` e o robô da Meta precisa
+  abri-lo.
+- **Migration que redefine o sorteio põe o sorteio por último no arquivo**:
+  `sorteioDoPorteiro.test.ts` lê do `create or replace` dele até o fim.

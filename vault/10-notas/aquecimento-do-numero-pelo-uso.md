@@ -14,7 +14,7 @@ codigo:
   - src/lib/whatsapp/limitesConservadores.test.ts
   - supabase/migrations/0158_aquecimento_pelo_uso.sql
 created: 2026-10-03
-updated: 2026-10-09
+updated: 2026-10-10
 fonte: pedido do usuário ("se não enviarem todo dia, as contas vão tomar ban")
 summary: O limite diário de mensagens por iniciativa nossa parte do maior dia dos últimos 7 (×1,5, piso 15), com a curva por idade como teto e freio quando muita gente pede para sair.
 ---
@@ -67,6 +67,14 @@ Mordida com sete afrouxamentos (todos reprovaram) e dois apertos (passaram).
 Conferido no mesmo dia: nenhum botão do painel nem função do banco passa por
 cima desses limites (`resetar_cota_campanha` não existe mais, e nenhuma
 lista com pendentes tem a janela afrouxada).
+
+## Depois de uma queda (0174, 10/10/2026)
+
+Número fora do ar por 30 minutos ou mais grava `aquecimento_desde`, e o
+`limiteDoDia` (`recomecoDepoisDe`) ignora os envios até o dia da queda: volta
+ao piso de 15 e sobe de novo com o uso. É aperto, então a guarda de 09/10
+passa (e ganhou um teste: a queda nunca aumenta o limite). Ver
+[[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
 
 ## Guardas
 

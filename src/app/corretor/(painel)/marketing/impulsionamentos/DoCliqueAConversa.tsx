@@ -21,7 +21,7 @@ export async function DoCliqueAConversa() {
   const [{ data: cliques, error }, { data: barrados }, catalogo] = await Promise.all([
     supabase
       .from("cliques_whatsapp")
-      .select("id, origem, created_at, user_agent, visitante, lead_id")
+      .select("id, origem, created_at, user_agent, visitante, lead_id, de_pessoa")
       .eq("pelo_porteiro", true)
       .gte("created_at", corte.toISOString())
       .limit(10000),
@@ -45,8 +45,8 @@ export async function DoCliqueAConversa() {
           Do clique à conversa
         </h2>
         <p className="text-fluid-xs text-corpo">
-          Últimos {DIAS} dias, só cliques de pessoas (o robô da Meta fica de fora). Mostra se quem clica chega a
-          escrever, e se escreve a mensagem pronta ou outra coisa.
+          Últimos {DIAS} dias, só cliques de pessoas (robôs ficam de fora, inclusive o da Meta). Mostra se quem
+          clica chega a escrever, e se escreve a mensagem pronta ou outra coisa.
         </p>
       </div>
 

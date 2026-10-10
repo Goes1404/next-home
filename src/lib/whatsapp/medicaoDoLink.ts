@@ -16,6 +16,56 @@ export function ehClienteDePessoa(userAgent: string | null | undefined): boolean
   return Boolean(userAgent) && !PADRAO_ROBO.test(userAgent as string);
 }
 
+/**
+ * O clique veio de um toque de pessoa? (0174, 10/10/2026)
+ *
+ * Só o navegador não basta. Na semana de 03 a 09/10, além dos robôs que se
+ * declaram (ClaudeBot, GPTBot, MJ12bot, 71% dos cliques do site), um robô
+ * com navegador de computador comum pediu os quatro botões de cada um dos 39
+ * imóveis: 39 cliques em cada intenção, nenhum lead. Para o filtro de
+ * navegador ele era gente.
+ *
+ * No botão do SITE a pergunta é se a navegação saiu de uma página nossa por
+ * um toque. O navegador conta isso sozinho nos cabeçalhos `Sec-Fetch-*`:
+ * `Sec-Fetch-Site` diz de onde veio (same-origin = de uma página do site) e
+ * `Sec-Fetch-User: ?1` diz que foi gesto da pessoa. Robô que acha o link no
+ * HTML e o pede direto não manda os dois. Navegador antigo, sem `Sec-Fetch`,
+ * vale pela página de origem (`Referer` do próprio site).
+ *
+ * No ANÚNCIO o link é aberto pelo navegador do Instagram ou do Facebook, sem
+ * página nossa antes; ali vale o filtro de navegador, como antes.
+ *
+ * Errar aqui só muda a contagem: o link funciona igual para todo mundo.
+ */
+export function ehCliqueDePessoa(p: {
+  userAgent: string | null;
+  doSite: boolean;
+  secFetchSite: string | null;
+  secFetchUser: string | null;
+  referer: string | null;
+  /** O host que recebeu o clique (o mesmo das páginas do site). */
+  host: string | null;
+}): boolean {
+  if (!ehClienteDePessoa(p.userAgent)) return false;
+  if (!p.doSite) return true;
+  const site = p.secFetchSite?.trim().toLowerCase();
+  if (site) return (site === "same-origin" || site === "same-site") && p.secFetchUser?.trim() === "?1";
+  return refererDoProprioSite(p.referer, p.host);
+}
+
+function semWww(host: string): string {
+  return host.toLowerCase().replace(/^www\./, "");
+}
+
+function refererDoProprioSite(referer: string | null, host: string | null): boolean {
+  if (!referer || !host) return false;
+  try {
+    return semWww(new URL(referer).host) === semWww(host);
+  } catch {
+    return false;
+  }
+}
+
 function resumo(partes: string[], segredo: string): string {
   return createHash("sha256").update([segredo, ...partes].join("|")).digest("hex").slice(0, 24);
 }

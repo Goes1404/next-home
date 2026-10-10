@@ -520,11 +520,13 @@ export async function getCliquesWhatsappCorretor(): Promise<{ hoje: number; tota
     const hojeInicio = new Date();
     hojeInicio.setHours(0, 0, 0, 0);
 
+    // Robô não conta (0174): o clique gravado sem classificação continua contando.
     const [totalRes, hojeRes] = await Promise.all([
-      supabase.from("cliques_whatsapp").select("id", { count: "exact", head: true }),
+      supabase.from("cliques_whatsapp").select("id", { count: "exact", head: true }).not("de_pessoa", "is", false),
       supabase
         .from("cliques_whatsapp")
         .select("id", { count: "exact", head: true })
+        .not("de_pessoa", "is", false)
         .gte("created_at", hojeInicio.toISOString()),
     ]);
 

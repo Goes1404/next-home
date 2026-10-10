@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { BotaoDesconectar } from "./BotaoDesconectar";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { motivoDaQueda } from "@/lib/whatsapp/motivoDaQueda";
+import { quandoEmSaoPaulo } from "@/lib/whatsapp/saudeDaConexao";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 
@@ -71,7 +73,7 @@ export default async function AdminWhatsappPage() {
     equipe
       .from("corretor_whatsapp_instancias")
       .select(
-        "id, corretor_id, instance_name, status_conexao, telefone_conectado, conectado_em, modo_bot, bloqueado_ate",
+        "id, corretor_id, instance_name, status_conexao, telefone_conectado, conectado_em, modo_bot, bloqueado_ate, desconectado_em, motivo_queda_codigo, sessao_caida_em",
       ),
     equipe
       .from("ia_interacoes")
@@ -149,6 +151,9 @@ export default async function AdminWhatsappPage() {
             {(instancias ?? []).map((i) => {
               const conectado = i.status_conexao === "conectado" && i.conectado_em !== null;
               const bloqueado = i.bloqueado_ate !== null && new Date(i.bloqueado_ate) > new Date();
+              // "Conectado" no banco com a sessão caída não recebe nada (0174).
+              const sessaoCaida = conectado && i.sessao_caida_em !== null;
+              const motivo = !conectado ? motivoDaQueda(i.motivo_queda_codigo) : null;
               return (
                 <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
@@ -161,20 +166,32 @@ export default async function AdminWhatsappPage() {
                       {bloqueado &&
                         ` · bloqueado até ${dataHora.format(new Date(i.bloqueado_ate as string))}`}
                     </p>
+                    {!conectado && i.desconectado_em && (
+                      <p className="text-fluid-xs text-apoio mt-0.5">
+                        Caiu em {quandoEmSaoPaulo(new Date(i.desconectado_em))}
+                        {motivo ? ` · ${motivo}` : " · o WhatsApp não informou o motivo"}
+                      </p>
+                    )}
+                    {sessaoCaida && (
+                      <p className="text-fluid-xs text-apoio mt-0.5">
+                        Aparece conectado, mas os envios voltam com a conexão fechada e nada chega à plataforma. Fica
+                        fora do rodízio do site e do anúncio até reconectar.
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <Selo
-                      ok={conectado && !bloqueado}
-                      texto={conectado ? "Conectado" : "Desconectado"}
+                      ok={conectado && !bloqueado && !sessaoCaida}
+                      texto={sessaoCaida ? "Parou de enviar" : conectado ? "Conectado" : "Desconectado"}
                     />
                     {/* Conectar exige o CELULAR do dono do número (QR ou
                         código) — não existe ação remota honesta aqui. O que
                         o gestor pode fazer é saber a quem pedir, e é isso
                         que a linha diz. */}
-                    {!conectado && (
+                    {(!conectado || sessaoCaida) && (
                       <span className="text-fluid-xs text-apoio">
-                        peça para {nomePor.get(i.corretor_id) ?? "o corretor"} conectar em
-                        WhatsApp → Conexão
+                        peça para {nomePor.get(i.corretor_id) ?? "o corretor"}{" "}
+                        {sessaoCaida ? "desconectar e conectar de novo" : "conectar"} em WhatsApp → Conexão
                       </span>
                     )}
                     {i.status_conexao !== "desconectado" && (

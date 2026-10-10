@@ -27,6 +27,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10); desde 09/10 os limites só podem ser apertados, nunca afrouxados
 - [[texto-da-lista-conferido-antes-de-sair]] ⚠️ cada mensagem só sai abaixo de 0,70 de semelhança com as do número; o A/B também é reescrito (0173, 08/10)
 - [[sessao-caida-com-o-numero-conectado]] ⚠️ "Connection Closed" com o número "conectado": o painel pede para reconectar, e reconectar levanta a pausa de 12h (09/10)
+- [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]] ⚠️ número fora do ar por 30 min pausa as listas e o limite recomeça de 15; a queda guarda o motivo do WhatsApp; sessão caída sai do rodízio (0174, 10/10)
 
 ## Diagnóstico
 - [[fila-parada-tres-causas]] ⚠️ runbook principal
