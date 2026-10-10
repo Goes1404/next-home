@@ -4,7 +4,7 @@ tags: [moc, runbook]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-09
+updated: 2026-10-10
 summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem certa.
 ---
 # Runbooks — Map of Content
@@ -16,6 +16,7 @@ summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem cert
 | "Número não está no WhatsApp" | [[envio-mandava-telefone-sem-ddi]] → [[numero-sem-whatsapp-nao-e-falha-nossa]] |
 | mensagens saindo em rajada | [[espacamento-anti-ban-so-existia-no-papel]] (comparar `enviado_em` com `lag`) |
 | 401 persistente após trocar segredo | [[env-var-nova-so-vale-depois-de-redeploy]] |
+| URL ou chave do WhatsApp (Evolution) que a Vercel não mostra | [[url-e-chave-da-evolution-so-existem-no-servidor]] |
 | erro genérico de Server Components em produção | [[sharp-na-vercel-o-binario-nao-chega]] → [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]] |
 | 429 do Gemini | [[cota-do-gemini-e-por-modelo-e-por-dia]] (conferir hora no Pacífico) |
 | upload de mídia falhando | [[upload-de-foto-nunca-funcionou]] (testar policy com identidade fingida) |

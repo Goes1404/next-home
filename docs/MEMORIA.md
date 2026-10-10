@@ -53,6 +53,12 @@
   commit). Os status do commit no GitHub (`/commits/<sha>/statuses`) têm um
   `pending` por push que a Vercel recebeu. Commit só de documentação não
   precisa de nada; com código, Redeploy no painel ou o próximo push.
+- **`WHATSAPP_API_URL` e `WHATSAPP_API_KEY` são variáveis sensíveis**
+  (10/10/2026): a Vercel não mostra o valor nem ao dono, e o conector desta
+  sessão leva 403 até para listar. O valor está no servidor da Evolution,
+  em `/opt/evolution/.env` (`EVOLUTION_DOMAIN` e `AUTHENTICATION_API_KEY`).
+  O endereço não está gravado no repositório nem no banco
+  ([[url-e-chave-da-evolution-so-existem-no-servidor]]).
 - **`CRON_SECRET`**: precisa estar configurado em Settings → Environment
   Variables → Production. Sem ele, `/api/cron/campanhas` recusa toda
   requisição em produção (falha fechada, mesmo padrão do webhook de
