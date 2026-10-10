@@ -32,6 +32,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[fila-parada-tres-causas]] ⚠️ runbook principal
 - [[numero-sem-whatsapp-nao-e-falha-nossa]]
 - [[envio-mandava-telefone-sem-ddi]]
+- [[primeira-semana-em-producao]] — em 10/10, 4 dos 6 números desconectados e ninguém avisado fora do painel
 
 ## Painel
 - [[selecao-manual-da-transmissao-e-a-ultima-revisao]]

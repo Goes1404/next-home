@@ -9922,3 +9922,33 @@ Nota: [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
   atalho recriado ainda mostrar o triângulo, falta apagar os dados do site no
   navegador, ou o atalho aponta para um deploy antigo da Vercel (endereço com
   sufixo), que serve o favicon padrão do Next para sempre.
+
+## A primeira semana em produção (03-09/10/2026)
+
+Nota: [[primeira-semana-em-producao]]. Consultas em
+`scripts/relatorioDaSemana.sql`.
+
+- **O que aconteceu**: 897 leads novos (855 de planilha), 47 clientes
+  conversaram, a IA respondeu 96 vezes e o corretor 115 (mediana de 20 s; 12
+  vezes sem resposta, todas com a IA desligada), 245 mensagens de lista e 31
+  respostas (12,7%), 1 visita marcada e nenhuma venda. Nota, tarefa, arte e
+  vídeo: zero.
+- **O perfil demo entra na semana por duas colunas que o banco carimba.** O
+  seed de 07/10 pôs leads e mensagens no passado, mas `visita_marcada_em`
+  (trigger da 0122) e `vendas.created_at` ficaram em 07/10. Sem
+  `slug not like 'demo-%'`, a semana teria 19 visitas e 39 vendas em vez de
+  1 e 0.
+- **Mensagem `bot` não é resposta da IA**: inclui lista e lembrete (07/10:
+  200 `bot`, 26 respostas da IA). Contar a IA em `ia_interacoes`
+  (`acao = 'respondida'`).
+- **71% dos cliques do site são robôs**: ClaudeBot, GPTBot e MJ12bot seguem
+  os botões `/wa/<imóvel>?de=site` das fichas (~21 por imóvel na semana); o
+  `robots.txt` só bloqueia `/corretor` e `/api`. Contar `visitante` distinto
+  sem os robôs: 81 pessoas no site, 118 no anúncio.
+- **Visitas ao site não se leem por aqui**: a API de Web Analytics da Vercel
+  responde 404 "Web Analytics not found" com o script no ar. Conferir na aba
+  Analytics do projeto.
+- **Em 10/10, 4 dos 6 números estavam desconectados** (Ana, Carolini, Bruna,
+  Ramos) e a sessão da Márcia caída; a lista dela (36, criada em 07/10) nunca
+  mandou nada. Ninguém foi avisado fora do painel: o e-mail precisa de
+  `RESEND_API_KEY` e o aviso por WhatsApp sai do número que caiu.
