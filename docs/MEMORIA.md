@@ -9971,7 +9971,8 @@ Notas: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]],
   A Evolution guarda só a última queda que não reconecta sozinha: o código
   só vale com `disconnectionAt` perto da nossa queda.
 - **Número fora do ar por 30 minutos pausa as listas dele e o limite volta a
-  15** (`aquecimento_desde`, `recomecoDepoisDe` no `limiteDoDia`). As quedas
+  15** (`aquecimento_desde`, `recomecoDepoisDe` no `limiteDoDia`). (O limite
+  voltar a 15 passou a exigir 3 dias sem conectar na 0176, no mesmo dia.) As quedas
   de 10/10 não pausaram lista nenhuma, por decisão do dono da conta ("não
   pause as listas"): a migration as marcou como tratadas e só recomeçou o
   aquecimento. Sem isso a Bruna voltaria a 60–75 mensagens por dia logo
@@ -10023,3 +10024,26 @@ Nota: [[estado-do-numero-so-o-servidor-escreve]].
 - **Antes de fechar grant de uma tabela, procurar quem mais escreve nela no
   banco** (`pg_proc.prosrc`, triggers, views): aqui todas as funções que
   escrevem são `security definer` sem execute para o `authenticated`.
+
+## O limite só volta a 15 depois de 3 dias sem conectar (0176, 10/10/2026)
+
+Nota: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
+
+- **Decisão do dono da conta: "se estiver 3 dias sem conectar volta a 15,
+  para não ficar voltando a 15 toda hora".** Na 0174 o limite recomeçava aos
+  30 minutos fora do ar; em 10/10 quatro números caíram (22 a 50 horas) e
+  todos voltariam a 15. A pausa da lista continua aos 30 minutos.
+- **Pausa e recomeço são duas perguntas** (`quedaPedePausa`,
+  `quedaPedeRecomeco`), cada uma uma vez por queda. O prazo é
+  `DIAS_FORA_PARA_RECOMECAR`, e `limitesConservadores.test.ts` reprova
+  prazo maior que 3.
+- **O recomeço medido em dias depende de o marco ser o da queda ATUAL.** O
+  registro da queda só carimba `desconectado_em` quando o campo está vazio;
+  um marco esquecido num número conectado faz a próxima queda já contar
+  como 3 dias. A Márcia tinha um de 07/10, e o botão Conectar com o número
+  já no ar não apagava o marco (corrigido). Ao mudar regra que mede tempo a
+  partir de um marco, procurar todo caminho que deveria apagá-lo.
+- **Aplicada depois do deploy.** O passo que desfaz o recomeço usa
+  `aquecimento_desde > now() - 3 dias`: um recomeço desses não pode ter
+  vindo da regra nova, então a condição também pega o que o código antigo
+  gravasse até o deploy.

@@ -113,7 +113,7 @@ pendentes da perdedora com o texto da vencedora. Ver
 [[aprimoramentos-das-oito-funcionalidades]].
 
 Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
-`varrerQuedasDeNumero` → `protegerNumerosQueCairam` (0174: motivo da queda, e queda de 30+ min pausa as listas e recomeça o aquecimento; [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]) → `alimentarListasVivas` (só no tique geral, 1x/hora
+`varrerQuedasDeNumero` → `protegerNumerosQueCairam` (0174: motivo da queda, e queda de 30+ min pausa as listas; 0176: só 3 dias seguidos sem conectar recomeçam o aquecimento; [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]) → `alimentarListasVivas` (só no tique geral, 1x/hora
 por lista) → instância a instância: bloqueio → conexão → listas
 `em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
