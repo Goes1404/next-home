@@ -58,7 +58,9 @@
   sessão leva 403 até para listar. O valor está no servidor da Evolution,
   em `/opt/evolution/.env` (`EVOLUTION_DOMAIN` e `AUTHENTICATION_API_KEY`).
   O endereço não está gravado no repositório nem no banco
-  ([[url-e-chave-da-evolution-so-existem-no-servidor]]).
+  ([[url-e-chave-da-evolution-so-existem-no-servidor]]). Revelar pela
+  própria aplicação (página protegida pela Vercel ou o host na resposta do
+  cron) foi bloqueado pelo controle de permissões da sessão: não contornar.
 - **`CRON_SECRET`**: precisa estar configurado em Settings → Environment
   Variables → Production. Sem ele, `/api/cron/campanhas` recusa toda
   requisição em produção (falha fechada, mesmo padrão do webhook de
