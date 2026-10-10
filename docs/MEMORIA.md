@@ -9988,3 +9988,7 @@ Notas: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]],
   abri-lo.
 - **Migration que redefine o sorteio põe o sorteio por último no arquivo**:
   `sorteioDoPorteiro.test.ts` lê do `create or replace` dele até o fim.
+- **Primeiro resultado, minutos depois do deploy:** Bruna, Ramos e Ana
+  caíram com 401 (aparelho desconectado da conta); a Carolini ficou sem
+  motivo guardado. Nenhuma foi queda de internet. Para consultar:
+  `motivo_queda_codigo` em `corretor_whatsapp_instancias`.

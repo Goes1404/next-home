@@ -61,6 +61,15 @@ sessão caída. Três defeitos estavam juntos:
 - A faixa do painel e a tela "WhatsApp da equipe" mostram quando caiu e por
   quê, e "Parou de enviar" para a sessão caída.
 
+## O primeiro resultado (10/10, minutos depois do deploy)
+
+A varredura perguntou à Evolution o motivo das 4 quedas em aberto: **Bruna,
+Ramos e Ana caíram com 401** (o aparelho foi desconectado da conta, por quem
+usa o celular ou pelo próprio WhatsApp). A Carolini ficou sem motivo
+guardado. Nenhuma das três foi queda de internet, que a Evolution reconecta
+sozinha. No caso da Bruna, o 401 veio 1 minuto depois de uma mensagem de
+lista, no dia seguinte à restrição.
+
 ## Decisões
 
 - **As quedas que já existiam em 10/10 não pausaram lista nenhuma**, por
