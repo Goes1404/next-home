@@ -10087,6 +10087,13 @@ mudou a lista: nenhum efeito saiu.
   `node_modules` por `cp -al`, os dois `next start` em portas diferentes e
   `npm run perf -- --base=http://localhost:<porta>`. Medir contra produção
   compara a rede de duas horas diferentes, não os dois builds.
+- **Medido local, antes × depois (3 rodadas):** LCP das rotas públicas
+  igual (home 1,94 → 1,98 s; listagem 4,27 → 4,29 s — a capa crua é o LCP
+  dela, e isso só muda com o backfill das variantes); tarefas longas no
+  celular −7 a −20% nas quatro páginas; mídia no desktop 719 → 499 KB. O
+  painel não entra na medição (login); lá o ganho é o do manifesto.
+  **`imagens` = 0 KB para o Storage não é foto ausente**: cross-origin sem
+  `Timing-Allow-Origin` não expõe `transferSize`.
 - **Continua pendente, e é o maior ganho estrutural**: `cookies()` no
   layout raiz mantém toda rota dinâmica (`X-Vercel-Cache: MISS` em tudo,
   TTFB de função). É a F2b do roadmap; exige o painel verificável.

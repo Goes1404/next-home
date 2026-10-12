@@ -33,6 +33,13 @@ visita — a régua do Google): LCP da home **7,39 → 3,17 s**, da listagem
 de 0,9–2,9 s para ~120 ms; HTML da home de 96 para 27 KB gz. Tabela
 completa em
 [docs/medicoes/2026-09-13-f0-a-f2-antes-e-depois.md](medicoes/2026-09-13-f0-a-f2-antes-e-depois.md).
+**Rodada de 12/10/2026** (medição local antes × depois, 3 rodadas,
+`docs/medicoes/perf-2026-10-12-*`): LCP das públicas igual — a listagem
+segue em 4,3 s no celular com a capa crua como LCP, e é o backfill das
+variantes (0177) que ataca isso; tarefas longas no celular −7 a −20%;
+mídia do desktop 719 → 499 KB; painel −300 KB nas telas de chat pelo
+manifesto. Ver [[menos-bytes-sem-perder-os-efeitos]].
+
 O que ainda segura o celular acima de 2,5 s é BANDA (745–944 KB de JS
 disputando 1,6 Mbps com a imagem do LCP) e a fonte de display chegando
 depois do texto — F3b e F5.

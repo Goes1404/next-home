@@ -137,6 +137,42 @@ nessa condição.
   sendo o maior ganho estrutural pendente.
 - O CSS de 230 KB (37 KB gz) não foi tocado.
 
+## Medido: antes × depois, mesma máquina (12/10/2026)
+
+`npm run perf`, 3 rodadas, mediana, `next start` do commit anterior
+(porta 3001) contra o novo (3000). Celular = Pixel 7, Slow 4G, CPU 4x.
+Arquivos: `docs/medicoes/perf-2026-10-12-{antes,depois}-local.*`.
+
+| página · perfil | LCP antes → depois | tarefas longas antes → depois | mídia antes → depois |
+|---|---|---|---|
+| `/` celular | 1,94 → 1,98 s | 944 → 831 ms | 32 → 203 KB (*) |
+| `/empreendimentos` celular | 4,27 → 4,29 s | 1.202 → 964 ms | — |
+| `/empreendimentos/<slug>` celular | 1,87 → 1,93 s | 1.725 → 1.607 ms | — |
+| `/financiamento` celular | 1,65 → 1,63 s | 582 → 525 ms | 32 → 203 KB (*) |
+| `/` desktop | 0,89 → 0,85 s | 94 → 74 ms | 719 → 499 KB |
+| `/empreendimentos` desktop | 0,98 → 0,92 s | 79 → 55 ms | 719 → 499 KB |
+| `/empreendimentos/<slug>` desktop | 1,06 → 0,98 s | 314 → 308 ms | 719 → 499 KB |
+| `/financiamento` desktop | 0,79 → 0,83 s | 15 → 42 ms | 719 → 499 KB |
+
+Leitura honesta:
+
+- **LCP das rotas públicas não mudou** nesta rodada (diferenças dentro da
+  variância de três rodadas). Era esperado: o JavaScript inicial das rotas
+  públicas só perdeu o Lenis, e a imagem da capa — o LCP da listagem, 4,3 s
+  — continua sendo o original cru até o backfill das variantes rodar. É o
+  backfill que ataca esse número; medir de novo depois dele.
+- **Tarefas longas no celular caíram 7 a 20% nas quatro páginas** (menos
+  JavaScript bloqueando o arranque). Consistente nas quatro, não é ruído.
+- **Mídia no desktop: 719 → 499 KB** por visitante de primeira vez (a
+  vinheta cortada). (*) No celular o `transferSize` local mediu 32 KB no
+  "antes" porque o navegador baixou o `fundo-home` por faixas e parou antes
+  do fim; em produção a mesma medição deu **608 KB** (12/10, antes). O
+  arquivo é 3x menor, e o pior caso agora é 208 KB.
+- **O painel não entra nesta medição** (exige login): lá o ganho é o do
+  manifesto — 300 KB a menos nas cinco telas de chat, ~120 KB nas outras.
+- `imagens` marca 0 KB para o Storage: recurso cross-origin sem
+  `Timing-Allow-Origin` não expõe `transferSize`. Não é foto ausente.
+
 ## Como medir de novo
 
 `npm run perf -- --base=http://localhost:3000` contra `next start` dos dois
