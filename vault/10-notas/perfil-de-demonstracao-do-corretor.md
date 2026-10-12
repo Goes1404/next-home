@@ -36,7 +36,7 @@ recusa `delete`).
 ## A conta ADM de demonstração (12/10/2026)
 
 Criada para fotografar a Administração na apresentação comercial:
-`adm-demo@nexthomeimoveis.com`, cadastro "Admin Demonstração", slug
+`admdemo@nexthomeimoveis.com`, cadastro "Admin Demonstração", slug
 `demo-adm`, papel `gestor`, `ativo = false` (fica fora da roleta e do site).
 A senha foi entregue ao dono da conta e não está no repositório. O evento
 `conta_criada` está em `admin_eventos`, com ator nulo e o motivo escrito.

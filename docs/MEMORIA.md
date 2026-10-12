@@ -10148,7 +10148,7 @@ Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
 
 Nota: [[perfil-de-demonstracao-do-corretor]].
 
-- **`adm-demo@nexthomeimoveis.com` (slug `demo-adm`) é `gestor` de verdade.**
+- **`admdemo@nexthomeimoveis.com` (slug `demo-adm`) é `gestor` de verdade.**
   Foi criada para fotografar a Administração, por escolha do dono da conta,
   que aceitou o risco: `eh_gestor()` só olha `papel`, então ela vê os leads
   reais da equipe inteira (911 em 12/10). Não existe papel de ADM só de
