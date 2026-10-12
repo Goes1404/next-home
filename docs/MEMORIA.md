@@ -10047,3 +10047,39 @@ Nota: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
   `aquecimento_desde > now() - 3 dias`: um recomeço desses não pode ter
   vindo da regra nova, então a condição também pega o que o código antigo
   gravasse até o deploy.
+
+## A semana do link do anúncio e a primeira revisão das recusas (12/10/2026)
+
+Notas: [[onde-o-clique-do-anuncio-se-perde]], [[recusa-em-camadas]].
+
+- **O anúncio só rodou em 05 e 06/10**: 118 pessoas na semana, 87% de dentro
+  do navegador de um app, e nenhum lead do anúncio. Antes de medir "a semana
+  do anúncio", conferir em que dias houve clique.
+- **Quem clica e não manda a mensagem pronta não escreve outra coisa.** Nos
+  dias de anúncio, 28,6% dos barrados chegaram até 15 min depois de um
+  clique, contra 28,2% nos mesmos barrados deslocados no mesmo dia. **O
+  acaso se mede no mesmo dia**: deslocar ±1 a 3 dias deu 7% contra 19% e
+  parecia sinal, porque caía em dias sem anúncio. O "6 de 8 perto do clique"
+  do primeiro dia era densidade de cliques.
+- **Barrados são o tráfego de fundo do WhatsApp pessoal**: 12 a 22 por dia em
+  cada número, com ou sem anúncio.
+- **Lead do botão de imóvel do SITE nasce `meta/ctwa`**, com o imóvel em
+  `anuncio_origem`: o botão manda a mesma mensagem pronta do anúncio. O único
+  "lead de anúncio" da semana era do site, e com campanha do mesmo imóvel no
+  ar ele contaria na campanha paga. O clique ligado ao lead diz a verdade
+  (`origem = site/<imóvel>`).
+- **Recusas: 11 decisões, nenhuma desfeita, duas erradas no efeito.**
+  `desfeito_em` subconta: o corretor assume a conversa sem tocar em "Liberar
+  contato". "Comprei um apto na planta" virou "já resolvido" pelo primeiro
+  balão; os seguintes contavam que o imóvel atrasou três anos. Toda família
+  de recusa (inclusive "já resolvido") tira o lead das listas e o marca
+  perdido e "não contatar".
+- **O filtro da recusa não tinha "adquiri" nem os plurais** (compramos,
+  fechamos, alugamos): "já adquiri imóvel" sozinho se perderia nas duas
+  camadas. Entraram no filtro, não na regex.
+- **O aviso de sem resposta (0161) saiu 10 vezes** em 4 corretores; em 2 o
+  corretor respondeu depois. O carimbo é gravado ANTES do envio: carimbo não
+  prova entrega.
+- **Palavra-chave**: a da Bruna continua "Oii" (ignorada desde a 0160); o
+  Ramos cadastrou 30 leads pela palavra em 21 minutos em 07/10, e 3
+  responderam.

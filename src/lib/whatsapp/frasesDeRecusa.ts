@@ -71,6 +71,13 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
   { fala: "obrigado mas não", esperado: "desinteresse", contexto: "Quer que eu te mande as opções?", origem: "sonda" },
   { fala: "deixa pra lá", esperado: "desinteresse", contexto: "Posso te mostrar as plantas?", origem: "sonda" },
   { fala: "não, valeu", esperado: "desinteresse", contexto: "Ainda tem interesse no apartamento?", origem: "sonda" },
+  {
+    fala: "Não obrigada",
+    esperado: "desinteresse",
+    contexto: "Olá, tudo bem? Estou entrando em contato para saber se você tem interesse em conhecer um lançamento em Barueri.",
+    origem: "producao",
+  },
+  { fala: "já encerramos a pesquisa obrigado", esperado: "desinteresse", origem: "producao" },
 
   // ── Já resolveu ─────────────────────────────────────────────────────
   { fala: "já comprei", esperado: "ja_resolvido", origem: "sonda" },
@@ -78,8 +85,23 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
   { fala: "já tenho corretor", esperado: "ja_resolvido", origem: "sonda" },
   { fala: "já tenho uma corretora que me atende", esperado: "ja_resolvido", origem: "sonda" },
   { fala: "fechei com outra imobiliária", esperado: "ja_resolvido", origem: "sonda" },
+  // "Adquiri" e os plurais não passavam no filtro (12/10/2026): sozinhos,
+  // ficavam perdidos para as duas camadas. Em produção a IA só viu o
+  // "já adquiri imóvel" porque ele veio junto com um "não".
+  { fala: "já adquiri imóvel", esperado: "ja_resolvido", origem: "producao" },
+  {
+    fala: "Não, eu adquiri um terreno, né? Vai ser liberado pra construir agora em fevereiro, então por agora a gente encerramos",
+    esperado: "ja_resolvido",
+    origem: "producao",
+  },
+  { fala: "já compramos um apartamento", esperado: "ja_resolvido", origem: "sonda" },
+  { fala: "a gente já alugou e fechamos o contrato", esperado: "ja_resolvido", origem: "sonda" },
 
   // ── Conversa normal: NUNCA é recusa ─────────────────────────────────
+  // A IA leu só o primeiro balão como "já resolvido" e encerrou (09/10/2026).
+  // Os balões seguintes contavam que a compra deu errado: é cliente, não
+  // recusa. A regex não pode pegar "comprei" sozinho por causa disso.
+  { fala: "Comprei um apto na planta\nNão foi entregue\nTrês anos em atraso", esperado: null, origem: "producao" },
   { fala: "Hoje não daria, trabalho a noite", esperado: null, origem: "producao" },
   { fala: "Imprevisto\nHoje não\nBom dia", esperado: null, origem: "producao" },
   { fala: "Vejo depois", esperado: null, origem: "producao" },
@@ -116,4 +138,4 @@ export const FRASES_DE_RECUSA: readonly FraseDeRecusa[] = [
  * melhorar a regex, o teste avisa para atualizar o número; se piorar, reprova.
  * As que ela não pega ficam para a IA (e o filtro garante que chegam lá).
  */
-export const ACERTOS_DA_REGEX = 29; // de 37 recusas em 08/10/2026; as outras 8 ficam para a IA (o "não" depois da oferta de parar a regex só pega com o contexto)
+export const ACERTOS_DA_REGEX = 29; // de 43 recusas em 12/10/2026; as outras 14 ficam para a IA (o "não" depois da oferta de parar a regex só pega com o contexto)
