@@ -5,9 +5,14 @@
  * colando o link de novo aparece a nova. Antes de escrever uma linha, as
  * causas candidatas foram medidas em produção:
  *
- *   - CACHE DE HTML: não é. Toda rota deste site é dinâmica (o `cookies()`
- *     do layout raiz), e a resposta sai `private, no-cache, no-store` com
- *     `X-Vercel-Cache: MISS`. Navegação de verdade NUNCA pega HTML velho.
+ *   - CACHE DE HTML: não era. Em 15/09 toda rota deste site era dinâmica (o
+ *     `cookies()` do layout raiz), e a resposta saía `private, no-cache,
+ *     no-store` com `X-Vercel-Cache: MISS`. Navegação de verdade NUNCA pegava
+ *     HTML velho. Desde a F2b (12/10/2026) as páginas públicas SÃO servidas
+ *     do cache, com revalidação de até uma hora — e por isso o carimbo da
+ *     build no HTML pode ficar uma hora atrás do deploy. O aviso continua
+ *     honesto porque compara com `/api/versao`, que é `no-store`: a página
+ *     estática do build anterior é exatamente o caso que ele anuncia.
  *   - SERVICE WORKER: não existe no repositório (`grep serviceWorker` = 0),
  *     que é a boa notícia — service worker velho é o mais caro de reverter.
  *   - CHUNK IMUTÁVEL: os `/_next/static/**` são `max-age=31536000,immutable`,

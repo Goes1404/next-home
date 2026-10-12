@@ -8,6 +8,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 const semInscricao = () => () => {};
 
 /** `false` no servidor; `true` depois de hidratar. O portal precisa de `document`. */
@@ -163,7 +164,7 @@ export function Lazer({
               <div className="relative aspect-[4/3] w-full">
                 <Image
                   key={aberto.foto.url}
-                  src={aberto.foto.url}
+                  src={srcDaMidia(aberto.foto)}
                   alt={aberto.foto.alt}
                   fill
                   sizes="(min-width: 640px) 384px, 100vw"

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { lerMensagens, marcarConversaLida, type MensagemConversa } from "./acoes";
 import { JANELA_DO_RECONCILIO, MENSAGENS_POR_PAGINA, type ContextoDaIA } from "./chatModelo";
@@ -108,7 +108,14 @@ export function ConversasClient({
   // propósito — a RLS já recorta por corretor, e um filtro `in.(...)` com a
   // carteira inteira estoura o limite do parâmetro.
   useEffect(() => {
-    const supabase = createClient();
+    // O supabase-js chega por import assíncrono (clientSobDemanda.ts): a
+    // lista já está na tela quando o canal abre. `cancelado` cobre a tela
+    // que desmonta antes de o módulo chegar.
+    let cancelado = false;
+    let limpar: (() => void) | null = null;
+
+    void createClientSobDemanda().then((supabase) => {
+    if (cancelado) return;
     const canal = supabase
       .channel("conversas-live")
       .on(
@@ -172,8 +179,14 @@ export function ConversasClient({
       )
       .subscribe();
 
-    return () => {
+    limpar = () => {
       void supabase.removeChannel(canal);
+    };
+    });
+
+    return () => {
+      cancelado = true;
+      limpar?.();
     };
   }, []);
 

@@ -7,13 +7,25 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { Reveal } from "@/components/motion/Reveal";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais, telefoneBR } from "@/lib/format";
-import { getCorretorPorSlug, getEmpreendimentos } from "@/lib/queries";
+import { getCorretorPorSlug, getCorretores, getEmpreendimentos } from "@/lib/queries";
 import { linkWhatsappPara, site } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 import { descricaoDePagina } from "@/lib/seo";
 import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 
 type Params = { slug: string };
+
+/**
+ * Prerenderiza a página de cada corretor com slug (F2b, 12/10/2026). Sem
+ * isto a rota saía "dinâmica sob demanda" no build; com a lista, vira SSG
+ * com a mesma revalidação de uma hora do layout. Corretor cadastrado depois
+ * do build continua funcionando: `dynamicParams` é o padrão, e a página
+ * dele é renderizada na primeira visita e cacheada.
+ */
+export async function generateStaticParams(): Promise<Params[]> {
+  const corretores = await getCorretores();
+  return corretores.flatMap((c) => (c.slug ? [{ slug: c.slug }] : []));
+}
 
 export async function generateMetadata({
   params,
@@ -144,6 +156,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
               {corretor.fotoUrl ? (
                 <Image
                   src={corretor.fotoUrl}
+                  unoptimized
                   // Decorativa: o nome vem em seguida, no h1.
                   alt=""
                   width={128}

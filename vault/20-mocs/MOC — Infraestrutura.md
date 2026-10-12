@@ -4,7 +4,7 @@ tags: [moc, infra]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-09
+updated: 2026-10-12
 summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 ---
 # Infraestrutura — Map of Content
@@ -29,11 +29,13 @@ Vercel (plano Hobby), deploy e runtime.
 - [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]]
 - [[uma-piscada-do-banco-derrubava-a-home]] — Gateway Timeout de segundos virava 500 na home; repetir, nunca degradar (10/09)
 - [[otimizador-de-imagens-tem-cota-no-hobby]] ⚠️ foto quebrada com o arquivo no Storage: 402 da cota do otimizador; imagens saem sem otimização (09/10)
+- [[menos-bytes-sem-perder-os-efeitos]] — 12/10: no lugar do `unoptimized`, loader próprio sobre variantes WebP que já estão no Storage (sem cota, sem redimensionar na requisição); vídeos cortados com `-c copy`
 - [[a-aba-aberta-e-que-carrega-a-versao-antiga]] — não é cache de HTML (sai `no-store` em toda rota): quem segura a versão antiga é a aba que nunca renavegou (15/09)
 
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — `proxy.ts` chama `getUser()` em toda requisição; `cookies()` no layout raiz torna tudo dinâmico; função em iad1, banco em ca-central-1 (13/09)
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
+- [[a-casca-estatica-sem-perder-o-tema]] — F2b: 11 das 14 páginas públicas servidas do cache (ISR 1 h); tema por script antes da pintura e cookie gravado no navegador; fundo do corretor como ilha; sem `cacheComponents` (12/10)
 - [[next-home-e-o-espelho-da-versao-geral]] — decisão: terminar a Next Home completa e derivar dela a versão geral (limitada), uma instalação por cliente (26/09)
 - [[o-orcamento-do-dossie-era-menor-que-o-escrito]] — E2E diário contra o site no ar (`e2e.yml`); senhas vazadas só no Supabase Pro (02/10)
 

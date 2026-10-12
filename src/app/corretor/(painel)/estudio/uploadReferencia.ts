@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 
 /**
  * Upload da foto de referência do chat — direto do navegador para o Storage.
@@ -40,7 +40,8 @@ export async function enviarFotoDeReferencia(
     .slice(0, 16);
 
   const path = `corretores/${corretorId}/referencias/${hash}.${EXT[file.type]}`;
-  const supabase = createClient();
+  // O supabase-js só chega quando há arquivo para subir (ver clientSobDemanda.ts).
+  const supabase = await createClientSobDemanda();
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, bytes, { contentType: file.type, upsert: true });

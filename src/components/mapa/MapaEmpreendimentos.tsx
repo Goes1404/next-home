@@ -24,7 +24,7 @@ const MapaClient = dynamic(() => import("./MapaInterativoClient"), {
   ),
 });
 
-interface Props {
+export interface PropsDoMapa {
   empreendimentos: PontoDoMapa[];
   imovelInicialSlug?: string;
   alturaClasse?: string;
@@ -45,7 +45,7 @@ interface Props {
   entradaCinematica?: boolean;
 }
 
-export function MapaEmpreendimentos({ alturaClasse = "h-[calc(100vh-80px)] min-h-[500px]", adiarAteVisivel = false, ...props }: Props) {
+export function MapaEmpreendimentos({ alturaClasse = "h-[calc(100vh-80px)] min-h-[500px]", adiarAteVisivel = false, ...props }: PropsDoMapa) {
   const sentinela = useRef<HTMLDivElement>(null);
   const [visivel, setVisivel] = useState(!adiarAteVisivel);
 

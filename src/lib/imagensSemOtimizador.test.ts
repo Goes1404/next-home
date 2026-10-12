@@ -1,15 +1,18 @@
 /**
- * As imagens do site saem sem o otimizador da Vercel (09/10/2026).
+ * As imagens do site saem sem o otimizador da Vercel (09/10/2026) — e, desde
+ * 12/10/2026, com o loader PRÓPRIO no lugar de `unoptimized: true`.
  *
  * No plano Hobby, a otimização tem cota mensal. Quando ela acabou, a Vercel
  * passou a responder 402 `OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` para cada
  * variante que ainda não estava em cache, e as fotos apareciam quebradas no
- * painel e no site, enquanto as já vistas continuavam abrindo. Nada no build,
- * nos tipos ou nos testes acusava.
+ * painel e no site. A primeira saída foi `unoptimized: true` — a foto crua
+ * (70 a 430 KB por capa). A segunda é `lib/imagens/loaderDeImagem.ts`: as
+ * variantes WebP já estão no Storage e o loader só escolhe entre elas.
  *
  * Duas guardas:
- * - `unoptimized: true` continua no next.config. Religar o otimizador é
- *   decisão de plano (Pro) e precisa vir junto com a troca desta guarda.
+ * - O otimizador da Vercel continua DESLIGADO (loader custom, nunca o
+ *   padrão). Religá-lo é decisão de plano (Pro) e precisa vir junto com a
+ *   troca desta guarda e da de `variantes.test.ts`.
  * - Imagem de `public/` usada pelo código chega leve, porque nada a reduz no
  *   caminho. Foi assim que o fundo do login de 757 KB apareceu.
  */
@@ -31,11 +34,13 @@ function arquivos(dir: string, filtro: (caminho: string) => boolean): string[] {
 }
 
 describe("imagens sem o otimizador da Vercel", () => {
-  it("next.config mantém unoptimized: true", () => {
+  it("next.config usa o loader próprio, nunca o otimizador da Vercel", () => {
     const config = readFileSync(join(raiz, "next.config.ts"), "utf8");
-    const bloco = config.slice(config.indexOf("images: {"));
-    expect(config.indexOf("images: {"), "bloco images do next.config").toBeGreaterThan(-1);
-    expect(bloco.slice(0, bloco.indexOf("remotePatterns"))).toMatch(/\n\s*unoptimized:\s*true,/);
+    const inicio = config.indexOf("images: {");
+    expect(inicio, "bloco images do next.config").toBeGreaterThan(-1);
+    const bloco = config.slice(inicio, config.indexOf("remotePatterns"));
+    expect(bloco).toMatch(/loader:\s*"custom"/);
+    expect(bloco).toMatch(/loaderFile:\s*"\.\/src\/lib\/imagens\/loaderDeImagem\.ts"/);
   });
 
   it(`imagem de public/ usada pelo código tem até ${TETO_KB} KB`, () => {

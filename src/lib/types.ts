@@ -60,6 +60,12 @@ export type Midia = {
   altura: number;
   /** Data URL minúscula para o `placeholder="blur"` do next/image. */
   blurDataUrl: string | null;
+  /**
+   * Larguras das versões WebP que existem no Storage ao lado do original
+   * (`midias.variantes`, 0177). Quem renderiza passa `srcDaMidia(m)` ao
+   * `<Image>`; o `url` cru segue sendo o do arquivo (WhatsApp, Lightbox).
+   */
+  variantes?: number[] | null;
 };
 
 export type FundoTipo = "video" | "foto";

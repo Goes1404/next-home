@@ -1,4 +1,5 @@
 import type { Empreendimento } from "@/lib/types";
+import { srcDaMidia } from "@/lib/imagens/variantes";
 
 /**
  * As regiões em que a Next Home atua, e o que cada uma tem DE VERDADE.
@@ -118,7 +119,10 @@ export function regioesComEstoque(catalogo: Empreendimento[]): RegiaoComEstoque[
       ...regiao,
       imoveis,
       precoMinimo: precos.length > 0 ? Math.min(...precos) : null,
-      capaUrl: imoveis.find((e) => e.galeria?.[0]?.url)?.galeria?.[0]?.url ?? null,
+      capaUrl: (() => {
+        const foto = imoveis.find((e) => e.galeria?.[0]?.url)?.galeria?.[0];
+        return foto ? srcDaMidia(foto) : null;
+      })(),
     };
   })
     .filter((r) => r.imoveis.length > 0)

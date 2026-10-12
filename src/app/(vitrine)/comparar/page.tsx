@@ -9,6 +9,7 @@ import { slugsParaComparar } from "@/lib/favoritos";
 import { linhasDaComparacao } from "@/lib/comparacao";
 import { FavoritosParaComparar } from "./FavoritosParaComparar";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 export const metadata: Metadata = {
   title: "Comparar imóveis",
   description: "Compare lado a lado os imóveis que você salvou: preço, plantas, metragem, entrega e lazer.",
@@ -58,7 +59,7 @@ export default async function CompararPage({
                 {escolhidos.map((e) => (
                   <Link key={e.slug} href={`/empreendimentos/${e.slug}`} className="block p-2 sm:p-3">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                      <Image src={e.capa.url} alt={e.capa.alt} fill sizes="(min-width: 1024px) 25vw, 33vw" className="object-cover" />
+                      <Image src={srcDaMidia(e.capa)} alt={e.capa.alt} fill sizes="(min-width: 1024px) 25vw, 33vw" className="object-cover" />
                     </div>
                     <p className="text-fluid-sm mt-2 font-semibold break-words text-titulo">{e.nome}</p>
                   </Link>

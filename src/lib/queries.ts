@@ -167,6 +167,26 @@ export async function getEmpreendimentos(
   filtros?: FiltrosEmpreendimento,
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
+  const todos = await buscarPublicados();
+  const filtrados = filtros ? todos.filter((e) => bate(e, filtros)) : todos;
+  return ordenar(filtrados, ordenacao);
+}
+
+/**
+ * O catálogo na ORDEM DO CORRETOR do link pessoal (`corretor_destaques`,
+ * tela "Meus links"). Separado de `getEmpreendimentos` desde 12/10/2026:
+ * esta lê o cookie do link (`getCorretorAtivo`), e `cookies()` torna
+ * dinâmica toda rota que a chame — era isso que impedia a home, a ficha do
+ * imóvel, as regiões, a equipe e o sitemap de serem servidos do cache (F2b).
+ *
+ * Só `/portfolio` (a página em que o link pessoal cai) e `/empreendimentos`
+ * (dinâmica de todo modo, pelos filtros em `searchParams`) a chamam. Nas
+ * outras páginas a ordem é a curada do cadastro, para todo mundo.
+ */
+export async function getEmpreendimentosDoLink(
+  filtros?: FiltrosEmpreendimento,
+  ordenacao: Ordenacao = "destaque",
+): Promise<Empreendimento[]> {
   const [todos, destaquesCorretor] = await Promise.all([
     buscarPublicados(),
     buscarDestaquesCorretorAtivo(),

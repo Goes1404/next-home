@@ -31,6 +31,7 @@ function Avatar({
     return (
       <Image
         src={corretor.fotoUrl}
+        unoptimized
         alt=""
         width={pedido}
         height={pedido}
@@ -123,6 +124,7 @@ export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
           {corretor.fotoUrl ? (
             <Image
               src={corretor.fotoUrl}
+        unoptimized
               alt={`Foto de ${corretor.nome}`}
               width={128}
               height={128}

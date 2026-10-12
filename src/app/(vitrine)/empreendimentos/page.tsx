@@ -14,7 +14,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { ehEstagio } from "@/lib/estagioDeCompra";
 import { site } from "@/lib/site";
-import { getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { getEmpreendimentosDoLink, getRegioesDisponiveis } from "@/lib/queries";
 import { Map } from "lucide-react";
 import {
   ORDENACAO_LABEL,
@@ -87,7 +87,7 @@ export default async function EmpreendimentosPage({
   const ordenacao = parseOrdenacao(sp);
 
   const [empreendimentos, regioes] = await Promise.all([
-    getEmpreendimentos(filtros, ordenacao),
+    getEmpreendimentosDoLink(filtros, ordenacao),
     getRegioesDisponiveis(),
   ]);
 

@@ -12,6 +12,7 @@ import { linkWhatsappPara } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_LABEL } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 export const metadata: Metadata = {
   title: "Acompanhe sua compra",
   robots: { index: false, follow: false },
@@ -92,7 +93,7 @@ export default async function PortalPage({
         <div className="max-w-2xl space-y-8">
           {imovel && (
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-              <Image src={imovel.capa.url} alt={imovel.capa.alt} fill sizes="(min-width: 768px) 672px, 100vw" className="object-cover" />
+              <Image src={srcDaMidia(imovel.capa)} alt={imovel.capa.alt} fill sizes="(min-width: 768px) 672px, 100vw" className="object-cover" />
             </div>
           )}
 
@@ -152,7 +153,7 @@ export default async function PortalPage({
                     {a.texto && <p className="text-fluid-sm mt-1 whitespace-pre-line break-words text-corpo">{a.texto}</p>}
                     {a.foto_url && (
                       <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-xl">
-                        <Image src={a.foto_url} alt={a.titulo} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+                        <Image unoptimized src={a.foto_url} alt={a.titulo} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
                       </div>
                     )}
                   </li>

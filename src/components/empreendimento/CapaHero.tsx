@@ -5,6 +5,7 @@ import { useRef, ViewTransition } from "react";
 import { useCamada } from "@/components/motion/Camada";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * A capa do hero em três planos.
  *
@@ -61,7 +62,7 @@ export function CapaHero({ slug, capa }: { slug: string; capa: Midia }) {
         <div ref={foto} className="absolute inset-0 will-change-transform">
           <ViewTransition name={`capa-${slug}`}>
             <Image
-              src={capa.url}
+              src={srcDaMidia(capa)}
               alt={capa.alt}
               fill
               priority

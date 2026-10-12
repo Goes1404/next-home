@@ -8,6 +8,7 @@ import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import type { Cena } from "./cenasDoShowcase";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * Seção-vitrine pinada: a página para, e três cenas (foto + uma frase)
  * passam sob o dedo do usuário no ritmo do scroll. É o momento "apresentar
@@ -97,7 +98,7 @@ export function CenaShowcase({ cenas }: { cenas: Cena[] }) {
           {cenas.map((c) => (
             <figure key={c.foto.url} data-cena className="absolute inset-0">
               <Image
-                src={c.foto.url}
+                src={srcDaMidia(c.foto)}
                 alt={c.foto.alt}
                 fill
                 sizes="100vw"
@@ -138,7 +139,7 @@ export function CenaShowcase({ cenas }: { cenas: Cena[] }) {
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
                 <Camada velocidade={0.14} className="absolute inset-0 scale-110">
                   <Image
-                    src={c.foto.url}
+                    src={srcDaMidia(c.foto)}
                     alt={c.foto.alt}
                     fill
                     sizes="100vw"

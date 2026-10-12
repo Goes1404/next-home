@@ -13,8 +13,9 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
-import { getEmpreendimentos } from "@/lib/queries";
+import { getEmpreendimentosDoLink } from "@/lib/queries";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * Revalida em segundo plano a cada 5 min: sem isso, a página fica estática
  * desde o build e uma curadoria feita direto no banco (trocar destaque,
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
  * abaixo pode envolver o header/CTA num ancestral com `transform`.
  */
 export default async function Home() {
-  const todos = await getEmpreendimentos();
+  const todos = await getEmpreendimentosDoLink();
   const destaques = todos.filter((e) => e.destaque);
 
   return (
@@ -136,7 +137,7 @@ export default async function Home() {
                         className="absolute inset-0 scale-110"
                       >
                         <Image
-                          src={e.capa.url}
+                          src={srcDaMidia(e.capa)}
                           alt={e.capa.alt}
                           fill
                           sizes="(min-width: 640px) 380px, 100vw"

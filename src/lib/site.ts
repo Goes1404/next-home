@@ -135,6 +135,18 @@ export const HERO_VIDEO_URL: string | null = null;
 export const HERO_VIDEO_WEBM_URL: string | null = null;
 
 /** Vinheta da logo exibida como preloader na primeira visita da sessão (ver Preloader.tsx). */
+/*
+ * Os quatro arquivos de vídeo em `public/video` foram CORTADOS ao trecho que
+ * aparece na tela, sem reencodar (12/10/2026): `ffmpeg -i <in> -t <s> -c copy`.
+ * Cortar o FIM de um stream com `-c copy` é sem perda em qualquer codec — só
+ * cortar o começo exige keyframe. A vinheta (`intro`) tinha 7,77 s e o
+ * overlay do Preloader sai, no pior caso, em 4,5 s + 0,95 s de cortina:
+ * ficou com 5,5 s (webm 736 → 511 KB; mp4 1.080 → 759 KB). O fundo do
+ * celular (`fundo-home`) tinha 8 s e congela em 1,5 s (`pararEm`): ficou com
+ * 1,75 s (webm 622 → 208 KB; mp4 714 → 226 KB). Um quadro que ninguém vê
+ * custava 0,9 MB a cada primeira visita no celular. `videosSobMedida.test.ts`
+ * trava os tamanhos; se uma peça nova for mais longa, cortar antes de subir.
+ */
 export const INTRO_VIDEO_URL = "/video/intro.mp4";
 export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
 /**

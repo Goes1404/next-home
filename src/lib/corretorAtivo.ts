@@ -20,9 +20,17 @@ export type CorretorAtivo = Corretor & { id: string };
  *
  * Desde a F2 do roadmap de performance (13/09/2026) esta função custa ZERO
  * idas ao banco por requisição: o cookie é lido uma vez (`cache()` do React
- * deduplica os cinco a oito chamadores que uma página tem — layout, página,
- * Footer, CtaFinal, queries) e o corretor sai da lista de corretores já
- * cacheada por etiqueta. Antes eram até oito consultas iguais por página.
+ * deduplica os chamadores de uma mesma requisição) e o corretor sai da lista
+ * de corretores já cacheada por etiqueta. Antes eram até oito consultas
+ * iguais por página.
+ *
+ * Desde a F2b (12/10/2026) NENHUM layout nem página estática a chama:
+ * `cookies()` torna a rota dinâmica, e o site público é servido do cache.
+ * Quem a chama hoje são as rotas que precisam do corretor do link por
+ * natureza — `/api/corretor-ativo` (a ilha `FundoDoLink` pergunta por ela
+ * no navegador), `/api/leads`, `/api/clique-whatsapp`, `/wa` — e
+ * `getEmpreendimentosDoLink`, usada só pelas duas listagens dinâmicas.
+ * `cascaEstatica.test.ts` reprova um chamador novo em página pública.
  */
 export const getCorretorAtivo = cache(async (): Promise<CorretorAtivo | null> => {
   const cookieStore = await cookies();

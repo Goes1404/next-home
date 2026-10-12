@@ -5,6 +5,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import type { Empreendimento } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * Sobre, em dupla editorial: texto largo à esquerda, foto com parallax à
  * direita. A ficha técnica saiu daqui — virou a faixa FichaNumeros, onde os
@@ -43,7 +44,7 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
           <Reveal from="baixo" className="lg:sticky lg:top-28">
             <ParallaxImagem className="aspect-[3/4] rounded-2xl" intensidade={20}>
               <Image
-                src={foto.url}
+                src={srcDaMidia(foto)}
                 alt={foto.alt}
                 fill
                 sizes="(min-width: 1024px) 40vw, 100vw"

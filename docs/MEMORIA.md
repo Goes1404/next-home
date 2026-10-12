@@ -10048,6 +10048,102 @@ Nota: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
   vindo da regra nova, então a condição também pega o que o código antigo
   gravasse até o deploy.
 
+## Menos bytes sem perder os efeitos (12/10/2026)
+
+Nota: [[menos-bytes-sem-perder-os-efeitos]]. Pedido: "melhorar o desempenho
+sem perder os efeitos e a qualidade". Medido antes de mexer, e a medição
+mudou a lista: nenhum efeito saiu.
+
+- **Vídeo com segundos que ninguém via.** `fundo-home` (fundo do celular)
+  tinha 8 s e congela em 1,5 s; a vinheta tinha 7,77 s para um overlay que
+  sai em 5,45 s no pior caso. **Cortar o FIM com `ffmpeg -t <s> -c copy` é
+  sem perda em qualquer codec** (só cortar o começo exige keyframe): webm
+  622 → 208 KB e 736 → 511 KB; mp4 714 → 226 e 1.080 → 759. Reencodar
+  (crf 36) dava SSIM 0,967 e saía MAIOR que a cópia: os webm da casa são
+  all-intra. `videosSobMedida.test.ts` trava os tamanhos.
+- **GSAP + Lenis em toda tela do painel** por um `import` do `SmoothScroll`
+  no layout raiz (~120 KB por rota de `/corretor`, sem um ScrollTrigger
+  para usar). `MovimentoDoSite` carrega por `next/dynamic` só fora do
+  painel. Um `if` em volta do import esconde o componente, não o chunk.
+- **supabase-js (245 KB) no primeiro carregamento de cinco rotas** para
+  abrir Realtime depois ou subir arquivo ao escolher. `createClientSobDemanda`
+  faz `import()` no efeito/handler: Pessoas 1.019 → 712 KB, Conversas 1.056
+  → 749, Criar arte 1.024 → 717, Criar vídeo 1.016 → 709, Importar 1.034 →
+  726. Guarda `pesoDoPainel.test.ts`; catraca de bundle desceu em toda rota.
+- **Capa de 430 KB num cartão de 360px.** Sem o otimizador da Vercel,
+  `unoptimized: true` mandava o original cru e sem `srcset`. Agora
+  `registrarMidia` gera WebP em 480/960/1440 (só menores que o original) e
+  grava `midias.variantes` (0177, aplicada); `srcDaMidia` põe a lista num
+  FRAGMENTO da URL (`#v=480,960`) e o loader próprio (`images.loaderFile`)
+  escolhe a variante; URL sem marca volta como veio. **A marca existe
+  porque candidato 404 no `srcset` quebra a foto inteira** — a mesma falha
+  calada do 402. Backfill das 1.174 linhas em `gerarVariantes.ts`, pelo
+  Actions (`variantes-de-imagem.yml`), quando o script chegar à branch de
+  produção; até lá o site serve o original, como antes.
+- **O Playwright instalado pede um `chromium_headless_shell-1234` que o
+  sandbox não tem**: `scripts/perf/medir.ts` passou a aceitar
+  `E2E_CHROMIUM`, como o `playwright.config.ts` já aceitava.
+- **A/B local honesto é `git worktree` do commit anterior** com
+  `node_modules` por `cp -al`, os dois `next start` em portas diferentes e
+  `npm run perf -- --base=http://localhost:<porta>`. Medir contra produção
+  compara a rede de duas horas diferentes, não os dois builds.
+- **Medido local, antes × depois (3 rodadas):** LCP das rotas públicas
+  igual (home 1,94 → 1,98 s; listagem 4,27 → 4,29 s — a capa crua é o LCP
+  dela, e isso só muda com o backfill das variantes); tarefas longas no
+  celular −7 a −20% nas quatro páginas; mídia no desktop 719 → 499 KB. O
+  painel não entra na medição (login); lá o ganho é o do manifesto.
+  **`imagens` = 0 KB para o Storage não é foto ausente**: cross-origin sem
+  `Timing-Allow-Origin` não expõe `transferSize`.
+- **O maior ganho estrutural ficou para a F2b, feita no mesmo dia** (seção
+  seguinte): `cookies()` no layout raiz mantinha toda rota dinâmica
+  (`X-Vercel-Cache: MISS` em tudo, TTFB de função).
+
+## A casca estática sem perder o tema (F2b, 12/10/2026)
+
+Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
+(F2b) sem perder o tema". Saiu SEM `cacheComponents`.
+
+- **Três leituras de requisição em lugar compartilhado tornavam TODA rota
+  dinâmica**: o cookie do tema no layout raiz (`generateViewport` +
+  `<html data-tema>`), no Footer e no Header; o corretor do link
+  (`getCorretorAtivo`) nos dois layouts de grupo e DENTRO de
+  `getEmpreendimentos`; e `searchParams` em `/contato` e `/mapa` para
+  pré-selecionar uma opção. Hoje 11 das 14 páginas públicas saem
+  `s-maxage=3600` (ficha do imóvel e financiamento 5 min). Continuam
+  dinâmicas, declaradas na guarda: `/empreendimentos`, `/portfolio`,
+  `/comparar`, páginas de token, `/wa`.
+- **O HTML não sabe o tema.** Sai sempre `data-tema="claro"` e um script
+  inline, primeiro filho do `<body>`, lê o cookie e corrige `<html>`,
+  `theme-color` e `color-scheme` antes da primeira pintura (o contrato do
+  `Preloader`). O seletor observa o DOM por `useSyncExternalStore`.
+  Medido: com cookie `escuro`, em `DOMContentLoaded` o `<html>` já está
+  escuro e a barra em `#040b0a`; HTML da home byte a byte igual com e sem
+  cookies.
+- **Server Action que mexe em cookie refaz a árvore da rota**, e a árvore
+  nova trouxe o `<meta theme-color>` claro por cima do escuro recém-
+  aplicado — `<html>` escuro, barra do navegador clara até recarregar. Só o
+  Playwright mostrou. Como o servidor não lê mais o cookie, ele não o
+  escreve: `document.cookie` no clique, 0 requisições ao servidor.
+- **O fundo do corretor do link é ilha** (`FundoDoLink` +
+  `/api/corretor-ativo`, zero banco): sem cookie nada é pedido; com cookie
+  troca depois da primeira pintura. Os dois fundos chegam por
+  `next/dynamic` — importados estaticamente, entravam em toda página
+  pública (+1 a +2 KB, a catraca pegou).
+- **`?param=` que só pré-seleciona vai para `useSearchParams` em
+  `<Suspense>` com o próprio componente como fallback**: o HTML estático
+  traz o formulário e o mapa inteiros.
+- **Comentário JSX sai antes do comentário de bloco** em guarda que lê
+  código; e `pkill -f "[n]ext start"` numa linha que contém `npx next
+  start` mata a própria sessão (a régua é `[n]ext-server`).
+- **Conferido em produção depois do merge (01h38 UTC)**: `PRERENDER` na
+  primeira requisição e `HIT` na segunda em todas as páginas estáticas;
+  `/empreendimentos` e `/portfolio` seguem `MISS`, como declarado. **Na
+  Vercel o `Cache-Control` visível é sempre `public, max-age=0,
+  must-revalidate`** — quem diz se veio do cache é o `x-vercel-cache`, não
+  o `Cache-Control`. O registro `Production` nasceu ~2,5 min depois do
+  `Preview` (mais que os ~70 s medidos em 16/09; consultar cedo imita
+  recusa).
+
 ## A semana do link do anúncio e a primeira revisão das recusas (12/10/2026)
 
 Notas: [[onde-o-clique-do-anuncio-se-perde]], [[recusa-em-camadas]].

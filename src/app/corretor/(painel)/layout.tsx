@@ -19,7 +19,6 @@ import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
-import { getTemaEscolhido } from "@/lib/tema";
 
 export const metadata: Metadata = {
   title: { default: "Painel do corretor", template: "%s · Painel" },
@@ -49,7 +48,7 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [corretor, tema, guardados] = await Promise.all([getCorretorLogado(), getTemaEscolhido(), cookies()]);
+  const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
   const ehGestor = corretor?.papel === "gestor";
   // A lateral do computador nasce do jeito que a pessoa deixou (ver menuLateral.ts).
   const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
@@ -81,7 +80,7 @@ export default async function PainelLayout({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <SeletorTema atual={tema} />
+            <SeletorTema />
 
             {corretor && (
               <MenuDaConta

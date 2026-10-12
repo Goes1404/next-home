@@ -3,7 +3,9 @@ import Link from "next/link";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { Suspense } from "react";
 import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
+import { MapaEmpreendimentosDaUrl } from "@/components/mapa/MapaEmpreendimentosDaUrl";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getEmpreendimentos } from "@/lib/queries";
 import { pontosDoMapa } from "@/lib/mapa/ponto";
@@ -23,15 +25,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function MapaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ imovel?: string }>;
-}) {
-  const [params, todosEmpreendimentos] = await Promise.all([
-    searchParams,
-    getEmpreendimentos(),
-  ]);
+export default async function MapaPage() {
+  const todosEmpreendimentos = await getEmpreendimentos();
+  const pontos = pontosDoMapa(todosEmpreendimentos);
+  const alturaClasse = "h-[70svh] min-h-[420px] sm:h-[76vh] sm:min-h-[520px]";
 
   return (
     <main className="relative min-h-screen pt-24 pb-8 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col">
@@ -73,11 +70,12 @@ export default async function MapaPage({
 
         {/* Mapa Interativo */}
         <div className="w-full">
-          <MapaEmpreendimentos
-            empreendimentos={pontosDoMapa(todosEmpreendimentos)}
-            imovelInicialSlug={params.imovel}
-            alturaClasse="h-[70svh] min-h-[420px] sm:h-[76vh] sm:min-h-[520px]"
-          />
+          {/* `?imovel=` é lido no navegador (F2b, 12/10/2026): `searchParams`
+              no servidor tornaria a página dinâmica. O fallback é o mesmo
+              mapa, sem pino inicial, e vai no HTML estático. */}
+          <Suspense fallback={<MapaEmpreendimentos empreendimentos={pontos} alturaClasse={alturaClasse} />}>
+            <MapaEmpreendimentosDaUrl empreendimentos={pontos} alturaClasse={alturaClasse} />
+          </Suspense>
         </div>
       </div>
 
