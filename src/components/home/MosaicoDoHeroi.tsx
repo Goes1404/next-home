@@ -3,6 +3,7 @@ import Link from "next/link";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 import { Camada } from "@/components/motion/Camada";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /*
  * Profundidade de cada card (03/10/2026). Os dois menores ficam "mais perto":
  * andam mais com a rolagem e com o ponteiro, e o grande, mais devagar, fica
@@ -52,7 +53,7 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
           }
         >
           <Image
-            src={e.capa.url}
+            src={srcDaMidia(e.capa)}
             alt={e.capa.alt}
             fill
             sizes={i === 0 ? "(min-width: 1024px) 34vw, 1px" : "(min-width: 1024px) 22vw, 1px"}

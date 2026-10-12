@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-24
+updated: 2026-10-12
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -75,6 +75,7 @@ F0–F6.
 ## Performance
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — Início abre com 22 consultas (12 idênticas), 3 `getUser()` por requisição, Realtime + polling juntos; fase 4 do roadmap de performance (13/09)
 - [[o-painel-carrega-por-rota-so-o-que-a-rota-usa]] — F4: Chat e ChatBase por next/dynamic no toque, sessão por getClaims(), contagem do funil deduplicada; o que ficou de fora e por quê (13/09)
+- [[menos-bytes-sem-perder-os-efeitos]] — 12/10: vídeo cortado ao trecho visível (-0,9 MB no celular), GSAP/Lenis fora do painel, supabase-js por import() (chat 1.019–1.056 → 708–749 KB), fotos em variantes WebP com loader próprio (0177)
 - [[rodada-de-26-09-parte-3]] — agenda .ics, portal do comprador, andamento da obra, parceiros, Gmail do corretor, marca da instalação (0125-0126, 26/09)
 
 ## Relacionados

@@ -10047,3 +10047,46 @@ Nota: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
   `aquecimento_desde > now() - 3 dias`: um recomeço desses não pode ter
   vindo da regra nova, então a condição também pega o que o código antigo
   gravasse até o deploy.
+
+## Menos bytes sem perder os efeitos (12/10/2026)
+
+Nota: [[menos-bytes-sem-perder-os-efeitos]]. Pedido: "melhorar o desempenho
+sem perder os efeitos e a qualidade". Medido antes de mexer, e a medição
+mudou a lista: nenhum efeito saiu.
+
+- **Vídeo com segundos que ninguém via.** `fundo-home` (fundo do celular)
+  tinha 8 s e congela em 1,5 s; a vinheta tinha 7,77 s para um overlay que
+  sai em 5,45 s no pior caso. **Cortar o FIM com `ffmpeg -t <s> -c copy` é
+  sem perda em qualquer codec** (só cortar o começo exige keyframe): webm
+  622 → 208 KB e 736 → 511 KB; mp4 714 → 226 e 1.080 → 759. Reencodar
+  (crf 36) dava SSIM 0,967 e saía MAIOR que a cópia: os webm da casa são
+  all-intra. `videosSobMedida.test.ts` trava os tamanhos.
+- **GSAP + Lenis em toda tela do painel** por um `import` do `SmoothScroll`
+  no layout raiz (~120 KB por rota de `/corretor`, sem um ScrollTrigger
+  para usar). `MovimentoDoSite` carrega por `next/dynamic` só fora do
+  painel. Um `if` em volta do import esconde o componente, não o chunk.
+- **supabase-js (245 KB) no primeiro carregamento de cinco rotas** para
+  abrir Realtime depois ou subir arquivo ao escolher. `createClientSobDemanda`
+  faz `import()` no efeito/handler: Pessoas 1.019 → 712 KB, Conversas 1.056
+  → 749, Criar arte 1.024 → 717, Criar vídeo 1.016 → 709, Importar 1.034 →
+  726. Guarda `pesoDoPainel.test.ts`; catraca de bundle desceu em toda rota.
+- **Capa de 430 KB num cartão de 360px.** Sem o otimizador da Vercel,
+  `unoptimized: true` mandava o original cru e sem `srcset`. Agora
+  `registrarMidia` gera WebP em 480/960/1440 (só menores que o original) e
+  grava `midias.variantes` (0177, aplicada); `srcDaMidia` põe a lista num
+  FRAGMENTO da URL (`#v=480,960`) e o loader próprio (`images.loaderFile`)
+  escolhe a variante; URL sem marca volta como veio. **A marca existe
+  porque candidato 404 no `srcset` quebra a foto inteira** — a mesma falha
+  calada do 402. Backfill das 1.174 linhas em `gerarVariantes.ts`, pelo
+  Actions (`variantes-de-imagem.yml`), quando o script chegar à branch de
+  produção; até lá o site serve o original, como antes.
+- **O Playwright instalado pede um `chromium_headless_shell-1234` que o
+  sandbox não tem**: `scripts/perf/medir.ts` passou a aceitar
+  `E2E_CHROMIUM`, como o `playwright.config.ts` já aceitava.
+- **A/B local honesto é `git worktree` do commit anterior** com
+  `node_modules` por `cp -al`, os dois `next start` em portas diferentes e
+  `npm run perf -- --base=http://localhost:<porta>`. Medir contra produção
+  compara a rede de duas horas diferentes, não os dois builds.
+- **Continua pendente, e é o maior ganho estrutural**: `cookies()` no
+  layout raiz mantém toda rota dinâmica (`X-Vercel-Cache: MISS` em tudo,
+  TTFB de função). É a F2b do roadmap; exige o painel verificável.

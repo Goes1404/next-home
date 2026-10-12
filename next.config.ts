@@ -40,18 +40,27 @@ const nextConfig: NextConfig = {
 
   images: {
     /*
-     * Sem o otimizador de imagens da Vercel (09/10/2026). No plano Hobby ele
-     * tem cota mensal de conversões, e quando ela acaba a Vercel responde
-     * 402 `OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` para toda variante que
-     * ainda não estava em cache: no painel e no site, a foto aparecia
-     * quebrada, só com o texto alternativo, e as que já tinham sido vistas
-     * continuavam abrindo. Era uma falha calada e parcial.
+     * Sem o otimizador de imagens da Vercel desde 09/10/2026: no plano Hobby
+     * ele tem cota mensal e, quando ela acabou, respondia 402
+     * `OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` — foto quebrada, calada.
+     * A primeira saída foi `unoptimized: true`: a foto original crua, 70 a
+     * 430 KB por capa na listagem para um cartão de ~360px no celular.
      *
-     * As fotos do catálogo já são pequenas (média de 83 KB, ~1080 px), então
-     * servir o arquivo direto do Storage custa pouco e nunca quebra. Imagem
-     * nova em `public/` precisa chegar já leve: nada a reduz no caminho.
+     * Desde 12/10/2026 o loader é NOSSO (`loaderDeImagem.ts`): as variantes
+     * WebP já estão no Storage (geradas em `registrarMidia` e pelo backfill),
+     * e o loader só escolhe entre as que a linha de `midias` diz que
+     * existem. URL sem essa marca volta como veio — o comportamento de
+     * `unoptimized`, imagem a imagem. Nada é redimensionado em tempo de
+     * requisição, então nada tem cota. Imagem nova em `public/` continua
+     * precisando chegar leve: nada a reduz no caminho.
+     *
+     * `deviceSizes` casa com as variantes que existem (480/960/1440) mais
+     * 1920, em que o loader devolve o original: candidato do srcset que não
+     * existe no Storage seria foto quebrada.
      */
-    unoptimized: true,
+    loader: "custom",
+    loaderFile: "./src/lib/imagens/loaderDeImagem.ts",
+    deviceSizes: [480, 960, 1440, 1920],
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
       // Thumbnails oficiais do YouTube — a facade do PlayerVideo mostra a

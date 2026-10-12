@@ -4,7 +4,7 @@ tags: [moc, front, gsap]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-24
+updated: 2026-10-12
 summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ---
 # Front Público — Map of Content
@@ -51,6 +51,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[o-conteudo-aparece-antes-do-javascript]] — F1: o contrato `.gsap-pending` invertido (nasce visível, `estaNaTela` decide), hero por CSS, vinheta só desktop e dispensável por rolagem (13/09)
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
 - [[o-globo-recebe-pontos-e-nada-roda-sozinho]] — F3: HTML da home 96 → 27 KB gz; globo só nasce perto da viewport; laços dormem com a página parada; cards sem backdrop-filter (13/09)
+- [[menos-bytes-sem-perder-os-efeitos]] — 12/10: vídeo cortado ao trecho visível (-0,9 MB no celular), GSAP/Lenis fora do painel, supabase-js por import() (chat 1.019–1.056 → 708–749 KB), fotos em variantes WebP com loader próprio (0177)
 ## Fundo
 - [[fundo-em-video-saiu-de-todas-as-paginas]] — a vinheta congelada deixou de ser papel de parede; fica a aurora em CSS (13/09)
 - [[a-remocao-levou-a-peca-errada-junto]] — o componente montava DUAS peças e a queixa era de uma; o vídeo do celular volta esmaecendo com a rolagem (15/09)

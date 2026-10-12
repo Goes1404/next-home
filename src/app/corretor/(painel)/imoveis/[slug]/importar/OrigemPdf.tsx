@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import { TETO_PDF_BYTES, TETO_PDF_MB } from "@/lib/imoveis/limitesPdf";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import {
@@ -88,7 +88,7 @@ export function OrigemPdf({
     // Nome aleatório, não sequencial: o bucket é público, e um caminho
     // adivinhável deixaria a apresentação exposta enquanto ela existe.
     const caminho = `${empreendimentoId}/_importacao/${crypto.randomUUID()}.pdf`;
-    const supabase = createClient();
+    const supabase = await createClientSobDemanda();
     const { error } = await supabase.storage
       .from("empreendimentos")
       .upload(caminho, arquivo, { contentType: "application/pdf", upsert: true });

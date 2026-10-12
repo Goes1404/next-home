@@ -61,6 +61,7 @@ function mapMidia(m: Tables<"midias">): Midia {
     largura: m.largura ?? 0,
     altura: m.altura ?? 0,
     blurDataUrl: m.blur_data_url,
+    variantes: m.variantes ?? null,
   };
 }
 

@@ -167,7 +167,7 @@ const SCRIPT_MEDIDA = String.raw`(() => {
 })()`;
 
 async function medirUma(base: string, pagina: string, perfil: Perfil, semVinheta: boolean): Promise<Medida> {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.E2E_CHROMIUM ? { executablePath: process.env.E2E_CHROMIUM } : {});
   const opcoes: BrowserContextOptions =
     perfil === "celular"
       ? { ...devices["Pixel 7"] }

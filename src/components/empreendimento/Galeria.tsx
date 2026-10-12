@@ -9,6 +9,7 @@ import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * Quantas fotos da grade aparecem antes do "Ver mais".
  *
@@ -66,7 +67,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
               intensidade das demais — é ela que dá o tom da seção. */}
           <ParallaxImagem className="aspect-[16/9] w-full rounded-2xl" intensidade={18}>
             <Image
-              src={destaque.url}
+              src={srcDaMidia(destaque)}
               alt={destaque.alt}
               fill
               sizes="(min-width: 1280px) 1216px, 100vw"
@@ -107,7 +108,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
                 className="group absolute inset-0 h-full w-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-acento-forte"
               >
                 <Image
-                  src={foto.url}
+                  src={srcDaMidia(foto)}
                   alt={foto.alt}
                   fill
                   sizes="(min-width: 1024px) 33vw, 50vw"

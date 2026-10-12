@@ -144,6 +144,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
               {corretor.fotoUrl ? (
                 <Image
                   src={corretor.fotoUrl}
+                  unoptimized
                   // Decorativa: o nome vem em seguida, no h1.
                   alt=""
                   width={128}

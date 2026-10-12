@@ -10,6 +10,7 @@ import { MapPin } from 'lucide-react';
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 interface Props {
   imovel: PontoDoMapa;
   onFechar: () => void;
@@ -27,7 +28,7 @@ export function CardFlutuanteImovel({ imovel, onFechar }: Props) {
         <div className="relative mb-3 overflow-hidden rounded-xl aspect-[16/10] bg-superficie border border-linha">
           {imovel.capa?.url ? (
             <Image
-              src={imovel.capa.url}
+              src={srcDaMidia(imovel.capa)}
               alt={imovel.nome}
               fill
               sizes="(max-width: 640px) 100vw, 384px"

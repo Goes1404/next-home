@@ -2660,6 +2660,7 @@ export type Database = {
           ordem: number
           tipo: Database["public"]["Enums"]["tipo_midia"]
           url: string
+          variantes: number[] | null
         }
         Insert: {
           alt?: string | null
@@ -2673,6 +2674,7 @@ export type Database = {
           ordem?: number
           tipo?: Database["public"]["Enums"]["tipo_midia"]
           url: string
+          variantes?: number[] | null
         }
         Update: {
           alt?: string | null
@@ -2686,6 +2688,7 @@ export type Database = {
           ordem?: number
           tipo?: Database["public"]["Enums"]["tipo_midia"]
           url?: string
+          variantes?: number[] | null
         }
         Relationships: [
           {

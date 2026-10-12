@@ -98,6 +98,7 @@ export function Tipologias({
                     <Camada velocidade={0.09} className="absolute inset-0 scale-105">
                       <Image
                         src={t.plantaUrl}
+                        unoptimized
                         alt=""
                         fill
                         sizes="(min-width: 640px) 340px, 100vw"

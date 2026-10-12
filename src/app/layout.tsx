@@ -6,7 +6,7 @@ import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { AvisoDeVersaoNovaSobDemanda } from "@/components/layout/SobDemanda";
 import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
-import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { MovimentoDoSite } from "@/components/motion/MovimentoDoSite";
 import { site } from "@/lib/site";
 import { OG_IMAGEM } from "@/lib/dadosEstruturados";
 import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
@@ -187,7 +187,10 @@ export default async function RootLayout({
             servia: nenhum conteúdo nasce mais invisível esperando
             JavaScript, então não há o que devolver quando ele falta. */}
         <GlassSvgDefs />
-        <SmoothScroll />
+        {/* Lenis + ScrollTrigger só fora do painel, e por import assíncrono:
+            o painel não usa nenhum dos dois e pagava ~120 KB por tela (ver
+            MovimentoDoSite.tsx, 12/10/2026). */}
+        <MovimentoDoSite />
         {/* A onda entre páginas mora AQUI, e não nos layouts de grupo: ir da
             home para o catálogo troca de grupo de rota, o layout inteiro é
             desmontado e um componente que compara "caminho anterior" nasce

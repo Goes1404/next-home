@@ -4,7 +4,7 @@ tags: [moc, infra]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-09
+updated: 2026-10-12
 summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 ---
 # Infraestrutura — Map of Content
@@ -29,6 +29,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[erro-que-so-existe-no-runtime-se-investiga-no-runtime]]
 - [[uma-piscada-do-banco-derrubava-a-home]] — Gateway Timeout de segundos virava 500 na home; repetir, nunca degradar (10/09)
 - [[otimizador-de-imagens-tem-cota-no-hobby]] ⚠️ foto quebrada com o arquivo no Storage: 402 da cota do otimizador; imagens saem sem otimização (09/10)
+- [[menos-bytes-sem-perder-os-efeitos]] — 12/10: no lugar do `unoptimized`, loader próprio sobre variantes WebP que já estão no Storage (sem cota, sem redimensionar na requisição); vídeos cortados com `-c copy`
 - [[a-aba-aberta-e-que-carrega-a-versao-antiga]] — não é cache de HTML (sai `no-store` em toda rota): quem segura a versão antiga é a aba que nunca renavegou (15/09)
 
 ## Performance

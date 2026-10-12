@@ -48,6 +48,40 @@ export async function medirImagem(bytes: Buffer): Promise<{ largura: number; alt
   }
 }
 
+/**
+ * As versões WebP que o site serve no lugar do original (ver
+ * `lib/imagens/variantes.ts`): só larguras MENORES que a do original, para
+ * nunca ampliar. Qualidade 80 — medido em fotos de fachada e decorado, é o
+ * ponto em que o WebP fica indistinguível do JPEG de origem a 1x e 2x de
+ * densidade; abaixo disso o céu e os reflexos de vidro ganham banda.
+ *
+ * Falha de uma largura não derruba as outras nem a foto: devolve as que
+ * saíram. Sem `sharp` (runtime sem o binário), devolve lista vazia e a foto
+ * segue sendo servida no original, como antes.
+ */
+export async function gerarVariantes(
+  bytes: Buffer,
+  larguras: readonly number[],
+): Promise<{ largura: number; bytes: Buffer }[]> {
+  const sharp = await carregarSharp();
+  if (!sharp || larguras.length === 0) return [];
+
+  const saida: { largura: number; bytes: Buffer }[] = [];
+  for (const largura of larguras) {
+    try {
+      const variante = await sharp(bytes)
+        .rotate()
+        .resize({ width: largura, withoutEnlargement: true })
+        .webp({ quality: 80, effort: 4 })
+        .toBuffer();
+      saida.push({ largura, bytes: variante });
+    } catch (erro) {
+      console.error(`[imagem] variante de ${largura}px falhou:`, erro);
+    }
+  }
+  return saida;
+}
+
 export async function gerarBlur(bytes: Buffer): Promise<string | null> {
   const sharp = await carregarSharp();
   if (!sharp) return null;
