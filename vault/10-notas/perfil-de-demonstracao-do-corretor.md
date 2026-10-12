@@ -7,7 +7,7 @@ status: ativo
 custou: baixo
 codigo: ["scripts/demo/semearPerfilDemo.sql", "scripts/demo/apagarPerfilDemo.sql", "src/lib/catalogo/cache.ts"]
 summary: Corretor fictício "Lucas Andrade" (slug demo-lucas-andrade), desativado e sem WhatsApp, com 49 leads, 30 conversas, visitas e 4 vendas, para apresentar o painel cheio. Apagar com scripts/demo/apagarPerfilDemo.sql.
-updated: 2026-10-07
+updated: 2026-10-12
 ---
 
 # Perfil de demonstração do corretor
@@ -32,3 +32,24 @@ corretor no mesmo instante. Gerar visitas em lote precisa de horários únicos.
 
 Para apagar: rodar `scripts/demo/apagarPerfilDemo.sql` no editor SQL (o MCP
 recusa `delete`).
+
+## A conta ADM de demonstração (12/10/2026)
+
+Criada para fotografar a Administração na apresentação comercial:
+`adm-demo@nexthomeimoveis.com`, cadastro "Admin Demonstração", slug
+`demo-adm`, papel `gestor`, `ativo = false` (fica fora da roleta e do site).
+A senha foi entregue ao dono da conta e não está no repositório. O evento
+`conta_criada` está em `admin_eventos`, com ator nulo e o motivo escrito.
+
+**Risco aceito pelo dono da conta:** não existe ADM "de demonstração".
+`eh_gestor()` só olha `papel`, então esta conta enxerga toda a equipe real:
+911 leads com nome e telefone, as contas e o WhatsApp de cada corretor.
+Quem usar essa senha numa demonstração vê dados de clientes reais. Para
+desfazer: `update corretores set papel = 'corretor' where slug = 'demo-adm'`
+(ou apagar o usuário do Auth). Ela some sozinha quando o multi-empresa
+(`empresa_id` + RLS) existir.
+
+As fotos da Administração na apresentação foram tiradas com nomes,
+telefones e e-mails da equipe borrados por script (filtro de CSS na hora da
+captura), porque o link da apresentação é público.
+

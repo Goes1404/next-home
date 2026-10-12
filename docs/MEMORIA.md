@@ -10143,3 +10143,21 @@ Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
   o `Cache-Control`. O registro `Production` nasceu ~2,5 min depois do
   `Preview` (mais que os ~70 s medidos em 16/09; consultar cedo imita
   recusa).
+
+## A conta ADM de demonstração enxerga a equipe real (12/10/2026)
+
+Nota: [[perfil-de-demonstracao-do-corretor]].
+
+- **`adm-demo@nexthomeimoveis.com` (slug `demo-adm`) é `gestor` de verdade.**
+  Foi criada para fotografar a Administração, por escolha do dono da conta,
+  que aceitou o risco: `eh_gestor()` só olha `papel`, então ela vê os leads
+  reais da equipe inteira (911 em 12/10). Não existe papel de ADM só de
+  demonstração enquanto o multi-empresa não estiver pronto.
+- **Foto de tela com dado real vai borrada.** O script de captura aplica
+  `filter: blur()` a telefone, e-mail e nome de corretor real antes da foto.
+  A apresentação tem link público.
+- **Número de resultado se mede sem a demo.** Com o perfil demo semeado,
+  a Visão geral do ADM mistura conversas fictícias. Medido só com corretores
+  reais (12/10, últimos 30 dias): a IA respondeu 45 de 52 clientes que
+  escreveram, com mediana de 22 s até a primeira resposta.
+
