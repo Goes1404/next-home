@@ -16,6 +16,9 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[parallax-em-um-laco]]
 - [[home-mora-no-institucional]]
 
+## Casca e cache
+- [[a-casca-estatica-sem-perder-o-tema]] — o HTML não sabe o tema nem o corretor do link: script antes da pintura + ilha; `/contato` e `/mapa` leem o parâmetro no navegador (12/10)
+
 ## Vídeo e peso
 - [[video-controlado-por-scroll-precisa-de-keyframes-densos]]
 - [[fundo-16-9-em-tela-mais-larga-vira-faixa]] — 143px de faixa vazia no desktop (06/09)

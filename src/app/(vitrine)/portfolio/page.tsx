@@ -13,7 +13,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
-import { getEmpreendimentos } from "@/lib/queries";
+import { getEmpreendimentosDoLink } from "@/lib/queries";
 
 import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
  * abaixo pode envolver o header/CTA num ancestral com `transform`.
  */
 export default async function Home() {
-  const todos = await getEmpreendimentos();
+  const todos = await getEmpreendimentosDoLink();
   const destaques = todos.filter((e) => e.destaque);
 
   return (

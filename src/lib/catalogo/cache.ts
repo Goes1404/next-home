@@ -34,9 +34,10 @@ import { REVALIDA_EM_SEGUNDOS, TAG_CATALOGO, TAG_CORRETORES } from "./tags";
  *
  * `unstable_cache` e não `'use cache'`: a diretiva exige `cacheComponents`
  * ligado, que muda o contrato de TODAS as 50 rotas (cookie fora de Suspense
- * vira erro de build) — é a F2b do roadmap, com o painel verificável antes.
- * A API antiga segue suportada no Next 16 como camada separada, e é o que
- * cabe numa fase sem quebrar o resto.
+ * vira erro de build). A F2b (12/10/2026) foi feita SEM ela — `revalidate`
+ * nos layouts de grupo mais tema e personalização lidos no navegador — e a
+ * API antiga segue suportada no Next 16 como camada separada. É o que cabe
+ * enquanto o painel não tem credencial de E2E para verificar a troca.
  */
 export const catalogoPublicado = unstable_cache(
   async (): Promise<Empreendimento[]> => {

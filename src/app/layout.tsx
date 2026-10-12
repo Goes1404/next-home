@@ -9,7 +9,7 @@ import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { MovimentoDoSite } from "@/components/motion/MovimentoDoSite";
 import { site } from "@/lib/site";
 import { OG_IMAGEM } from "@/lib/dadosEstruturados";
-import { COR_DA_BARRA, getTemaEscolhido } from "@/lib/tema";
+import { COR_DA_BARRA, SCRIPT_TEMA_ANTES_DA_PINTURA, TEMA_PADRAO } from "@/lib/tema";
 import "./globals.css";
 
 const inter = Inter({
@@ -112,40 +112,34 @@ export const metadata: Metadata = {
 };
 
 /**
- * `generateViewport` (e não a constante `viewport`) porque a cor da barra
- * depende do cookie: quem escolheu um tema recebe a cor dele; quem está em
- * "seguir o sistema" recebe as duas, uma por media query, para o navegador
- * escolher sozinho.
+ * `viewport` ESTÁTICO (era `generateViewport` lendo o cookie, até 12/10/2026).
+ * A cor da barra sai com a do padrão da casa; para quem escolheu o escuro, o
+ * script inline do `<body>` reescreve o `<meta name="theme-color">` antes da
+ * primeira pintura — ler o cookie aqui faria toda rota do site ser dinâmica
+ * (ver lib/tema.ts).
  */
-export async function generateViewport(): Promise<Viewport> {
-  const tema = await getTemaEscolhido();
-
-  return {
-    // Sem cookie, o padrão é CLARO (ver o comentário do `data-tema` abaixo),
-    // então a barra do navegador acompanha em vez de consultar o sistema.
-    themeColor: COR_DA_BARRA[tema ?? "claro"],
-    colorScheme: tema === "escuro" ? "dark" : "light",
-    width: "device-width",
-    initialScale: 1,
-    viewportFit: "cover",
-  };
-}
+export const viewport: Viewport = {
+  themeColor: COR_DA_BARRA[TEMA_PADRAO],
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 /**
- * O `data-tema` sai daqui, do servidor, e não de um script no cliente: como
- * toda rota deste site já é dinâmica, o cookie é lido antes de a resposta
- * sair, e o HTML chega ao navegador já no tema certo. É o que dispensa o
- * script de anti-flash e a piscada de tema errado no primeiro paint — e vale
- * para o site inteiro, não só o painel.
+ * O `data-tema` NÃO sai mais do servidor (F2b, 12/10/2026). Este layout não
+ * lê cookie nenhum: é o que deixa o site público ser prerenderizado e servido
+ * do cache da Vercel (`X-Vercel-Cache: HIT`) em vez de por função a cada
+ * visita. O HTML chega sempre no padrão da casa (claro) e o PRIMEIRO script
+ * do `<body>` corrige o atributo pelo cookie antes da primeira pintura — o
+ * mesmo contrato do `Preloader`. A explicação inteira está em lib/tema.ts.
  *
- * Sem cookie, nenhum atributo é carimbado — e aí quem manda é a preferência
- * do sistema operacional, tratada em CSS puro (ver globals.css).
+ * `suppressHydrationWarning` cobre a mutação: o script muda `data-tema` e
+ * `data-tema-escolhido` antes de o React hidratar.
  */
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const tema = await getTemaEscolhido();
-
   return (
     <html
       lang="pt-BR"
@@ -161,11 +155,12 @@ export default async function RootLayout({
        * marca, era o padrão do CSS decidindo por nós.
        *
        * O seletor no rodapé continua inteiro, e quem escolher "escuro"
-       * grava o cookie e nada aqui interfere. Para voltar ao comportamento
-       * antigo (o sistema decide), é trocar por `tema ?? undefined` aqui e
-       * desfazer as duas linhas de `generateViewport` acima.
+       * grava o cookie; o script inline abaixo o aplica a cada carga. Para
+       * voltar ao comportamento antigo (o sistema decide), o script teria de
+       * REMOVER o atributo quando não há cookie, e `viewport.colorScheme`
+       * deixar de ser fixo.
        */
-      data-tema={tema ?? "claro"}
+      data-tema={TEMA_PADRAO}
       // O script inline do Preloader carimba `data-intro-ativa` no <html>
       // antes da hidratação, de propósito; sem isto, o dev console acusa
       // mismatch a cada carga.
@@ -173,6 +168,11 @@ export default async function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* O tema, antes da primeira pintura (ver lib/tema.ts). Primeiro
+            filho do body de propósito: o <head> já foi todo lido (o
+            `<meta name="theme-color">` existe) e nenhum conteúdo foi
+            pintado ainda. */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_ANTES_DA_PINTURA }} />
         {/* Primeiro parável do documento: quem navega por teclado pula o
             header fixo e o botão flutuante de WhatsApp direto para o
             conteúdo. Invisível até receber foco. */}

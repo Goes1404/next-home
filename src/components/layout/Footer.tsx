@@ -3,7 +3,6 @@ import Link from "next/link";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { enderecoLinha, site } from "@/lib/site";
-import { getTemaEscolhido } from "@/lib/tema";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 const LINKS_RAPIDOS = [
@@ -27,9 +26,7 @@ const REDES = [
  * SiteHeader/WhatsappCta, que dependem do GlassBackgroundProvider local a
  * cada rota).
  */
-export async function Footer() {
-  const tema = await getTemaEscolhido();
-
+export function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14 sm:px-8">
       <FundoEmCamadas intensidade={0.5} />
@@ -124,7 +121,7 @@ export async function Footer() {
           Área do corretor
         </Link>
 
-        <SeletorTema atual={tema} />
+        <SeletorTema />
       </div>
     </footer>
   );

@@ -10094,6 +10094,46 @@ mudou a lista: nenhum efeito saiu.
   painel não entra na medição (login); lá o ganho é o do manifesto.
   **`imagens` = 0 KB para o Storage não é foto ausente**: cross-origin sem
   `Timing-Allow-Origin` não expõe `transferSize`.
-- **Continua pendente, e é o maior ganho estrutural**: `cookies()` no
-  layout raiz mantém toda rota dinâmica (`X-Vercel-Cache: MISS` em tudo,
-  TTFB de função). É a F2b do roadmap; exige o painel verificável.
+- **O maior ganho estrutural ficou para a F2b, feita no mesmo dia** (seção
+  seguinte): `cookies()` no layout raiz mantinha toda rota dinâmica
+  (`X-Vercel-Cache: MISS` em tudo, TTFB de função).
+
+## A casca estática sem perder o tema (F2b, 12/10/2026)
+
+Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
+(F2b) sem perder o tema". Saiu SEM `cacheComponents`.
+
+- **Três leituras de requisição em lugar compartilhado tornavam TODA rota
+  dinâmica**: o cookie do tema no layout raiz (`generateViewport` +
+  `<html data-tema>`), no Footer e no Header; o corretor do link
+  (`getCorretorAtivo`) nos dois layouts de grupo e DENTRO de
+  `getEmpreendimentos`; e `searchParams` em `/contato` e `/mapa` para
+  pré-selecionar uma opção. Hoje 11 das 14 páginas públicas saem
+  `s-maxage=3600` (ficha do imóvel e financiamento 5 min). Continuam
+  dinâmicas, declaradas na guarda: `/empreendimentos`, `/portfolio`,
+  `/comparar`, páginas de token, `/wa`.
+- **O HTML não sabe o tema.** Sai sempre `data-tema="claro"` e um script
+  inline, primeiro filho do `<body>`, lê o cookie e corrige `<html>`,
+  `theme-color` e `color-scheme` antes da primeira pintura (o contrato do
+  `Preloader`). O seletor observa o DOM por `useSyncExternalStore`.
+  Medido: com cookie `escuro`, em `DOMContentLoaded` o `<html>` já está
+  escuro e a barra em `#040b0a`; HTML da home byte a byte igual com e sem
+  cookies.
+- **Server Action que mexe em cookie refaz a árvore da rota**, e a árvore
+  nova trouxe o `<meta theme-color>` claro por cima do escuro recém-
+  aplicado — `<html>` escuro, barra do navegador clara até recarregar. Só o
+  Playwright mostrou. Como o servidor não lê mais o cookie, ele não o
+  escreve: `document.cookie` no clique, 0 requisições ao servidor.
+- **O fundo do corretor do link é ilha** (`FundoDoLink` +
+  `/api/corretor-ativo`, zero banco): sem cookie nada é pedido; com cookie
+  troca depois da primeira pintura. Os dois fundos chegam por
+  `next/dynamic` — importados estaticamente, entravam em toda página
+  pública (+1 a +2 KB, a catraca pegou).
+- **`?param=` que só pré-seleciona vai para `useSearchParams` em
+  `<Suspense>` com o próprio componente como fallback**: o HTML estático
+  traz o formulário e o mapa inteiros.
+- **Comentário JSX sai antes do comentário de bloco** em guarda que lê
+  código; e `pkill -f "[n]ext start"` numa linha que contém `npx next
+  start` mata a própria sessão (a régua é `[n]ext-server`).
+- **Produção só se confere depois do merge**: `X-Vercel-Cache: HIT` na
+  segunda requisição à home.

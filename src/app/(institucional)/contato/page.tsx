@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
+import { Suspense } from "react";
 import { FormularioContato } from "@/components/contato/FormularioContato";
+import { FormularioContatoDaUrl } from "@/components/contato/FormularioContatoDaUrl";
 import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
 import { MapaDaSede } from "@/components/institucional/MapaDaSede";
 import { Pagina } from "@/components/institucional/Pagina";
@@ -43,15 +45,9 @@ const OUTROS_CAMINHOS = [
   },
 ];
 
-export default async function ContatoPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ empreendimento?: string }>;
-}) {
-  const [sp, empreendimentos] = await Promise.all([
-    searchParams,
-    getEmpreendimentos(),
-  ]);
+export default async function ContatoPage() {
+  const empreendimentos = await getEmpreendimentos();
+  const opcoes = empreendimentos.map((e) => ({ slug: e.slug, nome: e.nome }));
 
   return (
     <>
@@ -72,10 +68,13 @@ export default async function ContatoPage({
               <p className="text-fluid-sm text-apoio mt-1 mb-6">
                 Diga o que procura. Se já tem um imóvel em mente, escolha-o na lista.
               </p>
-              <FormularioContato
-                empreendimentos={empreendimentos.map((e) => ({ slug: e.slug, nome: e.nome }))}
-                empreendimentoPreselecionado={sp.empreendimento}
-              />
+              {/* `?empreendimento=` é lido no navegador (F2b, 12/10/2026): no
+                  servidor isso exigiria `searchParams`, que tornaria a página
+                  dinâmica. O fallback É o formulário — ele vai no HTML
+                  estático; o navegador só acrescenta a pré-seleção. */}
+              <Suspense fallback={<FormularioContato empreendimentos={opcoes} />}>
+                <FormularioContatoDaUrl empreendimentos={opcoes} />
+              </Suspense>
             </Reveal>
 
             <div className="space-y-6">

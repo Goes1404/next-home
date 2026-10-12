@@ -1,13 +1,10 @@
 import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
-import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
 import { FundoDaCasaDesktop } from "@/components/motion/FundoDaCasaDesktop";
-import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
+import { FundoDoLink, PersonalizacaoDoLink } from "@/components/motion/FundoDoLink";
 import { Preloader } from "@/components/motion/Preloader";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { PixelMeta } from "@/components/analytics/PixelMeta";
 import { BarraDeFavoritosSobDemanda } from "@/components/layout/SobDemanda";
-
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
 
 /**
  * Layout compartilhado pela home e pela listagem de empreendimentos.
@@ -25,9 +22,16 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
  * aninhado, que sobrepõe este aqui só para a própria subárvore; o vídeo
  * continua rodando por baixo, apenas encoberto pelo hero opaco da página.
  */
-export default async function VitrineLayout({ children }: { children: React.ReactNode }) {
-  const corretorAtivo = await getCorretorAtivo();
-  const usaFotoDeFundo = corretorAtivo?.fundoTipo === "foto" && corretorAtivo.fundoFotoUrl;
+/**
+ * Validade da casca estática (F2b, 12/10/2026) — ver o mesmo comentário no
+ * layout do institucional. `/portfolio` e `/empreendimentos` continuam
+ * dinâmicas (a primeira ordena pelos destaques do corretor do link, a
+ * segunda lê filtros em `searchParams`); a ficha do imóvel, o mapa e o
+ * comparador é que passam a ser servidos do cache.
+ */
+export const revalidate = 3600;
+
+export default function VitrineLayout({ children }: { children: React.ReactNode }) {
   /*
    * O vídeo da casa SAIU daqui em 10/09/2026, e o número é o motivo:
    * `hero-scroll-fluido` pesa 15 MB (por codec), e ele era baixado por todo
@@ -41,11 +45,13 @@ export default async function VitrineLayout({ children }: { children: React.Reac
    *
    * Vídeo PRÓPRIO do corretor continua tendo precedência: é personalização
    * explícita dele, feita no painel, e não é a casa impondo peso a ninguém.
+   * Desde 12/10/2026 quem decide isso é o navegador (FundoDoLink): o HTML
+   * sai estático com o fundo da casa, e quem veio por link pessoal vê o
+   * fundo do corretor entrar logo depois da primeira pintura.
    */
-  const videoUrl = corretorAtivo?.videoUrl || null;
-
   return (
     <GlassBackgroundProvider>
+    <PersonalizacaoDoLink>
       {/* Vinheta da logo na primeira visita da sessão — cobre a montagem
           da página enquanto fontes e o vídeo de fundo ainda carregam. */}
       <Preloader />
@@ -56,22 +62,17 @@ export default async function VitrineLayout({ children }: { children: React.Reac
           reescalava a cada gesto. Ver o mesmo comentário no layout do
           institucional. */}
       <div className="fixed inset-x-0 top-0 -z-10 h-lvh fundo-aurora overflow-hidden bg-fundo">
-        {usaFotoDeFundo ? (
-          <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
-        ) : (
-          <>
-            {videoUrl ? <HeroVideoBackground src={videoUrl} /> : <FundoDaCasaDesktop />}
-            {/* Sem vinheta de fundo desde 13/09/2026 (ver o layout do
-                institucional): a aurora em CSS cobre os dois tamanhos. */}
-          </>
-        )}
+        {/* Sem vinheta de fundo desde 13/09/2026 (ver o layout do
+            institucional): a aurora em CSS cobre os dois tamanhos. */}
+        <FundoDoLink padrao={<FundoDaCasaDesktop />} />
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
       </div>
 
       {children}
       <PixelMeta />
-    <VoltarAoTopo />
-    <BarraDeFavoritosSobDemanda />
+      <VoltarAoTopo />
+      <BarraDeFavoritosSobDemanda />
+    </PersonalizacaoDoLink>
     </GlassBackgroundProvider>
   );
 }

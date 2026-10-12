@@ -18,7 +18,7 @@ de planejar" e "uma rodada não separa regressão de variância".
 | F0 — Instrumentar | feita em 13/09 | `1306397` | Speed Insights e Analytics no layout (**ligar no painel da Vercel**), `npm run perf`, catraca de bundle na esteira, 29,8 MB de vídeo morto fora, deploy de produção consertado |
 | F1 — Conteúdo antes do JS | feita em 13/09 | `d502267` | `.gsap-pending` invertido (`estaNaTela`), hero por CSS, vinheta só desktop/3,8 s/dispensável por rolagem, `fetchPriority` nas capas, Fraunces −52 KB |
 | F2 — Cache e servidor | feita em 13/09 (menos a casca estática) | `72f6424` + 0112 | cache por etiqueta, proxy sem Auth no público, poster do fundo no SSR, prefetch com intenção, 23 índices e 27 policies no banco |
-| F2b — Casca estática (Cache Components / PPR) | pendente | — | exige `cacheComponents`, que muda o contrato das 50 rotas; fazer com o painel verificável (credencial de E2E) |
+| F2b — Casca estática | feita em 12/10 (sem `cacheComponents`) | — | 11 das 14 páginas públicas estáticas/ISR (home, sobre, contato, mapa, corretores e cada corretor, regiões, privacidade, anunciar; ficha do imóvel e financiamento em 5 min): tema por script antes da pintura + cookie gravado no navegador, fundo do corretor do link como ilha (`FundoDoLink` + `/api/corretor-ativo`), `?empreendimento=`/`?imovel=` lidos no navegador, `generateStaticParams` em `/corretores/[slug]`. Ficam dinâmicas, declaradas: `/empreendimentos`, `/portfolio`, `/comparar`, páginas de token, `/wa`. Guarda `cascaEstatica.test.ts`. Ver [[a-casca-estatica-sem-perder-o-tema]]. `cacheComponents`/PPR continua fora: exige o painel verificável |
 | F3 — Menos JavaScript | feita em 13/09 (RSC e laços; o bundle em si fica para a F3b) | `77959b5` | HTML da home 96 → 27 KB gz (`PontoDoMapa`), globo só nasce perto da viewport e dorme fora dela, laços das camadas e do header só trabalham quando algo rolou, cards sem backdrop-filter |
 | F3b — O bundle em si | parte feita em 12/10 | — | GSAP + Lenis fora do painel (`MovimentoDoSite`, dynamic só fora de `/corretor`: ~120 KB a menos por tela do painel, −18 KB nas públicas); supabase-js por `import()` no efeito/handler (`clientSobDemanda`): as cinco telas de chat 1.016–1.056 → 708–749 KB; catraca desceu em toda rota (`*` 800 → 738). Fica: Reveal por CSS + IntersectionObserver se o INP de campo pedir |
 | Imagens — variantes WebP + loader próprio | feita em 12/10 (código e 0177; backfill roda no Actions ao chegar à produção) | — | sem o otimizador da Vercel a capa ia crua (70–430 KB, sem `srcset`); `registrarMidia` gera 480/960/1440 e `midias.variantes` diz o que existe; `srcDaMidia` marca a URL e `loaderDeImagem` escolhe. Ver [[menos-bytes-sem-perder-os-efeitos]] |
@@ -55,7 +55,7 @@ depois do texto — F3b e F5.
 | TTFB da home (Brasil) | 0,9 s a 2,9 s | ≤ 0,8 s |
 | HTML da home (gzip) | **96 KB** (344 KB de RSC, 252 KB é o catálogo inteiro) | ~30 KB é o comum |
 | JavaScript por página (listagem) | 740 KB decodificado, 14 chunks | — |
-| Cache de CDN | **zero** rotas estáticas; `X-Vercel-Cache: MISS` em tudo | — |
+| Cache de CDN | **zero** rotas estáticas; `X-Vercel-Cache: MISS` em tudo → **12/10: 11 de 14 páginas públicas em ISR** (`s-maxage=3600`, HIT no `next start`; produção a confirmar após o merge) | — |
 | Dado de campo (usuários reais) | **não existe** — sem Speed Insights, sem Web Analytics, fora do CrUX | — |
 
 Os números do celular foram medidos **sem a vinheta de abertura** (o
