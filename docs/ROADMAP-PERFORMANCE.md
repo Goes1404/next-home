@@ -55,7 +55,7 @@ depois do texto — F3b e F5.
 | TTFB da home (Brasil) | 0,9 s a 2,9 s | ≤ 0,8 s |
 | HTML da home (gzip) | **96 KB** (344 KB de RSC, 252 KB é o catálogo inteiro) | ~30 KB é o comum |
 | JavaScript por página (listagem) | 740 KB decodificado, 14 chunks | — |
-| Cache de CDN | **zero** rotas estáticas; `X-Vercel-Cache: MISS` em tudo → **12/10: 11 de 14 páginas públicas em ISR** (`s-maxage=3600`, HIT no `next start`; produção a confirmar após o merge) | — |
+| Cache de CDN | **zero** rotas estáticas; `X-Vercel-Cache: MISS` em tudo → **12/10: 11 de 14 páginas públicas em ISR** (`s-maxage=3600`; em produção `x-vercel-cache: HIT` a partir da 2ª requisição, conferido em 12/10 após o merge `f03e609`) | — |
 | Dado de campo (usuários reais) | **não existe** — sem Speed Insights, sem Web Analytics, fora do CrUX | — |
 
 Os números do celular foram medidos **sem a vinheta de abertura** (o

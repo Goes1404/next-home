@@ -10135,5 +10135,11 @@ Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
 - **Comentário JSX sai antes do comentário de bloco** em guarda que lê
   código; e `pkill -f "[n]ext start"` numa linha que contém `npx next
   start` mata a própria sessão (a régua é `[n]ext-server`).
-- **Produção só se confere depois do merge**: `X-Vercel-Cache: HIT` na
-  segunda requisição à home.
+- **Conferido em produção depois do merge (01h38 UTC)**: `PRERENDER` na
+  primeira requisição e `HIT` na segunda em todas as páginas estáticas;
+  `/empreendimentos` e `/portfolio` seguem `MISS`, como declarado. **Na
+  Vercel o `Cache-Control` visível é sempre `public, max-age=0,
+  must-revalidate`** — quem diz se veio do cache é o `x-vercel-cache`, não
+  o `Cache-Control`. O registro `Production` nasceu ~2,5 min depois do
+  `Preview` (mais que os ~70 s medidos em 16/09; consultar cedo imita
+  recusa).

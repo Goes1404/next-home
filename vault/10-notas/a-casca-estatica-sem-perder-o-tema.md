@@ -20,7 +20,7 @@ codigo:
   - src/app/cascaEstatica.test.ts
 created: 2026-10-12
 updated: 2026-10-12
-fonte: F2b do docs/ROADMAP-PERFORMANCE.md; tabela de rotas do `next build`; `curl -sI` e Playwright contra `next start`, 12/10/2026
+fonte: F2b do docs/ROADMAP-PERFORMANCE.md; tabela de rotas do `next build`; `curl -sI` e Playwright contra `next start` e contra o domínio depois do merge, 12/10/2026
 summary: Até 12/10 toda rota do site saía `private, no-cache, no-store` por três leituras de requisição em lugar compartilhado — o cookie do tema no layout raiz, o corretor do link nos layouts de grupo e `searchParams` em páginas que só pré-selecionavam uma opção. Hoje 11 das 14 páginas públicas são estáticas (ISR, 1 h; ficha do imóvel 5 min), o tema é aplicado por um script antes da primeira pintura e o fundo do corretor é uma ilha que pergunta ao servidor só quando há cookie. Sem `cacheComponents`.
 ---
 # A casca estática sem perder o tema
@@ -101,8 +101,27 @@ pública nova lendo requisição e reprova exceção que deixou de ser usada.
 - `/corretor/entrar` continua renderizando (mesma casca raiz).
 - Build: `tsc` 0, lint 0, 3.279 testes, catraca de bundle dentro do teto.
 
-Produção só se confere depois do merge: a prova lá é `X-Vercel-Cache: HIT`
-na segunda requisição à home.
+## Conferido em produção (12/10/2026, 01h38 UTC)
+
+Merge por fast-forward nas duas branches de produção (`1e5b717 → f03e609`,
+produção servia exatamente a ponta delas; nenhum preview alheio promovido).
+O registro `Production` nasceu ~2,5 min depois do `Preview`.
+
+| rota | 1ª requisição | 2ª requisição |
+|---|---|---|
+| `/`, `/contato`, `/mapa`, `/sobre`, `/corretores/<slug>`, `/regioes/<slug>`, `/empreendimentos/<slug>` | `x-vercel-cache: PRERENDER` | **`HIT`** |
+| `/empreendimentos`, `/portfolio` | `MISS`, `no-store` | `MISS` (dinâmicas, como declarado) |
+
+- `/api/versao` → `f03e609`; `/api/corretor-ativo` → 200 (era 404).
+- HTML da home idêntico com e sem cookies também no ar.
+- Playwright contra o domínio: as 14 verificações do `next start` passaram
+  iguais (tema em `DOMContentLoaded`, 0 requisições no clique, ilha do
+  corretor, `?empreendimento=`, `?imovel=`, login).
+- TTFB da home no `HIT`: 0,22–0,56 s daqui do sandbox (fora do Brasil; a
+  comparação honesta é a medição de campo nas próximas semanas).
+- Na Vercel o `Cache-Control` que o visitante vê é `public, max-age=0,
+  must-revalidate`; o `s-maxage` fica entre a função e a borda. O que diz
+  se a página veio do cache é o `x-vercel-cache`, não o `Cache-Control`.
 
 ## Armadilhas
 
@@ -137,8 +156,8 @@ na segunda requisição à home.
   estática saiu sem ele.
 - `/empreendimentos` estática exigiria filtrar no navegador sobre o catálogo
   inteiro — é a página pública mais pesada e merece decisão própria.
-- Produção: confirmar o `HIT` depois do merge e medir o TTFB da home de
-  novo (a linha de base é 0,37–0,54 s de função aquecida).
+- Medição de campo (Speed Insights) nas próximas semanas: é ela que diz o
+  quanto o `HIT` valeu para quem está no Brasil.
 
 ## Relacionadas
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — a medição que apontou o `cookies()` do layout raiz
