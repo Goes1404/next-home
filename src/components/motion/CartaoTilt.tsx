@@ -43,6 +43,7 @@ export function CartaoTilt({
   style,
   indice = 0,
   velocidadeCamada = 0,
+  semCortina = false,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -59,6 +60,12 @@ export function CartaoTilt({
    * mesma matriz de transform.
    */
   velocidadeCamada?: number;
+  /**
+   * Pula a cortina de entrada e fica só com o tilt e a camada. Para quem já
+   * tem outra entrada no mesmo nó (a galeria usa `.cartao-passa`, 13/10/2026):
+   * as duas juntas seriam duas entradas na mesma foto.
+   */
+  semCortina?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   // Dois refs, um por ramo: registrar o wrapper do zoom como camada (mesmo a
@@ -90,7 +97,7 @@ export function CartaoTilt({
     // só a cortina é pulada, o tilt liga do mesmo jeito (regra de
     // 13/09/2026, ver estaNaTela.ts — esconder o que está sob o olho de quem
     // lê era o que fazia o LCP esperar o GSAP).
-    const contexto = estaNaTela(el)
+    const contexto = semCortina || estaNaTela(el)
       ? null
       : gsap.context(() => {
       // A cortina do clip-path é quem esconde daqui em diante.
@@ -161,7 +168,7 @@ export function CartaoTilt({
       contexto?.revert();
       limpar?.();
     };
-  }, [indice, velocidadeCamada]);
+  }, [indice, velocidadeCamada, semCortina]);
 
   return (
     <div

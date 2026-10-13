@@ -57,7 +57,9 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
         </Reveal>
       </div>
 
-      <Reveal>
+      {/* A passagem dos cards da home (`cartao-passa`, 13/10/2026), no lugar
+          do Reveal: os dois juntos seriam dois donos da opacidade. */}
+      <div className="cartao-passa">
         <button
           type="button"
           onClick={(ev) => abrir(0, ev)}
@@ -89,7 +91,7 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
             />
           </ParallaxImagem>
         </button>
-      </Reveal>
+      </div>
 
       {resto.length > 0 && (
         // Celular: UMA coluna, cada foto no formato dela (até 3:2). Em duas
@@ -105,9 +107,18 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
               // diferença ENTRE colunas que produz o ritmo de revista; todas
               // no mesmo passo pareceria a grade inteira tremendo junta.
               velocidadeCamada={0.06 + (i % 3) * 0.06}
-              style={{ "--proporcao": proporcaoNoCelular(foto) } as React.CSSProperties}
+              // A entrada é a passagem dos cards da home (`cartao-passa`,
+              // 13/10/2026), não a cortina: as duas juntas seriam duas
+              // entradas. O tilt e a camada continuam.
+              semCortina
+              style={
+                {
+                  "--proporcao": proporcaoNoCelular(foto),
+                  "--coluna": i % 3,
+                } as React.CSSProperties
+              }
               className={
-                "overflow-hidden rounded-2xl aspect-[var(--proporcao)] " +
+                "cartao-passa overflow-hidden rounded-2xl aspect-[var(--proporcao)] " +
                 // Ritmo do mosaico: a cada bloco de 5, a primeira célula é
                 // alta e ocupa as duas linhas das quatro paisagens ao lado.
                 // Sem proporção própria: ela ESTICA até a altura das duas
