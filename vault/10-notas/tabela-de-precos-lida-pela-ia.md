@@ -104,3 +104,28 @@ quanto dos prints da tela do celular.
 Do tabelão de out/2026, sem cadastro no catálogo: Bless Shopping Barueri,
 Reserva Urano Ecopark, Viva RSF Carapicuíba, Bless Praça da Árvore, Bless
 Ipiranga e Murat 208. Esses vêm como "não encontrado".
+
+## PDF que desenha letra por letra (13/10/2026)
+
+Relatado logo depois: "A IA achou valores, mas nenhum estava escrito no
+arquivo", com o texto da caixa saindo `T / E / S / T / E`, uma letra por
+linha. O defeito era do extrator (`pdfTexto.ts`), não da IA.
+
+- **Todo `Td`/`Tm` virava quebra de linha.** Chrome, Canva e ferramentas de
+  design posicionam cada letra (ou cada trecho com espaçamento entre letras)
+  com um operador próprio, e o preço "381.405,62" saía em dez linhas. A IA lia
+  o número pela forma, mas a trava "o valor está escrito" procurava o número
+  inteiro no texto e não achava.
+- **Hoje o fluxo é interpretado pela posição**: matriz de texto, `cm`/`q`/`Q`,
+  e a largura de cada glifo (`/Widths` ou `/W` da fonte; estimada quando o
+  arquivo não diz). Mesma linha de base = mesma linha de texto; salto para a
+  frente = espaço. Bônus: as células de uma linha da tabela saem juntas, o que
+  é exatamente a "unidade por linha" que a leitura espera.
+- **Fonte dentro de `/ObjStm`** (PDF 1.5+, comum em exportação de design) agora
+  é lida: antes o dicionário comprimido não era achado, e sem `/ToUnicode` o
+  texto saía em códigos de glifo.
+- **Reproduzido sem o arquivo do usuário**: um PDF impresso pelo Chromium do
+  Playwright com `letter-spacing` dá o mesmo `T / E / S / T / E` no extrator
+  antigo. É o jeito barato de testar PDF real neste ambiente.
+- Texto com espaçamento grande entre letras sai como "T E S T E" (é como está
+  desenhado); números e nomes de imóvel saem inteiros.

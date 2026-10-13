@@ -10247,3 +10247,20 @@ Nota: [[tabela-de-precos-lida-pela-ia]].
   também.
 - Sem chave de IA aqui: a leitura do print está provada só com o modelo
   simulado no teste.
+
+## O PDF saía com uma letra por linha (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **"A IA achou valores, mas nenhum estava escrito no arquivo" era o
+  extrator.** `pdfTexto.ts` transformava todo `Td`/`Tm` em quebra de linha,
+  e PDF que posiciona letra por letra (Chrome com `letter-spacing`, Canva,
+  design) saía `T\nE\nS\nT\nE`; o preço virava dez linhas e a trava de valor
+  escrito não o achava. Hoje a linha sai da posição (matriz de texto + `cm` +
+  largura do glifo), e a linha da tabela sai inteira.
+- **Fonte em `/ObjStm` passou a ser lida** (largura e `/ToUnicode`).
+- **PDF de teste real sem arquivo do usuário**: `page.pdf()` do Chromium do
+  Playwright (`/opt/pw-browsers/chromium-*/chrome-linux/chrome`) sobre um HTML
+  com tabela. O extrator antigo reproduz o defeito com ele.
+- O extrator é usado também pela importação de leads, pelo rascunho de imóvel
+  e pelas unidades: todos ganham a mesma leitura.

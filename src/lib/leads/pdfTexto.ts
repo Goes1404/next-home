@@ -156,78 +156,309 @@ function decodificarUtf16be(bytes: number[]): string {
   return saida;
 }
 
+/** Matriz afim do PDF: [a b c d e f], com vetor-linha (x' = x·a + y·c + e). */
+type Matriz = [number, number, number, number, number, number];
+
+const IDENTIDADE: Matriz = [1, 0, 0, 1, 0, 0];
+
+function multiplicar(m1: Matriz, m2: Matriz): Matriz {
+  return [
+    m1[0] * m2[0] + m1[1] * m2[2],
+    m1[0] * m2[1] + m1[1] * m2[3],
+    m1[2] * m2[0] + m1[3] * m2[2],
+    m1[2] * m2[1] + m1[3] * m2[3],
+    m1[4] * m2[0] + m1[5] * m2[2] + m2[4],
+    m1[4] * m2[1] + m1[5] * m2[3] + m2[5],
+  ];
+}
+
+const deslocar = (tx: number, ty: number, m: Matriz): Matriz => multiplicar([1, 0, 0, 1, tx, ty], m);
+
+/** Largura média de um glifo, em em, quando a fonte não diz as larguras. */
+const LARGURA_ESTIMADA = 0.55;
+
+type Token =
+  | { tipo: "num"; valor: number }
+  | { tipo: "nome"; valor: string }
+  | { tipo: "str"; bytes: number[] }
+  | { tipo: "abre" }
+  | { tipo: "fecha" }
+  | { tipo: "op"; valor: string };
+
 /**
  * Percorre um fluxo de conteúdo e devolve só o texto desenhado.
  *
- * Operadores de posicionamento (`Td`, `TD`, `T*`, `Tm`) viram quebra de
- * linha: é o que reconstrói a tabela em linhas, e a linha é a unidade que o
- * parser de leads entende.
+ * A quebra de linha sai da POSIÇÃO na página, não do operador. Até
+ * 13/10/2026 todo `Td`/`Tm` virava quebra, e PDF que posiciona letra por
+ * letra (Canva, exportação de design, o tabelão da RSF) saía com UMA LETRA
+ * POR LINHA — "381.405,62" virava dez linhas e a leitura de preço não achava
+ * valor nenhum escrito. Hoje o fluxo é interpretado: matriz de texto, matriz
+ * de transformação (`cm`, `q`/`Q`) e a largura de cada glifo (da fonte quando
+ * ela diz, estimada quando não). Mesma linha de base = mesma linha de texto;
+ * salto para a frente maior que um quarto de letra = espaço.
  */
-function textoDoFluxo(fluxo: string, fontes: Map<string, MapaDeFonte> = new Map()): string {
+function textoDoFluxo(fluxo: string, fontes: Map<string, Fonte> = new Map()): string {
   let saida = "";
-  let i = 0;
-  let mapa: MapaDeFonte | null = null;
 
-  while (i < fluxo.length) {
-    const c = fluxo[i];
+  let ctm: Matriz = IDENTIDADE;
+  const pilha: Matriz[] = [];
+  let tm: Matriz = IDENTIDADE;
+  let tlm: Matriz = IDENTIDADE;
+  let fonte: Fonte | null = null;
+  let tamanho = 12;
+  let entrelinha = 0;
+  let espacoLetra = 0;
+  let espacoPalavra = 0;
+  let escalaH = 1;
 
-    // `/Nome 12 Tf` troca a fonte, e com ela o jeito de ler os bytes.
-    if (c === "/") {
-      const tf = fluxo.slice(i, i + 160).match(/^\/([^\s/<>[\]()]+)\s+-?[\d.]+\s+Tf/);
-      if (tf) {
-        mapa = fontes.get(tf[1]) ?? null;
-        i += tf[0].length;
-        continue;
+  /** Houve `Td`/`Tm`/`T*` desde o último pedaço (dentro de um TJ, não há). */
+  let reposicionado = false;
+  let ultimo: { y: number; fimX: number; altura: number; letras: number } | null = null;
+
+  /** Desenha uma string na posição atual e avança a matriz de texto. */
+  function mostrar(bytes: number[]) {
+    const m = multiplicar(tm, ctm);
+    const sx = Math.hypot(m[0], m[1]) || 1;
+    const sy = Math.hypot(m[2], m[3]) || 1;
+    const altura = Math.abs(tamanho) * sy;
+    const em = Math.abs(tamanho) * sx * escalaH || 1;
+    const x = m[4];
+    const y = m[5];
+
+    const texto = decodificar(bytes, fonte?.mapa ?? null);
+    if (!texto) return;
+
+    if (ultimo) {
+      const tolerancia = Math.max(altura, ultimo.altura) * 0.5;
+      if (Math.abs(y - ultimo.y) > tolerancia) {
+        if (!saida.endsWith("\n")) saida += "\n";
+      } else {
+        const folga = (x - ultimo.fimX) / em;
+        // Sem a largura da fonte o fim do pedaço anterior é estimado, e a
+        // estimativa erra para os dois lados. Letra solta só ganha espaço
+        // com folga clara; dois pedaços de várias letras reposicionados na
+        // mesma linha são palavras (ou células) diferentes, salvo sobreposição.
+        const espaco = fonte?.largura
+          ? folga > 0.15
+          : folga > 0.25 || (reposicionado && texto.length > 1 && ultimo.letras > 1 && folga > -0.15);
+        if (espaco && !/\s$/.test(saida) && !/^\s/.test(texto)) saida += " ";
       }
     }
+    saida += texto;
 
+    // Avanço: soma das larguras dos glifos, com o espaço entre letras e o
+    // espaço entre palavras do estado gráfico.
+    const porCodigo = fonte?.bytesPorCodigo ?? 1;
+    let avanco = 0;
+    for (let i = 0; i + porCodigo <= bytes.length; i += porCodigo) {
+      let codigo = 0;
+      for (let k = 0; k < porCodigo; k++) codigo = (codigo << 8) | bytes[i + k];
+      const w = fonte?.largura?.(codigo);
+      avanco += ((w ?? LARGURA_ESTIMADA * 1000) / 1000) * tamanho + espacoLetra;
+      if (porCodigo === 1 && codigo === 32) avanco += espacoPalavra;
+    }
+    if (porCodigo > 1 && bytes.length > 0 && bytes.length < porCodigo) {
+      avanco += LARGURA_ESTIMADA * tamanho;
+    }
+    tm = deslocar(avanco * escalaH, 0, tm);
+
+    const fim = multiplicar(tm, ctm);
+    ultimo = { y, fimX: fim[4], altura, letras: texto.length };
+    reposicionado = false;
+  }
+
+  function proximaLinha() {
+    reposicionado = true;
+    tlm = deslocar(0, -entrelinha, tlm);
+    tm = tlm;
+  }
+
+  let operandos: Token[] = [];
+  let arranjo: Token[] | null = null;
+  const num = (k: number) => {
+    const t = operandos[operandos.length - k];
+    return t && t.tipo === "num" ? t.valor : 0;
+  };
+
+  let aberto = false;
+
+  for (const token of tokens(fluxo)) {
+    if (token.tipo === "abre") {
+      arranjo = [];
+      aberto = true;
+      continue;
+    }
+    if (token.tipo === "fecha") {
+      aberto = false;
+      continue;
+    }
+    if (aberto && arranjo && token.tipo !== "op") {
+      arranjo.push(token);
+      continue;
+    }
+    if (token.tipo !== "op") {
+      operandos.push(token);
+      continue;
+    }
+
+    switch (token.valor) {
+      case "q":
+        pilha.push(ctm);
+        break;
+      case "Q":
+        ctm = pilha.pop() ?? IDENTIDADE;
+        break;
+      case "cm":
+        ctm = multiplicar([num(6), num(5), num(4), num(3), num(2), num(1)], ctm);
+        break;
+      case "BT":
+        tm = IDENTIDADE;
+        tlm = IDENTIDADE;
+        break;
+      case "Tf": {
+        const nome = operandos[operandos.length - 2];
+        fonte = nome && nome.tipo === "nome" ? (fontes.get(nome.valor) ?? null) : null;
+        tamanho = num(1) || tamanho;
+        break;
+      }
+      case "TL":
+        entrelinha = num(1);
+        break;
+      case "Tc":
+        espacoLetra = num(1);
+        break;
+      case "Tw":
+        espacoPalavra = num(1);
+        break;
+      case "Tz":
+        escalaH = num(1) / 100 || 1;
+        break;
+      case "Td":
+        reposicionado = true;
+        tlm = deslocar(num(2), num(1), tlm);
+        tm = tlm;
+        break;
+      case "TD":
+        reposicionado = true;
+        entrelinha = -num(1);
+        tlm = deslocar(num(2), num(1), tlm);
+        tm = tlm;
+        break;
+      case "Tm":
+        reposicionado = true;
+        tlm = [num(6), num(5), num(4), num(3), num(2), num(1)];
+        tm = tlm;
+        break;
+      case "T*":
+        reposicionado = true;
+        proximaLinha();
+        break;
+      case "Tj":
+      case "'":
+      case '"': {
+        if (token.valor === '"') {
+          espacoPalavra = num(3);
+          espacoLetra = num(2);
+        }
+        if (token.valor !== "Tj") proximaLinha();
+        const s = operandos[operandos.length - 1];
+        if (s && s.tipo === "str") mostrar(s.bytes);
+        break;
+      }
+      case "TJ":
+        for (const item of arranjo ?? []) {
+          if (item.tipo === "str") mostrar(item.bytes);
+          else if (item.tipo === "num") tm = deslocar((-item.valor / 1000) * tamanho * escalaH, 0, tm);
+        }
+        break;
+    }
+    operandos = [];
+    arranjo = null;
+    aberto = false;
+  }
+
+  return saida;
+}
+
+/** Quebra o fluxo de conteúdo em números, nomes, strings, `[`, `]` e operadores. */
+function* tokens(fluxo: string): Generator<Token> {
+  let i = 0;
+  const n = fluxo.length;
+  const delimitador = /[\s()<>[\]{}/%]/;
+
+  while (i < n) {
+    const c = fluxo[i];
+
+    if (/\s/.test(c)) {
+      i++;
+      continue;
+    }
+    if (c === "%") {
+      while (i < n && fluxo[i] !== "\n" && fluxo[i] !== "\r") i++;
+      continue;
+    }
     if (c === "(" || (c === "<" && fluxo[i + 1] !== "<")) {
       const lido = lerString(fluxo, i);
       if (!lido) {
         i++;
         continue;
       }
-      saida += decodificar(lido.bytes, mapa);
+      yield { tipo: "str", bytes: lido.bytes };
       i = lido.fim;
       continue;
     }
-
+    if (c === "<" || c === ">") {
+      // `<<` e `>>` de dicionário (propriedades de conteúdo marcado): o
+      // dicionário não interessa, só o operador que vem depois.
+      i += fluxo[i + 1] === c ? 2 : 1;
+      continue;
+    }
     if (c === "[") {
-      // Array do operador TJ: strings intercaladas com ajustes de espaço.
-      // Um recuo grande (bem negativo) é o espaço entre palavras.
+      yield { tipo: "abre" };
+      i++;
+      continue;
+    }
+    if (c === "]") {
+      yield { tipo: "fecha" };
+      i++;
+      continue;
+    }
+    if (c === "{" || c === "}") {
+      i++;
+      continue;
+    }
+    if (c === "/") {
       let j = i + 1;
-      while (j < fluxo.length && fluxo[j] !== "]") {
-        if (fluxo[j] === "(" || (fluxo[j] === "<" && fluxo[j + 1] !== "<")) {
-          const lido = lerString(fluxo, j);
-          if (!lido) break;
-          saida += decodificar(lido.bytes, mapa);
-          j = lido.fim;
-          continue;
-        }
-        const ajuste = fluxo.slice(j).match(/^-?\d+(\.\d+)?/);
-        if (ajuste) {
-          if (Number(ajuste[0]) < -120) saida += " ";
-          j += ajuste[0].length;
-          continue;
-        }
-        j++;
-      }
-      i = j + 1;
+      while (j < n && !delimitador.test(fluxo[j])) j++;
+      yield { tipo: "nome", valor: fluxo.slice(i + 1, j) };
+      i = j;
       continue;
     }
 
-    // Operadores que movem o cursor de texto para outra linha.
-    const quebra = fluxo.slice(i, i + 3).match(/^(T\*|Td|TD|Tm|ET)/);
-    if (quebra && !/[A-Za-z0-9]/.test(fluxo[i - 1] ?? " ")) {
-      if (!saida.endsWith("\n")) saida += "\n";
-      i += quebra[0].length;
+    let j = i;
+    while (j < n && !delimitador.test(fluxo[j])) j++;
+    if (j === i) {
+      i++;
+      continue;
+    }
+    const palavra = fluxo.slice(i, j);
+    i = j;
+
+    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(palavra)) {
+      yield { tipo: "num", valor: Number(palavra) };
       continue;
     }
 
-    i++;
+    // Imagem embutida: os bytes entre `ID` e `EI` são binários e poderiam
+    // parecer qualquer operador.
+    if (palavra === "ID") {
+      const fimImagem = fluxo.slice(i).search(/\sEI(\s|$)/);
+      i = fimImagem === -1 ? n : i + fimImagem + 3;
+      continue;
+    }
+
+    yield { tipo: "op", valor: palavra };
   }
-
-  return saida;
 }
 
 /** Como os bytes de uma fonte viram texto: o `/ToUnicode` dela. */
@@ -277,22 +508,30 @@ export function lerCMap(cmap: string): MapaDeFonte {
 }
 
 /**
- * Nome de recurso da fonte (`/F1`, `/AYBQCF+Tahoma`) → mapa de leitura.
- * Os nomes vêm dos dicionários `/Font << … >>` do arquivo inteiro: num PDF de
- * relatório eles são os mesmos em toda página, e guardar recurso por página
- * só para isto seria montar a árvore inteira do documento.
+ * O que o extrator sabe de uma fonte: como os bytes viram letra
+ * (`/ToUnicode`) e quanto cada glifo anda (`/Widths` ou `/W`, em milésimos
+ * de em). Sem a largura, o avanço é estimado e a detecção de espaço fica
+ * mais grosseira — mas a de linha, que é a que importa, não depende dela.
  */
-function mapasDeFonte(cru: string, bytes: Buffer): Map<string, MapaDeFonte> {
+type Fonte = {
+  mapa: MapaDeFonte | null;
+  bytesPorCodigo: number;
+  largura?: (codigo: number) => number | undefined;
+};
+
+/**
+ * Lê objetos pelo número, inclusive os guardados dentro de `/ObjStm`
+ * (PDF 1.5+, o comum em exportação de design): ali o dicionário da fonte
+ * fica comprimido e uma busca por `N 0 obj` no arquivo não o acha.
+ */
+function indiceDeObjetos(cru: string, bytes: Buffer) {
   const objetos = new Map<string, { inicio: number; fim: number }>();
   for (const m of cru.matchAll(/(\d+)\s+0\s+obj\b/g)) {
     const inicio = m.index ?? 0;
     const fim = cru.indexOf("endobj", inicio);
     if (fim !== -1) objetos.set(m[1], { inicio, fim });
   }
-  const textoDoObjeto = (n: string) => {
-    const o = objetos.get(n);
-    return o ? cru.slice(o.inicio, o.fim) : "";
-  };
+
   const fluxoDoObjeto = (n: string): string | null => {
     const o = objetos.get(n);
     if (!o) return null;
@@ -308,19 +547,134 @@ function mapasDeFonte(cru: string, bytes: Buffer): Map<string, MapaDeFonte> {
     return conteudo ? conteudo.toString("latin1") : null;
   };
 
-  const mapas = new Map<string, MapaDeFonte>();
-  for (const dic of cru.matchAll(/\/Font\s*<<([\s\S]*?)>>/g)) {
-    for (const ref of dic[1].matchAll(/\/([^\s/<>[\]()]+)\s+(\d+)\s+0\s+R/g)) {
-      if (mapas.has(ref[1])) continue;
-      const toUnicode = textoDoObjeto(ref[2]).match(/\/ToUnicode\s+(\d+)\s+0\s+R/);
-      if (!toUnicode) continue;
-      const cmap = fluxoDoObjeto(toUnicode[1]);
-      if (!cmap) continue;
-      const mapa = lerCMap(cmap);
-      if (mapa.unicode.size > 0) mapas.set(ref[1], mapa);
+  const comprimidos = new Map<string, string>();
+  for (const [n, o] of objetos) {
+    const cabeca = cru.slice(o.inicio, Math.min(o.fim, o.inicio + 400));
+    if (!/\/Type\s*\/ObjStm/.test(cabeca)) continue;
+    const quantos = Number(cabeca.match(/\/N\s+(\d+)/)?.[1] ?? 0);
+    const primeiro = Number(cabeca.match(/\/First\s+(\d+)/)?.[1] ?? 0);
+    const conteudo = fluxoDoObjeto(n);
+    if (!conteudo || !quantos) continue;
+    const pares = conteudo.slice(0, primeiro).trim().split(/\s+/).map(Number);
+    for (let k = 0; k < quantos; k++) {
+      const num = pares[2 * k];
+      const deslocamento = pares[2 * k + 1];
+      const proximo = k + 1 < quantos ? pares[2 * (k + 1) + 1] : conteudo.length - primeiro;
+      if (!Number.isFinite(num) || !Number.isFinite(deslocamento)) continue;
+      comprimidos.set(String(num), conteudo.slice(primeiro + deslocamento, primeiro + proximo));
     }
   }
-  return mapas;
+
+  const textoDoObjeto = (n: string) => {
+    const o = objetos.get(n);
+    return o ? cru.slice(o.inicio, o.fim) : (comprimidos.get(n) ?? "");
+  };
+
+  return { textoDoObjeto, fluxoDoObjeto, comprimidos: [...comprimidos.values()] };
+}
+
+/** `/Chave 12 0 R` resolvido para o texto do objeto; valor direto, como veio. */
+function valorDe(dicionario: string, chave: string, textoDoObjeto: (n: string) => string): string | null {
+  const ref = dicionario.match(new RegExp(`/${chave}\\s+(\\d+)\\s+0\\s+R`));
+  if (ref) return textoDoObjeto(ref[1]).replace(/^\s*\d+\s+0\s+obj\b/, "");
+  const direto = dicionario.match(new RegExp(`/${chave}\\s*(\\[[^\\]]*\\]|-?[\\d.]+)`));
+  return direto ? direto[1] : null;
+}
+
+/** Larguras de fonte simples: `/FirstChar` + `/Widths`. */
+function largurasSimples(dic: string, textoDoObjeto: (n: string) => string) {
+  const primeiro = Number(dic.match(/\/FirstChar\s+(\d+)/)?.[1] ?? NaN);
+  const widths = valorDe(dic, "Widths", textoDoObjeto);
+  if (!Number.isFinite(primeiro) || !widths) return undefined;
+  const lista = (widths.match(/-?[\d.]+/g) ?? []).map(Number);
+  if (lista.length === 0) return undefined;
+  return (codigo: number) => lista[codigo - primeiro];
+}
+
+/** Larguras de fonte CID (Type0): `/W` e `/DW` da fonte descendente. */
+function largurasCid(descendente: string, textoDoObjeto: (n: string) => string) {
+  const padrao = Number(descendente.match(/\/DW\s+([\d.]+)/)?.[1] ?? 1000);
+  const w = descendente.match(/\/W\s+(\d+)\s+0\s+R/)
+    ? textoDoObjeto(descendente.match(/\/W\s+(\d+)\s+0\s+R/)![1])
+    : (descendente.match(/\/W\s*(\[[\s\S]*?\]\s*\])/)?.[1] ?? "");
+  const mapa = new Map<number, number>();
+  // `/W [ c [w1 w2 …]  c1 c2 w ]`
+  const corpo = w.replace(/^[^[]*\[/, "").replace(/\]\s*$/, "");
+  const re = /(\d+)\s*\[([^\]]*)\]|(\d+)\s+(\d+)\s+([\d.]+)/g;
+  for (const m of corpo.matchAll(re)) {
+    if (m[1] !== undefined) {
+      const inicio = Number(m[1]);
+      (m[2].match(/-?[\d.]+/g) ?? []).forEach((v, k) => mapa.set(inicio + k, Number(v)));
+    } else {
+      const de = Number(m[3]);
+      const ate = Number(m[4]);
+      if (ate - de > 0xffff) continue;
+      for (let c = de; c <= ate; c++) mapa.set(c, Number(m[5]));
+    }
+  }
+  return (codigo: number) => mapa.get(codigo) ?? padrao;
+}
+
+/**
+ * Nome de recurso da fonte (`/F1`, `/AYBQCF+Tahoma`) → como ler e medir.
+ * Os nomes vêm dos dicionários `/Font << … >>` do arquivo inteiro: num PDF de
+ * relatório eles são os mesmos em toda página, e guardar recurso por página
+ * só para isto seria montar a árvore inteira do documento.
+ */
+function fontesDoArquivo(cru: string, bytes: Buffer): Map<string, Fonte> {
+  const { textoDoObjeto, fluxoDoObjeto, comprimidos } = indiceDeObjetos(cru, bytes);
+
+  // Dicionários de recurso de fonte: no arquivo e dentro dos objetos
+  // comprimidos (a página exportada por ferramenta de design mora lá).
+  const recursos: string[] = [];
+  for (const texto of [cru, ...comprimidos]) {
+    for (const dic of texto.matchAll(/\/Font\s*<<([\s\S]*?)>>/g)) recursos.push(dic[1]);
+    for (const ref of texto.matchAll(/\/Font\s+(\d+)\s+0\s+R/g)) {
+      const alvo = textoDoObjeto(ref[1]).match(/<<([\s\S]*)>>/);
+      if (alvo) recursos.push(alvo[1]);
+    }
+  }
+
+  const fontes = new Map<string, Fonte>();
+  const lidos = new Set<string>();
+  const tentar = (corpoRecursos: string) => {
+    for (const ref of corpoRecursos.matchAll(/\/([^\s/<>[\]()]+)\s+(\d+)\s+0\s+R/g)) {
+      if (lidos.has(ref[1])) continue;
+      lidos.add(ref[1]);
+      const dic = textoDoObjeto(ref[2]);
+      if (!dic) continue;
+
+      let mapa: MapaDeFonte | null = null;
+      const toUnicode = dic.match(/\/ToUnicode\s+(\d+)\s+0\s+R/);
+      if (toUnicode) {
+        const cmap = fluxoDoObjeto(toUnicode[1]);
+        if (cmap) {
+          const lido = lerCMap(cmap);
+          if (lido.unicode.size > 0) mapa = lido;
+        }
+      }
+
+      const type0 = /\/Subtype\s*\/Type0/.test(dic);
+      let largura: Fonte["largura"];
+      if (type0) {
+        const desc = dic.match(/\/DescendantFonts\s*(?:\[\s*(\d+)\s+0\s+R|(\d+)\s+0\s+R)/);
+        let descendente = "";
+        if (desc?.[1]) descendente = textoDoObjeto(desc[1]);
+        else if (desc?.[2]) {
+          const arr = textoDoObjeto(desc[2]).match(/(\d+)\s+0\s+R/);
+          descendente = arr ? textoDoObjeto(arr[1]) : "";
+        }
+        if (descendente) largura = largurasCid(descendente, textoDoObjeto);
+      } else {
+        largura = largurasSimples(dic, textoDoObjeto);
+      }
+
+      const bytesPorCodigo = mapa?.bytesPorCodigo ?? (type0 ? 2 : 1);
+      if (mapa || largura) fontes.set(ref[1], { mapa, bytesPorCodigo, largura });
+    }
+  };
+  for (const r of recursos) tentar(r);
+  return fontes;
 }
 
 /**
@@ -333,7 +687,7 @@ export function extrairTextoDePdf(pdf: Buffer | Uint8Array): string {
 
   if (!cru.startsWith("%PDF")) return "";
 
-  const fontes = mapasDeFonte(cru, bytes);
+  const fontes = fontesDoArquivo(cru, bytes);
   const partes: string[] = [];
   let cursor = 0;
 
