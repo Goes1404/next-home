@@ -47,11 +47,9 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
             {/* No celular o quadro segue a foto (ver `proporcaoNoCelular`): um
                 retrato 3:4 de um render 2:1 mostrava um terço da fachada. No
                 desktop a coluna é estreita e alta, e o 3:4 continua. */}
-            <div
-              style={{ "--proporcao": proporcaoNoCelular(foto) } as React.CSSProperties}
-            >
             <ParallaxImagem
               className="aspect-[var(--proporcao)] rounded-2xl lg:aspect-[3/4]"
+              style={{ "--proporcao": proporcaoNoCelular(foto) } as React.CSSProperties}
               intensidade={20}
             >
               <Image
@@ -64,7 +62,6 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
                 className="object-cover"
               />
             </ParallaxImagem>
-            </div>
           </Reveal>
         )}
       </div>

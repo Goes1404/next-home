@@ -11,7 +11,9 @@ codigo:
   - src/components/empreendimento/cenasDoShowcase.ts
   - src/components/empreendimento/Sobre.tsx
   - src/components/motion/ParallaxImagem.tsx
-summary: Na página do imóvel, no celular, a foto do Sobre (3:4) e as três cenas (4:5) recortavam renders de 2:1 a 2,4:1 até sobrar um terço da largura, e o parallax ainda ampliava 40% (Sobre) e 10% (cenas). Agora o quadro segue a foto entre 4:5 e 3:2, a folga do parallax no celular é proporcional ao movimento de lá, e as cenas pulam a foto do Sobre, que aparecia duas vezes seguidas.
+  - src/components/empreendimento/Galeria.tsx
+  - src/components/motion/CartaoTilt.tsx
+summary: Na página do imóvel, no celular, a foto do Sobre (3:4) e as três cenas (4:5) recortavam renders de 2:1 a 2,4:1 até sobrar um terço da largura, e o parallax ainda ampliava 40% (Sobre) e 10% (cenas). Agora o quadro segue a foto entre 4:5 e 3:2, a folga do parallax no celular é proporcional ao movimento de lá, e as cenas pulam a foto do Sobre, que aparecia duas vezes seguidas. Na Galeria, o celular virou uma coluna só, com cada foto no formato dela; o mosaico continua do `sm` para cima.
 updated: 2026-10-13
 ---
 
@@ -43,6 +45,15 @@ publicados: nenhum perdeu a seção de cenas por falta de foto.
 **O quadro segue a foto, com limites** (`proporcaoNoCelular`): entre 4:5
 (foto em pé não vira poste) e 3:2 (panorâmica não vira faixa baixa). Um 2:1
 num quadro 3:2 mostra 75% da largura. Sem medida, 3:2.
+
+**A Galeria tinha o mesmo defeito, mais forte.** A foto de abertura do Dom
+Parque é uma torre EM PÉ, e o 16:9 fixo mostrava só o miolo dela. As
+miniaturas, em duas colunas de ~180px, cortavam renders 2,4:1 em 4:3 ou numa
+célula alta. No celular agora é uma coluna, cada foto em
+`proporcaoNoCelular` (a abertura até 16:9, as demais até 3:2). Do `sm` para
+cima, nada mudou: medido em 700px e 1440px, colunas e tamanhos de célula
+iguais aos de produção. `ParallaxImagem` e `CartaoTilt` passaram a aceitar
+`style`, por onde a `--proporcao` chega à moldura.
 
 ## Para conferir
 

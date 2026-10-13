@@ -40,11 +40,14 @@ import { estaNaTela } from "./estaNaTela";
 export function CartaoTilt({
   children,
   className,
+  style,
   indice = 0,
   velocidadeCamada = 0,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Repassado à moldura (ex.: `--proporcao` da galeria no celular). */
+  style?: React.CSSProperties;
   /** Posição na grade — escalona a entrada sem depender de um pai. */
   indice?: number;
   /**
@@ -168,6 +171,7 @@ export function CartaoTilt({
       // `overflow-clip` é o corte de LAYOUT que a cortina de clip-path não
       // dá: sem ele, o filho a 1.18 alargava a página (ver cabeçalho).
       className={`group/tilt relative overflow-clip [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
+      style={style}
     >
       {/* O conteúdo SEMPRE ganha um nó próprio. Com camada, o nó absoluto com a
           folga do `scale-110`; sem ela, o wrapper em fluxo que a entrada

@@ -24,10 +24,12 @@ import { cn } from "@/lib/utils";
 export function ParallaxImagem({
   children,
   className,
+  style,
   intensidade = 12,
 }: {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   intensidade?: number;
 }) {
   const alvo = useRef<HTMLDivElement>(null);
@@ -35,7 +37,7 @@ export function ParallaxImagem({
   useCamada(alvo, { velocidade: intensidade / 100 });
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
+    <div className={cn("relative overflow-hidden", className)} style={style}>
       <div
         ref={alvo}
         className="absolute inset-0 will-change-transform [scale:var(--folga-cel)] md:[scale:var(--folga-desk)]"

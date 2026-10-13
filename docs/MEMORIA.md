@@ -10179,4 +10179,8 @@ Nota: [[foto-panoramica-num-quadro-de-retrato]].
   1,4x à toa. No celular a folga agora é `1 + 0,8 × intensidade`.
 - **A fachada aparecia duas vezes**: Sobre e primeira cena usavam a mesma
   foto. As cenas pulam `fotoDoSobre`.
+- **A Galeria do celular virou uma coluna**, cada foto no formato dela (a
+  abertura até 16:9, as demais até 3:2). Duas colunas de ~180px cortavam
+  render panorâmico em 4:3 ou numa célula alta. Do `sm` para cima o mosaico
+  não mudou.
 
