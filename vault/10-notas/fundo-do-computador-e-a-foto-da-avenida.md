@@ -84,7 +84,7 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   de fora: `scale` no ancestral desloca o clique e prende o card flutuante.
 - `.cartao-passa` (03/10): a mesma passagem card a card em "Oportunidades em
 - As páginas de região (`/regioes/<slug>`) também usam `.cartao-passa` (13/10/2026). O cartão continua dentro de `<li>`, com `--coluna` = `i % 3` (lá não há cartão de destaque largo).
-- Na página do imóvel, os cards das tipologias (`--coluna` = `i % 2`) e de "Veja também" (`i % 3`) também usam `.cartao-passa` (13/10/2026). A galeria também, no mesmo dia: a foto de abertura e cada foto da grade. Nas fotos da grade o `CartaoTilt` ganhou `semCortina`, que tira a cortina de entrada e mantém o tilt do mouse e o parallax.
+- Na página do imóvel, os cards das tipologias (`--coluna` = `i % 2`) e de "Veja também" (`i % 3`) também usam `.cartao-passa` (13/10/2026). A galeria também, no mesmo dia: a foto de abertura e cada foto da grade. Nas fotos da grade o `CartaoTilt` ganhou `semCortina`, que tira a cortina de entrada e mantém o tilt do mouse e o parallax. O Lazer também: cada item da lista passa sozinho, e a prévia da foto continua certa porque abre num portal.
   destaque", substituindo o Reveal (dois donos da opacidade); no computador
   as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
   seção perdeu a `secao-passa` para não somar com a dos cards.

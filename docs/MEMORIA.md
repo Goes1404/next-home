@@ -10230,3 +10230,4 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
 - **As páginas de região também usam a passagem (13/10)**: `.cartao-passa` direto no `<li>` (com `Reveal` a lista perderia o `<li>`), `--coluna` = `i % 3`.
 - **Na página do imóvel também (13/10)**: tipologias (`i % 2`, a grade tem duas colunas) e "Veja também" (`i % 3`). A galeria fica de fora: já tem a entrada do `CartaoTilt`, e as duas juntas seriam duas entradas.
 - **E na galeria (13/10)**: abertura e grade com `.cartao-passa`. O `CartaoTilt` ganhou `semCortina`: sem ela, a foto teria duas entradas (cortina + passagem). Tilt e parallax continuam.
+- **E no Lazer (13/10)**: cada item da lista com `.cartao-passa`, no lugar do Reveal em cascata. A prévia `fixed` não se prende ao item porque mora num portal; conferido abrindo a prévia no celular e no computador.
