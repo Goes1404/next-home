@@ -6,7 +6,7 @@ status: ativo
 custou: pouco — o vídeo só aparecia para quem chegava pelo link da Bruna
 codigo: src/components/motion/FundoDaCasaDesktop.tsx
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-13
 summary: No computador, o fundo da casa passou a ser uma foto de avenida entre torres (WebP, 149 KB), num picture com media para o celular não baixar. O vídeo que aparecia era o vídeo próprio do link da Bruna, que era o arquivo antigo da casa; a 0151 o tirou.
 ---
 
@@ -86,6 +86,11 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   destaque", substituindo o Reveal (dois donos da opacidade); no computador
   as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
   seção perdeu a `secao-passa` para não somar com a dos cards.
+- Desde 13/10 a listagem `/empreendimentos` usa a mesma `.cartao-passa` em
+  todos os cards (pedido: "o efeito da home ficaria legal em toda essa
+  parte"), também no lugar do Reveal. `--coluna` é a coluna REAL no
+  computador: o primeiro card sem filtro ocupa duas colunas, então os
+  seguintes deslocam uma.
 - Zoom na cidade é o PADRÃO desde 03/10 (escolhido no teste `?efeito=zoom`, que saiu): a foto aproxima até 1,7x e sobe 3% enquanto o herói sai. Fica um pouco borrada na ampliação, porque o arquivo tem 1024px.
 
 ## Limite

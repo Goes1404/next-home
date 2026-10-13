@@ -10219,3 +10219,12 @@ Nota: [[foto-panoramica-num-quadro-de-retrato]].
   abertura até 16:9, as demais até 3:2). Duas colunas de ~180px cortavam
   render panorâmico em 4:3 ou numa célula alta. Do `sm` para cima o mosaico
   não mudou.
+
+## A passagem dos cards da home chegou à listagem (13/10/2026)
+
+Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
+
+- **`/empreendimentos` usa `.cartao-passa` em todos os cards**, no lugar do
+  Reveal (os dois juntos seriam dois donos da opacidade). `--coluna` conta a
+  coluna real: sem filtro, o primeiro card ocupa duas colunas.
+
