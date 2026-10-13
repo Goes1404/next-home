@@ -12,6 +12,11 @@ import { cn } from "@/lib/utils";
  * borda vazia. `intensidade` é o quanto ela percorre, em % da própria
  * altura, do centro até a ponta da passagem pela viewport.
  *
+ * No celular o controlador anda só 40% do desktop, então a folga também
+ * encolhe: com `intensidade={20}` o desktop amplia 1,4x e o celular 1,16x.
+ * A folga cheia no celular ampliava em 40% uma foto já recortada para o
+ * quadro estreito — o que sobrava era um borrão de parede (13/10/2026).
+ *
  * Desde 08/2026 a API é a mesma mas o motor mudou: em vez de um
  * `ScrollTrigger` próprio, delega ao controlador central — um laço só para
  * as ~40 camadas do site (ver `controladorCamadas.ts`).
@@ -33,8 +38,13 @@ export function ParallaxImagem({
     <div className={cn("relative overflow-hidden", className)}>
       <div
         ref={alvo}
-        className="absolute inset-0 will-change-transform"
-        style={{ scale: `${1 + (intensidade * 2) / 100}` }}
+        className="absolute inset-0 will-change-transform [scale:var(--folga-cel)] md:[scale:var(--folga-desk)]"
+        style={
+          {
+            "--folga-desk": `${1 + (intensidade * 2) / 100}`,
+            "--folga-cel": `${1 + (intensidade * 0.8) / 100}`,
+          } as React.CSSProperties
+        }
       >
         {children}
       </div>

@@ -10166,3 +10166,17 @@ Nota: [[perfil-de-demonstracao-do-corretor]].
   reais (12/10, últimos 30 dias): a IA respondeu 45 de 52 clientes que
   escreveram, com mediana de 22 s até a primeira resposta.
 
+## Foto panorâmica num quadro de retrato (13/10/2026)
+
+Nota: [[foto-panoramica-num-quadro-de-retrato]].
+
+- **"No celular as fotos ficam sem sentido" era recorte.** Os renders das
+  construtoras medem 2:1 a 2,4:1, e o Sobre (3:4) e as cenas (4:5) os
+  recortavam em retrato: sobrava um terço da largura. O quadro do celular
+  agora segue a foto, entre 4:5 e 3:2 (`proporcaoNoCelular`).
+- **`ParallaxImagem` amplia `1 + 2 × intensidade`** para a folga do
+  deslocamento, e no celular o movimento é 40% do desktop: o Sobre ampliava
+  1,4x à toa. No celular a folga agora é `1 + 0,8 × intensidade`.
+- **A fachada aparecia duas vezes**: Sobre e primeira cena usavam a mesma
+  foto. As cenas pulam `fotoDoSobre`.
+
