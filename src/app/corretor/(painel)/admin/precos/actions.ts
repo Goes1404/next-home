@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
-import { lerTabelaDePrecosComIa } from "@/lib/precos/leituraPorIa";
+import { lerTabelaDePrecosComIa, transcreverPrintDaTabela } from "@/lib/precos/leituraPorIa";
 
 /**
  * Busca a lista de empreendimentos para conciliação no cliente.
@@ -15,7 +15,7 @@ export async function buscarCatalogoAtualParaConciliacao(): Promise<Empreendimen
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("empreendimentos")
-    .select("id, nome, slug, cidade, bairro, preco_a_partir")
+    .select("id, nome, slug, cidade, bairro, preco_a_partir, nomes_alternativos")
     .order("nome", { ascending: true });
 
   if (error) throw new Error(`Falha ao buscar catálogo: ${error.message}`);
@@ -27,6 +27,7 @@ export async function buscarCatalogoAtualParaConciliacao(): Promise<Empreendimen
     cidade: e.cidade,
     bairro: e.bairro,
     precoAtual: e.preco_a_partir ? Number(e.preco_a_partir) : null,
+    apelidos: e.nomes_alternativos ?? [],
   }));
 }
 
@@ -251,24 +252,29 @@ export async function buscarHistoricoLotes(): Promise<LoteHistorico[]> {
 }
 
 
-/**
- * Teto do PDF que a tela de reajuste aceita.
- *
- * Aqui o arquivo CRUZA a Server Action (diferente do book do imóvel, que
- * vai do navegador direto para o Storage), e o teto de corpo deste projeto
- * é de 12 MB. Tabela de preços é PDF de texto, gerado de planilha: os reais
- * têm dezenas de KB. Recusar antes de subir é o que evita o erro de
- * plataforma, que chega como falha genérica e não diz o que fazer.
- */
-const TETO_PDF_PRECOS_BYTES = 8 * 1024 * 1024;
+/** Prazo total da página (60 s) menos o que a resposta precisa. */
+const PRAZO_DA_LEITURA_MS = 52_000;
+/** Teto de um arquivo: o do bucket é 50 MB. Guia de parceria de 53 páginas cabe. */
+const TETO_ARQUIVO_BYTES = 40 * 1024 * 1024;
+/** Prints por vez: cada um é uma chamada de visão, todas em paralelo. */
+const MAX_PRINTS = 8;
+const BUCKET = "empreendimentos";
 
 type ResultadoDaLeitura =
-  | { ok: true; texto: string; itens: ItemConciliado[]; descartados: string[] }
+  | {
+      ok: true;
+      texto: string;
+      itens: ItemConciliado[];
+      descartados: string[];
+      valoresDeReferencia: boolean;
+      naoLidos: number;
+      dePrint: boolean;
+    }
   | { ok: false; erro: string; texto?: string };
 
-async function lerComIa(texto: string): Promise<ResultadoDaLeitura> {
+async function lerComIa(texto: string, opts?: { prazoMs?: number; dePrint?: boolean }): Promise<ResultadoDaLeitura> {
   const catalogo = await buscarCatalogoAtualParaConciliacao();
-  const leitura = await lerTabelaDePrecosComIa(texto, catalogo);
+  const leitura = await lerTabelaDePrecosComIa(texto, catalogo, { prazoMs: opts?.prazoMs });
   if (leitura.falhou) {
     return {
       ok: false,
@@ -286,7 +292,15 @@ async function lerComIa(texto: string): Promise<ResultadoDaLeitura> {
           : "Não encontrei valores de unidade nesta tabela. Confira se é a tabela de preços.",
     };
   }
-  return { ok: true, texto, itens: leitura.itens, descartados: leitura.descartados };
+  return {
+    ok: true,
+    texto,
+    itens: leitura.itens,
+    descartados: leitura.descartados,
+    valoresDeReferencia: leitura.valoresDeReferencia ?? false,
+    naoLidos: leitura.naoLidos ?? 0,
+    dePrint: opts?.dePrint ?? false,
+  };
 }
 
 /**
@@ -297,53 +311,110 @@ export async function lerTabelaColadaComIa(texto: string): Promise<ResultadoDaLe
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
   if (texto.trim().length === 0) return { ok: false, erro: "Cole a tabela primeiro." };
-  return lerComIa(texto.slice(0, 200_000));
+  return lerComIa(texto.slice(0, 200_000), { prazoMs: PRAZO_DA_LEITURA_MS });
+}
+
+/** Foto normalizada para JPEG que a OpenAI lê, girada pelo EXIF e com 2048 px no máximo. */
+async function printParaDataUrl(bytes: Buffer, tipo: string): Promise<string | null> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const jpeg = await sharp(bytes)
+      .rotate()
+      .resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+  } catch {
+    return /^image\/(jpeg|png|webp)$/.test(tipo) ? `data:${tipo};base64,${bytes.toString("base64")}` : null;
+  }
 }
 
 /**
- * Lê a tabela de preços de dentro de um PDF e devolve o texto.
+ * Lê a tabela de preços de PDFs e prints que a tela subiu para o Storage.
  *
- * A tela só aceitava `.csv`/`.txt`/`.tsv` e lia com `readAsText` — e a
- * construtora manda a tabela em PDF. Um PDF lido como texto no navegador
- * devolve binário, então nem afrouxar o `accept` resolveria: o conteúdo
- * precisa ser EXTRAÍDO, e o extrator (`pdfTexto.ts`) usa `node:zlib`, que
- * só existe no servidor.
+ * Os arquivos vão do navegador DIRETO para o Storage (pasta pessoal do
+ * gestor, `corretores/<id>/tabelas/`) e só os caminhos chegam aqui. Até
+ * 13/10/2026 o PDF cruzava a Server Action, com teto de 8 MB, e print não
+ * era aceito: o guia de parceria da RSF tem 53 páginas e o tabelão chega
+ * como foto da tela do celular.
  *
- * A IA lê o texto extraído (ver `leituraPorIa.ts`), e o valor que ela
- * aponta só entra se estiver escrito no arquivo. O que este caminho NÃO
- * cobre é PDF escaneado (a página é uma imagem, não há texto nenhum); nesse
- * caso ele diz isso em vez de devolver vazio em silêncio.
+ * - PDF: texto extraído aqui (`extrairTextoDePdf`, que usa `node:zlib`).
+ *   PDF escaneado não tem texto: a tela pede os prints das páginas.
+ * - Print: a IA transcreve cada imagem (em paralelo) e a transcrição passa
+ *   pela mesma leitura do PDF, com a trava "o valor está escrito".
+ *
+ * Os arquivos são apagados depois de lidos: o bucket é público.
  */
-export async function lerTabelaDePdf(formData: FormData): Promise<ResultadoDaLeitura> {
+export async function lerArquivosDaTabela(caminhos: string[]): Promise<ResultadoDaLeitura> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+  const inicio = Date.now();
 
-  const arquivo = formData.get("arquivo");
-  if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { ok: false, erro: "Selecione um arquivo válido." };
+  // Só a pasta do próprio gestor, sem subir de diretório.
+  const pasta = `corretores/${guarda.corretor.id}/tabelas/`;
+  const validos = [...new Set(caminhos)].filter(
+    (c) => typeof c === "string" && c.startsWith(pasta) && !c.includes(".."),
+  );
+  if (validos.length === 0) return { ok: false, erro: "Selecione um arquivo válido." };
+
+  const supabase = await createClient();
+  try {
+    const arquivos = await Promise.all(
+      validos.map(async (caminho) => {
+        const { data, error } = await supabase.storage.from(BUCKET).download(caminho);
+        if (error || !data) return null;
+        return { caminho, tipo: data.type, bytes: Buffer.from(await data.arrayBuffer()) };
+      }),
+    );
+    if (arquivos.some((a) => a === null)) {
+      return { ok: false, erro: "Não consegui abrir um dos arquivos enviados. Tente enviar de novo." };
+    }
+    const lidos = arquivos as { caminho: string; tipo: string; bytes: Buffer }[];
+    if (lidos.some((a) => a.bytes.length > TETO_ARQUIVO_BYTES)) {
+      return { ok: false, erro: "Arquivo acima de 40 MB. Mande só as páginas da tabela (ou os prints delas)." };
+    }
+
+    const ehPdf = (a: { caminho: string; tipo: string }) => a.tipo === "application/pdf" || /\.pdf$/i.test(a.caminho);
+    const pdfs = lidos.filter(ehPdf);
+    const prints = lidos.filter((a) => !ehPdf(a)).slice(0, MAX_PRINTS);
+
+    const textosDosPdfs = pdfs.map((a) => extrairTextoDePdf(a.bytes)).filter((t) => t.trim().length > 0);
+    if (pdfs.length > 0 && textosDosPdfs.length === 0 && prints.length === 0) {
+      return {
+        ok: false,
+        erro: "Não achei texto dentro deste PDF (ele parece escaneado). Mande os prints das páginas da tabela: a IA lê imagem.",
+      };
+    }
+
+    let transcricao = "";
+    if (prints.length > 0) {
+      const resultados = await Promise.all(
+        prints.map(async (a, i) => {
+          const url = await printParaDataUrl(a.bytes, a.tipo);
+          if (!url) return { i, ok: false as const };
+          const r = await transcreverPrintDaTabela(url, { orcamentoMs: 30_000 });
+          return { i, ...r };
+        }),
+      );
+      const falharam = resultados.filter((r) => !r.ok).length;
+      if (falharam === prints.length && textosDosPdfs.length === 0) {
+        return { ok: false, erro: "A IA não conseguiu ler os prints agora. Tente de novo em instantes." };
+      }
+      transcricao = resultados
+        .filter((r): r is { i: number; ok: true; texto: string } => r.ok && r.texto.length > 0)
+        .map((r) => `PRINT ${r.i + 1}:\n${r.texto}`)
+        .join("\n\n");
+      if (!transcricao && textosDosPdfs.length === 0) {
+        return { ok: false, erro: "Não encontrei tabela de preços nos prints. Confira se as imagens mostram os valores." };
+      }
+    }
+
+    const texto = [...textosDosPdfs, transcricao].filter(Boolean).join("\n\n");
+    return lerComIa(texto.slice(0, 200_000), {
+      prazoMs: PRAZO_DA_LEITURA_MS - (Date.now() - inicio),
+      dePrint: transcricao.length > 0,
+    });
+  } finally {
+    await supabase.storage.from(BUCKET).remove(validos).catch(() => undefined);
   }
-
-  if (arquivo.size > TETO_PDF_PRECOS_BYTES) {
-    const mb = (arquivo.size / 1024 / 1024).toFixed(0);
-    return {
-      ok: false,
-      erro: `Este PDF tem ${mb} MB e o limite é 8 MB. Tabela de preços costuma ter poucos KB — este parece ser outra coisa.`,
-    };
-  }
-
-  const texto = extrairTextoDePdf(Buffer.from(await arquivo.arrayBuffer()));
-
-  if (texto.trim().length === 0) {
-    return {
-      ok: false,
-      erro: "Não achei texto dentro deste PDF. Se ele for escaneado (foto da tabela), copie os valores e cole na caixa acima.",
-    };
-  }
-
-  /*
-   * 02/10/2026: a tabela da construtora não tem "um imóvel por linha" (é o
-   * empreendimento no cabeçalho e as unidades embaixo), e o leitor por linha
-   * não achava nada. Quem lê agora é a IA, com o valor conferido no texto.
-   */
-  return lerComIa(texto);
 }

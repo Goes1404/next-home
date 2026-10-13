@@ -16,7 +16,7 @@ export default async function PrecosPage() {
    * ignorava o resultado — quem digitasse a URL entrava. Aqui a guarda é de
    * verdade; as policies da 0031 fecham o mesmo buraco no banco.
    */
-  await exigirGestorNaPagina();
+  const gestor = await exigirGestorNaPagina();
 
   const [catalogo, historico] = await Promise.all([
     buscarCatalogoAtualParaConciliacao(),
@@ -37,7 +37,7 @@ export default async function PrecosPage() {
         </p>
       </div>
 
-      <PrecosManager catalogoInicial={catalogo} historicoInicial={historico} />
+      <PrecosManager corretorId={gestor.id} catalogoInicial={catalogo} historicoInicial={historico} />
     </div>
   );
 }

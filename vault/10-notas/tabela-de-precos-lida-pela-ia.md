@@ -10,8 +10,9 @@ codigo:
   - src/lib/leads/pdfTexto.ts
   - src/app/corretor/(painel)/admin/precos/actions.ts
   - src/app/corretor/(painel)/admin/precos/PrecosManager.tsx
-summary: A tabela da construtora tem o empreendimento no cabeçalho e as unidades embaixo; o leitor por linha não achava nada. A IA casa com o catálogo e aponta o menor valor de unidade, que só entra se estiver escrito no arquivo.
-updated: 2026-10-02
+  - src/app/corretor/(painel)/admin/precos/page.tsx
+summary: PDF e prints (13/10). A tabela da construtora tem o empreendimento no cabeçalho e as unidades embaixo; o leitor por linha não achava nada. A IA casa com o catálogo e aponta o menor valor de unidade, que só entra se estiver escrito no arquivo.
+updated: 2026-10-13
 ---
 
 # Tabela de preços lida pela IA
@@ -73,3 +74,33 @@ provado com a IA de verdade**: não há chave nesta máquina.
 O casamento da IA com nome pouco parecido (abaixo de 0,5) vira sugestão
 desmarcada. O Acqua Park não está no catálogo, e contra o "Alpha Park View"
 o nome dá 0,43.
+
+## Prints e o guia de 53 páginas (13/10/2026)
+
+Pedido: ler o "tabelão" da RSF tanto do PDF (guia de parceria, 53 páginas)
+quanto dos prints da tela do celular.
+
+- **PDF e prints sobem DIRETO para o Storage** (`corretores/<id>/tabelas/`,
+  pasta pessoal da 0015) e só o caminho vai à action
+  (`lerArquivosDaTabela`), que apaga os arquivos depois de ler. Antes o PDF
+  cruzava a action, com teto de 8 MB; agora o teto é 40 MB.
+- **Print: dois passos.** A IA transcreve cada imagem em detalhe alto, uma
+  linha por unidade com o nome do empreendimento repetido
+  (`transcreverPrintDaTabela`); a transcrição passa pela mesma leitura do
+  PDF, com a trava "o valor está escrito" valendo contra a transcrição. O
+  texto fica na caixa para o gestor conferir com o print.
+- **"Unidades de referência, não o mínimo da tabela"**: o rodapé do tabelão
+  diz isso. Quando o arquivo avisa (`avisaValoresDeReferencia`), item que
+  SUBIRIA o "a partir de" entra desmarcado: o Breeze tem unidade de
+  R$ 349.900 e a de referência é de R$ 381.405.
+- **Apelidos do cadastro entram no catálogo da IA e na conferência de
+  nome**: a tabela escreve "Viva RSF Jaguaribe" para o "Viva Jaguaribe".
+- **Pedaço sem valor de imóvel não vai à IA**, seis pedaços por vez e prazo
+  total de 50 s: o guia inteiro estourava os 60 s da página com três por
+  vez. O que sobrar sem ler é dito na tela.
+- **Não provado com a IA de verdade**: não há chave da OpenAI nesta máquina.
+  A prova é subir os prints do tabelão em produção.
+
+Do tabelão de out/2026, sem cadastro no catálogo: Bless Shopping Barueri,
+Reserva Urano Ecopark, Viva RSF Carapicuíba, Bless Praça da Árvore, Bless
+Ipiranga e Murat 208. Esses vêm como "não encontrado".

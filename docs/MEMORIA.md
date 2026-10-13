@@ -10231,3 +10231,19 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
 - **Na página do imóvel também (13/10)**: tipologias (`i % 2`, a grade tem duas colunas) e "Veja também" (`i % 3`). A galeria fica de fora: já tem a entrada do `CartaoTilt`, e as duas juntas seriam duas entradas.
 - **E na galeria (13/10)**: abertura e grade com `.cartao-passa`. O `CartaoTilt` ganhou `semCortina`: sem ela, a foto teria duas entradas (cortina + passagem). Tilt e parallax continuam.
 - **E no Lazer (13/10)**: cada item da lista com `.cartao-passa`, no lugar do Reveal em cascata. A prévia `fixed` não se prende ao item porque mora num portal; conferido abrindo a prévia no celular e no computador.
+
+## O tabelão da RSF lido de PDF e de print (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **Print da tabela agora é lido**: a IA transcreve a imagem (detalhe alto,
+  uma linha por unidade) e a transcrição passa pela leitura de sempre, com a
+  trava "o valor está escrito". PDF e prints sobem direto ao Storage
+  (`corretores/<id>/tabelas/`), saem do teto de 12 MB da action e são
+  apagados depois de lidos.
+- **O tabelão avisa que os valores são de unidades de referência, não o
+  mínimo.** Nesse caso, o que subiria o "a partir de" entra desmarcado.
+- **O catálogo que a IA recebe leva os apelidos**, e a conferência de nome
+  também.
+- Sem chave de IA aqui: a leitura do print está provada só com o modelo
+  simulado no teste.

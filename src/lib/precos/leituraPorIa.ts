@@ -52,8 +52,17 @@ Responda EXCLUSIVAMENTE um JSON válido, sem crases e sem texto em volta:
  */
 const TAMANHO_DO_PEDACO = 12_000;
 const CABECALHO = 1_200;
-const EM_PARALELO = 3;
+/*
+ * Seis de uma vez: o guia de parceria da RSF (13/10/2026) tem 53 páginas, e
+ * com três por vez o segundo lote estourava os 60 s da página. Pedaço sem
+ * nenhum valor de imóvel nem vai à IA (ver `temValorDeImovel`).
+ */
+const EM_PARALELO = 6;
 const ORCAMENTO_POR_PEDACO_MS = 45_000;
+/** Tempo total da leitura: a página tem 60 s e ainda precisa responder. */
+const PRAZO_PADRAO_MS = 50_000;
+/** Lote que começaria com menos que isto não começa: devolve o que já leu. */
+const MINIMO_PARA_UM_LOTE_MS = 8_000;
 
 /** Abaixo disto, o casamento da IA vira sugestão desmarcada. */
 const NOME_PARECIDO = 0.5;
@@ -80,6 +89,25 @@ export function valoresEscritos(texto: string): Set<number> {
     if (Number.isFinite(valor)) valores.add(valor);
   }
   return valores;
+}
+
+/** O trecho tem algum número que poderia ser preço de imóvel? */
+export function temValorDeImovel(texto: string): boolean {
+  for (const v of valoresEscritos(texto)) if (v >= PRECO_MINIMO && v <= PRECO_MAXIMO) return true;
+  return false;
+}
+
+/**
+ * A tabela avisa que os valores NÃO são o menor da tabela? O tabelão da RSF
+ * (out/2026) diz no rodapé: "Valores das unidades de referência do tabelão
+ * de outubro/2026, não o mínimo da tabela". Nesse caso o menor valor lido é
+ * o de uma unidade de exemplo: serve para baixar o "a partir de" (existe
+ * unidade por aquele preço), mas não para SUBIR (o Breeze tem unidade de
+ * R$ 349.900 e a de referência é de R$ 381.405).
+ */
+export function avisaValoresDeReferencia(texto: string): boolean {
+  const t = texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return /unidades? de referencia|nao (e )?o minimo da tabela|valores? de referencia/.test(t);
 }
 
 /** O valor que a IA apontou está escrito no arquivo? */
@@ -111,6 +139,10 @@ export type LeituraDaTabela = {
   /** Valores que a IA apontou e que NÃO estão no arquivo: descartados. */
   descartados: string[];
   falhou: boolean;
+  /** O arquivo diz que os valores são de unidades de referência. */
+  valoresDeReferencia?: boolean;
+  /** Pedaços com valor que ficaram sem ler porque o tempo acabou. */
+  naoLidos?: number;
 };
 
 /**
@@ -120,26 +152,37 @@ export type LeituraDaTabela = {
 export async function lerTabelaDePrecosComIa(
   texto: string,
   catalogo: EmpreendimentoSimples[],
+  opts?: { prazoMs?: number },
 ): Promise<LeituraDaTabela> {
   const limpo = texto.trim();
   if (!limpo) return { itens: [], descartados: [], falhou: false };
+  const fim = Date.now() + (opts?.prazoMs ?? PRAZO_PADRAO_MS);
 
   const listaDoCatalogo = catalogo
-    .map((e) => `- ${e.slug} | ${e.nome} | ${e.bairro} | ${e.cidade}`)
+    .map((e) => {
+      const apelidos = (e.apelidos ?? []).filter(Boolean);
+      return `- ${e.slug} | ${e.nome}${apelidos.length ? ` (também: ${apelidos.join(", ")})` : ""} | ${e.bairro} | ${e.cidade}`;
+    })
     .join("\n");
   const cabecalho = limpo.slice(0, CABECALHO);
-  const pedacos = dividirEmPedacos(limpo, TAMANHO_DO_PEDACO);
+  // O primeiro pedaço vai sempre (é ele que dá o nome); dos outros, só os que
+  // têm algum número com cara de preço de imóvel.
+  const pedacos = dividirEmPedacos(limpo, TAMANHO_DO_PEDACO).filter((p, i) => i === 0 || temValorDeImovel(p));
 
   const respostas: LidoPelaIa[][] = [];
   let falhas = 0;
+  let lidos = 0;
   for (let i = 0; i < pedacos.length; i += EM_PARALELO) {
+    const resta = fim - Date.now();
+    if (resta < MINIMO_PARA_UM_LOTE_MS) break;
     const lote = pedacos.slice(i, i + EM_PARALELO);
+    lidos += lote.length;
     const resultados = await Promise.all(
       lote.map((pedaco, k) => {
         const inicio = i + k === 0 ? "" : `COMEÇO DO ARQUIVO (só para saber de qual empreendimento é o trecho):\n${cabecalho}\n\n`;
         return chamarLlmJson(
           `${PROMPT}\n\nNOSSO CATÁLOGO (slug | nome | bairro | cidade):\n${listaDoCatalogo}\n\n${inicio}TRECHO DA TABELA:\n${pedaco}`,
-          { temperature: 0, orcamentoMs: ORCAMENTO_POR_PEDACO_MS },
+          { temperature: 0, orcamentoMs: Math.min(ORCAMENTO_POR_PEDACO_MS, resta) },
         );
       }),
     );
@@ -149,7 +192,8 @@ export async function lerTabelaDePrecosComIa(
     }
   }
 
-  if (falhas === pedacos.length) return { itens: [], descartados: [], falhou: true };
+  if (lidos === 0 || falhas === lidos) return { itens: [], descartados: [], falhou: true };
+  const valoresDeReferencia = avisaValoresDeReferencia(limpo);
 
   const escritos = valoresEscritos(limpo);
   const porSlug = new Map(catalogo.map((e) => [e.slug, e]));
@@ -177,7 +221,12 @@ export async function lerTabelaDePrecosComIa(
     const precoAtual = emp?.precoAtual ?? null;
     const precoNovo = lido.menorPreco;
     const temAtual = precoAtual !== null && precoAtual > 0;
-    const similaridade = emp ? calcularSimilaridade(lido.nomeNoArquivo, emp.nome) : 0;
+    const similaridade = emp
+      ? Math.max(...[emp.nome, ...(emp.apelidos ?? [])].map((n) => calcularSimilaridade(lido.nomeNoArquivo, n)))
+      : 0;
+    // Valor de referência que SUBIRIA o preço não entra marcado (ver
+    // `avisaValoresDeReferencia`): a tabela diz que existe unidade mais barata.
+    const subiriaComReferencia = valoresDeReferencia && temAtual && precoNovo > (precoAtual ?? 0);
     const parecido = similaridade >= NOME_PARECIDO;
     return {
       idTemp: `ia_${indice}_${agora}`,
@@ -203,9 +252,57 @@ export async function lerTabelaDePrecosComIa(
        */
       matchStatus: !emp ? "nao_encontrado" : parecido ? "exato" : "sugerido",
       scoreSimilaridade: similaridade,
-      selecionado: emp !== null && parecido,
+      selecionado: emp !== null && parecido && !subiriaComReferencia,
     };
   });
 
-  return { itens, descartados, falhou: false };
+  return { itens, descartados, falhou: false, valoresDeReferencia, naoLidos: pedacos.length - lidos };
+}
+
+/**
+ * Print da tabela (13/10/2026): o tabelão da RSF chega como foto da tela do
+ * celular, e foto não tem texto dentro para ler de graça.
+ *
+ * São DOIS passos de propósito. Primeiro a IA só TRANSCREVE o que vê, uma
+ * linha por unidade com o nome do empreendimento repetido; depois a mesma
+ * leitura do PDF (`lerTabelaDePrecosComIa`) roda sobre essa transcrição. Assim
+ * a trava "o valor está escrito no arquivo" continua valendo, agora contra a
+ * transcrição, e o texto aparece na tela para o gestor conferir com o print.
+ */
+const PROMPT_DA_TRANSCRICAO = `Esta imagem é um print de uma tabela de preços de imóveis (uma ou mais tabelas, às vezes cortadas em cima ou embaixo).
+Transcreva TODAS as linhas de unidade que aparecem, uma por linha, neste formato:
+Empreendimento | descrição da unidade (dormitórios, suítes, metragem) | vagas | valor | código da unidade
+
+Regras:
+- Na imagem o nome do empreendimento aparece só na primeira linha do grupo, com a entrega embaixo. Repita o nome em TODAS as linhas do grupo. Se o grupo começa cortado e o nome não aparece, use "(nome cortado)".
+- Copie o valor exatamente como está escrito, com R$, pontos e vírgula (ex.: R$ 381.405,62). Se estiver escrito "Indisponível", escreva Indisponível.
+- Linhas de condição (desconto, voucher, documentação grátis) entram como "Obs: <empreendimento> | <texto>".
+- Notas de rodapé sobre os valores entram como "Nota: <texto>".
+- Não invente nem complete nada. Número que você não consegue ler: [ilegível].
+- Se a imagem não tiver tabela de preços, devolva a lista vazia.
+
+Responda EXCLUSIVAMENTE um JSON válido, sem crases e sem texto em volta:
+{"linhas":["Breeze Home Clube | 2 dorms 49 m² | 1 | R$ 381.405,62 | B-107"]}`;
+
+export async function transcreverPrintDaTabela(
+  imagemDataUrl: string,
+  opts?: { orcamentoMs?: number },
+): Promise<{ ok: true; texto: string } | { ok: false }> {
+  const r = await chamarLlmJson(PROMPT_DA_TRANSCRICAO, {
+    temperature: 0,
+    orcamentoMs: opts?.orcamentoMs ?? 30_000,
+    fatia: 1,
+    imagens: [imagemDataUrl],
+    // Aqui se lê dígito: em "low" a imagem vira 512 px e o centavo some.
+    detalheImagem: "high",
+  });
+  if (!r.ok) return { ok: false };
+  const linhas = (r.json as { linhas?: unknown })?.linhas;
+  if (!Array.isArray(linhas)) return { ok: true, texto: "" };
+  const texto = linhas
+    .filter((l): l is string => typeof l === "string")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("\n");
+  return { ok: true, texto };
 }

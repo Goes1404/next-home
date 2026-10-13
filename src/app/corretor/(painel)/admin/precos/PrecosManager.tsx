@@ -5,16 +5,23 @@ import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { parsearTabelaTexto } from "@/lib/precos/spreadsheetParser";
 import { conciliarPlanilhaComCatalogo } from "@/lib/precos/matchingEngine";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
-import { aplicarLotePrecos, lerTabelaColadaComIa, lerTabelaDePdf, reverterLotePrecos } from "./actions";
+import { aplicarLotePrecos, lerArquivosDaTabela, lerTabelaColadaComIa, reverterLotePrecos } from "./actions";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { Download, AlertTriangle, Rocket, Clock, Folder, Check } from 'lucide-react';
 
+/** Espelham o servidor (`lerArquivosDaTabela`): recusar antes de subir poupa o envio. */
+const MAX_PRINTS = 8;
+const TETO_ARQUIVO_BYTES = 40 * 1024 * 1024;
+
 interface Props {
+  /** Pasta pessoal no Storage (`corretores/<id>/tabelas/`) para onde o PDF e os prints sobem. */
+  corretorId: string;
   catalogoInicial: EmpreendimentoSimples[];
   historicoInicial: LoteHistorico[];
 }
 
-export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
+export function PrecosManager({ corretorId, catalogoInicial, historicoInicial }: Props) {
   const [abaAtiva, setAbaAtiva] = useState<"importar" | "historico">("importar");
   const [textoColado, setTextoColado] = useState("");
   const [itensConciliados, setItensConciliados] = useState<ItemConciliado[]>([]);
@@ -43,36 +50,69 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
     setItensConciliados(conciliados);
   }
 
-  // Upload de arquivo: CSV / TXT / TSV lidos aqui mesmo, PDF no servidor.
+  // Upload de arquivo: CSV / TXT / TSV lidos aqui mesmo; PDF e prints no servidor.
   //
   // PDF não se lê com `readAsText`: o navegador devolveria o binário do
-  // arquivo, e o parser acharia "nenhum dado válido" num arquivo que tem a
-  // tabela inteira dentro. Quem sabe abrir é `extrairTextoDePdf`, que usa
-  // `node:zlib` e por isso vive no servidor.
+  // arquivo. Quem sabe abrir é `extrairTextoDePdf`, que usa `node:zlib` e por
+  // isso vive no servidor. Print (13/10/2026: o tabelão da RSF chega como foto
+  // da tela) só a IA lê. Os dois sobem DIRETO para o Storage e só o caminho
+  // vai à action: o teto de corpo da action (12 MB) não comporta o guia de
+  // parceria de 53 páginas nem oito prints juntos.
   async function onUploadArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
+    if (files.length === 0) return;
 
-    const ehPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-
-    if (!ehPdf) {
+    const ehTexto = (f: File) => /\.(csv|txt|tsv)$/i.test(f.name) || f.type.startsWith("text/");
+    if (files.length === 1 && ehTexto(files[0])) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
         setTextoColado(text);
         processarConteudo(text);
       };
-      reader.readAsText(file, "UTF-8");
+      reader.readAsText(files[0], "UTF-8");
+      return;
+    }
+
+    const ehPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+    const ehPrint = (f: File) => /^image\/(jpeg|png|webp)$/.test(f.type);
+    const recusados = files.filter((f) => !ehPdf(f) && !ehPrint(f));
+    if (recusados.length > 0) {
+      setFeedback({
+        tipo: "erro",
+        msg: `${recusados[0].name}: envie PDF ou print (JPG, PNG ou WebP). Planilha (.csv/.txt) vai sozinha.`,
+      });
+      return;
+    }
+    if (files.filter(ehPrint).length > MAX_PRINTS) {
+      setFeedback({ tipo: "erro", msg: `Mande até ${MAX_PRINTS} prints de uma vez.` });
+      return;
+    }
+    if (files.some((f) => f.size > TETO_ARQUIVO_BYTES)) {
+      setFeedback({ tipo: "erro", msg: "Arquivo acima de 40 MB. Mande só as páginas da tabela (ou os prints delas)." });
       return;
     }
 
     setFeedback(null);
     setLendoPdf(true);
     try {
-      const formData = new FormData();
-      formData.append("arquivo", file);
-      aplicarLeituraDaIa(await lerTabelaDePdf(formData));
+      const supabase = await createClientSobDemanda();
+      const caminhos: string[] = [];
+      for (const f of files) {
+        const ext = ehPdf(f) ? "pdf" : f.type.split("/")[1];
+        // Nome aleatório: o bucket é público, e a action apaga depois de ler.
+        const caminho = `corretores/${corretorId}/tabelas/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage
+          .from("empreendimentos")
+          .upload(caminho, f, { contentType: ehPdf(f) ? "application/pdf" : f.type, upsert: true });
+        if (error) {
+          setFeedback({ tipo: "erro", msg: `Não deu para enviar ${f.name}. Tente de novo.` });
+          return;
+        }
+        caminhos.push(caminho);
+      }
+      aplicarLeituraDaIa(await lerArquivosDaTabela(caminhos));
     } catch (err) {
       // Rede caída e aba de antes do último deploy REJEITAM a promessa. Sem
       // este ramo a tela destravaria calada, parecendo que o arquivo não
@@ -88,7 +128,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
 
   // Resultado da leitura pela IA (PDF ou texto colado): os itens já vêm
   // casados com o catálogo, e o texto fica na caixa para conferência.
-  function aplicarLeituraDaIa(res: Awaited<ReturnType<typeof lerTabelaDePdf>>) {
+  function aplicarLeituraDaIa(res: Awaited<ReturnType<typeof lerArquivosDaTabela>>) {
     if (res.texto) setTextoColado(res.texto);
     if (!res.ok) {
       setItensConciliados([]);
@@ -96,10 +136,27 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
       return;
     }
     setItensConciliados(res.itens);
+    const avisos: string[] = [];
+    if (res.dePrint) {
+      avisos.push("Lido de print: a transcrição está na caixa acima. Confira os valores com a imagem antes de aplicar.");
+    }
+    if (res.valoresDeReferencia) {
+      avisos.push(
+        "A tabela avisa que os valores são de unidades de referência, não o menor da tabela. Quem subiria de preço entra desmarcado: pode haver unidade mais barata.",
+      );
+    }
     if (res.descartados.length > 0) {
+      avisos.push(
+        `${res.descartados.length} valor(es) ficaram de fora por não estarem escritos no arquivo: ${res.descartados.slice(0, 3).join("; ")}.`,
+      );
+    }
+    if (res.naoLidos > 0) {
+      avisos.push(`${res.naoLidos} trecho(s) do arquivo ficaram sem ler por falta de tempo. Mande só as páginas da tabela para ler tudo.`);
+    }
+    if (avisos.length > 0) {
       setFeedback({
         tipo: "erro",
-        msg: `A IA leu ${res.itens.length} ${res.itens.length === 1 ? "empreendimento" : "empreendimentos"}. ${res.descartados.length} valor(es) ficaram de fora por não estarem escritos no arquivo: ${res.descartados.slice(0, 3).join("; ")}.`,
+        msg: `A IA leu ${res.itens.length} ${res.itens.length === 1 ? "empreendimento" : "empreendimentos"}. ${avisos.join(" ")}`,
       });
     }
   }
@@ -257,7 +314,7 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
                   1. Envie a tabela da construtora ou cole os valores
                 </h3>
                 <p className="text-fluid-xs text-apoio">
-                  Em PDF, a IA acha o empreendimento, casa com o catálogo e pega o <strong>menor valor de unidade</strong> como
+                  Em PDF ou print, a IA acha o empreendimento, casa com o catálogo e pega o <strong>menor valor de unidade</strong> como
                   &quot;a partir de&quot;. Você confere tudo antes de aplicar.
                 </p>
               </div>
@@ -265,11 +322,12 @@ export function PrecosManager({ catalogoInicial, historicoInicial }: Props) {
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-vidro-forte hover:bg-vidro-mais text-fluid-xs font-medium text-corpo transition-colors">
                 <span>
                   <Folder className="inline-block w-5 h-5 align-text-bottom mr-1" />{" "}
-                  {lendoPdf ? "A IA está lendo a tabela…" : "Carregar Arquivo (.pdf / .csv / .txt)"}
+                  {lendoPdf ? "A IA está lendo a tabela…" : "Carregar PDF, prints ou planilha"}
                 </span>
                 <input
                   type="file"
-                  accept=".pdf,.csv,.txt,.tsv,application/pdf"
+                  accept=".pdf,.csv,.txt,.tsv,application/pdf,image/jpeg,image/png,image/webp"
+                  multiple
                   disabled={lendoPdf}
                   onChange={(ev) => void onUploadArquivo(ev)}
                   className="hidden"
