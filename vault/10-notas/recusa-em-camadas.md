@@ -15,7 +15,7 @@ codigo:
   - scripts/revisarRecusas.sql
 fonte: Pergunta do usuário "como arrumamos o regex de forma definitiva?" (06/10/2026)
 created: 2026-10-06
-updated: 2026-10-09
+updated: 2026-10-12
 summary: Regex nenhuma cobre o português inteiro, então ela deixou de decidir tudo. Agora a regex resolve o óbvio, o que tem sinal de "não" e escapou vai a uma chamada curta à IA com a última fala nossa como contexto, e toda decisão fica registrada. O "Liberar contato" do corretor vira o rótulo de falso positivo, e um conjunto de frases de referência roda no CI.
 ---
 
@@ -90,3 +90,28 @@ mais à IA de recusa, ganhou a jogada `esclarecer_contato` (quem escreve, por
 quê e, no começo, a oferta de parar), e o "não" dito a essa oferta é parada
 mesmo sem a IA. A afirmação ("número errado", "não sou eu") continua parada.
 
+
+## A primeira revisão semanal (12/10/2026)
+
+De 06 a 12/10: 11 decisões (4 da regex, 7 da IA), **nenhuma desfeita pelo
+corretor**, e mesmo assim duas estavam erradas no efeito. `desfeito_em`
+conta menos falso positivo do que existe: o corretor assume a conversa e
+segue, sem tocar em "Liberar contato".
+
+- **"Comprei um apto na planta" virou "já resolvido" pelo primeiro balão.**
+  A IA (confiança 1,0) respondeu "Que bom que conseguiu realizar seu sonho!",
+  e os balões seguintes contavam que o imóvel não foi entregue, três anos de
+  atraso, e que a cliente está pagando aluguel. O corretor assumiu, mas o
+  lead ficou perdido, "não contatar" e fora das listas: as quatro
+  consequências valem para TODA família, inclusive "já resolvido".
+- **"Acho que você mandou errado"** é o caso de 08/10, já corrigido em
+  [[duvida-de-engano-nao-e-pedido-para-parar]].
+- **Furo do filtro:** "já adquiri imóvel" sozinho não tinha sinal de "não"
+  para o filtro e se perderia nas duas camadas. Em produção só chegou à IA
+  porque veio junto com um "não". Entraram no filtro "adquiri",
+  "adquirimos", "compramos", "fechamos" e "alugamos", com frases de
+  referência que reprovam sem eles (mordida conferida).
+- **Nada subiu para a regex**, de propósito: com "já compramos" decidido
+  pela regex, "já compramos na planta, mas atrasou três anos" encerraria o
+  atendimento sem ninguém ler o resto. Na IA, pelo menos a mensagem inteira
+  é lida.

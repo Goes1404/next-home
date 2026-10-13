@@ -14,7 +14,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/DoCliqueAConversa.tsx
 fonte: docs/MEMORIA.md — Onde o clique do anúncio se perde (0159)
 created: 2026-10-05
-updated: 2026-10-10
+updated: 2026-10-12
 summary: Em 7 dias, 679 cliques de pessoas no link do anúncio do Dom Parque viraram 5 leads, e o banco só sabia o total. A 0159 conta pessoas (resumo diário de IP + navegador) e quem escreveu ao corretor sem a mensagem pronta (o porteiro ignora; fica só a contagem, nunca o texto). O cartão "Do clique à conversa" na tela de Anúncios pagos mostra os degraus lado a lado, com a linha de comparação dos contatos que escrevem sem clique por perto.
 ---
 
@@ -57,11 +57,44 @@ com o usuário em 05/10/2026: medir antes de mexer.
   `porteiro_barrados` passar a levar texto ou telefone cru.
 - Retenção: 90 dias, apagada pela limpeza diária de `limpar-artes-ia`.
 
+## A primeira semana medida (05 a 12/10/2026)
+
+- **O anúncio só rodou dois dias** (05 e 06/10: 129 e 57 cliques de pessoa;
+  depois, 0 a 3 por dia). Na semana: 160 cliques de pessoa, 118 pessoas,
+  87% de dentro do navegador de um app (WebView do Android ou Instagram e
+  Facebook declarados) e **nenhum lead do anúncio**.
+- **O único lead `meta/ctwa` da semana veio de um botão do SITE.** O botão de
+  imóvel do site manda a mesma mensagem pronta do anúncio (decisão de 28/09),
+  e `reconhecerMensagemDeAnuncio` carimba `meta/ctwa` e `anuncio_origem` em
+  quem chega por ela. Com campanha cadastrada do mesmo imóvel no ar, esse
+  lead cairia na campanha paga (`campanhaDoLinkDoAnuncio`). Quem diz a
+  verdade é o clique ligado ao lead: `origem = site/<imóvel>`.
+- **Quem clica e não manda a mensagem pronta não escreve outra coisa.** Nos
+  dois dias de anúncio, 14 de 49 barrados (28,6%) chegaram até 15 minutos
+  depois de um clique; nos mesmos barrados deslocados de ±20 a ±120 minutos,
+  no mesmo dia, 28,2%. Nenhum citou o imóvel. O "6 de 8 perto do clique" do
+  primeiro dia era densidade: com 129 cliques num dia, um quarto do dia fica
+  a menos de 15 minutos de algum clique.
+- **Os barrados são o tráfego de fundo do WhatsApp pessoal**: 251 em 6,8
+  dias, 157 números, de 12 a 22 por dia em cada número, inclusive no fim de
+  semana sem anúncio.
+
+Duas armadilhas da medição:
+
+- **O acaso tem de ser medido no mesmo dia.** Deslocar os barrados de ±1 a
+  3 dias deu 7% de acaso contra 19% real, porque os pontos deslocados caíam
+  em dias sem anúncio e sem cliques.
+- **Clique de robô do site anterior à 0174** (`de_pessoa` nulo) cobre o dia
+  inteiro: em 09/10, 158 "cliques de pessoa" do site deixaram 27 de 58
+  barrados "perto de um clique".
+
 ## Próximo passo
 
-Com uma semana de dado, decidir: página intermediária com botão grande (e
-formulário em que a IA chama, decisão do usuário) e/ou aceitar a mensagem
-que cita o imóvel.
+A página intermediária com formulário perdeu a premissa de recuperar quem
+escreve outra coisa: essa pessoa não aparece nos dados. O que sobra é o
+formulário como alternativa ao WhatsApp, a ser testado contra o destino
+nativo da Meta (o anúncio que abre o WhatsApp sem passar pelo navegador do
+app, já reconhecido pela etiqueta da 0127), que não exige código novo.
 
 ## Relacionadas
 

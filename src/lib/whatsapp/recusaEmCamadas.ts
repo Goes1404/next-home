@@ -35,9 +35,12 @@ export const CONFIANCA_MINIMA = 0.8;
  * para a IA é perdê-la, mandar uma mensagem neutra custa um décimo de
  * centavo. Por isso ele é largo de propósito, e o conjunto de frases de
  * referência exige que TODA recusa conhecida passe por ele.
+ *
+ * "Adquiri" e os plurais (compramos, fechamos, alugamos) entraram em
+ * 12/10/2026: "já adquiri imóvel" sozinho não chegava à IA.
  */
 const SINAL_NEGATIVO =
-  /\b(nao|n|num|nada|nunca|nem|chega|pare|para de|parar|sair|saia|sai|stop|cancel\w*|bloque\w*|interess\w*|obrigad\w*|dispens\w*|deixa pra la|deixa quieto|esquece|esquecer|tira|tirar|remov\w*|apag\w*|exclu\w*|delet\w*|desist\w*|ja (comprei|tenho|tem|fechei|resolvi|aluguei|escolhi|consegui|estou)|sem condic\w*|incomod\w*|spam|engano|errad\w*|quem e (voce|vc)|quem (fala|ta falando)|nao conheco|chato|encher|perturb\w*|denunci\w*|procon|me deixa|depois|mais pra frente|ano que vem|agora nao|por enquanto|fechei|comprei|aluguei|outra imobiliaria|outro corretor|outra corretora)\b/;
+  /\b(nao|n|num|nada|nunca|nem|chega|pare|para de|parar|sair|saia|sai|stop|cancel\w*|bloque\w*|interess\w*|obrigad\w*|dispens\w*|deixa pra la|deixa quieto|esquece|esquecer|tira|tirar|remov\w*|apag\w*|exclu\w*|delet\w*|desist\w*|ja (comprei|tenho|tem|fechei|resolvi|aluguei|escolhi|consegui|estou)|sem condic\w*|incomod\w*|spam|engano|errad\w*|quem e (voce|vc)|quem (fala|ta falando)|nao conheco|chato|encher|perturb\w*|denunci\w*|procon|me deixa|depois|mais pra frente|ano que vem|agora nao|por enquanto|fechei|comprei|aluguei|outra imobiliaria|outro corretor|outra corretora|adquiri|adquirimos|compramos|fechamos|alugamos)\b/;
 
 /*
  * A DÚVIDA sobre o contato sai antes do filtro (08/10/2026). "Acho que você
