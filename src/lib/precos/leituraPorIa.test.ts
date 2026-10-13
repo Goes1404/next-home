@@ -34,6 +34,16 @@ describe("valores escritos na tabela", () => {
     const v = valoresEscritos("R$ 448.000,00 · 457000 · 1.289.900 · 350 mil");
     expect([...v]).toEqual(expect.arrayContaining([448000, 457000, 1289900, 350000]));
   });
+
+  it("aceita o valor com centavos arredondado, que é como a resposta da IA chega", async () => {
+    // Guia da RSF (out/2026): "R$ 381.405,62" vira 381.406 em `lerResposta`.
+    chamarLlmJson.mockResolvedValue(
+      ok({ imoveis: [{ nomeNoArquivo: "Breeze Home Clube", slug: "breeze", menorPreco: 381405.62, unidades: null }] }),
+    );
+    const r = await lerTabelaDePrecosComIa("Breeze Home Clube\n2 dorms 49 m² 1 R$ 381.405,62 B-107", catalogo);
+    expect(r.descartados).toEqual([]);
+    expect(r.itens[0]?.precoNovo).toBe(381406);
+  });
 });
 
 describe("tabela de preços lida pela IA", () => {

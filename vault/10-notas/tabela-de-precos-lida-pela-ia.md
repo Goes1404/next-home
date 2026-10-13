@@ -129,3 +129,25 @@ linha. O defeito era do extrator (`pdfTexto.ts`), não da IA.
   antigo. É o jeito barato de testar PDF real neste ambiente.
 - Texto com espaçamento grande entre letras sai como "T E S T E" (é como está
   desenhado); números e nomes de imóvel saem inteiros.
+
+## O guia da RSF, testado com o arquivo real (13/10/2026)
+
+O "Guia do Parceiro" de outubro (53 páginas, 13,3 MB) passou pelo extrator em
+0,4 s: 28 mil caracteres, o tabelão inteiro com uma linha por unidade e os 35
+valores escritos. O defeito estava depois da extração:
+
+- **Centavos arredondados não batiam com o arquivo.** `lerResposta` arredonda o
+  preço da IA (381.405,62 vira 381.406), e `valoresEscritos` guardava só a parte
+  inteira (381.405). Todo valor com 50 centavos ou mais era descartado como "não
+  está escrito no arquivo": 8 dos 15 empreendimentos do guia. Hoje
+  `valoresEscritos` guarda também o valor arredondado.
+- **Simulado com a resposta que uma IA correta daria e o catálogo real** (39
+  publicados): 15 lidos, 0 descartados. Entram marcados os que baixam ou criam o
+  "a partir de" (Liv Stay, Beyond, Symmetry, Eternity, Vila do Conde). Os que
+  subiriam o valor ficam desmarcados, porque o guia avisa que são unidades de
+  referência (Breeze, Manacá, Bless Jardim Esperança, Viva Jaguaribe). Seis
+  empreendimentos do guia não existem no catálogo (Bless Shopping Barueri,
+  Reserva Urano, Viva Carapicuíba, Bless Praça da Árvore, Bless Ipiranga, Murat
+  208) e aparecem como "não encontrado".
+- Sem chave de IA nesta máquina, a leitura pelo modelo de verdade só se prova
+  subindo o arquivo em produção.

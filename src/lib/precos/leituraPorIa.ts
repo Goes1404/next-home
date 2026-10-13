@@ -80,9 +80,16 @@ export function valoresEscritos(texto: string): Set<number> {
   const t = texto.replace(/ /g, " ");
   for (const m of t.matchAll(/\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?/g)) {
     const bruto = m[0];
-    const [inteiro] = bruto.split(",");
+    const [inteiro, centavos] = bruto.split(",");
     const valor = Number(inteiro.replace(/\./g, ""));
-    if (Number.isFinite(valor) && valor > 0) valores.add(valor);
+    if (Number.isFinite(valor) && valor > 0) {
+      valores.add(valor);
+      // A resposta da IA é arredondada (`lerResposta`): "381.405,62" chega
+      // como 381.406. Sem o valor arredondado aqui, todo preço com 50
+      // centavos ou mais era descartado como "não está escrito no arquivo"
+      // (8 dos 15 do guia da RSF, 13/10/2026).
+      if (centavos) valores.add(Math.round(valor + Number(centavos.padEnd(2, "0")) / 100));
+    }
   }
   for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*mil\b/gi)) {
     const valor = Math.round(Number(m[1].replace(",", ".")) * 1000);

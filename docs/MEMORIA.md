@@ -10264,3 +10264,16 @@ Nota: [[tabela-de-precos-lida-pela-ia]].
   com tabela. O extrator antigo reproduz o defeito com ele.
 - O extrator é usado também pela importação de leads, pelo rascunho de imóvel
   e pelas unidades: todos ganham a mesma leitura.
+
+## Centavos descartavam metade do tabelão (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **Testado com o guia real da RSF** (53 páginas): o extrator novo tira o
+  tabelão inteiro, mas 8 dos 15 valores eram descartados. A IA devolve o preço
+  arredondado (381.405,62 → 381.406) e a trava "o valor está escrito" só
+  conhecia a parte inteira. Hoje `valoresEscritos` guarda as duas.
+- **Para testar a leitura sem chave de IA**: extrair o texto com
+  `extrairTextoDePdf`, ler o catálogo com a chave publicável e simular a
+  resposta da IA num teste com `chamarLlmJson` mockado. Log do teste vai para
+  arquivo: o vitest às vezes engole `console.log`.
