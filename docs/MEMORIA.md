@@ -10228,3 +10228,4 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
   Reveal (os dois juntos seriam dois donos da opacidade). `--coluna` conta a
   coluna real: sem filtro, o primeiro card ocupa duas colunas.
 - **As páginas de região também usam a passagem (13/10)**: `.cartao-passa` direto no `<li>` (com `Reveal` a lista perderia o `<li>`), `--coluna` = `i % 3`.
+- **Na página do imóvel também (13/10)**: tipologias (`i % 2`, a grade tem duas colunas) e "Veja também" (`i % 3`). A galeria fica de fora: já tem a entrada do `CartaoTilt`, e as duas juntas seriam duas entradas.
