@@ -154,10 +154,17 @@ export default async function PaginaDaRegiao({ params }: Props) {
 
         <Secao espaco="final">
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {/* A passagem dos cards da home (`cartao-passa`, 13/10/2026), no
+                lugar do Reveal: os dois juntos seriam dois donos da opacidade.
+                Continua `<li>`, senão o leitor de tela perde a lista. */}
             {imoveis.map((e, i) => (
-              <Reveal key={e.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
+              <li
+                key={e.slug}
+                className="cartao-passa h-full"
+                style={{ "--coluna": i % 3 } as React.CSSProperties}
+              >
                 <CardEmpreendimento empreendimento={e} prioridade={i < 3} nivel="h2" />
-              </Reveal>
+              </li>
             ))}
           </ul>
 

@@ -83,6 +83,7 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   ancorada na base ao sair; faixas curvas com sombra para cima. O mapa fica
   de fora: `scale` no ancestral desloca o clique e prende o card flutuante.
 - `.cartao-passa` (03/10): a mesma passagem card a card em "Oportunidades em
+- As páginas de região (`/regioes/<slug>`) também usam `.cartao-passa` (13/10/2026). O cartão continua dentro de `<li>`, com `--coluna` = `i % 3` (lá não há cartão de destaque largo).
   destaque", substituindo o Reveal (dois donos da opacidade); no computador
   as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
   seção perdeu a `secao-passa` para não somar com a dos cards.

@@ -10227,4 +10227,4 @@ Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
 - **`/empreendimentos` usa `.cartao-passa` em todos os cards**, no lugar do
   Reveal (os dois juntos seriam dois donos da opacidade). `--coluna` conta a
   coluna real: sem filtro, o primeiro card ocupa duas colunas.
-
+- **As páginas de região também usam a passagem (13/10)**: `.cartao-passa` direto no `<li>` (com `Reveal` a lista perderia o `<li>`), `--coluna` = `i % 3`.
