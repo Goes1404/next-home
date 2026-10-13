@@ -14,7 +14,7 @@ codigo:
   - public/icones/icone-mascaravel-512.png
   - public/apple-touch-icon.png
 created: 2026-10-09
-updated: 2026-10-10
+updated: 2026-10-13
 fonte: docs/MEMORIA.md — "O atalho da tela inicial guarda o ícone antigo (09/10/2026)"
 summary: Depois da troca do favicon, o atalho do celular seguia com o triângulo do Next borrado. Atalho guarda o ícone de quando foi criado e não atualiza. O site já entregava o ícone novo; faltava um manifesto com ícone de 512 px e versão mascarável, sem start_url e com display "browser".
 ---
@@ -98,6 +98,17 @@ O triângulo só pode vir de três lugares, e nenhum se resolve no código:
 
 O Chromium lista `start-url-not-valid` para o nosso manifesto. É esperado,
 porque não há `start_url` de propósito, e não impede o atalho.
+
+## No resultado de busca do Google (13/10/2026)
+
+O triângulo também apareceu ao lado do site numa pesquisa do Google. Ali não
+é o celular de ninguém: é a cópia que o Google guarda. O servidor entregava a
+marca (mesmo md5 do repositório, `<link rel="icon">` de 48 e 192 px, `robots`
+liberando). Para ver o que o Google guardou:
+`https://www.google.com/s2/favicons?domain=www.nexthomeimoveis.com&sz=64`.
+Em 13/10 ele ainda devolvia o triângulo do Next. Não há conserto no código: o
+Google troca quando recolhe a home de novo, o que leva de dias a semanas.
+Para apressar, Search Console → Inspeção de URL da home → Solicitar indexação.
 
 ## Relacionadas
 - [[identidade-da-marca-para-o-google]]

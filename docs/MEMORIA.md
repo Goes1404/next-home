@@ -9922,6 +9922,11 @@ Nota: [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
   atalho recriado ainda mostrar o triângulo, falta apagar os dados do site no
   navegador, ou o atalho aponta para um deploy antigo da Vercel (endereço com
   sufixo), que serve o favicon padrão do Next para sempre.
+- **No resultado de busca do Google o triângulo é a cópia DO GOOGLE (13/10).**
+  O servidor já entregava a marca. O que o Google guardou se vê em
+  `google.com/s2/favicons?domain=www.nexthomeimoveis.com&sz=64` (em 13/10,
+  ainda o triângulo). Troca quando ele recolhe a home de novo; para apressar,
+  Search Console → Inspeção de URL → Solicitar indexação.
 
 ## A primeira semana em produção (03-09/10/2026)
 
