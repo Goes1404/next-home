@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [supabase/migrations/0100_anotacoes.sql, src/app/corretor/(painel)/anotacoes, src/lib/crm/lembretes.ts, src/lib/crm/filaDeTrabalho.ts, src/app/api/cron/followups/route.ts]
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-14
 fonte: docs/superpowers/specs/2026-09-06-anotacoes-do-corretor-design.md
 summary: Nota livre, vínculo opcional a lead, direcionável a colega (destinatario_id), lembrete no WhatsApp do próprio corretor + fila do Início. Empreendimento vem do LEAD, nunca de coluna própria.
 ---
@@ -50,3 +50,10 @@ https://claude.ai/code/artifact/52ceae23-be2f-4026-baab-473838609ffe
 - [[fila-do-inicio-e-uma-fila]]
 - [[campanha-tambem-mexe-no-funil]]
 - [[MOC — CRM e Painel]]
+
+## 14/10/2026: o lembrete sai na hora marcada
+
+O lembrete rodava depois da janela comercial do runner, então um das 8h saía
+às 9h. Agora roda antes dela, junto com o da tarefa do lead
+([[lembrete-da-tarefa-chega-no-whatsapp]]). A mensagem com lead leva o link
+da ficha.

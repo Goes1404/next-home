@@ -31,6 +31,8 @@ import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
+import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
+import { site } from "@/lib/site";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
@@ -622,11 +624,25 @@ export async function GET(req: NextRequest) {
   });
   const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
 
+  /*
+   * Lembretes do corretor: os das anotações (0100) e os das tarefas da ficha
+   * do lead (0178). Vão para o WhatsApp do PRÓPRIO corretor, na hora que ELE
+   * marcou — por isso antes da janela comercial e fora da cota anti-ban.
+   * Atrás da janela, um lembrete das 8h só sairia às 9h.
+   */
+  await processarLembretesDeAnotacao(supabase).catch((e) => {
+    console.error("[lembrete de anotação]", e);
+  });
+  const lembretesDeTarefa = await processarLembretesDeTarefa(supabase).catch((e) => {
+    console.error("[lembrete de tarefa]", e);
+    return 0;
+  });
+
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -651,9 +667,6 @@ export async function GET(req: NextRequest) {
       console.error("[aviso de novidade]", e);
       return 0;
     });
-    // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
-    // para cliente — por isso não passa por cota anti-ban nem pela janela.
-    await processarLembretesDeAnotacao(supabase);
 
     const { data: vencidos } = await supabase
       .from("whatsapp_followups")
@@ -671,7 +684,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
@@ -682,9 +695,10 @@ export const POST = GET;
 /**
  * Lembretes das anotações vencidos → WhatsApp do próprio corretor (0100).
  *
- * Roda no MESMO tique (e sob a mesma trava) dos follow-ups: o pg_cron já
- * bate aqui a cada 5 min, e criar um segundo cron para meia dúzia de
- * lembretes seria configuração nova em produção sem ganho nenhum.
+ * Roda no MESMO tique dos follow-ups, antes da janela comercial (14/10): o
+ * pg_cron já bate aqui a cada 5 min, e criar um segundo cron para meia dúzia
+ * de lembretes seria configuração nova em produção sem ganho nenhum. Fica
+ * fora da trava dos follow-ups porque o claim abaixo já impede envio duplo.
  *
  * O claim é atômico (`lembrete_enviado_em is null` no próprio UPDATE):
  * entre dois tiques concorrentes, só um manda. Falha de envio carimba
@@ -747,6 +761,7 @@ async function processarLembretesDeAnotacao(
         texto: nota.texto,
         leadNome: lead?.nome ?? null,
         autorNome: autor?.nome ?? null,
+        link: nota.lead_id ? `${site.url}/corretor/leads/${nota.lead_id}` : null,
       }),
     });
 

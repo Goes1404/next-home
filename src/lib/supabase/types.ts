@@ -2212,6 +2212,8 @@ export type Database = {
           created_at: string
           id: string
           lead_id: string
+          lembrete_enviado_em: string | null
+          lembrete_erro: string | null
           prazo: string
           titulo: string
         }
@@ -2221,6 +2223,8 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id: string
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
           prazo: string
           titulo: string
         }
@@ -2230,6 +2234,8 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id?: string
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
           prazo?: string
           titulo?: string
         }

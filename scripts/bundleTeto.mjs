@@ -34,6 +34,7 @@ const APP = join(NEXT, "server", "app");
  * folgado é catraca que não catraca.
  */
 const TETOS_KB = {
+  "/corretor/(painel)/leads/page": 739, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 12/10/2026: a catraca desceu em TODA rota, pelos dois cortes do dia.
   // (1) GSAP + ScrollTrigger + Lenis saíram do painel: o layout raiz monta o
   // `SmoothScroll` por `MovimentoDoSite`, que só o carrega (dynamic) fora de
@@ -64,36 +65,36 @@ const TETOS_KB = {
   // (higieneDaBase) e o funil de 10 etapas com grupos (types.ts), que todas
   // puxam pelos utilitários de lead.
   // 07/10: +1 KB: o menu ganhou "Alertas e IA" no Financeiro.
-  "/corretor/(painel)/pessoas/page": 712, // 07/10: +1 KB, o mascote da IA (Mascote) no botão do consultor, que mora no layout
+  "/corretor/(painel)/pessoas/page": 714, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 749, // 07/10: +1 KB, o mascote da IA no botão do consultor
+  "/corretor/(painel)/conversas/page": 751, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
-  "/corretor/(painel)/imoveis/criar-imagem/page": 717, // 07/10: +1 KB, o mascote da IA com destaque (disco e pulso) no botão do consultor
+  "/corretor/(painel)/imoveis/criar-imagem/page": 718, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
-  "/corretor/(painel)/imoveis/[slug]/importar/page": 726, // 07/10: +1 KB, o mascote da IA no botão do consultor
+  "/corretor/(painel)/imoveis/[slug]/importar/page": 728, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
-  "/corretor/(painel)/imoveis/[slug]/page": 780, // 07/10: +1 KB, o mascote da IA no botão do consultor
-  "/corretor/(painel)/marketing/video/page": 709, // 07/10: +1 KB, o mascote da IA com destaque (disco e pulso) no botão do consultor
+  "/corretor/(painel)/imoveis/[slug]/page": 781, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/marketing/video/page": 710, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
   // 07/10: +1 KB: o menu ganhou Fiscal e Contador (navegação vai em toda rota).
-  "/corretor/(painel)/campanhas/page": 750, // 07/10: +1 KB, aviso de números sem WhatsApp ao criar a lista (pausaAutomatica.ts)
+  "/corretor/(painel)/campanhas/page": 752, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // 09/10: +8 a +10 KB em toda rota do painel com teto próprio, e as duas
   // de teto padrão abaixo: a lateral do computador que recolhe em trilho de
   // ícones (cartões, cookie) e o cabeçalho que some ao rolar no celular. Os
   // dois moram no layout, então pesam em toda rota do painel.
-  "/corretor/(painel)/marketing/impulsionamentos/page": 744,
-  "/corretor/(painel)/importar/page": 746, // 09/10: +2 KB, telefone com 55 que a planilha cortou ("5,51198E+12") ou que veio sem DDD não vira número errado na revisão; o resto da colagem é carregado sob demanda
+  "/corretor/(painel)/marketing/impulsionamentos/page": 745, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/importar/page": 747, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

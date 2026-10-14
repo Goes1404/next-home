@@ -10286,3 +10286,20 @@ Nota: [[menu-do-painel-reorganizado]].
   Negócio = Imóveis, Sistema = Marketing), aplicada com `data-modulo` no
   `<li>`. Seção nova no menu precisa entrar no mapa: a guarda de
   `navegacao.test.ts` reprova seção sem cor ou com cor repetida.
+
+## O lembrete da tarefa do lead chega no WhatsApp (0178, 14/10/2026)
+
+Nota: [[lembrete-da-tarefa-chega-no-whatsapp]].
+
+- **A tarefa da ficha do lead só avisava na tela.** Agora o tique dos
+  follow-ups manda a tarefa vencida para o WhatsApp do próprio corretor
+  (`processarLembretesDeTarefa`, pelo `avisarCorretor`), com o link da ficha.
+- **O lembrete da anotação esperava a janela comercial**: rodava depois do
+  `return` de fora da janela, e um lembrete das 8h saía às 9h. Os dois rodam
+  antes dela; guarda em `lembretesDeTarefa.test.ts`.
+- **A 0178 não foi aplicada por esta sessão** (MCP do Supabase sem
+  permissão). Sem ela o código devolve 0 e não quebra; a migration marca como
+  enviado o que já venceu, para o primeiro tique não mandar tudo de uma vez.
+- **A catraca de peso estava vermelha** desde o menu colorido do mesmo dia
+  (10 rotas do painel, menos de 1 KB cada, pelo layout). Tetos subiram 1 KB.
+
