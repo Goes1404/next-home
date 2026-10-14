@@ -9,6 +9,7 @@ import {
   gruposVisiveis,
   itemAtivo,
   moduloAtivo,
+  moduloDaSecao,
   rotaAtiva,
   subitensDe,
 } from "./navegacao";
@@ -460,6 +461,29 @@ describe("tópico com subtópicos é pasta", () => {
       expect(f, arq).toMatch(/aria-expanded=\{/);
       // O botão que abre a pasta não pode carregar href: seria navegação.
       expect(f, arq).not.toMatch(/<button[^>]*href=/);
+    }
+  });
+});
+
+describe("seções de subtópicos (Administração)", () => {
+  const subs = GRUPOS_NAV.flatMap((g) => g.itens).flatMap((i) => i.subitens ?? []);
+  const secoes = [...new Set(subs.map((s) => s.secao).filter((s): s is string => !!s))];
+
+  it("toda seção tem cor, e cada uma a sua", () => {
+    // Seção nova sem cor sairia cinza no meio das coloridas, calada.
+    expect(secoes.length).toBeGreaterThan(1);
+    const cores = secoes.map((s) => moduloDaSecao(s));
+    expect(cores).not.toContain(null);
+    expect(new Set(cores).size).toBe(secoes.length);
+  });
+
+  it("subtópicos da mesma seção ficam juntos", () => {
+    // O título só é desenhado quando a seção muda: seção repetida mais
+    // abaixo apareceria duas vezes.
+    for (const item of GRUPOS_NAV.flatMap((g) => g.itens)) {
+      const seq = (item.subitens ?? []).map((s) => s.secao).filter(Boolean);
+      const blocos = seq.filter((s, i) => s !== seq[i - 1]);
+      expect(new Set(blocos).size).toBe(blocos.length);
     }
   });
 });

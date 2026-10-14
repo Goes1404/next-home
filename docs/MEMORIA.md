@@ -10277,3 +10277,12 @@ Nota: [[tabela-de-precos-lida-pela-ia]].
   `extrairTextoDePdf`, ler o catálogo com a chave publicável e simular a
   resposta da IA num teste com `chamarLlmJson` mockado. Log do teste vai para
   arquivo: o vitest às vezes engole `console.log`.
+
+## Cada seção da Administração com a própria cor (14/10/2026)
+
+Nota: [[menu-do-painel-reorganizado]].
+
+- **Seção de subtópico ganha cor por `moduloDaSecao`** (Equipe = Pessoas,
+  Negócio = Imóveis, Sistema = Marketing), aplicada com `data-modulo` no
+  `<li>`. Seção nova no menu precisa entrar no mapa: a guarda de
+  `navegacao.test.ts` reprova seção sem cor ou com cor repetida.

@@ -13,7 +13,7 @@ codigo:
   - src/app/corretor/(painel)/admin/anuncios/ContaDaMeta.tsx
   - src/app/globals.css
 created: 2026-09-30
-updated: 2026-09-30
+updated: 2026-10-14
 summary: Reorganização do menu do painel em 30/09/2026, a pedido. Criar arte e Criar vídeo foram para Marketing e o Consultor para Assistente. A Administração virou um tópico com três seções (Equipe, Negócio, Sistema). "Atendimento da IA" passou a se chamar "Respostas da IA", e a conta da Meta mudou-se para Anúncios pagos. Adicionar leads, Modelos, Ordem no site, Fila de cadastro, SLA e Eventos saíram do menu e continuam como botões na tela de que fazem parte. No visual, cada tópico ganhou um quadradinho na cor da sua seção, e os subtópicos ganharam ícone e títulos de seção.
 ---
 
@@ -86,3 +86,20 @@ Veja também [[navegacao-do-painel-tem-regua]] e [[adm-nao-le-conversa-alheia]].
   reprodução que desenhava bolinhas no lugar dos ícones. Ele pediu "crie
   símbolos" para ícones que já existiam. Agora a reprodução usa os SVGs
   reais, gerados com `renderToStaticMarkup` sobre `GRUPOS_NAV`.
+
+## Cada seção da Administração tem a própria cor (14/10/2026)
+
+- **Pedido do usuário, com print da gaveta do celular:** "deixe separadinho
+  por cores e por categoria". As três seções (Equipe, Negócio, Sistema) eram
+  só um título cinza no meio de nove linhas iguais.
+- **Cor por seção, reaproveitada de módulo** (`moduloDaSecao`, em
+  `navegacao.tsx`): Equipe na cor de Pessoas (é gente), Negócio na de Imóveis
+  (construtora, preço, crédito), Sistema na de Marketing (a marca). Não há cor
+  nova: o círculo cromático do painel está cheio.
+- **Como pinta:** `data-modulo` no `<li>` de cada subtópico reaponta o acento.
+  Título da seção com bolinha colorida, ícone num quadradinho da cor, item
+  aberto realçado na mesma cor, e um fio entre uma seção e a seguinte. Vale
+  na gaveta do celular e na lateral do computador.
+- **Guarda** (`navegacao.test.ts`): toda seção precisa ter cor, cada uma a
+  sua, e subtópicos da mesma seção ficam juntos (o título só sai quando a
+  seção muda). Provocada dando a Sistema a cor de Equipe: reprovou.

@@ -8,6 +8,7 @@ import {
   destinoAtivo,
   ehPasta,
   gruposVisiveis,
+  moduloDaSecao,
   moduloDoTopico,
   subitemAtivo,
   type GrupoNav,
@@ -355,10 +356,20 @@ function Subtopicos({
         // Título de seção quando ela muda (Administração: Equipe · Negócio ·
         // Sistema).
         const novaSecao = sub.secao && sub.secao !== subs[i - 1]?.secao;
+        // Cada seção na própria cor (`moduloDaSecao`): título, ícone e o
+        // realce do ativo seguem a categoria, como na gaveta do celular.
+        const modSecao = moduloDaSecao(sub.secao);
         return (
-          <li key={sub.href}>
+          <li key={sub.href} data-modulo={modSecao ?? undefined}>
             {novaSecao && (
-              <p className="text-tenue px-2 pt-2.5 pb-1 text-[10.5px] font-semibold tracking-[0.14em] uppercase">
+              <p
+                className={cn(
+                  "flex items-center gap-2 px-2 pb-1 text-[10.5px] font-semibold tracking-[0.14em] uppercase",
+                  modSecao ? "text-acento-suave" : "text-tenue",
+                  i > 0 ? "border-linha mt-1.5 border-t pt-2.5" : "pt-2",
+                )}
+              >
+                {modSecao && <span aria-hidden className="bg-acento h-1.5 w-1.5 shrink-0 rounded-full" />}
                 {sub.secao}
               </p>
             )}
@@ -373,7 +384,17 @@ function Subtopicos({
                 aberto ? "bg-acento-lavado text-acento-suave font-medium" : "text-apoio hover:text-titulo hover:bg-vidro",
               )}
             >
-              {IconeSub && <IconeSub aria-hidden className="h-4 w-4 shrink-0 opacity-80" />}
+              {IconeSub &&
+                (modSecao ? (
+                  <span
+                    aria-hidden
+                    className="bg-acento-lavado text-acento-suave grid h-6 w-6 shrink-0 place-items-center rounded-md"
+                  >
+                    <IconeSub className="h-3.5 w-3.5" />
+                  </span>
+                ) : (
+                  <IconeSub aria-hidden className="h-4 w-4 shrink-0 opacity-80" />
+                ))}
               <span className="min-w-0 flex-1 truncate">{sub.label}</span>
               <MarcaDoMenu marca={marcas[sub.href]} />
               <CarregandoLink />
