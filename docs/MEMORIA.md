@@ -10370,3 +10370,20 @@ Nota: [[agenda-padrao-aberta]].
   (o arquivo inteiro voltou ao commit). Salvou a cópia feita antes da
   mordida: copiar sempre antes de morder.
 
+## Link de documentos em dois tempos (16/10/2026)
+
+Nota: [[arquivo-grande-nao-passa-pela-server-action]].
+
+- **A Vercel recusa corpo acima de 4,5 MB** (413 `FUNCTION_PAYLOAD_TOO_LARGE`,
+  medido) antes do código rodar; o `bodySizeLimit: 12mb` não muda isso. O
+  link de documentos e o anexar da ficha mandavam o arquivo pela Server
+  Action, e a tela dizia "sem conexão". Agora: o servidor autoriza um caminho
+  (`createSignedUploadUrl`), o navegador sobe direto e o servidor confere
+  tamanho e formato pelo armazenamento antes de registrar.
+- **Foto reduzida no aparelho** (2400 px, JPEG), HEIC vira JPEG quando o
+  navegador abre; tipo vazio sai da extensão. O erro diz a causa; link vencido
+  tem página com o botão de pedir outro; cada item tem dica.
+- **Arquivo novo que precise subir do navegador**: use
+  `autorizarEnvio`/`conferirArquivoEnviado`, nunca `File` numa Server Action.
+- Não provado contra o bucket real (sem chave de serviço nesta sessão).
+

@@ -36,6 +36,7 @@ F0–F6.
 - [[anotacoes-do-corretor]] — bloco de notas com lembretes (06/09)
 - [[lembrete-da-tarefa-chega-no-whatsapp]] — a tarefa da ficha do lead avisa no WhatsApp (14/10)
 - [[documentacao-do-lead]] — listas por fase, conferir/recusar com motivo, guardar do WhatsApp, .zip (16/10)
+- [[arquivo-grande-nao-passa-pela-server-action]] — o link de documentos sobe direto ao armazenamento (Vercel recusa > 4,5 MB), foto reduzida, link vencido, dica por item (16/10)
 - [[fila-do-inicio-e-uma-fila]]
 - [[nome-util-do-lead-e-modulo-puro]]
 - [[alerta-sempre-aceso-vira-paisagem]]

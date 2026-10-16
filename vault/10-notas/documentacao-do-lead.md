@@ -58,3 +58,6 @@ link e a ficha mostrava só "recebido".
 
 - [[lembrete-da-tarefa-chega-no-whatsapp]]
 - [[audio-do-cliente-era-arquivo-cifrado]] (o mesmo download da Evolution)
+
+O envio (link do cliente e anexar da ficha) sobe direto ao armazenamento desde
+o mesmo dia: [[arquivo-grande-nao-passa-pela-server-action]].
