@@ -7,7 +7,7 @@ status: evergreen
 custou: baixo
 codigo: [supabase/migrations/0178_lembrete_das_tarefas_no_whatsapp.sql, src/lib/crm/lembretesDeTarefa.ts, src/lib/crm/lembretes.ts, src/app/api/cron/followups/route.ts, src/app/corretor/(painel)/leads/[id]/ProximasAcoes.tsx]
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-16
 summary: A tarefa da ficha do lead ("Próximas ações") manda o lembrete no WhatsApp do próprio corretor na hora marcada, pelo mesmo caminho do resumo do dia. Os lembretes das anotações e das tarefas saem antes da janela comercial.
 ---
 # O lembrete da tarefa do lead chega no WhatsApp (0178)
@@ -38,3 +38,4 @@ já chegava. A tarefa da ficha do lead não: o prazo passava e só a tela avisav
 - **Funciona antes da migration.** Sem a coluna, a consulta falha, a função
   devolve 0 e nada quebra. A tela não lê as colunas novas.
 - Número desconectado: o lembrete não sai e a tarefa continua no painel.
+- **Aplicada em 16/10/2026** pelo usuário, no editor SQL do Supabase.

@@ -10297,9 +10297,10 @@ Nota: [[lembrete-da-tarefa-chega-no-whatsapp]].
 - **O lembrete da anotação esperava a janela comercial**: rodava depois do
   `return` de fora da janela, e um lembrete das 8h saía às 9h. Os dois rodam
   antes dela; guarda em `lembretesDeTarefa.test.ts`.
-- **A 0178 não foi aplicada por esta sessão** (MCP do Supabase sem
-  permissão). Sem ela o código devolve 0 e não quebra; a migration marca como
-  enviado o que já venceu, para o primeiro tique não mandar tudo de uma vez.
+- **A 0178 foi aplicada pelo usuário no editor SQL em 16/10** (o MCP do
+  Supabase desta sessão segue sem permissão). Antes dela o código devolvia 0
+  sem quebrar; a migration marca como enviado o que já venceu, para o
+  primeiro tique não mandar tudo de uma vez.
 - **A catraca de peso estava vermelha** desde o menu colorido do mesmo dia
   (10 rotas do painel, menos de 1 KB cada, pelo layout). Tetos subiram 1 KB.
 
