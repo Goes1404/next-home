@@ -5,6 +5,7 @@ import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { lerLinkPublico } from "@/lib/crm/linkPublico";
 import { createServiceClient } from "@/lib/supabase/service";
+import { documentacaoDoLink } from "@/lib/crm/documentacaoDados";
 import { EnvioDeDocumentos } from "./EnvioDeDocumentos";
 
 export const metadata: Metadata = {
@@ -19,8 +20,10 @@ export const metadata: Metadata = {
  * ninguém sabe o que falta. Aqui é uma lista, um botão por item, e o
  * corretor vê na ficha o que chegou.
  *
- * A página mostra só QUE o item foi enviado, nunca o arquivo: o link pode
- * ser encaminhado, e documento pessoal não aparece para quem o recebeu.
+ * A página mostra só a SITUAÇÃO de cada item (falta, enviado, conferido,
+ * recusado com o motivo), nunca o arquivo: o link pode ser encaminhado, e
+ * documento pessoal não aparece para quem o recebeu. A lista é a do lead
+ * como está agora (0179) — o corretor pode ter posto ou tirado item.
  */
 export default async function DocumentosPage({
   params,
@@ -33,13 +36,7 @@ export default async function DocumentosPage({
   const link = await lerLinkPublico(token, "documentos", { previa: previa === "1" });
   if (!link) notFound();
 
-  const itens = Array.isArray(link.dados.itens) ? (link.dados.itens as string[]) : [];
-  const { data: enviados } = await createServiceClient()
-    .from("lead_documentos")
-    .select("item")
-    .eq("link_token", token);
-  const contagem: Record<string, number> = {};
-  for (const d of enviados ?? []) contagem[d.item] = (contagem[d.item] ?? 0) + 1;
+  const { itens } = await documentacaoDoLink(createServiceClient(), link.leadId, link.dados);
 
   return (
     <Pagina>
@@ -52,7 +49,7 @@ export default async function DocumentosPage({
       </Secao>
       <Secao espaco="final">
         <div className="max-w-2xl">
-          <EnvioDeDocumentos token={token} itens={itens} jaEnviados={contagem} />
+          <EnvioDeDocumentos token={token} itens={itens} />
         </div>
       </Secao>
     </Pagina>

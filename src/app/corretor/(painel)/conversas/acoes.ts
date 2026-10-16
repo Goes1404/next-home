@@ -6,6 +6,8 @@ import { MENSAGENS_POR_PAGINA } from "./chatModelo";
 import type { ContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { caminhoDaMidiaPrivada } from "@/lib/whatsapp/midiaPrivada";
 import {
   enviarMensagemWhatsapp,
   enviarMidiaWhatsapp,
@@ -85,6 +87,11 @@ export type MensagemConversa = {
   tipo: "texto" | "audio" | "imagem" | "documento";
   /** URL da mídia quando houver — é o que permite tocar o áudio no painel. */
   midiaUrl: string | null;
+  /**
+   * A foto ou o PDF do cliente está no bucket privado (16/10/2026): dá para
+   * guardar como documento do lead. A `midiaUrl` é, então, assinada e curta.
+   */
+  guardavel?: boolean;
   /** ✓✓ das mensagens enviadas pelo painel (0051); null = sem rastreio. */
   statusEntrega: "enviada" | "entregue" | "lida" | null;
   /** Vínculo com a telemetria (0040) — é o que torna ESTE balão avaliável. */
@@ -153,6 +160,27 @@ export async function lerMensagens(
     }
   }
 
+  /*
+   * Mídia do cliente guardada no bucket privado (`privado:<caminho>`): abre
+   * por URL assinada de 30 minutos. A leitura da mensagem já passou pela RLS
+   * (só o dono da conversa chega aqui), então assinar pela chave de serviço
+   * não abre nada a mais.
+   */
+  const privadas = (data ?? [])
+    .map((m) => caminhoDaMidiaPrivada(m.midia_url))
+    .filter((c): c is string => c !== null);
+  const assinadas = new Map<string, string>();
+  if (privadas.length > 0) {
+    const { data: urls } = await createServiceClient()
+      .storage.from("documentos-clientes")
+      .createSignedUrls(privadas, 60 * 30);
+    for (const u of urls ?? []) if (u.path && u.signedUrl) assinadas.set(u.path, u.signedUrl);
+  }
+  const midiaDe = (url: string | null) => {
+    const caminho = caminhoDaMidiaPrivada(url);
+    return caminho ? (assinadas.get(caminho) ?? null) : url;
+  };
+
   return (data ?? [])
     .map((m) => ({
       id: m.id,
@@ -160,7 +188,8 @@ export async function lerMensagens(
       conteudo: m.conteudo,
       criadoEm: m.created_at,
       tipo: m.tipo as MensagemConversa["tipo"],
-      midiaUrl: m.midia_url,
+      midiaUrl: midiaDe(m.midia_url),
+      guardavel: m.remetente === "cliente" && caminhoDaMidiaPrivada(m.midia_url) !== null,
       statusEntrega: m.status_entrega,
       interacaoId: m.interacao_id,
       avaliacao: m.interacao_id ? (avaliacoes.get(m.interacao_id) ?? null) : null,

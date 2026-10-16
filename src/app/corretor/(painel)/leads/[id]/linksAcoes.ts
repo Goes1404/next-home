@@ -10,10 +10,7 @@ import { getParametrosCredito } from "@/lib/credito/parametros";
 import { validarProposta, type EntradaDaProposta } from "@/lib/crm/proposta";
 import {
   caminhoDoLink,
-  documentosDoPerfil,
   IMOVEIS_NA_SELECAO,
-  PERFIS_DE_DOCUMENTO,
-  type PerfilDeDocumento,
   mensagemParaCliente,
   type TipoDeLink,
 } from "@/lib/crm/linksDoCliente";
@@ -158,19 +155,6 @@ export async function criarSelecao(leadId: string, escolhidos: string[]): Promis
     nome: lead.nome,
     // Só os imóveis: a renda do cliente não viaja num link compartilhável.
     dados: { empreendimentos: ids },
-  });
-}
-
-export async function criarLinkDeDocumentos(leadId: string, perfil: string = "clt"): Promise<LinkCriado> {
-  if (!(PERFIS_DE_DOCUMENTO as readonly string[]).includes(perfil)) return { erro: "Perfil desconhecido." };
-  const r = await leadDaCarteira(leadId);
-  if ("erro" in r) return { erro: r.erro! };
-  return gravar(r.supabase, {
-    tipo: "documentos",
-    leadId,
-    corretorId: r.corretor.id,
-    nome: r.lead.nome,
-    dados: { itens: documentosDoPerfil(perfil as PerfilDeDocumento), perfil },
   });
 }
 

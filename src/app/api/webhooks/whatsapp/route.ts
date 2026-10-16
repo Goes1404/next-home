@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { after, NextRequest, NextResponse } from "next/server";
+import { guardarMidiaRecebida } from "@/lib/whatsapp/midiaRecebida";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
@@ -735,6 +736,27 @@ export async function POST(req: NextRequest) {
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+    }
+
+    /*
+     * Foto ou PDF do cliente vai para o bucket privado (16/10/2026): é o que
+     * deixa o corretor ver no painel e guardar como documento do lead. Depois
+     * da resposta, para não atrasar o atendimento.
+     */
+    if (tipoMidiaRecebida && gravacao.id && conversa.leadId && providerMessageId) {
+      const mensagemId = gravacao.id;
+      const leadDaMidia = conversa.leadId;
+      const idNoProvedor = providerMessageId;
+      after(() =>
+        guardarMidiaRecebida({
+          instanceName: instancia.instanceName,
+          providerMessageId: idNoProvedor,
+          mensagemCompleta: payload.data ?? null,
+          leadId: leadDaMidia,
+          mensagemId,
+          nomeDoArquivo: documentoMsg?.fileName ?? null,
+        }),
+      );
     }
 
     /*

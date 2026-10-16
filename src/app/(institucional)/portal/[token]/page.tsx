@@ -47,7 +47,8 @@ export default async function PortalPage({
       .eq("status", "ativa")
       .order("data_venda", { ascending: false })
       .limit(1),
-    supabase.from("lead_documentos").select("item").eq("lead_id", link.leadId),
+    // Documento recusado não conta como entregue (0179).
+    supabase.from("lead_documentos").select("item").eq("lead_id", link.leadId).neq("situacao", "recusado"),
   ]);
   if (!lead) notFound();
   const venda = vendas?.[0] ?? null;

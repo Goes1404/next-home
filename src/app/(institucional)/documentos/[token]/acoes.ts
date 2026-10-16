@@ -5,13 +5,13 @@ import { lerLinkPublico } from "@/lib/crm/linkPublico";
 import { after } from "next/server";
 import {
   alertaDeResolucao,
-  documentosQueFaltam,
   nomeSeguro,
   problemaDoArquivo,
   TETO_DOCUMENTOS_POR_LINK,
 } from "@/lib/crm/linksDoCliente";
 import { avisarCorretorDoLink, registrarEventoDoLink } from "@/lib/crm/eventosDoLink";
 import { medirImagem } from "@/lib/imoveis/imagemDerivada";
+import { documentacaoDoLink } from "@/lib/crm/documentacaoDados";
 
 /**
  * O cliente envia um documento pelo link (26/09/2026).
@@ -39,13 +39,16 @@ export async function enviarDocumento(formData: FormData): Promise<{ ok?: true; 
   const link = await lerLinkPublico(token, "documentos", { previa: true });
   if (!link) return { erro: "Este link venceu. Peça um novo ao seu corretor." };
 
-  const itens = Array.isArray(link.dados.itens) ? (link.dados.itens as string[]) : [];
-  if (!itens.includes(item)) return { erro: "Documento não reconhecido." };
+  // A lista é a do lead como está agora (0179), na fase do link.
+  const supabase = createServiceClient();
+  const lista = await documentacaoDoLink(supabase, link.leadId, link.dados);
+  const doItem = lista.itens.find((i) => i.item === item);
+  if (!doItem) return { erro: "Documento não reconhecido." };
+  if (doItem.situacao === "conferido") return { erro: "Este documento já foi conferido pelo seu corretor." };
 
   const problema = problemaDoArquivo(arquivo);
   if (problema) return { erro: problema };
 
-  const supabase = createServiceClient();
   const { count } = await supabase
     .from("lead_documentos")
     .select("id", { count: "exact", head: true })
@@ -80,24 +83,28 @@ export async function enviarDocumento(formData: FormData): Promise<{ ok?: true; 
     tamanho: arquivo.size,
     mime: arquivo.type,
     alerta,
+    // Antes da 0179 a coluna não existe: mandar a fase recusaria o insert.
+    ...(lista.migrado ? { fase: lista.fase } : {}),
   });
   if (error) {
     // Sem a linha, o arquivo ficaria órfão no bucket e invisível ao corretor.
     await supabase.storage.from("documentos-clientes").remove([caminho]);
     return { erro: "Não foi possível registrar o envio. Tente de novo." };
   }
-  after(() => registrarAvanco(supabase, { token, leadId: link.leadId, corretorId: link.corretorId, item, itens }));
+  after(() =>
+    registrarAvanco(supabase, { token, leadId: link.leadId, corretorId: link.corretorId, item, dados: link.dados }),
+  );
   return { ok: true };
 }
 
 /** Evento do documento e, quando cabe, o aviso ao corretor. */
 async function registrarAvanco(
   supabase: ReturnType<typeof createServiceClient>,
-  p: { token: string; leadId: string; corretorId: string; item: string; itens: string[] },
+  p: { token: string; leadId: string; corretorId: string; item: string; dados: Record<string, unknown> },
 ): Promise<void> {
-  const [{ data: anteriores }, { data: recebidos }, { data: lead }] = await Promise.all([
+  const [{ data: anteriores }, lista, { data: lead }] = await Promise.all([
     supabase.from("links_do_cliente_eventos").select("tipo").eq("token", p.token),
-    supabase.from("lead_documentos").select("item").eq("link_token", p.token),
+    documentacaoDoLink(supabase, p.leadId, p.dados),
     supabase.from("leads").select("nome").eq("id", p.leadId).maybeSingle(),
   ]);
   const ja = new Set((anteriores ?? []).map((e) => e.tipo));
@@ -108,8 +115,9 @@ async function registrarAvanco(
     await avisarCorretorDoLink(supabase, { ...base, tipo: "documento", nomeLead: lead?.nome ?? null, detalhe: p.item });
   }
 
-  const faltam = documentosQueFaltam(p.itens, (recebidos ?? []).map((r) => r.item));
-  if (faltam.length === 0 && !ja.has("documentos_completos")) {
+  // "Completa" é a mesma conta da ficha: todo item com arquivo e nenhum
+  // recusado esperando o cliente (`resumirLista`).
+  if (lista.completa && !ja.has("documentos_completos")) {
     await registrarEventoDoLink(supabase, { ...base, tipo: "documentos_completos" });
     await avisarCorretorDoLink(supabase, { ...base, tipo: "documentos_completos", nomeLead: lead?.nome ?? null });
   }

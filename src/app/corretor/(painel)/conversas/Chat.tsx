@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
 import { ResumoDoLeadCartao } from "../_componentes/ResumoDoLeadCartao";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,12 @@ import {
   fraseDoEstado,
   type ContextoDaIA,
 } from "./chatModelo";
+
+/*
+ * "Guardar como documento" só aparece embaixo de foto ou PDF do cliente:
+ * carrega quando o primeiro balão assim é desenhado, não em toda conversa.
+ */
+const GuardarComoDocumento = dynamic(() => import("./GuardarComoDocumento").then((m) => m.GuardarComoDocumento));
 
 /**
  * O chat de UMA conversa — os balões, o teclado, a ficha do lead e a
@@ -1343,6 +1350,16 @@ function Balao({
             className="mb-1 max-h-72 w-auto max-w-full rounded-md"
           />
         )}
+        {mensagem.tipo === "documento" && mensagem.guardavel && mensagem.midiaUrl && (
+          <a
+            href={mensagem.midiaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-wa-texto mb-1 inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium link-acao"
+          >
+            📄 Abrir arquivo
+          </a>
+        )}
         {mensagem.tipo === "audio" && (
           <p className="text-wa-meta text-[10px] font-medium tracking-wide uppercase">
             🎙 Áudio
@@ -1394,6 +1411,9 @@ function Balao({
           )}
         </p>
       </div>
+
+      {/* Foto ou PDF do cliente guardado no bucket privado: vira documento do lead (0179). */}
+      {mensagem.guardavel && <GuardarComoDocumento mensagemId={mensagem.id} />}
 
       {/*
         A avaliação como REAÇÃO, do jeito que o app mostra o emoji numa

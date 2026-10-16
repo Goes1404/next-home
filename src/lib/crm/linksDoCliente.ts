@@ -72,12 +72,6 @@ export function alertaDeResolucao(largura: number | undefined, altura: number | 
   return `Foto pequena (${largura}×${altura}): pode estar ilegível para o banco. Confira antes de mandar.`;
 }
 
-/** Itens da lista que ainda não têm nenhum arquivo. */
-export function documentosQueFaltam(itens: string[], recebidos: string[]): string[] {
-  const tem = new Set(recebidos);
-  return itens.filter((i) => !tem.has(i));
-}
-
 export const TETO_DOCUMENTO_BYTES = 10 * 1024 * 1024;
 export const TETO_DOCUMENTOS_POR_LINK = 40;
 export const MIMES_ACEITOS = [

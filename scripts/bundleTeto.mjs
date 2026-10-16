@@ -94,6 +94,10 @@ const TETOS_KB = {
   // ícones (cartões, cookie) e o cabeçalho que some ao rolar no celular. Os
   // dois moram no layout, então pesam em toda rota do painel.
   "/corretor/(painel)/marketing/impulsionamentos/page": 745, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  // 16/10: a ficha do lead ganhou a seção Documentação (0179): conferir e
+  // recusar com motivo, lista por fase editável, anexar e o .zip montado no
+  // navegador (o montador do zip vai por import() no clique).
+  "/corretor/(painel)/leads/[id]/page": 753,
   "/corretor/(painel)/importar/page": 747, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.

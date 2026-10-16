@@ -1,3 +1,4 @@
+import { caminhoDaMidiaPrivada } from "@/lib/whatsapp/midiaPrivada";
 import type { MensagemConversa } from "./acoes";
 import {
   decidirSeAIaResponde,
@@ -178,7 +179,9 @@ export function deMensagemRow(row: MensagemRow): MensagemConversa {
     conteudo: row.conteudo,
     criadoEm: row.created_at,
     tipo: row.tipo,
-    midiaUrl: row.midia_url,
+    // A mídia privada (`privado:`) só abre assinada, e a assinatura vem de
+    // `lerMensagens` no próximo carregamento — aqui ela não é URL.
+    midiaUrl: caminhoDaMidiaPrivada(row.midia_url) ? null : row.midia_url,
     statusEntrega: row.status_entrega,
     interacaoId: row.interacao_id,
     // Só para mensagem que CHEGA por realtime — nova, portanto sem avaliação.

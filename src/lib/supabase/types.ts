@@ -134,6 +134,12 @@ export type Database = {
           mime: string | null
           nome_arquivo: string | null
           tamanho: number | null
+          conferido_em: string | null
+          fase: "financiamento" | "contrato"
+          mensagem_id: string | null
+          motivo_recusa: string | null
+          origem: "link" | "corretor" | "whatsapp"
+          situacao: "recebido" | "conferido" | "recusado"
         }
         Insert: {
           alerta?: string | null
@@ -147,6 +153,12 @@ export type Database = {
           mime?: string | null
           nome_arquivo?: string | null
           tamanho?: number | null
+          conferido_em?: string | null
+          fase?: "financiamento" | "contrato"
+          mensagem_id?: string | null
+          motivo_recusa?: string | null
+          origem?: "link" | "corretor" | "whatsapp"
+          situacao?: "recebido" | "conferido" | "recusado"
         }
         Update: {
           alerta?: string | null
@@ -160,6 +172,39 @@ export type Database = {
           mime?: string | null
           nome_arquivo?: string | null
           tamanho?: number | null
+          conferido_em?: string | null
+          fase?: "financiamento" | "contrato"
+          mensagem_id?: string | null
+          motivo_recusa?: string | null
+          origem?: "link" | "corretor" | "whatsapp"
+          situacao?: "recebido" | "conferido" | "recusado"
+        }
+        Relationships: []
+      }
+      lead_documentos_lista: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          fase: "financiamento" | "contrato"
+          itens: string[]
+          lead_id: string
+          perfil: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          fase: "financiamento" | "contrato"
+          itens?: string[]
+          lead_id: string
+          perfil?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          fase?: "financiamento" | "contrato"
+          itens?: string[]
+          lead_id?: string
+          perfil?: string | null
         }
         Relationships: []
       }

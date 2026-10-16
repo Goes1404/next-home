@@ -26,6 +26,7 @@ import { PreferenciasContato } from "./PreferenciasContato";
 import { AdicionarALista } from "./AdicionarALista";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
+import { Documentacao } from "./Documentacao";
 import { Indicacoes } from "./Indicacoes";
 import { PedidoDoSite } from "./PedidoDoSite";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
@@ -249,6 +250,13 @@ export default async function FichaLeadPage({
           />
 
           <PedidoDoSite leadId={lead.id} />
+          <Documentacao
+            leadId={lead.id}
+            nome={lead.nome}
+            telefone={lead.telefone}
+            etapa={lead.etapa}
+            corretorDoLead={lead.corretor?.id ?? null}
+          />
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <Indicacoes leadId={lead.id} />
           <AtalhoDoConsultor lead={lead} />

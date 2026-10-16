@@ -10304,3 +10304,24 @@ Nota: [[lembrete-da-tarefa-chega-no-whatsapp]].
 - **A catraca de peso estava vermelha** desde o menu colorido do mesmo dia
   (10 rotas do painel, menos de 1 KB cada, pelo layout). Tetos subiram 1 KB.
 
+
+## A documentação do lead (0179, 16/10/2026)
+
+Nota: [[documentacao-do-lead]].
+
+- **A ficha ganhou a seção Documentação**: lista por fase (financiamento e
+  contrato), editável, com cada arquivo recebido, conferido ou recusado com
+  motivo. O recusado volta para o link do cliente com o motivo. O pedido de
+  documentos saiu de "Links para o cliente" e mora nela.
+- **A lista mora no lead (`lead_documentos_lista`), não no link.** Link antigo
+  sem lista gravada continua valendo pela lista que veio nele
+  (`listaEfetiva`).
+- **Foto e PDF que o cliente manda no WhatsApp passaram a ser guardados** no
+  bucket privado (`guardarMidiaRecebida`, depois da resposta). `midia_url`
+  guarda `privado:<caminho>`, que o painel assina na leitura. Embaixo do
+  balão: "Guardar como documento".
+- **O .zip é montado no navegador** (resposta da Vercel tem teto de 4,5 MB).
+- **Escrita só pela chave de serviço**, depois de a action conferir que o lead
+  é do corretor. O gestor lê e baixa, não confere nem recusa.
+- **Antes da 0179 o código não quebra**: a leitura cai nas colunas antigas e a
+  seção avisa que a conferência depende da migration.
