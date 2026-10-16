@@ -46,6 +46,7 @@ function estado(over: Partial<EstadoDaConversa> = {}): EstadoDaConversa {
     objetouPreco: false,
     pediuAlternativa: false,
     saidaSuave: false,
+    adiou: false,
     objecoesSeguidas: 0,
     alternativa: null,
     nomeDoFoco: null,
@@ -825,7 +826,12 @@ describe("a confirmação manda o combinado, não só um 'confirmado'", () => {
 
   it("pede o imóvel e o nome do corretor no resumo", () => {
     expect(texto("Vista AlphaGran")).toContain("no Vista AlphaGran");
-    expect(texto("Vista AlphaGran")).toContain("nome do corretor");
+    // O nome vai escrito (a IA inventou "o corretor Carlos" sem ele, 15/10/2026).
+    const comNome = blocoDaJogada(
+      { tipo: "confirmar_visita", oQueEleDisse: "11h" },
+      { nomeDoFoco: "Vista AlphaGran", nomeCorretor: "Carolini Ivina Maia" },
+    );
+    expect(comNome).toContain("quem vai recebê-lo na visita é Carolini");
   });
 
   /*
@@ -1144,8 +1150,14 @@ describe("marcar visita sem saber QUAL imóvel", () => {
   });
 
   it("quem recebe o cliente é o corretor, não a assistente", () => {
-    const b = blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "11h" }, { nomeDoFoco: "Terra Alta" });
+    const b = blocoDaJogada(
+      { tipo: "confirmar_visita", oQueEleDisse: "11h" },
+      { nomeDoFoco: "Terra Alta", nomeCorretor: "Carolini Ivina Maia" },
+    );
     expect(b).toMatch(/nunca o seu/i);
+    // Sem nome cadastrado, nenhum nome: inventar um é o defeito da Rute.
+    const semNome = blocoDaJogada({ tipo: "confirmar_visita", oQueEleDisse: "11h" }, { nomeDoFoco: "Terra Alta" });
+    expect(semNome).toMatch(/NÃO diga nome nenhum/);
   });
 });
 
@@ -1420,5 +1432,77 @@ describe("recusa vinda da IA", () => {
       recusasAnterioresExtra: 1,
     });
     expect(planejarJogada(e)).toEqual({ tipo: "encerrar_recusado", familia: "desinteresse" });
+  });
+});
+
+describe("pedir um tempo não é aceitar nem marcar (conversa da Rute, 16/10/2026)", () => {
+  // As falas reais, na ordem em que aconteceram em 15/10.
+  const historico: Fala[] = [
+    cliente("Pode ser no último domingo do mês?"),
+    bot("Domingo 18/10 está disponível às 10h e às 14h para a visita. Qual desses horários prefere para conhecer o Terra Alta Barueri?"),
+  ];
+
+  it('"Vou confirmar com vc depois, pode ser?" não confirma a visita', () => {
+    const e = estadoDaConversa({
+      historico,
+      mensagemAtual: "Vou confirmar com vc depois,pode ser?",
+      imovelEmFoco: IMOVEL,
+      catalogo: [IMOVEL],
+    });
+    expect(e.aceitouHorario).toBe(false);
+    const j = planejarJogada(e);
+    expect(j.tipo).toBe("aguardar");
+    expect(aceiteDeVisitaValido(j, true)).toBe(false);
+  });
+
+  it('"No máximo amanhã já te aviso" não vira visita amanhã', () => {
+    const e = estadoDaConversa({
+      historico,
+      mensagemAtual: "No máximo amanhã já te aviso",
+      imovelEmFoco: IMOVEL,
+      catalogo: [IMOVEL],
+    });
+    expect(e.agendamento.dia).toBeNull();
+    expect(planejarJogada(e).tipo).toBe("aguardar");
+  });
+
+  it('"Só um momento" pede espera, não devolve a escolha', () => {
+    const e = estadoDaConversa({
+      historico,
+      mensagemAtual: "Só um momento",
+      imovelEmFoco: IMOVEL,
+      catalogo: [IMOVEL],
+    });
+    expect(planejarJogada(e).tipo).toBe("aguardar");
+  });
+
+  it("o aceite de verdade continua confirmando", () => {
+    for (const fala of ["domingo às 10h pode ser", "pode ser às 14h", "fechado, 10h"]) {
+      const e = estadoDaConversa({ historico, mensagemAtual: fala, imovelEmFoco: IMOVEL, catalogo: [IMOVEL] });
+      const j = planejarJogada(e);
+      expect(j.tipo, fala).not.toBe("aguardar");
+      expect(aceiteDeVisitaValido(j, true), fala).toBe(true);
+    }
+  });
+
+  it("a instrução de aguardar não pede nada nem confirma", () => {
+    const bloco = blocoDaJogada({ tipo: "aguardar", oQueEleDisse: "te aviso amanhã" }, { nomeDoFoco: "Terra Alta" });
+    expect(bloco).toMatch(/NENHUMA pergunta/);
+    expect(bloco).toMatch(/"visitaProposta" fica null/);
+  });
+});
+
+describe('"último domingo do mês" chega à IA com a data (16/10/2026)', () => {
+  it("o bloco de agendar leva a data calculada", () => {
+    const e = estadoDaConversa({
+      historico: [bot("Domingo posso te mostrar às 10h ou às 14h. Qual horário prefere?")],
+      mensagemAtual: "Pode ser no último domingo do mês?",
+      imovelEmFoco: IMOVEL,
+      catalogo: [IMOVEL],
+      agora: new Date("2026-10-15T18:26:19Z"),
+    });
+    const j = planejarJogada(e);
+    expect(j).toMatchObject({ tipo: "agendar", dia: "domingo", data: { mes: 10, dia: 25 } });
+    expect(blocoDaJogada(j, { nomeDoFoco: "Terra Alta" })).toContain("domingo, 25/10");
   });
 });

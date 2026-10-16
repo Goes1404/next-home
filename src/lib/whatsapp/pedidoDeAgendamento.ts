@@ -39,6 +39,11 @@ export interface PedidoDeAgendamento {
   hora: number | null;
   /** Ele pediu visita sem dizer quando ("quero marcar uma visita"). */
   pediuVisita: boolean;
+  /**
+   * A data exata, quando ele a deu por ordem no mês ("último domingo do
+   * mês"). Só existe quando a função recebe `agora`.
+   */
+  data?: { ano: number; mes: number; dia: number } | null;
 }
 
 const DIAS_DA_SEMANA: Record<string, string> = {
@@ -105,7 +110,81 @@ function frases(texto: string): string[] {
     .filter(Boolean);
 }
 
-export function pedidoDeAgendamento(mensagem: string): PedidoDeAgendamento {
+/**
+ * "Último domingo do mês", "primeiro sábado do mês que vem".
+ *
+ * Conversa da Rute, 15/10/2026: ela pediu "o último domingo do mês", o
+ * planner só enxergou "domingo", e a IA ofereceu o domingo SEGUINTE (18/10)
+ * em vez do último (25/10). Daí a data é calculada aqui, no fuso de São
+ * Paulo — o modelo não conta semanas de calendário de cabeça.
+ */
+const ORDEM_NO_MES =
+  /\b(ultim[oa]|primeir[oa])\s+(domingo|segunda|terca|quarta|quinta|sexta|sabado)(?:-?feira)?\s+do\s+mes(\s+que\s+vem)?\b/;
+const NUMERO_DO_DIA: Record<string, number> = {
+  domingo: 0,
+  segunda: 1,
+  terca: 2,
+  quarta: 3,
+  quinta: 4,
+  sexta: 5,
+  sabado: 6,
+};
+
+function hojeEmSaoPaulo(agora: Date): { ano: number; mes: number; dia: number } {
+  const [ano, mes, dia] = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(agora)
+    .split("-")
+    .map(Number);
+  return { ano, mes, dia };
+}
+
+/** O dia do mês da primeira ou da última ocorrência daquele dia da semana. */
+function ocorrenciaNoMes(ano: number, mes: number, diaSemana: number, qual: "primeiro" | "ultimo"): number {
+  if (qual === "primeiro") {
+    const doDia1 = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay();
+    return 1 + ((diaSemana - doDia1 + 7) % 7);
+  }
+  const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  const doUltimo = new Date(Date.UTC(ano, mes - 1, ultimoDia)).getUTCDay();
+  return ultimoDia - ((doUltimo - diaSemana + 7) % 7);
+}
+
+function dataPelaOrdemNoMes(texto: string, agora: Date): { ano: number; mes: number; dia: number } | null {
+  const m = ORDEM_NO_MES.exec(texto);
+  if (!m) return null;
+  const qual = m[1].startsWith("ultim") ? "ultimo" : "primeiro";
+  const diaSemana = NUMERO_DO_DIA[m[2]];
+  const hoje = hojeEmSaoPaulo(agora);
+  let ano = hoje.ano;
+  let mes = hoje.mes;
+  const avancar = () => {
+    mes += 1;
+    if (mes > 12) {
+      mes = 1;
+      ano += 1;
+    }
+  };
+  if (m[3]) avancar();
+  let dia = ocorrenciaNoMes(ano, mes, diaSemana, qual);
+  // Já passou neste mês: é a do mês seguinte.
+  if (!m[3] && dia < hoje.dia) {
+    avancar();
+    dia = ocorrenciaNoMes(ano, mes, diaSemana, qual);
+  }
+  return { ano, mes, dia };
+}
+
+/** "25/10", para o planner escrever a data junto do dia da semana. */
+export function rotuloDaData(data: { mes: number; dia: number }): string {
+  return `${String(data.dia).padStart(2, "0")}/${String(data.mes).padStart(2, "0")}`;
+}
+
+export function pedidoDeAgendamento(mensagem: string, agora?: Date): PedidoDeAgendamento {
   const texto = normalizar(mensagem ?? "");
 
   let dia: string | null = null;
@@ -125,7 +204,9 @@ export function pedidoDeAgendamento(mensagem: string): PedidoDeAgendamento {
   const numero = bruta ? Number(bruta[1]) : null;
   const hora = numero !== null && numero >= 0 && numero <= 23 ? numero : null;
 
-  return { dia, hora, pediuVisita: PEDIU_VISITA.test(texto) };
+  const data = agora && dia ? dataPelaOrdemNoMes(texto, agora) : null;
+
+  return { dia, hora, pediuVisita: PEDIU_VISITA.test(texto), data };
 }
 
 /** Ele está marcando? Qualquer sinal basta. */

@@ -390,6 +390,13 @@ function Importador({
             {resumo.ignorados} sem telefone aproveitável ficaram de fora.
           </p>
         )}
+        {(resumo.repetidos ?? 0) > 0 && (
+          <p className="text-fluid-xs text-apoio mt-2">
+            {resumo.repetidos === 1
+              ? "1 telefone já estava cadastrado (ou repetido na lista) e não entrou de novo."
+              : `${resumo.repetidos} telefones já estavam cadastrados (ou repetidos na lista) e não entraram de novo.`}
+          </p>
+        )}
         {(resumo.falhas ?? 0) > 0 && (
           <p className="text-fluid-xs text-perigo mt-2">
             {resumo.falhas} não puderam ser gravados. Tente esses de novo.

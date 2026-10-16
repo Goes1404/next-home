@@ -234,7 +234,15 @@ export function textoNoLugarDaRepeticao(
 export function aproveitarSoONovo(
   texto: string,
   historico?: { remetente: string; texto: string }[],
+  /**
+   * O dado que o cliente acabou de pedir (o endereço, o preço). A frase que
+   * o traz FICA, mesmo repetida: ele perguntou de novo, e cortá-la deixava a
+   * pergunta sem resposta. Conversa da Rute, 15/10/2026: "Onde fica
+   * exatamente?" recebeu só "Quer agendar uma visita?".
+   */
+  protegido?: string | null,
 ): string {
+  const marca = protegido ? normalizarParaRepeticao(protegido) : "";
   const anteriores = (historico ?? [])
     .filter((m) => m.remetente === "bot")
     .slice(-JANELA_MENSAGENS_BOT)
@@ -246,6 +254,7 @@ export function aproveitarSoONovo(
   const ineditas = frasesDe(texto).filter((frase) => {
     const n = normalizarParaRepeticao(frase);
     if (n.length < 25) return true;
+    if (marca.length >= 6 && n.includes(marca)) return true;
     return !anteriores.some((ant) => semelhanca(n, ant) >= 0.6);
   });
 

@@ -1,4 +1,6 @@
 import "server-only";
+import { corrigirNomeDoCorretor } from "./nomeDoCorretor";
+import { marcaDoDado } from "./dadoPedido";
 import { estagioIncompativel } from "./estagioIncompativel";
 
 import type { Empreendimento } from "@/lib/types";
@@ -497,13 +499,22 @@ export async function executarTurnoDeAtendimento(
         }
       : brutaConferida;
 
+    // Nome de corretor inventado ("o corretor Carlos") vira o do cadastro.
+    const comNome = corrigirNomeDoCorretor(
+      brutaNaHora.textoResposta ?? "",
+      pedido.identidade.nomeCorretor,
+      pedido.identidade.nomeAssistente,
+    );
+    if (comNome.corrigiu) console.warn("[turno] nome de corretor inventado trocado pelo do cadastro");
+
     return sanearRespostaIA(
-      brutaNaHora,
+      comNome.corrigiu ? { ...brutaNaHora, textoResposta: comNome.texto } : brutaNaHora,
       pedido.catalogo,
       pedido.historico,
       pedido.identidade.slugCorretor,
       pedido.identidade.nomeAssistente,
       textoDaVez,
+      jogada.tipo === "responder_dado" ? marcaDoDado(jogada.dado.resposta) : null,
     );
   };
 

@@ -70,6 +70,8 @@ export type ResultadoAnalise = {
 export type ResumoImportacao = {
   inseridos?: number;
   ignorados?: number;
+  /** Telefones que já estavam cadastrados, ou repetidos na mesma lista. */
+  repetidos?: number;
   falhas?: number;
   erro?: string;
 };
@@ -345,13 +347,49 @@ export async function importarLeads(
     return { erro: "Nenhum dos contatos tem telefone válido.", ignorados };
   }
 
+  /*
+   * Telefone já cadastrado não entra de novo (16/10/2026). A tela marcava
+   * "já existe", mas o servidor gravava o que viesse: a mesma planilha
+   * importada duas vezes, com dois minutos de diferença, deu quatro leads
+   * para a Rute na carteira da Carol, e a lista de transmissão ficou com
+   * dois envios a mais para ela. A pessoa é o telefone; a régua é a mesma
+   * coluna gerada que o banco usa (`telefone_e164`), vista pela RLS: o
+   * corretor compara com a carteira dele, o gestor com a da equipe.
+   */
+  const chaveDe = (telefone: string) => normalizarTelefoneBrasileiro(telefone);
+  const chaves = [...new Set(linhas.map((l) => chaveDe(l.telefone)).filter((c): c is string => Boolean(c)))];
+  const jaCadastrados = new Set<string>();
+  if (chaves.length > 0) {
+    const { data: existentes, error: erroExistentes } = await supabase
+      .from("leads")
+      .select("telefone_e164")
+      .in("telefone_e164", chaves);
+    if (erroExistentes) {
+      console.error("[importar] falha ao conferir telefones já cadastrados:", erroExistentes.message);
+      return { erro: "Não consegui conferir quem já está cadastrado. Tente de novo em instantes." };
+    }
+    for (const l of existentes ?? []) if (l.telefone_e164) jaCadastrados.add(l.telefone_e164);
+  }
+  const vistos = new Set<string>();
+  const novas = linhas.filter((l) => {
+    const chave = chaveDe(l.telefone);
+    if (!chave) return true;
+    if (jaCadastrados.has(chave) || vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+  const repetidos = linhas.length - novas.length;
+  if (novas.length === 0) {
+    return { inseridos: 0, ignorados, repetidos };
+  }
+
   // Em lotes: um insert de 300 linhas que falha na última perde as 299.
   let inseridos = 0;
   let falhas = 0;
   const TAMANHO_LOTE = 50;
 
-  for (let i = 0; i < linhas.length; i += TAMANHO_LOTE) {
-    const lote = linhas.slice(i, i + TAMANHO_LOTE);
+  for (let i = 0; i < novas.length; i += TAMANHO_LOTE) {
+    const lote = novas.slice(i, i + TAMANHO_LOTE);
     const { data, error } = await supabase.from("leads").insert(lote).select("id");
 
     if (error) {
@@ -367,7 +405,7 @@ export async function importarLeads(
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor");
 
-  return { inseridos, ignorados, falhas };
+  return { inseridos, ignorados, repetidos, falhas };
 }
 
 export async function criarLeadUnico(

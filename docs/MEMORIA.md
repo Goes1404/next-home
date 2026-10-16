@@ -10325,3 +10325,31 @@ Nota: [[documentacao-do-lead]].
   é do corretor. O gestor lê e baixa, não confere nem recusa.
 - **Antes da 0179 o código não quebra**: a leitura cai nas colunas antigas e a
   seção avisa que a conferência depende da migration.
+
+## Pedir um tempo não é aceitar a visita (v50, 16/10/2026)
+
+Nota: [[pedir-um-tempo-nao-e-aceitar-a-visita]]. Conversa da Carol com a Rute.
+
+- **"Vou confirmar com vc depois, pode ser?" gravou visita no CRM.** O "pode
+  ser" casou em `ACEITE`. Agora `ADIAMENTO` (vou confirmar, te aviso, só um
+  momento, vou ver e te falo) vence o aceite e apaga o dia citado ("amanhã te
+  aviso" não é visita amanhã), e vira a jogada `aguardar`. Contraproposta de
+  dia ("pode ser no último domingo?") também não é aceite.
+- **A IA inventou "o corretor Carlos".** A instrução de confirmar pedia o nome
+  do corretor sem dar o nome, e a regra 21 proíbe dizer que o cliente vai
+  falar com ele. Agora o nome vai escrito, a regra 21 tem a exceção da visita
+  e `corrigirNomeDoCorretor` troca nome inventado depois de "corretor(a)".
+- **"Último domingo do mês" virou o domingo seguinte.** `pedidoDeAgendamento`
+  recebe `agora` e calcula a data no fuso de SP.
+- **"Onde fica exatamente?" ficou sem resposta**: o planner achou o endereço
+  "não dito" (comparação por texto exato) e o anti-eco achou repetido (por
+  semelhança) e cortou. A frase com a marca do dado pedido não é cortada.
+- **A mesma planilha importada duas vezes deu 4 leads para a Rute**, e a lista
+  ficou com dois envios a mais para ela. O "já existe" só existia na tela.
+  Agora `importarLeads` recusa telefone já cadastrado ou repetido na lista, e o
+  disparador confere os outros cadastros do mesmo telefone antes da cota.
+- **Para ler uma conversa sem o MCP do Supabase**: o conector desta sessão
+  estava em outra conta. A consulta de linha do tempo (lead + mensagens +
+  `ia_interacoes` + recusas + fila) unida por `union all` e ordenada por
+  horário cabe numa colagem só no editor SQL. Lead com nome em maiúsculas
+  ("RUTE") não casa com a grafia "Ruth": buscar por `ilike any` com variações.

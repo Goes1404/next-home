@@ -66,3 +66,36 @@ describe("pedidoDeAgendamento", () => {
     expect(estaMarcando(pedidoDeAgendamento("quero marcar uma visita"))).toBe(true);
   });
 });
+
+describe('"último domingo do mês" vira a data certa (conversa da Rute, 16/10/2026)', () => {
+  // 15/10/2026, 15h20 em São Paulo — quinta-feira.
+  const agora = new Date("2026-10-15T18:26:19Z");
+
+  it("último domingo de outubro é 25/10, não o domingo seguinte", () => {
+    const p = pedidoDeAgendamento("Pode ser no último domingo do mês?", agora);
+    expect(p.dia).toBe("domingo");
+    expect(p.data).toEqual({ ano: 2026, mes: 10, dia: 25 });
+  });
+
+  it("primeiro sábado do mês que vem", () => {
+    expect(pedidoDeAgendamento("primeiro sábado do mês que vem", agora).data).toEqual({ ano: 2026, mes: 11, dia: 7 });
+  });
+
+  it("primeiro do mês que já passou vira o do mês seguinte", () => {
+    expect(pedidoDeAgendamento("pode ser no primeiro domingo do mês", agora).data).toEqual({
+      ano: 2026,
+      mes: 11,
+      dia: 1,
+    });
+  });
+
+  it("vira o ano em dezembro", () => {
+    const dez = new Date("2026-12-30T15:00:00Z");
+    expect(pedidoDeAgendamento("último sábado do mês", dez).data).toEqual({ ano: 2027, mes: 1, dia: 30 });
+  });
+
+  it("dia da semana solto continua sem data, e sem agora também", () => {
+    expect(pedidoDeAgendamento("domingo", agora).data).toBeNull();
+    expect(pedidoDeAgendamento("último domingo do mês").data).toBeNull();
+  });
+});

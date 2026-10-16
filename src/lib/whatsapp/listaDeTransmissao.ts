@@ -183,6 +183,32 @@ export function motivoParaNaoEnviar(
   return null;
 }
 
+/**
+ * A PESSOA é o telefone, não o cadastro (16/10/2026).
+ *
+ * A Rute tinha quatro leads na carteira da Carol: dois telefones, cada um
+ * importado duas vezes. A lista saiu para os dois telefones e ficaram dois
+ * itens pendentes, dos cadastros duplicados — ela receberia a mesma lista
+ * de novo depois de já ter conversado e marcado visita. A conferência antes
+ * do envio olhava só o lead do item, e o duplicado não tinha conversa, nem
+ * pedido de parada, nem nada que o barrasse.
+ */
+export const MOTIVO_TELEFONE_JA_RECEBEU =
+  "Este telefone já recebeu esta lista por outro cadastro (lead duplicado).";
+export const MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR =
+  "Este telefone pediu para não receber mais mensagens (em outro cadastro).";
+
+export function motivoDoMesmoTelefone(p: {
+  /** Outro item desta lista, para este telefone, já saiu. */
+  jaRecebeuEstaLista: boolean;
+  /** Algum outro cadastro deste telefone pediu para parar. */
+  outroCadastroNaoContatar: boolean;
+}): string | null {
+  if (p.outroCadastroNaoContatar) return MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR;
+  if (p.jaRecebeuEstaLista) return MOTIVO_TELEFONE_JA_RECEBEU;
+  return null;
+}
+
 // --------------------------------------------------------- falhas de envio
 
 /**

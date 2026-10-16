@@ -26,6 +26,7 @@ import { HORAS_DA_GUARDA_HUMANA, MOTIVO_CONVERSA_RECENTE } from "./contextoDaCam
 import {
   classificarFalhaDeEnvio,
   falhaContaParaDisjuntor,
+  motivoDoMesmoTelefone,
   motivoParaNaoEnviar,
   MOTIVO_ENVIO_INCERTO,
   MOTIVO_TELEFONE_INVALIDO,
@@ -552,11 +553,34 @@ async function processarInstancia(ctx: {
       }
 
       /*
+       * O mesmo telefone em outro cadastro (16/10/2026): a pessoa é o
+       * número, e lead duplicado não pode fazer a lista sair duas vezes, nem
+       * passar por cima de um pedido de parada feito no outro cadastro.
+       */
+      const irmaos = item.lead_id ? await cadastrosDoMesmoTelefone(supabase, item.lead_id) : [];
+      const doMesmoTelefone = motivoDoMesmoTelefone({
+        outroCadastroNaoContatar: irmaos.some((l) => l.nao_contatar_em !== null),
+        jaRecebeuEstaLista:
+          irmaos.length > 0 && (await listaJaSaiuPara(supabase, item.campanha_id, irmaos.map((l) => l.id))),
+      });
+      if (doMesmoTelefone) {
+        parcial.processados++;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({ status: "erro", erro_motivo: doMesmoTelefone })
+          .eq("id", item.id)
+          .eq("status", "pendente");
+        continue;
+      }
+
+      /*
        * A guarda de conversa humana (Fase 2): o corretor falou com este lead
        * nas últimas 24h, então a mensagem da lista não sai. Antes da cota:
-       * o que não sai não gasta a cota do número.
+       * o que não sai não gasta a cota do número. Vale para qualquer
+       * cadastro do mesmo telefone.
        */
-      if (item.lead_id && (await corretorFalouComOLead(supabase, item.lead_id))) {
+      const outrosCadastros = irmaos.map((l) => l.id);
+      if (item.lead_id && (await corretorFalouComOLead(supabase, item.lead_id, outrosCadastros))) {
         parcial.processados++;
         await supabase
           .from("whatsapp_campanhas_fila")
@@ -1034,6 +1058,44 @@ async function leadParaEnvio(
   return data ? { ...data, nome: data.nome ?? "" } : null;
 }
 
+/**
+ * Os OUTROS cadastros do mesmo corretor com o mesmo telefone. Compara pela
+ * coluna gerada `telefone_e164`, que normaliza pontuação e DDI.
+ */
+async function cadastrosDoMesmoTelefone(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string,
+): Promise<{ id: string; nao_contatar_em: string | null }[]> {
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("telefone_e164, corretor_id")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead?.telefone_e164 || !lead.corretor_id) return [];
+  const { data } = await supabase
+    .from("leads")
+    .select("id, nao_contatar_em")
+    .eq("corretor_id", lead.corretor_id)
+    .eq("telefone_e164", lead.telefone_e164)
+    .neq("id", leadId);
+  return data ?? [];
+}
+
+/** Algum item desta lista, de um desses cadastros, já saiu? */
+async function listaJaSaiuPara(
+  supabase: ReturnType<typeof createServiceClient>,
+  campanhaId: string,
+  leadIds: string[],
+): Promise<boolean> {
+  const { count } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id", { count: "exact", head: true })
+    .eq("campanha_id", campanhaId)
+    .in("lead_id", leadIds)
+    .in("status", ["enviado", "respondido"]);
+  return (count ?? 0) > 0;
+}
+
 /** As mídias da lista que de fato pertencem ao imóvel dela no catálogo. */
 async function midiasDoCatalogo(
   supabase: ReturnType<typeof createServiceClient>,
@@ -1130,9 +1192,13 @@ async function atualizarProgressoCampanhas(
 async function corretorFalouComOLead(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
+  outrosCadastros: string[] = [],
 ): Promise<boolean> {
   const desde = new Date(Date.now() - HORAS_DA_GUARDA_HUMANA * 3_600_000).toISOString();
-  const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
+  const { data: conversas } = await supabase
+    .from("whatsapp_conversas")
+    .select("id")
+    .in("lead_id", [leadId, ...outrosCadastros]);
   const ids = (conversas ?? []).map((c) => c.id);
   if (ids.length === 0) return false;
   const { count } = await supabase

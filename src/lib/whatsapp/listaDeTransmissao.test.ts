@@ -7,7 +7,10 @@ import {
   contextoDaLista,
   dormitoriosEmPalavras,
   falhaContaParaDisjuntor,
+  motivoDoMesmoTelefone,
   motivoParaNaoEnviar,
+  MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR,
+  MOTIVO_TELEFONE_JA_RECEBEU,
   previsaoDeTermino,
   resolverHorarios,
   retornoDasListas,
@@ -208,5 +211,28 @@ describe("guardas de código (Fase 4)", () => {
     const fonte = ler("src/lib/whatsapp/publicoDaLista.ts");
     expect(fonte).toMatch(/\.eq\("corretor_id", corretorId\)\s*\.is\("arquivado_em", null\)/);
     expect(ler("src/app/corretor/(painel)/campanhas/acoes.ts")).not.toContain("getMeusLeads");
+  });
+});
+
+describe("a pessoa é o telefone, não o cadastro (lista da Rute, 16/10/2026)", () => {
+  it("cadastro duplicado não recebe a lista de novo", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: true, outroCadastroNaoContatar: false })).toBe(
+      MOTIVO_TELEFONE_JA_RECEBEU,
+    );
+  });
+  it("pedido de parada em outro cadastro vale para o telefone", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: false, outroCadastroNaoContatar: true })).toBe(
+      MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR,
+    );
+  });
+  it("telefone sem outro cadastro segue", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: false, outroCadastroNaoContatar: false })).toBeNull();
+  });
+  it("o disparador confere o mesmo telefone ANTES da cota", () => {
+    const fonte = fs.readFileSync(path.join(__dirname, "campaignDispatcher.ts"), "utf8");
+    const confere = fonte.indexOf("motivoDoMesmoTelefone({");
+    const cota = fonte.indexOf("reservarCotaCampanha(");
+    expect(confere).toBeGreaterThan(0);
+    expect(cota).toBeGreaterThan(confere);
   });
 });

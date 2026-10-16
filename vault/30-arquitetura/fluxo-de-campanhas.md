@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-10
+updated: 2026-10-16
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -118,7 +118,7 @@ por lista) → instância a instância: bloqueio → conexão → listas
 `em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
 pausa automática (0172) → **`motivoParaNaoEnviar`** (pediu para sair,
-arquivado, perdido, transferido, comprou) → guarda de 24h → **texto conferido**
+arquivado, perdido, transferido, comprou) → **mesmo telefone em outro cadastro** (a lista já saiu para ele ou ele pediu parada; [[pedir-um-tempo-nao-e-aceitar-a-visita]]) → guarda de 24h (em qualquer cadastro do telefone) → **texto conferido**
 (`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de
 abertura e de pergunta, e só quando A e B são diferentes de verdade; sem texto
 próprio, o item espera, o motivo vai para o log e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
