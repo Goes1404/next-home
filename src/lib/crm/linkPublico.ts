@@ -67,13 +67,12 @@ export async function lerLinkPublico(
     }
   }
 
-  const primeiro = (lead.nome ?? "").trim().split(/\s+/)[0] || null;
   return {
     token: link.token,
     leadId: link.lead_id,
     corretorId: link.corretor_id,
     dados: (link.dados ?? {}) as Record<string, unknown>,
-    primeiroNome: primeiro && !/^\+?\d/.test(primeiro) && !primeiro.startsWith("WhatsApp") ? primeiro : null,
+    primeiroNome: primeiroNomeUtil(lead.nome),
     corretor: {
       nome: corretor.nome,
       whatsapp: corretor.whatsapp,
@@ -81,4 +80,42 @@ export async function lerLinkPublico(
       creci: corretor.creci,
     },
   };
+}
+
+export type LinkVencido = {
+  primeiroNome: string | null;
+  corretor: { nome: string; whatsapp: string | null };
+};
+
+/**
+ * Quando `lerLinkPublico` devolve `null`, distingue o link que EXISTIU e
+ * venceu do que nunca existiu (16/10/2026). O vencido ganha página própria
+ * com o botão de pedir outro ao corretor: o cliente que abria o link do mês
+ * passado via "página não encontrada" e não sabia a quem recorrer. Token
+ * inexistente continua em 404 — não há corretor a quem mandar.
+ */
+export async function lerLinkVencido(token: string, tipo: TipoDeLink): Promise<LinkVencido | null> {
+  if (!UUID.test(token)) return null;
+  const supabase = createServiceClient();
+  const { data: link } = await supabase
+    .from("links_do_cliente")
+    .select("lead_id, corretor_id, expira_em")
+    .eq("token", token)
+    .eq("tipo", tipo)
+    .maybeSingle();
+  if (!link || linkValido(link)) return null;
+  const [{ data: lead }, { data: corretor }] = await Promise.all([
+    supabase.from("leads").select("nome").eq("id", link.lead_id).maybeSingle(),
+    supabase.from("corretores").select("nome, whatsapp").eq("id", link.corretor_id).maybeSingle(),
+  ]);
+  if (!corretor) return null;
+  return {
+    primeiroNome: primeiroNomeUtil(lead?.nome ?? null),
+    corretor: { nome: corretor.nome, whatsapp: corretor.whatsapp },
+  };
+}
+
+function primeiroNomeUtil(nome: string | null): string | null {
+  const primeiro = (nome ?? "").trim().split(/\s+/)[0] || null;
+  return primeiro && !/^\+?\d/.test(primeiro) && !primeiro.startsWith("WhatsApp") ? primeiro : null;
 }

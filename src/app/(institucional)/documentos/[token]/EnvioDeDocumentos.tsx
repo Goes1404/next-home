@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { MIMES_ACEITOS, problemaDoArquivo } from "@/lib/crm/linksDoCliente";
 import { situacaoParaCliente, type SituacaoDoItem } from "@/lib/crm/documentacao";
-import { enviarDocumento } from "./acoes";
+import { dicaDoDocumento, formatoDoArquivo, motivoDaFalhaDeEnvio } from "@/lib/crm/envioDeDocumento";
+import { prepararFoto, subirComAutorizacao } from "@/lib/crm/fotoParaEnvio";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import { confirmarEnvio, prepararEnvio } from "./acoes";
 
 type Item = { item: string; situacao: SituacaoDoItem; motivo: string | null };
-type Estado = { enviando?: boolean; situacao: SituacaoDoItem; motivo: string | null; erro?: string };
+type Estado = { enviando?: string; situacao: SituacaoDoItem; motivo: string | null; erro?: string };
 
 const COR: Record<SituacaoDoItem, string> = {
   falta: "text-apoio",
@@ -20,42 +23,74 @@ const COR: Record<SituacaoDoItem, string> = {
  * conferido pelo corretor, ou recusado com o motivo — o cliente que mandou a
  * foto torta lê "falta o verso" e manda de novo, sem precisar perguntar.
  *
- * O arquivo é conferido NO APARELHO antes de subir (tamanho e formato) —
- * recusar depois de 10 MB enviados pelo 4G é o jeito mais caro de dizer
- * "não". Item conferido não oferece envio: está resolvido.
+ * A foto é reduzida NO APARELHO (`fotoParaEnvio.ts`) e o arquivo é
+ * conferido antes de subir (tamanho e formato) — recusar depois de 10 MB
+ * enviados pelo 4G é o jeito mais caro de dizer "não". Depois ele sobe
+ * direto ao armazenamento, sem passar pela Vercel, que recusa acima de
+ * 4,5 MB. Item conferido não oferece envio: está resolvido.
+ *
+ * Cada falha diz a causa (`motivoDaFalhaDeEnvio`): "sem conexão" para
+ * arquivo grande demais mandava o cliente tentar de novo algo que nunca ia
+ * passar.
  */
 export function EnvioDeDocumentos({ token, itens }: { token: string; itens: Item[] }) {
   const [estado, setEstado] = useState<Record<string, Estado>>(() =>
     Object.fromEntries(itens.map((i) => [i.item, { situacao: i.situacao, motivo: i.motivo }])),
   );
 
+  function marcar(item: string, mudanca: Partial<Estado>) {
+    setEstado((s) => ({ ...s, [item]: { ...s[item], ...mudanca } }));
+  }
+
+  /** Um arquivo, do aparelho até a lista. Devolve a frase de erro, ou nada. */
+  async function enviarUm(item: string, original: File, rotulo: string): Promise<string | undefined> {
+    marcar(item, { enviando: `Preparando${rotulo}…`, erro: undefined });
+    const arquivo = await prepararFoto(original);
+    const problema = problemaDoArquivo(arquivo);
+    if (problema) return problema;
+
+    marcar(item, { enviando: `Enviando${rotulo}…` });
+    try {
+      const autorizado = await prepararEnvio({
+        token,
+        item,
+        nome: arquivo.name,
+        tamanho: arquivo.size,
+        tipo: formatoDoArquivo(arquivo),
+      });
+      if ("erro" in autorizado) return autorizado.erro;
+      const subiu = await subirComAutorizacao({
+        bucket: "documentos-clientes",
+        caminho: autorizado.caminho,
+        autorizacao: autorizado.autorizacao,
+        arquivo,
+      });
+      if ("erro" in subiu) return subiu.erro;
+      const r = await confirmarEnvio({ token, item, caminho: autorizado.caminho, nome: original.name });
+      return r.erro;
+    } catch (erro) {
+      return ehActionDeOutroBuild(erro) ? avisoDePaginaVelha() : motivoDaFalhaDeEnvio(erro);
+    }
+  }
+
   async function enviar(item: string, arquivos: FileList | null) {
     if (!arquivos || arquivos.length === 0) return;
-    for (const arquivo of Array.from(arquivos)) {
-      const problema = problemaDoArquivo(arquivo);
-      if (problema) {
-        setEstado((s) => ({ ...s, [item]: { ...s[item], erro: problema } }));
-        continue;
-      }
-      setEstado((s) => ({ ...s, [item]: { ...s[item], enviando: true, erro: undefined } }));
-      const dados = new FormData();
-      dados.set("token", token);
-      dados.set("item", item);
-      dados.set("arquivo", arquivo);
-      let erro: string | undefined;
-      try {
-        const r = await enviarDocumento(dados);
-        erro = r.erro;
-      } catch {
-        erro = "Sem conexão. Tente de novo.";
-      }
-      setEstado((s) => ({
-        ...s,
-        [item]: erro
-          ? { ...s[item], enviando: false, erro }
-          : { enviando: false, situacao: "recebido", motivo: null },
-      }));
+    const lista = Array.from(arquivos);
+    let enviados = 0;
+    let ultimoErro: string | undefined;
+    for (const [i, arquivo] of lista.entries()) {
+      const rotulo = lista.length > 1 ? ` ${i + 1} de ${lista.length}` : "";
+      const erro = await enviarUm(item, arquivo, rotulo);
+      if (erro) ultimoErro = lista.length > 1 ? `${arquivo.name}: ${erro}` : erro;
+      else enviados++;
     }
+    setEstado((s) => ({
+      ...s,
+      [item]:
+        enviados > 0
+          ? { enviando: undefined, situacao: "recebido", motivo: null, erro: ultimoErro }
+          : { ...s[item], enviando: undefined, erro: ultimoErro },
+    }));
   }
 
   const resolvidos = itens.filter((i) => {
@@ -73,6 +108,7 @@ export function EnvioDeDocumentos({ token, itens }: { token: string; itens: Item
           const e = estado[item] ?? { situacao: "falta", motivo: null };
           const id = `doc-${indice}`;
           const jaFoi = e.situacao === "recebido" || e.situacao === "conferido";
+          const dica = dicaDoDocumento(item);
           return (
             <li key={item} className="rounded-2xl border border-linha bg-superficie p-4 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -82,6 +118,9 @@ export function EnvioDeDocumentos({ token, itens }: { token: string; itens: Item
                     {item}
                   </p>
                   <p className={`text-fluid-xs font-semibold ${COR[e.situacao]}`}>{situacaoParaCliente(e.situacao)}</p>
+                  {dica && e.situacao !== "conferido" && (
+                    <p className="mt-1 text-fluid-xs text-apoio break-words">{dica}</p>
+                  )}
                 </div>
                 {e.situacao !== "conferido" && (
                   <>
@@ -92,7 +131,7 @@ export function EnvioDeDocumentos({ token, itens }: { token: string; itens: Item
                       } ${e.enviando ? "opacity-60" : ""}`}
                     >
                       {e.enviando
-                        ? "Enviando…"
+                        ? e.enviando
                         : e.situacao === "recusado"
                           ? "Enviar de novo"
                           : jaFoi
@@ -103,8 +142,8 @@ export function EnvioDeDocumentos({ token, itens }: { token: string; itens: Item
                       id={id}
                       type="file"
                       multiple
-                      accept={MIMES_ACEITOS.join(",")}
-                      disabled={e.enviando}
+                      accept={[...MIMES_ACEITOS, ".heic", ".heif"].join(",")}
+                      disabled={Boolean(e.enviando)}
                       className="sr-only"
                       onChange={(ev) => {
                         void enviar(item, ev.target.files);

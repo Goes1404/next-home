@@ -117,10 +117,38 @@ export function nomeSeguro(nome: string): string {
   return base || "arquivo";
 }
 
-export function problemaDoArquivo(arquivo: { size: number; type: string }): string | null {
+const POR_EXTENSAO: Record<string, string> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heic",
+};
+
+/**
+ * O formato do arquivo, lido do tipo que o aparelho informou ou, quando ele
+ * vem vazio, da extensão. Alguns navegadores do Android entregam a foto HEIC
+ * com `type` vazio: sem isto, um arquivo bom era recusado como "formato não
+ * aceito". HEIF entra como HEIC, que é o tipo que o armazenamento aceita.
+ */
+export function formatoDoArquivo(arquivo: { type: string; name?: string }): string {
+  const tipo = (arquivo.type || "").toLowerCase();
+  if (tipo === "image/heif") return "image/heic";
+  if (tipo === "image/jpg") return "image/jpeg";
+  if ((MIMES_ACEITOS as readonly string[]).includes(tipo)) return tipo;
+  const ext = (arquivo.name ?? "").toLowerCase().split(".").pop() ?? "";
+  if (tipo === "" || tipo === "application/octet-stream") return POR_EXTENSAO[ext] ?? tipo;
+  return tipo;
+}
+
+export function problemaDoArquivo(arquivo: { size: number; type: string; name?: string }): string | null {
   if (arquivo.size <= 0) return "O arquivo está vazio.";
-  if (arquivo.size > TETO_DOCUMENTO_BYTES) return "O arquivo passa de 10 MB. Tire uma foto ou mande o PDF menor.";
-  if (!(MIMES_ACEITOS as readonly string[]).includes(arquivo.type)) {
+  if (arquivo.size > TETO_DOCUMENTO_BYTES) {
+    return "O arquivo passa de 10 MB. Se for PDF escaneado, salve com qualidade menor ou mande uma foto de cada página.";
+  }
+  if (!(MIMES_ACEITOS as readonly string[]).includes(formatoDoArquivo(arquivo))) {
     return "Formato não aceito. Envie PDF ou foto (JPG, PNG, WEBP ou HEIC).";
   }
   return null;

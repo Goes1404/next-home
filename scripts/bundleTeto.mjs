@@ -97,7 +97,9 @@ const TETOS_KB = {
   // 16/10: a ficha do lead ganhou a seção Documentação (0179): conferir e
   // recusar com motivo, lista por fase editável, anexar e o .zip montado no
   // navegador (o montador do zip vai por import() no clique).
-  "/corretor/(painel)/leads/[id]/page": 753,
+  // 16/10: +1 KB, anexo em dois tempos (autoriza, sobe direto ao armazenamento,
+  // confere); o redutor de foto e o envio vão por import() no clique.
+  "/corretor/(painel)/leads/[id]/page": 754,
   "/corretor/(painel)/importar/page": 747, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.

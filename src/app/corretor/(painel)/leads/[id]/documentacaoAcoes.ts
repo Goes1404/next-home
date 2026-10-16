@@ -5,9 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { site } from "@/lib/site";
-import { medirImagem } from "@/lib/imoveis/imagemDerivada";
+import { autorizarEnvio, conferirArquivoEnviado } from "@/lib/crm/envioAutorizado";
 import {
-  alertaDeResolucao,
   caminhoDoLink,
   mensagemParaCliente,
   nomeSeguro,
@@ -148,57 +147,80 @@ export async function removerItem(leadId: string, fase: string, item: string): P
  * é quem confere, e pedir um segundo toque para cada arquivo que ele mesmo
  * escolheu seria cerimônia.
  */
-export async function anexarDocumento(formData: FormData): Promise<Resultado> {
-  const leadId = String(formData.get("leadId") ?? "");
-  const fase = String(formData.get("fase") ?? "");
-  const item = normalizarItem(String(formData.get("item") ?? ""));
-  const arquivo = formData.get("arquivo");
-  if (!ehFase(fase)) return { erro: "Fase desconhecida." };
+export async function prepararAnexo(p: {
+  leadId: string;
+  fase: string;
+  item: string;
+  nome: string;
+  tamanho: number;
+  tipo: string;
+}): Promise<{ caminho: string; autorizacao: string } | { erro: string }> {
+  const item = normalizarItem(String(p.item ?? ""));
+  if (!ehFase(p.fase)) return { erro: "Fase desconhecida." };
   if (!item) return { erro: "Documento não reconhecido." };
-  if (!(arquivo instanceof File)) return { erro: "Escolha um arquivo." };
-  const problema = problemaDoArquivo(arquivo);
+  const problema = problemaDoArquivo({ size: p.tamanho, type: p.tipo, name: p.nome });
   if (problema) return { erro: problema };
 
-  const r = await leadDoCorretor(leadId);
-  if ("erro" in r) return { erro: r.erro };
-  const { itens } = await itensAtuais(leadId, fase);
+  const r = await leadDoCorretor(p.leadId);
+  if ("erro" in r) return { erro: r.erro! };
+  const { itens } = await itensAtuais(p.leadId, p.fase);
   if (!itens.some((i) => mesmoItem(i, item))) return { erro: "Esse documento não está na lista." };
+  return autorizarEnvio(createServiceClient(), `${p.leadId}/painel/${crypto.randomUUID()}-${nomeSeguro(p.nome)}`);
+}
 
-  const bytes = Buffer.from(await arquivo.arrayBuffer());
-  const alerta = arquivo.type.startsWith("image/")
-    ? await medirImagem(bytes).then((m) => (m ? alertaDeResolucao(m.largura, m.altura) : null))
-    : null;
+/**
+ * O 2º tempo do anexo: o arquivo já subiu direto do navegador ao
+ * armazenamento (a Vercel recusa corpo acima de 4,5 MB); aqui ele é
+ * conferido e registrado. Ver `envioAutorizado.ts`.
+ */
+export async function confirmarAnexo(p: {
+  leadId: string;
+  fase: string;
+  item: string;
+  caminho: string;
+  nome: string;
+}): Promise<Resultado> {
+  const item = normalizarItem(String(p.item ?? ""));
+  if (!ehFase(p.fase)) return { erro: "Fase desconhecida." };
+  if (!item) return { erro: "Documento não reconhecido." };
+  const r = await leadDoCorretor(p.leadId);
+  if ("erro" in r) return { erro: r.erro };
+  // O caminho vem do navegador: só vale o da pasta que este lead autorizou.
+  if (!p.caminho.startsWith(`${p.leadId}/painel/`) || p.caminho.includes("..")) {
+    return { erro: "Envio não reconhecido. Tente de novo." };
+  }
 
   const servico = createServiceClient();
-  const caminho = `${leadId}/${crypto.randomUUID()}-${nomeSeguro(arquivo.name)}`;
-  const { error: erroUpload } = await servico.storage
-    .from("documentos-clientes")
-    .upload(caminho, bytes, { contentType: arquivo.type, upsert: false });
-  if (erroUpload) {
-    console.error("[documentação] upload recusado:", erroUpload.message);
-    return { erro: "Não foi possível enviar o arquivo agora. Tente de novo." };
-  }
+  const { count: jaRegistrado } = await servico
+    .from("lead_documentos")
+    .select("id", { count: "exact", head: true })
+    .eq("caminho", p.caminho);
+  if ((jaRegistrado ?? 0) > 0) return { ok: true };
+
+  const arquivo = await conferirArquivoEnviado(servico, p.caminho);
+  if ("erro" in arquivo) return { erro: arquivo.erro };
+
   const { error } = await servico.from("lead_documentos").insert({
-    lead_id: leadId,
+    lead_id: p.leadId,
     corretor_id: r.corretor.id,
     item,
-    fase,
-    caminho,
-    nome_arquivo: arquivo.name.slice(0, 120),
-    tamanho: arquivo.size,
-    mime: arquivo.type,
-    alerta,
+    fase: p.fase,
+    caminho: p.caminho,
+    nome_arquivo: p.nome.slice(0, 120),
+    tamanho: arquivo.tamanho,
+    mime: arquivo.mime,
+    alerta: arquivo.alerta,
     origem: "corretor",
     situacao: "conferido",
     conferido_em: new Date().toISOString(),
   });
   if (error) {
     // Sem a linha, o arquivo ficaria órfão no bucket e invisível na ficha.
-    await servico.storage.from("documentos-clientes").remove([caminho]);
+    await servico.storage.from("documentos-clientes").remove([p.caminho]);
     console.error("[documentação] documento não registrado:", error.message);
-    return { erro: "Não foi possível registrar o documento. Tente de novo." };
+    return { erro: "O arquivo chegou, mas não foi possível registrá-lo. Tente de novo." };
   }
-  revalidar(leadId);
+  revalidar(p.leadId);
   return { ok: true };
 }
 

@@ -14,6 +14,8 @@ import {
   MIMES_ACEITOS,
   PERFIL_DE_DOCUMENTO_LABEL,
   PERFIS_DE_DOCUMENTO,
+  formatoDoArquivo,
+  problemaDoArquivo,
   type PerfilDeDocumento,
 } from "@/lib/crm/linksDoCliente";
 import {
@@ -28,7 +30,8 @@ import {
 } from "@/lib/crm/documentacao";
 import {
   adicionarItem,
-  anexarDocumento,
+  confirmarAnexo,
+  prepararAnexo,
   arquivosParaZip,
   comecarLista,
   conferirDocumento,
@@ -151,12 +154,33 @@ export function DocumentacaoClient({
     const item = anexoAlvo.current;
     if (seletorDeArquivo.current) seletorDeArquivo.current.value = "";
     if (!arquivo || !item) return;
-    const dados = new FormData();
-    dados.set("leadId", leadId);
-    dados.set("fase", faseAtiva);
-    dados.set("item", item);
-    dados.set("arquivo", arquivo);
-    rodar(() => anexarDocumento(dados), `"${item}" anexado e conferido.`);
+    const fase = faseAtiva;
+    // Sobe direto ao armazenamento (a Vercel recusa corpo acima de 4,5 MB);
+    // a foto é reduzida antes, como no link do cliente.
+    rodar(async () => {
+      // Só quem anexa paga o peso do envio: a ficha abre sem ele.
+      const { prepararFoto, subirComAutorizacao } = await import("@/lib/crm/fotoParaEnvio");
+      const pronto = await prepararFoto(arquivo);
+      const problema = problemaDoArquivo(pronto);
+      if (problema) return { erro: problema };
+      const autorizado = await prepararAnexo({
+        leadId,
+        fase,
+        item,
+        nome: pronto.name,
+        tamanho: pronto.size,
+        tipo: formatoDoArquivo(pronto),
+      });
+      if ("erro" in autorizado) return { erro: autorizado.erro };
+      const subiu = await subirComAutorizacao({
+        bucket: "documentos-clientes",
+        caminho: autorizado.caminho,
+        autorizacao: autorizado.autorizacao,
+        arquivo: pronto,
+      });
+      if ("erro" in subiu) return { erro: subiu.erro };
+      return confirmarAnexo({ leadId, fase, item, caminho: autorizado.caminho, nome: arquivo.name });
+    }, `"${item}" anexado e conferido.`);
   }
 
   function confirmarRecusa() {
@@ -604,7 +628,7 @@ export function DocumentacaoClient({
       <input
         ref={seletorDeArquivo}
         type="file"
-        accept={MIMES_ACEITOS.join(",")}
+        accept={[...MIMES_ACEITOS, ".heic", ".heif"].join(",")}
         className="sr-only"
         tabIndex={-1}
         aria-hidden
