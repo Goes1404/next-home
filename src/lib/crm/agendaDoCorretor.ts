@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import {
+  gradeEfetiva,
   proximosHorarios,
   type FaixaDisponivel,
   type HorarioDeVisita,
@@ -57,7 +58,7 @@ export async function horariosDeVisita(
     .filter((v): v is string => Boolean(v))
     .map((v) => new Date(v));
 
-  return proximosHorarios({ grade: faixas, ocupados, agora, quantos: 6 });
+  return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, agora, quantos: 6 });
 }
 
 /**
@@ -65,8 +66,8 @@ export async function horariosDeVisita(
  *
  * Agenda é ENRIQUECIMENTO: falhar aqui não pode custar a resposta ao
  * cliente, que é o que o webhook está no meio de produzir. Sem lista, o
- * prompt volta ao calendário genérico — exatamente o que acontece hoje para
- * os 8 corretores, que não configuraram grade nenhuma.
+ * prompt volta ao calendário genérico. Quem não configurou grade usa a
+ * padrão (`GRADE_PADRAO`, todos os dias das 9h às 20h).
  *
  * Devolve a lista CRUA, não o bloco pronto: quem filtra o que já foi
  * oferecido na conversa é o turno, que é onde o histórico está.

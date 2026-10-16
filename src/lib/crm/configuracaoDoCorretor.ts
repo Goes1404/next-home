@@ -9,7 +9,7 @@ import type { EstadoDaConfiguracao } from "@/lib/crm/primeirosPassos";
  * chave de serviço DEPOIS da guarda de papel (a agenda de um colega não é
  * legível pela RLS do gestor).
  *
- * Cinco consultas no total, qualquer que seja o número de corretores.
+ * Três consultas no total, qualquer que seja o número de corretores.
  */
 export async function carregarConfiguracao(
   supabase: SupabaseClient<Database>,
@@ -18,14 +18,13 @@ export async function carregarConfiguracao(
   const resultado = new Map<string, EstadoDaConfiguracao>();
   if (corretorIds.length === 0) return resultado;
 
-  const [{ data: corretores }, { data: instancias }, { data: faixas }, { data: leads }] = await Promise.all([
+  const [{ data: corretores }, { data: instancias }, { data: leads }] = await Promise.all([
     supabase.from("corretores").select("id, foto_url, bio").in("id", corretorIds),
     supabase
       .from("corretor_whatsapp_instancias")
       .select("corretor_id")
       .in("corretor_id", corretorIds)
       .eq("status_conexao", "conectado"),
-    supabase.from("corretor_disponibilidade").select("corretor_id").in("corretor_id", corretorIds),
     // Só a existência de lead importa: basta saber se há algum por corretor.
     supabase
       .from("leads")
@@ -41,13 +40,11 @@ export async function carregarConfiguracao(
     return m;
   };
   const conectados = conta(instancias);
-  const agenda = conta(faixas);
   const carteira = conta(leads);
 
   for (const c of corretores ?? []) {
     resultado.set(c.id, {
       whatsappConectado: (conectados.get(c.id) ?? 0) > 0,
-      faixasDeAgenda: agenda.get(c.id) ?? 0,
       temFoto: Boolean(c.foto_url),
       temApresentacao: Boolean(c.bio && c.bio.trim().length >= 20),
       leads: carteira.get(c.id) ?? 0,

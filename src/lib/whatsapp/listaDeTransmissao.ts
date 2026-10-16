@@ -94,11 +94,11 @@ export function variaveisUsadas(texto: string): string[] {
 export function variaveisSemValor(
   texto: string,
   contexto: ContextoTemplate,
-  opcoes: { temAgenda: boolean },
 ): string[] {
   return variaveisUsadas(texto).filter((chave) => {
     if (chave === "nome") return false;
-    if (chave === "horarios") return !opcoes.temAgenda;
+    // Sempre há horário: sem agenda preenchida vale a padrão (GRADE_PADRAO).
+    if (chave === "horarios") return false;
     return !contexto[chave as keyof ContextoTemplate];
   });
 }

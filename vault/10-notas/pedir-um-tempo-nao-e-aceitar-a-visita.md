@@ -47,6 +47,8 @@ a visita constava como marcada.
    instrução leva o primeiro nome do cadastro, a regra 21 ganhou a exceção da
    visita, e `corrigirNomeDoCorretor` troca o nome inventado depois de
    "corretor(a)" pelo do cadastro (apelido que é começo do nome passa).
+   O nome é o do corretor dono do número que atende a conversa
+   (`instancia.nomeCorretor`), então vale igual para qualquer corretor.
 4. **"Último/primeiro <dia> do mês" vira data.** `pedidoDeAgendamento(texto,
    agora)` calcula no fuso de São Paulo e o bloco de agendar diz
    "domingo, 25/10 (calculada pelo sistema)".

@@ -10353,3 +10353,20 @@ Nota: [[pedir-um-tempo-nao-e-aceitar-a-visita]]. Conversa da Carol com a Rute.
   `ia_interacoes` + recusas + fila) unida por `union all` e ordenada por
   horário cabe numa colagem só no editor SQL. Lead com nome em maiúsculas
   ("RUTE") não casa com a grafia "Ruth": buscar por `ilike any` com variações.
+
+## Agenda aberta por padrão (16/10/2026)
+
+Nota: [[agenda-padrao-aberta]].
+
+- **Sem agenda preenchida, vale todos os dias das 9h às 20h** (`GRADE_PADRAO`,
+  `gradeEfetiva`). Antes, grade vazia deixava a IA sem horário para oferecer.
+  Mora no código, sem migration: vale para corretor novo sem seed.
+- Desligar todos os dias na tela de Visitas e salvar volta à padrão.
+- `{horarios}` nas listas sempre tem valor (`corretorTemAgenda` saiu) e a
+  agenda saiu dos primeiros passos.
+- O nome na confirmação da visita (v50) é o do corretor dono do número que
+  atende: vale igual para todos.
+- **`git checkout --` na provocação apagou trabalho não commitado de novo**
+  (o arquivo inteiro voltou ao commit). Salvou a cópia feita antes da
+  mordida: copiar sempre antes de morder.
+

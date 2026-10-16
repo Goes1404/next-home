@@ -54,12 +54,3 @@ export async function idsProtegidosDeNovaLista(supabase: Supa, corretorId: strin
   if (error) throw new Error(`Falha ao conferir contatos recentes: ${error.message}`);
   return new Set((itens ?? []).flatMap((i) => (i.lead_id ? [i.lead_id] : [])));
 }
-
-/** O corretor tem horários de visita configurados? Sem isso `{horarios}` não tem o que oferecer. */
-export async function corretorTemAgenda(supabase: Supa, corretorId: string): Promise<boolean> {
-  const { count } = await supabase
-    .from("corretor_disponibilidade")
-    .select("dia_semana", { count: "exact", head: true })
-    .eq("corretor_id", corretorId);
-  return (count ?? 0) > 0;
-}

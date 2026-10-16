@@ -87,6 +87,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[quando-a-ia-responde]] — a decisão de responder numa função só, em duas camadas; trava de liberação removida; motivo do silêncio gravado (0149-0150, 04/10)
 - [[cliente-sem-resposta-avisa-o-corretor]] — 30 min sem resposta vira aviso no WhatsApp do corretor, uma vez por espera (0161, 06/10)
 - [[pedir-um-tempo-nao-e-aceitar-a-visita]] — "vou confirmar depois, pode ser?" gravou visita; "corretor Carlos" inventado; último domingo do mês; lista duplicada por telefone (v50, 16/10)
+- [[agenda-padrao-aberta]] — sem agenda preenchida, vale todos os dias das 9h às 20h (16/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

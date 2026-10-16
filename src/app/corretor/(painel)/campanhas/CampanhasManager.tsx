@@ -24,7 +24,6 @@ interface Props {
   /** Pré-preenchimento vindo de "leads que combinam", listas sugeridas, repetir ou rascunho. */
   inicial?: InicialDaLista;
   modelos: TemplateMensagem[];
-  temAgenda: boolean;
   corretor: { nome: string; whatsapp: string };
 }
 
@@ -34,7 +33,6 @@ export function CampanhasManager({
   statusInicial,
   inicial,
   modelos,
-  temAgenda,
   corretor,
 }: Props) {
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
@@ -57,7 +55,6 @@ export function CampanhasManager({
         empreendimentos={empreendimentos}
         inicial={inicial}
         modelos={modelos}
-        temAgenda={temAgenda}
         numeroConectado={numeroConectado}
         corretor={corretor}
         aoCriar={(campanha, aviso) => {

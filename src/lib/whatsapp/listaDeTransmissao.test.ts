@@ -95,13 +95,11 @@ describe("variáveis da mensagem (Fase 2)", () => {
   });
 
   it("avisa o que vai sair vazio antes de a lista nascer", () => {
-    expect(variaveisSemValor("Oi {nome}, no {bairro} tem {horarios}", {}, { temAgenda: false })).toEqual([
-      "bairro",
-      "horarios",
-    ]);
-    expect(variaveisSemValor("Oi {nome} no {bairro}", ctx, { temAgenda: true })).toEqual([]);
+    // `{horarios}` sempre tem valor: sem agenda preenchida vale a padrão.
+    expect(variaveisSemValor("Oi {nome}, no {bairro} tem {horarios}", {})).toEqual(["bairro"]);
+    expect(variaveisSemValor("Oi {nome} no {bairro}", ctx)).toEqual([]);
     // Variável com erro de digitação também conta: o cliente leria "{bairo}".
-    expect(variaveisSemValor("no {bairo}", ctx, { temAgenda: true })).toEqual(["bairo"]);
+    expect(variaveisSemValor("no {bairo}", ctx)).toEqual(["bairo"]);
   });
 
   it("dormitórios em palavras", () => {

@@ -28,6 +28,18 @@ describe("o nome do corretor é o do cadastro (conversa da Rute, 15/10/2026)", (
     expect(corrigirNomeDoCorretor(t, "Carolini Ivina Maia")).toEqual({ texto: t, corrigiu: false });
   });
 
+  it("vale para qualquer corretor: o nome vem do cadastro de quem atende", () => {
+    for (const [cadastro, primeiro] of [
+      ["Bruna Souza", "Bruna"],
+      ["Ramos Oliveira", "Ramos"],
+      ["Márcia Lima", "Márcia"],
+    ]) {
+      expect(corrigirNomeDoCorretor("a corretora Carla vai te receber", cadastro).texto).toBe(
+        `a corretora ${primeiro} vai te receber`,
+      );
+    }
+  });
+
   it("sem nome cadastrado, não mexe", () => {
     expect(corrigirNomeDoCorretor("o corretor Carlos", null).corrigiu).toBe(false);
     expect(primeiroNomeDoCorretor("  ")).toBeNull();

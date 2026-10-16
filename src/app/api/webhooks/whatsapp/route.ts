@@ -1094,8 +1094,8 @@ export async function POST(req: NextRequest) {
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a
        * Sofia oferecia horário de cabeça: o eval de 31/08 mediu os mesmos
        * dois inventados quatro vezes seguidas, e o funil mostra 6 visitas
-       * propostas para 1 marcada. Vazio para quem não configurou agenda —
-       * e aí o prompt segue com o calendário genérico de sempre.
+       * propostas para 1 marcada. Quem não configurou agenda usa a padrão
+       * (todos os dias, 9h às 20h); vazio só sem vaga nos próximos 14 dias.
        *
        * Vai CRU: quem filtra o que já foi oferecido nesta conversa é o
        * turno, que é onde o histórico está. Montar o bloco aqui faria a

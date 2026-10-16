@@ -180,9 +180,9 @@ export interface ContextoAtendimento {
    */
   blocoRegrasCondicionais?: string;
   /**
-   * Os horários de visita que EXISTEM (agenda do corretor, 0073). Vazio
-   * quando ele não configurou agenda — e aí o calendário genérico segue
-   * valendo, como sempre valeu.
+   * Os horários de visita que EXISTEM (agenda do corretor, 0073, ou a
+   * padrão de quem não configurou). Vazio só sem vaga nos próximos 14 dias
+   * ou com a leitura da agenda falhando; aí vale o calendário genérico.
    */
   blocoHorariosReais?: string;
   /**

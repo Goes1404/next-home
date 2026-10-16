@@ -44,7 +44,7 @@ import {
   type ContextoTemplate,
 } from "@/lib/whatsapp/listaDeTransmissao";
 import { MAXIMO_DE_MIDIAS_NA_LISTA, type MidiaDaLista } from "@/lib/whatsapp/midiasDaLista";
-import { corretorTemAgenda, idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
+import { idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
 import type { CriterioDaLista } from "@/lib/whatsapp/listasVivas";
 
 /**
@@ -225,16 +225,15 @@ export async function gerarPreviewCampanha(params: {
 
   const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
   const supabase = await createClient();
-  const temAgenda = await corretorTemAgenda(supabase, corretor.id);
   const textoB = params.mensagemBaseB?.trim() || null;
   if (textoB && !versoesDiferentes(params.mensagemBase, textoB)) return { erro: AVISO_DE_VERSOES_IGUAIS };
   const faltando = [
-    ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
-    ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
+    ...variaveisSemValor(params.mensagemBase, contexto),
+    ...(textoB ? variaveisSemValor(textoB, contexto) : []),
   ];
   if (faltando.length > 0) return { erro: avisoDeVariaveis([...new Set(faltando)]) };
 
-  const rotulos = temAgenda ? (await horariosDeVisita(corretor.id)).map((h) => h.rotulo) : [];
+  const rotulos = (await horariosDeVisita(corretor.id)).map((h) => h.rotulo);
   const amostra = elegiveis.slice(0, 3);
 
   /*
@@ -454,12 +453,11 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
     imovelSlug = imovel.slug;
   }
 
-  const temAgenda = await corretorTemAgenda(supabase, corretor.id);
   const textoB = params.mensagemBaseB?.trim() || null;
   if (textoB && !versoesDiferentes(params.mensagemBase, textoB)) return { erro: AVISO_DE_VERSOES_IGUAIS };
   const faltando = [
-    ...variaveisSemValor(params.mensagemBase, contexto, { temAgenda }),
-    ...(textoB ? variaveisSemValor(textoB, contexto, { temAgenda }) : []),
+    ...variaveisSemValor(params.mensagemBase, contexto),
+    ...(textoB ? variaveisSemValor(textoB, contexto) : []),
   ];
   if (faltando.length > 0) return { erro: avisoDeVariaveis([...new Set(faltando)]) };
 

@@ -147,7 +147,6 @@ export function NovaCampanha({
   aoCriar,
   inicial,
   modelos,
-  temAgenda,
   numeroConectado,
   corretor,
 }: {
@@ -156,8 +155,6 @@ export function NovaCampanha({
   inicial?: InicialDaLista;
   /** Modelos de mensagem do corretor (templates_mensagens). */
   modelos: TemplateMensagem[];
-  /** Há horários de visita na agenda? Sem isso `{horarios}` não tem o que oferecer. */
-  temAgenda: boolean;
   /** O número do corretor está conectado? Sem isso a lista nasceria parada. */
   numeroConectado: boolean;
   corretor: { nome: string; whatsapp: string };
@@ -533,7 +530,7 @@ export function NovaCampanha({
   }
 
   const variaveisDisponiveis = VARIAVEIS_DA_MENSAGEM.filter(
-    (v) => (imovel || !DO_IMOVEL.has(v.chave)) && (temAgenda || v.chave !== "horarios"),
+    (v) => imovel || !DO_IMOVEL.has(v.chave),
   );
 
   return (
@@ -859,8 +856,8 @@ export function NovaCampanha({
           />
 
           {/* Variáveis do cadastro em um toque (Fase 2). Só aparecem as que
-              têm valor: sem imóvel, nada de {bairro}; sem agenda, nada de
-              {horarios}. */}
+              têm valor: sem imóvel, nada de {bairro}. {horarios} sempre tem:
+              sem agenda preenchida vale a padrão. */}
           <div className="flex flex-wrap gap-1.5" aria-label="Inserir variável na mensagem">
             {variaveisDisponiveis.map((v) => (
               <button
@@ -885,7 +882,7 @@ export function NovaCampanha({
               <Sparkles className="h-4 w-4" />
               {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
             </button>
-            {temAgenda && !/\{horarios\}/i.test(mensagemBase) && (
+            {!/\{horarios\}/i.test(mensagemBase) && (
               <button
                 type="button"
                 onClick={() => setMensagemBase((m) => `${m.trimEnd()}${CONVITE_COM_HORARIOS}`)}
