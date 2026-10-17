@@ -10387,3 +10387,22 @@ Nota: [[arquivo-grande-nao-passa-pela-server-action]].
   `autorizarEnvio`/`conferirArquivoEnviado`, nunca `File` numa Server Action.
 - Não provado contra o bucket real (sem chave de serviço nesta sessão).
 
+
+## Conta só WhatsApp (0180, 17/10/2026)
+
+Nota: [[conta-so-whatsapp]].
+
+- **Pedido: uma pessoa usa o painel só como WhatsApp Web.** Marca por conta
+  (`corretores.so_whatsapp`, ADM em Contas): toda conversa do número aparece,
+  quem não é lead não vira lead, o texto é guardado (exceção declarada à
+  privacidade) e a IA fica desligada.
+- **A trava da 0111 virou trigger** (`conversa_exige_lead`): `lead_id` nulo
+  só passa em conta só WhatsApp.
+- **Coluna nova lida por consulta à parte e tolerante** (`ehContaSoWhatsapp`):
+  embutida no select da instância, a falta da migration faria o webhook
+  devolver "instância não cadastrada" para todo número. Antes de pôr coluna
+  nova num select de caminho quente, perguntar o que acontece se a migration
+  ainda não foi aplicada.
+- **Fora do sorteio do anúncio, por último na roleta, fora do site.**
+- Conversas antigas não aparecem (a Evolution não guarda histórico); foto de
+  quem não é lead fica só como texto.
