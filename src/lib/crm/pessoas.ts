@@ -1,7 +1,8 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { sanearBusca } from "@/lib/corretorSessao";
+import { getCorretorLogado, sanearBusca } from "@/lib/corretorSessao";
+import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import type { EtapaFunil } from "@/lib/types";
 import { PESSOAS_POR_PAGINA, type FiltroPessoas, type PessoaNaLista } from "./pessoasTipos";
@@ -51,22 +52,35 @@ export async function getPaginaDePessoas(
   const supabase = await createClient();
   const de = Math.max(0, pagina) * PESSOAS_POR_PAGINA;
 
+  /*
+   * Conta só WhatsApp (0180): a lista é o WhatsApp Web dela — TODA conversa
+   * do número, com lead ou sem, mesmo as que só ela falou. Lead sem
+   * conversa continua fora (aqui é lista de conversas, não carteira).
+   */
+  const corretor = await getCorretorLogado();
+  const soWhatsapp = corretor ? await ehContaSoWhatsapp(supabase, corretor.id) : false;
+
   let query = supabase
     .from("pessoas_do_corretor")
     .select(
       "pessoa_id, conversa_id, lead_id, nome, telefone, etapa, ultima_atividade, previa, nao_lidas, tem_conversa",
       { count: "exact" },
-    )
-    // A view antiga admitia conversa atendida sem lead. Enquanto a 0111 não
-    // estiver aplicada, este filtro impede que esse estoque reapareça.
-    .not("lead_id", "is", null)
-    /*
-     * Só quem JÁ CONVERSOU: o cliente falou ao menos uma vez (0157). Esta é
-     * a aba "Conversas" do menu, e lead recém-importado aparecia aqui como se
-     * tivesse falado (298 leads sem conversa e 8 conversas de um lado só, em
-     * 03/10/2026). Quem nunca conversou continua na aba Lista.
-     */
-    .eq("conversou", true);
+    );
+  if (soWhatsapp) {
+    query = query.eq("tem_conversa", true);
+  } else {
+    query = query
+      // Conversa sem lead só existe em conta só WhatsApp (trigger da 0180);
+      // se a conta deixar de ser, as conversas dela continuam escondidas.
+      .not("lead_id", "is", null)
+      /*
+       * Só quem JÁ CONVERSOU: o cliente falou ao menos uma vez (0157). Esta é
+       * a aba "Conversas" do menu, e lead recém-importado aparecia aqui como se
+       * tivesse falado (298 leads sem conversa e 8 conversas de um lado só, em
+       * 03/10/2026). Quem nunca conversou continua na aba Lista.
+       */
+      .eq("conversou", true);
+  }
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   // Sem saneamento, vírgula e parênteses digitados na busca viram sintaxe de

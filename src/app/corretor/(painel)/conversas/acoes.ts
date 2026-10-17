@@ -648,6 +648,9 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
    */
   const identidade = await resolverInstancia(instancia.instance_name);
   if (!identidade) return { erro: "Número não configurado." };
+  // Conta só WhatsApp (0180): não há IA, e conversa sem lead não é atendida.
+  if (identidade.soWhatsapp) return { erro: "Esta conta é só WhatsApp: a IA fica desligada nela." };
+  if (!conversa.lead_id) return { erro: "Esta conversa não tem ficha de lead: a IA não atende aqui." };
 
   const historico = await historicoRecente(conversaId);
   const ultima = historico[historico.length - 1];

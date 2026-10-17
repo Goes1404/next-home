@@ -23,7 +23,11 @@ vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock("@/lib/supabase/public", () => ({
   createClient: () => ({
     from: () => {
+      let colunas = "";
       const resultado = () => {
+        // A consulta das contas só WhatsApp (0180), que o site tira da equipe:
+        // não é a leitura da equipe, e não entra na contagem do incidente.
+        if (colunas === "id") return { data: [], error: null };
         chamadas.corretores += 1;
         // Só a primeira falha, como no incidente: as requisições seguintes
         // passaram normalmente.
@@ -32,9 +36,13 @@ vi.mock("@/lib/supabase/public", () => ({
           : { data: [{ id: "1", nome: "Bruna", slug: "bruna" }], error: null };
       };
       const construtor: Record<string, unknown> = {};
-      for (const m of ["select", "eq", "not", "order", "maybeSingle"]) {
+      for (const m of ["eq", "not", "order", "maybeSingle"]) {
         construtor[m] = () => construtor;
       }
+      construtor.select = (c: string) => {
+        colunas = c;
+        return construtor;
+      };
       construtor.then = (r: (v: unknown) => unknown) => Promise.resolve(resultado()).then(r);
       return construtor;
     },

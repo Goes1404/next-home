@@ -576,6 +576,8 @@ export type CorretorAdmin = {
   emPausa: boolean;
   temLogin: boolean;
   leads: number;
+  /** Conta só WhatsApp (0180): todas as conversas, sem lead, sem IA. */
+  soWhatsapp: boolean;
 };
 
 /**
@@ -606,6 +608,11 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     supabase.from("leads").select("corretor_id").is("arquivado_em", null),
   ]);
 
+  // À parte e tolerante: sem a 0180 a coluna não existe, e a tela de Contas
+  // não pode cair por isso.
+  const { data: marcas } = await supabase.from("corretores").select("id, so_whatsapp");
+  const soWhatsapp = new Set((marcas ?? []).filter((m) => m.so_whatsapp).map((m) => m.id));
+
   const porCorretor = new Map<string, number>();
   for (const lead of leads ?? []) {
     if (lead.corretor_id) porCorretor.set(lead.corretor_id, (porCorretor.get(lead.corretor_id) ?? 0) + 1);
@@ -621,6 +628,7 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     emPausa: c.em_pausa,
     temLogin: c.user_id !== null,
     leads: porCorretor.get(c.id) ?? 0,
+    soWhatsapp: soWhatsapp.has(c.id),
   }));
 }
 

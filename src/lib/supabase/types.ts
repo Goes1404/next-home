@@ -1227,6 +1227,7 @@ export type Database = {
           papel: string
           regioes: string[] | null
           slug: string | null
+          so_whatsapp: boolean
           user_id: string | null
           video_url: string | null
           whatsapp: string
@@ -1251,6 +1252,7 @@ export type Database = {
           papel?: string
           regioes?: string[] | null
           slug?: string | null
+          so_whatsapp?: boolean
           user_id?: string | null
           video_url?: string | null
           whatsapp: string
@@ -1275,6 +1277,7 @@ export type Database = {
           papel?: string
           regioes?: string[] | null
           slug?: string | null
+          so_whatsapp?: boolean
           user_id?: string | null
           video_url?: string | null
           whatsapp?: string
@@ -3052,7 +3055,7 @@ export type Database = {
           e_teste: boolean
           historico_anterior: "importado" | "indisponivel" | null
           id: string
-          lead_id: string
+          lead_id: string | null
           nao_lidas: number
           nome_cliente: string | null
           origem: "organica" | "campanha"
@@ -3078,7 +3081,7 @@ export type Database = {
           e_teste?: boolean
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
-          lead_id: string
+          lead_id?: string | null
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
@@ -3104,7 +3107,7 @@ export type Database = {
           e_teste?: boolean
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
-          lead_id?: string
+          lead_id?: string | null
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"

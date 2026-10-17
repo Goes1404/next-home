@@ -1,4 +1,5 @@
 import "server-only";
+import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
@@ -67,6 +68,11 @@ export type InstanciaResolvida = {
   expediente: { inicioHora: number; fimHora: number };
   /** As regras que o corretor escreveu para a IA dele (0154). */
   regrasDaIa: string | null;
+  /**
+   * Conta só WhatsApp (0180): todas as conversas do número aparecem no
+   * painel, sem virar lead, com o texto guardado e a IA desligada.
+   */
+  soWhatsapp: boolean;
 };
 
 /**
@@ -97,6 +103,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     .maybeSingle();
 
   if (!corretor) return null;
+  const soWhatsapp = await ehContaSoWhatsapp(supabase, data.corretor_id);
 
   return {
     id: data.id,
@@ -108,13 +115,16 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     slugCorretor: corretor.slug,
     nomeAssistente: data.nome_assistente,
     tomVoz: data.tom_voz,
-    modoBot: data.modo_bot,
+    // Conta só WhatsApp: a IA fica desligada por desenho, seja qual for o
+    // modo gravado na tela de configuração.
+    modoBot: soWhatsapp ? "desativado" : data.modo_bot,
     webhookSecret: data.webhook_secret,
     palavraChaveAtivacao: data.palavra_chave_ativacao,
     palavraChaveTeste: data.palavra_chave_teste,
     palavrasEntradaCliente: data.palavras_entrada_cliente,
     expediente: { inicioHora: data.expediente_inicio ?? 9, fimHora: data.expediente_fim ?? 21 },
     regrasDaIa: data.regras_da_ia ?? null,
+    soWhatsapp,
   };
 }
 
@@ -484,6 +494,12 @@ export async function obterOuCriarConversa(params: {
    * lead — sem convite, a regra da 0111 continua inteira.
    */
   convite?: ConviteDeEntrada | null;
+  /**
+   * Conta só WhatsApp (0180): número sem lead ganha conversa mesmo assim, e
+   * ninguém é cadastrado. O banco recusa conversa sem lead em qualquer outra
+   * conta (trigger da 0180).
+   */
+  semLead?: boolean;
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
 
@@ -520,6 +536,8 @@ export async function obterOuCriarConversa(params: {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
         return mapConversa({ ...existente, lead_id: leadId });
       }
+      // Conta só WhatsApp: a conversa sem lead é o normal, não estoque velho.
+      if (params.semLead) return mapConversa(existente);
       // Estoque anterior à 0111: sem lead não pode continuar visível nem
       // reter mensagens. O cascade remove mensagens e follow-ups.
       await supabase.from("whatsapp_conversas").delete().eq("id", existente.id);
@@ -531,6 +549,7 @@ export async function obterOuCriarConversa(params: {
   const leadId =
     (await encontrarLeadCadastrado(supabase, params)) ??
     (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+  if (!leadId && params.semLead) return criarConversaSemLead(supabase, params);
   if (!leadId) return null;
 
   const origem = params.origem ?? "organica";
@@ -566,6 +585,31 @@ export async function obterOuCriarConversa(params: {
 
   if (error || !criada) return null;
 
+  return mapConversa(criada);
+}
+
+/** A conversa de quem não é lead, numa conta só WhatsApp (0180). */
+async function criarConversaSemLead(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null },
+): Promise<ConversaPersistida | null> {
+  const { data: criada, error } = await supabase
+    .from("whatsapp_conversas")
+    .insert({
+      corretor_id: params.corretorId,
+      telefone_cliente: params.telefoneCliente,
+      nome_cliente: params.nomeCliente ?? null,
+      lead_id: null,
+      origem: "organica",
+      // IA desligada desde o nascimento: esta conta não tem IA.
+      bot_ativo: false,
+    })
+    .select(SELECT_CONVERSA)
+    .single();
+  if (error || !criada) {
+    console.error("[só WhatsApp] falha ao criar conversa sem lead:", error?.message);
+    return null;
+  }
   return mapConversa(criada);
 }
 

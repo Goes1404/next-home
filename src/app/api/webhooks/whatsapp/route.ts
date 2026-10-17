@@ -3,7 +3,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { guardarMidiaRecebida } from "@/lib/whatsapp/midiaRecebida";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
+import { conversaEhAtendimento, guardaOTextoDaConversa } from "@/lib/whatsapp/privacidadeDaConversa";
 import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
@@ -455,8 +455,9 @@ export async function POST(req: NextRequest) {
      * dono, nada é criado aqui, e a IA não responde neste número. O aviso vai
      * só para quem digitou, pela fila do Início, sem o nome do dono.
      */
+    // Conta só WhatsApp (0180) não tem IA: a palavra-chave não cadastra nem liga nada.
     const palavraDoCorretor =
-      fromMe && text
+      fromMe && text && !instancia.soWhatsapp
         ? palavraDoCorretorNaMensagem({
             mensagem: text,
             palavraChaveConfigurada: instancia.palavraChaveAtivacao,
@@ -496,7 +497,13 @@ export async function POST(req: NextRequest) {
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
-      convite,
+      /*
+       * Conta só WhatsApp (0180): toda conversa do número aparece no painel,
+       * e ninguém vira lead — nem pelo convite. A trava da 0111 continua no
+       * banco para todas as outras contas.
+       */
+      convite: instancia.soWhatsapp ? null : convite,
+      semLead: instancia.soWhatsapp,
     });
 
     /*
@@ -620,15 +627,20 @@ export async function POST(req: NextRequest) {
       }
 
       await gravarMensagem({
-        // O porteiro acima já garantiu o vínculo com um lead. A função
-        // central continua decidindo a gravação para manter o mesmo contrato
-        // dos demais caminhos de atendimento.
-        conversaLiberada: conversaEhAtendimento(conversa),
+        // O porteiro acima já garantiu o vínculo com um lead (ou a conta é
+        // só WhatsApp, que guarda tudo). A função central continua decidindo
+        // a gravação para manter o mesmo contrato dos demais caminhos.
+        conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
         conversaId: conversa.id,
         remetente: "corretor",
         conteudo: text,
         tipo: ehAudio ? "audio" : "texto",
       });
+
+      // Conversa sem lead (conta só WhatsApp): é só registro, sem CRM nem IA.
+      if (!conversa.leadId) {
+        return NextResponse.json({ ok: true, action: "fala_registrada_sem_lead", sender });
+      }
 
       const decisao = decidirPorFalaDoCorretor({
         mensagem: text,
@@ -723,7 +735,7 @@ export async function POST(req: NextRequest) {
     }
 
     const gravacao = await gravarMensagem({
-      conversaLiberada: conversaEhAtendimento(conversa),
+      conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
       conversaId: conversa.id,
       remetente: "cliente",
       conteudo: text,
@@ -736,6 +748,18 @@ export async function POST(req: NextRequest) {
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+    }
+
+    /*
+     * Conversa sem lead (conta só WhatsApp, 0180): a mensagem fica guardada
+     * para a pessoa ler no painel, e nada mais acontece — sem ficha, sem
+     * funil, sem lista e sem IA.
+     */
+    if (!conversa.leadId) {
+      if (payload.senderName) {
+        await preencherNomeContato({ conversaId: conversa.id, nome: String(payload.senderName) });
+      }
+      return NextResponse.json({ ok: true, action: "mensagem_registrada_sem_lead", sender });
     }
 
     /*

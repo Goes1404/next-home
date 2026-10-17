@@ -1,3 +1,4 @@
+import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -451,6 +452,8 @@ async function responderAtrasada(
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return "pulada";
+  // Conta só WhatsApp (0180): não há IA, seja qual for o modo gravado.
+  if (await ehContaSoWhatsapp(supabase, instancia.corretor_id)) return "pulada";
 
   const [catalogo, historicoCompleto, dossie] = await Promise.all([
     getEmpreendimentos().catch(() => []),

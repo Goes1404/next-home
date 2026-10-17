@@ -67,6 +67,21 @@ export function conversaEhAtendimento(conversa: { leadId: string | null }): bool
 }
 
 /**
+ * Guarda o texto desta conversa?
+ *
+ * Conta só WhatsApp (0180) é a exceção declarada: o dono da conta escolheu
+ * guardar TODAS as conversas do número, inclusive as de quem não é lead,
+ * porque a pessoa usa o painel como WhatsApp Web. Para qualquer outra conta
+ * vale a régua de sempre (`conversaEhAtendimento`).
+ */
+export function guardaOTextoDaConversa(
+  conversa: { leadId: string | null },
+  conta: { soWhatsapp: boolean },
+): boolean {
+  return conta.soWhatsapp || conversaEhAtendimento(conversa);
+}
+
+/**
  * Fica no lugar do texto. Não é vazio de propósito: linha em branco na tela
  * parece defeito, e quem abrir o Live Chat precisa entender por que não há
  * conteúdo.

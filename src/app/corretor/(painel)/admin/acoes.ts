@@ -412,6 +412,61 @@ export async function alternarAtivoCorretor(
 }
 
 /**
+ * Conta só WhatsApp (0180): a pessoa usa o painel como WhatsApp Web. Todas
+ * as conversas do número aparecem (inclusive de quem não é lead, que não
+ * vira lead), o texto de todas é guardado e a IA fica desligada.
+ *
+ * Pela chave de serviço, depois da guarda: `so_whatsapp` não tem grant de
+ * UPDATE para a sessão — se tivesse, qualquer corretor ligaria sozinho a
+ * exceção à regra de privacidade.
+ */
+export async function alternarSoWhatsapp(
+  corretorId: string,
+  ligar: boolean,
+): Promise<ResultadoAdmin> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const servico = createServiceClient();
+  const { data, error } = await servico
+    .from("corretores")
+    .update({ so_whatsapp: ligar })
+    .eq("id", corretorId)
+    .select("id");
+  if (error) {
+    console.error("[admin] falha ao marcar conta só WhatsApp:", error.message);
+    return {
+      erro: /so_whatsapp/.test(error.message)
+        ? "O banco ainda não tem a conta só WhatsApp (migration 0180)."
+        : traduzirErroBanco(error.message),
+    };
+  }
+  if (!data || data.length === 0) return { erro: "Corretor não encontrado." };
+
+  // A IA da instância desliga junto: o webhook já a ignora nesta conta, e a
+  // tela de configuração passa a dizer a mesma coisa.
+  if (ligar) {
+    await servico
+      .from("corretor_whatsapp_instancias")
+      .update({ modo_bot: "desativado" })
+      .eq("corretor_id", corretorId);
+  }
+  console.info(`[admin] conta só WhatsApp ${ligar ? "ligada" : "desligada"}`, {
+    ator: guarda.corretor.id,
+    alvo: corretorId,
+  });
+
+  revalidarCorretores();
+  revalidatePath("/corretor/admin/contas");
+  revalidatePath("/corretor/pessoas");
+  return {
+    ok: ligar
+      ? "Agora é só WhatsApp: todas as conversas aparecem, sem virar lead e sem IA."
+      : "Voltou a ser conta comum: conversas sem lead ficam escondidas.",
+  };
+}
+
+/**
  * Passa a carteira INTEIRA de um corretor (ou todos os leads sem dono) para
  * outro corretor, de uma vez.
  *

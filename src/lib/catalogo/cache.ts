@@ -71,7 +71,14 @@ export const corretoresPublicos = unstable_cache(
         .order("nome"),
     );
     if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
-    return (data as LinhaCorretor[]).map(mapCorretor);
+    // Conta só WhatsApp (0180) não é corretor do site. À parte e tolerante:
+    // sem a migration a coluna não existe, e o site não pode cair por isso.
+    const { data: soWhatsapp } = await supabase
+      .from("corretores")
+      .select("id")
+      .eq("so_whatsapp", true);
+    const fora = new Set((soWhatsapp ?? []).map((c) => c.id));
+    return (data as LinhaCorretor[]).filter((c) => !fora.has(c.id)).map(mapCorretor);
   },
   // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação

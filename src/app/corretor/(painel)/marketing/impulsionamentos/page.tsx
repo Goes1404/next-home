@@ -106,7 +106,7 @@ export default async function PaginaImpulsionamentos() {
       .from("whatsapp_conversas")
       .select("id, lead_id")
       .in("lead_id", ids.slice(i, i + 300));
-    for (const c of data ?? []) conversaDoLead.set(c.id, c.lead_id);
+    for (const c of data ?? []) if (c.lead_id) conversaDoLead.set(c.id, c.lead_id);
   }
   const falas = new Map<string, number>();
   const conversas = [...conversaDoLead.keys()];

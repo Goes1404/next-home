@@ -8,6 +8,7 @@ import {
   alterarPapelCorretor,
   cadastrarCorretor,
   alternarAtivoCorretor,
+  alternarSoWhatsapp,
   criarAcessoCorretor,
   criarAcessosQueFaltam,
   redefinirSenhaCorretor,
@@ -119,6 +120,18 @@ function LinhaCorretor({
       aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
     });
 
+  const trocarSoWhatsapp = () => {
+    const ligar = !corretor.soWhatsapp;
+    const aviso = ligar
+      ? `Tornar ${corretor.nome} uma conta só WhatsApp?\n\nTodas as conversas do número dela passam a aparecer no painel, inclusive de quem não é lead (essas pessoas não viram lead). O texto de todas é guardado, inclusive o das conversas pessoais. A IA fica desligada, e a conta sai do sorteio do link do anúncio. Conversas anteriores não aparecem: só as que chegarem daqui para frente.`
+      : `Voltar ${corretor.nome} a ser conta comum?\n\nAs conversas de quem não é lead ficam escondidas, e a IA continua desligada até alguém ligar na tela da IA.`;
+    if (!confirm(aviso)) return;
+    iniciar(async () => {
+      const r = await alternarSoWhatsapp(corretor.id, ligar);
+      aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
+    });
+  };
+
   const trocarAtivo = () => {
     /*
      * Desativar é a ação mais séria da tela e era a única SEM confirmação.
@@ -149,6 +162,11 @@ function LinhaCorretor({
             {corretor.papel === "gestor" && (
               <span className="text-fluid-xs border-acento-linha bg-acento-lavado text-acento-suave inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium">
                 <ShieldCheck className="h-3 w-3" /> Administra
+              </span>
+            )}
+            {corretor.soWhatsapp && (
+              <span className="text-fluid-xs border-ok-linha bg-ok-lavado text-ok inline-flex items-center rounded-full border px-2 py-0.5 font-medium">
+                Só WhatsApp
               </span>
             )}
             {souEu && <span className="text-fluid-xs text-tenue">(você)</span>}
@@ -228,6 +246,14 @@ function LinhaCorretor({
             className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-40"
           >
             {corretor.papel === "gestor" ? "Tirar administração" : "Tornar administrador"}
+          </button>
+          <button
+            type="button"
+            onClick={trocarSoWhatsapp}
+            disabled={pendente}
+            className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-60"
+          >
+            {corretor.soWhatsapp ? "Voltar a conta comum" : "Tornar só WhatsApp"}
           </button>
           <button
             type="button"

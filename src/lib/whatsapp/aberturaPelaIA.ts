@@ -1,3 +1,4 @@
+import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 import { site } from "@/lib/site";
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -81,6 +82,17 @@ export async function gerarEEnviarPelaIA(params: {
    * conversa de `quandoAIaResponde.ts` — a mesma do webhook. O modo do
    * número não entra: o gesto do corretor é a decisão.
    */
+  /*
+   * Conta só WhatsApp (0180): não há IA nesta conta, nem pelo clique nem
+   * pela palavra-chave. E conversa sem lead só existe nela.
+   */
+  if (!conversa.leadId) {
+    return { enviou: false, erro: "Esta conversa não tem ficha de lead: a IA não atende aqui." };
+  }
+  if (await ehContaSoWhatsapp(servico, instancia.corretor_id)) {
+    return { enviou: false, erro: "Esta conta é só WhatsApp: a IA fica desligada nela." };
+  }
+
   const persistida = await lerConversaPersistida(conversa.id);
   const silencio = persistida ? silencioDaConversa(situacaoDaConversa(persistida)) : null;
   if (silencio) {
