@@ -35,7 +35,12 @@ const DIR_MIGRATIONS = join(process.cwd(), "supabase", "migrations");
  * teste abaixo reprova reserva que já foi ocupada, para ela não virar
  * comentário morto.
  */
-const RESERVADOS = new Set<number>([]);
+const RESERVADOS = new Set<number>([
+  // 19/10/2026: 0181 a 0187 são da branch da fase 2 (multi-grupo), ainda não
+  // publicada. A correção do texto da prévia do link (0188) saiu direto de
+  // produção. A lista esvazia quando as duas se juntarem.
+  181, 182, 183, 184, 185, 186, 187,
+]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
   return readdirSync(DIR_MIGRATIONS)

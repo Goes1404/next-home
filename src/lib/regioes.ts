@@ -58,7 +58,7 @@ export const REGIOES: Regiao[] = [
     slug: "barueri",
     nome: "Barueri",
     chamada:
-      "A cidade que concentra o maior número de lançamentos da região, do compacto ao alto padrão.",
+      "A cidade que concentra o maior número de lançamentos da região, do compacto ao amplo.",
     pertence: (e) => contem(e.cidade, "Barueri"),
     filtro: "/empreendimentos?cidade=Barueri",
   },

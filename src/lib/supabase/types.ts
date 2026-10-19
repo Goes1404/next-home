@@ -1210,6 +1210,7 @@ export type Database = {
         Row: {
           ativo: boolean
           bio: string | null
+          chamada_do_link: string | null
           created_at: string
           creci: string
           deve_trocar_senha: boolean
@@ -1235,6 +1236,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           bio?: string | null
+          chamada_do_link?: string | null
           created_at?: string
           creci: string
           deve_trocar_senha?: boolean
@@ -1260,6 +1262,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           bio?: string | null
+          chamada_do_link?: string | null
           created_at?: string
           creci?: string
           deve_trocar_senha?: boolean

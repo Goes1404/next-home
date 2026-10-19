@@ -78,14 +78,26 @@ export const corretoresPublicos = unstable_cache(
       .select("id")
       .eq("so_whatsapp", true);
     const fora = new Set((soWhatsapp ?? []).map((c) => c.id));
-    return (data as LinhaCorretor[]).filter((c) => !fora.has(c.id)).map(mapCorretor);
+    // Texto da prévia do link (0188). Também à parte e tolerante: com a
+    // coluna ausente a consulta falha, o erro é ignorado e vale o padrão.
+    const { data: chamadas } = await supabase
+      .from("corretores")
+      .select("id, chamada_do_link")
+      .not("chamada_do_link", "is", null);
+    const chamadaPorId = new Map(
+      (chamadas ?? []).map((c) => [c.id, c.chamada_do_link] as [string, string | null]),
+    );
+    return (data as LinhaCorretor[])
+      .filter((c) => !fora.has(c.id))
+      .map((c) => ({ ...mapCorretor(c), chamadaDoLink: chamadaPorId.get(c.id) ?? null }));
   },
   // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
   // do painel. "-v2" (03/10/2026): a 0151 tirou o vídeo de fundo da Bruna e o
   // site seguiu mostrando o vídeo pela entrada antiga. "-v3" (07/10/2026): o
-  // filtro de `ativo`.
-  ["corretores-publicos-v3"],
+  // filtro de `ativo`. "-v4" (19/10/2026): a entrada passou a levar
+  // `chamadaDoLink` (0188); a antiga não tinha o campo.
+  ["corretores-publicos-v4"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 
