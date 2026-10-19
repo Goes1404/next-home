@@ -10464,14 +10464,21 @@ Nota: [[plataforma-multi-grupo]].
 
 - **O plano numerava a primeira migration multi-grupo como 0159, e a branch
   de produção já ia até 0180** (99 commits à frente da base desta branch).
-  Ela virou `0181_grupos.sql`, e 0159–0180 estão em `RESERVADOS` de
-  `migrations.test.ts`. A guarda de prefixo duplicado não enxerga a branch
-  vizinha: conferir com `git ls-tree -r --name-only origin/<branch de
+  Ela virou `0181_grupos.sql`. A guarda de prefixo duplicado não enxerga a
+  branch vizinha: conferir com `git ls-tree -r --name-only origin/<branch de
   produção> supabase/migrations | tail` antes de criar.
+- **A branch multi-grupo trouxe a produção por merge antes da migration de
+  `grupo_id` em toda tabela.** Sem isso, as tabelas que só existem em
+  produção (caixa, fiscal, contador, IA do financeiro, 0166–0169) ficariam
+  sem grupo. Conflito só em documentação (MEMORIA, uma nota e um MOC), e as
+  181 migrations aplicam do zero no banco local.
 - **A 0181 cria `grupos`, o grupo 1 (`…0001`, `next-home`),
-  `corretores.grupo_id not null` e `grupo_atual()`.** Sozinha em produção ela
-  quebraria a criação de acesso, que insere corretor sem grupo; a seguinte
-  põe o gatilho que deduz o grupo, e as duas sobem juntas.
+  `corretores.grupo_id not null`, `grupo_atual()` e o gatilho
+  `corretores_00_grupo`.** Sem o gatilho, ela sozinha em produção quebraria
+  "cadastrar corretor" e "criar acesso", que inserem corretor sem grupo pela
+  chave de serviço — e o MCP aplica uma migration por vez. O gatilho usa o
+  grupo de quem está logado; sem login, o grupo único (com aviso no log);
+  com dois grupos, erro. Default fixo no grupo 1 seria o erro calado.
 - **Teste de banco** (`*.db.test.ts`, pula sem `DB_TESTE_URL`): ajudantes em
   `src/lib/grupos/apoioDoBanco.ts`. Cada teste roda em
   `emTransacaoDesfeita`; `comoUsuario` usa savepoint, e o `set local role`

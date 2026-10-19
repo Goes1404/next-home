@@ -59,6 +59,7 @@ viraria N migrations.
 - As 158 migrations nunca rodaram num banco vazio; o ambiente de testes é
   onde isso se prova.
 - **As migrations multi-grupo começam em 0181**, não em 0159: a branch de
-  produção já ocupa 0159–0180 (reservados em `migrations.test.ts`). A 0181
-  cria `grupos`, o grupo 1 (`00000000-…-0001`), `corretores.grupo_id` e
-  `grupo_atual()`.
+  produção já ocupava 0159–0180, e a branch a trouxe por merge. A 0181
+  cria `grupos`, o grupo 1 (`00000000-…-0001`), `corretores.grupo_id`,
+  `grupo_atual()` e o gatilho `corretores_00_grupo`, que deixa a 0181
+  aplicável sozinha em produção (o código no ar insere corretor sem grupo).

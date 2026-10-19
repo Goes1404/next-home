@@ -40,8 +40,9 @@
  * `.select()`, não no banco.
  *
  * Também escritos à mão: a tabela `grupos`, a coluna `corretores.grupo_id`
- * (opcional no Insert: a migration seguinte põe o gatilho que a deduz) e a
- * função `grupo_atual()`, todos da 0181.
+ * (opcional no Insert: o gatilho `corretores_00_grupo`, da própria 0181,
+ * preenche o grupo de quem insere; com dois grupos e sem login, o insert sem
+ * grupo falha no banco) e a função `grupo_atual()`, todos da 0181.
  */
 
 export type Json =

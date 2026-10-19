@@ -68,6 +68,50 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
+  // O código no ar insere corretor sem grupo_id (cadastrar corretor pelo
+  // painel, admin/acoes.ts, pela chave de serviço). A 0181 tem de deixá-lo
+  // funcionando sozinha, sem esperar a migration seguinte.
+  it("cadastro de corretor sem grupo, com um grupo só, cai nele", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const [{ todos }] = await tx<{ todos: number }[]>`select count(*)::int as todos from grupos`;
+      expect(todos).toBe(1);
+
+      const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+        insert into public.corretores (nome, creci, whatsapp, slug, ativo)
+        values ('Corretor sem grupo', 'TESTE-sem-grupo', '5511900000001', 'corretor-sem-grupo', true)
+        returning grupo_id
+      `;
+      expect(grupo_id).toBe(GRUPO_NEXT_HOME_ID);
+    });
+  });
+
+  it("sem login e com dois grupos, cadastro de corretor sem grupo falha", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "b" });
+      await expect(
+        tx`
+          insert into public.corretores (nome, creci, whatsapp, slug, ativo)
+          values ('Corretor sem grupo', 'TESTE-sem-grupo', '5511900000001', 'corretor-sem-grupo', true)
+        `,
+      ).rejects.toThrow(/grupo_id obrigatório em corretores/);
+    });
+  });
+
+  it("com login, o corretor novo nasce no grupo de quem cadastra", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      // Papel continua postgres (só ele insere em corretores); o que muda é
+      // a sessão, que é de onde `grupo_atual()` tira o grupo.
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: b.gestorUserId, role: "authenticated" })}, true)`;
+      const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+        insert into public.corretores (nome, creci, whatsapp, slug, ativo)
+        values ('Corretor de B', 'TESTE-b-novo', '5511900000002', 'b-novo', true)
+        returning grupo_id
+      `;
+      expect(grupo_id).toBe(b.grupoId);
+    });
+  });
+
   it("o apoio desfaz tudo: papel volta a postgres e o grupo de teste some", async () => {
     // Sem isto, um teste que esquecesse de desfazer o papel rodaria o
     // seguinte como `authenticated`, e o grupo B de um vazaria para o outro.

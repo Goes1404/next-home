@@ -6,10 +6,9 @@
 -- um grupo só, e nenhum dado de um grupo aparece para outro.
 --
 -- Número: o plano previa 0159, mas a branch de produção
--- (claude/modernizar-plataforma-imobiliaria-2tm13q) já ocupa 0159 a 0180
--- com conteúdo próprio. Esta é a primeira livre; os números do meio ficam
--- declarados em RESERVADOS de src/lib/migrations.test.ts até as branches se
--- encontrarem.
+-- (claude/modernizar-plataforma-imobiliaria-2tm13q) já ocupava 0159 a 0180
+-- com conteúdo próprio. Esta é a primeira livre, e a branch multi-grupo
+-- trouxe a produção por merge antes das migrations seguintes.
 --
 -- O que esta migration faz:
 --   1. cria `grupos`;
@@ -17,11 +16,20 @@
 --      esse id (src/lib/grupos/grupo.ts, GRUPO_NEXT_HOME_ID);
 --   3. põe `corretores.grupo_id`, carimbando todo corretor existente no
 --      grupo 1 antes do `not null`;
---   4. cria `grupo_atual()`, no padrão de `corretor_atual()` (0007).
+--   4. cria `grupo_atual()`, no padrão de `corretor_atual()` (0007);
+--   5. põe o gatilho `corretores_00_grupo`, que preenche o grupo de quem
+--      insere corretor sem dizê-lo.
 --
--- As outras tabelas ganham `grupo_id` na migration seguinte. Até lá, quem
--- insere em `corretores` precisa mandar o grupo (a seguinte põe o gatilho
--- que o deduz); as duas sobem juntas em produção.
+-- O item 5 é o que deixa esta migration aplicável SOZINHA em produção. O
+-- código no ar insere corretor sem `grupo_id` (cadastrar corretor pelo
+-- painel, criar acesso, pela chave de serviço), e a coluna é `not null`
+-- sem default: sem o gatilho, essas telas quebrariam no intervalo entre
+-- esta migration e a seguinte. Default fixo no grupo 1 não serve, porque
+-- no dia em que houver dois grupos o corretor cairia CALADO na Next Home.
+--
+-- As outras tabelas ganham `grupo_id` na migration seguinte, que troca a
+-- função deste gatilho pela genérica (`carimbar_grupo`) com o mesmo nome
+-- de gatilho.
 
 -- ---------------------------------------------------------------------------
 -- 1. A tabela
@@ -87,7 +95,60 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- 5. Quem lê `grupos`
+-- 5. O gatilho de corretores
+-- ---------------------------------------------------------------------------
+--
+-- Ordem: o grupo informado; senão o grupo de quem está logado
+-- (`grupo_atual()`); senão, se existe UM grupo só, ele, com aviso no log;
+-- senão erro. A chave de serviço não tem login, então hoje (grupo único)
+-- cai no grupo 1 e as telas seguem funcionando; com dois grupos, o insert
+-- sem grupo falha em voz alta em vez de escolher um.
+--
+-- `security definer` porque a contagem tem de ver TODOS os grupos: pela
+-- RLS de `grupos`, um logado enxerga só o próprio. Nome com `_00_` para
+-- ordenar antes de qualquer outro gatilho `before` da tabela.
+
+create or replace function public.carimbar_grupo_do_corretor()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_grupos integer;
+begin
+  if new.grupo_id is not null then
+    return new;
+  end if;
+
+  new.grupo_id := public.grupo_atual();
+  if new.grupo_id is not null then
+    return new;
+  end if;
+
+  select count(*) into v_grupos from grupos;
+  if v_grupos = 1 then
+    select id into new.grupo_id from grupos;
+    raise warning 'grupo_id inferido pelo grupo único em %', tg_table_name;
+    return new;
+  end if;
+
+  raise exception 'grupo_id obrigatório em %', tg_table_name;
+end
+$$;
+
+revoke execute on function public.carimbar_grupo_do_corretor() from public;
+revoke execute on function public.carimbar_grupo_do_corretor() from anon;
+revoke execute on function public.carimbar_grupo_do_corretor() from authenticated;
+
+drop trigger if exists corretores_00_grupo on public.corretores;
+create trigger corretores_00_grupo
+  before insert on public.corretores
+  for each row
+  execute function public.carimbar_grupo_do_corretor();
+
+-- ---------------------------------------------------------------------------
+-- 6. Quem lê `grupos`
 -- ---------------------------------------------------------------------------
 --
 -- O Supabase dá ALL ao anon e ao authenticated em toda tabela nova do
