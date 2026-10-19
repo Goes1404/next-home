@@ -101,7 +101,9 @@ jobs:
   # (o mesmo `npm run db:teste` da máquina de quem desenvolve). Nunca fala
   # com produção: o CLI só enxerga o Docker do runner.
   isolamento:
-    runs-on: ubuntu-latest
+    # Versão fixa: o `ubuntu-latest` passa a ser o Ubuntu 26 em 19/10/2026, e
+    # este job depende do Docker do runner para subir o banco.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     # `bash` explícito liga o pipefail: sem ele, o `| tee` abaixo devolveria
@@ -132,6 +134,8 @@ jobs:
       # Suíte que pula inteira devolve sucesso (o vitest sai com 0 quando
       # tudo é "skipped"). O relatório JSON é conferido para o verde
       # significar testes rodados: nenhum pulado e pelo menos um passando.
+      # Pulo INTENCIONAL (`it.skip`) também reprova, de propósito: nesta suíte
+      # um teste pulado é um vazamento que deixou de ser medido.
       - name: Suíte de isolamento
         run: |
           : "${DB_TESTE_URL:?o db:teste não imprimiu DB_TESTE_URL}"
@@ -151,11 +155,9 @@ jobs:
 
 # O que esta esteira NÃO roda, e por quê:
 #
-# - `npm run test:e2e` — os specs do painel exigem credencial REAL
-#   (E2E_CORRETOR_EMAIL/SENHA) e o banco por trás é o de PRODUÇÃO, não há
-#   ambiente de teste. Rodar a cada push seria bater no banco de clientes
-#   de verdade a cada commit. Desde 02/10/2026 ele roda à parte, uma vez por
-#   dia e sob demanda, contra o site no ar (ver e2e.yml).
+# - `npm run test:e2e` — precisa de um site no ar com banco e login. Desde
+#   19/10/2026 ele roda à parte, contra o ambiente de testes e nunca contra
+#   produção (ver e2e.yml e docs/AMBIENTE-DE-TESTES.md).
 #
 # - `npm run eval` e `eval:conversa` — custam chamada de LLM paga a cada
 #   rodada e consomem a MESMA cota do atendimento real. Eval é decisão de
