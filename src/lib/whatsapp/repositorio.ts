@@ -893,13 +893,22 @@ export async function gravarMensagem(params: {
    * em produção) isso descartava a mensagem E a resposta ao cliente. Erro
    * passageiro (sem `code`) ganha nova chance; erro de consulta, recusa do
    * gatilho de grupo e a reentrega (23505) não são repetidos.
+   *
+   * O `id` da linha nasce AQUI, antes da primeira tentativa, e é o mesmo em
+   * todas: é ele que torna a repetição idempotente. Quando o banco grava e só
+   * a resposta se perde, a segunda tentativa bate na chave primária (23505) em
+   * vez de gravar a mesma fala de novo — o que acontecia com toda mensagem sem
+   * `providerMessageId` (bot, corretor, campanha), que nenhum índice único
+   * protegia. A IA lê fala duplicada como duas falas.
    */
+  const idDaLinha = crypto.randomUUID();
   let tentativas = 0;
   const { data, error } = await comRetentativa("mensagem do WhatsApp", () => {
     tentativas++;
     return supabase
       .from("whatsapp_mensagens")
       .insert({
+        id: idDaLinha,
         conversa_id: params.conversaId,
         remetente: params.remetente,
         tipo: params.tipo ?? "texto",
@@ -918,15 +927,17 @@ export async function gravarMensagem(params: {
   // banco — com dois grupos, a recusa do gatilho de grupo sumiria aqui.
   // Quem chama decide o que fazer; o webhook para sem responder.
   if (error) {
-    // 23505 DEPOIS de uma tentativa que falhou por tempo: a primeira gravou
-    // e só a resposta se perdeu. A mensagem é nossa, não reentrega; tratar
-    // como reentrega deixaria o cliente sem resposta.
-    if (error.code === "23505" && tentativas > 1 && params.providerMessageId) {
+    // 23505 DEPOIS de uma tentativa que falhou por tempo: se a linha com o
+    // NOSSO id existe, a primeira gravou e só a resposta se perdeu — a
+    // mensagem é nossa, não reentrega, e tratá-la como reentrega deixaria o
+    // cliente sem resposta. Procurar pelo provider id confundiria isso com a
+    // reentrega concorrente do provedor, que grava a mesma mensagem com outro
+    // id e é quem responde.
+    if (error.code === "23505" && tentativas > 1) {
       const { data: gravada } = await supabase
         .from("whatsapp_mensagens")
         .select("id")
-        .eq("conversa_id", params.conversaId)
-        .eq("provider_message_id", params.providerMessageId)
+        .eq("id", idDaLinha)
         .maybeSingle();
       if (gravada) {
         await tocarConversa(supabase, params);
