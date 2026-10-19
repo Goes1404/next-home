@@ -37,15 +37,16 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, ctx: { params: Promise<{ campanha: string }> }) {
   const { campanha } = await ctx.params;
   const url = new URL(req.url);
+  // Só os imóveis do grupo do site (L11): o clique pago de um grupo não
+  // vira lead no outro por ter o mesmo apelido. O grupo vem antes da chave
+  // de serviço, que enxerga todos.
+  const grupo = grupoDoSite();
   const supabase = createServiceClient();
 
   const bruto = url.searchParams.get("i");
   const intencao = ehChaveIntencao(bruto) ? bruto : null;
   const doSite = url.searchParams.get("de") === "site";
 
-  // Só os imóveis do grupo do site (L11): o clique pago de um grupo não
-  // vira lead no outro por ter o mesmo apelido.
-  const grupo = grupoDoSite();
   const { data: imoveis } = await supabase
     .from("empreendimentos")
     .select("id, slug, nome, nomes_alternativos")

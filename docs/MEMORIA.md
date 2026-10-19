@@ -10705,3 +10705,39 @@ Nota: [[plataforma-multi-grupo]]. Passo a passo: `docs/AMBIENTE-DE-TESTES.md`.
 - **Guarda que conta ocorrências não morde quando há sobra**: com três
   `.eq("grupo_id", grupo)` e mínimo de dois, tirar um passava. A guarda
   confere cada consulta do `.from()` até o `;`.
+
+## A chave de serviço classificada por grupo (Task 7, 19/10/2026)
+
+Nota: [[chave-de-servico-classificada-por-grupo]].
+
+- **Todo arquivo que usa a chave de serviço está num mapa**
+  (`src/lib/grupos/servicoComGrupo.test.ts`), com a categoria que explica por
+  que não atravessa grupos: `por-id` (nomeia quem validou o id), `equipe`
+  (cada leitura com `grupo_id`), `agrega-por-grupo` (laço de grupos),
+  `cruza-conjuntos` (casamento pelo grupo) e `plataforma` (linha a linha).
+  Arquivo novo fora do mapa reprova pedindo a categoria.
+- **`clienteParaNumerosDaEquipe()` não devolve mais o cliente cru**: devolve a
+  leitura recortada (`leituraDoGrupo`), com `ler((c) => c.from(...))` e
+  `lerView(...)`. Views ainda não têm `grupo_id` (0184): o recorte delas é por
+  `corretor_id` entre os corretores do grupo. O tipo de `ler` recusa view e
+  tabela global.
+- **Genérico mapeado sobre todas as tabelas do Supabase deixa o `tsc` 5x mais
+  lento** (65 s → 5 min, e estoura a memória padrão). Por isso a leitura
+  recortada recebe um callback que monta a consulta normal, em vez de tipar a
+  tabela por um tipo genérico.
+- **O resumo do dia oferecia imóvel de outro grupo**: o `grupoId` chegava a
+  `imoveisNovosQueCombinam` e só servia para as taxas. Achado ao classificar o
+  arquivo, com teste (`enviarResumoDoDia.test.ts`).
+- **`import` não é validação.** A regra `por-id` aceitava o nome da guarda no
+  import, e tirar a chamada passava. Hoje os imports são ignorados.
+- **O relatório semanal e o aviso de espera rodam grupo a grupo**, cada um com
+  os próprios números e destinatários. Desagendados, mas religar era uma linha.
+- **Scripts com chave secreta exigem `--grupo`** (só o 1): observatórios,
+  casos do consultor, `migrar.ts` e os scripts de `ops/` (os workflows passam
+  o grupo). O worker de vídeo é exceção declarada: processa job a job, como um
+  cron. O SQL de diagnóstico fixa o grupo num `set_config` e recusa outro.
+- **Log sem conversa**: o áudio recusado loga só o tamanho; o e-mail de portal
+  não loga telefone, e `inbound_logs.payload_raw` guarda só os nomes dos
+  campos que o provedor mandou.
+- **Testes de rota sem banco**: `test/bancoFalso.ts` aplica os filtros do
+  PostgREST em memória. A linha de outro grupo só some se o código filtrar.

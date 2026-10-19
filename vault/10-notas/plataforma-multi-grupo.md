@@ -115,3 +115,11 @@ viraria N migrations.
   `sortear_corretor_whatsapp(p_grupo, …)` sorteia só no grupo; a assinatura
   antiga fica até o deploy, presa ao grupo 1. Meta, Gmail e Pixel passam por
   `integracaoLiberada` (só o grupo 1 até a fase 7).
+- **A chave de serviço está classificada por grupo (Task 7).** Todo arquivo
+  que a usa está num mapa com a categoria (`por-id`, `equipe`,
+  `agrega-por-grupo`, `cruza-conjuntos`, `plataforma`) e
+  `servicoComGrupo.test.ts` cobra o que cada uma promete. As telas do gestor
+  leem pela leitura recortada (`leituraDoGrupo`), o relatório semanal e o
+  aviso de espera rodam grupo a grupo, os scripts com chave secreta exigem
+  `--grupo` e o SQL de diagnóstico fixa o grupo. Ver
+  [[chave-de-servico-classificada-por-grupo]].

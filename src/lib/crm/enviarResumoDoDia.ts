@@ -92,6 +92,7 @@ async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje
     supabase
       .from("leads")
       .select("id, nome, telefone, visita_agendada_em, empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome)")
+      .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
       .gte("visita_agendada_em", inicio)
       .lt("visita_agendada_em", fim)
@@ -103,6 +104,7 @@ async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje
     supabase
       .from("leads")
       .select("id, nome, telefone, origem")
+      .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
       .is("arquivado_em", null)
       .gte("created_at", new Date(agora.getTime() - 86_400_000).toISOString())
@@ -119,9 +121,9 @@ async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje
 
   const [semRetorno, ontem, imoveisNovos, valeRetomar] = await Promise.all([
     visitasSemRetorno(supabase, corretorId, agora, painel),
-    placarDeOntem(supabase, corretorId, hoje),
+    placarDeOntem(supabase, corretorId, grupoId, hoje),
     imoveisNovosQueCombinam(supabase, corretorId, grupoId, agora, painel),
-    segundaEmSP(agora) ? leadsQueValemRetomar(supabase, corretorId, agora, painel) : Promise.resolve([]),
+    segundaEmSP(agora) ? leadsQueValemRetomar(supabase, corretorId, grupoId, agora, painel) : Promise.resolve([]),
   ]);
 
   const itensVisita: ItemDoResumo[] = (visitas.data ?? []).map((l) => {
@@ -221,6 +223,7 @@ async function visitasSemRetorno(
 async function placarDeOntem(
   supabase: Supa,
   corretorId: string,
+  grupoId: string,
   hoje: string,
 ): Promise<{ clientesQueEscreveram: number; visitasMarcadas: number }> {
   const { inicio, fim } = limitesDoDiaSP(diaAnterior(hoje));
@@ -236,6 +239,7 @@ async function placarDeOntem(
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
+      .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
       .gte("visita_marcada_em", inicio)
       .lt("visita_marcada_em", fim),
@@ -258,6 +262,9 @@ const ETAPAS_ABERTAS = "(novo,primeiro_contato,visita_agendada,documentacao)";
  *
  * Limite conhecido: a janela é pela criação do cadastro. Imóvel criado como
  * rascunho e publicado dias depois não aparece aqui.
+ *
+ * Imóvel, lead e dossiê são lidos no grupo do corretor: pela chave de
+ * serviço, sem o grupo, o resumo oferecia o lançamento de outra empresa.
  */
 async function imoveisNovosQueCombinam(
   supabase: Supa,
@@ -269,6 +276,7 @@ async function imoveisNovosQueCombinam(
   const { data: novos } = await supabase
     .from("empreendimentos")
     .select("nome, slug, cidade, bairro, preco_a_partir, tipologias(dormitorios)")
+    .eq("grupo_id", grupoId)
     .eq("publicado", true)
     .gte("created_at", new Date(agora.getTime() - 86_400_000).toISOString())
     .limit(10);
@@ -278,12 +286,18 @@ async function imoveisNovosQueCombinam(
     supabase
       .from("leads")
       .select("id, regiao_interesse, dormitorios_min, orcamento_max, renda_mensal")
+      .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
       .is("arquivado_em", null)
       .is("nao_contatar_em", null)
       .filter("etapa", "in", ETAPAS_ABERTAS)
       .limit(1000),
-    supabase.from("lead_observacoes_ia").select("lead_id, orcamento_max").not("orcamento_max", "is", null).limit(2000),
+    supabase
+      .from("lead_observacoes_ia")
+      .select("lead_id, orcamento_max")
+      .eq("grupo_id", grupoId)
+      .not("orcamento_max", "is", null)
+      .limit(2000),
     // As taxas do grupo do corretor (0181): cada imobiliária ajusta as dela.
     getParametrosCredito(grupoId),
   ]);
@@ -317,12 +331,14 @@ async function imoveisNovosQueCombinam(
 async function leadsQueValemRetomar(
   supabase: Supa,
   corretorId: string,
+  grupoId: string,
   agora: Date,
   painel: string,
 ): Promise<ItemDoResumo[]> {
   const { data } = await supabase
     .from("leads")
     .select("id, nome, telefone, regiao_interesse, etapa_alterada_em")
+    .eq("grupo_id", grupoId)
     .eq("corretor_id", corretorId)
     .is("arquivado_em", null)
     .is("nao_contatar_em", null)

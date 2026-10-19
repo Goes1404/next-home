@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/service";
+import type { LeituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import { pendenciasDoCatalogo } from "@/lib/imoveis/pendenciasDoCatalogo";
 import type { NumerosDaSemana } from "./relatorioSemanal";
 
@@ -14,23 +14,26 @@ import type { NumerosDaSemana } from "./relatorioSemanal";
  * Roda uma vez por semana, então pode ser generoso em consultas. Ainda
  * assim são poucas: duas views que já existem (0072 e 0075) e três
  * contagens.
+ *
+ * Os números são de UM grupo: quem chama passa a leitura recortada
+ * (`leituraDoGrupo`), e não existe caminho aqui para somar a plataforma
+ * inteira (L18). O relatório roda um laço de grupos.
  */
-export async function coletarNumerosDaSemana(agora: Date = new Date()): Promise<NumerosDaSemana> {
-  const supabase = createServiceClient();
+export async function coletarNumerosDaSemana(
+  grupo: LeituraDoGrupo,
+  agora: Date = new Date(),
+): Promise<NumerosDaSemana> {
   const umaSemanaAtras = new Date(agora.getTime() - 7 * 86_400_000).toISOString();
 
   const [instancias, funil, resposta, campanha, leadsNovos, imoveis] = await Promise.all([
-    supabase
-      .from("corretor_whatsapp_instancias")
-      .select("status_conexao, desconectado_em"),
-    supabase.from("whatsapp_funil_metricas").select("visitas_propostas, visitas_agendadas"),
-    supabase
-      .from("whatsapp_resposta_metricas")
-      .select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos"),
-    supabase.from("whatsapp_campanhas_fila").select("status"),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
+    grupo.ler((c) => c.from("corretor_whatsapp_instancias").select("status_conexao, desconectado_em")),
+    grupo.lerView((c) => c.from("whatsapp_funil_metricas").select("visitas_propostas, visitas_agendadas")),
+    grupo.lerView((c) =>
+      c.from("whatsapp_resposta_metricas").select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos"),
+    ),
+    grupo.ler((c) => c.from("whatsapp_campanhas_fila").select("status")),
+    grupo
+      .ler((c) => c.from("leads").select("id", { count: "exact", head: true }))
       .gte("created_at", umaSemanaAtras)
       .is("arquivado_em", null),
     /*
@@ -38,9 +41,8 @@ export async function coletarNumerosDaSemana(agora: Date = new Date()): Promise<
      * tela de Imóveis usa — duas contas do "o que falta" divergiriam, e a
      * que o gestor lê no e-mail tem de ser a que ele vê na tela.
      */
-    supabase
-      .from("empreendimentos")
-      .select("slug, nome, nomes_alternativos, midias(tipo), tipologias(id)")
+    grupo
+      .ler((c) => c.from("empreendimentos").select("slug, nome, nomes_alternativos, midias(tipo), tipologias(id)"))
       .eq("publicado", true),
   ]);
 

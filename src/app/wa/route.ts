@@ -24,6 +24,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  // O grupo do site vem antes da chave de serviço, que enxerga todos.
+  const grupo = grupoDoSite();
   const supabase = createServiceClient();
 
   const bruto = url.searchParams.get("i");
@@ -39,7 +41,7 @@ export async function GET(req: Request) {
         await supabase
           // Só corretor do grupo do site (L11): o botão da home de um grupo
           // nunca cai no número de outro.
-          .rpc("sortear_corretor_whatsapp", { p_grupo: grupoDoSite() })
+          .rpc("sortear_corretor_whatsapp", { p_grupo: grupo })
           .maybeSingle<{ corretor_id: string; telefone: string }>()
       ).data;
 
@@ -51,7 +53,7 @@ export async function GET(req: Request) {
   await supabase.from("cliques_whatsapp").insert({
     // Pela chave de serviço não há sessão, e o clique pode não ter corretor
     // nem imóvel: o grupo vai explícito, o do site (0183).
-    grupo_id: grupoDoSite(),
+    grupo_id: grupo,
     corretor_id: destino.tipo === "whatsapp" ? (sorteio?.corretor_id ?? null) : null,
     empreendimento_id: null,
     origem: "site",

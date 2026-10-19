@@ -55,9 +55,8 @@ export async function POST(req: NextRequest) {
      *
      * Separado de `referenciaPath` de propósito: aquele é caminho de arquivo e
      * precisa ser confinado à pasta do corretor, porque um caminho forjado
-     * leria arquivo alheio. Aqui vem um ID de linha, e quem decide o acesso é
-     * a RLS — o `select` roda com o cliente de SESSÃO, então mídia de imóvel
-     * que ele não pode ver simplesmente volta vazia.
+     * leria arquivo alheio. Aqui vem um ID de linha, lido pela chave de
+     * serviço: só vale mídia do grupo do corretor (ver o `select` abaixo).
      */
     midiaId?: string | null;
     imovelSlug?: string | null;
@@ -108,14 +107,16 @@ export async function POST(req: NextRequest) {
   const referenciasUrl: string[] = [];
   if (corpo?.midiaId) {
     /*
-     * A foto do imóvel como base. Nenhuma confinação de caminho aqui: o
-     * recorte é a RLS, que é fonte de verdade e não precisa ser repetida em
-     * JavaScript. Mídia de imóvel que este corretor não enxerga volta nula.
+     * A foto do imóvel como base. O id vem do navegador e a leitura é pela
+     * chave de serviço, que ignora a RLS e enxerga todos os grupos: sem o
+     * filtro do grupo, uma mídia de outra empresa iria ao modelo e a arte
+     * nasceria ligada ao imóvel dela (L16). Fora do grupo, volta nula.
      */
     const { data: midia } = await supabase
       .from("midias")
       .select("url, empreendimento_id")
       .eq("id", corpo.midiaId)
+      .eq("grupo_id", corretor.grupoId)
       .maybeSingle();
 
     if (!midia?.url) {

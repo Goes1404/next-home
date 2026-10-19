@@ -20,11 +20,23 @@
 --    (ClaudeBot, GPTBot, MJ12bot) seguindo os botões do site. Contar
 --    pessoas distintas (coluna visitante), nunca o total.
 
+-- GRUPO (plataforma multi-grupo, L22): este SQL roda com um papel que
+-- enxerga TODOS os grupos. Todo bloco abaixo filtra pelo grupo deste
+-- `set_config`, e na fase 1 só o grupo da Next Home é aceito: o `do` recusa
+-- qualquer outro. Rode o arquivo inteiro na mesma sessão.
+select set_config('diagnostico.grupo', '00000000-0000-0000-0000-000000000001', false);
+do $$
+begin
+  if current_setting('diagnostico.grupo', true) is distinct from '00000000-0000-0000-0000-000000000001' then
+    raise exception 'Na fase 1 o diagnóstico só roda no grupo da Next Home.';
+  end if;
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- 1. POR DIA
 -- ---------------------------------------------------------------------------
 with p as (select timestamptz '2026-10-03 00:00-03' ini, timestamptz '2026-10-10 00:00-03' fim),
-cor as (select id from corretores where coalesce(slug, '') not like 'demo-%'),
+cor as (select id from corretores where coalesce(slug, '') not like 'demo-%' and grupo_id = current_setting('diagnostico.grupo')::uuid),
 dias as (select generate_series((select ini from p) at time zone 'America/Sao_Paulo',
                                 (select fim from p) at time zone 'America/Sao_Paulo' - interval '1 day',
                                 interval '1 day')::date dia)
@@ -49,7 +61,7 @@ from dias d order by d.dia;
 -- 2. POR CORRETOR
 -- ---------------------------------------------------------------------------
 with p as (select timestamptz '2026-10-03 00:00-03' ini, timestamptz '2026-10-10 00:00-03' fim),
-cor as (select id, nome from corretores where coalesce(slug, '') not like 'demo-%')
+cor as (select id, nome from corretores where coalesce(slug, '') not like 'demo-%' and grupo_id = current_setting('diagnostico.grupo')::uuid)
 select cor.nome,
   (select count(*) from leads l where l.corretor_id = cor.id and l.created_at >= p.ini and l.created_at < p.fim) leads_novos,
   (select count(distinct m.conversa_id) from whatsapp_mensagens m join whatsapp_conversas w on w.id = m.conversa_id
@@ -70,7 +82,7 @@ order by 2 desc;
 -- 3. TEMPO DE RESPOSTA (por vez do cliente: a 1ª fala depois de uma nossa)
 -- ---------------------------------------------------------------------------
 with p as (select timestamptz '2026-10-03 00:00-03' ini, timestamptz '2026-10-10 00:00-03' fim),
-cor as (select id from corretores where coalesce(slug, '') not like 'demo-%'),
+cor as (select id from corretores where coalesce(slug, '') not like 'demo-%' and grupo_id = current_setting('diagnostico.grupo')::uuid),
 vez as (
   select m.conversa_id, m.created_at
   from whatsapp_mensagens m join whatsapp_conversas w on w.id = m.conversa_id, p
@@ -102,6 +114,7 @@ c as (
   select c.*, case when c.origem like 'anuncio%' then 'anuncio' else 'site' end canal,
     (c.user_agent is null or c.user_agent ilike any (array['%facebookexternalhit%', '%bot%', '%crawl%', '%spider%', '%headless%'])) robo
   from cliques_whatsapp c, p where c.created_at >= p.ini and c.created_at < p.fim
+    and c.grupo_id = current_setting('diagnostico.grupo')::uuid
 )
 select canal, count(*) total, count(*) filter (where robo) robos,
   count(distinct visitante) filter (where not robo) pessoas,
@@ -117,4 +130,5 @@ select c.nome, i.status_conexao,
   i.falhas_seguidas,
   to_char(i.bloqueado_ate at time zone 'America/Sao_Paulo', 'DD/MM HH24:MI') bloqueado_ate
 from corretor_whatsapp_instancias i join corretores c on c.id = i.corretor_id
+where i.grupo_id = current_setting('diagnostico.grupo')::uuid
 order by c.nome;

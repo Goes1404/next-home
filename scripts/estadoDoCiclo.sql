@@ -16,6 +16,18 @@
 -- Se o bloco 1 acusar problema, os outros são consequência — conserte ele
 -- primeiro e remeça.
 
+-- GRUPO (plataforma multi-grupo, L22): este SQL roda com um papel que
+-- enxerga TODOS os grupos. Todo bloco abaixo filtra pelo grupo deste
+-- `set_config`, e na fase 1 só o grupo da Next Home é aceito: o `do` recusa
+-- qualquer outro. Rode o arquivo inteiro na mesma sessão.
+select set_config('diagnostico.grupo', '00000000-0000-0000-0000-000000000001', false);
+do $$
+begin
+  if current_setting('diagnostico.grupo', true) is distinct from '00000000-0000-0000-0000-000000000001' then
+    raise exception 'Na fase 1 o diagnóstico só roda no grupo da Next Home.';
+  end if;
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- 1. O NÚMERO ESTÁ NO AR?  (se não estiver, nada mais importa)
 -- ---------------------------------------------------------------------------
@@ -39,6 +51,7 @@ select
     else 'ok'
   end as veredito
 from public.corretor_whatsapp_instancias i
+where i.grupo_id = current_setting('diagnostico.grupo')::uuid
 order by i.instance_name;
 
 -- ---------------------------------------------------------------------------
@@ -47,9 +60,9 @@ order by i.instance_name;
 -- Silêncio longo aqui, com o bloco 1 dizendo "ok", é sinal de fila vazia —
 -- não de defeito. Com o bloco 1 acusando, é a duração do apagão.
 select
-  (select max(enviado_em)  at time zone 'America/Sao_Paulo' from public.whatsapp_campanhas_fila)                              as ultimo_disparo_sp,
-  (select max(created_at)  at time zone 'America/Sao_Paulo' from public.whatsapp_mensagens where remetente = 'cliente')       as ultima_fala_de_cliente_sp,
-  (select max(created_at)  at time zone 'America/Sao_Paulo' from public.whatsapp_mensagens where remetente = 'bot')           as ultima_fala_do_bot_sp,
+  (select max(enviado_em)  at time zone 'America/Sao_Paulo' from public.whatsapp_campanhas_fila where grupo_id = current_setting('diagnostico.grupo')::uuid)                              as ultimo_disparo_sp,
+  (select max(created_at)  at time zone 'America/Sao_Paulo' from public.whatsapp_mensagens where remetente = 'cliente' and grupo_id = current_setting('diagnostico.grupo')::uuid) as ultima_fala_de_cliente_sp,
+  (select max(created_at)  at time zone 'America/Sao_Paulo' from public.whatsapp_mensagens where remetente = 'bot' and grupo_id = current_setting('diagnostico.grupo')::uuid)     as ultima_fala_do_bot_sp,
   now() at time zone 'America/Sao_Paulo'                                                                                     as agora_sp;
 
 -- ---------------------------------------------------------------------------
@@ -71,6 +84,7 @@ with envios as (
     )) as intervalo_s
   from public.whatsapp_campanhas_fila
   where status in ('enviado', 'respondido') and enviado_em is not null
+    and grupo_id = current_setting('diagnostico.grupo')::uuid
 )
 select
   count(*) filter (where intervalo_s is not null)                       as intervalos_medidos,
@@ -96,6 +110,7 @@ select
   min(f.agendado_para) at time zone 'America/Sao_Paulo' as mais_antigo_sp
 from public.whatsapp_campanhas_fila f
 where f.status in ('pendente', 'erro')
+  and f.grupo_id = current_setting('diagnostico.grupo')::uuid
 group by f.status, motivo, f.tentativas
 order by itens desc;
 
@@ -114,20 +129,21 @@ order by itens desc;
 -- 31/08 o número era 46 na vida e apenas 3 entre as 55 conversas em que o
 -- bot falou desde 25/08.
 select
-  (select count(*) from public.whatsapp_mensagens where remetente = 'bot')                                          as msgs_do_bot_gravadas,
-  (select count(*) from public.ia_interacoes where acao = 'respondida' and modelo is not null)                      as respostas_reais,
+  (select count(*) from public.whatsapp_mensagens where remetente = 'bot' and grupo_id = g.id)                                          as msgs_do_bot_gravadas,
+  (select count(*) from public.ia_interacoes where acao = 'respondida' and modelo is not null and grupo_id = g.id)                      as respostas_reais,
   (select count(*) from public.ia_interacoes where acao = 'respondida' and modelo is not null
-      and coalesce(e_teste, false) = false)                                                                          as respostas_fora_de_teste,
+      and coalesce(e_teste, false) = false and grupo_id = g.id)                                                                          as respostas_fora_de_teste,
   (select count(*) from public.whatsapp_conversas c
-     where (select count(*) from public.whatsapp_mensagens m
+     where c.grupo_id = g.id and (select count(*) from public.whatsapp_mensagens m
               where m.conversa_id = c.id and m.remetente = 'cliente') >= 2)                                          as conversas_com_2mais_falas_do_cliente,
-  (select count(*) from public.ia_interacoes where avaliacao is not null)                                            as rotulos_humanos,
-  (select count(*) from public.leads where visita_agendada_em is not null)                                           as visitas_marcadas,
-  (select count(*) from public.whatsapp_followups where status = 'enviado')                                          as followups_enviados,
-  (select count(*) from public.lead_observacoes_ia)                                                                  as dossies,
-  (select count(*) from public.leads where arquivado_em is null)                                                     as leads_ativos,
-  (select count(*) from public.leads where arquivado_em is null
-      and (renda_mensal is not null or orcamento_min is not null or orcamento_max is not null))                       as leads_com_renda_ou_orcamento;
+  (select count(*) from public.ia_interacoes where avaliacao is not null and grupo_id = g.id)                                            as rotulos_humanos,
+  (select count(*) from public.leads where visita_agendada_em is not null and grupo_id = g.id)                                           as visitas_marcadas,
+  (select count(*) from public.whatsapp_followups where status = 'enviado' and grupo_id = g.id)                                          as followups_enviados,
+  (select count(*) from public.lead_observacoes_ia where grupo_id = g.id)                                                                  as dossies,
+  (select count(*) from public.leads where arquivado_em is null and grupo_id = g.id)                                                     as leads_ativos,
+  (select count(*) from public.leads where arquivado_em is null and grupo_id = g.id
+      and (renda_mensal is not null or orcamento_min is not null or orcamento_max is not null))                       as leads_com_renda_ou_orcamento
+from (select current_setting('diagnostico.grupo')::uuid as id) g;
 
 -- ---------------------------------------------------------------------------
 -- 6. A CAMPANHA CONVERTE?
@@ -144,7 +160,8 @@ select
   , 1)                                                        as taxa_de_resposta_pct,
   count(*) filter (where status = 'erro')                     as erros,
   count(*) filter (where status = 'pendente')                 as pendentes
-from public.whatsapp_campanhas_fila;
+from public.whatsapp_campanhas_fila
+where grupo_id = current_setting('diagnostico.grupo')::uuid;
 
 -- ---------------------------------------------------------------------------
 -- 7. CONVERSA QUE MORRE POR CAUSA NOSSA
@@ -162,6 +179,7 @@ select
   max(created_at) at time zone 'America/Sao_Paulo' as ultima_sp
 from public.ia_interacoes
 where modelo is not null
+  and grupo_id = current_setting('diagnostico.grupo')::uuid
 group by prompt_versao
 order by ultima_sp desc nulls last
 limit 10;
@@ -193,5 +211,6 @@ select
   count(*) filter (where f.status = 'pendente' and f.tentativas_texto > 0)             as com_tentativas_de_texto
 from public.whatsapp_campanhas_fila f
 join public.whatsapp_campanhas c on c.id = f.campanha_id
+where f.grupo_id = current_setting('diagnostico.grupo')::uuid
 group by c.corretor_id
 order by enviadas_7d desc;

@@ -23,6 +23,18 @@
 -- `leads_created_at_idx`. Com mil linhas o Postgres varre a tabela em 1,3 ms
 -- e ignora o índice de propósito; ele passa a valer com dezenas de milhares.
 
+-- GRUPO (plataforma multi-grupo, L22): este SQL roda com um papel que
+-- enxerga TODOS os grupos. Todo bloco abaixo filtra pelo grupo deste
+-- `set_config`, e na fase 1 só o grupo da Next Home é aceito: o `do` recusa
+-- qualquer outro. Rode o arquivo inteiro na mesma sessão.
+select set_config('diagnostico.grupo', '00000000-0000-0000-0000-000000000001', false);
+do $$
+begin
+  if current_setting('diagnostico.grupo', true) is distinct from '00000000-0000-0000-0000-000000000001' then
+    raise exception 'Na fase 1 o diagnóstico só roda no grupo da Next Home.';
+  end if;
+end $$;
+
 begin;
 
 insert into public.leads (nome, telefone, tipo, origem, etapa, etapa_alterada_em, created_at, corretor_id)
@@ -37,7 +49,7 @@ select
   c.id
 from generate_series(1, 1000) g
 cross join lateral (
-  select id from public.corretores where ativo order by md5(g::text || id::text) limit 1
+  select id from public.corretores where ativo and grupo_id = current_setting('diagnostico.grupo')::uuid order by md5(g::text || id::text) limit 1
 ) c;
 
 analyze public.leads;
@@ -46,6 +58,7 @@ analyze public.leads;
 explain (analyze, buffers)
 select id, nome, email, telefone, etapa, created_at
 from public.leads
+where grupo_id = current_setting('diagnostico.grupo')::uuid
 order by created_at desc
 limit 30 offset 0;
 
@@ -53,19 +66,20 @@ limit 30 offset 0;
 explain (analyze, buffers)
 select id, nome
 from public.leads
-where nome ilike '%carga 5%' or telefone ilike '%carga 5%'
+where grupo_id = current_setting('diagnostico.grupo')::uuid and (nome ilike '%carga 5%' or telefone ilike '%carga 5%')
 order by created_at desc
 limit 30;
 
 -- Agregado do gestor: consulta magra, sem join (getAgregadoDaEquipe).
 explain (analyze, buffers)
-select id, etapa, etapa_alterada_em, origem_atribuicao, corretor_id from public.leads;
+select id, etapa, etapa_alterada_em, origem_atribuicao, corretor_id from public.leads where grupo_id = current_setting('diagnostico.grupo')::uuid;
 
 -- Fila de trabalho do Início: visitas de hoje, no máximo 6.
 explain (analyze, buffers)
 select id, nome, telefone, visita_agendada_em
 from public.leads
-where etapa = 'visita_agendada'
+where grupo_id = current_setting('diagnostico.grupo')::uuid
+  and etapa = 'visita_agendada'
   and visita_agendada_em >= (now() at time zone 'America/Sao_Paulo')::date
   and visita_agendada_em < (now() at time zone 'America/Sao_Paulo')::date + 1
 order by visita_agendada_em

@@ -7,8 +7,11 @@
  * o endereço e grava tudo no Postgres via Management API.
  *
  * Uso:
- *   npx tsx scripts/migrar.ts --dry-run   # só mostra o que seria gravado
- *   npx tsx scripts/migrar.ts             # migra de verdade
+ *   npx tsx scripts/migrar.ts --grupo=00000000-0000-0000-0000-000000000001 --dry-run
+ *   npx tsx scripts/migrar.ts --grupo=00000000-0000-0000-0000-000000000001
+ *
+ * O grupo é obrigatório e, na fase 1, só o da Next Home é aceito
+ * (`grupoDoScript`): a chave de serviço enxerga todos os grupos.
  *
  * Idempotente por `codigo_legado` (upsert) — rodar de novo atualiza em vez
  * de duplicar. Os dois empreendimentos já curados à mão (Eternity Alphaville
@@ -18,13 +21,21 @@
 import * as cheerio from "cheerio";
 import type { AnyNode } from "domhandler";
 import iconv from "iconv-lite";
+import { grupoDoScript } from "../src/lib/grupos/grupoDoScript";
 
 /**
- * O site legado é da Next Home: tudo o que ele traz nasce no grupo 1. CRECI e
- * código legado são únicos por grupo desde a 0183, e é por essa chave que o
- * script continua idempotente.
+ * O site legado é da Next Home: tudo o que ele traz nasce no grupo pedido em
+ * `--grupo` (só o 1 é aceito). CRECI e código legado são únicos por grupo
+ * desde a 0183, e é por essa chave que o script continua idempotente. O
+ * grupo é lido ANTES de qualquer credencial, para o esquecimento virar erro.
  */
-const GRUPO_LEGADO = "00000000-0000-0000-0000-000000000001";
+let GRUPO_LEGADO: string;
+try {
+  GRUPO_LEGADO = grupoDoScript(process.argv.slice(2)).grupoId;
+} catch (e) {
+  console.error((e as Error).message);
+  process.exit(1);
+}
 
 const BASE = "https://www.nexthomeimobiliaria.com.br";
 const SUPABASE_URL = "https://prhhrqyubjcafvucirri.supabase.co";

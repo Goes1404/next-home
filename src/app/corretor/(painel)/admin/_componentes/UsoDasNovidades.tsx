@@ -7,7 +7,9 @@ const DIAS = 30;
 
 /**
  * O que está sendo usado das ferramentas novas, nos últimos 30 dias (0121).
- * Lido com a sessão do gestor: a RLS dele alcança a equipe inteira.
+ * Lido com a sessão do gestor: a RLS dele alcança a equipe inteira, e cada
+ * leitura filtra o grupo dele (a chave de serviço e a RLS anterior à 0184
+ * enxergam todos os grupos).
  */
 export async function UsoDasNovidades() {
   const supabase = await createClient();
@@ -17,27 +19,48 @@ export async function UsoDasNovidades() {
   const contar = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0);
 
   const [enviadas, abertas, cliques, documentos, completas, posVisitas, decididas] = await Promise.all([
-    contar(supabase.from("links_do_cliente").select("token", { count: "exact", head: true }).eq("tipo", "selecao").gte("created_at", desde)),
     contar(
       supabase
         .from("links_do_cliente")
         .select("token", { count: "exact", head: true })
+        .eq("grupo_id", equipe.grupoId)
+        .eq("tipo", "selecao")
+        .gte("created_at", desde),
+    ),
+    contar(
+      supabase
+        .from("links_do_cliente")
+        .select("token", { count: "exact", head: true })
+        .eq("grupo_id", equipe.grupoId)
         .eq("tipo", "selecao")
         .gte("created_at", desde)
         .not("aberto_em", "is", null),
     ),
-    contar(supabase.from("links_do_cliente_eventos").select("id", { count: "exact", head: true }).eq("tipo", "clicou").gte("created_at", desde)),
-    contar(supabase.from("lead_documentos").select("id", { count: "exact", head: true }).gte("created_at", desde)),
     contar(
       supabase
         .from("links_do_cliente_eventos")
         .select("id", { count: "exact", head: true })
+        .eq("grupo_id", equipe.grupoId)
+        .eq("tipo", "clicou")
+        .gte("created_at", desde),
+    ),
+    contar(
+      supabase
+        .from("lead_documentos")
+        .select("id", { count: "exact", head: true })
+        .eq("grupo_id", equipe.grupoId)
+        .gte("created_at", desde),
+    ),
+    contar(
+      supabase
+        .from("links_do_cliente_eventos")
+        .select("id", { count: "exact", head: true })
+        .eq("grupo_id", equipe.grupoId)
         .eq("tipo", "documentos_completos")
         .gte("created_at", desde),
     ),
     equipe
-      .from("whatsapp_followups")
-      .select("conversa_id, enviado_em")
+      .ler((c) => c.from("whatsapp_followups").select("conversa_id, enviado_em"))
       .eq("tipo", "pos_visita")
       .eq("status", "enviado")
       .gte("enviado_em", desde)
@@ -45,6 +68,7 @@ export async function UsoDasNovidades() {
     supabase
       .from("whatsapp_campanhas")
       .select("titulo, variante_vencedora", { count: "exact" })
+      .eq("grupo_id", equipe.grupoId)
       .not("variante_vencedora", "is", null)
       .order("created_at", { ascending: false })
       .limit(1),
@@ -55,8 +79,7 @@ export async function UsoDasNovidades() {
   for (const f of posVisitas.data ?? []) {
     if (!f.enviado_em) continue;
     const { count } = await equipe
-      .from("whatsapp_mensagens")
-      .select("id", { count: "exact", head: true })
+      .ler((c) => c.from("whatsapp_mensagens").select("id", { count: "exact", head: true }))
       .eq("conversa_id", f.conversa_id)
       .eq("remetente", "cliente")
       .gt("created_at", f.enviado_em);
