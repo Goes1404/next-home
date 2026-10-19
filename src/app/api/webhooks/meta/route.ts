@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assinaturaValida } from "@/lib/metaWebhookSignature";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { createServiceClient } from "@/lib/supabase/service";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import { CAMPOS_DO_ANUNCIO, extrairIdsDoAnuncio, SEM_ANUNCIO } from "@/lib/metaAnuncio";
 
@@ -207,6 +208,12 @@ export async function POST(req: Request) {
 
       const { error } = await supabase.from("leads").upsert(
         {
+          /*
+           * A integração com a Meta é do grupo 1 até a fase 7. O lead nasce
+           * sem dono (a roleta escolhe), então não há linha-mãe de onde o
+           * gatilho tire o grupo: ele vai explícito (0183).
+           */
+          grupo_id: GRUPO_NEXT_HOME_ID,
           meta_lead_id: leadgenId,
           nome: dados.nome,
           telefone: dados.telefone,

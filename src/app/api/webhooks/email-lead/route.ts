@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { processarEmailDeLead } from "@/lib/inbound/processarEmail";
 import type { EmailInboundInput } from "@/lib/inbound/types";
 
@@ -62,7 +63,9 @@ export async function POST(req: Request) {
     ),
   };
 
-  const r = await processarEmailDeLead(emailInput, { bodyRaw });
+  // O endereço de recebimento dos portais é da Next Home até a fase 7, que
+  // dá a cada grupo o seu (0183).
+  const r = await processarEmailDeLead(emailInput, { bodyRaw, grupoId: GRUPO_NEXT_HOME_ID });
   if (r.totalEncontrados === 0) {
     return NextResponse.json(
       { ok: false, mensagem: "E-mail recebido mas nenhum telefone válido foi identificado." },

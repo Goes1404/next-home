@@ -496,12 +496,29 @@ export async function atribuirLead(
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
 
-  // O dono ANTERIOR, para a linha do tempo dizer de quem para quem.
+  // O dono ANTERIOR, para a linha do tempo dizer de quem para quem, e a
+  // origem, que o update abaixo sobrescreve com `manual`.
   const { data: antes } = await supabase
     .from("leads")
-    .select("corretor_id, corretor:corretores!leads_corretor_id_fkey(nome)")
+    .select("corretor_id, origem_atribuicao, corretor:corretores!leads_corretor_id_fkey(nome)")
     .eq("id", leadId)
     .maybeSingle();
+  if (!antes) return { erro: "Sem permissão para atribuir este lead." };
+
+  // A origem anterior fica guardada ANTES de ser sobrescrita (L30): é dela
+  // que a fase 5 tira a etiqueta de quem já foi repassado. Sem ela gravada,
+  // o repasse não acontece.
+  const { error: erroRepasse } = await supabase.from("lead_interacoes").insert({
+    lead_id: leadId,
+    corretor_id: guarda.corretor.id,
+    tipo: "repasse",
+    conteudo: "Repasse pela gestão",
+    detalhes: { origem_anterior: antes.origem_atribuicao, de: antes.corretor_id, para: corretorId },
+  });
+  if (erroRepasse) {
+    console.error("[atribuir] origem anterior não gravada:", erroRepasse.message);
+    return { erro: "Não foi possível atribuir agora. Tente novamente." };
+  }
 
   const { data, error } = await supabase
     .from("leads")

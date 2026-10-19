@@ -34,7 +34,10 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    contra fala inventada; o turno recebe `instrucaoDoAudio`
    ([[audio-do-cliente-era-arquivo-cifrado]], [[whisper-nao-recusa-como-o-gemini]]).
 5. **Gravação + dedup** — a conversa já nasce com `lead_id` obrigatório;
-   `provider_message_id` único (0027) mata reentrega.
+   `provider_message_id` único por grupo (0027, 0183) mata reentrega. Insert
+   que falha por outro motivo NÃO vira "inédita": o webhook para com
+   `mensagem_nao_gravada` e a IA não responde por cima de uma fala que o
+   banco não tem (0183).
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
    corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois

@@ -78,10 +78,16 @@ function comoJson(contexto: ContextoDaInteracao | null): Json | null {
   return contexto as unknown as Json | null;
 }
 
-export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
+/**
+ * Grava a linha de telemetria. Nunca lança (quem chama está no meio do
+ * atendimento), mas lê o `{ error }` e devolve a falha (L26): o insert
+ * recusado — pelo gatilho de grupo, por uma coluna nova — aparece no log e
+ * no retorno, em vez de sumir.
+ */
+export async function registrarInteracao(dados: InteracaoIA): Promise<{ ok: boolean; erro?: string }> {
   try {
     const supabase = createServiceClient();
-    await supabase.from("ia_interacoes").insert({
+    const { error } = await supabase.from("ia_interacoes").insert({
       ...(dados.id ? { id: dados.id } : {}),
       conversa_id: dados.conversaId ?? null,
       corretor_id: dados.corretorId ?? null,
@@ -137,7 +143,13 @@ export async function registrarInteracao(dados: InteracaoIA): Promise<void> {
       // Só vai a chave quando há silêncio: linha de resposta não muda.
       ...(dados.silencio ? { silencio: dados.silencio as unknown as Json } : {}),
     });
+    if (error) {
+      console.error("Telemetria de IA não gravada:", error.message);
+      return { ok: false, erro: error.message };
+    }
+    return { ok: true };
   } catch (err) {
     console.warn("Telemetria de IA falhou (seguindo sem ela):", err);
+    return { ok: false, erro: err instanceof Error ? err.message : String(err) };
   }
 }

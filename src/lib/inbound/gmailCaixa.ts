@@ -39,7 +39,7 @@ export async function lerCaixasDoGmail(limiteCaixas = 1, limiteMensagens = 5): P
   const supabase = createServiceClient();
   const { data: contas } = await supabase
     .from("contas_email_google")
-    .select("corretor_id, refresh_token, ultima_leitura_em, lidos_total")
+    .select("corretor_id, grupo_id, refresh_token, ultima_leitura_em, lidos_total")
     // Caixa com erro (acesso revogado) vai para o fim: não pode tomar a vez
     // das que funcionam a cada tique.
     .order("ultimo_erro", { ascending: true, nullsFirst: true })
@@ -85,7 +85,11 @@ export async function lerCaixasDoGmail(limiteCaixas = 1, limiteMensagens = 5): P
         break;
       }
       const mensagem = (await r.json()) as MensagemGmail & { internalDate?: string };
-      const resultado = await processarEmailDeLead(mensagemParaEmail(mensagem), { corretorDono: conta.corretor_id });
+      // O lead nasce no grupo do dono da caixa, nunca no de outro (0183).
+      const resultado = await processarEmailDeLead(mensagemParaEmail(mensagem), {
+        corretorDono: conta.corretor_id,
+        grupoId: conta.grupo_id,
+      });
       novos += resultado.totalInseridos;
       lidos++;
       if (lidos >= limiteMensagens && fila.length > lidos) {

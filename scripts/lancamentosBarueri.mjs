@@ -32,7 +32,11 @@
  * construtora, com quem a Next Home já tem relação direta (a ingestão de
  * PDF/Drive do painel já processa isso e já produziu 57 mídias).
  *
- * COMO RODAR:  node scripts/lancamentosBarueri.mjs [--status="Em construção"] [--todos]
+ * COMO RODAR:  node scripts/lancamentosBarueri.mjs --grupo=<uuid> [--status="Em construção"] [--todos]
+ *
+ * `--grupo` é obrigatório (0183): a lista vira linhas de
+ * `catalogo_candidatos`, que é por grupo, e cada item já sai com o
+ * `grupo_id` de quem vai carregá-la. Na fase 1 só o grupo da Next Home.
  */
 
 const BASE = "https://apto.vc/br/sp/barueri";
@@ -47,6 +51,17 @@ const PAUSA_MS = 1500;
 const argv = process.argv.slice(2);
 const arg = (n) => argv.find((a) => a.startsWith(`--${n}=`))?.split("=").slice(1).join("=");
 const TODOS = argv.includes("--todos");
+
+const GRUPO_NEXT_HOME_ID = "00000000-0000-0000-0000-000000000001";
+const GRUPO = arg("grupo");
+if (!GRUPO) {
+  console.error(`Informe o grupo: --grupo=${GRUPO_NEXT_HOME_ID}`);
+  process.exit(2);
+}
+if (GRUPO !== GRUPO_NEXT_HOME_ID) {
+  console.error(`Na fase 1 só o grupo da Next Home (${GRUPO_NEXT_HOME_ID}); recebi ${GRUPO}.`);
+  process.exit(2);
+}
 const STATUS_ALVO = arg("status") ?? "Em construção";
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -69,6 +84,7 @@ async function pagina(n) {
 
 function enxugar(r) {
   return {
+    grupo_id: GRUPO,
     nome: r.name,
     status: r.status?.name ?? "(sem status)",
     bairro: (r.neighborhoods ?? []).map((b) => b.name).join(", ") || "(sem bairro)",

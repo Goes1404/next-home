@@ -26,7 +26,12 @@ export async function GET(req: Request) {
   });
 
   const supabase = await createClient();
-  const { data: fechado } = await supabase.from("meses_fechados").select("arquivo_path").eq("mes", `${mes}-01`).maybeSingle();
+  const { data: fechado } = await supabase
+    .from("meses_fechados")
+    .select("arquivo_path")
+    .eq("grupo_id", guarda.corretor.grupoId)
+    .eq("mes", `${mes}-01`)
+    .maybeSingle();
   if (fechado) {
     const { data, error } = await createServiceClient().storage.from(BUCKET_CONTABILIDADE).download(fechado.arquivo_path);
     if (error || !data) return new Response("Não consegui abrir o arquivo do mês fechado.", { status: 500 });

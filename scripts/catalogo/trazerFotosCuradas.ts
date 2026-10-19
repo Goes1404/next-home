@@ -16,6 +16,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServiceClient } from "@/lib/supabase/service";
+import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 import { buscarSeguro } from "@/lib/imoveis/site/buscarSeguro";
 import { registrarMidia, type LinhaMidiaNova } from "@/lib/imoveis/registrarMidia";
 import { chaveDaFoto } from "@/lib/imoveis/site/lerPagina";
@@ -25,7 +26,9 @@ type Item = { url: string; legenda: string; tipo: "foto" | "planta"; ordem: numb
 const TETO_IMAGEM = 15 * 1024 * 1024;
 
 async function main() {
-  const lista = process.argv[2];
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  const { grupoId, resto } = grupoDoScript(process.argv.slice(2));
+  const lista = resto[0];
   if (!lista) throw new Error("informe o JSON da lista: trazerFotosCuradas.ts scripts/catalogo/fotos-curadas/<lista>.json");
   const selecao: Record<string, Item[]> = JSON.parse(
     readFileSync(join(process.cwd(), lista), "utf8"),
@@ -59,6 +62,7 @@ async function main() {
       .from("empreendimentos")
       .select("id")
       .eq("slug", slug)
+      .eq("grupo_id", grupoId)
       .maybeSingle();
     if (error || !imovel) {
       console.error(`[${slug}] imóvel não encontrado`, error?.message ?? "");

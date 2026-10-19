@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
@@ -46,6 +47,9 @@ export async function GET(req: Request) {
   // Aguardado de propósito: fire-and-forget perderia o clique se a função
   // for congelada logo após o redirect.
   await supabase.from("cliques_whatsapp").insert({
+    // Pela chave de serviço não há sessão, e o clique pode não ter corretor
+    // nem imóvel: o grupo vai explícito, o do site (0183).
+    grupo_id: grupoDoSite(),
     corretor_id: destino.tipo === "whatsapp" ? (sorteio?.corretor_id ?? null) : null,
     empreendimento_id: null,
     origem: "site",

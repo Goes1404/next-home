@@ -55,18 +55,49 @@ function slugificar(nome: string): string {
   return normalizarParaEmail(nome);
 }
 
+/**
+ * Primeiro slug livre a partir do nome.
+ *
+ * O slug é GLOBAL (o site resolve o corretor por ele, sem grupo, até a fase
+ * 3), mas a sessão do gestor só enxerga o próprio grupo: lendo `corretores`
+ * por ela, um slug do grupo A pareceria livre, o update bateria na chave
+ * única e o login recém-criado seria desfeito. Quem confere é
+ * `slug_de_corretor_livre` (0183), que olha todos os grupos e só diz sim/não.
+ * Erro da função não vira "livre": o slug sai com o sufixo de tempo.
+ */
 async function slugDisponivel(
   supabase: Awaited<ReturnType<typeof createClient>>,
   base: string,
-  idAtual: string,
 ): Promise<string> {
   const candidato = base || "corretor";
   for (let sufixo = 0; sufixo < 50; sufixo++) {
     const slug = sufixo === 0 ? candidato : `${candidato}-${sufixo + 1}`;
-    const { data } = await supabase.from("corretores").select("id").eq("slug", slug).maybeSingle();
-    if (!data || data.id === idAtual) return slug;
+    const { data: livre, error } = await supabase.rpc("slug_de_corretor_livre", { p_slug: slug });
+    if (error) {
+      console.error("[admin] falha ao conferir slug livre:", error.message);
+      break;
+    }
+    if (livre) return slug;
   }
   return `${candidato}-${Date.now().toString(36)}`;
+}
+
+/**
+ * O e-mail de acesso está livre em todos os grupos e no Auth? Mesma razão do
+ * slug: pela sessão o gestor só veria o próprio grupo. Erro conta como
+ * ocupado, para o lote seguir para o próximo candidato em vez de bater no
+ * Auth.
+ */
+async function emailDeAcessoLivre(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  email: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("email_de_acesso_livre", { p_email: email });
+  if (error) {
+    console.error("[admin] falha ao conferir e-mail livre:", error.message);
+    return false;
+  }
+  return data === true;
 }
 
 export type ResultadoCriarAcesso =
@@ -103,11 +134,14 @@ export async function criarAcessoCorretor(
   const supabase = await createClient();
   const { data: alvo } = await supabase
     .from("corretores")
-    .select("id, nome, slug, user_id")
+    .select("id, nome, slug, user_id, grupo_id")
     .eq("id", corretorId)
     .maybeSingle();
 
-  if (!alvo) return { erro: "Corretor não encontrado." };
+  // `corretores` é pública para leitura: a ficha de outro grupo aparece no
+  // select acima. O login nasce no grupo de quem cria, e só para a equipe
+  // dele.
+  if (!alvo || alvo.grupo_id !== guarda.corretor.grupoId) return { erro: "Corretor não encontrado." };
   if (alvo.user_id) return { erro: "Este corretor já tem acesso. Use 'Redefinir senha'." };
 
   /*
@@ -115,7 +149,7 @@ export async function criarAcessoCorretor(
    * `null` quando o slug é nulo (corretorSessao.ts) — a pessoa entraria com
    * a senha certa e cairia direto em "Conta sem vínculo", com o painel vazio.
    */
-  const slug = alvo.slug ?? (await slugDisponivel(supabase, slugificar(alvo.nome), alvo.id));
+  const slug = alvo.slug ?? (await slugDisponivel(supabase, slugificar(alvo.nome)));
 
   const senha = senhaEscolhida ?? senhaTemporaria();
   const servico = createServiceClient();
@@ -137,10 +171,19 @@ export async function criarAcessoCorretor(
     };
   }
 
+  // O grupo vai junto e no filtro: a chave de serviço ignora a RLS, e o
+  // gatilho de grupo (0182) recusa mudar o grupo de uma ficha.
   const { error: erroVinculo } = await servico
     .from("corretores")
-    .update({ user_id: criado.user.id, email: emailLimpo, slug, deve_trocar_senha: true })
-    .eq("id", corretorId);
+    .update({
+      user_id: criado.user.id,
+      email: emailLimpo,
+      slug,
+      deve_trocar_senha: true,
+      grupo_id: guarda.corretor.grupoId,
+    })
+    .eq("id", corretorId)
+    .eq("grupo_id", guarda.corretor.grupoId);
 
   if (erroVinculo) {
     /*
@@ -195,11 +238,13 @@ export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<Resul
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "E-mail inválido." };
 
   const supabase = await createClient();
-  const slug = await slugDisponivel(supabase, slugificar(nome), "");
+  const slug = await slugDisponivel(supabase, slugificar(nome));
   const servico = createServiceClient();
+  // Pela chave de serviço não há sessão para o gatilho tirar o grupo: ele
+  // vai explícito, o de quem cadastra (0183).
   const { data: ficha, error } = await servico
     .from("corretores")
-    .insert({ nome, creci, whatsapp, slug, ativo: true })
+    .insert({ nome, creci, whatsapp, slug, ativo: true, grupo_id: guarda.corretor.grupoId })
     .select("id")
     .single();
   if (error || !ficha) {
@@ -257,20 +302,21 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
     .select("id, nome, slug, whatsapp")
     .eq("ativo", true)
     .is("user_id", null)
+    // `corretores` é pública para leitura: sem o filtro, o lote tentaria
+    // criar login para a equipe de outro grupo.
+    .eq("grupo_id", guarda.corretor.grupoId)
     .order("nome");
 
   if (error) return { criados: [], falhas: [], erro: "Não foi possível ler a equipe." };
 
   /*
-   * Os endereços que já existem, para o primeiro nome não colidir. O slug era
-   * UNIQUE no banco e dava a unicidade de graça; primeiro nome não dá, e
-   * e-mail no Auth é único — um segundo "Eduardo" derrubaria a criação dele.
+   * Os endereços já usados neste lote, para o primeiro nome não colidir. O
+   * slug era UNIQUE no banco e dava a unicidade de graça; primeiro nome não
+   * dá, e e-mail no Auth é único — um segundo "Eduardo" derrubaria a criação
+   * dele. Os de antes do lote, de qualquer grupo, quem responde é
+   * `email_de_acesso_livre` (0183): pela sessão o gestor só veria o próprio.
    */
-  const { data: jaUsados } = await supabase
-    .from("corretores")
-    .select("email")
-    .not("email", "is", null);
-  const ocupados = new Set((jaUsados ?? []).map((c) => (c.email ?? "").toLowerCase()));
+  const ocupados = new Set<string>();
 
   const criados: AcessoEmLote[] = [];
   const falhas: { nome: string; motivo: string }[] = [];
@@ -297,7 +343,15 @@ export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
       // Primeiro nome livre; se estiver tomado, cai para nome+sobrenome e
       // depois para o slug inteiro. O último candidato sempre existe.
       const candidatos = candidatosDeEmail(corretor.nome, corretor.slug).map(emailInicial);
-      email = candidatos.find((e) => !ocupados.has(e.toLowerCase())) ?? candidatos[0];
+      let livre: string | undefined;
+      for (const candidato of candidatos) {
+        if (ocupados.has(candidato.toLowerCase())) continue;
+        if (await emailDeAcessoLivre(supabase, candidato)) {
+          livre = candidato;
+          break;
+        }
+      }
+      email = livre ?? candidatos[0];
       senha = senhaInicial(corretor.whatsapp);
     } catch (e) {
       falhas.push({ nome: corretor.nome, motivo: e instanceof Error ? e.message : String(e) });
@@ -331,6 +385,9 @@ export async function redefinirSenhaCorretor(
     .from("corretores")
     .select("id, user_id, email, slug")
     .eq("id", corretorId)
+    // A senha nova sai pela chave de serviço: a ficha tem de ser do grupo
+    // de quem pede, senão o gestor de um grupo redefiniria a de outro.
+    .eq("grupo_id", guarda.corretor.grupoId)
     .maybeSingle();
 
   if (!alvo?.user_id) return { erro: "Este corretor ainda não tem acesso." };
@@ -432,6 +489,8 @@ export async function alternarSoWhatsapp(
     .from("corretores")
     .update({ so_whatsapp: ligar })
     .eq("id", corretorId)
+    // Chave de serviço sobre id vindo do navegador: só dentro do grupo.
+    .eq("grupo_id", guarda.corretor.grupoId)
     .select("id");
   if (error) {
     console.error("[admin] falha ao marcar conta só WhatsApp:", error.message);
@@ -479,6 +538,11 @@ export async function alternarSoWhatsapp(
  * `deId = null` significa "os sem dono": o mesmo gesto resolve o backlog de
  * órfãos que a roleta não conseguiu atribuir.
  */
+/** Ids por PATCH ao repassar a carteira (vão na URL). */
+const LOTE_DE_REPASSE = 200;
+/** O `max_rows` do PostgREST (supabase/config.toml). */
+const TETO_DA_LEITURA = 1000;
+
 export async function redistribuirCarteira(
   deId: string | null,
   paraId: string,
@@ -502,16 +566,51 @@ export async function redistribuirCarteira(
     return { erro: `${destino.nome} está desativado — reative antes de passar leads para ele.` };
   }
 
-  let query = supabase.from("leads").update({
-    corretor_id: paraId,
-    origem_atribuicao: "manual",
-  });
-  query = deId === null ? query.is("corretor_id", null) : query.eq("corretor_id", deId);
+  // Primeiro a carteira e a origem de cada lead: o update abaixo sobrescreve
+  // `origem_atribuicao` com `manual`, e a fase 5 precisa saber de onde cada
+  // um veio (L30).
+  let leitura = supabase.from("leads").select("id, origem_atribuicao");
+  leitura = deId === null ? leitura.is("corretor_id", null) : leitura.eq("corretor_id", deId);
+  const { data: carteira, error: erroLeitura } = await leitura;
+  if (erroLeitura) return { erro: traduzirErroBanco(erroLeitura.message) };
+  if (!carteira || carteira.length === 0) {
+    return { ok: deId === null ? "Não havia leads sem dono." : "Este corretor não tem leads." };
+  }
 
-  const { data: movidos, error } = await query.select("id");
-  if (error) return { erro: traduzirErroBanco(error.message) };
+  // O registro da origem vem ANTES do update: gravado depois, uma falha no
+  // meio perderia a origem para sempre. Se o update falhar, sobra uma linha
+  // de repasse com a origem que o lead ainda tem, o que não engana ninguém.
+  const { error: erroRepasse } = await createServiceClient()
+    .from("lead_interacoes")
+    .insert(
+      carteira.map((l) => ({
+        lead_id: l.id,
+        corretor_id: guarda.corretor.id,
+        tipo: "repasse" as const,
+        conteudo: "Repasse de carteira pela gestão",
+        detalhes: { origem_anterior: l.origem_atribuicao, de: deId, para: paraId },
+      })),
+    );
+  if (erroRepasse) {
+    console.error("[redistribuir] origem anterior não gravada:", erroRepasse.message);
+    return { erro: "Não foi possível registrar a passagem dos leads agora. Tente de novo." };
+  }
 
-  const total = movidos?.length ?? 0;
+  // Só os leads lidos acima: um lead que chegou no meio não muda de dono sem
+  // ter a origem registrada. Em lotes, porque os ids vão na URL do PATCH.
+  const ids = carteira.map((l) => l.id);
+  const movidos: { id: string }[] = [];
+  for (let i = 0; i < ids.length; i += LOTE_DE_REPASSE) {
+    const { data, error } = await supabase
+      .from("leads")
+      .update({ corretor_id: paraId, origem_atribuicao: "manual" })
+      .in("id", ids.slice(i, i + LOTE_DE_REPASSE))
+      .select("id");
+    if (error) return { erro: traduzirErroBanco(error.message) };
+    movidos.push(...(data ?? []));
+  }
+
+  const total = movidos.length;
   if (total === 0) {
     return { ok: deId === null ? "Não havia leads sem dono." : "Este corretor não tem leads." };
   }
@@ -524,7 +623,7 @@ export async function redistribuirCarteira(
   const { error: erroLinha } = await createServiceClient()
     .from("lead_interacoes")
     .insert(
-      (movidos ?? []).map((l) => ({
+      movidos.map((l) => ({
         lead_id: l.id,
         corretor_id: guarda.corretor.id,
         tipo: "sistema" as const,
@@ -551,8 +650,11 @@ export async function redistribuirCarteira(
   revalidatePath("/corretor/pessoas");
   revalidatePath("/corretor/funil");
 
+  // A leitura para no teto do PostgREST (1000 linhas): carteira maior passa
+  // em mais de um clique, e a tela diz isso em vez de parecer completa.
+  const sobrou = carteira.length >= TETO_DA_LEITURA ? " Ainda há leads para passar: repita." : "";
   return {
-    ok: `${total} lead${total === 1 ? "" : "s"} agora ${total === 1 ? "é" : "são"} de ${destino.nome}.`,
+    ok: `${total} lead${total === 1 ? "" : "s"} agora ${total === 1 ? "é" : "são"} de ${destino.nome}.${sobrou}`,
     movidos: total,
   };
 }

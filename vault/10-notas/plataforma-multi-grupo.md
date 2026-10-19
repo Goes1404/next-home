@@ -84,3 +84,14 @@ viraria N migrations.
   e `_zz_grupo_update`, `after`): gatilho `before` que roda depois do carimbo
   (a roleta `leads_distribuir`) não consegue pôr mãe de outro grupo nem
   trocar o grupo. O webhook e a seleção leem as taxas pelo grupo do dono.
+- **A 0183 (parte A) escopa as chaves únicas de negócio por grupo**: CRECI,
+  item de lazer (lazer é catálogo, cada grupo tem o seu), campanha canônica
+  e evento de marketing, mês fechado do contador, configuração fiscal (uma
+  por grupo), código legado do imóvel e o id da mensagem do WhatsApp. Ficam
+  globais, de propósito e listados em `CHAVES_UNICAS_GLOBAIS`: slugs de
+  imóvel e corretor (fase 3), login, instância no provedor, tokens sorteados
+  e os ids da Meta (fase 7). Slug de corretor e e-mail de acesso são
+  conferidos por `slug_de_corretor_livre`/`email_de_acesso_livre`, que olham
+  todos os grupos e só dizem sim/não. As portas que gravam pela chave de
+  serviço sem linha-mãe passam o grupo explícito (`/wa`, Meta, e-mail de
+  portal, Gmail), e scripts de catálogo exigem `--grupo`.

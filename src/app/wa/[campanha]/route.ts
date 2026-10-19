@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
@@ -74,6 +75,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   });
   const registrarClique = async (corretorId: string | null) => {
     await supabase.from("cliques_whatsapp").insert({
+      // Link com typo não tem imóvel nem corretor: o grupo vai explícito, o
+      // do site (0183).
+      grupo_id: grupoDoSite(),
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
       origem: `${doSite ? "site" : "anuncio"}/${campanha.slice(0, 80)}`,

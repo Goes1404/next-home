@@ -18,7 +18,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   if (!acesso || !MES.test(mes)) return new Response("Não encontrado.", { status: 404, headers: { "cache-control": "no-store" } });
 
   const servico = createServiceClient();
-  const { data: fechado } = await servico.from("meses_fechados").select("arquivo_path").eq("mes", `${mes}-01`).maybeSingle();
+  const { data: fechado } = await servico
+    .from("meses_fechados")
+    .select("arquivo_path")
+    .eq("grupo_id", acesso.grupoId)
+    .eq("mes", `${mes}-01`)
+    .maybeSingle();
   if (!fechado) return new Response("Este mês não está fechado.", { status: 404, headers: { "cache-control": "no-store" } });
 
   const { data, error } = await servico.storage

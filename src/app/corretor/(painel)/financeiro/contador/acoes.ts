@@ -30,7 +30,9 @@ export async function fecharMes(mes: string): Promise<ResultadoContador> {
   const pacote = await montarPacoteDoMes(mes);
   if (!pacote.ok) return { erro: pacote.motivo };
 
-  const caminho = `${mes}.xlsx`;
+  // Uma pasta por grupo (0183): cada grupo fecha o próprio mês, e o arquivo
+  // de um sobrescreveria o do outro no mesmo caminho (`upsert: true`).
+  const caminho = `${guarda.corretor.grupoId}/${mes}.xlsx`;
   const { error: erroUpload } = await createServiceClient()
     .storage.from(BUCKET_CONTABILIDADE)
     .upload(caminho, pacote.arquivo, {
@@ -64,7 +66,14 @@ export async function reabrirMes(mes: string): Promise<ResultadoContador> {
   if (!MES.test(mes)) return { erro: "Mês inválido." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("meses_fechados").delete().eq("mes", `${mes}-01`).select("arquivo_path");
+  // O mês é por grupo desde a 0183: sem o filtro, reabrir apagaria também o
+  // fechamento de outro grupo que a sessão enxergasse.
+  const { data, error } = await supabase
+    .from("meses_fechados")
+    .delete()
+    .eq("grupo_id", guarda.corretor.grupoId)
+    .eq("mes", `${mes}-01`)
+    .select("arquivo_path");
   if (error || !data?.length) return { erro: "Não foi possível reabrir o mês." };
   // Arquivo velho no bucket diria ao contador um número que deixou de valer.
   const { error: erroArquivo } = await createServiceClient().storage.from(BUCKET_CONTABILIDADE).remove([data[0].arquivo_path]);

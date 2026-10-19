@@ -21,10 +21,16 @@ export type ResultadoDoEmail = {
  *
  * `corretorDono`: quando o e-mail veio da caixa DE um corretor, o lead é
  * dele se nada mais específico (imóvel com dono, corretor citado) decidir.
+ *
+ * `grupoId`: o grupo em que o lead e o log nascem, obrigatório (0183). Pela
+ * chave de serviço não há sessão, e o lead de portal nasce sem dono nem
+ * imóvel: sem o grupo explícito, com dois grupos o insert falharia (e com um
+ * só cairia nele por inferência). O webhook dos portais é do grupo 1; a
+ * caixa do Gmail é do grupo do dono dela.
  */
 export async function processarEmailDeLead(
   emailInput: EmailInboundInput,
-  opcoes: { bodyRaw?: Record<string, unknown>; corretorDono?: string | null } = {},
+  opcoes: { bodyRaw?: Record<string, unknown>; corretorDono?: string | null; grupoId: string },
 ): Promise<ResultadoDoEmail> {
   const bodyRaw = opcoes.bodyRaw ?? { ...emailInput };
   const vazio: ResultadoDoEmail = { ok: true, totalEncontrados: 0, totalInseridos: 0, totalDeduplicados: 0, totalFalhas: 0, leads: [] };
@@ -45,6 +51,7 @@ export async function processarEmailDeLead(
     extra: { erroMensagem?: string; leadId?: string | null } = {},
   ) => {
     const { error } = await supabase.from("inbound_logs").insert({
+      grupo_id: opcoes.grupoId,
       de: emailInput.from || null,
       para: emailInput.to || null,
       assunto: emailInput.subject || null,
@@ -171,6 +178,7 @@ export async function processarEmailDeLead(
     const { data: novo, error: erroInsert } = await supabase
       .from("leads")
       .insert({
+        grupo_id: opcoes.grupoId,
         nome: lead.nome,
         telefone: lead.telefone,
         email: lead.email,
