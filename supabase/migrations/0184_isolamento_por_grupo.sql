@@ -52,7 +52,17 @@
 --     loop execute format('drop policy isolamento_por_grupo on public.%I', t.tablename); end loop;
 --   end $$;
 --   e as views e as duas policies do Storage pelas definições da 0043/0015.
+--
+-- Transação única, como a 0182 e a 0183: aplica inteira ou nada. Sem ela, o
+-- `set local` abaixo vira só um aviso (fora de transação não vale nada), e
+-- uma falha na §3 deixaria as policies restritivas criadas com o Storage
+-- ainda nas policies antigas.
 
+begin;
+
+-- ~70 policies novas, cada uma com ACCESS EXCLUSIVE na tabela, enquanto o
+-- webhook escreve em produção. Com o teto, a migration falha e pode ser
+-- repetida, em vez de enfileirar o tráfego atrás dela.
 set local lock_timeout = '5s';
 
 -- ---------------------------------------------------------------------------
@@ -373,3 +383,5 @@ begin
   end if;
 end
 $$;
+
+commit;

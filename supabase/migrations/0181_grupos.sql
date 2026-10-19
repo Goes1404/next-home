@@ -34,6 +34,19 @@
 -- As outras tabelas ganham `grupo_id` na migration seguinte, que troca a
 -- função deste gatilho pela genérica (`carimbar_grupo`) com o mesmo nome
 -- de gatilho.
+--
+-- Transação única, como a 0182 e a 0183: aplica inteira ou nada. Sem ela,
+-- uma falha no meio (o `lock_timeout` abaixo, por exemplo) deixaria a
+-- coluna criada e o gatilho de fora — exatamente o intervalo em que o código
+-- no ar quebraria ao cadastrar corretor. Os `drop ... if exists` antes de
+-- cada `create` deixam a migration reaplicável depois de uma falha.
+
+begin;
+
+-- `corretores` é lida por `corretor_atual()` em quase toda policy: um ALTER
+-- esperando sem teto enfileiraria o painel e o webhook atrás dele. Com o
+-- teto, a migration falha e pode ser repetida.
+set local lock_timeout = '5s';
 
 -- ---------------------------------------------------------------------------
 -- 1. A tabela
@@ -203,6 +216,7 @@ revoke all on public.grupos from anon;
 revoke all on public.grupos from authenticated;
 grant select on public.grupos to authenticated;
 
+drop policy if exists "grupos: cada um le o proprio" on public.grupos;
 create policy "grupos: cada um le o proprio"
   on public.grupos
   for select
@@ -360,3 +374,5 @@ grant execute on function public.atualizar_parametros_credito(jsonb, numeric, nu
 
 comment on table public.parametros_credito is
   'Uma linha por grupo: faixas do MCMV, teto do FGTS, taxa SBPE e ITBI. Editada só pelo gestor ativo do grupo, via atualizar_parametros_credito (0103; por grupo desde a 0181).';
+
+commit;
