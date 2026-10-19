@@ -10483,3 +10483,24 @@ Nota: [[plataforma-multi-grupo]].
   `src/lib/grupos/apoioDoBanco.ts`. Cada teste roda em
   `emTransacaoDesfeita`; `comoUsuario` usa savepoint, e o `set local role`
   volta junto com ele (há teste que confere).
+
+## Revisão de lacunas e respostas do dono (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:
+`docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
+
+- **A decisão de 06/10 ("banco compartilhado com `empresa_id`") e a de
+  18/10 são a mesma.** A de 06/10 ficou só registrada; a implementação usa
+  `grupos`/`grupo_id`, a partir da 0181.
+- **Uma varredura de 7 áreas achou 88 lacunas** que o desenho não cobria. A
+  mais grave: gatilhos internos (outbox, campanha canônica da Meta) gravam
+  em outra tabela sem dizer o grupo, então com dois grupos nenhum lead
+  nasceria, inclusive na Next Home. **Ao isolar por grupo, procurar quem
+  grava por gatilho, não só quem grava por código.**
+- **Decisões do dono em 19/10:** repositório pode ficar privado; login com
+  e-mail real e convite; domínio da plataforma só depois do primeiro
+  pagamento; um número de WhatsApp em um grupo só; taxas do simulador por
+  imobiliária; suspensão no 5º dia de atraso; 90 dias + cópia ao cancelar;
+  lixeira de 30 dias; co-corretagem entre empresas por convite; Gmail só
+  Next Home; a IA não se anuncia e não nega.
+

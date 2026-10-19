@@ -99,7 +99,7 @@ daquele grupo: catálogo, marca, contatos, corretores, Pixel.
   certificado automático). `nexthomeimoveis.com` vira o domínio do grupo
   Next Home.
 - **Página do corretor** dentro do site do grupo
-  (`<dominio>/corretor/<slug>`). O corretor independente é dono do site
+  (`<dominio>/corretores/<slug>`; `/corretor/*` é o painel, exige login e o robots bloqueia). O corretor independente é dono do site
   inteiro. O mecanismo atual de link pessoal por cookie (`?corretor=`)
   continua valendo dentro do site do grupo.
 - O que hoje está fixo como Next Home (`src/lib/site.ts`, `marca.ts`,
@@ -110,6 +110,8 @@ daquele grupo: catálogo, marca, contatos, corretores, Pixel.
   (`catalogo`, `corretores-publicos-v2`, …) leva o grupo. Sem isso o site de
   uma imobiliária mostra imóveis de outra.
 - SEO, sitemap, robots, canonical, JSON-LD e Pixel da Meta são de cada site.
+  Até existir Pixel por grupo (fase 7), o Pixel só carrega no site do grupo
+  dono do ID; nos outros sites ele fica desligado.
 
 **Portfólio: conteúdo livre, layout fixo.** O gestor edita o site da
 imobiliária; o corretor edita a página dele dentro dele. Podem mudar: nome,
@@ -246,6 +248,9 @@ Só o administrador da plataforma acessa. Nele:
 - vê o uso de cada grupo por ferramenta;
 - marca pagamento e suspende/reativa grupo.
 
+Grupo tem `situacao` (ativo, suspenso, encerrado); encerrar está no §18,
+fase Operação.
+
 **Não vê conversa nem ficha.** Grupo suspenso: o que para e o que continua
 (site, IA, login) é **(decisão do construtor)**, com a regra de que o cliente
 final do grupo nunca recebe mensagem de erro da plataforma.
@@ -265,11 +270,12 @@ final do grupo nunca recebe mensagem de erro da plataforma.
 
 | Fase | Entrega |
 |---|---|
-| **1. Fundação** | Grupo no banco, Next Home como grupo 1, isolamento com teste de vazamento, ambiente de testes separado de produção |
+| **1. Fundação** | Grupo no banco, Next Home como grupo 1, isolamento com teste de vazamento, ambiente de testes separado de produção; isolamento também nas portas de entrada, nos scripts e nas telas do gestor (§18) |
 | **2. Painel da plataforma e planos** | Cadastro de grupos, medidor único, cotas, cobrança manual, plano a preço de custo |
 | **3. Sites por endereço** | Endereço gratuito, domínio próprio, portfólio editável, SEO e cache por site |
 | **4. IA de cada grupo** | Nome, região, preço, tom, regras da casa |
 | **5. Saída do corretor** | Etiqueta de origem, levar e devolver leads |
+| **Operação e ciclo de vida** | Planos pagos, alertas, Evolution em escala, justiça entre grupos nos crons, encerramento de grupo, pedidos de titular (LGPD), retenção, exportação, site de vendas |
 | — | **Pronto para o primeiro cliente externo** |
 | **6. Catálogo compartilhado** | Base, cópias por grupo, sugestões por fonte oficial |
 | **7. Integrações por grupo** | Meta Ads, Pixel, e-mail de portais, Gmail |
@@ -288,7 +294,9 @@ trava código.
   conseguir. Roda no CI a cada push. As funções `security definer` e os usos
   da chave de serviço são os pontos onde a RLS não protege: cada um precisa
   receber e conferir o grupo explicitamente.
-- **Ambiente de testes** separado de produção (banco e deploy). Hoje o E2E
+- **Ambiente de testes** separado de produção (banco e deploy). Na fase 1
+  isso inclui o deploy: um projeto Supabase de testes e um ambiente da Vercel
+  apontando para ele, para onde o E2E diário passa a apontar. Hoje o E2E
   roda contra produção; com dados de várias empresas isso deixa de ser
   aceitável.
 - **Migrations reproduzíveis do zero.** As 158 migrations nunca foram
@@ -313,7 +321,7 @@ mim, para o Matheus conferir:
   grupo do `Host`, e o `anon` perde `select` direto nessas tabelas. Isso
   também é o que torna o cache por grupo confiável. As duas entradas públicas
   de escrita (formulário de lead e clique de WhatsApp) passam pelo servidor,
-  que carimba o grupo.
+  que carimba o grupo — isso já na fase 1 (§18).
 - **Dois logins são dois e-mails.** O Supabase Auth exige e-mail único.
 - **Na saída, o login dele muda de grupo** (para a conta de independente ou
   para o novo grupo). Não nasce login novo.
@@ -369,3 +377,320 @@ que é **provisório** e pode mudar o plano quando houver resposta:
 - Formato da etiqueta de origem e o mapeamento de cada caminho de entrada
   atual para ela.
 - Estrutura do ambiente de testes (branch do Supabase, projeto separado).
+- Precedência entre nome e tom da assistente do grupo e os que já existem por
+  instância de corretor.
+- Na saída do corretor: mover a linha dele ou criar ficha nova no destino.
+
+## 18. Lacunas cobertas na revisão de 19/10
+
+Uma auditoria do código contra este desenho e o plano da fase 1 achou 88
+lacunas (lista com evidência em `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`). Elas entram assim.
+O código citado é o caminho de onde a mudança parte.
+
+### Fase 1 — Fundação (o plano da fase 1 foi acrescido)
+
+- **Gatilhos que gravam em outra tabela repassam o grupo.**
+  `registrar_evento_lead_criado` (0065) e `vincular_campanha_meta_canonica`
+  passam `new.grupo_id` para `marketing_eventos`, `event_outbox` e
+  `marketing_campanhas`; o gatilho `meta_ads_campanha_canonica` é renomeado
+  para rodar depois de `meta_ads_metricas_00_grupo`. Sem isso, com dois grupos,
+  nenhum lead nasce.
+- **A linha-mãe sai das FKs reais, não do nome da coluna.** Mapa
+  `(tabela, coluna, tabela_mãe)` gerado de `pg_constraint`. Corrige
+  `estudio_mensagens`/`consultor_mensagens` (`conversa_id` de outras tabelas),
+  `meta_ads_metricas.campanha_id` (texto) e inclui `marketing_evento_id`,
+  `entidade_id`, `parceiro_id`, `impulsionamento_id`, `lote_id`, `link_token`,
+  `ator_id`/`alvo_corretor_id`. Valor sem linha-mãe → erro.
+- **Todas as colunas-mãe são conferidas, não só a primeira**, e no UPDATE só
+  as que mudaram. Fecha `anotacoes.destinatario_id` (vazava a nota pelo
+  WhatsApp), `venda_participantes`, `leads.empreendimento_id`/`parceiro_id`,
+  `imagens_geradas`, `video_jobs`, `whatsapp_campanhas_fila`,
+  `estudio_mensagens`, `ativacoes_em_lead_alheio`.
+- **Trocar o grupo de uma linha só pela role dona da função de transferência**
+  (role `NOLOGIN`), nunca por variável de sessão.
+- **Tabelas da plataforma:** `whatsapp_disparo_lock` e
+  `whatsapp_diagnosticos` não têm grupo e não são lidas pelo usuário.
+- **Administrador da plataforma no banco:** `administradores_da_plataforma` +
+  `eh_admin_da_plataforma()`. Parâmetros de crédito passam a ser escritos só
+  por ele (`atualizar_parametros_credito`, 0103).
+- **Inativo perde acesso:** `grupo_atual()`, `corretor_atual()`, `eh_gestor()`
+  e `getCorretorLogado()` ignoram corretor com `ativo = false`.
+- **Portas de entrada leem dentro do grupo:** `processarEmailDeLead`
+  (`src/lib/inbound/processarEmail.ts`), webhook da Meta
+  (`api/webhooks/meta/route.ts`), palavra-chave (`repositorio.ts`
+  `cadastrarPelaPalavraChave`), porteiro `/wa` e `/wa/<campanha>`
+  (`sortear_corretor_whatsapp` ganha `p_grupo`), página do parceiro
+  (`parceiros.grupo_id`), aviso de novidade (`crm/avisoDeNovidade.ts`).
+- **Formulário e clique públicos gravam pelo servidor** (`api/leads`,
+  `api/clique-whatsapp`), com `grupoDoSite()` e o corretor validado no grupo.
+- **Leitura pública e catálogo da IA filtram o grupo já na fase 1**
+  (`catalogo/cache.ts`, `queries.ts`), para o grupo de teste da fase 2 não
+  aparecer no site da Next Home.
+- **Chave de serviço sobre id do navegador:** `desconectarNumeroDoCorretor`,
+  `trocarLinkDoParceiro` e `/api/imagens/gerar` (`midiaId`) conferem o grupo
+  antes de agir.
+- **Telas do gestor e views:** toda view ganha `grupo_id`; Visão geral,
+  WhatsApp da equipe, Desempenho e Prontidão filtram pelo grupo da sessão.
+- **Relatório semanal e aviso de espera** rodam por grupo.
+- **Integrações da Next Home** (Meta, Gmail) ficam restritas ao grupo 1 até a
+  fase 7; `meta_ads_metricas` é carimbada com o grupo 1.
+- **Funções `security definer` com id no parâmetro** (créditos de vídeo, 0092)
+  são revogadas do `authenticated` ou conferem o chamador; a guarda confere
+  `pg_proc` no banco, não o texto das migrations.
+- **Scripts com chave secreta** (`scripts/observatorio.ts`,
+  `scripts/eval/*`, scripts de catálogo, SQL de diagnóstico) exigem `--grupo` e
+  aceitam só o grupo 1; logs deixam de levar conteúdo de conversa.
+- **Repositório público:** o E2E para de subir traços como artefato e o golden
+  do eval deixa de exportar conversa real.
+- **Ambiente de testes com deploy** e E2E diário fora de produção.
+- **Realtime** entra na suíte de isolamento.
+- **Telemetria e gravação de mensagem** deixam de engolir erro de insert.
+- **Unicidade global** (slug de corretor, e-mail de acesso) é conferida por
+  função que enxerga todos os grupos e só responde sim/não.
+- **`catalogo_candidatos`** ganha grupo e chave única por grupo.
+- **A sessão do painel carrega o grupo.**
+- **Repasse de lead** grava a origem anterior em `lead_interacoes` antes de
+  sobrescrever, para a etiqueta da fase 5.
+
+### Fase 2 — Painel da plataforma e planos
+
+- Gestor **cadastra e convida** corretor (hoje não existe insert em
+  `corretores`; `admin/acoes.ts` só cria login para ficha existente).
+- **Login** com e-mail real, convite e recuperação de senha, se a resposta à
+  pergunta 2 for sim (`corretores/credenciaisIniciais.ts`).
+- **Canal com o cliente pagante:** contato de cobrança do grupo, remetente da
+  plataforma, chave de e-mail configurada (`src/lib/email.ts`).
+- **Dados institucionais do grupo:** razão social, CNPJ/CPF, CRECI J ou F,
+  endereço, telefones, redes, encarregado LGPD. Substituem `site.ts` no rodapé,
+  no JSON-LD e na privacidade.
+- **Slug do grupo** validado como nome de DNS, com lista de reservados.
+- **Grupo de uma pessoa:** independente é gestor do próprio grupo; o menu
+  esconde roleta, ranking e comissão por `grupos.tipo`; caminho de
+  independente para imobiliária.
+- **Ponto único "pode operar"** no webhook, nos crons e no disparador (corretor
+  ativo, grupo ativo, cota), sem mandar contingência repetida ao cliente
+  (`repositorio.ts` `resolverInstancia`, `aiAgent.ts` `textoDeContingencia`).
+- **Medidor cobre toda chamada paga** (dossiê, transcrição, variação de lista,
+  consultor, estúdio, tradutor, leituras de PDF/planta/preço/lista, e-mail de
+  portal, classificação de fotos), grava tokens por grupo e não depende de
+  linha que expira. Define o que continua quando a cota acaba.
+- **Vazão da OpenAI:** prioridade (atendimento > lote > eval), chave separada
+  para testes, crédito acabando avisa a plataforma e nunca manda o corretor
+  "recarregar".
+- **Armazenamento por grupo:** como somar bytes do Storage, órfãos e apagados.
+- **Cobrança manual completa:** ciclo, pro rata, carência, troca de plano,
+  faturas; registro diário de assento (número conectado ou lead na carteira).
+- **Suporte:** canal, consentimento do corretor e registro em `admin_eventos`
+  aceitando ator da plataforma.
+- **Saúde por grupo** no painel da plataforma (ativação, número caído, IA
+  calada, inadimplência).
+- **Teto por corretor** dentro da cota somada da equipe.
+- **Aceite de termos** por usuário antes de conectar o número.
+- **Mesmo número em dois grupos**, conforme a pergunta 4: anti-bloqueio contado
+  por telefone e dedup por instância, ou proibição.
+
+### Fase 3 — Sites por endereço
+
+- **Fora de requisição o grupo vem da linha** (instância → corretor → grupo),
+  nunca do `Host`: `getEmpreendimentos`, `site` e `linkDaPagina` recebem o
+  grupo; `dominioDoGrupo(grupoId)` monta todo link enviado ao cliente
+  (`resolverMidia.ts`, `apresentacaoDigital.ts`, `aiAgent.ts`,
+  `linksAcoes.ts`, `api/agenda`, `linkDeIndicacao.ts`, `campaignQueue.ts`).
+- **Painel, login e infraestrutura no domínio da plataforma**: webhook da
+  Evolution, retorno do OAuth, pg_cron e auto-disparo deixam de depender do
+  domínio da Next Home; matcher do proxy cobre `api/`, sitemap e robots; Host
+  desconhecido e previews têm regra.
+- **Slug do corretor por grupo**; instância da Evolution identificada por id,
+  nunca recalculada do slug (`whatsapp/acoes.ts`); `?corretor=` conferido
+  contra o grupo do site.
+- **`corretor_destaques`** passa a referenciar `empreendimento_id`.
+- **Search Console por grupo**; sai o arquivo estático da Next Home de
+  `public/`.
+- **Porteiro reconhece a mensagem pronta de cada grupo**
+  (`mensagensDoSite.ts`, `porteiro.ts`).
+- **Marca do grupo fora do site:** painel, e-mails, sonda, GET do webhook,
+  vídeo, carrossel, legenda, capa padrão, og-image, vinheta e fundos.
+- **Regiões, mapa e globo** saem da configuração do grupo (`lib/regioes.ts`,
+  `MapaInterativoClient.tsx`, `GloboImoveis.tsx`).
+- **Páginas por token** usam o grupo do token e redirecionam Host divergente.
+- **Cache de rota por Host** (segmento por grupo ou guarda que mantém as rotas
+  dinâmicas).
+- **Storage:** pasta e policy para a marca do grupo; material interno
+  (referências, artes, books, rascunho) fora do bucket público.
+- **Privacidade e termos por grupo**, com controlador, operador, transferência
+  ao Canadá e Pixel só quando existe.
+- **Redirecionamento permanente** do endereço gratuito para o próprio, e
+  destino definido para links de grupo suspenso ou encerrado.
+- **Migrations e scripts de catálogo** passam a localizar imóvel por grupo e
+  id, não por slug; guarda.
+- **Aposentar** a tela Marca (`NEXT_PUBLIC_MARCA`) e
+  `docs/INSTALAR-NOVO-CLIENTE.md`.
+
+### Fase 4 — IA de cada grupo
+
+- **Ficha completa e confiável** (extração para `lead_observacoes_ia` e
+  `leads`), pronta antes da fase 5.
+- **`ModalDossieLead` mostra dados inventados** e é trocado pelo dossiê real
+  (conserto que pode sair antes da fase).
+- **Literais de Barueri e Alphaville** no funil, dossiê, alertas e estilo
+  (`jogada.ts`, `aiAgent.ts`, `dossierExtractor.ts`, `brokerNotifier.ts`).
+- **Segmento** (alto padrão, médio, econômico) entra entre os itens
+  configuráveis; precedência entre grupo e instância.
+- **IAs de marketing** (descrição do imóvel, variação de lista, legenda,
+  tradutor, estúdio) seguem a configuração do grupo.
+- **Evals por configuração** de grupo; `PROMPT_VERSAO` e fixture por grupo.
+- **Fuso por grupo** na configuração de região (visita, cota, janela anti-ban,
+  teto de imagem, ciclo de vídeo).
+
+### Fase 5 — Saída do corretor
+
+- Corretor só **exclui ou arquiva lead de origem dele**.
+- Decidir entre **mover a linha do corretor** e criar ficha nova no destino.
+- **Material de marketing e link pessoal** na saída: artes, vídeos, listas,
+  impulsionamentos, destaques e o `?corretor=` já publicado.
+
+### Fase 6 — Catálogo compartilhado
+
+- Decidir se `catalogo_candidatos` vira a base da plataforma ou continua fila
+  do grupo.
+
+### Fase 7 — Integrações por grupo
+
+- **Cofre de credenciais** por grupo; `refresh_token` do Gmail sai do texto
+  puro.
+- **Meta por grupo:** chave de `meta_ads_metricas` com grupo, conta canônica
+  sem `legacy`, webhook roteado por `page_id`, cron por conta.
+- **Gmail para clientes** depende da pergunta 10 (verificação do Google).
+
+### Operação e ciclo de vida (fase nova, antes do primeiro cliente externo)
+
+- **Planos pagos:** Vercel Pro e Supabase Pro.
+- **Alertas e CI que avisa:** crédito da OpenAI, Evolution, worker de vídeo,
+  crons com erro, CI vermelho.
+- **Evolution em escala:** capacidade, backup das sessões, segredo de webhook
+  por instância (a coluna já existe), limpeza das instâncias de quem sai.
+- **Justiça entre grupos nos crons:** rodízio por grupo no disparador, nos
+  follow-ups, nas respostas atrasadas, nas listas vivas e no Gmail; a trava
+  global da roleta vira por grupo.
+- **Render de vídeo:** fila com rodízio por grupo, ambiente de teste e destino
+  conforme a pergunta 1.
+- **Encerramento de grupo:** exportar e apagar linhas, Storage, instâncias,
+  logins e tokens, com auditoria; prazo conforme a pergunta 7.
+- **Pedido do titular (LGPD):** excluir lead apaga também `ia_correcoes`,
+  `ia_interacoes.contexto`, fila de campanha, `inbound_logs` e documentos do
+  Storage.
+- **Retenção** por tipo de dado.
+- **Exportação** dos dados do grupo e do titular.
+- **Lixeira**, conforme a pergunta 8.
+- **Pronto para vender:** domínio da plataforma, site de vendas, termos e
+  privacidade da plataforma, conta de demonstração fora da produção.
+
+## 19. Perguntas abertas da revisão de 19/10 (padrão provisório até a resposta)
+
+**Respondidas pelo Matheus em 19/10:**
+
+- **1 — Repositório:** pode ficar privado. O Matheus muda a visibilidade no
+  GitHub. O render de vídeo no Actions passa a gastar minutos da cota do
+  plano; as guardas da Task 10 (sem traço público, golden fora do
+  repositório) continuam valendo.
+- **2 — Login:** e-mail real de cada corretor, com convite e "esqueci a
+  senha". Exige e-mail transacional configurado (hoje não há SMTP e o Resend
+  está sem chave). Entra na fase 2, junto com a criação de grupo e o convite
+  de equipe; o endereço inventado `nome@nexthome.com` deixa de ser criado.
+- **3 — Domínio da plataforma:** comprado depois do primeiro pagamento de uma
+  imobiliária. Até lá não há endereço gratuito por grupo: o primeiro cliente
+  entra com o domínio próprio dele, e o painel segue no endereço atual.
+- **4 — Mesmo número em duas contas:** proibido. Um número de WhatsApp só
+  pode estar conectado em um grupo; a tentativa de conectar em outro é
+  recusada com explicação. A trava mora no banco (número único entre
+  instâncias de todos os grupos), na fase 2.
+
+- **5 — Taxas do simulador:** cada imobiliária ajusta as dela. `parametros_credito`
+  passa a ser por grupo já na fase 1; grupo novo nasce com cópia das taxas da
+  Next Home (fase 2). O site de cada grupo simula com as taxas daquele grupo.
+- **6 — Atraso:** suspensão automática no 5º dia de atraso, com aviso no
+  painel desde o vencimento (fase 2).
+- **7 — Cancelamento:** o cliente recebe a exportação dos leads e do catálogo;
+  os dados ficam bloqueados por 90 dias (dá para reativar) e depois são
+  apagados de vez (fase Operação).
+- **8 — Exclusão de lead:** lixeira de 30 dias, com lead e conversa
+  recuperáveis; depois disso, apagado de vez (fase Operação).
+- **9 — Co-corretagem entre empresas:** permitida. Uma venda pode ter
+  participante de outro grupo, por convite que o outro lado aceita; é uma
+  exceção ao isolamento feita por função única e auditada em `admin_eventos`.
+  O participante externo vê só a própria participação (imóvel, valor, a
+  comissão dele), nunca o lead nem a ficha. Na fase 1 o banco ainda recusa;
+  a exceção entra em fase posterior (junto da fase 5, que também atravessa
+  grupos de forma controlada).
+- **10 — Gmail:** só a Next Home por enquanto; os outros clientes usam o
+  e-mail de encaminhamento dos portais.
+- **11 — Aviso de IA:** como hoje — a IA não se anuncia e nunca nega quando
+  perguntada. Confirmar com o advogado.
+
+Todas as 11 perguntas estão respondidas; o texto abaixo é o registro de como
+elas foram feitas.
+
+
+Cada pergunta diz o que acontece até a resposta (o padrão que vale enquanto
+isso) e qual lacuna depende dela.
+
+1. **O repositório do GitHub pode ficar privado?** Hoje ele é público: os
+   traços dos testes automáticos (com telas do painel) e trechos de conversas
+   reais ficam baixáveis por qualquer pessoa. Fechar custa: o vídeo deixa de
+   ser renderizado de graça no GitHub (passa a gastar minutos pagos).
+   *Até a resposta:* a fase 1 para de publicar traços e conversas, mesmo com o
+   repositório aberto. (L23, L79)
+
+2. **O login do corretor vai ser o e-mail real dele, com convite e "esqueci a
+   senha"?** Hoje o login é um endereço inventado (`nome@nexthome.com`, que é
+   de outra empresa) com senha padrão que o gestor entrega, e só o gestor (ou
+   você) consegue trocar a senha. Com várias imobiliárias, dois "João" em
+   empresas diferentes não conseguem ter o mesmo endereço.
+   *Até a resposta:* nada muda; o primeiro cliente externo não entra antes
+   disso. (L85, L31, L32)
+
+3. **Quando o domínio da plataforma será comprado, e o painel de todos os
+   clientes pode morar nele (por exemplo `app.<dominio>`)?** Sem ele não há
+   endereço gratuito para os grupos, e hoje o WhatsApp, os avisos e o login do
+   Gmail de todos dependem de `nexthomeimoveis.com`, que é o domínio de um
+   cliente. *Até a resposta:* a fase 3 não começa. (L45, L46, L84)
+
+4. **O mesmo WhatsApp pode ficar ligado em duas contas (duas imobiliárias) ao
+   mesmo tempo?** Permitir exige contar o limite anti-bloqueio pelo número e
+   não pela conta (senão o número manda o dobro e corre mais risco de bloqueio).
+   Proibir é bem mais simples e mais seguro.
+   *Até a resposta:* proibido na prática, porque nenhum cliente externo entra
+   antes da fase 2. (L86)
+
+5. **As taxas do simulador de financiamento (juros, FGTS, faixas do Minha Casa
+   Minha Vida, ITBI por cidade) são iguais para todas as imobiliárias e só você
+   muda, ou cada imobiliária ajusta as dela?** Hoje qualquer gestor muda para
+   todos.
+   *Até a resposta:* iguais para todos, só você muda (fase 1). (L06)
+
+6. **Cliente com mensalidade atrasada: quantos dias de tolerância antes de
+   suspender?** *Até a resposta:* nenhuma suspensão automática; você suspende à
+   mão. (L40)
+
+7. **Quando um cliente cancela, por quanto tempo os dados dele ficam guardados
+   antes de serem apagados (e ele recebe uma cópia)?** *Até a resposta:* nada é
+   apagado sem você pedir. (L80, L83)
+
+8. **Lead excluído some na hora ou vai para uma lixeira por alguns dias (por
+   exemplo 30)?** Hoje some na hora, com a conversa junto, e com várias empresas
+   no mesmo banco não dá para recuperar o erro de uma sem voltar o banco de
+   todas. *Até a resposta:* continua sumindo na hora. (L88)
+
+9. **Uma venda pode ser dividida entre corretores de imobiliárias diferentes
+   (co-corretagem entre empresas)?** *Até a resposta:* não; o banco recusa um
+   participante de outro grupo. (L03)
+
+10. **Vale pagar a verificação anual do Google para oferecer "ler leads do
+    Gmail" aos clientes, ou o Gmail fica só para a Next Home?** Sem a
+    verificação, o acesso de quem não é da Next Home vence a cada 7 dias.
+    *Até a resposta:* só a Next Home. (L87)
+
+11. **(Para o advogado)** O cliente final deve ser avisado logo no começo da
+    conversa no WhatsApp de que ela é guardada e lida por IA, ou basta a IA não
+    negar quando perguntada? *Até a resposta:* vale a regra de hoje (não nega
+    quando perguntada). (L58)

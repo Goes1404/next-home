@@ -12,7 +12,8 @@ summary: Decisão de 18/10/2026 — o CRM vira produto vendido para imobiliária
 
 # Plataforma multi-grupo
 
-Substitui [[next-home-e-o-espelho-da-versao-geral]] (26/09). Desenho completo
+Substitui [[next-home-e-o-espelho-da-versao-geral]] (26/09). A decisão de 06/10 ("banco compartilhado com `empresa_id`")
+é a mesma, só registrada; a implementação usa `grupos`/`grupo_id` (0181). Desenho completo
 em `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`.
 
 **Por que mudou:** para corretor independente pagando por mês, um banco e um
