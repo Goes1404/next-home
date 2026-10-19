@@ -694,3 +694,20 @@ isso) e qual lacuna depende dela.
     conversa no WhatsApp de que ela é guardada e lida por IA, ou basta a IA não
     negar quando perguntada? *Até a resposta:* vale a regra de hoje (não nega
     quando perguntada). (L58)
+
+## 20. Decisões do dono para a fase 2 (19/10/2026)
+
+- **Remetente dos e-mails** (convite, recuperação de senha, cobrança): Resend
+  com o domínio `nexthomeimoveis.com` (ex.: `acesso@nexthomeimoveis.com`) até
+  existir o domínio da plataforma; a troca é uma variável de ambiente.
+- **Grupo suspenso** (5º dia de atraso): para o que custa — IA no WhatsApp,
+  listas de transmissão, artes e vídeos. O painel abre com aviso de pagamento
+  e o site público continua no ar. O cliente final nunca vê erro: a IA fica
+  calada e o corretor atende à mão.
+- **Ciclo da mensalidade:** vence todo mês no dia do cadastro do grupo, sem
+  pro rata; troca de plano vale no ciclo seguinte.
+- **Ordem da fase 2:** (1) painel da plataforma + criação de grupo + convite
+  com e-mail real; (2) medidor e cotas (com a medição do custo real por
+  resposta); (3) cobrança manual e suspensão; (4) o restante (pode-operar
+  único, teto por corretor, termos, número único, suporte, saúde por grupo).
+
