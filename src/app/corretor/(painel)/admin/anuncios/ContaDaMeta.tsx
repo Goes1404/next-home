@@ -434,7 +434,7 @@ export async function ContaDaMeta() {
                   <td className="py-2 text-right tabular-nums">
                     {c.leads > 0 ? (
                       <Link
-                        href={`/corretor/leads?campanha=${encodeURIComponent(c.campanhaId)}`}
+                        href={`/corretor/leads?corretor=equipe&campanha=${encodeURIComponent(c.campanhaId)}`}
                         className="hover:text-titulo underline underline-offset-2"
                       >
                         {c.leads}

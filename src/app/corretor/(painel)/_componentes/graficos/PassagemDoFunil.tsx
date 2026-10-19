@@ -19,12 +19,22 @@ import { CartaoDeGrafico, GraficoVazio } from "./Moldura";
  *
  * O link abre quem ESTÁ na etapa agora, não todos que passaram por ela: por
  * isso a faixa diz os dois números.
+ *
+ * `daEquipe`: as contagens são da equipe inteira (Administração), e o link
+ * precisa pedir a equipe — sem isso a lista abriria só os leads do gestor
+ * (hotfix de 19/10/2026) e o número não bateria com o destino.
  */
 
 /** Largura mínima da faixa, para o rótulo sempre caber. */
 const PISO = 52;
 
-export function PassagemDoFunil({ contagens }: { contagens: Partial<Record<EtapaFunil, number>> }) {
+export function PassagemDoFunil({
+  contagens,
+  daEquipe = false,
+}: {
+  contagens: Partial<Record<EtapaFunil, number>>;
+  daEquipe?: boolean;
+}) {
   const passos = passagemDoFunil(contagens);
   const vazamento = maiorVazamento(passos);
   const perdidos = contagens.perdido ?? 0;
@@ -75,7 +85,7 @@ export function PassagemDoFunil({ contagens }: { contagens: Partial<Record<Etapa
                     </div>
                   )}
                   <Link
-                    href={`/corretor/leads?etapa=${p.etapa}`}
+                    href={`/corretor/leads?${daEquipe ? "corretor=equipe&" : ""}etapa=${p.etapa}`}
                     title={`${ETAPA_LABEL[p.etapa]}: ${p.alcancaram} chegaram, ${agora} nesta etapa agora`}
                     className={`${BARRA_ETAPA[p.etapa]} text-sobre-cor mx-auto flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 py-2 shadow-sm transition-[transform,width] duration-700 hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:transition-none ${
                       perda ? "ring-alerta ring-2 ring-offset-2 ring-offset-transparent" : ""

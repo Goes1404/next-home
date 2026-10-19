@@ -68,7 +68,7 @@ export default async function EquipePage() {
           {ETAPAS_FUNIL.map((etapa) => (
             <Link
               key={etapa}
-              href={`/corretor/leads?etapa=${etapa}`}
+              href={`/corretor/leads?corretor=equipe&etapa=${etapa}`}
               className="border-linha bg-superficie hover:border-acento-linha rounded-xl border px-4 py-3 transition-colors"
             >
               <p className="font-display text-titulo text-lg tabular-nums">

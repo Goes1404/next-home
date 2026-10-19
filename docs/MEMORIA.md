@@ -10406,3 +10406,24 @@ Nota: [[conta-so-whatsapp]].
 - **Fora do sorteio do anúncio, por último na roleta, fora do site.**
 - Conversas antigas não aparecem (a Evolution não guarda histórico); foto de
   quem não é lead fica só como texto.
+
+## O ADM via a carteira da equipe nas telas de trabalho (19/10/2026)
+
+Nota: [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]].
+
+- **"A RLS recorta" vale para segurança, não para a tela.** As consultas de
+  Início, Lista, Funil, Visitas, tarefas e anotações não tinham
+  `.eq("corretor_id", …)`; para o gestor a policy abre a equipe inteira, e
+  o ADM não conseguia trabalhar como corretor. Hoje toda leitura de lista ou
+  contagem exige `recorteDaVisao()` (`corretorSessao.ts`).
+- **Só o gestor troca de carteira, e só pela URL**: `?corretor=<id>` ou
+  `?corretor=equipe` (`?dono=sem` implica equipe). Link da Administração
+  para a lista leva `corretor=equipe`, senão o número da equipe abre só os
+  leads do gestor.
+- **Guarda que lê o código**: `carteiraNaTelaDeTrabalho.test.ts`, com
+  exceções escritas (Contas, placar da equipe, busca de lead na venda,
+  Anúncios pagos).
+- **Na branch de produção, 3 testes falham no Windows também sem mudança
+  nenhuma** (`botoesComPista`, `paradaSemIA`), e `next build` local para no
+  type-check pelo par `PixelMeta.tsx`/`pixelMeta.ts`. Não é o seu código.
+

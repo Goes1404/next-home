@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { recorteDaVisao } from "@/lib/corretorSessao";
+import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import {
   origemDosLeads,
@@ -20,11 +22,15 @@ const reais = (v: number) =>
  *
  * Leads dos últimos 90 dias por canal de origem, com visitas e, onde há
  * gasto conhecido, o custo por lead e por visita. Gasto só existe para
- * anúncio: o digitado nos impulsionamentos e o que a conta da Meta
- * sincroniza (quando está conectada). Portal, site e indicação não têm custo
+ * anúncio: o digitado nos impulsionamentos do corretor. Portal, site e indicação não têm custo
  * registrado, e o gráfico diz isso em vez de inventar zero.
  *
- * A RLS recorta: o corretor vê os dele; o gestor, os da equipe.
+ * Recorta pelo corretor da sessão, também para o gestor (hotfix de
+ * 19/10/2026): a tela de Marketing é trabalho dele como corretor, e a RLS
+ * abriria a equipe inteira. Pelo mesmo motivo o gasto é só o das campanhas
+ * DELE: o gasto da conta da Meta é da imobiliária e mora na Administração
+ * (Anúncios pagos) — dividi-lo pelos leads de uma pessoa daria um custo por
+ * lead que não existe.
  *
  * A forma é CARTÃO POR CANAL, não barra: cada canal carrega três números
  * de escalas diferentes (leads, visitas, custo), e o que se decide aqui é
@@ -34,28 +40,29 @@ const reais = (v: number) =>
 export async function OrigemDosLeads() {
   const supabase = await createClient();
   const { corte, corteDia } = janelaDeDias(DIAS);
+  const dono = (await recorteDaVisao()) ?? CORRETOR_NENHUM;
 
-  const [{ data: leads }, { data: impulsos }, { data: meta }] = await Promise.all([
+  const [{ data: leads }, { data: impulsos }] = await Promise.all([
     supabase
       .from("leads")
       .select("origem, etapa, visita_agendada_em")
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .gte("created_at", corte.toISOString()),
     supabase
       .from("impulsionamentos")
       .select("valor_gasto")
+      .eq("corretor_id", dono)
       .gte("ultimo_lead_em", corte.toISOString())
       // Campanha de Google ou portal (0132) não é gasto do canal "anúncio":
       // os clientes dela chegam por outro canal.
       .or("canal.is.null,canal.in.(instagram,facebook)"),
-    // Só o gestor lê o gasto da conta da Meta; para o corretor o erro vira
-    // "sem gasto", e o custo dele sai só do que ele digitou.
-    supabase.from("meta_ads_metricas").select("gasto").gte("dia", corteDia),
   ]);
 
-  const gastoAnuncio =
-    (impulsos ?? []).reduce((s, i) => s + (i.valor_gasto === null ? 0 : Number(i.valor_gasto)), 0) +
-    (meta ?? []).reduce((s, m) => s + Number(m.gasto ?? 0), 0);
+  const gastoAnuncio = (impulsos ?? []).reduce(
+    (s, i) => s + (i.valor_gasto === null ? 0 : Number(i.valor_gasto)),
+    0,
+  );
 
   const linhas = origemDosLeads(
     (leads ?? []).map((l) => ({ origem: l.origem, etapa: l.etapa, visitaAgendadaEm: l.visita_agendada_em })),

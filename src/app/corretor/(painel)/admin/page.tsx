@@ -165,19 +165,19 @@ export default async function AdminVisaoGeralPage() {
           detalhe={`${agregado.semDono} sem dono`}
           // O detalhe é a parte acionável do cartão: cai na lista JÁ
           // recortada nos órfãos, que é o que o gestor vai resolver.
-          href={agregado.semDono > 0 ? "/corretor/leads?dono=sem" : "/corretor/leads"}
+          href={agregado.semDono > 0 ? "/corretor/leads?corretor=equipe&dono=sem" : "/corretor/leads?corretor=equipe"}
         />
         <Kpi
           rotulo="Conversão"
           valor={agregado.conversao === null ? "—" : `${agregado.conversao}%`}
           detalhe="dos leads já concluídos"
-          href="/corretor/leads?filtro=frios"
+          href="/corretor/leads?corretor=equipe&filtro=frios"
         />
         <Kpi
           rotulo="Parados há 15+ dias"
           valor={String(agregado.parados15d)}
           detalhe="pedem cutucão"
-          href="/corretor/leads?parado=15"
+          href="/corretor/leads?corretor=equipe&parado=15"
         />
         <Kpi
           rotulo="Visitas pelo WhatsApp"
@@ -244,7 +244,7 @@ export default async function AdminVisaoGeralPage() {
             return (
               <li key={etapa}>
                 <Link
-                  href={`/corretor/leads?etapa=${etapa}`}
+                  href={`/corretor/leads?corretor=equipe&etapa=${etapa}`}
                   className="group hover:bg-vidro -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors linha-abre"
                 >
                   <span className="text-fluid-xs text-apoio w-36 shrink-0">
@@ -270,7 +270,7 @@ export default async function AdminVisaoGeralPage() {
         </ul>
       </section>
 
-      <PassagemDoFunil contagens={agregado.porEtapa} />
+      <PassagemDoFunil contagens={agregado.porEtapa} daEquipe />
 
       <Suspense fallback={null}>
         <PlacarDaEquipe equipe={equipe} />

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { recorteDaVisao } from "@/lib/corretorSessao";
+import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { procuraPorImovel, type LinhaDeImovel } from "@/lib/graficos/calculos";
 import { CartaoDeGrafico, GraficoVazio } from "./Moldura";
@@ -27,11 +29,15 @@ export async function ProcuraPorImovel({
 }) {
   const supabase = await createClient();
   const { corte, corteDia } = janelaDeDias(DIAS);
+  // Os leads de quem abriu o painel, também do gestor (hotfix de 19/10/2026):
+  // a tela de Imóveis é trabalho dele como corretor.
+  const dono = (await recorteDaVisao()) ?? CORRETOR_NENHUM;
   const [{ data: leads }, { data: vendas }] = await Promise.all([
     supabase
       .from("leads")
       .select("empreendimento_id, imovel_interesse_id, etapa, visita_agendada_em")
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .gte("created_at", corte.toISOString()),
     supabase.from("vendas").select("empreendimento_id").eq("status", "ativa").gte("data_venda", corteDia),
   ]);

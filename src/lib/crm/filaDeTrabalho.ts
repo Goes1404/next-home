@@ -2,6 +2,7 @@ import "server-only";
 
 import { DIAS_ATE_ESQUECER, retornoDasListas } from "@/lib/whatsapp/listaDeTransmissao";
 import { createClient } from "@/lib/supabase/server";
+import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import { situacaoDaTarefa, type Tarefa } from "@/lib/crm/timeline";
 import { horaDoLembrete, situacaoDoLembrete } from "@/lib/crm/lembretes";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
@@ -209,6 +210,13 @@ export async function getFilaDeTrabalho(
   corretorId?: string | null,
 ): Promise<ItemFila[]> {
   const supabase = await createClient();
+  /*
+   * A fila é o trabalho de QUEM ABRIU o painel, inclusive do gestor: a RLS
+   * dele enxerga a equipe inteira, e a fila do Início virava a carteira de
+   * todo mundo (hotfix de 19/10/2026). Sem sessão, um id que não casa com
+   * ninguém — nunca "sem recorte".
+   */
+  const dono = corretorId ?? CORRETOR_NENHUM;
 
   const dia = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
@@ -288,12 +296,14 @@ export async function getFilaDeTrabalho(
       .select("conversa_id, lead_id, telefone_cliente, nome_cliente, esperando_desde", {
         count: "exact",
       })
+      .eq("corretor_id", dono)
       .order("esperando_desde", { ascending: true })
       .limit(TETO_DA_FILA),
     supabase
       .from("leads")
       .select("id, nome, telefone, visita_agendada_em")
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .eq("etapa", "visita_agendada")
       .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
       .lte("visita_agendada_em", `${dia}T23:59:59-03:00`)
@@ -309,6 +319,7 @@ export async function getFilaDeTrabalho(
       .from("leads")
       .select("id, nome, telefone, nao_contatar_em, nao_contatar_motivo", { count: "exact" })
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .gte("nao_contatar_em", limiteRecusa)
       .order("nao_contatar_em", { ascending: false })
       .limit(TETO_DA_FILA),
@@ -316,6 +327,7 @@ export async function getFilaDeTrabalho(
       .from("leads")
       .select("id, nome, telefone, created_at", { count: "exact" })
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .eq("etapa", "novo")
       .order("created_at", { ascending: true })
       .limit(TETO_DA_FILA),
@@ -323,6 +335,7 @@ export async function getFilaDeTrabalho(
       .from("leads")
       .select("id, nome, telefone, etapa_alterada_em", { count: "exact" })
       .is("arquivado_em", null)
+      .eq("corretor_id", dono)
       .in("etapa", ETAPAS_DO_CAMINHO.filter((e) => e !== "novo" && e !== "fechado"))
       .lt("etapa_alterada_em", limiteEsfriar)
       .order("etapa_alterada_em", { ascending: true })
@@ -332,6 +345,7 @@ export async function getFilaDeTrabalho(
     supabase
       .from("ia_interacoes")
       .select("id", { count: "exact", head: true })
+      .eq("corretor_id", dono)
       .in("origem", ["webhook", "followup"])
       .eq("e_teste", false)
       .in("acao", ["respondida", "visita_confirmada"])

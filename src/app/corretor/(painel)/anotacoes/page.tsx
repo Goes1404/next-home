@@ -49,6 +49,10 @@ export default async function AnotacoesPage({
     .select(
       "id, corretor_id, destinatario_id, lead_id, texto, lembrete_em, lembrete_whatsapp, lembrete_enviado_em, lembrete_erro, concluida_em, created_at",
     )
+    // As notas de quem abriu o painel — as que escreveu e as que recebeu —,
+    // também para o gestor (hotfix de 19/10/2026): a policy da 0100 abre a
+    // equipe inteira para ele, e o bloco de notas virava o de todo mundo.
+    .or(`corretor_id.eq.${corretor.id},destinatario_id.eq.${corretor.id}`)
     .order("created_at", { ascending: false })
     .limit(ANOTACOES_POR_PAGINA);
 
