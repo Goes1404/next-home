@@ -144,13 +144,14 @@ export async function gerarEEnviarPelaIA(params: {
 
     const { data: corretor } = await servico
       .from("corretores")
-      .select("nome, creci, whatsapp, slug")
+      .select("nome, creci, whatsapp, slug, grupo_id")
       .eq("id", instancia.corretor_id)
       .single();
     if (!corretor) return { enviou: false, erro: "Corretor da conversa não encontrado." };
 
     const [catalogo, dossie] = await Promise.all([
-      getEmpreendimentos().catch(() => []),
+      // O catálogo do grupo do corretor da instância (L15).
+      getEmpreendimentos(corretor.grupo_id).catch(() => []),
       conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
     ]);
 
@@ -281,7 +282,7 @@ export async function rascunharPelaIA(params: {
 
   const { data: corretor } = await createServiceClient()
     .from("corretores")
-    .select("nome, creci, whatsapp, slug")
+    .select("nome, creci, whatsapp, slug, grupo_id")
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return { erro: "Corretor da conversa não encontrado." };
@@ -289,7 +290,7 @@ export async function rascunharPelaIA(params: {
   const { historico, pendentes } = separarRajada(await historicoRecente(conversa.id));
   const ehAbertura = pendentes.length === 0;
   const [catalogo, dossie] = await Promise.all([
-    getEmpreendimentos().catch(() => []),
+    getEmpreendimentos(corretor.grupo_id).catch(() => []),
     conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
   ]);
 

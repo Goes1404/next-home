@@ -11,19 +11,34 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * medidor da fase 2 contaria menos do que aconteceu.
  */
 
-let respostaDoInsert: { data: unknown; error: { code?: string; message: string } | null };
+type Resposta = { data: unknown; error: { code?: string; message: string } | null };
+let respostaDoInsert: Resposta;
+/** Respostas em ordem, uma por tentativa; vazia, vale `respostaDoInsert`. */
+const respostasDoInsert: Resposta[] = [];
+/** O que a releitura da mensagem por `provider_message_id` encontra. */
+let mensagemJaGravada: { id: string } | null = null;
 const inserts: { tabela: string; linha: unknown }[] = [];
 const updates: string[] = [];
+
+const proximaResposta = () => respostasDoInsert.shift() ?? respostaDoInsert;
 
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     from: (tabela: string) => ({
       insert: (linha: unknown) => {
         inserts.push({ tabela, linha });
-        const resultado = Promise.resolve(respostaDoInsert);
+        const resposta = proximaResposta();
+        const resultado = Promise.resolve(resposta);
         return Object.assign(resultado, {
-          select: () => ({ maybeSingle: async () => respostaDoInsert }),
+          select: () => ({ maybeSingle: async () => resposta }),
         });
+      },
+      select: () => {
+        const leitura = {
+          eq: () => leitura,
+          maybeSingle: async () => ({ data: mensagemJaGravada, error: null }),
+        };
+        return leitura;
       },
       update: () => {
         updates.push(tabela);
@@ -48,7 +63,38 @@ describe("gravarMensagem", () => {
   beforeEach(() => {
     inserts.length = 0;
     updates.length = 0;
+    respostasDoInsert.length = 0;
+    mensagemJaGravada = null;
     vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  // Uma piscada do banco (Gateway Timeout, sem `code`) não pode descartar a
+  // mensagem do cliente e a resposta: o webhook para em `mensagem_nao_gravada`.
+  it("repete a gravação quando o banco falha por instantes", async () => {
+    respostasDoInsert.push({ data: null, error: { message: "Gateway Timeout" } });
+    respostaDoInsert = { data: { id: "mensagem-2" }, error: null };
+    const r = await gravarMensagem(mensagem);
+    expect(r).toEqual({ inedita: true, id: "mensagem-2" });
+    expect(inserts).toHaveLength(2);
+    expect(updates).toEqual(["whatsapp_conversas"]);
+  });
+
+  it("não repete erro de consulta nem a recusa do gatilho de grupo", async () => {
+    respostaDoInsert = { data: null, error: { code: "P0001", message: "grupo da linha difere do grupo de whatsapp_conversas" } };
+    const r = await gravarMensagem(mensagem);
+    expect(r.erro).toMatch(/grupo da linha difere/);
+    expect(inserts).toHaveLength(1);
+  });
+
+  it("a duplicata depois de uma tentativa perdida é a própria mensagem, não reentrega", async () => {
+    // A primeira tentativa gravou e só a resposta se perdeu no timeout.
+    respostasDoInsert.push({ data: null, error: { message: "Gateway Timeout" } });
+    respostaDoInsert = { data: null, error: { code: "23505", message: "duplicate key" } };
+    mensagemJaGravada = { id: "mensagem-3" };
+    const r = await gravarMensagem(mensagem);
+    expect(r).toEqual({ inedita: true, id: "mensagem-3" });
+    expect(updates).toEqual(["whatsapp_conversas"]);
   });
 
   it("não diz inédita quando o insert falha", async () => {

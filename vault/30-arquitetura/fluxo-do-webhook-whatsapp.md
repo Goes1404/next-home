@@ -37,7 +37,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    `provider_message_id` único por grupo (0027, 0183) mata reentrega. Insert
    que falha por outro motivo NÃO vira "inédita": o webhook para com
    `mensagem_nao_gravada` e a IA não responde por cima de uma fala que o
-   banco não tem (0183).
+   banco não tem (0183). Antes de desistir, erro passageiro (sem `code`,
+   o Gateway Timeout) é repetido por `comRetentativa`; a duplicata que vem
+   depois de uma tentativa perdida é a própria mensagem, não reentrega.
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
    corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois
@@ -93,7 +95,9 @@ Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
 Grupo (0182): a instância resolvida traz o `grupo_id` do número, e as taxas
 do simulador que o turno usa são as desse grupo, não as do site. Toda linha
 que o webhook grava herda o grupo da linha-mãe pelo gatilho
-`<tabela>_00_grupo` ([[plataforma-multi-grupo]]).
+`<tabela>_00_grupo` ([[plataforma-multi-grupo]]). A palavra-chave procura o
+lead "alheio" só no grupo da instância, e o catálogo que a IA recebe é o
+do grupo da instância (`getEmpreendimentos(instancia.grupoId)`, Task 12).
 
 Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
 a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um

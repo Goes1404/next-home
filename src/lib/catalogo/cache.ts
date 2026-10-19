@@ -39,16 +39,27 @@ import { REVALIDA_EM_SEGUNDOS, TAG_CATALOGO, TAG_CORRETORES } from "./tags";
  * API antiga segue suportada no Next 16 como camada separada. É o que cabe
  * enquanto o painel não tem credencial de E2E para verificar a troca.
  */
+/*
+ * Por GRUPO (L15): sem o filtro, o primeiro grupo de teste da fase 2
+ * apareceria no site da Next Home, no sitemap e na IA dela. O grupo é
+ * argumento, e o `unstable_cache` põe os argumentos na chave: cada grupo
+ * tem a sua entrada, e a etiqueta (`revalidarCatalogo`) limpa todas.
+ */
 export const catalogoPublicado = unstable_cache(
-  async (): Promise<Empreendimento[]> => {
+  async (grupoId: string): Promise<Empreendimento[]> => {
     const supabase = createClient();
     const { data, error } = await comRetentativa("empreendimentos publicados", () =>
-      supabase.from("empreendimentos").select(SELECT_EMPREENDIMENTO).eq("publicado", true).order("ordem"),
+      supabase
+        .from("empreendimentos")
+        .select(SELECT_EMPREENDIMENTO)
+        .eq("grupo_id", grupoId)
+        .eq("publicado", true)
+        .order("ordem"),
     );
     if (error) throw new Error(`Falha ao buscar empreendimentos: ${error.message}`);
     return (data as unknown as LinhaEmpreendimento[]).map(mapEmpreendimento);
   },
-  ["catalogo-publicado"],
+  ["catalogo-publicado-por-grupo"],
   { tags: [TAG_CATALOGO], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 
@@ -60,12 +71,14 @@ export const catalogoPublicado = unstable_cache(
  * pessoal. Desativado, ele também fica fora da roleta.
  */
 export const corretoresPublicos = unstable_cache(
-  async (): Promise<CorretorPerfil[]> => {
+  async (grupoId: string): Promise<CorretorPerfil[]> => {
     const supabase = createClient();
     const { data, error } = await comRetentativa("corretores", () =>
       supabase
         .from("corretores")
         .select(SELECT_CORRETOR)
+        // A equipe do grupo do site (L15), não a da plataforma inteira.
+        .eq("grupo_id", grupoId)
         .eq("ativo", true)
         .not("slug", "is", null)
         .order("nome"),
@@ -76,6 +89,7 @@ export const corretoresPublicos = unstable_cache(
     const { data: soWhatsapp } = await supabase
       .from("corretores")
       .select("id")
+      .eq("grupo_id", grupoId)
       .eq("so_whatsapp", true);
     const fora = new Set((soWhatsapp ?? []).map((c) => c.id));
     return (data as LinhaCorretor[]).filter((c) => !fora.has(c.id)).map(mapCorretor);
@@ -84,8 +98,9 @@ export const corretoresPublicos = unstable_cache(
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
   // do painel. "-v2" (03/10/2026): a 0151 tirou o vídeo de fundo da Bruna e o
   // site seguiu mostrando o vídeo pela entrada antiga. "-v3" (07/10/2026): o
-  // filtro de `ativo`.
-  ["corretores-publicos-v3"],
+  // filtro de `ativo`. "-v4" (19/10/2026): por grupo (o grupo também entra na
+  // chave, como argumento).
+  ["corretores-publicos-v4"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 

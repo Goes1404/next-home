@@ -8,6 +8,7 @@ import { AjustesDoResumo } from "./AjustesDoResumo";
 import { CaixaDoGmail } from "./CaixaDoGmail";
 import { createServiceClient } from "@/lib/supabase/service";
 import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -80,7 +81,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
 
       <div className="cartao mt-6 p-6 sm:p-7">
         <CaixaDoGmail
-          configurado={gmailConfigurado()}
+          configurado={gmailConfigurado() && integracaoLiberada(corretor.grupoId, "gmail")}
           volta={volta ?? null}
           conta={
             contaGmail

@@ -10611,6 +10611,47 @@ Nota: [[plataforma-multi-grupo]].
   fase 1) e filtram o imóvel por ele; os workflows passam a opção, e a
   guarda confere os dois lados.
 
+## As portas de entrada leem dentro do grupo (Task 12, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **Gravar com o grupo certo não basta: a consulta ANTES da gravação também
+  atravessa grupos.** Pela chave de serviço, `processarEmailDeLead` casava o
+  imóvel e o corretor citados com os de qualquer grupo e deduplicava por
+  telefone e por `email_message_id` no banco inteiro: o e-mail da caixa de B
+  que citasse "Bruna" criava o lead na carteira dela. O mesmo valia para o
+  dedupe do Lead Ads, o lead "alheio" da palavra-chave (que ainda revelava ao
+  corretor que o número é cliente de outra empresa), o espelho do parceiro,
+  o "me avise quando surgir" e o catálogo do site e da IA. **Ao isolar uma
+  porta, procurar as leituras dela, não só o insert.**
+- **`portas.test.ts` reprova** leitura de `leads`, `empreendimentos` ou
+  `corretores` sem `grupo_id` no mesmo encadeamento nos arquivos das portas,
+  com piso de leituras encontradas (o recorte que para de achar aprova tudo).
+- **`/api/leads` e `/api/clique-whatsapp` gravam pela chave de serviço** com
+  `grupo_id = grupoDoSite()`. O `corretorId` do corpo e o slug do imóvel só
+  valem se forem do grupo; senão o clique ou o lead entra sem eles. A coluna
+  `pelo_porteiro` continua fora do insert, como a 0143 exigia do `anon`.
+- **Sorteio do porteiro com grupo obrigatório**: `sortear_corretor_whatsapp(
+  p_grupo, p_empreendimento, preferido)`. `preferido` de outro grupo não está
+  entre os candidatos; imóvel de outro grupo não sorteia ninguém (escape).
+  A assinatura antiga `(uuid, uuid)` FICA até o deploy, delegando ao grupo 1:
+  o código no ar a chama, e tirá-la derrubaria o clique pago entre a
+  migration e o deploy. O roteiro da Task 9 a apaga depois.
+- **Função `sql` cujo corpo chama função criada depois falha na criação**
+  (o corpo é conferido com `check_function_bodies`). A assinatura antiga é
+  `plpgsql` por isso.
+- **`unstable_cache` põe os argumentos na chave**: o catálogo e a equipe
+  públicos recebem o grupo como argumento, e cada grupo tem a sua entrada; a
+  etiqueta limpa todas.
+- **Retentativa no insert da mensagem tem uma armadilha**: se a primeira
+  tentativa gravou e só a resposta se perdeu, a segunda volta 23505, que o
+  código lia como reentrega e deixava o cliente sem resposta. Depois de uma
+  tentativa perdida, a duplicata é relida e tratada como a própria mensagem.
+- **Integrações da Next Home** (Meta, Gmail, Pixel) passam por
+  `integracaoLiberada(grupo, qual)`, verdadeiro só no grupo 1 até a fase 7.
+  O painel tem grant por coluna em `parceiros`: o insert do gestor não manda
+  `grupo_id`, quem põe é o gatilho pelo `grupo_atual()`.
+
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 
 Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:

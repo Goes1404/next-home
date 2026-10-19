@@ -171,6 +171,10 @@ export async function POST(req: Request) {
         const { data: existente } = await supabase
           .from("leads")
           .select("id, meta_lead_id, meta_ad_id")
+          // A conta da Meta é do grupo 1 (L09): o cliente que é lead de outro
+          // grupo não impede o lead da Next Home de nascer, nem tem a ficha
+          // reescrita com o anúncio dela.
+          .eq("grupo_id", GRUPO_NEXT_HOME_ID)
           .eq("telefone_e164", e164)
           .is("arquivado_em", null)
           .order("created_at", { ascending: false })
@@ -198,7 +202,8 @@ export async function POST(req: Request) {
                   }
                 : {}),
             })
-            .eq("id", existente.id);
+            .eq("id", existente.id)
+            .eq("grupo_id", GRUPO_NEXT_HOME_ID);
           if (erroUpdate) {
             console.error(`Webhook Meta: falha ao atualizar o lead existente ${existente.id}: ${erroUpdate.message}`);
           }

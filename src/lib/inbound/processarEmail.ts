@@ -41,6 +41,7 @@ export async function processarEmailDeLead(
     const { count } = await createServiceClient()
       .from("leads")
       .select("id", { count: "exact", head: true })
+      .eq("grupo_id", opcoes.grupoId)
       .eq("email_message_id", emailInput.messageId);
     if ((count ?? 0) > 0) return vazio;
   }
@@ -74,9 +75,16 @@ export async function processarEmailDeLead(
     return { ok: false, totalEncontrados: 0, totalInseridos: 0, totalDeduplicados: 0, totalFalhas: 0, leads: [] };
   }
 
+  /*
+   * Imóvel, corretor citado e duplicado só no grupo do lead (L08): sem o
+   * filtro, um e-mail na caixa de outro grupo que citasse "Bruna" criaria o
+   * lead na carteira dela, e o telefone de um cliente de outro grupo faria
+   * reescrever a ficha dele. O corretor citado é sempre do grupo, então ele
+   * nunca vence o dono da caixa de outro grupo.
+   */
   const [{ data: empreendimentos }, { data: corretores }] = await Promise.all([
-    supabase.from("empreendimentos").select("id, nome, slug").limit(50),
-    supabase.from("corretores").select("id, nome, slug").eq("ativo", true),
+    supabase.from("empreendimentos").select("id, nome, slug").eq("grupo_id", opcoes.grupoId).limit(50),
+    supabase.from("corretores").select("id, nome, slug").eq("grupo_id", opcoes.grupoId).eq("ativo", true),
   ]);
 
   const processados: { id: string; deduplicado: boolean; nome: string; telefone: string }[] = [];
@@ -132,6 +140,7 @@ export async function processarEmailDeLead(
     let buscaExistente = supabase
       .from("leads")
       .select("id, mensagem, empreendimento_id")
+      .eq("grupo_id", opcoes.grupoId)
       .eq("telefone_e164", e164 ?? lead.telefone)
       .is("arquivado_em", null);
     if (opcoes.corretorDono) buscaExistente = buscaExistente.eq("corretor_id", opcoes.corretorDono);
@@ -157,7 +166,8 @@ export async function processarEmailDeLead(
           // escolheu (ou o primeiro pedido) não é trocado por e-mail.
           ...(empreendimentoId && !existente.empreendimento_id ? { empreendimento_id: empreendimentoId } : {}),
         })
-        .eq("id", existente.id);
+        .eq("id", existente.id)
+        .eq("grupo_id", opcoes.grupoId);
 
       if (erroUpdate) {
         console.error(`[inbound] falha ao atualizar duplicado ${existente.id}:`, erroUpdate.message);

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { metaAdsConfigurado, sincronizarMetaAds } from "@/lib/metaAds";
 
 /**
@@ -14,6 +15,12 @@ import { metaAdsConfigurado, sincronizarMetaAds } from "@/lib/metaAds";
 export async function sincronizarMetaAdsAgora(): Promise<{ ok: boolean; mensagem: string }> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro) return { ok: false, mensagem: guarda.erro };
+
+  // A conta da Meta configurada é a da Next Home (L19): gestor de outro
+  // grupo não sincroniza nem vê o gasto dela.
+  if (!guarda.corretor || !integracaoLiberada(guarda.corretor.grupoId, "meta")) {
+    return { ok: false, mensagem: "A conexão com o Meta não está disponível para a sua imobiliária." };
+  }
 
   if (!metaAdsConfigurado()) {
     return {

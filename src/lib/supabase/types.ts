@@ -3747,7 +3747,9 @@ export type Database = {
         Returns: { clique_id: string; empreendimento_id: string | null; origem: string }[]
       }
       sortear_corretor_whatsapp: {
-        Args: { p_empreendimento?: string; preferido?: string }
+        // A assinatura antiga (sem grupo) fica no banco só até o deploy da
+        // 0183 e não é declarada aqui: código novo sorteia sempre no grupo.
+        Args: { p_grupo: string; p_empreendimento?: string; preferido?: string }
         Returns: { corretor_id: string; telefone: string }[]
       }
       desligar_followups_automaticos: { Args: never; Returns: string }

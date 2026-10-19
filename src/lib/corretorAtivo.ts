@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { corretoresPublicos } from "@/lib/catalogo/cache";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import type { Corretor } from "@/lib/types";
 
 export { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
@@ -37,7 +38,9 @@ export const getCorretorAtivo = cache(async (): Promise<CorretorAtivo | null> =>
   const slug = cookieStore.get(COOKIE_CORRETOR_ATIVO)?.value;
   if (!slug) return null;
 
-  const corretor = (await corretoresPublicos()).find((c) => c.slug === slug);
+  // Só corretor do grupo do site: cookie com o slug de alguém de outro grupo
+  // não vira "corretor do link" aqui.
+  const corretor = (await corretoresPublicos(grupoDoSite())).find((c) => c.slug === slug);
   if (!corretor) return null;
 
   return {

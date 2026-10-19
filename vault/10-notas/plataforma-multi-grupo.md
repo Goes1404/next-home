@@ -95,3 +95,16 @@ viraria N migrations.
   todos os grupos e só dizem sim/não. As portas que gravam pela chave de
   serviço sem linha-mãe passam o grupo explícito (`/wa`, Meta, e-mail de
   portal, Gmail), e scripts de catálogo exigem `--grupo`.
+- **As portas de entrada leem dentro do grupo (Task 12).** Pela chave de
+  serviço, a consulta que vem ANTES da gravação atravessava grupos: o
+  imóvel e o corretor citados no e-mail de portal, o duplicado por telefone
+  (e-mail, Lead Ads, palavra-chave), o estoque da página do parceiro, o
+  imóvel novo do "me avise", o catálogo público e o da IA. Hoje cada uma
+  filtra o grupo (o do site, o da instância ou o da Next Home nas
+  integrações), e `portas.test.ts` reprova leitura de `leads`,
+  `empreendimentos` ou `corretores` sem `grupo_id` nesses arquivos.
+  `/api/leads` e `/api/clique-whatsapp` passaram à chave de serviço com o
+  grupo do site, aceitando corretor e imóvel do corpo só se forem dele.
+  `sortear_corretor_whatsapp(p_grupo, …)` sorteia só no grupo; a assinatura
+  antiga fica até o deploy, presa ao grupo 1. Meta, Gmail e Pixel passam por
+  `integracaoLiberada` (só o grupo 1 até a fase 7).

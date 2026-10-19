@@ -26,24 +26,36 @@ export async function avisarQuemPediuAlerta(limite = 2): Promise<number> {
   const desde = new Date(Date.now() - JANELA_DE_NOVIDADE_H * 3600_000).toISOString();
   const { data: novosBrutos } = await supabase
     .from("empreendimentos")
-    .select("id, nome, slug, cidade, bairro, preco_a_partir, tipologias(dormitorios)")
+    .select("id, grupo_id, nome, slug, cidade, bairro, preco_a_partir, tipologias(dormitorios)")
     .eq("publicado", true)
     .gte("created_at", desde)
     .limit(20);
   if (!novosBrutos || novosBrutos.length === 0) return 0;
-  const novos: ImovelNovo[] = novosBrutos.map((e) => ({
-    id: e.id,
-    nome: e.nome,
-    slug: e.slug,
-    cidade: e.cidade,
-    bairro: e.bairro,
-    precoAPartir: e.preco_a_partir != null ? Number(e.preco_a_partir) : null,
-    dormitorios: (e.tipologias ?? []).map((t) => t.dormitorios),
-  }));
+  /*
+   * Os imóveis novos POR GRUPO (L13): o lead só é avisado de imóvel do grupo
+   * dele, senão o WhatsApp do corretor de um grupo mandaria o imóvel de
+   * outro. A janela e o teto são de todos; o casamento é dentro do grupo.
+   */
+  const novosPorGrupo = new Map<string, ImovelNovo[]>();
+  for (const e of novosBrutos) {
+    const lista = novosPorGrupo.get(e.grupo_id) ?? [];
+    lista.push({
+      id: e.id,
+      nome: e.nome,
+      slug: e.slug,
+      cidade: e.cidade,
+      bairro: e.bairro,
+      precoAPartir: e.preco_a_partir != null ? Number(e.preco_a_partir) : null,
+      dormitorios: (e.tipologias ?? []).map((t) => t.dormitorios),
+    });
+    novosPorGrupo.set(e.grupo_id, lista);
+  }
 
   const { data: leads } = await supabase
     .from("leads")
-    .select("id, nome, telefone_e164, corretor_id, detalhes, regiao_interesse, dormitorios_min, orcamento_max")
+    .select("id, grupo_id, nome, telefone_e164, corretor_id, detalhes, regiao_interesse, dormitorios_min, orcamento_max")
+    // Só os grupos que têm imóvel novo: os outros não têm o que receber.
+    .in("grupo_id", [...novosPorGrupo.keys()])
     .eq("detalhes->>alerta", "true")
     .is("nao_contatar_em", null)
     .is("arquivado_em", null)
@@ -58,7 +70,7 @@ export async function avisarQuemPediuAlerta(limite = 2): Promise<number> {
     if (enviados >= limite) break;
     const alerta = lerAlerta(lead.detalhes);
     if (!alerta.ativo) continue;
-    const imovel = imovelParaAvisar(lead, novos, alerta.avisados);
+    const imovel = imovelParaAvisar(lead, novosPorGrupo.get(lead.grupo_id) ?? [], alerta.avisados);
     if (!imovel) continue;
 
     const detalhes = { ...(lead.detalhes as Record<string, unknown>), avisados: [...alerta.avisados, imovel.id] };

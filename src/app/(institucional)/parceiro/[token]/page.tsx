@@ -28,12 +28,19 @@ export default async function EspelhoPage({ params }: { params: Promise<{ token:
   const { token } = await params;
   if (!UUID.test(token)) notFound();
   const supabase = createServiceClient();
-  const { data: parceiro } = await supabase.from("parceiros").select("nome, ativo").eq("token", token).maybeSingle();
+  const { data: parceiro } = await supabase
+    .from("parceiros")
+    .select("nome, ativo, grupo_id")
+    .eq("token", token)
+    .maybeSingle();
   if (!parceiro || !parceiro.ativo) notFound();
 
+  // Só o estoque do grupo que cadastrou o parceiro (L12): pela chave de
+  // serviço, sem o filtro, o espelho de outro grupo apareceria aqui.
   const { data: imoveis } = await supabase
     .from("empreendimentos")
     .select("id, nome, slug, bairro, cidade, status, preco_a_partir, unidades(identificacao, status, dormitorios, area_m2, andar)")
+    .eq("grupo_id", parceiro.grupo_id)
     .eq("publicado", true)
     .order("nome", { ascending: true });
 

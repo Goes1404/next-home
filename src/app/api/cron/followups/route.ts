@@ -448,7 +448,7 @@ async function responderAtrasada(
 
   const { data: corretor } = await supabase
     .from("corretores")
-    .select("nome, creci, whatsapp, slug")
+    .select("nome, creci, whatsapp, slug, grupo_id")
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return "pulada";
@@ -456,7 +456,8 @@ async function responderAtrasada(
   if (await ehContaSoWhatsapp(supabase, instancia.corretor_id)) return "pulada";
 
   const [catalogo, historicoCompleto, dossie] = await Promise.all([
-    getEmpreendimentos().catch(() => []),
+    // O catálogo do grupo do corretor da instância (L15).
+    getEmpreendimentos(corretor.grupo_id).catch(() => []),
     historicoRecente(conversa.id),
     conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
   ]);
@@ -893,7 +894,7 @@ async function processarFollowup(
 
   const { data: corretor } = await supabase
     .from("corretores")
-    .select("nome, creci, whatsapp, slug")
+    .select("nome, creci, whatsapp, slug, grupo_id")
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return descartar(supabase, item.id, "corretor_inexistente");
@@ -979,7 +980,8 @@ async function processarFollowup(
   // Gera o texto de reengajamento com o MESMO agente e guardrails da
   // conversa normal — só muda o cenário via instrução extra.
   const [catalogo, historico, dossie] = await Promise.all([
-    getEmpreendimentos().catch(() => []),
+    // O catálogo do grupo do corretor da instância (L15).
+    getEmpreendimentos(corretor.grupo_id).catch(() => []),
     historicoRecente(conversa.id),
     conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
   ]);

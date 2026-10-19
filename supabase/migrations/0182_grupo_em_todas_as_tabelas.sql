@@ -44,8 +44,10 @@
 -- outras tabelas, e não veria `destinatario_id`, `indicado_por`, `lote_id`,
 -- `link_token`, `marketing_evento_id`... Ordem das mães dentro da tabela:
 -- lead_id, conversa_id, venda_id, campanha_id, instancia_id, corretor_id,
--- empreendimento_id e depois as outras por nome. A ordem só decide qual mãe
--- aparece na mensagem de erro: TODAS são conferidas.
+-- parceiro_id, empreendimento_id e depois as outras por nome. A ordem só
+-- decide qual mãe aparece na mensagem de erro: TODAS são conferidas. O
+-- parceiro vem antes do imóvel porque a indicação dele é do grupo DELE: um
+-- imóvel de outro grupo é o que diverge, e é ele que a mensagem acusa.
 --
 -- O mapa que a seção 7 gerou no banco local em 19/10 (as 0001-0182 aplicadas
 -- do zero), tabela: colunas-mãe → tabela-mãe:
@@ -97,10 +99,10 @@
 --   lead_interacoes:           lead_id → leads; corretor_id → corretores
 --   lead_observacoes_ia:       lead_id → leads
 --   lead_tarefas:              lead_id → leads; corretor_id → corretores
---   leads:                     corretor_id → corretores; empreendimento_id,
---                              imovel_interesse_id → empreendimentos;
---                              impulsionamento_id → impulsionamentos;
---                              indicado_por → leads; parceiro_id → parceiros
+--   leads:                     corretor_id → corretores; parceiro_id → parceiros;
+--                              empreendimento_id, imovel_interesse_id →
+--                              empreendimentos; impulsionamento_id →
+--                              impulsionamentos; indicado_por → leads
 --   links_do_cliente:          lead_id → leads; corretor_id → corretores
 --   links_do_cliente_eventos:  lead_id → leads; corretor_id → corretores;
 --                              token → links_do_cliente(token)
@@ -607,7 +609,8 @@ declare
   v_colunas  text[];
   v_lista    text;
   v_ordem constant text[] := array[
-    'lead_id', 'conversa_id', 'venda_id', 'campanha_id', 'instancia_id', 'corretor_id', 'empreendimento_id'
+    'lead_id', 'conversa_id', 'venda_id', 'campanha_id', 'instancia_id', 'corretor_id', 'parceiro_id',
+    'empreendimento_id'
   ];
 begin
   for v_tabela in

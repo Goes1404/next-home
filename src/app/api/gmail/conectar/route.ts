@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { urlDeAutorizacao } from "@/lib/inbound/gmail";
 import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
 import { site } from "@/lib/site";
@@ -15,7 +16,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const corretor = await getCorretorLogado();
   if (!corretor) return NextResponse.redirect(`${site.url}/corretor/entrar`);
-  if (!gmailConfigurado()) return NextResponse.redirect(`${site.url}/corretor/perfil?gmail=nao-configurado`);
+  // O app OAuth é o da Next Home: até a fase 7, só o grupo dela liga a
+  // caixa a ele (L19). Para os outros, é como se não estivesse configurado.
+  if (!gmailConfigurado() || !integracaoLiberada(corretor.grupoId, "gmail")) {
+    return NextResponse.redirect(`${site.url}/corretor/perfil?gmail=nao-configurado`);
+  }
 
   const state = crypto.randomUUID();
   const res = NextResponse.redirect(

@@ -3,6 +3,7 @@ import { catalogoPublicado, corretoresPublicos } from "@/lib/catalogo/cache";
 import { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "@/lib/catalogo/selects";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { estagioDe } from "@/lib/estagioDeCompra";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createClient } from "@/lib/supabase/public";
 import type {
   CorretorPerfil,
@@ -36,7 +37,9 @@ export type { LinhaCorretor };
  * do link pessoal. O imóvel não tem mais dono: o contato do site passa pelo
  * porteiro (`/wa`), que sorteia entre quem tem WhatsApp conectado.
  */
-const buscarPublicados = cache(async (): Promise<Empreendimento[]> => catalogoPublicado());
+const buscarPublicados = cache(
+  async (grupoId: string = grupoDoSite()): Promise<Empreendimento[]> => catalogoPublicado(grupoId),
+);
 
 /** Minúsculas e sem acento: "Estação" e "estacao" são a mesma busca. */
 function chave(texto: string): string {
@@ -164,10 +167,16 @@ async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | und
  * aninhada (`tipologias!inner(...)`) só para o caso de dormitoriosMin.
  */
 export async function getEmpreendimentos(
+  /**
+   * O grupo dono do catálogo (L15). O site usa o do site; o webhook e os
+   * crons passam o grupo da instância, para a IA de um grupo não oferecer o
+   * imóvel de outro.
+   */
+  grupoId: string = grupoDoSite(),
   filtros?: FiltrosEmpreendimento,
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados();
+  const todos = await buscarPublicados(grupoId);
   const filtrados = filtros ? todos.filter((e) => bate(e, filtros)) : todos;
   return ordenar(filtrados, ordenacao);
 }
@@ -232,7 +241,7 @@ export async function getEmpreendimentoBySlug(
 }
 
 export async function getSlugsEmpreendimentos(): Promise<string[]> {
-  return (await catalogoPublicado()).map((e) => e.slug);
+  return (await catalogoPublicado(grupoDoSite())).map((e) => e.slug);
 }
 
 /* ---------------------------------------------------------------------------
@@ -249,11 +258,11 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * que não é uma pessoa e não deve aparecer na vitrine da equipe.
  */
 export async function getCorretores(): Promise<CorretorPerfil[]> {
-  return corretoresPublicos();
+  return corretoresPublicos(grupoDoSite());
 }
 
 export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
-  return (await corretoresPublicos()).find((c) => c.slug === slug) ?? null;
+  return (await corretoresPublicos(grupoDoSite())).find((c) => c.slug === slug) ?? null;
 }
 
 

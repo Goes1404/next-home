@@ -3,6 +3,7 @@ import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { metaAdsConfigurado } from "@/lib/metaAds";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { idadeDaSincronizacao } from "@/lib/metaDiagnostico";
 import { agregarPorCampanha } from "@/lib/admin/funilDeAnuncios";
 import { janelaDeDias } from "@/lib/admin/janelaDeDias";
@@ -106,7 +107,10 @@ function FaixaDeSincronizacao({ estado, texto }: { estado: "nunca" | "atrasado";
  * continua aqui dentro, porque a service key abaixo passa por cima da RLS.
  */
 export async function ContaDaMeta() {
-  await exigirGestorNaPagina();
+  const gestor = await exigirGestorNaPagina();
+  // A conta da Meta configurada é a da Next Home (L19): para o gestor de
+  // outro grupo, esta seção não existe (mostraria o gasto dela).
+  if (!integracaoLiberada(gestor.grupoId, "meta")) return null;
 
   const sessao = await createClient();
   // Cliques do link porteiro: a tabela é escrita pelo público (site e
@@ -141,11 +145,13 @@ export async function ContaDaMeta() {
     sessao
       .from("leads")
       .select("id, meta_campanha_id, visita_agendada_em, etapa")
+      .eq("grupo_id", gestor.grupoId)
       .in("origem", ["meta/leadads", "meta/ctwa"])
       .gte("created_at", corte.toISOString()),
     servico
       .from("cliques_whatsapp")
       .select("id", { count: "exact", head: true })
+      .eq("grupo_id", gestor.grupoId)
       .like("origem", "anuncio/%")
       // Só clique de pessoa (0174): o robô da Meta abre o link o tempo todo.
       .not("de_pessoa", "is", false)

@@ -468,12 +468,14 @@ export async function POST(req: NextRequest) {
     if (palavraDoCorretor) {
       const cadastro = await cadastrarPelaPalavraChave({
         corretorId: instancia.corretorId,
+        grupoId: instancia.grupoId,
         telefoneCliente: sender,
         teste: palavraDoCorretor === "teste",
       });
       if (cadastro.desfecho === "lead_de_outro_corretor") {
         await registrarAtivacaoEmLeadAlheio({
           corretorId: instancia.corretorId,
+          grupoId: instancia.grupoId,
           leadId: cadastro.leadId,
           telefone: sender,
         });
@@ -1040,7 +1042,9 @@ export async function POST(req: NextRequest) {
     // já qualificou) e serve de base de comparação para a nota incremental
     // ao corretor. O NOVO é extraído depois da resposta, da conversa toda.
     const [catalogo, historico, dossieAnterior] = await Promise.all([
-      getEmpreendimentos().catch((err) => {
+      // O catálogo do grupo da instância (L15): a IA de um grupo não oferece
+      // o imóvel de outro.
+      getEmpreendimentos(instancia.grupoId).catch((err) => {
         console.warn("Aviso: Falha ao carregar catálogo para o webhook (usando fallback):", err);
         return [] as Awaited<ReturnType<typeof getEmpreendimentos>>;
       }),

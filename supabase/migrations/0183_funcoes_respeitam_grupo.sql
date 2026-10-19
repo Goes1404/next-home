@@ -8,6 +8,7 @@
 --      global (slug de corretor, e-mail de acesso) é conferida por função
 --      que enxerga todos os grupos e só responde sim/não;
 --   B. (a seguir, Task 5) as funções `security definer` respeitam o grupo.
+-- A seção 4 (Task 12) põe o grupo no sorteio do porteiro `/wa`.
 --
 -- ---------------------------------------------------------------------------
 -- Por que a chave única precisa do grupo
@@ -256,5 +257,115 @@ comment on function public.slug_de_corretor_livre(text) is
   'Sim/não: o slug de corretor está livre em TODOS os grupos (0183). Só gestor.';
 comment on function public.email_de_acesso_livre(text) is
   'Sim/não: o e-mail de acesso está livre em todos os grupos e no Auth (0183). Só gestor.';
+
+-- ---------------------------------------------------------------------------
+-- 4. O porteiro sorteia dentro do grupo (Task 12, L11)
+-- ---------------------------------------------------------------------------
+-- `sortear_corretor_whatsapp` escolhe para onde vai o clique do site e do
+-- anúncio (`/wa`, `/wa/<campanha>`). Sem grupo no parâmetro, o botão da home
+-- da Next Home podia cair no número de um corretor de outro grupo, e o
+-- `preferido` (corretor do link pessoal) de outro grupo ganhava a vez.
+--
+-- A assinatura nova recebe o grupo, obrigatório (sem default: chamada sem
+-- grupo não casa com ela):
+--   - só sorteia corretor do grupo;
+--   - `preferido` de outro grupo é ignorado (não está entre os candidatos);
+--   - imóvel informado tem de ser do grupo; se não for, não há sorteio e a
+--     rota cai no escape (`/contato`), nunca no corretor de outro grupo;
+--   - o rodízio olha só cliques do grupo.
+--
+-- A assinatura ANTIGA (uuid, uuid) fica até o deploy: o código no ar a chama
+-- (sem argumento e com `p_empreendimento`), e tirá-la agora derrubaria o
+-- clique pago entre esta migration e o deploy. Ela passa a sortear SÓ no
+-- grupo 1, que é o único site que existe e o único que o código antigo
+-- serve. O roteiro da Task 9 a apaga depois do deploy (`drop function
+-- public.sortear_corretor_whatsapp(uuid, uuid)`).
+create or replace function public.sortear_corretor_whatsapp(
+  p_empreendimento uuid default null,
+  preferido uuid default null
+)
+returns table(corretor_id uuid, telefone text)
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  -- plpgsql, e não sql: a função de três argumentos é criada logo abaixo, e
+  -- o corpo de uma função sql é conferido já na criação.
+  return query
+    select s.corretor_id, s.telefone
+      from public.sortear_corretor_whatsapp(
+        '00000000-0000-0000-0000-000000000001'::uuid, p_empreendimento, preferido
+      ) s;
+end;
+$function$;
+
+create or replace function public.sortear_corretor_whatsapp(
+  p_grupo uuid,
+  p_empreendimento uuid default null,
+  preferido uuid default null
+)
+returns table(corretor_id uuid, telefone text)
+language sql
+security definer
+set search_path to 'public'
+as $function$
+  with ultimo as (
+    select k.corretor_id
+      from cliques_whatsapp k
+     where p_empreendimento is not null
+       and k.grupo_id = p_grupo
+       and k.empreendimento_id = p_empreendimento
+       and k.corretor_id is not null
+       and k.origem like 'anuncio/%'
+       and coalesce(k.de_pessoa, true)
+     order by k.created_at desc
+     limit 1
+  )
+  select c.id, i.telefone_conectado
+    from corretores c
+    join corretor_whatsapp_instancias i on i.corretor_id = c.id
+   where c.grupo_id = p_grupo
+     and c.ativo
+     and not c.em_pausa
+     -- Conta só WhatsApp (0180): não cadastra quem escreve nem tem IA.
+     and not c.so_whatsapp
+     and i.status_conexao = 'conectado'
+     and i.conectado_em is not null
+     and i.telefone_conectado is not null
+     and i.sessao_caida_em is null
+     -- Imóvel de outro grupo não sorteia ninguém: o clique vai para o escape.
+     and (
+       p_empreendimento is null
+       or exists (
+         select 1 from empreendimentos e
+          where e.id = p_empreendimento and e.grupo_id = p_grupo
+       )
+     )
+   order by
+     -- Link pessoal: escolha de quem trouxe o visitante. De outro grupo, ele
+     -- nem está entre os candidatos.
+     (c.id is distinct from preferido) asc,
+     -- Rodízio: quem recebeu o último clique deste imóvel vai para o fim.
+     (c.id in (select u.corretor_id from ultimo u)) asc,
+     random()
+   limit 1
+$function$;
+
+-- Devolve o TELEFONE PESSOAL do corretor: só a chave de serviço executa, nas
+-- duas assinaturas (a 0052 fechou isso; função nova nasce aberta a PUBLIC).
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid) from public;
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid) from anon;
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid) from authenticated;
+grant execute on function public.sortear_corretor_whatsapp(uuid, uuid) to service_role;
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) from public;
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) from anon;
+revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) from authenticated;
+grant execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) to service_role;
+
+comment on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) is
+  'Porteiro /wa (0183): sorteia, entre os conectados DO GRUPO, para onde vai o clique; preferido e imóvel de outro grupo não valem.';
+comment on function public.sortear_corretor_whatsapp(uuid, uuid) is
+  'Assinatura antiga, só para o código anterior ao deploy da 0183: sorteia no grupo 1. Sai depois do deploy.';
 
 commit;

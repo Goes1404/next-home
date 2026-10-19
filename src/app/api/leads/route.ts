@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { createClient } from "@/lib/supabase/public";
+import { grupoDoSite } from "@/lib/grupos/grupo";
+import { createServiceClient } from "@/lib/supabase/service";
 import { parseFavoritos, parseInteresse } from "@/lib/crm/pedidoDoSite";
 import { CHAVES_ATRIBUICAO, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
@@ -132,7 +133,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "É preciso concordar com o tratamento dos dados." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  /*
+   * Pela chave de serviço, com o grupo do site (L14): pela chave pública o
+   * lead não carregaria o grupo sem abrir a coluna ao `anon`, e aí qualquer
+   * um escolheria o grupo. O que vem do navegador (slug do imóvel, cookie do
+   * corretor) só vale dentro do grupo do site; fora dele o lead é gravado
+   * sem esse vínculo e a roleta decide o dono.
+   */
+  const grupo = grupoDoSite();
+  const supabase = createServiceClient();
 
   let empreendimentoId: string | null = null;
   const slug = normalizado(corpo.empreendimentoSlug);
@@ -140,6 +149,7 @@ export async function POST(req: Request) {
     const { data } = await supabase
       .from("empreendimentos")
       .select("id")
+      .eq("grupo_id", grupo)
       .eq("slug", slug)
       .eq("publicado", true)
       .maybeSingle();
@@ -178,6 +188,7 @@ export async function POST(req: Request) {
   const atribuicao = parseAtribuicao(corpo.atribuicao);
 
   const { error } = await supabase.from("leads").insert({
+    grupo_id: grupo,
     nome,
     email,
     telefone,

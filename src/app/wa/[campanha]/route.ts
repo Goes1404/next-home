@@ -43,9 +43,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   const intencao = ehChaveIntencao(bruto) ? bruto : null;
   const doSite = url.searchParams.get("de") === "site";
 
+  // Só os imóveis do grupo do site (L11): o clique pago de um grupo não
+  // vira lead no outro por ter o mesmo apelido.
+  const grupo = grupoDoSite();
   const { data: imoveis } = await supabase
     .from("empreendimentos")
     .select("id, slug, nome, nomes_alternativos")
+    .eq("grupo_id", grupo)
     .eq("publicado", true);
 
   // A linha crua do banco usa snake_case; sem este mapeamento o apelido
@@ -77,7 +81,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     await supabase.from("cliques_whatsapp").insert({
       // Link com typo não tem imóvel nem corretor: o grupo vai explícito, o
       // do site (0183).
-      grupo_id: grupoDoSite(),
+      grupo_id: grupo,
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
       origem: `${doSite ? "site" : "anuncio"}/${campanha.slice(0, 80)}`,
@@ -110,15 +114,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   const doLink = await getCorretorAtivo();
   const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
   let sorteio: Sorteio | null = numeroDoLink ? { corretor_id: doLink!.id, telefone: numeroDoLink } : null;
-  const primeiro = sorteio
-    ? null
-    : await supabase.rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id }).maybeSingle<Sorteio>();
-  if (primeiro) sorteio = primeiro.data;
-  const erroDoSorteio = primeiro?.error;
-  if (erroDoSorteio) {
-    // Banco sem a assinatura nova (0117/0130): sorteia
-    // pela versão antiga em vez de perder o clique pago.
-    ({ data: sorteio } = await supabase.rpc("sortear_corretor_whatsapp").maybeSingle<Sorteio>());
+  if (!sorteio) {
+    // Sem a versão de reserva sem argumento (0183): ela sorteava fora do
+    // grupo. Se o sorteio falhar, o clique vai para o escape (`/contato`),
+    // que tem formulário.
+    const { data, error } = await supabase
+      .rpc("sortear_corretor_whatsapp", { p_grupo: grupo, p_empreendimento: alvo.id })
+      .maybeSingle<Sorteio>();
+    if (error) console.error("[porteiro] sorteio falhou:", error.message);
+    sorteio = data;
   }
 
   const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: alvo.nome, intencao, complemento: url.searchParams.get("m") });
