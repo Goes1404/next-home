@@ -530,13 +530,29 @@ export async function obterOuCriarConversa(params: {
    */
   const variantes = candidatosTelefone(params.telefoneCliente);
 
-  const { data: encontradas } = await supabase
-    .from("whatsapp_conversas")
-    .select(SELECT_CONVERSA)
-    .eq("corretor_id", params.corretorId)
-    .in("telefone_cliente", variantes)
-    .order("created_at", { ascending: true })
-    .limit(1);
+  /*
+   * Erro de leitura NUNCA vira "não existe" (19/10/2026). O `error` era
+   * descartado: numa piscada do banco, ou na trava de uma migration que cria
+   * policy nesta tabela (0182/0184), a conversa existente virava `null` e o
+   * webhook respondia 200 com `numero_sem_lead_cadastrado` — o provedor não
+   * reentrega 200, e a mensagem do cliente sumia sem rastro. Repete o que é
+   * passageiro; persistindo, LANÇA para o webhook responder 5xx. A mensagem
+   * do erro não leva telefone.
+   */
+  const { data: encontradas, error: erroDaLeitura } = await comRetentativa(
+    "conversa do WhatsApp",
+    () =>
+      supabase
+        .from("whatsapp_conversas")
+        .select(SELECT_CONVERSA)
+        .eq("corretor_id", params.corretorId)
+        .in("telefone_cliente", variantes)
+        .order("created_at", { ascending: true })
+        .limit(1),
+  );
+  if (erroDaLeitura) {
+    throw new Error(`Falha ao ler a conversa do WhatsApp: ${erroDaLeitura.message}`);
+  }
 
   const existente = encontradas?.[0] ?? null;
 

@@ -495,18 +495,37 @@ export async function POST(req: NextRequest) {
      * transcrever antes de saber se é lead é exatamente o que a 0111 veio
      * impedir.
      */
-    const conversa = await obterOuCriarConversa({
-      corretorId: instancia.corretorId,
-      telefoneCliente: sender,
-      nomeCliente: payload.senderName || null,
-      /*
-       * Conta só WhatsApp (0180): toda conversa do número aparece no painel,
-       * e ninguém vira lead — nem pelo convite. A trava da 0111 continua no
-       * banco para todas as outras contas.
-       */
-      convite: instancia.soWhatsapp ? null : convite,
-      semLead: instancia.soWhatsapp,
-    });
+    /*
+     * Leitura que falha NÃO é "número sem lead" (19/10/2026). Antes, um erro
+     * do banco (piscada, ou a trava de uma migration que cria policy em
+     * whatsapp_conversas) virava `null` e caía no 200 "ignorado" logo
+     * abaixo — o provedor não reentrega 200 e a mensagem sumia sem rastro.
+     * Agora o porteiro lança, e aqui vira 503: o provedor reentrega, e a
+     * deduplicação por `provider_message_id` impede gravar duas vezes. O log
+     * não leva o texto nem o telefone inteiro.
+     */
+    let conversa: Awaited<ReturnType<typeof obterOuCriarConversa>>;
+    try {
+      conversa = await obterOuCriarConversa({
+        corretorId: instancia.corretorId,
+        telefoneCliente: sender,
+        nomeCliente: payload.senderName || null,
+        /*
+         * Conta só WhatsApp (0180): toda conversa do número aparece no painel,
+         * e ninguém vira lead — nem pelo convite. A trava da 0111 continua no
+         * banco para todas as outras contas.
+         */
+        convite: instancia.soWhatsapp ? null : convite,
+        semLead: instancia.soWhatsapp,
+      });
+    } catch (erroDoPorteiro) {
+      console.error("[porteiro] leitura falhou; 503 para o provedor reentregar", {
+        corretorId: instancia.corretorId,
+        finalDoTelefone: sender.slice(-4),
+        erro: erroDoPorteiro instanceof Error ? erroDoPorteiro.message : String(erroDoPorteiro),
+      });
+      return NextResponse.json({ ok: false, error: "leitura_do_porteiro_falhou" }, { status: 503 });
+    }
 
     /*
      * Cadastro pelo clique no link SEM a mensagem pronta (0143) foi
