@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { PLANOS, ROTULO_DO_PLANO, ROTULO_DO_TIPO, TIPOS_DE_GRUPO } from "@/lib/plataforma/rotulosDoGrupo";
+import { copiarTexto } from "@/lib/ui/copiarTexto";
 import { criarGrupoComPrimeiroAcesso } from "../../acoes";
 
 const VAZIO = {
@@ -29,7 +30,28 @@ const CLASSE_DO_CAMPO =
 
 /** O convite que acabou de sair: e-mail enviado, ou o link para mandar à mão. */
 function CartaoDoConvite({ criado, aoNovo }: { criado: Criado; aoNovo: () => void }) {
-  const [copiado, setCopiado] = useState(false);
+  // "Copiado!" só quando o navegador aceitou; recusado, o link fica selecionado
+  // na tela para copiar à mão (Ctrl+C, ou segurar o dedo no celular).
+  const [copia, setCopia] = useState<"nada" | "copiado" | "falhou">("nada");
+  const linkRef = useRef<HTMLParagraphElement>(null);
+
+  const copiar = async () => {
+    if (await copiarTexto(criado.url!)) {
+      setCopia("copiado");
+      setTimeout(() => setCopia("nada"), 2500);
+      return;
+    }
+    setCopia("falhou");
+    const no = linkRef.current;
+    const selecao = typeof window !== "undefined" ? window.getSelection() : null;
+    if (no && selecao) {
+      const faixa = document.createRange();
+      faixa.selectNodeContents(no);
+      selecao.removeAllRanges();
+      selecao.addRange(faixa);
+    }
+  };
+
   return (
     <div role="status" className="border-ok-linha bg-ok-lavado rounded-2xl border p-5">
       <h2 className="text-fluid-sm text-titulo font-bold">Grupo {criado.nome} criado</h2>
@@ -41,23 +63,28 @@ function CartaoDoConvite({ criado, aoNovo }: { criado: Criado; aoNovo: () => voi
             Para {criado.email}: o e-mail não está configurado; mande este link pelo WhatsApp. Ele vale por 24
             horas.
           </p>
-          <p className="text-fluid-xs bg-superficie border-linha text-corpo mt-3 rounded-xl border p-3 break-all">
+          <p
+            ref={linkRef}
+            className="text-fluid-xs bg-superficie border-linha text-corpo mt-3 rounded-xl border p-3 break-all select-all"
+          >
             {criado.url}
           </p>
+          {copia === "falhou" && (
+            <p role="alert" className="text-fluid-xs text-corpo mt-2">
+              Não deu para copiar sozinho: o link acima está selecionado. Copie com Ctrl+C, ou segure o dedo sobre ele
+              no celular.
+            </p>
+          )}
         </>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         {!criado.enviado && criado.url && (
           <button
             type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(criado.url!);
-              setCopiado(true);
-              setTimeout(() => setCopiado(false), 2500);
-            }}
+            onClick={copiar}
             className="text-fluid-xs bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 cursor-pointer items-center rounded-lg px-4 font-medium"
           >
-            {copiado ? "Copiado!" : "Copiar link"}
+            {copia === "copiado" ? "Copiado!" : "Copiar link"}
           </button>
         )}
         <Link
