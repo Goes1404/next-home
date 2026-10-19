@@ -93,3 +93,52 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
     })),
   );
 }
+
+/** O cadastro de um grupo, como a tela de grupo da plataforma mostra e edita. */
+export type CadastroDeGrupo = ResumoDeGrupo & {
+  contatoNome: string | null;
+  contatoEmail: string | null;
+  contatoTelefone: string | null;
+  razaoSocial: string | null;
+  documento: string | null;
+  creci: string | null;
+  creciTipo: "J" | "F" | null;
+  encarregadoNome: string | null;
+  encarregadoEmail: string | null;
+};
+
+/**
+ * Um grupo pelo id, com o cadastro e os números; `null` se não existe. A
+ * prova não é lida: existe para o chamador não conseguir pular a guarda.
+ */
+export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: string): Promise<CadastroDeGrupo | null> {
+  const servico = createServiceClient();
+  const { data: g, error } = await servico
+    .from("grupos")
+    .select(
+      "id, nome, slug, tipo, plano, situacao, criado_em, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email",
+    )
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (error) throw new Error(`Falha ao ler o grupo: ${error.message}`);
+  if (!g) return null;
+  return {
+    id: g.id,
+    nome: g.nome,
+    slug: g.slug,
+    tipo: g.tipo,
+    plano: g.plano,
+    situacao: g.situacao,
+    criadoEm: g.criado_em,
+    contatoNome: g.contato_cobranca_nome,
+    contatoEmail: g.contato_cobranca_email,
+    contatoTelefone: g.contato_cobranca_telefone,
+    razaoSocial: g.razao_social,
+    documento: g.documento,
+    creci: g.creci,
+    creciTipo: g.creci_tipo,
+    encarregadoNome: g.encarregado_lgpd_nome,
+    encarregadoEmail: g.encarregado_lgpd_email,
+    ...(await contarDoGrupo(servico, g.id)),
+  };
+}

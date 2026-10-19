@@ -184,6 +184,7 @@ const MAPA: Record<string, Entrada> = {
 
   // ── Área da plataforma: lê vários grupos, só depois da guarda dela ────────
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
+  "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso e edita o cadastro dele; a chave só depois de exigirAdminDaPlataformaNaAcao" },
 };
 
 /** A definição da chave: não é uso. */

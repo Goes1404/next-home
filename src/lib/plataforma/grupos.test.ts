@@ -63,6 +63,10 @@ function consulta(tabela: string) {
     order() {
       return q;
     },
+    maybeSingle() {
+      const id = c.filtros.find((f) => f.startsWith("eq:id="))?.split("=")[1];
+      return Promise.resolve({ data: GRUPOS.find((g) => g.id === id) ?? null, error: null });
+    },
     then(ok: (v: unknown) => unknown, falha?: (e: unknown) => unknown) {
       const resposta =
         tabela === "grupos"
@@ -80,7 +84,7 @@ vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({ from: (tabela: string) => consulta(tabela) }),
 }));
 
-const { listarGruposDaPlataforma } = await import("./grupos");
+const { listarGruposDaPlataforma, lerGrupoDaPlataforma } = await import("./grupos");
 
 const PROVA = { userId: "usuario-admin" };
 
@@ -152,5 +156,32 @@ describe("listarGruposDaPlataforma", () => {
   it("contagem que falha derruba a lista em vez de mostrar zero", async () => {
     falharContagem = true;
     await expect(listarGruposDaPlataforma(PROVA)).rejects.toThrow(/tempo esgotado/);
+  });
+});
+
+describe("lerGrupoDaPlataforma", () => {
+  beforeEach(() => {
+    chamadas.length = 0;
+    falharContagem = false;
+  });
+
+  it("um grupo lê o cadastro e conta, sem tabela de conversa nem de lead", async () => {
+    const grupo = await lerGrupoDaPlataforma(PROVA, "g2");
+    expect(grupo).toMatchObject({ id: "g2", nome: "Fulana Corretora", corretoresAtivos: 6, comLogin: 3, numerosConectados: 4 });
+    expect([...new Set(chamadas.map((c) => c.tabela))].sort()).toEqual([
+      "corretor_whatsapp_instancias",
+      "corretores",
+      "grupos",
+    ]);
+    const colunas = chamadas.find((c) => c.tabela === "grupos")!.select!.split(",").map((s) => s.trim());
+    expect(colunas).toEqual(expect.arrayContaining(["contato_cobranca_email", "documento", "encarregado_lgpd_email"]));
+    for (const c of chamadas.filter((c) => c.tabela !== "grupos")) {
+      expect(c.opcoes).toEqual({ count: "exact", head: true });
+    }
+  });
+
+  it("grupo que não existe volta nulo, sem contar nada", async () => {
+    expect(await lerGrupoDaPlataforma(PROVA, "nao-existe")).toBeNull();
+    expect(chamadas.map((c) => c.tabela)).toEqual(["grupos"]);
   });
 });

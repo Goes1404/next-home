@@ -1,20 +1,10 @@
 import type { Metadata } from "next";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import Link from "next/link";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
+import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 
 export const metadata: Metadata = { title: "Grupos" };
-
-const TIPO: Record<ResumoDeGrupo["tipo"], string> = {
-  imobiliaria: "Imobiliária",
-  independente: "Corretor independente",
-};
-
-const PLANO: Record<ResumoDeGrupo["plano"], string> = {
-  essencial: "Essencial",
-  profissional: "Profissional",
-  imobiliaria: "Imobiliária",
-  custo: "Preço de custo",
-};
 
 /** Classes por extenso: montada em tempo de execução, a classe não existiria. */
 const SITUACAO: Record<ResumoDeGrupo["situacao"], { rotulo: string; classe: string }> = {
@@ -36,12 +26,20 @@ export default async function PlataformaPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div>
-        <p className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</p>
-        <h1 className="font-display text-titulo text-fluid-2xl mt-1">Grupos</h1>
-        <p className="text-fluid-sm text-apoio mt-2">
-          {grupos.length === 1 ? "1 grupo cadastrado." : `${grupos.length} grupos cadastrados.`}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</p>
+          <h1 className="font-display text-titulo text-fluid-2xl mt-1">Grupos</h1>
+          <p className="text-fluid-sm text-apoio mt-2">
+            {grupos.length === 1 ? "1 grupo cadastrado." : `${grupos.length} grupos cadastrados.`}
+          </p>
+        </div>
+        <Link
+          href="/plataforma/grupos/novo"
+          className="text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 items-center rounded-xl px-4 font-medium"
+        >
+          Novo grupo
+        </Link>
       </div>
 
       {grupos.length === 0 ? (
@@ -54,7 +52,11 @@ export default async function PlataformaPage() {
               <li key={g.id} className="cartao flex min-w-0 flex-col gap-4 p-5">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h2 className="text-titulo text-fluid-lg font-medium break-words">{g.nome}</h2>
+                    <h2 className="text-titulo text-fluid-lg font-medium break-words">
+                      <Link href={`/plataforma/grupos/${g.id}`} className="hover:text-acento inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                        {g.nome}
+                      </Link>
+                    </h2>
                     <p className="text-fluid-xs text-apoio break-all">{g.slug}</p>
                   </div>
                   <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${situacao.classe}`}>
@@ -65,11 +67,11 @@ export default async function PlataformaPage() {
                 <dl className="text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
                     <dt className="text-apoio text-fluid-xs">Tipo</dt>
-                    <dd className="text-titulo">{TIPO[g.tipo]}</dd>
+                    <dd className="text-titulo">{ROTULO_DO_TIPO[g.tipo]}</dd>
                   </div>
                   <div>
                     <dt className="text-apoio text-fluid-xs">Plano</dt>
-                    <dd className="text-titulo">{PLANO[g.plano]}</dd>
+                    <dd className="text-titulo">{ROTULO_DO_PLANO[g.plano]}</dd>
                   </div>
                   <div>
                     <dt className="text-apoio text-fluid-xs">Criado em</dt>

@@ -125,6 +125,81 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
     });
   });
 
+  // Task 6: o caminho da tela de "novo grupo" (`criarGrupoComPrimeiroAcesso`)
+  // pela chave de serviço — grupo, ficha do primeiro acesso como gestora e,
+  // se o convite falha, o desfazer na ordem das chaves estrangeiras.
+  it("grupo criado pela plataforma tem taxas e fiscal", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const operador = await criarUsuario(tx, "operador@plataforma.teste");
+      const convidado = await criarUsuario(tx, "ana@independente.teste");
+
+      await comoServico(tx, operador, async (s) => {
+        const [{ id }] = await s<{ id: string }[]>`
+          select public.criar_grupo(
+            'Ana Corretora', 'ana-corretora', 'independente', 'essencial',
+            ${s.json({ nome: "Ana", email: "ana@independente.teste", telefone: "5511987654321" })}, ${operador}
+          ) as id
+        `;
+        // A ficha nasce pela chave de serviço, com o grupo explícito (sem
+        // sessão, o gatilho não teria de onde tirá-lo).
+        const [ficha] = await s<{ id: string; grupo_id: string; papel: string }[]>`
+          insert into public.corretores (nome, creci, whatsapp, slug, ativo, papel, grupo_id)
+          values ('Ana', '12345-F', '5511987654321', 'ana-corretora-ficha', true, 'gestor', ${id})
+          returning id, grupo_id, papel
+        `;
+        expect(ficha).toMatchObject({ grupo_id: id, papel: "gestor" });
+        await s`update public.corretores set user_id = ${convidado} where id = ${ficha.id} and grupo_id = ${id}`;
+        await s`reset role`;
+
+        const [taxas] = await s`select count(*)::int as n from public.parametros_credito where grupo_id = ${id}`;
+        const [fiscal] = await s`select count(*)::int as n from public.fiscal_config where grupo_id = ${id}`;
+        expect({ taxas: taxas.n, fiscal: fiscal.n }).toEqual({ taxas: 1, fiscal: 1 });
+
+        // Independente é gestor do próprio grupo (§18): a sessão dele diz isso.
+        const [eu] = await comoUsuario(s, convidado, (u) => u`
+          select public.eh_gestor() as gestor, public.grupo_atual() = ${id} as do_grupo
+        `);
+        expect(eu).toEqual({ gestor: true, do_grupo: true });
+      });
+    });
+  });
+
+  it("desfazer o grupo criado libera o endereço", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const operador = await criarUsuario(tx, "operador@plataforma.teste");
+
+      await comoServico(tx, operador, async (s) => {
+        const criar = () => s<{ id: string }[]>`
+          select public.criar_grupo(
+            'Imobiliária Silva', 'imobiliaria-silva', 'imobiliaria', 'profissional', '{}'::jsonb, ${operador}
+          ) as id
+        `;
+        const [{ id }] = await criar();
+        await s`
+          insert into public.corretores (nome, creci, whatsapp, slug, ativo, papel, grupo_id)
+          values ('Ana', '12345', '5511987654321', 'ana-silva-desfazer', true, 'gestor', ${id})
+        `;
+
+        // O grupo não sai antes das linhas dele: nenhuma chave estrangeira
+        // para `grupos` apaga em cascata.
+        await expect(s.savepoint((sp) => sp`delete from public.grupos where id = ${id}`)).rejects.toThrow(
+          /foreign key/,
+        );
+
+        // A ordem de `desfazerGrupo` (src/app/plataforma/acoes.ts).
+        await s`delete from public.admin_eventos where grupo_id = ${id}`;
+        await s`delete from public.parametros_credito where grupo_id = ${id}`;
+        await s`delete from public.fiscal_config where grupo_id = ${id}`;
+        await s`delete from public.corretores where grupo_id = ${id}`;
+        const apagados = await s`delete from public.grupos where id = ${id} returning id`;
+        expect(apagados).toHaveLength(1);
+
+        const [{ id: deNovo }] = await criar();
+        expect(deNovo).not.toBe(id);
+      });
+    });
+  });
+
   it("criar_grupo recusa slug reservado, fora do formato e repetido", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const operador = await criarUsuario(tx, "operador@plataforma.teste");
