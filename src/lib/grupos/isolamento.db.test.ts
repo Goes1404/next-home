@@ -53,7 +53,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       select id, slug, nome, tipo from grupos where id = ${GRUPO_NEXT_HOME_ID}
     `;
     expect(linhas).toEqual([
-      { id: GRUPO_NEXT_HOME_ID, slug: "provocacao-do-ci", nome: "Next Home", tipo: "imobiliaria" },
+      { id: GRUPO_NEXT_HOME_ID, slug: "next-home", nome: "Next Home", tipo: "imobiliaria" },
     ]);
   });
 
