@@ -193,4 +193,74 @@ describe("tela de trabalho mostra a carteira de quem abriu o painel", () => {
       }
     }
   });
+
+  // As duas guardas abaixo varrem TODO arquivo de /corretor/admin — não uma
+  // lista — porque a regressão da rodada 1 morou exatamente fora do que a
+  // guarda acima enxerga: link sem query string e chamada sem argumento.
+  const doAdmin = arquivos(join(process.cwd(), "src", "app", "corretor"))
+    .map(relativo)
+    .filter((r) => r.includes("/(painel)/admin/"));
+
+  it("nenhum link da Administração cai na lista sem dizer de quem é a carteira", () => {
+    expect(doAdmin.length).toBeGreaterThan(10);
+    const infratores: string[] = [];
+    let links = 0;
+    for (const arquivo of doAdmin) {
+      const codigo = semComentarios(readFileSync(arquivo, "utf8"));
+      // `/corretor/leads` fechando a string (sem `?`), ou com `?` sem
+      // `corretor=` como primeiro parâmetro. `revalidatePath` não é link.
+      for (const m of codigo.matchAll(/(revalidatePath\(\s*)?["'`]\/corretor\/leads(\?[^"'`]*)?["'`]/g)) {
+        if (m[1]) continue;
+        links++;
+        const qs = m[2] ?? "";
+        if (/^\?corretor=/.test(qs)) continue;
+        infratores.push(`${arquivo}: /corretor/leads${qs}`);
+      }
+    }
+    expect(links).toBeGreaterThan(0);
+    expect(
+      infratores,
+      "Link da Administração para /corretor/leads sem corretor=: desde o hotfix a lista " +
+        "abre só os leads do gestor, e o número da equipe não bate com o destino. " +
+        "Use /corretor/leads?corretor=equipe (ou ?corretor=<id>).",
+    ).toEqual([]);
+  });
+
+  it("a Administração pede a equipe ao chamar as leituras que recortam pela sessão", () => {
+    // Sem argumento, estas funções devolvem a carteira de quem abriu o painel.
+    // Na Administração isso é sempre engano: foi o que fez "Contatos recentes"
+    // de Leads da equipe mostrar só os leads do ADM.
+    const FUNCOES = [
+      "getPaginaDeLeads",
+      "getContagemPorEtapa",
+      "contarLeadsArquivados",
+      "recorteDaVisao",
+      "getCarteiraDaVisao",
+      "getLeadsDoFunil",
+      "getLeadsDeVisita",
+      "getVisitasDeHoje",
+    ];
+    const infratores: string[] = [];
+    let chamadas = 0;
+    for (const arquivo of doAdmin) {
+      const codigo = semComentarios(readFileSync(arquivo, "utf8"));
+      for (const fn of FUNCOES) {
+        for (const m of codigo.matchAll(new RegExp(`\\b${fn}\\(([^)]*)\\)`, "g"))) {
+          chamadas++;
+          // Só vale pedido explícito: a equipe, ou um corretor por id.
+          if (!/CARTEIRA_EQUIPE|["'`]equipe["'`]|corretorId\s*:/.test(m[1])) {
+            infratores.push(`${arquivo}: ${m[0]}`);
+          }
+        }
+      }
+    }
+    // Leads da equipe chama getPaginaDeLeads: se a varredura não achar nem
+    // essa, o regex quebrou e o teste passaria vazio.
+    expect(chamadas).toBeGreaterThan(0);
+    expect(
+      infratores,
+      "Chamada na Administração sem pedir a equipe: devolve só a carteira do gestor. " +
+        "Passe { corretorId: CARTEIRA_EQUIPE } (ou CARTEIRA_EQUIPE como pedido).",
+    ).toEqual([]);
+  });
 });

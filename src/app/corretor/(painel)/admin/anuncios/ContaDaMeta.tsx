@@ -296,7 +296,7 @@ export async function ContaDaMeta() {
           rotulo="Leads de anúncio no CRM"
           valor={String(leadsCrm ?? 0)}
           detalhe="o que chegou de verdade"
-          href="/corretor/leads"
+          href="/corretor/leads?corretor=equipe"
         />
         <Kpi
           rotulo="Custo por lead (CRM)"
