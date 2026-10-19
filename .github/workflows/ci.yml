@@ -83,6 +83,72 @@ jobs:
       - name: Bundle (catraca)
         run: node scripts/bundleTeto.mjs
 
+  # ## Por que este job nasceu em 19/10/2026
+  #
+  # A plataforma passou a ter mais de um grupo (imobiliária) no MESMO banco,
+  # e a promessa é que nenhum dado de um grupo aparece para outro. Quem
+  # cumpre essa promessa é o banco: RLS, gatilhos `<tabela>_00_grupo` e as
+  # funções que filtram por `grupo_atual()`. Nada disso existe em TypeScript,
+  # então tipo, teste comum e build passam verdes com o isolamento quebrado.
+  #
+  # A suíte que mede isso (`*.db.test.ts`) PULA sem DB_TESTE_URL, para
+  # `npm test` continuar rodando sem Docker. Ou seja: no job de cima ela
+  # sempre aparece como "skipped", e só rodaria se alguém lembrasse de subir
+  # o banco local. Vazamento entre grupos é o defeito que não pode falhar
+  # calado — por isso ele ganhou esteira própria.
+  #
+  # O banco é montado do zero a cada execução, só com supabase/migrations
+  # (o mesmo `npm run db:teste` da máquina de quem desenvolve). Nunca fala
+  # com produção: o CLI só enxerga o Docker do runner.
+  isolamento:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # `bash` explícito liga o pipefail: sem ele, o `| tee` abaixo devolveria
+    # o status do tee e um banco que não subiu passaria por banco de pé.
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # A URL sai da própria saída do script, não de uma cópia aqui: se a
+      # porta mudar em config.toml, os dois não divergem. Sem a linha, o
+      # grep falha e o job para aqui.
+      - name: Subir o banco de teste
+        run: |
+          npm run db:teste | tee db-teste.log
+          grep '^DB_TESTE_URL=' db-teste.log >> "$GITHUB_ENV"
+
+      # Suíte que pula inteira devolve sucesso (o vitest sai com 0 quando
+      # tudo é "skipped"). O relatório JSON é conferido para o verde
+      # significar testes rodados: nenhum pulado e pelo menos um passando.
+      - name: Suíte de isolamento
+        run: |
+          : "${DB_TESTE_URL:?o db:teste não imprimiu DB_TESTE_URL}"
+          npm run test:isolamento -- --reporter=default --reporter=json --outputFile=isolamento.json
+          node -e '
+            const r = require("./isolamento.json");
+            console.log(`passaram: ${r.numPassedTests}, pulados: ${r.numPendingTests}, falharam: ${r.numFailedTests}`);
+            if (r.numPassedTests === 0 || r.numPendingTests > 0) {
+              console.error("A suíte de isolamento não rodou de verdade (testes pulados).");
+              process.exit(1);
+            }
+          '
+
+      - name: Derrubar o banco de teste
+        if: always()
+        run: npm run db:teste:parar
+
 # O que esta esteira NÃO roda, e por quê:
 #
 # - `npm run test:e2e` — os specs do painel exigem credencial REAL
