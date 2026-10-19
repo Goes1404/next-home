@@ -9247,3 +9247,25 @@ Nota: [[dominio-proprio-nexthomeimoveis]].
   OAuth do Gmail); trocar antes manda gente para um endereço morto.
 - **O retorno do Gmail muda junto**: acrescentar
   `https://nexthomeimoveis.com/api/gmail/retorno` no Google Cloud Console.
+
+## A plataforma vira multi-grupo (decisão, 18/10/2026)
+
+Nota: [[plataforma-multi-grupo]]. Desenho:
+`docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`.
+
+- **Substitui a decisão de 26/09** ("uma instalação por cliente"): para
+  corretor independente, banco e projeto Vercel por cliente custam mais do
+  que ele paga. Agora é um banco só, com grupos (imobiliária = grupo;
+  independente = grupo de uma pessoa). A Next Home vira o grupo 1, a preço
+  de custo.
+- **Gestor e administrador da plataforma nunca leem conversa**: a ficha do
+  lead passa a ser o que o gestor vê e o que sobrevive à saída do corretor,
+  então ficha incompleta vira defeito de produto.
+- **A resposta da IA é mais de dois terços do custo de qualquer plano.** No
+  pior caso (cota inteira) o Profissional de R$ 147 empata. Medir o custo por
+  resposta e o cache de prompt antes de publicar preço.
+- **Região do banco é `ca-central-1` e não muda depois de criada.** Se a
+  LGPD exigir Brasil, a migração só é barata antes do segundo grupo entrar.
+- **Leitura pública pela chave `anon` vira vazamento num banco único**: ela
+  listaria catálogo e telefones de todos os grupos. Passa ao servidor,
+  escopada pelo `Host`.

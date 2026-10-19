@@ -6,11 +6,15 @@ status: stable
 custou: baixo
 codigo: src/lib/site.ts
 created: 2026-09-26
-updated: 2026-09-26
-summary: Decisão de produto de 26/09 — terminar o CRM da Next Home completo e, depois, derivar dele uma versão geral para vender, com funcionalidades limitadas e uma instalação (banco + projeto Vercel) por imobiliária. Nada de multi-empresa num banco só.
+updated: 2026-10-18
+summary: SUBSTITUÍDA em 18/10/2026 por [[plataforma-multi-grupo]]. Decisão de produto de 26/09 — terminar o CRM da Next Home completo e, depois, derivar dele uma versão geral para vender, com funcionalidades limitadas e uma instalação (banco + projeto Vercel) por imobiliária. Nada de multi-empresa num banco só.
 ---
 
 # A Next Home é o espelho da versão geral
+
+> **Substituída em 18/10/2026.** O produto passou a ser multi-empresa num
+> banco só. Ver [[plataforma-multi-grupo]]. O texto abaixo fica como
+> história da decisão anterior.
 
 Decisão do dono do produto (26/09/2026):
 

@@ -58,6 +58,8 @@ F0–F6.
 - [[memoria-da-conversa-e-ficha-viva]] — a IA preenche a ficha, e o que o corretor edita fica protegido (0110)
 
 ## Administração (gestor)
+
+- [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
 - [[papel-nunca-ganha-grant-update]]
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 - [[adm-nao-le-conversa-alheia]] — perfis separados: o ADM tem tudo menos a conversa de outro corretor, que a RLS fecha (0134); só o ADM exclui lead e desconecta número (30/09)
