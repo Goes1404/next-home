@@ -304,7 +304,10 @@ export function ListaLeads({
               onChange={(e) => atualizarUrl({ corretor: e.target.value })}
               className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
             >
-              <option value="">Todos os corretores</option>
+              {/* Vazio = os MEUS, também para o gestor (hotfix de 19/10/2026): a
+                  equipe inteira é um pedido explícito, nunca o padrão. */}
+              <option value="">Os meus leads</option>
+              <option value="equipe">Toda a equipe</option>
               {equipe.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}

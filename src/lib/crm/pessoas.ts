@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado, sanearBusca } from "@/lib/corretorSessao";
+import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import type { EtapaFunil } from "@/lib/types";
@@ -65,7 +66,13 @@ export async function getPaginaDePessoas(
     .select(
       "pessoa_id, conversa_id, lead_id, nome, telefone, etapa, ultima_atividade, previa, nao_lidas, tem_conversa",
       { count: "exact" },
-    );
+    )
+    /*
+     * A lista é de quem abriu o painel, inclusive do gestor (hotfix de
+     * 19/10/2026): na metade "lead sem conversa" da view a RLS dele abre a
+     * equipe inteira. Sem sessão, um id que não casa com ninguém.
+     */
+    .eq("corretor_id", corretor?.id ?? CORRETOR_NENHUM);
   if (soWhatsapp) {
     query = query.eq("tem_conversa", true);
   } else {

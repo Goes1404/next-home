@@ -10425,3 +10425,24 @@ Nota: [[previa-do-link-do-corretor]].
 - 0181–0187 estão reservadas para a branch da fase 2 (`RESERVADOS` em
   `migrations.test.ts`); ao juntar, a 0187 precisa incluir `chamada_do_link`
   entre as colunas públicas para o `anon`.
+
+## O ADM via a carteira da equipe nas telas de trabalho (19/10/2026)
+
+Nota: [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]].
+
+- **"A RLS recorta" vale para segurança, não para a tela.** As consultas de
+  Início, Lista, Funil, Visitas, tarefas e anotações não tinham
+  `.eq("corretor_id", …)`; para o gestor a policy abre a equipe inteira, e
+  o ADM não conseguia trabalhar como corretor. Hoje toda leitura de lista ou
+  contagem exige `recorteDaVisao()` (`corretorSessao.ts`).
+- **Só o gestor troca de carteira, e só pela URL**: `?corretor=<id>` ou
+  `?corretor=equipe` (`?dono=sem` implica equipe). Link da Administração
+  para a lista leva `corretor=equipe`, senão o número da equipe abre só os
+  leads do gestor.
+- **Guarda que lê o código**: `carteiraNaTelaDeTrabalho.test.ts`, com
+  exceções escritas (Contas, placar da equipe, busca de lead na venda,
+  Anúncios pagos).
+- **Na branch de produção, 3 testes falham no Windows também sem mudança
+  nenhuma** (`botoesComPista`, `paradaSemIA`), e `next build` local para no
+  type-check pelo par `PixelMeta.tsx`/`pixelMeta.ts`. Não é o seu código.
+

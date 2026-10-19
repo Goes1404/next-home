@@ -71,6 +71,7 @@ F0–F6.
 - [[perfil-de-demonstracao-do-corretor]] — corretor fictício para apresentação, isolado e com script de remoção (07/10)
 - [[painel-da-tela-de-vendas]] — indicadores e gráficos de VGV, comissão e imóveis na tela de Vendas (07/10)
 - [[mascote-da-ia]] — o botão do consultor virou o mascote da IA, sem fundo (07/10)
+- [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]] — o ADM via a carteira da equipe inteira nas telas de trabalho; agora toda lista/contagem recorta pelo usuário logado, e só o gestor pede outra carteira pela URL (19/10)
 - [[adm-nao-le-conversa-alheia]] — perfis separados: o ADM tem tudo menos a conversa de outro corretor, que a RLS fecha (0134); só o ADM exclui lead e desconecta número (30/09)
 - [[adm-exclui-lead-direto]] — excluir lead direto na lista ativa e na ficha, sem arquivar antes, com confirmação; corretor exclui os seus, ADM todos (0145, 02/10)
 - [[nome-da-agenda-chega-como-pushname]] — nome salvo na agenda chega no mesmo pushName do perfil; diagnóstico compara com o nome da conversa (03/10, em teste)
