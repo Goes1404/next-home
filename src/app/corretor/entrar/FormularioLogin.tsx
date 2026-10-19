@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { entrar } from "@/app/corretor/actions";
 import { CampoSenha } from "@/components/ui/CampoSenha";
@@ -134,6 +135,13 @@ export function FormularioLogin() {
       >
         {pendente ? "Entrando…" : "Entrar"}
       </button>
+
+      <Link
+        href="/corretor/esqueci-a-senha"
+        className="text-fluid-sm text-corpo hover:text-titulo flex min-h-11 items-center justify-center underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
+      >
+        Esqueci a senha
+      </Link>
     </form>
   );
 }

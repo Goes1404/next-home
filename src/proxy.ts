@@ -6,6 +6,9 @@ import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
 
 const TRINTA_DIAS_EM_SEGUNDOS = 60 * 60 * 24 * 30;
 
+/** As telas de `/corretor` que abrem sem sessão. */
+const TELAS_SEM_LOGIN = new Set(["/corretor/entrar", "/corretor/esqueci-a-senha"]);
+
 /** Opções do cookie de atribuição — as mesmas nos dois caminhos abaixo. */
 const OPCOES_COOKIE_CORRETOR = {
   maxAge: TRINTA_DIAS_EM_SEGUNDOS,
@@ -53,7 +56,10 @@ export async function proxy(request: NextRequest) {
   // que mandaria todo visitante para a tela de login (e, agora, faria a
   // vitrine pagar o Auth que só o painel precisa).
   const areaDoCorretor = pathname === "/corretor" || pathname.startsWith("/corretor/");
-  const precisaLogin = areaDoCorretor && pathname !== "/corretor/entrar";
+  // Telas de quem ainda não entrou. A volta do link do e-mail
+  // (`/auth/confirmar`) mora fora de `/corretor` justamente para não passar
+  // por esta exigência.
+  const precisaLogin = areaDoCorretor && !TELAS_SEM_LOGIN.has(pathname);
 
   if (areaDoCorretor) {
     const supabase = createServerClient(supabaseUrl(), supabasePublishableKey(), {

@@ -30,8 +30,14 @@ import { ehEmailDeAcesso } from "@/lib/corretores/credenciaisIniciais";
 
 const ENDERECO_API = "https://api.resend.com/emails";
 
-/** Remetente. Só vale depois que o domínio estiver verificado no Resend. */
-const REMETENTE_PADRAO = "Next Home <avisos@nexthomeimobiliaria.com.br>";
+/**
+ * Remetente padrão (convite, recuperação de senha, avisos). Só sai depois que
+ * o domínio estiver verificado no Resend. `nexthomeimoveis.com` até existir o
+ * domínio da plataforma (desenho §20); a troca é a variável `EMAIL_REMETENTE`,
+ * sem tocar no código. O padrão antigo (`nexthomeimobiliaria.com.br`) ainda
+ * serve o site legado e nunca foi verificado.
+ */
+const REMETENTE_PADRAO = "Next Home <acesso@nexthomeimoveis.com>";
 
 export type ResultadoEmail =
   | { enviado: true; id: string | null }
