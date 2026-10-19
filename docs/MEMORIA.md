@@ -10705,6 +10705,54 @@ Nota: [[plataforma-multi-grupo]].
   `participante_de_outro_grupo`, que a tela traduz (co-corretagem entre
   grupos fica para fase posterior).
 
+## O isolamento por grupo na RLS, nas views, no Storage e no Realtime (0184, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **Uma policy RESTRITIVA por tabela com `grupo_id`** (`isolamento_por_grupo`,
+  `to authenticated`, `using` e `with check` = `grupo_atual()`). Restritiva
+  se soma por AND a toda permissiva, inclusive às que só existem em produção
+  e às que alguém criar depois: nenhuma policy nova abre acesso entre grupos
+  sem apagar esta. Antes dela, o gestor de B (`eh_gestor()`) lia leads,
+  vendas, auditoria e imóveis de A — medido em 18 tabelas no banco local.
+- **O UPDATE entre grupos só a policy segura.** O gatilho do grupo
+  (`<t>_00_grupo`) só dispara quando o SET cita o grupo ou uma mãe:
+  `update leads set nome = 'x' where id = <lead de A>` passava inteiro sem a
+  policy. Por isso a defesa em profundidade no carimbo (passo e de
+  `derivar_grupo_da_linha`: logado que não é administrador da plataforma só
+  grava linha do próprio grupo, inclusive em tabela sem mãe) cobre INSERT e
+  troca de mãe, e não substitui a policy.
+- **View ganha coluna no FIM por `create or replace`**, sem `drop`: os grants
+  ficam (a armadilha da 0072 é o `drop`). Agregada por corretor põe o grupo
+  no `group by` — um corretor é de um grupo só, as linhas não mudam. A 0184
+  falha se alguma view do `public` ficar sem `grupo_id`.
+- **O teste do Storage passaria sem mudar a policy do Storage**: a
+  subconsulta em `empreendimentos` já atravessa a RLS da tabela, que agora
+  recorta o grupo. A regra escrita na policy do Storage tem teste de texto
+  próprio (`pg_policies`), senão ela some sem ninguém ver.
+- **Realtime não enxerga transação desfeita** (ele lê o WAL), então
+  `realtime.db.test.ts` grava DE VERDADE, em dois grupos próprios, e limpa no
+  fim. Enquanto existe, esse segundo grupo quebraria os testes "com um grupo
+  só" de `isolamento.db.test.ts`, que rodam em paralelo (o vitest roda
+  arquivos ao mesmo tempo): os dois arquivos pegam a mesma trava de sessão
+  (`travarSuite`, `pg_advisory_lock`). O `realtime` saiu da lista `FORA` de
+  `dbTeste.mjs`. Para assinar como um usuário, o teste assina o JWT com o
+  segredo de demonstração do Supabase local (HS256) e espera a linha
+  aparecer em `realtime.subscription` antes de inserir — o `SUBSCRIBED`
+  chega antes do registro, e silêncio antes do registro não prova nada.
+- **Com as policies de hoje o Realtime já não vazava** (a permissiva de
+  `whatsapp_mensagens` é a do dono da conversa); a provocação que mostra a
+  restritiva trabalhando é abrir uma permissiva `using (true)`: com a
+  restritiva o corretor de B não recebe a mensagem de A, sem ela recebe.
+- **`has_column_privilege` num join com `pg_class` pode ser avaliado antes do
+  filtro** e quebrar em índice ("column grupo_id of relation …_idx does not
+  exist"). Materialize a lista de tabelas num CTE antes de chamar a função.
+- **`comoUsuario` desfaz o que se grava dentro dele**: para semear evento da
+  chave de serviço que o teste vai CONTAR, `set local role service_role` na
+  própria transação e `reset role` depois.
+- `definir_preferencia_contato` saiu do `anon` (régua da 0135); quem chama é
+  a sessão do painel.
+
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 
 Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:

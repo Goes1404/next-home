@@ -118,3 +118,11 @@ viraria N migrations.
   agem só no grupo dele, ranking e taxas da equipe contam só o grupo. Crédito
   de vídeo e reserva de visita saíram do `authenticated`. As exceções ficam
   em `src/lib/grupos/funcoesSeguras.ts`, conferidas no texto e no `pg_proc`.
+- **A 0184 fecha a RLS por grupo** (Task 6): policy restritiva
+  `isolamento_por_grupo` em toda tabela com `grupo_id` (soma por AND a toda
+  permissiva), as seis views com `grupo_id` no fim da lista, as duas
+  policies de `storage.objects` conferindo o grupo do imóvel/corretor do
+  caminho, e o carimbo recusando logado que grava em outro grupo (defesa em
+  profundidade, passo e da 0182). O Realtime entrou na suíte
+  (`realtime.db.test.ts`, que grava de verdade e por isso divide uma trava
+  de sessão com `isolamento.db.test.ts`).
