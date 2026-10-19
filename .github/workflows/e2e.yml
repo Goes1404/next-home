@@ -1,43 +1,70 @@
-# E2E contra o site NO AR — uma vez por dia e sob demanda.
+# E2E contra o AMBIENTE DE TESTES — sob demanda, por enquanto.
 #
-# ## Por que não roda a cada push (ver o fim de ci.yml)
+# ## Por que saiu de produção (19/10/2026)
 #
-# Não existe banco de teste: o painel por trás é o de PRODUÇÃO. Rodar a cada
-# commit bateria no banco de clientes de verdade dezenas de vezes por dia.
-# Uma vez por dia é o meio-termo: os specs são SOMENTE LEITURA por contrato
-# (abrem tela, marcam checkbox, abrem modal, nunca acionam o botão que grava
-# ou dispara), e o que eles pegam — tela do painel que parou de abrir — é
-# exatamente o defeito que build, tipo e teste não pegam.
+# Até aqui este workflow rodava todo dia contra o site de produção, com a
+# credencial de um corretor de verdade, e subia o rastro das falhas (telas do
+# painel logado) como artefato. Com a plataforma multi-grupo, o banco de
+# produção passa a guardar dados de várias empresas, e isso deixou de ser
+# aceitável (spec da plataforma, §14 e §18). O E2E agora roda contra o
+# ambiente de testes: um projeto Supabase só de teste, montado do zero pelas
+# migrations, com dados sintéticos de dois grupos, e um ambiente da Vercel
+# apontando para ele. Passo a passo em docs/AMBIENTE-DE-TESTES.md.
 #
-# ## Credenciais
+# `playwright.config.ts` recusa o endereço de produção antes de qualquer
+# teste (e2e/baseDoE2E.ts), e test/ambienteDeTestes.test.ts reprova este
+# arquivo se ele voltar a apontar para produção ou a subir artefato.
 #
-# Secrets do repositório E2E_CORRETOR_EMAIL e E2E_CORRETOR_SENHA, de uma
-# conta de corretor de verdade (de preferência uma criada só para isso, sem
-# carteira, para nenhum spec nem sequer LER lead de cliente). Sem os
-# secrets, os specs do painel são PULADOS com aviso e os do site público
-# rodam do mesmo jeito: a esteira não fica vermelha por falta de segredo.
+# ## Por que não há `schedule`
 #
-# Roda contra o domínio de produção, não contra um build local: o que se
-# quer saber é se o que está NO AR abre.
+# O projeto Supabase de testes e o ambiente da Vercel ainda não existem
+# (dependem do Matheus). Até o E2E passar verde contra eles, o workflow só
+# roda sob demanda; um agendamento diário rodaria contra uma URL vazia. Quando
+# o ambiente existir, o `schedule` volta junto com a guarda correspondente.
+#
+# ## Variáveis e segredos (Settings → Secrets and variables → Actions)
+#
+# - variável E2E_BASE_URL_TESTE: a URL do ambiente `teste` da Vercel;
+# - segredos E2E_TESTE_EMAIL e E2E_TESTE_SENHA: o corretor SINTÉTICO criado
+#   no banco de teste. Nunca a conta de um corretor de verdade.
+#
+# Sem a variável, o job para no primeiro passo dizendo o que falta. Sem os
+# segredos, os specs do painel são PULADOS com aviso e os do site público
+# rodam do mesmo jeito.
+#
+# ## Sem artefato
+#
+# O rastro das falhas fica no runner e morre com ele: telas do painel não são
+# subidas como artefato, mesmo com o repositório privado. Para investigar uma
+# falha, rode o E2E local contra o ambiente de testes (o documento diz como).
 
-name: E2E (produção)
+name: E2E (ambiente de testes)
 
 on:
   workflow_dispatch:
-  schedule:
-    # 09:17 UTC = 06:17 em Brasília: antes de a equipe começar o dia.
-    - cron: "17 9 * * *"
 
 concurrency:
-  group: e2e-producao
+  group: e2e-ambiente-de-testes
   cancel-in-progress: true
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Versão fixa: o `ubuntu-latest` passa a ser o Ubuntu 26 em 19/10/2026, e
+    # o `playwright install --with-deps` instala pacotes do sistema por versão
+    # da distribuição.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
+      - name: Conferir o ambiente de testes
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL_TESTE }}
+        run: |
+          if [ -z "$E2E_BASE_URL" ]; then
+            echo "Variável E2E_BASE_URL_TESTE ausente. Crie o ambiente de testes: docs/AMBIENTE-DE-TESTES.md."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
@@ -53,15 +80,7 @@ jobs:
 
       - name: Rodar os specs
         env:
-          E2E_BASE_URL: https://next-home-drab.vercel.app
-          E2E_CORRETOR_EMAIL: ${{ secrets.E2E_CORRETOR_EMAIL }}
-          E2E_CORRETOR_SENHA: ${{ secrets.E2E_CORRETOR_SENHA }}
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL_TESTE }}
+          E2E_CORRETOR_EMAIL: ${{ secrets.E2E_TESTE_EMAIL }}
+          E2E_CORRETOR_SENHA: ${{ secrets.E2E_TESTE_SENHA }}
         run: npm run test:e2e
-
-      - name: Guardar o rastro das falhas
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-rastros
-          path: test-results/
-          retention-days: 7

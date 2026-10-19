@@ -1,23 +1,31 @@
 import { defineConfig, devices } from "@playwright/test";
+import { conferirBaseDoE2E } from "./e2e/baseDoE2E";
 
 /**
  * E2E do site público e do painel do corretor.
  *
  * Duas verdades deste projeto moram aqui:
  *
- * - **O banco é o de PRODUÇÃO.** Não existe ambiente de teste (ver
- *   docs/MEMORIA.md). Por isso os specs são READ-ONLY por contrato: nenhum
- *   teste cria lead, dispara campanha ou salva cadastro. Clicar em checkbox
- *   e abrir modal é estado de tela; "Começar a enviar" é proibido.
+ * - **Nunca contra produção.** Desde 19/10/2026 o E2E roda contra o
+ *   ambiente de testes (docs/AMBIENTE-DE-TESTES.md) ou contra o servidor
+ *   local; `conferirBaseDoE2E` recusa o endereço de produção antes de
+ *   qualquer teste. Os specs continuam READ-ONLY por contrato: nenhum teste
+ *   cria lead, dispara campanha ou salva cadastro. Clicar em checkbox e
+ *   abrir modal é estado de tela; "Começar a enviar" é proibido.
  * - **O Chromium do Playwright não decodifica H.264** — os vídeos do site
  *   têm par WebM justamente para o teste exercitar o caminho real de vídeo
  *   (ver HERO_VIDEO_URL em src/lib/site.ts).
  *
  * O painel exige sessão: o projeto `painel` depende do setup de login, que
  * lê E2E_CORRETOR_EMAIL / E2E_CORRETOR_SENHA do ambiente (.env.e2e.local,
- * fora do git). Sem as credenciais, os specs do painel são PULADOS com
- * aviso — os do site público rodam sempre.
+ * fora do git) — a conta sintética do ambiente de testes, nunca a de um
+ * corretor de verdade. Sem as credenciais, os specs do painel são PULADOS
+ * com aviso — os do site público rodam sempre.
  */
+const baseDoE2E = process.env.E2E_BASE_URL
+  ? conferirBaseDoE2E(process.env.E2E_BASE_URL)
+  : undefined;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -29,7 +37,7 @@ export default defineConfig({
   reporter: [["list"]],
   timeout: 45_000,
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL: baseDoE2E ?? "http://localhost:3000",
     trace: "retain-on-failure",
     locale: "pt-BR",
     // Sandbox sem o `chromium_headless_shell` que esta versão pede, mas com o
@@ -37,9 +45,9 @@ export default defineConfig({
     // (E2E_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome).
     ...(process.env.E2E_CHROMIUM ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM } } : {}),
   },
-  // Com E2E_BASE_URL apontando para um site no ar (a esteira e2e.yml usa a
-  // produção), não há servidor local para subir.
-  webServer: process.env.E2E_BASE_URL
+  // Com E2E_BASE_URL apontando para um site no ar (a esteira e2e.yml usa o
+  // ambiente de testes), não há servidor local para subir.
+  webServer: baseDoE2E
     ? undefined
     : {
         command: "npm run dev",
