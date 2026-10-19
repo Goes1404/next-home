@@ -155,3 +155,12 @@ viraria N migrations.
   publicável do stack local) e o passo do build recusa URL fora do runner.
   Guarda: `src/lib/supabase/buildDoCiSemProducao.test.ts`. O build da Vercel
   continua lendo produção, e por isso a migration sobe antes do deploy.
+- **Lote de correções da revisão final da fase 1 (19/10).** 0181 e 0184
+  ganharam `begin`/`commit` e `lock_timeout` (guarda
+  `src/lib/migracoesAtomicas.test.ts`, que cobra também `drop policy if
+  exists` antes de cada `create policy`); `slug_de_imovel_livre` (0183) confere
+  o slug de imóvel em todos os grupos para `criarImovel`; a **0185 é
+  pós-deploy** (apaga a assinatura antiga do sorteio e tira do `anon` o insert
+  em `leads`/`cliques_whatsapp`); `gravarMensagem` não duplica fala na
+  retentativa; e o job `site-publico` do `e2e.yml` voltou a vigiar produção
+  todo dia, só com os specs públicos e sem segredo.

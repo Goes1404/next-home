@@ -10855,3 +10855,43 @@ Nota: [[plataforma-multi-grupo]].
 - **Hoje o `verificar` sobe o banco de teste das migrations** antes do build
   e exporta a API dele; o passo do build recusa URL que não seja 127.0.0.1.
   Guarda: `buildDoCiSemProducao.test.ts`.
+
+## O lote de correções da revisão final da fase 1 (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **Retentativa de INSERT só é segura com chave que a torne idempotente.**
+  `gravarMensagem` ganhou `comRetentativa` e passou a gravar a MESMA fala duas
+  vezes quando o banco gravava e só a resposta se perdia: mensagem do bot, do
+  corretor e da campanha não tem `provider_message_id`, e nada a recusava. O
+  conserto é o `id` da linha nascer no código antes da primeira tentativa; a
+  repetição bate na chave primária. E o 23505 na retentativa confere pelo
+  PRÓPRIO id: conferir pelo provider id confundia a reentrega concorrente do
+  provedor com a nossa mensagem. Teste com banco falso que guarda linhas:
+  `gravacaoIdempotente.test.ts`.
+- **`set local` fora de transação é só um aviso.** A 0184 tinha
+  `set local lock_timeout` sem `begin`: o teto não valia, e uma falha no meio
+  deixava metade das policies criadas. Toda migration da 0181 em diante abre
+  com `begin;`, fecha com `commit;`, põe o teto logo no começo e derruba cada
+  policy antes de criá-la (`migracoesAtomicas.test.ts`).
+- **Chave única global conferida pela sessão mente depois da RLS por grupo.**
+  `criarImovel` lia os slugs ocupados pela sessão, que depois da 0184 só vê o
+  próprio grupo; o 2º grupo bateria em "já existe". `slug_de_imovel_livre`
+  (0183 §3) olha todos os grupos e só diz sim/não; erro dela vira "tente de
+  novo", nunca "livre".
+- **A 0185 é PÓS-deploy, e o cabeçalho diz isso em letras grandes.** Ela apaga
+  `sortear_corretor_whatsapp(uuid, uuid)` e tira do `anon` o insert em
+  `leads`/`cliques_whatsapp`. Aplicada antes do deploy, o código antigo perde
+  o clique pago e o formulário. A policy de insert de `leads` era `to public`
+  (sem `to`) e o painel cadastra lead pela sessão (importar, indicação): ela
+  virou uma só para `authenticated`, em vez de sumir.
+- **O E2E diário do site público voltou contra produção**, no job
+  `site-publico` do `e2e.yml`: só `e2e/publico/`, com `E2E_SO_SITE_PUBLICO=1`
+  (o Playwright monta só os projetos públicos e recusa credencial no
+  ambiente), sem `secrets.`, `vars.` nem artefato. A guarda recorta o YAML por
+  job. Tirar o agendamento inteiro tinha levado junto a única vigilância do
+  que está no ar.
+- **Python escrevendo TypeScript, de novo:** `"\n"` dentro de um heredoc
+  Python virou quebra de linha real numa regex de teste. Bloco com barra
+  invertida vai por arquivo escrito com a ferramenta de escrita, não por
+  heredoc.

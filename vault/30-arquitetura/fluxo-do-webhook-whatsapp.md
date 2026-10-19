@@ -38,8 +38,12 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    que falha por outro motivo NÃO vira "inédita": o webhook para com
    `mensagem_nao_gravada` e a IA não responde por cima de uma fala que o
    banco não tem (0183). Antes de desistir, erro passageiro (sem `code`,
-   o Gateway Timeout) é repetido por `comRetentativa`; a duplicata que vem
-   depois de uma tentativa perdida é a própria mensagem, não reentrega.
+   o Gateway Timeout) é repetido por `comRetentativa`. O `id` da linha
+   nasce antes da primeira tentativa e é o mesmo em todas: a repetição bate
+   na chave primária em vez de gravar a mesma fala de novo (mensagem sem
+   `provider_message_id` não tinha índice que a protegesse), e o 23505 numa
+   retentativa confere pelo próprio `id` — achou, é a nossa; não achou, é a
+   reentrega concorrente do provedor.
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
    corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois
