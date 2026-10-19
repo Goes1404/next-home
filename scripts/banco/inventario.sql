@@ -2,8 +2,14 @@
 --
 -- Roda igual nos dois bancos e devolve uma linha por objeto, já ordenada:
 -- diff de texto entre as duas saídas é a conferência. Só lê catálogo
--- (information_schema, pg_policies, pg_proc, pg_trigger, storage.buckets);
--- não lê nenhuma linha de dado de cliente.
+-- (information_schema, pg_class, pg_policies, pg_proc, pg_trigger,
+-- pg_constraint, pg_indexes, storage.buckets); não lê nenhuma linha de dado
+-- de cliente.
+--
+-- Cobre o que decide o isolamento entre grupos, não só a forma: RLS ligada
+-- por tabela, policies, grants de tabela/coluna/função ao anon e ao
+-- authenticated (e a PUBLIC, nas funções), opções das views, constraints e
+-- índices. Objeto que difere em qualquer um desses sai como linha no diff.
 --
 -- Local:    docker exec -i supabase_db_next-home-teste psql -U postgres -At < scripts/banco/inventario.sql
 -- Produção: a mesma consulta, pelo editor SQL ou com SUPABASE_PAT (ver supabase/REPRODUCAO.md).
@@ -12,7 +18,9 @@
 -- achatadas para uma, senão o diff deixa de ser uma linha por objeto.
 select regexp_replace(tipo || ' | ' || nome || ' | ' || detalhe, '\s+', ' ', 'g') as linha
 from (
-  select 'extensao' as tipo, extname as nome, '' as detalhe
+  -- extname é do tipo name (63 bytes), e o primeiro ramo do union decidia o
+  -- tipo da coluna inteira: assinatura de função longa saía cortada no meio.
+  select 'extensao'::text as tipo, extname::text as nome, ''::text as detalhe
   from pg_extension
 
   union all
@@ -64,6 +72,64 @@ from (
     table_schema || '.' || table_name || '.' || column_name || ' ' || grantee, privilege_type
   from information_schema.column_privileges
   where table_schema = 'public' and grantee in ('anon', 'authenticated')
+
+  -- RLS ligada/forçada por tabela. Tabela com RLS desligada em produção e
+  -- ligada aqui faria todo teste de isolamento passar no banco errado; sem
+  -- esta linha, as duas saídas sairiam iguais.
+  union all
+  select 'rls', n.nspname || '.' || c.relname,
+    'enable=' || c.relrowsecurity || ' force=' || c.relforcerowsecurity
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname in ('public', 'storage') and c.relkind in ('r', 'p')
+
+  -- Opções da view (security_invoker, security_barrier). View sem
+  -- security_invoker atravessa a RLS de quem consulta (lição da 0077).
+  union all
+  select 'view_opcoes', n.nspname || '.' || c.relname,
+    coalesce(array_to_string(array(select unnest(c.reloptions) order by 1), ','), '')
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind in ('v', 'm')
+
+  -- Quem pode EXECUTAR cada função (o furo da 0135: security definer
+  -- chamável pelo anon). Uma linha por função, inclusive quando ninguém pode:
+  -- "execute=" vazio aparece no diff como linha mudada, não como linha que
+  -- falta. proacl nulo é o padrão do Postgres, que dá EXECUTE a PUBLIC;
+  -- acldefault o torna explícito.
+  union all
+  select 'grant_funcao',
+    n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
+    'execute=' || coalesce((
+      select string_agg(quem, ',' order by quem)
+      from (
+        select case when a.grantee = 0 then 'PUBLIC' else pg_get_userbyid(a.grantee) end as quem
+        from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+        where a.privilege_type = 'EXECUTE'
+      ) g
+      where quem in ('PUBLIC', 'anon', 'authenticated')
+    ), '')
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.prokind in ('f', 'p')
+
+  -- Constraints (check, FK, unique, PK, exclusão) com a definição inteira.
+  -- A Task 4 reescreve as chaves únicas; divergência aqui é chave de negócio
+  -- diferente entre os dois bancos.
+  union all
+  select 'constraint', n.nspname || '.' || c.relname || ' ' || k.conname,
+    pg_get_constraintdef(k.oid)
+  from pg_constraint k
+  join pg_class c on c.oid = k.conrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname in ('public', 'storage')
+
+  -- Índices, inclusive os únicos parciais que não são constraint
+  -- (midias.hash_conteudo, reserva de visita).
+  union all
+  select 'indice', schemaname || '.' || tablename || ' ' || indexname, indexdef
+  from pg_indexes
+  where schemaname in ('public', 'storage')
 
   union all
   select 'bucket', id,

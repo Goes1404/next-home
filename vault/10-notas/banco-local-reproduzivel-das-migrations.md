@@ -9,13 +9,16 @@ codigo: [scripts/banco/dbTeste.mjs, scripts/banco/inventario.sql, supabase/confi
 created: 2026-10-19
 updated: 2026-10-19
 fonte: Task 1 da fase 1 multi-grupo, rodada no Docker local em 19/10/2026
-summary: npm run db:teste sobe o Supabase local e aplica as 158 migrations do zero. Aplicaram sem erro na primeira tentativa; o que não reproduzia era silencioso (update de bucket criado pelo painel). Quatro policies do script consolidado de 08/2026 podem existir só em produção. Conferência contra produção pendente.
+summary: npm run db:teste derruba, apaga o volume e aplica as 158 migrations do zero (start sozinho, com containers de pé, não aplica migration nova). Aplicaram sem erro na primeira tentativa; o que não reproduzia era silencioso (update de bucket criado pelo painel). Quatro policies do script consolidado de 08/2026 podem existir só em produção. Conferência contra produção pendente.
 ---
 # Banco local reproduzível a partir das migrations
 
 `npm run db:teste` sobe o Supabase local (CLI fixo `supabase@2.121.0`,
 `project_id = "next-home-teste"`) e aplica `supabase/migrations` num banco
-vazio; imprime `DB_TESTE_URL`. `npm run db:teste:parar` derruba e **apaga o
+vazio; imprime `DB_TESTE_URL`. **Ele sempre começa com `stop --no-backup`**:
+com os containers de pé, `supabase start` só diz "já está rodando", devolve
+sucesso e não aplica migration nova, e o `DB_TESTE_URL` apontaria para um
+esquema velho (medido em 19/10: tabela criada à mão sobrevivia). `npm run db:teste:parar` derruba e **apaga o
 volume**, para a próxima subida provar de novo do zero. Detalhes e edições em
 `supabase/REPRODUCAO.md`.
 
@@ -40,7 +43,17 @@ volume**, para a próxima subida provar de novo do zero. Detalhes e edições em
 ## Conferência contra produção
 
 Pendente (sem `SUPABASE_PAT`). `scripts/banco/inventario.sql` roda igual nos
-dois bancos e devolve uma linha por objeto; o diff é a conferência.
+dois bancos e devolve uma linha por objeto; o diff é a conferência. Ele cobre
+o que decide isolamento, não só a forma: RLS ligada por tabela, quem executa
+cada função (`PUBLIC`/`anon`/`authenticated`), `security_invoker` das views,
+constraints e índices. A primeira versão só listava tabelas, colunas,
+policies e grants de tabela: RLS desligada, função `security definer`
+liberada ao `anon`, view sem `security_invoker` e índice único apagado saíam
+**iguais** no diff (provado com as quatro mudanças no banco local).
+
+- **O primeiro ramo de um `union` decide o tipo da coluna.** `extname` é
+  `name` (63 bytes), e com ele no primeiro ramo toda assinatura de função
+  longa saía cortada no meio. `::text` explícito.
 Diferença vira a migration de reconciliação `0159_*`.
 
 Relacionadas: [[list-migrations-esta-dessincronizado]],

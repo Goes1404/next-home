@@ -9289,3 +9289,12 @@ Nota: [[banco-local-reproduzivel-das-migrations]]. Roteiro e edições:
   (`scripts/banco/inventario.sql` nos dois bancos, diff) está pendente: falta
   `SUPABASE_PAT`.
 - Seed desligado: grava `empreendimentos.corretor_id`, que a 0129 apagou.
+- **`supabase start` com os containers de pé não aplica migration nova.**
+  Responde "já está rodando" e devolve sucesso. Por isso `db:teste` roda
+  `stop --no-backup` antes, sempre: senão a `DB_TESTE_URL` impressa aponta
+  para um esquema velho.
+- **O inventário de comparação precisa ver isolamento, não só forma**: RLS
+  ligada por tabela, quem executa cada função, `security_invoker` das views,
+  constraints e índices. Sem isso, RLS desligada ou `security definer`
+  liberada ao `anon` em produção saíam "iguais" no diff. E o primeiro ramo do
+  `union` decide o tipo: `extname` (`name`, 63 bytes) cortava as assinaturas.

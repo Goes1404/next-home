@@ -9,10 +9,15 @@ Matheus.
 
 Como fazer, quando houver acesso:
 
-1. Rodar a MESMA consulta nos dois bancos. Ela só lê catálogo (tabelas,
-   colunas, policies, funções, gatilhos, grants do `anon`/`authenticated`,
-   buckets), nenhuma linha de cliente, e devolve uma linha por objeto já
-   ordenada:
+1. Rodar a MESMA consulta nos dois bancos. Ela só lê catálogo, nenhuma
+   linha de cliente, e devolve uma linha por objeto já ordenada. Cobre o que
+   decide o isolamento entre grupos, não só a forma: tabelas, colunas,
+   **RLS ligada/forçada por tabela**, policies, funções (com md5 da
+   definição), **quem pode executar cada função** (`PUBLIC`/`anon`/
+   `authenticated`, o furo da 0135), gatilhos, grants de tabela e coluna do
+   `anon`/`authenticated`, **opções das views** (`security_invoker`),
+   **constraints e índices** (as chaves únicas que a Task 4 reescreve) e
+   buckets:
 
    ```bash
    # local (com `npm run db:teste` de pé)
@@ -78,9 +83,20 @@ Levantados lendo o repositório; nenhum foi confirmado contra produção.
 ## Como usar
 
 ```bash
-npm run db:teste         # sobe o Docker local e aplica as migrations do zero
+npm run db:teste         # derruba o que houver, apaga o volume, sobe e aplica tudo do zero
 npm run db:teste:parar   # derruba e APAGA o volume
 ```
+
+**`db:teste` sempre recomeça do zero, mesmo com os containers de pé.** Ele
+roda `supabase stop --no-backup` antes do `start`. Sem isso, com os
+containers rodando, `supabase start` só responde "já está rodando", devolve
+sucesso e **não aplica nenhuma migration nova** (0159+): o `DB_TESTE_URL`
+impresso apontaria para um esquema velho. Conferido em 19/10: uma tabela
+criada à mão com `psql` sobrevivia a um segundo `npm run db:teste`; com o
+`stop` antes, some, e as 158 migrations são aplicadas de novo. Custa ~1 min
+por subida (as imagens ficam em cache). Para rodar mais testes contra o
+mesmo banco sem recriá-lo, use a `DB_TESTE_URL` direto, sem chamar
+`db:teste` de novo; depois de criar ou mudar migration, chame-o.
 
 `db:teste` termina imprimindo
 `DB_TESTE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres`.

@@ -1,12 +1,19 @@
 // Banco local de teste, montado só a partir de supabase/migrations.
 //
-//   npm run db:teste         sobe o Postgres local e aplica as migrations do zero
+//   npm run db:teste         derruba o que houver, apaga o volume, sobe de novo
+//                            e aplica TODAS as migrations num banco vazio
 //   npm run db:teste:parar   derruba os containers E apaga o volume
 //
-// Derrubar apaga o volume de propósito: a próxima subida volta a aplicar as
-// 158+ migrations num banco vazio, que é exatamente o que este banco existe
-// para provar (ver supabase/REPRODUCAO.md). Banco reaproveitado esconderia uma
-// migration que deixou de aplicar.
+// Subir sempre começa derrubando. Com os containers de pé, `supabase start`
+// só responde "já está rodando" e devolve sucesso SEM aplicar nenhuma
+// migration nova (0159+), e o DB_TESTE_URL impresso apontaria para um esquema
+// velho, com o que mais tiver sido criado à mão nele. Conferido em 19/10: uma
+// tabela criada com psql sobrevivia a um segundo `npm run db:teste`.
+//
+// Apagar o volume é de propósito: as 158+ migrations voltam a aplicar num
+// banco vazio, que é exatamente o que este banco existe para provar (ver
+// supabase/REPRODUCAO.md). Banco reaproveitado esconderia uma migration que
+// deixou de aplicar. O custo é ~1 min por subida (as imagens ficam em cache).
 //
 // Nunca aponta para produção: o CLI só fala com o Docker local, e a URL
 // impressa é a do container (porta de config.toml).
@@ -53,6 +60,9 @@ function supabase(args) {
 const comando = process.argv[2] ?? "subir";
 
 if (comando === "subir") {
+  // Sem containers, o stop só avisa que não havia nada e segue. Se ele falhar
+  // de verdade (Docker parado), o start abaixo falha também e diz por quê.
+  supabase(["stop", "--no-backup"]);
   const status = supabase(["start", "-x", FORA.join(",")]);
   if (status !== 0) {
     console.error(
