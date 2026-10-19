@@ -125,6 +125,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/estudio/repositorio.ts": { categoria: "helper", motivo: "corretor da sessão (estúdio) e conversa conferida por conversaDoCorretor" },
   "src/lib/imagens/galeria.ts": { categoria: "helper", motivo: "corretor da sessão, passado pela rota de geração" },
   "src/lib/video/fila.ts": { categoria: "helper", motivo: "corretor da sessão; o worker pega o job pela trava, um por vez" },
+  "src/lib/corretores/convite.ts": { categoria: "helper", motivo: "grupo provado por quem chama (gestor da sessão ou operador da plataforma); a ficha só é lida e escrita com o grupo no filtro" },
   "src/lib/crm/agendaDoCorretor.ts": { categoria: "helper", motivo: "corretor da instância que o webhook validou" },
   "src/lib/crm/avisoAoCorretor.ts": { categoria: "helper", motivo: "manda ao próprio corretor, a partir da linha que o cron leu" },
   "src/lib/crm/envioAutorizado.ts": { categoria: "helper", motivo: "caminho <lead>/... montado por quem chama depois de validar o lead" },

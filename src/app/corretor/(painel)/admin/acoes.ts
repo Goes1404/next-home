@@ -1,18 +1,24 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
+import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import {
-  candidatosDeEmail,
-  emailInicial,
-  normalizarParaEmail,
-  senhaInicial,
-} from "@/lib/corretores/credenciaisIniciais";
+  MENSAGEM_EMAIL_EM_USO,
+  MENSAGEM_ENDERECO_DE_ACESSO,
+  MENSAGEM_ENDERECO_PROVISORIO,
+} from "@/lib/corretores/acessoDaConta";
+import {
+  convidarCorretorDoGrupo,
+  limparEmail,
+  mandarLinkDeAcesso,
+  registrarEventoDeAcesso,
+  type ResultadoDoLink,
+} from "@/lib/corretores/convite";
 
 /**
  * Ações administrativas do gestor.
@@ -25,33 +31,19 @@ import {
  * REGRA DE OURO deste arquivo: o cliente de SERVIÇO (que ignora a RLS) nunca
  * decide QUEM pode fazer algo. Quem decide é `exigirGestorNaAcao()`, que roda
  * com a sessão do navegador. A service key só entra depois, para executar o
- * que exige privilégio (criar usuário no Auth, escrever `user_id`).
+ * que exige privilégio (convidar no Auth, escrever `user_id`).
+ *
+ * Desde a fase 2A o gestor não vê senha nenhuma: convida pelo e-mail real, e
+ * o corretor cria a própria senha pelo link (`src/lib/corretores/convite.ts`,
+ * o mesmo caminho do convite pela plataforma).
  */
 
 export type ResultadoAdmin = { ok?: string; erro?: string };
 
-/** Alfabeto sem `0/O/l/1`: a senha vai ser ditada ou copiada à mão. */
-const ALFABETO = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-/**
- * Senha temporária gerada no SERVIDOR.
- *
- * Não deixamos o gestor escolher de propósito: senha digitada por humano em
- * lote vira "next123" para as sete pessoas, e aí o acesso de todo mundo vale
- * o mesmo que nenhum.
- */
-function senhaTemporaria(tamanho = 12): string {
-  const bytes = randomBytes(tamanho);
-  let senha = "";
-  for (let i = 0; i < tamanho; i++) senha += ALFABETO[bytes[i] % ALFABETO.length];
-  return senha;
-}
-
 /** "Cristal - Bruna" → "cristal-bruna". Mesma forma dos slugs já no banco. */
 function slugificar(nome: string): string {
-  // Delega para a normalização compartilhada: o slug e o e-mail de acesso
-  // saem do MESMO nome, e duas cópias da regra divergiriam no primeiro
-  // "Antônio" — o slug com acento removido de um jeito e o e-mail de outro.
+  // Delega para a normalização compartilhada: duas cópias da regra
+  // divergiriam no primeiro "Antônio".
   return normalizarParaEmail(nome);
 }
 
@@ -83,161 +75,108 @@ async function slugDisponivel(
 }
 
 /**
- * O e-mail de acesso está livre em todos os grupos e no Auth? Mesma razão do
- * slug: pela sessão o gestor só veria o próprio grupo. Erro conta como
- * ocupado, para o lote seguir para o próximo candidato em vez de bater no
- * Auth.
+ * O e-mail está livre em todos os grupos e no Auth? Pela sessão o gestor só
+ * veria o próprio grupo; `email_de_acesso_livre` (0183) olha todos e só diz
+ * sim/não. Erro devolve `null` ("não sei"): quem decide aí é o Auth, que
+ * recusa e-mail repetido no convite e na troca — chamar de "em uso" um
+ * e-mail livre só porque a conferência falhou mandaria o gestor atrás de um
+ * problema que não existe.
  */
 async function emailDeAcessoLivre(
   supabase: Awaited<ReturnType<typeof createClient>>,
   email: string,
-): Promise<boolean> {
+): Promise<boolean | null> {
   const { data, error } = await supabase.rpc("email_de_acesso_livre", { p_email: email });
   if (error) {
     console.error("[admin] falha ao conferir e-mail livre:", error.message);
-    return false;
+    return null;
   }
   return data === true;
 }
 
-export type ResultadoCriarAcesso =
-  | { ok: true; email: string; senha: string; slug: string }
-  | { ok?: false; erro: string };
-
 /**
- * Cria o login de um corretor que já tem ficha mas não tem acesso.
+ * Convida um corretor que já tem ficha mas não tem acesso: ele recebe um
+ * link no e-mail real e cria a própria senha.
  *
- * A senha volta UMA ÚNICA VEZ, no retorno desta função, para o gestor copiar
- * e repassar. Não é guardada em lugar nenhum — nem em log, nem no evento de
- * auditoria: senha que fica registrada em algum lugar é senha vazada mais
- * cedo ou mais tarde. Esqueceu? Redefine.
+ * Volta `{ ok, enviado }`. Sem e-mail configurado (ou com o envio recusado),
+ * volta também a `url`, para o gestor copiar e mandar pelo WhatsApp.
  */
-export async function criarAcessoCorretor(
-  corretorId: string,
-  email: string,
-  /*
-   * Senha explícita, só para o lote de bootstrap (`criarAcessosQueFaltam`),
-   * onde a regra precisa ser uma só para todo mundo e ditável por WhatsApp.
-   * Sem ela vale o de sempre — 12 caracteres aleatórios —, que continua
-   * sendo o certo para criação avulsa e para redefinição.
-   */
-  senhaEscolhida?: string,
-): Promise<ResultadoCriarAcesso> {
+export async function criarAcessoCorretor(corretorId: string, email: string): Promise<ResultadoDoLink> {
   const guarda = await exigirGestorNaAcao();
-  if (guarda.erro !== undefined) return { erro: guarda.erro };
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
-  const emailLimpo = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpo)) {
-    return { erro: "E-mail inválido." };
-  }
+  const emailLimpo = limparEmail(email);
+  if (!emailLimpo) return { ok: false, erro: "E-mail inválido." };
+  if (ehEmailDeAcesso(emailLimpo)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
 
   const supabase = await createClient();
   const { data: alvo } = await supabase
     .from("corretores")
     .select("id, nome, slug, user_id, grupo_id")
     .eq("id", corretorId)
+    .eq("grupo_id", guarda.corretor.grupoId)
     .maybeSingle();
 
-  // `corretores` é pública para leitura: a ficha de outro grupo aparece no
-  // select acima. O login nasce no grupo de quem cria, e só para a equipe
-  // dele.
-  if (!alvo || alvo.grupo_id !== guarda.corretor.grupoId) return { erro: "Corretor não encontrado." };
-  if (alvo.user_id) return { erro: "Este corretor já tem acesso. Use 'Redefinir senha'." };
+  if (!alvo) return { ok: false, erro: "Corretor não encontrado." };
+  if (alvo.user_id) return { ok: false, erro: "Este corretor já tem acesso. Use 'Reenviar convite'." };
+  if ((await emailDeAcessoLivre(supabase, emailLimpo)) === false) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
 
   /*
    * O slug tem que existir ANTES do login. `getCorretorLogado()` devolve
-   * `null` quando o slug é nulo (corretorSessao.ts) — a pessoa entraria com
-   * a senha certa e cairia direto em "Conta sem vínculo", com o painel vazio.
+   * `null` quando o slug é nulo (corretorSessao.ts) — a pessoa criaria a
+   * senha e cairia direto em "Conta sem vínculo", com o painel vazio.
    */
   const slug = alvo.slug ?? (await slugDisponivel(supabase, slugificar(alvo.nome)));
 
-  const senha = senhaEscolhida ?? senhaTemporaria();
-  const servico = createServiceClient();
-
-  // `email_confirm: true` é obrigatório: sem serviço de e-mail no projeto, a
-  // conta nasceria esperando um link de confirmação que ninguém envia.
-  const { data: criado, error: erroAuth } = await servico.auth.admin.createUser({
+  const r = await convidarCorretorDoGrupo({
+    grupoId: guarda.corretor.grupoId,
+    corretorId,
     email: emailLimpo,
-    password: senha,
-    email_confirm: true,
+    slug,
+    ator: { corretorId: guarda.corretor.id },
   });
 
-  if (erroAuth || !criado?.user) {
-    const jaExiste = erroAuth?.message?.toLowerCase().includes("already");
-    return {
-      erro: jaExiste
-        ? "Já existe uma conta com este e-mail. Use outro, ou vincule pelo Supabase."
-        : `Não foi possível criar o acesso: ${erroAuth?.message ?? "erro desconhecido"}`,
-    };
+  if (r.ok) {
+    revalidarCorretores();
+    revalidatePath("/corretor/admin/contas");
   }
-
-  // O grupo vai junto e no filtro: a chave de serviço ignora a RLS, e o
-  // gatilho de grupo (0182) recusa mudar o grupo de uma ficha.
-  const { error: erroVinculo } = await servico
-    .from("corretores")
-    .update({
-      user_id: criado.user.id,
-      email: emailLimpo,
-      slug,
-      deve_trocar_senha: true,
-      grupo_id: guarda.corretor.grupoId,
-    })
-    .eq("id", corretorId)
-    .eq("grupo_id", guarda.corretor.grupoId);
-
-  if (erroVinculo) {
-    /*
-     * Compensação obrigatória: sem ela sobra um usuário órfão no Auth com o
-     * e-mail queimado pela unicidade, e QUALQUER nova tentativa com o mesmo
-     * e-mail falha para sempre — um beco sem saída pela UI.
-     */
-    await servico.auth.admin.deleteUser(criado.user.id);
-    return { erro: "Acesso criado mas não vinculado; desfeito. Tente novamente." };
-  }
-
-  await servico.from("admin_eventos").insert({
-    ator_id: guarda.corretor.id,
-    acao: "conta_criada",
-    alvo_corretor_id: corretorId,
-    // Nunca a senha aqui dentro.
-    detalhes: { email: emailLimpo, slug },
-  });
-
-  revalidarCorretores();
-  revalidatePath("/corretor/admin/contas");
-  return { ok: true, email: emailLimpo, senha, slug };
+  return r;
 }
 
 export type DadosNovoCorretor = { nome: string; creci: string; whatsapp: string; email: string };
 
 /**
- * Cadastra um corretor novo (ficha + login) de uma vez (07/10/2026).
+ * Cadastra um corretor novo (ficha + convite) de uma vez (07/10/2026).
  *
- * Até aqui só existia "Criar acesso" para quem JÁ tinha ficha, e ficha nova
- * só nascia por SQL. `corretores` não tem policy de INSERT de propósito (a
- * tabela é pública para leitura), então quem grava é a chave de serviço,
- * depois de `exigirGestorNaAcao()` decidir que pode.
+ * `corretores` não tem policy de INSERT de propósito (a tabela é pública
+ * para leitura), então quem grava é a chave de serviço, depois de
+ * `exigirGestorNaAcao()` decidir que pode.
  *
- * Se o login falhar, a ficha é apagada: sem isso sobraria um corretor sem
+ * Se o convite falhar, a ficha é apagada: sem isso sobraria um corretor sem
  * acesso que aparece no site, e a próxima tentativa com o mesmo nome
- * ganharia slug com sufixo.
+ * ganharia slug com sufixo. E-mail que não saiu NÃO é falha: o link volta
+ * para a tela.
  */
-export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoCriarAcesso> {
+export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoDoLink> {
   const guarda = await exigirGestorNaAcao();
-  if (!guarda.corretor) return { erro: guarda.erro ?? "Acesso negado." };
+  if (!guarda.corretor) return { ok: false, erro: guarda.erro ?? "Acesso negado." };
 
   const nome = dados.nome.trim().replace(/\s+/g, " ");
   const creci = dados.creci.trim();
-  const email = dados.email.trim().toLowerCase();
+  const email = limparEmail(dados.email);
   const whatsapp = normalizarTelefoneBr(dados.whatsapp);
-  if (nome.length < 3) return { erro: "Informe o nome do corretor." };
-  if (!creci) return { erro: "Informe o CRECI." };
+  if (nome.length < 3) return { ok: false, erro: "Informe o nome do corretor." };
+  if (!creci) return { ok: false, erro: "Informe o CRECI." };
   if (!whatsapp || whatsapp.length < 12 || whatsapp.length > 13) {
-    return { erro: "WhatsApp inválido. Use DDD + número, por exemplo (11) 98765-4321." };
+    return { ok: false, erro: "WhatsApp inválido. Use DDD + número, por exemplo (11) 98765-4321." };
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "E-mail inválido." };
+  if (!email) return { ok: false, erro: "E-mail inválido." };
+  if (ehEmailDeAcesso(email)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
 
   const supabase = await createClient();
+  // Antes de criar a ficha: e-mail ocupado não deixa ficha órfã para trás.
+  if ((await emailDeAcessoLivre(supabase, email)) === false) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
+
   const slug = await slugDisponivel(supabase, slugificar(nome));
   const servico = createServiceClient();
   // Pela chave de serviço não há sessão para o gatilho tirar o grupo: ele
@@ -249,165 +188,181 @@ export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<Resul
     .single();
   if (error || !ficha) {
     console.error("[admin] falha ao cadastrar corretor:", error?.message);
-    return { erro: "Não foi possível cadastrar o corretor agora. Tente de novo." };
+    return { ok: false, erro: "Não foi possível cadastrar o corretor agora. Tente de novo." };
   }
 
-  const acesso = await criarAcessoCorretor(ficha.id, email);
-  if (!acesso.ok) {
-    await servico.from("corretores").delete().eq("id", ficha.id);
-    return { erro: acesso.erro };
+  const convite = await criarAcessoCorretor(ficha.id, email);
+  if (!convite.ok) {
+    await servico.from("corretores").delete().eq("id", ficha.id).eq("grupo_id", guarda.corretor.grupoId);
   }
-  return acesso;
+  return convite;
 }
-
-export type AcessoEmLote = {
-  nome: string;
-  email: string;
-  senha: string;
-  slug: string;
-};
-
-export type ResultadoLoteAcessos = {
-  criados: AcessoEmLote[];
-  falhas: { nome: string; motivo: string }[];
-  erro?: string;
-};
 
 /**
- * Cria de uma vez o acesso de todo corretor ATIVO que ainda não tem login.
- *
- * Existe porque a roleta de leads (0093) prefere quem tem login e quem tem
- * WhatsApp no ar — e enquanto 7 dos 8 corretores não conseguem entrar no
- * painel, essa preferência não distribui nada. Criar um a um pela tela, com
- * e-mail digitado à mão, é onde nasce o "next123 para todo mundo".
- *
- * A credencial é derivada, não sorteada: e-mail do SLUG (que já é UNIQUE no
- * banco, então nasce único) e senha pela regra de `credenciaisIniciais.ts`.
- * As duas metades são previsíveis de propósito, para caberem numa mensagem
- * de WhatsApp — quem fecha a janela é `deve_trocar_senha: true`, que o
- * `criarAcessoCorretor` já grava e que manda o primeiro login para
- * `/corretor/senha` antes de qualquer tela.
- *
- * Falha de um corretor NÃO aborta os outros: num lote, parar no primeiro
- * erro deixaria metade criada e metade não, sem ninguém saber onde parou.
- * O que não deu certo volta nomeado.
+ * A ficha do grupo do gestor e o usuário do Auth dela. O e-mail usado nos
+ * links é o do AUTH, que é para onde o login aponta — a ficha pode estar
+ * desatualizada numa conta antiga.
  */
-export async function criarAcessosQueFaltam(): Promise<ResultadoLoteAcessos> {
-  const guarda = await exigirGestorNaAcao();
-  if (guarda.erro !== undefined) return { criados: [], falhas: [], erro: guarda.erro };
-
-  const supabase = await createClient();
-  const { data: pendentes, error } = await supabase
-    .from("corretores")
-    .select("id, nome, slug, whatsapp")
-    .eq("ativo", true)
-    .is("user_id", null)
-    // `corretores` é pública para leitura: sem o filtro, o lote tentaria
-    // criar login para a equipe de outro grupo.
-    .eq("grupo_id", guarda.corretor.grupoId)
-    .order("nome");
-
-  if (error) return { criados: [], falhas: [], erro: "Não foi possível ler a equipe." };
-
-  /*
-   * Os endereços já usados neste lote, para o primeiro nome não colidir. O
-   * slug era UNIQUE no banco e dava a unicidade de graça; primeiro nome não
-   * dá, e e-mail no Auth é único — um segundo "Eduardo" derrubaria a criação
-   * dele. Os de antes do lote, de qualquer grupo, quem responde é
-   * `email_de_acesso_livre` (0183): pela sessão o gestor só veria o próprio.
-   */
-  const ocupados = new Set<string>();
-
-  const criados: AcessoEmLote[] = [];
-  const falhas: { nome: string; motivo: string }[] = [];
-
-  for (const corretor of pendentes ?? []) {
-    /*
-     * O slug pode ser nulo aqui (é o caso de "Equipe Next Home"), e é o
-     * `criarAcessoCorretor` que o gera. Só que o e-mail SAI do slug, então
-     * ele precisa existir antes — e gerá-lo aqui criaria uma segunda regra
-     * de slug para divergir da primeira. Sem slug, o corretor fica de fora
-     * com o motivo escrito.
-     */
-    if (!corretor.slug) {
-      falhas.push({
-        nome: corretor.nome,
-        motivo: "Sem link pessoal (slug). Abra a ficha, salve o cadastro e tente de novo.",
-      });
-      continue;
-    }
-
-    let email: string;
-    let senha: string;
-    try {
-      // Primeiro nome livre; se estiver tomado, cai para nome+sobrenome e
-      // depois para o slug inteiro. O último candidato sempre existe.
-      const candidatos = candidatosDeEmail(corretor.nome, corretor.slug).map(emailInicial);
-      let livre: string | undefined;
-      for (const candidato of candidatos) {
-        if (ocupados.has(candidato.toLowerCase())) continue;
-        if (await emailDeAcessoLivre(supabase, candidato)) {
-          livre = candidato;
-          break;
-        }
-      }
-      email = livre ?? candidatos[0];
-      senha = senhaInicial(corretor.whatsapp);
-    } catch (e) {
-      falhas.push({ nome: corretor.nome, motivo: e instanceof Error ? e.message : String(e) });
-      continue;
-    }
-
-    const r = await criarAcessoCorretor(corretor.id, email, senha);
-    if (r.ok) {
-      // Dentro do MESMO lote dois "Eduardo" colidiriam: a consulta acima é de
-      // antes do laço, e o e-mail recém-criado ainda não estava lá.
-      ocupados.add(r.email.toLowerCase());
-      criados.push({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
-    }
-    else falhas.push({ nome: corretor.nome, motivo: r.erro });
-  }
-
-  revalidarCorretores();
-  revalidatePath("/corretor/admin/contas");
-  return { criados, falhas };
-}
-
-/** Nova senha temporária para quem esqueceu — mesmo contrato de exibição única. */
-export async function redefinirSenhaCorretor(
+async function contaDoGrupo(
   corretorId: string,
-): Promise<ResultadoCriarAcesso> {
-  const guarda = await exigirGestorNaAcao();
-  if (guarda.erro !== undefined) return { erro: guarda.erro };
-
+  grupoId: string,
+): Promise<
+  | { erro: string }
+  | { erro?: undefined; userId: string; emailDoLogin: string; ultimoLogin: string | null }
+> {
   const supabase = await createClient();
   const { data: alvo } = await supabase
     .from("corretores")
-    .select("id, user_id, email, slug")
+    .select("id, user_id, email")
     .eq("id", corretorId)
-    // A senha nova sai pela chave de serviço: a ficha tem de ser do grupo
-    // de quem pede, senão o gestor de um grupo redefiniria a de outro.
-    .eq("grupo_id", guarda.corretor.grupoId)
+    // O link sai pela chave de serviço: a ficha tem de ser do grupo de quem
+    // pede, senão o gestor de um grupo mandaria o link de outro.
+    .eq("grupo_id", grupoId)
     .maybeSingle();
+  if (!alvo) return { erro: "Corretor não encontrado." };
+  if (!alvo.user_id) return { erro: "Este corretor ainda não tem acesso. Use 'Convidar'." };
 
-  if (!alvo?.user_id) return { erro: "Este corretor ainda não tem acesso." };
+  const { data, error } = await createServiceClient().auth.admin.getUserById(alvo.user_id);
+  if (error) console.error(`[admin] falha ao ler o login do corretor ${corretorId}: ${error.message}`);
+  const email = data?.user?.email ?? alvo.email;
+  if (!email) return { erro: "Este acesso está sem e-mail. Use 'Trocar e-mail'." };
+  return { userId: alvo.user_id, emailDoLogin: email, ultimoLogin: data?.user?.last_sign_in_at ?? null };
+}
 
-  const senha = senhaTemporaria();
+/**
+ * Manda de novo o link de quem tem acesso: convite enquanto a pessoa nunca
+ * entrou, link de senha depois. O convite também cai para o link de senha
+ * quando o Auth o recusa — conta já confirmada que nunca entrou (criada pelo
+ * caminho antigo, com senha provisória) não aceita convite, e o link de
+ * senha resolve do mesmo jeito.
+ */
+export async function reenviarConvite(corretorId: string): Promise<ResultadoDoLink> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+
+  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId);
+  if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
+  if (ehEmailDeAcesso(conta.emailDoLogin)) return { ok: false, erro: MENSAGEM_ENDERECO_PROVISORIO };
+
+  const pedido = { grupoId: guarda.corretor.grupoId, email: conta.emailDoLogin, usuarioEsperado: conta.userId };
+  let tipo: "invite" | "recovery" = conta.ultimoLogin ? "recovery" : "invite";
+  let r = await mandarLinkDeAcesso({ ...pedido, tipo });
+  if (!r.ok && tipo === "invite" && r.motivo === "email_em_uso") {
+    tipo = "recovery";
+    r = await mandarLinkDeAcesso({ ...pedido, tipo });
+  }
+  if (!r.ok) return { ok: false, erro: r.erro };
+
+  await registrarEventoDeAcesso(createServiceClient(), {
+    grupoId: guarda.corretor.grupoId,
+    ator: { corretorId: guarda.corretor.id },
+    acao: "convite_reenviado",
+    alvoCorretorId: corretorId,
+    detalhes: { tipo },
+  });
+
+  revalidatePath("/corretor/admin/contas");
+  return { ok: true, enviado: r.enviado, ...(r.url ? { url: r.url } : {}) };
+}
+
+/**
+ * Link para criar uma senha nova (no lugar da antiga "Redefinir senha", que
+ * devolvia uma senha em claro para o gestor repassar).
+ */
+export async function enviarLinkDeSenha(corretorId: string): Promise<ResultadoDoLink> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+
+  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId);
+  if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
+  if (ehEmailDeAcesso(conta.emailDoLogin)) return { ok: false, erro: MENSAGEM_ENDERECO_PROVISORIO };
+
+  const r = await mandarLinkDeAcesso({
+    grupoId: guarda.corretor.grupoId,
+    tipo: "recovery",
+    email: conta.emailDoLogin,
+    usuarioEsperado: conta.userId,
+  });
+  if (!r.ok) return { ok: false, erro: r.erro };
+
+  await registrarEventoDeAcesso(createServiceClient(), {
+    grupoId: guarda.corretor.grupoId,
+    ator: { corretorId: guarda.corretor.id },
+    acao: "link_de_senha_enviado",
+    alvoCorretorId: corretorId,
+  });
+
+  return { ok: true, enviado: r.enviado, ...(r.url ? { url: r.url } : {}) };
+}
+
+/**
+ * Troca o e-mail de login de um corretor e manda o link de senha para o
+ * endereço novo. É o caminho das contas antigas `@nexthome.com` (domínio de
+ * terceiro), que não podem receber link nenhum.
+ *
+ * Troca no Auth primeiro e depois na ficha; se a ficha falhar, o Auth volta
+ * ao endereço antigo — senão login e ficha apontariam para e-mails
+ * diferentes, e o próximo link sairia para o endereço errado.
+ */
+export async function trocarEmailDoCorretor(corretorId: string, emailNovo: string): Promise<ResultadoDoLink> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
+
+  const email = limparEmail(emailNovo);
+  if (!email) return { ok: false, erro: "E-mail inválido." };
+  if (ehEmailDeAcesso(email)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
+
+  const grupoId = guarda.corretor.grupoId;
+  const conta = await contaDoGrupo(corretorId, grupoId);
+  if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
+  if (conta.emailDoLogin.toLowerCase() === email) return { ok: false, erro: "Esse já é o e-mail deste acesso." };
+
+  const supabase = await createClient();
+  if ((await emailDeAcessoLivre(supabase, email)) === false) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
+
   const servico = createServiceClient();
+  const { error: erroAuth } = await servico.auth.admin.updateUserById(conta.userId, { email, email_confirm: true });
+  if (erroAuth) {
+    const codigo = (erroAuth as { code?: string }).code;
+    if (codigo === "email_exists" || /already (been )?registered/i.test(erroAuth.message ?? "")) {
+      return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
+    }
+    console.error(`[admin] falha ao trocar o e-mail do login (corretor ${corretorId}): ${erroAuth.message}`);
+    return { ok: false, erro: "Não foi possível trocar o e-mail agora. Tente de novo." };
+  }
 
-  const { error } = await servico.auth.admin.updateUserById(alvo.user_id, { password: senha });
-  if (error) return { erro: `Não foi possível redefinir: ${error.message}` };
+  const { data: trocadas, error: erroFicha } = await servico
+    .from("corretores")
+    .update({ email })
+    .eq("id", corretorId)
+    .eq("grupo_id", grupoId)
+    .select("id");
+  if (erroFicha || !trocadas || trocadas.length === 0) {
+    console.error(`[admin] ficha ${corretorId} sem o e-mail novo: ${erroFicha?.message ?? "nenhuma linha"}`);
+    const { error: erroVolta } = await servico.auth.admin.updateUserById(conta.userId, {
+      email: conta.emailDoLogin,
+      email_confirm: true,
+    });
+    if (erroVolta) console.error(`[admin] login do corretor ${corretorId} não voltou ao e-mail antigo: ${erroVolta.message}`);
+    return { ok: false, erro: "Não foi possível trocar o e-mail agora. Tente de novo." };
+  }
 
-  await servico.from("corretores").update({ deve_trocar_senha: true }).eq("id", corretorId);
-  await servico.from("admin_eventos").insert({
-    ator_id: guarda.corretor.id,
-    acao: "senha_redefinida",
-    alvo_corretor_id: corretorId,
+  await registrarEventoDeAcesso(servico, {
+    grupoId,
+    ator: { corretorId: guarda.corretor.id },
+    acao: "email_alterado",
+    alvoCorretorId: corretorId,
+    detalhes: { de: conta.emailDoLogin, para: email },
   });
 
   revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
-  return { ok: true, email: alvo.email ?? "", senha, slug: alvo.slug ?? "" };
+
+  const r = await mandarLinkDeAcesso({ grupoId, tipo: "recovery", email, usuarioEsperado: conta.userId });
+  if (!r.ok) {
+    return { ok: false, erro: "O e-mail foi trocado, mas o link não foi gerado. Use 'Mandar link de senha'." };
+  }
+  return { ok: true, enviado: r.enviado, ...(r.url ? { url: r.url } : {}) };
 }
 
 /**

@@ -9,10 +9,10 @@ import { Eye, EyeOff } from "lucide-react";
  * ## Por que ele existe
  *
  * A senha do corretor é digitada no CELULAR, num teclado que não mostra o
- * que foi tocado, e muitas vezes é a senha provisória que o gestor mandou
- * por outro aplicativo (`nexthome` + quatro dígitos). Errar sem poder
- * conferir é o caminho curto para a pessoa desistir de entrar — ou pedir
- * uma senha nova que também não vai conseguir digitar.
+ * que foi tocado — inclusive na hora de criar a senha pelo link do
+ * convite. Errar sem poder conferir é o caminho curto para a pessoa
+ * desistir de entrar — ou pedir uma senha nova que também não vai
+ * conseguir digitar.
  *
  * ## O que ele NÃO faz
  *
