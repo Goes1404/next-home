@@ -5,6 +5,12 @@ multi-grupo, o banco de produção passa a guardar dados de várias empresas, e
 rodar teste contra ele, com a senha de um corretor de verdade, deixou de ser
 aceitável (spec da plataforma, §14 e §18).
 
+A exceção única é o job `site-publico` do `e2e.yml`: todo dia, só os specs de
+`e2e/publico/` contra o site no ar, sem login, sem segredo e sem artefato
+(`E2E_SO_SITE_PUBLICO=1`, que faz o Playwright montar só os projetos do site
+público e recusar credencial no ambiente). É a vigilância automática do que
+está em produção; o painel nunca entra nele.
+
 São três peças, e só a primeira existe sem ação do Matheus:
 
 | Peça | Para quê | Estado |
@@ -13,8 +19,9 @@ São três peças, e só a primeira existe sem ação do Matheus:
 | Projeto Supabase de testes | Banco do site de testes, montado do zero pelas migrations | **depende do Matheus** |
 | Ambiente `teste` da Vercel | Site no ar contra o banco de testes, para o E2E | **depende do Matheus** |
 
-Enquanto as duas últimas não existem, o `e2e.yml` só roda sob demanda (sem
-`schedule`) e para no primeiro passo dizendo o que falta.
+Enquanto as duas últimas não existem, o job do painel (`ambiente-de-testes`
+no `e2e.yml`) só roda sob demanda (fora do `schedule`) e para no primeiro
+passo dizendo o que falta.
 
 ## O que já está travado no código
 

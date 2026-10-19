@@ -1,4 +1,5 @@
-# E2E contra o AMBIENTE DE TESTES — sob demanda, por enquanto.
+# E2E em dois jobs: o PAINEL contra o ambiente de testes (sob demanda, por
+# enquanto) e o SITE PÚBLICO contra o que está no ar (todo dia).
 #
 # ## Por que saiu de produção (19/10/2026)
 #
@@ -13,14 +14,27 @@
 #
 # `playwright.config.ts` recusa o endereço de produção antes de qualquer
 # teste (e2e/baseDoE2E.ts), e test/ambienteDeTestes.test.ts reprova este
-# arquivo se ele voltar a apontar para produção ou a subir artefato.
+# arquivo se ele voltar a apontar para produção ou a subir artefato — com a
+# exceção única do job `site-publico`, abaixo.
 #
-# ## Por que não há `schedule`
+# ## O job `site-publico`: a única porta para produção
+#
+# Tirar o agendamento inteiro levou junto a única vigilância automática do
+# que está no ar (achado M da revisão final da fase 1). Os specs de
+# `e2e/publico/` abrem páginas que qualquer visitante abre, sem login, e só
+# leem: o motivo da saída (dados de várias empresas no PAINEL) não vale para
+# eles. O job roda todo dia com E2E_SO_SITE_PUBLICO=1, que faz a
+# configuração montar só os projetos do site público e recusar qualquer
+# credencial no ambiente. Sem segredo, sem variável do repositório e sem
+# artefato: a guarda reprova qualquer um dos três neste job.
+#
+# ## Por que o job do painel não está no `schedule`
 #
 # O projeto Supabase de testes e o ambiente da Vercel ainda não existem
-# (dependem do Matheus). Até o E2E passar verde contra eles, o workflow só
-# roda sob demanda; um agendamento diário rodaria contra uma URL vazia. Quando
-# o ambiente existir, o `schedule` volta junto com a guarda correspondente.
+# (dependem do Matheus). Até o E2E passar verde contra eles, o job do painel
+# só roda sob demanda (`if: workflow_dispatch`); no agendamento ele rodaria
+# contra uma URL vazia. Quando o ambiente existir, ele volta ao agendamento
+# junto com a guarda correspondente.
 #
 # ## Variáveis e segredos (Settings → Secrets and variables → Actions)
 #
@@ -38,20 +52,49 @@
 # subidas como artefato, mesmo com o repositório privado. Para investigar uma
 # falha, rode o E2E local contra o ambiente de testes (o documento diz como).
 
-name: E2E (ambiente de testes)
+name: E2E
 
 on:
   workflow_dispatch:
+  schedule:
+    # 09:17 UTC = 06:17 em Brasília: antes de a equipe começar o dia. Só o
+    # job `site-publico` roda no agendamento.
+    - cron: "17 9 * * *"
 
 concurrency:
-  group: e2e-ambiente-de-testes
+  group: e2e
   cancel-in-progress: true
 
 jobs:
-  e2e:
+  site-publico:
     # Versão fixa: o `ubuntu-latest` passa a ser o Ubuntu 26 em 19/10/2026, e
     # o `playwright install --with-deps` instala pacotes do sistema por versão
     # da distribuição.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Rodar os specs do site público contra o que está no ar
+        env:
+          E2E_BASE_URL: https://next-home-drab.vercel.app
+          E2E_SO_SITE_PUBLICO: "1"
+        run: npx playwright test e2e/publico/
+
+  ambiente-de-testes:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 

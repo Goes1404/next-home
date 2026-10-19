@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-import { conferirBaseDoE2E } from "./e2e/baseDoE2E";
+import { conferirBaseDoE2E, modoSoSitePublico } from "./e2e/baseDoE2E";
 
 /**
  * E2E do site público e do painel do corretor.
@@ -21,10 +21,33 @@ import { conferirBaseDoE2E } from "./e2e/baseDoE2E";
  * fora do git) — a conta sintética do ambiente de testes, nunca a de um
  * corretor de verdade. Sem as credenciais, os specs do painel são PULADOS
  * com aviso — os do site público rodam sempre.
+ *
+ * Exceção única: com E2E_SO_SITE_PUBLICO=1 (o job diário `site-publico` do
+ * e2e.yml), a base pode ser produção — e então só existem os projetos do
+ * site público, sem setup de login nem painel, e qualquer credencial no
+ * ambiente faz a configuração recusar a rodada (`modoSoSitePublico`).
  */
+const soSitePublico = modoSoSitePublico(process.env);
 const baseDoE2E = process.env.E2E_BASE_URL
-  ? conferirBaseDoE2E(process.env.E2E_BASE_URL)
+  ? conferirBaseDoE2E(process.env.E2E_BASE_URL, soSitePublico)
   : undefined;
+
+/** Os specs de `e2e/publico/`: sem sessão, só leitura de páginas públicas. */
+const projetosDoSitePublico = [
+  {
+    name: "publico",
+    testMatch: /publico\/.*\.spec\.ts/,
+    use: { ...devices["Desktop Chrome"] },
+  },
+  {
+    name: "publico-mobile",
+    testMatch: /publico\/.*\.spec\.ts/,
+    // Pixel 7, não iPhone: o device do iPhone pede WebKit, que não está
+    // instalado nesta máquina — e o que se quer aqui é o VIEWPORT móvel
+    // (touch, largura de celular), não uma rodada de Safari.
+    use: { ...devices["Pixel 7"] },
+  },
+];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -56,21 +79,9 @@ export default defineConfig({
         reuseExistingServer: true,
         timeout: 60_000,
       },
-  projects: [
+  projects: soSitePublico ? projetosDoSitePublico : [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
-    {
-      name: "publico",
-      testMatch: /publico\/.*\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "publico-mobile",
-      testMatch: /publico\/.*\.spec\.ts/,
-      // Pixel 7, não iPhone: o device do iPhone pede WebKit, que não está
-      // instalado nesta máquina — e o que se quer aqui é o VIEWPORT móvel
-      // (touch, largura de celular), não uma rodada de Safari.
-      use: { ...devices["Pixel 7"] },
-    },
+    ...projetosDoSitePublico,
     {
       name: "painel",
       testMatch: /painel\/.*\.spec\.ts/,

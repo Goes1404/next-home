@@ -188,8 +188,9 @@ jobs:
 # O que esta esteira NÃO roda, e por quê:
 #
 # - `npm run test:e2e` — precisa de um site no ar com banco e login. Desde
-#   19/10/2026 ele roda à parte, contra o ambiente de testes e nunca contra
-#   produção (ver e2e.yml e docs/AMBIENTE-DE-TESTES.md).
+#   19/10/2026 ele roda à parte (e2e.yml): o painel contra o ambiente de
+#   testes, nunca contra produção; e, todo dia, só os specs do site público
+#   contra o que está no ar, sem login nem segredo (docs/AMBIENTE-DE-TESTES.md).
 #
 # - `npm run eval` e `eval:conversa` — custam chamada de LLM paga a cada
 #   rodada e consomem a MESMA cota do atendimento real. Eval é decisão de
