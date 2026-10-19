@@ -10794,3 +10794,16 @@ Nota: [[chave-de-servico-classificada-por-grupo]].
   campos que o provedor mandou.
 - **Testes de rota sem banco**: `test/bancoFalso.ts` aplica os filtros do
   PostgREST em memória. A linha de outro grupo só some se o código filtrar.
+
+## O build do CI lia o banco de produção (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **O comentário do `ci.yml` ("nada consulta o Supabase em tempo de build")
+  era falso desde a F2b.** O `generateStaticParams` de `/empreendimentos/[slug]`
+  lê o catálogo, e o build sem segredo caía no fallback de `env.ts`: produção.
+  O verde da esteira dependia de produção já ter as migrations da branch; o
+  filtro por `grupo_id` da fase 1 o derrubou.
+- **Hoje o `verificar` sobe o banco de teste das migrations** antes do build
+  e exporta a API dele; o passo do build recusa URL que não seja 127.0.0.1.
+  Guarda: `buildDoCiSemProducao.test.ts`.

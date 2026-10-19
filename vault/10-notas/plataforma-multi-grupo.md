@@ -138,3 +138,12 @@ viraria N migrations.
   aviso de espera rodam grupo a grupo, os scripts com chave secreta exigem
   `--grupo` e o SQL de diagnóstico fixa o grupo. Ver
   [[chave-de-servico-classificada-por-grupo]].
+- **O build do CI lê o banco de teste, nunca produção (19/10).** Desde a F2b o
+  `generateStaticParams` de `/empreendimentos/[slug]` consulta o catálogo em
+  build, e sem variável `src/lib/supabase/env.ts` cai no fallback de produção:
+  o filtro por `grupo_id` derrubou o `verificar` porque produção ainda não tem
+  a coluna. O job `verificar` agora sobe o mesmo banco do `isolamento`
+  (`npm run db:teste`, que imprime `NEXT_PUBLIC_SUPABASE_URL` e a chave
+  publicável do stack local) e o passo do build recusa URL fora do runner.
+  Guarda: `src/lib/supabase/buildDoCiSemProducao.test.ts`. O build da Vercel
+  continua lendo produção, e por isso a migration sobe antes do deploy.

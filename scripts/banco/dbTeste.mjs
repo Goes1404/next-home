@@ -78,6 +78,31 @@ if (comando === "subir") {
     process.exit(status);
   }
   console.log(`\nDB_TESTE_URL=${URL_DO_BANCO}`);
+
+  // A API do mesmo banco, para o `next build` do CI. Sem estas duas, o
+  // build cai no fallback de src/lib/supabase/env.ts, que é PRODUÇÃO: desde
+  // a F2b o `generateStaticParams` de /empreendimentos/[slug] lê o catálogo
+  // em tempo de build, e o resultado passaria a depender de o banco de
+  // produção já ter (ou não) as migrations da branch. As chaves saem do
+  // próprio CLI, não de uma cópia: são as de demonstração do stack local.
+  const r = spawnSync("npx", ["--yes", CLI, "status", "-o", "json"], {
+    cwd: raiz,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  });
+  let estado;
+  try {
+    estado = JSON.parse((r.stdout ?? "").slice((r.stdout ?? "").indexOf("{")));
+  } catch {
+    console.error("O `supabase status` não devolveu JSON; a API do banco de teste ficou sem URL.");
+    process.exit(1);
+  }
+  if (!estado.API_URL || !estado.PUBLISHABLE_KEY) {
+    console.error("O `supabase status` não trouxe API_URL e PUBLISHABLE_KEY.");
+    process.exit(1);
+  }
+  console.log(`NEXT_PUBLIC_SUPABASE_URL=${estado.API_URL}`);
+  console.log(`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${estado.PUBLISHABLE_KEY}`);
 } else if (comando === "parar") {
   process.exit(supabase(["stop", "--no-backup"]));
 } else if (comando === "remoto") {
