@@ -85,7 +85,7 @@ export async function sugerirSelecao(
   const { supabase, lead, corretor } = r;
 
   const [catalogo, credito, { data: dossie }] = await Promise.all([
-    getEmpreendimentos().catch(() => []),
+    getEmpreendimentos(corretor.grupoId).catch(() => []),
     getParametrosCredito(corretor.grupoId),
     supabase.from("lead_observacoes_ia").select("orcamento_max").eq("lead_id", leadId).maybeSingle(),
   ]);
@@ -143,7 +143,7 @@ export async function criarSelecao(leadId: string, escolhidos: string[]): Promis
   if (pedidos.length === 0) return { erro: "Marque ao menos um imóvel." };
   if (pedidos.length > IMOVEIS_NA_SELECAO) return { erro: `No máximo ${IMOVEIS_NA_SELECAO} imóveis por seleção.` };
 
-  const catalogo = await getEmpreendimentos().catch(() => []);
+  const catalogo = await getEmpreendimentos(corretor.grupoId).catch(() => []);
   const publicados = new Set(catalogo.map((e) => e.id).filter(Boolean));
   const ids = pedidos.filter((id) => publicados.has(id));
   if (ids.length !== pedidos.length) return { erro: "Algum imóvel saiu do catálogo. Monte a seleção de novo." };

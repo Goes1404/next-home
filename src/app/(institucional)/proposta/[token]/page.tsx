@@ -44,7 +44,7 @@ export default async function PropostaPage({
   if (!proposta) notFound();
 
   const [catalogo, { data: eventos }] = await Promise.all([
-    proposta.empreendimentoId ? getEmpreendimentos().catch(() => []) : Promise.resolve([]),
+    proposta.empreendimentoId ? getEmpreendimentos(link.grupoId).catch(() => []) : Promise.resolve([]),
     createServiceClient()
       .from("links_do_cliente_eventos")
       .select("tipo, created_at")

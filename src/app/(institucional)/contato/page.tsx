@@ -11,6 +11,7 @@ import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { enderecoLinha, site } from "@/lib/site";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
@@ -46,7 +47,7 @@ const OUTROS_CAMINHOS = [
 ];
 
 export default async function ContatoPage() {
-  const empreendimentos = await getEmpreendimentos();
+  const empreendimentos = await getEmpreendimentos(grupoDoSite());
   const opcoes = empreendimentos.map((e) => ({ slug: e.slug, nome: e.nome }));
 
   return (

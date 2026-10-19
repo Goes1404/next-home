@@ -108,3 +108,6 @@ viraria N migrations.
   `sortear_corretor_whatsapp(p_grupo, …)` sorteia só no grupo; a assinatura
   antiga fica até o deploy, presa ao grupo 1. Meta, Gmail e Pixel passam por
   `integracaoLiberada` (só o grupo 1 até a fase 7).
+  O catálogo (`getEmpreendimentos`) não tem mais grupo padrão: o painel lê o
+  do corretor logado e as páginas de seleção, proposta e portal o de quem
+  mandou o link (com o padrão, elas saíam vazias para o grupo B).

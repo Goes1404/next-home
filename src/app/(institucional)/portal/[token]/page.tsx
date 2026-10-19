@@ -53,7 +53,7 @@ export default async function PortalPage({
   if (!lead) notFound();
   const venda = vendas?.[0] ?? null;
   const empreendimentoId = venda?.empreendimento_id ?? lead.imovel_interesse_id ?? lead.empreendimento_id;
-  const catalogo = empreendimentoId ? await getEmpreendimentos().catch(() => []) : [];
+  const catalogo = empreendimentoId ? await getEmpreendimentos(link.grupoId).catch(() => []) : [];
   const imovel = catalogo.find((e) => e.id === empreendimentoId) ?? null;
   const { data: atualizacoes } = empreendimentoId
     ? await supabase

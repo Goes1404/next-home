@@ -9,6 +9,7 @@ import { Secao } from "@/components/institucional/Secao";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { getCorretores, getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { site } from "@/lib/site";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
  * escolher — sem ela, quem chega indeciso volta para o header.
  */
 export default async function CorretoresPage() {
-  const [corretores, catalogo] = await Promise.all([getCorretores(), getEmpreendimentos()]);
+  const [corretores, catalogo] = await Promise.all([getCorretores(), getEmpreendimentos(grupoDoSite())]);
 
   const quantos = corretores.length;
   // Sem corretor dono (28/09): o número que descreve a equipe é o tamanho do

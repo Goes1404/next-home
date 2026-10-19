@@ -8,6 +8,7 @@ import { MapaEmpreendimentos } from "@/components/mapa/MapaEmpreendimentos";
 import { MapaEmpreendimentosDaUrl } from "@/components/mapa/MapaEmpreendimentosDaUrl";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { pontosDoMapa } from "@/lib/mapa/ponto";
 import { site } from "@/lib/site";
 import { ClipboardList } from 'lucide-react';
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MapaPage() {
-  const todosEmpreendimentos = await getEmpreendimentos();
+  const todosEmpreendimentos = await getEmpreendimentos(grupoDoSite());
   const pontos = pontosDoMapa(todosEmpreendimentos);
   const alturaClasse = "h-[70svh] min-h-[420px] sm:h-[76vh] sm:min-h-[520px]";
 

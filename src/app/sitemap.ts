@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getCorretores, getEmpreendimentos, getSlugsEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { regioesComEstoque } from "@/lib/regioes";
 import { site } from "@/lib/site";
 
@@ -18,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [slugs, corretores, catalogo] = await Promise.all([
     getSlugsEmpreendimentos(),
     getCorretores(),
-    getEmpreendimentos(),
+    getEmpreendimentos(grupoDoSite()),
   ]);
 
   /*

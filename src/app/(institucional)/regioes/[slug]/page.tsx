@@ -12,6 +12,7 @@ import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { trilhaJsonLd } from "@/lib/dadosEstruturados";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { REGIOES, regiaoPorSlug, regioesComEstoque } from "@/lib/regioes";
 import { site } from "@/lib/site";
 
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const regiao = regiaoPorSlug(slug);
   if (!regiao) return { title: "Região não encontrada" };
 
-  const catalogo = await getEmpreendimentos();
+  const catalogo = await getEmpreendimentos(grupoDoSite());
   const quantos = catalogo.filter(regiao.pertence).length;
 
   /*
@@ -67,7 +68,7 @@ export default async function PaginaDaRegiao({ params }: Props) {
   const regiao = regiaoPorSlug(slug);
   if (!regiao) notFound();
 
-  const catalogo = await getEmpreendimentos();
+  const catalogo = await getEmpreendimentos(grupoDoSite());
   const todasComEstoque = regioesComEstoque(catalogo);
   const comEstoque = todasComEstoque.find((r) => r.slug === slug);
 

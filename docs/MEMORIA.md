@@ -10651,6 +10651,17 @@ Nota: [[plataforma-multi-grupo]].
   `integracaoLiberada(grupo, qual)`, verdadeiro só no grupo 1 até a fase 7.
   O painel tem grant por coluna em `parceiros`: o insert do gestor não manda
   `grupo_id`, quem põe é o gatilho pelo `grupo_atual()`.
+- **Parâmetro de grupo com valor padrão é o defeito, não a conveniência.**
+  `getEmpreendimentos(grupoId = grupoDoSite())` deixava todo chamador que
+  esquecia o argumento ler calado o catálogo do grupo 1: a seleção, a
+  proposta e o portal de um corretor do grupo B saíam VAZIOS (a página da
+  seleção passava `link.grupoId` às taxas e não ao catálogo, na mesma
+  linha), e o painel dele oferecia em lista de transmissão e seleção os
+  imóveis da Next Home. Sem padrão, o `tsc` lista cada chamador. Site
+  passa `grupoDoSite()`, painel `corretor.grupoId`, página de link
+  `link.grupoId`, webhook e crons o grupo da instância. A guarda em
+  `portas.test.ts` impede o padrão de voltar e o grupo do site de entrar no
+  painel ou nas páginas de link.
 
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 

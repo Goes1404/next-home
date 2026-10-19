@@ -152,13 +152,18 @@ function recortarPorSelecao(
   return elegiveis.filter((lead) => escolhidos.has(lead.id));
 }
 
-/** O imóvel do catálogo e as variáveis da mensagem que saem dele e do corretor. */
+/**
+ * O imóvel do catálogo e as variáveis da mensagem que saem dele e do corretor.
+ * O catálogo é o do grupo do corretor: o id chega pela rede, e imóvel de
+ * outro grupo não entra na lista dele.
+ */
 async function contextoDoImovel(
   empreendimentoId: string | null,
-  corretorNome: string | null,
+  corretor: { nome: string | null; grupoId: string },
 ): Promise<{ imovel: Empreendimento | null; contexto: ContextoTemplate }> {
+  const corretorNome = corretor.nome;
   const imovel = empreendimentoId
-    ? ((await getEmpreendimentos()).find((e) => e.id === empreendimentoId) ?? null)
+    ? ((await getEmpreendimentos(corretor.grupoId)).find((e) => e.id === empreendimentoId) ?? null)
     : null;
   return {
     imovel,
@@ -223,7 +228,7 @@ export async function gerarPreviewCampanha(params: {
   }
   if (elegiveis.length === 0) return { erro: "Nenhum lead elegível para este filtro no momento." };
 
-  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor);
   const supabase = await createClient();
   const textoB = params.mensagemBaseB?.trim() || null;
   if (textoB && !versoesDiferentes(params.mensagemBase, textoB)) return { erro: AVISO_DE_VERSOES_IGUAIS };
@@ -444,7 +449,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
     };
   }
 
-  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor);
 
   // Compradores só existem em relação a UM imóvel.
   let imovelSlug: string | null = null;
@@ -581,7 +586,7 @@ export async function salvarRascunho(
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
   const supabase = await createClient();
-  const { imovel } = await contextoDoImovel(params.empreendimentoId, corretor.nome);
+  const { imovel } = await contextoDoImovel(params.empreendimentoId, corretor);
   const linha = {
     titulo: params.titulo.trim() || "Rascunho",
     empreendimento_id: imovel?.id ?? null,

@@ -70,7 +70,7 @@ const VENDEDOR = {
  */
 export default async function HomeInstitucional() {
   const [todos, regioes, corretores, parametrosCredito] = await Promise.all([
-    getEmpreendimentos(),
+    getEmpreendimentos(grupoDoSite()),
     getRegioesDisponiveis(),
     getCorretores(),
     getParametrosCredito(grupoDoSite()),
