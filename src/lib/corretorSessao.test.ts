@@ -11,15 +11,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 let linha: Record<string, unknown> | null = null;
+/** O que a leitura de `grupos` devolve; uma função que lança simula rede/erro. */
+let grupo: () => Promise<{ data: unknown; error: unknown }> = async () => ({ data: null, error: null });
+let selectDeCorretores = "";
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getClaims: async () => ({ data: { claims: { sub: "usuario-1" } } }) },
-    from: () => ({
-      select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: linha, error: null }) }),
-      }),
-    }),
+    from: (tabela: string) => {
+      if (tabela === "grupos") {
+        return { select: () => ({ maybeSingle: () => grupo() }) };
+      }
+      return {
+        select: (colunas: string) => {
+          selectDeCorretores = colunas;
+          return { eq: () => ({ maybeSingle: async () => ({ data: linha, error: null }) }) };
+        },
+      };
+    },
   }),
 }));
 
@@ -42,6 +51,8 @@ function corretor(campos: Record<string, unknown> = {}): Record<string, unknown>
 describe("getCorretorLogado", () => {
   beforeEach(() => {
     linha = null;
+    grupo = async () => ({ data: null, error: null });
+    selectDeCorretores = "";
   });
 
   it("devolve o grupo do corretor logado", async () => {
@@ -52,15 +63,48 @@ describe("getCorretorLogado", () => {
   });
 
   it("traz o tipo do grupo, para o menu esconder o que é de equipe", async () => {
-    linha = corretor({ grupo: { tipo: "independente" } });
+    linha = corretor({ grupo_id: "grupo-b" });
+    grupo = async () => ({ data: { id: "grupo-b", tipo: "independente" }, error: null });
     expect((await getCorretorLogado())?.tipoDoGrupo).toBe("independente");
 
-    linha = corretor({ grupo: { tipo: "imobiliaria" } });
+    grupo = async () => ({ data: { id: "grupo-b", tipo: "imobiliaria" }, error: null });
     expect((await getCorretorLogado())?.tipoDoGrupo).toBe("imobiliaria");
   });
 
   it("sem a linha do grupo, o menu fica como antes (imobiliária)", async () => {
-    linha = corretor({ grupo: null });
+    linha = corretor();
+    grupo = async () => ({ data: null, error: null });
+    expect((await getCorretorLogado())?.tipoDoGrupo).toBe("imobiliaria");
+  });
+
+  // A consulta crítica da sessão (68 chamadores) não pode depender da
+  // leitura do tipo, que só serve ao menu: um embed que desse erro voltaria
+  // `data: null` e o painel inteiro viraria "conta sem vínculo".
+  it("a consulta de corretores não embute grupos", async () => {
+    linha = corretor();
+    await getCorretorLogado();
+    expect(selectDeCorretores).not.toMatch(/grupos?\s*[:(]/);
+    expect(selectDeCorretores).toContain("grupo_id");
+  });
+
+  it("erro ao ler o grupo não derruba a sessão: o menu fica como antes", async () => {
+    linha = corretor();
+    grupo = async () => ({ data: null, error: { code: "PGRST201", message: "ambíguo" } });
+    const eu = await getCorretorLogado();
+    expect(eu?.slug).toBe("fulana");
+    expect(eu?.tipoDoGrupo).toBe("imobiliaria");
+
+    grupo = async () => {
+      throw new Error("fetch failed");
+    };
+    const deNovo = await getCorretorLogado();
+    expect(deNovo?.slug).toBe("fulana");
+    expect(deNovo?.tipoDoGrupo).toBe("imobiliaria");
+  });
+
+  it("linha de outro grupo não decide o menu", async () => {
+    linha = corretor({ grupo_id: "grupo-a" });
+    grupo = async () => ({ data: { id: "grupo-b", tipo: "independente" }, error: null });
     expect((await getCorretorLogado())?.tipoDoGrupo).toBe("imobiliaria");
   });
 
