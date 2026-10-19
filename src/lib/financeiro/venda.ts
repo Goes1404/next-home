@@ -168,6 +168,9 @@ export function formatarReais(n: number): string {
 export function traduzirErroDoBanco(mensagem: string): string {
   if (mensagem.includes("partes_nao_somam_100")) return "As partes da venda precisam somar 100%.";
   if (mensagem.includes("sem_participantes")) return "A venda precisa de pelo menos um corretor.";
+  if (mensagem.includes("participante_de_outro_grupo")) {
+    return "Um dos corretores da venda não é da sua imobiliária. Venda dividida com outra imobiliária ainda não é registrada aqui.";
+  }
   if (mensagem.includes("venda_nao_editavel")) {
     return "Esta venda não pode mais ser editada por você — a comissão já entrou, ou ela não é sua.";
   }

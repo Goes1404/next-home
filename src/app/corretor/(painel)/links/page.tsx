@@ -14,7 +14,7 @@ export default async function LinksPage() {
   if (!corretor) return null;
 
   const [empreendimentos, destaques] = await Promise.all([
-    getEmpreendimentos(),
+    getEmpreendimentos(corretor.grupoId),
     getMeusDestaques(),
   ]);
 

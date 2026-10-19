@@ -38,7 +38,7 @@ export default async function SelecaoPage({
   const ids = Array.isArray(link.dados.empreendimentos) ? (link.dados.empreendimentos as string[]) : [];
   // As taxas do simulador são as do grupo do corretor que mandou o link
   // (0182), não as do site em que a página por acaso está.
-  const [catalogo, parametros] = await Promise.all([getEmpreendimentos(), getParametrosCredito(link.grupoId)]);
+  const [catalogo, parametros] = await Promise.all([getEmpreendimentos(link.grupoId), getParametrosCredito(link.grupoId)]);
   // Na ordem da seleção; imóvel despublicado depois sai sem deixar buraco.
   const imoveis = ids
     .map((id) => catalogo.find((e) => e.id === id))

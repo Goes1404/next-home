@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function PaginaFinanciamento() {
-  const [parametros, catalogo] = await Promise.all([getParametrosCredito(grupoDoSite()), getEmpreendimentos()]);
+  const [parametros, catalogo] = await Promise.all([getParametrosCredito(grupoDoSite()), getEmpreendimentos(grupoDoSite())]);
 
   const comPreco = catalogo
     .filter((e) => typeof e.precoAPartir === "number" && e.precoAPartir > 0)

@@ -1,4 +1,5 @@
 import { getEmpreendimentos, getEmpreendimentoBySlug } from "../src/lib/queries";
+import { grupoDoSite } from "../src/lib/grupos/grupo";
 import { mapEmpreendimento } from "../src/lib/supabase/mappers";
 import type { Empreendimento } from "../src/lib/types";
 
@@ -9,7 +10,7 @@ async function main() {
 
   // 1. Validar Catálogo Geral de Imóveis
   console.log("1️⃣ Testando carregamento do catálogo...");
-  const imoveis = await getEmpreendimentos();
+  const imoveis = await getEmpreendimentos(grupoDoSite());
   console.log(`✓ Catálogo carregado com ${imoveis.length} empreendimento(s).`);
   
   if (imoveis.length === 0) {

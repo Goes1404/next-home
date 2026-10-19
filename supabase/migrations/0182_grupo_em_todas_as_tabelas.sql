@@ -290,12 +290,14 @@ alter table public.catalogo_candidatos
 --
 -- `derivar_grupo_da_linha` devolve o grupo que a linha tem de ter, nesta
 -- ordem:
---   a. `admin_eventos` sem grupo, com `detalhes.origem = 'plataforma'`, vindo
---      da chave de serviço (ou `postgres`) ou de administrador da
---      plataforma: fica nulo.
---   b. Toda coluna-mãe com valor (no UPDATE, só as que mudaram): a
+--   a. Toda coluna-mãe com valor (no UPDATE, só as que mudaram): a
 --      linha-mãe tem de existir, e o grupo dela tem de bater com o da linha
 --      e com o das outras mães.
+--   b. Nenhum grupo informado e NENHUMA mãe com valor: `admin_eventos` com
+--      `detalhes.origem = 'plataforma'`, vindo da chave de serviço
+--      (`service_role`) ou de administrador da plataforma, fica nulo.
+--      `postgres` não conta: é o papel dentro de qualquer função
+--      `security definer` chamada por um logado.
 --   c. Nenhuma mãe decidiu: o grupo informado, senão `grupo_atual()`.
 --   d. Ainda nulo: o único grupo, se só existe um (com aviso no log); senão
 --      erro. Hoje (só a Next Home) deixa a produção de pé; no dia do segundo
@@ -329,21 +331,14 @@ declare
   v_g      uuid;
   v_achou  boolean;
   v_grupos integer;
+  v_com_mae boolean := false;
   i        integer;
 begin
   if pg_trigger_depth() = 0 then
     raise exception 'derivar_grupo_da_linha só roda dentro do gatilho <tabela>_00_grupo';
   end if;
 
-  -- a. Evento da plataforma.
-  if v_grupo is null
-     and v_nome = 'admin_eventos'
-     and p_novo -> 'detalhes' ->> 'origem' = 'plataforma'
-     and (p_papel in ('service_role', 'postgres') or public.eh_admin_da_plataforma()) then
-    return null;
-  end if;
-
-  -- b. As mães. `tg_argv` chega com índice a partir de ZERO; por isso os
+  -- a. As mães. `tg_argv` chega com índice a partir de ZERO; por isso os
   -- limites vêm do próprio array, e não de 1 .. array_length.
   for i in coalesce(array_lower(p_maes, 1), 1) .. coalesce(array_upper(p_maes, 1), 0) by 3 loop
     v_col := p_maes[i];
@@ -352,6 +347,7 @@ begin
     v_valor := p_novo ->> v_col;
 
     continue when v_valor is null;
+    v_com_mae := true;
     continue when p_op = 'UPDATE' and v_valor is not distinct from (p_velho ->> v_col);
 
     select format_type(a.atttypid, a.atttypmod) into v_tipo
@@ -375,6 +371,21 @@ begin
         using errcode = 'check_violation';
     end if;
   end loop;
+
+  -- b. Evento da plataforma: só sem grupo informado, sem NENHUMA mãe com
+  -- valor (evento sobre um corretor é do grupo dele) e vindo da chave de
+  -- serviço ou de administrador da plataforma. `postgres` não conta: dentro
+  -- de qualquer função `security definer` chamada por um logado o papel é
+  -- `postgres`, e a marca viraria um jeito de gravar evento fora do grupo
+  -- (0183). Fica depois das mães e antes de `grupo_atual()`, porque o
+  -- administrador pode também ser corretor de um grupo.
+  if v_grupo is null
+     and not v_com_mae
+     and v_nome = 'admin_eventos'
+     and p_novo -> 'detalhes' ->> 'origem' = 'plataforma'
+     and (p_papel = 'service_role' or public.eh_admin_da_plataforma()) then
+    return null;
+  end if;
 
   -- c. Sem mãe: o informado (já em v_grupo), senão o de quem está logado.
   if v_grupo is null then

@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { slugsParaComparar } from "@/lib/favoritos";
 import { linhasDaComparacao } from "@/lib/comparacao";
 import { FavoritosParaComparar } from "./FavoritosParaComparar";
@@ -28,7 +29,7 @@ export default async function CompararPage({
 }) {
   const sp = await searchParams;
   const slugs = slugsParaComparar(sp.imoveis);
-  const catalogo = await getEmpreendimentos();
+  const catalogo = await getEmpreendimentos(grupoDoSite());
   const nomes = Object.fromEntries(catalogo.map((e) => [e.slug, e.nome]));
   const escolhidos = slugs
     .map((s) => catalogo.find((e) => e.slug === s))

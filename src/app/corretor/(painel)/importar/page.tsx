@@ -10,7 +10,7 @@ export default async function ImportarPage() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [empreendimentos, gestor] = await Promise.all([getEmpreendimentos(), souGestor()]);
+  const [empreendimentos, gestor] = await Promise.all([getEmpreendimentos(corretor.grupoId), souGestor()]);
 
   return (
     <div>

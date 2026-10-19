@@ -115,6 +115,16 @@ viraria N migrations.
   `sortear_corretor_whatsapp(p_grupo, …)` sorteia só no grupo; a assinatura
   antiga fica até o deploy, presa ao grupo 1. Meta, Gmail e Pixel passam por
   `integracaoLiberada` (só o grupo 1 até a fase 7).
+  O catálogo (`getEmpreendimentos`) não tem mais grupo padrão: o painel lê o
+  do corretor logado e as páginas de seleção, proposta e portal o de quem
+  mandou o link (com o padrão, elas saíam vazias para o grupo B).
+- **A 0183 (parte B) escopa as funções `security definer`** (Task 5), onde a
+  RLS não vale: a roleta escolhe só no grupo do lead (sem ninguém elegível,
+  o lead fica sem dono dentro dele), o último gestor é contado por grupo,
+  funções de gestor (papel, pagamento de venda, preferência de contato)
+  agem só no grupo dele, ranking e taxas da equipe contam só o grupo. Crédito
+  de vídeo e reserva de visita saíram do `authenticated`. As exceções ficam
+  em `src/lib/grupos/funcoesSeguras.ts`, conferidas no texto e no `pg_proc`.
 - **A chave de serviço está classificada por grupo (Task 7).** Todo arquivo
   que a usa está num mapa com a categoria (`por-id`, `equipe`,
   `agrega-por-grupo`, `cruza-conjuntos`, `plataforma`) e

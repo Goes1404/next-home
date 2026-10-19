@@ -38,7 +38,7 @@ export type { LinhaCorretor };
  * porteiro (`/wa`), que sorteia entre quem tem WhatsApp conectado.
  */
 const buscarPublicados = cache(
-  async (grupoId: string = grupoDoSite()): Promise<Empreendimento[]> => catalogoPublicado(grupoId),
+  async (grupoId: string): Promise<Empreendimento[]> => catalogoPublicado(grupoId),
 );
 
 /** Minúsculas e sem acento: "Estação" e "estacao" são a mesma busca. */
@@ -168,11 +168,13 @@ async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | und
  */
 export async function getEmpreendimentos(
   /**
-   * O grupo dono do catálogo (L15). O site usa o do site; o webhook e os
-   * crons passam o grupo da instância, para a IA de um grupo não oferecer o
-   * imóvel de outro.
+   * O grupo dono do catálogo (L15). Obrigatório, sem padrão: o site passa
+   * `grupoDoSite()`, o painel o grupo do corretor logado, as páginas de link
+   * (seleção, proposta, portal) o grupo de quem mandou o link, e o webhook e
+   * os crons o grupo da instância. Com um padrão, todo chamador que
+   * esquecesse leria calado o catálogo do grupo 1 (rodada 1 da Task 12).
    */
-  grupoId: string = grupoDoSite(),
+  grupoId: string,
   filtros?: FiltrosEmpreendimento,
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
@@ -197,7 +199,7 @@ export async function getEmpreendimentosDoLink(
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
   const [todos, destaquesCorretor] = await Promise.all([
-    buscarPublicados(),
+    buscarPublicados(grupoDoSite()),
     buscarDestaquesCorretorAtivo(),
   ]);
   const filtrados = filtros ? todos.filter((e) => bate(e, filtros)) : todos;
@@ -213,7 +215,7 @@ export async function getSimilares(
   slug: string,
   limite = 3,
 ): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados();
+  const todos = await buscarPublicados(grupoDoSite());
   const atual = todos.find((e) => e.slug === slug);
   if (!atual) return [];
 
@@ -225,7 +227,7 @@ export async function getSimilares(
 }
 
 export async function getEmpreendimentosDestaque(): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados();
+  const todos = await buscarPublicados(grupoDoSite());
   return todos.filter((e) => e.destaque);
 }
 
@@ -236,7 +238,7 @@ export async function getEmpreendimentoBySlug(
   // a página pedem o MESMO slug na mesma requisição: com o `cache()` de
   // `buscarPublicados`, a segunda leitura é de graça (era uma ida ao banco a
   // mais, e depois outra inteira para os similares).
-  const todos = await buscarPublicados();
+  const todos = await buscarPublicados(grupoDoSite());
   return todos.find((e) => e.slug === slug) ?? null;
 }
 
@@ -279,7 +281,7 @@ export async function getRegioesDisponiveis(): Promise<{
   bairros: string[];
   tipos: TipoImovel[];
 }> {
-  const todos = await buscarPublicados();
+  const todos = await buscarPublicados(grupoDoSite());
   const cidades = [...new Set(todos.map((e) => e.cidade))].sort();
   const bairros = [...new Set(todos.map((e) => e.bairro))].sort();
   const tipos = [...new Set(todos.map((e) => e.tipo))].sort();

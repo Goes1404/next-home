@@ -14,6 +14,7 @@ import { CartaoTilt } from "@/components/motion/CartaoTilt";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { enderecoLinha, site } from "@/lib/site";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
@@ -82,7 +83,7 @@ const COMO_FUNCIONA = [
 
 export default async function SobrePage() {
   const [catalogo, regioes, corretores] = await Promise.all([
-    getEmpreendimentos(),
+    getEmpreendimentos(grupoDoSite()),
     getRegioesDisponiveis(),
     getCorretores(),
   ]);

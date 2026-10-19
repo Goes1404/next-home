@@ -8,6 +8,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { iniciais, telefoneBR } from "@/lib/format";
 import { getCorretorPorSlug, getCorretores, getEmpreendimentos } from "@/lib/queries";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { linkWhatsappPara, site } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 import { descricaoDePagina } from "@/lib/seo";
@@ -100,7 +101,7 @@ export default async function CorretorPage({ params }: { params: Promise<Params>
   const corretor = await getCorretorPorSlug(slug);
   if (!corretor) notFound();
 
-  const catalogo = await getEmpreendimentos();
+  const catalogo = await getEmpreendimentos(grupoDoSite());
   const empreendimentos = catalogo.slice(0, VITRINE);
   const primeiroNome = corretor.nome.split(" ")[0];
   const whatsapp = linkWhatsappPara(

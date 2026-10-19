@@ -64,7 +64,8 @@ export default async function CampanhasPainelPage({
 
   const corretor = await getCorretorLogado();
   const [empreendimentos, campanhas, status, listas, modelos] = await Promise.all([
-    getEmpreendimentos(),
+    // O catálogo do grupo de quem está logado; sem sessão, nenhum.
+    corretor ? getEmpreendimentos(corretor.grupoId) : Promise.resolve([]),
     listarCampanhas(),
     statusDisparo(),
     getListasSugeridas(diasParado),

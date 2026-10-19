@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
 
@@ -417,6 +418,61 @@ describe("guarda: portas de entrada leem dentro do grupo", () => {
     // Um piso: se o recorte parar de achar as leituras, a guarda aprovaria
     // tudo calada.
     expect(encontradas).toBeGreaterThanOrEqual(15);
+    expect(fora).toEqual([]);
+  });
+});
+
+/**
+ * Rodada 1 da Task 12: `getEmpreendimentos` tinha `grupoDoSite()` como
+ * padrão, e todo chamador que não passava o grupo lia calado o catálogo do
+ * grupo 1 — a seleção, a proposta e o portal de um corretor do grupo B
+ * saíam vazios, e o painel dele mostrava o catálogo da Next Home. Sem
+ * padrão, o `tsc` lista cada chamador; esta guarda impede o padrão de
+ * voltar e o grupo do SITE de entrar onde quem manda é outro grupo.
+ */
+describe("guarda: o catálogo é lido no grupo de quem pede", () => {
+  const PAGINAS_DE_LINK = [
+    "src/app/(institucional)/selecao/[token]/page.tsx",
+    "src/app/(institucional)/proposta/[token]/page.tsx",
+    "src/app/(institucional)/portal/[token]/page.tsx",
+  ];
+
+  it("getEmpreendimentos e buscarPublicados não têm grupo padrão", () => {
+    const queries = semComentarios(readFileSync("src/lib/queries.ts", "utf8"));
+    const assinatura = /export async function getEmpreendimentos\(([\s\S]*?)\)\s*:/.exec(queries);
+    expect(assinatura, "assinatura de getEmpreendimentos não encontrada").not.toBeNull();
+    expect(assinatura![1]).toMatch(/grupoId\s*:\s*string\s*,/);
+    expect(assinatura![1]).not.toMatch(/grupoId\s*:\s*string\s*=/);
+    const busca = /const buscarPublicados = cache\(\s*async \(([^)]*)\)/.exec(queries);
+    expect(busca, "buscarPublicados não encontrada").not.toBeNull();
+    expect(busca![1]).not.toContain("=");
+  });
+
+  it("as páginas de link leem o catálogo do grupo de quem mandou o link", () => {
+    for (const arquivo of PAGINAS_DE_LINK) {
+      const codigo = semComentarios(readFileSync(arquivo, "utf8"));
+      const chamadas = [...codigo.matchAll(/getEmpreendimentos\(([^)]*)\)/g)].map((m) => m[1].trim());
+      expect(chamadas.length, arquivo).toBeGreaterThan(0);
+      for (const argumento of chamadas) expect(argumento, arquivo).toBe("link.grupoId");
+    }
+  });
+
+  it("o painel nunca lê o catálogo pelo grupo do site", () => {
+    const fora: string[] = [];
+    let chamadas = 0;
+    const arquivos = readdirSync("src/app/corretor", { recursive: true, encoding: "utf8" }).filter(
+      (f) => /\.(ts|tsx)$/.test(f) && !/\.test\.tsx?$/.test(f),
+    );
+    for (const relativo of arquivos) {
+      const arquivo = join("src/app/corretor", relativo);
+      const codigo = semComentarios(readFileSync(arquivo, "utf8"));
+      for (const m of codigo.matchAll(/getEmpreendimentos\(([^)]*\)?)\)/g)) {
+        chamadas++;
+        if (m[1].trim() === "" || m[1].includes("grupoDoSite")) fora.push(`${arquivo}: ${m[0]}`);
+      }
+    }
+    // Piso: campanhas (2), importar, links, seleção (2), conversas, whatsapp.
+    expect(chamadas).toBeGreaterThanOrEqual(8);
     expect(fora).toEqual([]);
   });
 });
