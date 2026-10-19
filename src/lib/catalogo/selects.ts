@@ -15,6 +15,11 @@ export const SELECT_EMPREENDIMENTO = `
   unidades(tipologia_id, status)
 `;
 
+/**
+ * As colunas que `mapCorretor` lê. A leitura PÚBLICA de corretores usa
+ * `COLUNAS_PUBLICAS_DE_CORRETOR` (`corretores/colunasPublicas.ts`, 0187), que
+ * as contém; aqui fica o que o login do painel lê pela sessão.
+ */
 export const SELECT_CORRETOR =
   "id, slug, nome, creci, whatsapp, foto_url, video_url, fundo_tipo, fundo_foto_url, bio";
 

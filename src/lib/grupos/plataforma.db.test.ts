@@ -20,6 +20,7 @@ import {
   type Conexao,
 } from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
+import { COLUNAS_PUBLICAS_DE_CORRETOR } from "@/lib/corretores/colunasPublicas";
 
 /** Roda `fn` pela chave de serviço (papel `service_role`, como o PostgREST). */
 function comoServico<T>(
@@ -41,7 +42,7 @@ const CONTATO = {
   telefone: "11999990000",
 };
 
-describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", () => {
   let sql: Sql;
 
   beforeAll(async () => {
@@ -231,5 +232,72 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186)", () => 
           or has_table_privilege('authenticated', 'public.grupos', 'delete') as escreve
     `;
     expect(escreve).toBe(false);
+  });
+
+  // 0187: com e-mail REAL na ficha (fase 2), a chave pública só lê as colunas
+  // que o site mostra. `authenticated` não muda nesta migration.
+  it("anon não lê email de corretores", async () => {
+    for (const coluna of ["email", "user_id", "deve_trocar_senha"]) {
+      await emTransacaoDesfeita(sql, async (tx) => {
+        await tx`set local role anon`;
+        await expect(tx.unsafe(`select ${coluna} from public.corretores`)).rejects.toThrow(
+          /permission denied/,
+        );
+      });
+    }
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await tx`set local role anon`;
+      await expect(tx`select * from public.corretores`).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("anon lê a lista pública", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "grupo-b" });
+      const linhas = await tx.savepoint(async (s) => {
+        await s`set local role anon`;
+        // A mesma consulta de `corretoresPublicos` (catalogo/cache.ts).
+        return s.unsafe(
+          `select ${COLUNAS_PUBLICAS_DE_CORRETOR} from public.corretores
+            where grupo_id = $1 and ativo and slug is not null order by nome`,
+          [b.grupoId],
+        );
+      });
+      expect(linhas.map((l) => l.nome)).toEqual(["corretor grupo-b", "gestor grupo-b"]);
+      expect(Object.keys(linhas[0]).sort()).toEqual(
+        COLUNAS_PUBLICAS_DE_CORRETOR.split(",").map((c) => c.trim()).sort(),
+      );
+    });
+    const [{ logado }] = await sql`
+      select has_column_privilege('authenticated', 'public.corretores', 'email', 'select') as logado
+    `;
+    expect(logado).toBe(true);
+  });
+
+  // Mesma migration: as colunas da 0186 (documento, cobrança, LGPD) são da
+  // plataforma, não de todo corretor do grupo. O logado lê só o básico.
+  it("corretor lê tipo do grupo e não lê documento", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "grupo-b" });
+      const [grupo] = await comoUsuario(tx, b.corretorUserId, (eu) =>
+        eu`select id, nome, slug, tipo, plano, situacao, criado_em from public.grupos`,
+      );
+      expect(grupo).toMatchObject({ id: b.grupoId, tipo: "imobiliaria", situacao: "ativo" });
+      for (const coluna of [
+        "documento",
+        "razao_social",
+        "contato_cobranca_email",
+        "contato_cobranca_telefone",
+        "encarregado_lgpd_email",
+        "criado_por",
+      ]) {
+        await expect(
+          comoUsuario(tx, b.corretorUserId, (eu) => eu.unsafe(`select ${coluna} from public.grupos`)),
+        ).rejects.toThrow(/permission denied/);
+      }
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) => eu`select * from public.grupos`),
+      ).rejects.toThrow(/permission denied/);
+    });
   });
 });

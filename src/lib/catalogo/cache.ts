@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/public";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type { CorretorPerfil, Empreendimento } from "@/lib/types";
-import { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "./selects";
+import { COLUNAS_PUBLICAS_DE_CORRETOR } from "@/lib/corretores/colunasPublicas";
+import { mapCorretor, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "./selects";
 import { REVALIDA_EM_SEGUNDOS, TAG_CATALOGO, TAG_CORRETORES } from "./tags";
 
 /**
@@ -73,10 +74,12 @@ export const catalogoPublicado = unstable_cache(
 export const corretoresPublicos = unstable_cache(
   async (grupoId: string): Promise<CorretorPerfil[]> => {
     const supabase = createClient();
+    // Só as colunas que a chave pública pode ler (0187): sem e-mail, sem
+    // login. Um `select("*")` aqui seria recusado pelo banco inteiro.
     const { data, error } = await comRetentativa("corretores", () =>
       supabase
         .from("corretores")
-        .select(SELECT_CORRETOR)
+        .select(COLUNAS_PUBLICAS_DE_CORRETOR)
         // A equipe do grupo do site (L15), não a da plataforma inteira.
         .eq("grupo_id", grupoId)
         .eq("ativo", true)
@@ -84,15 +87,10 @@ export const corretoresPublicos = unstable_cache(
         .order("nome"),
     );
     if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
-    // Conta só WhatsApp (0180) não é corretor do site. À parte e tolerante:
-    // sem a migration a coluna não existe, e o site não pode cair por isso.
-    const { data: soWhatsapp } = await supabase
-      .from("corretores")
-      .select("id")
-      .eq("grupo_id", grupoId)
-      .eq("so_whatsapp", true);
-    const fora = new Set((soWhatsapp ?? []).map((c) => c.id));
-    return (data as LinhaCorretor[]).filter((c) => !fora.has(c.id)).map(mapCorretor);
+    // Conta só WhatsApp (0180) não é corretor do site.
+    return (data as unknown as (LinhaCorretor & { so_whatsapp: boolean | null })[])
+      .filter((c) => !c.so_whatsapp)
+      .map(mapCorretor);
   },
   // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
