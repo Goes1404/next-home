@@ -118,6 +118,11 @@ viraria N migrations.
   O catálogo (`getEmpreendimentos`) não tem mais grupo padrão: o painel lê o
   do corretor logado e as páginas de seleção, proposta e portal o de quem
   mandou o link (com o padrão, elas saíam vazias para o grupo B).
+  No painel o grupo é sempre o de quem está logado:
+  `semGrupoDoSiteNoPainel.test.ts` reprova `grupoDoSite(` em
+  `src/app/corretor` e `src/app/api/painel`, e também as funções do site
+  que o usam por dentro (`getCorretores`, `getEmpreendimentoBySlug`, ...),
+  com a lista tirada do código delas.
 - **A 0183 (parte B) escopa as funções `security definer`** (Task 5), onde a
   RLS não vale: a roleta escolhe só no grupo do lead (sem ninguém elegível,
   o lead fica sem dono dentro dele), o último gestor é contado por grupo,
