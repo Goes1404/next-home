@@ -57,7 +57,8 @@ export async function proxy(request: NextRequest) {
   // vitrine pagar o Auth que só o painel precisa).
   const areaDoCorretor = pathname === "/corretor" || pathname.startsWith("/corretor/");
   // Telas de quem ainda não entrou. A volta do link do e-mail
-  // (`/auth/confirmar`) mora fora de `/corretor` justamente para não passar
+  // (`/auth/confirmar` e o botão `/auth/continuar`) mora fora de `/corretor`
+  // justamente para não passar
   // por esta exigência.
   const precisaLogin = areaDoCorretor && !TELAS_SEM_LOGIN.has(pathname);
 

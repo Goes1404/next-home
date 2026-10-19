@@ -1,44 +1,54 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { destinoSeguro } from "@/lib/auth/links";
-import { createClient } from "@/lib/supabase/server";
+import {
+  CAMINHO_DO_BOTAO,
+  CAMINHO_DO_COOKIE,
+  COOKIE_DO_LINK,
+  DESTINO_DO_LINK_RUIM,
+  VALIDADE_DO_COOKIE_S,
+  lerLinkPendente,
+  valorDoCookie,
+} from "@/lib/auth/linkPendente";
 
 /**
  * A volta do e-mail de convite e de recuperação de senha.
  *
  * O link (`gerarLinkDeAcesso`) traz `token_hash`, `type` e `next` na query.
- * O `verifyOtp` roda aqui, no servidor, com o cliente de cookies: a sessão
- * nasce na própria resposta (o Next junta os cookies gravados por
- * `cookies()` ao redirecionamento devolvido), sem depender de verificador
- * PKCE nem de JavaScript no navegador — funciona no celular de quem abriu o
- * e-mail, que não é o computador de quem mandou o convite.
+ * Este GET NÃO gasta o token: filtros de e-mail (Safe Links do Microsoft 365
+ * e outros) abrem o link antes da pessoa, e um GET que verificasse faria o
+ * primeiro clique de verdade cair em "já foi usado". Aqui o link só é guardado
+ * num cookie `httpOnly` e a pessoa vai para `/auth/continuar`, onde o botão
+ * faz o `verifyOtp` (ver `src/lib/auth/linkPendente.ts`).
  *
  * Mora fora de `/corretor` (o `proxy.ts` só exige sessão lá): quem chega aqui
  * ainda não tem sessão nenhuma.
  *
- * Link já usado, vencido, adulterado ou incompleto: tela de entrar com
- * `?link=expirado`, que explica e aponta "Esqueci a senha". Erro genérico
- * aqui faria a pessoa achar que a conta não existe.
+ * Link incompleto ou de tipo desconhecido: tela de entrar com
+ * `?link=expirado`, que explica e aponta "Esqueci a senha".
  */
-
-const TIPOS = new Set(["invite", "recovery"]);
-
 export async function GET(request: NextRequest) {
-  const parametros = request.nextUrl.searchParams;
-  const tokenHash = parametros.get("token_hash");
-  const tipo = parametros.get("type");
+  const link = lerLinkPendente(request.nextUrl.searchParams);
+  if (!link) return irPara(DESTINO_DO_LINK_RUIM);
 
-  if (!tokenHash || !tipo || !TIPOS.has(tipo)) return expirado(request);
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    type: tipo as "invite" | "recovery",
-    token_hash: tokenHash,
+  const resposta = irPara(CAMINHO_DO_BOTAO);
+  resposta.cookies.set(COOKIE_DO_LINK, valorDoCookie(link), {
+    httpOnly: true,
+    // `lax`, não `strict`: o clique vem de outro site (o e-mail), e um cookie
+    // `strict` não seguiria o redirecionamento para `/auth/continuar`.
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: CAMINHO_DO_COOKIE,
+    maxAge: VALIDADE_DO_COOKIE_S,
   });
-  if (error) return expirado(request);
-
-  return NextResponse.redirect(new URL(destinoSeguro(parametros.get("next")), request.url));
+  return resposta;
 }
 
-function expirado(request: NextRequest) {
-  return NextResponse.redirect(new URL("/corretor/entrar?link=expirado", request.url));
+/**
+ * Redirecionamento com `Location` RELATIVO. O `request.url` nem sempre traz o
+ * host que o navegador usou (no `next dev -H 127.0.0.1` ele vira `localhost`;
+ * atrás de proxy pode virar o host interno), e o cookie do link é do host do
+ * clique: mandar para outro host perderia o cookie e o botão cairia em
+ * "link expirado". Conferido no teste manual de 19/10.
+ */
+function irPara(caminho: string): NextResponse {
+  return new NextResponse(null, { status: 303, headers: { Location: caminho } });
 }

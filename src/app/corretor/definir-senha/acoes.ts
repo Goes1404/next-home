@@ -13,7 +13,7 @@ const MINIMO_DA_SENHA = 8;
  *
  * Não pede a senha atual, ao contrário de `trocarSenha`: quem foi convidado
  * nunca teve uma, e quem esqueceu não sabe qual é. O que autoriza é a sessão
- * que o `/auth/confirmar` abriu a partir do link — e o link só funciona uma
+ * que o botão de `/auth/continuar` abriu a partir do link — e o link só funciona uma
  * vez.
  *
  * Zera `deve_trocar_senha`: a senha agora é escolhida pela pessoa, então o

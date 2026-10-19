@@ -16,8 +16,11 @@ import { createServiceClient } from "@/lib/supabase/service";
  * o e-mail no celular, e não há verificador nenhum ali.
  *
  * O caminho que não depende de nada disso é o `hashed_token` na query de uma
- * rota nossa (`/auth/confirmar`), que chama `verifyOtp({ type, token_hash })`
- * no servidor e grava os cookies da sessão na própria resposta.
+ * rota nossa (`/auth/confirmar`). Ela não gasta o token (scanners de e-mail
+ * abrem o link antes da pessoa): guarda o link e mostra um botão em
+ * `/auth/continuar`, cuja action chama `verifyOtp({ type, token_hash })` no
+ * servidor e grava os cookies da sessão na própria resposta
+ * (`linkPendente.ts`).
  *
  * `generateLink` só GERA: não manda e-mail nenhum (o envio é do
  * `emailsDeAcesso.ts`, pelo Resend). Para o convite ele também cria o
@@ -31,7 +34,7 @@ export type LinkDeAcesso =
   | { ok: true; url: string; userId: string }
   | { ok: false; motivo: "email_em_uso" | "email_de_acesso" | "falha" };
 
-/** A rota que recebe o link (`src/app/auth/confirmar/route.ts`). */
+/** A rota que recebe o link (`src/app/auth/confirmar/route.ts`); o token só é gasto no botão de `/auth/continuar`. */
 export const CAMINHO_DE_CONFIRMACAO = "/auth/confirmar";
 
 /** Para onde vai quem entrou sem um `next` válido. */
