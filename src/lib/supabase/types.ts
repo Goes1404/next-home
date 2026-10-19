@@ -13,6 +13,7 @@
  *   - catalogo_candidatos.decisao (0078)
  *   - corretor_whatsapp_instancias.modo_bot
  *   - corretor_whatsapp_instancias.status_conexao
+ *   - grupos.tipo (0181)
  *   - ia_interacoes.avaliacao
  *   - ia_interacoes.motivo_avaliacao (0131)
  *   - ia_interacoes.origem
@@ -37,6 +38,10 @@
  * do Supabase só aceita nomes de coluna e de relação que existam AQUI, e uma
  * coluna que existe no banco mas falta neste arquivo vira erro de tipo no
  * `.select()`, não no banco.
+ *
+ * Também escritos à mão: a tabela `grupos`, a coluna `corretores.grupo_id`
+ * (opcional no Insert: a migration seguinte põe o gatilho que a deduz) e a
+ * função `grupo_atual()`, todos da 0181.
  */
 
 export type Json =
@@ -984,6 +989,7 @@ export type Database = {
           foto_url: string | null
           fundo_foto_url: string | null
           fundo_tipo: string
+          grupo_id: string
           id: string
           nome: string
           papel: string
@@ -1008,6 +1014,7 @@ export type Database = {
           foto_url?: string | null
           fundo_foto_url?: string | null
           fundo_tipo?: string
+          grupo_id?: string
           id?: string
           nome: string
           papel?: string
@@ -1032,6 +1039,7 @@ export type Database = {
           foto_url?: string | null
           fundo_foto_url?: string | null
           fundo_tipo?: string
+          grupo_id?: string
           id?: string
           nome?: string
           papel?: string
@@ -1041,7 +1049,15 @@ export type Database = {
           video_url?: string | null
           whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "corretores_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       empreendimento_lazer: {
         Row: {
@@ -1181,6 +1197,30 @@ export type Database = {
         }
         Relationships: [
         ]
+      }
+      grupos: {
+        Row: {
+          criado_em: string
+          id: string
+          nome: string
+          slug: string
+          tipo: "imobiliaria" | "independente"
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome: string
+          slug: string
+          tipo: "imobiliaria" | "independente"
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome?: string
+          slug?: string
+          tipo?: "imobiliaria" | "independente"
+        }
+        Relationships: []
       }
       historico_envios: {
         Row: {
@@ -3137,6 +3177,7 @@ export type Database = {
         Returns: number
       }
       eh_gestor: { Args: never; Returns: boolean }
+      grupo_atual: { Args: never; Returns: string | null }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }
       conversas_com_fala_do_cliente: {
         Args: { p_ids: string[] }

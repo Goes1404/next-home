@@ -9298,3 +9298,22 @@ Nota: [[banco-local-reproduzivel-das-migrations]]. Roteiro e edições:
   constraints e índices. Sem isso, RLS desligada ou `security definer`
   liberada ao `anon` em produção saíam "iguais" no diff. E o primeiro ramo do
   `union` decide o tipo: `extname` (`name`, 63 bytes) cortava as assinaturas.
+
+## O grupo 1 e a numeração que já estava ocupada (0181, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **O plano numerava a primeira migration multi-grupo como 0159, e a branch
+  de produção já ia até 0180** (99 commits à frente da base desta branch).
+  Ela virou `0181_grupos.sql`, e 0159–0180 estão em `RESERVADOS` de
+  `migrations.test.ts`. A guarda de prefixo duplicado não enxerga a branch
+  vizinha: conferir com `git ls-tree -r --name-only origin/<branch de
+  produção> supabase/migrations | tail` antes de criar.
+- **A 0181 cria `grupos`, o grupo 1 (`…0001`, `next-home`),
+  `corretores.grupo_id not null` e `grupo_atual()`.** Sozinha em produção ela
+  quebraria a criação de acesso, que insere corretor sem grupo; a seguinte
+  põe o gatilho que deduz o grupo, e as duas sobem juntas.
+- **Teste de banco** (`*.db.test.ts`, pula sem `DB_TESTE_URL`): ajudantes em
+  `src/lib/grupos/apoioDoBanco.ts`. Cada teste roda em
+  `emTransacaoDesfeita`; `comoUsuario` usa savepoint, e o `set local role`
+  volta junto com ele (há teste que confere).

@@ -6,7 +6,7 @@ status: seedling
 custou: alto
 codigo: docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 summary: Decisão de 18/10/2026 — o CRM vira produto vendido para imobiliárias e corretores independentes numa plataforma só, com vários grupos no mesmo banco. Substitui "uma instalação por cliente". A Next Home vira o grupo 1, a preço de custo.
 ---
 
@@ -58,3 +58,7 @@ viraria N migrations.
   feita no servidor, escopada pelo grupo.
 - As 158 migrations nunca rodaram num banco vazio; o ambiente de testes é
   onde isso se prova.
+- **As migrations multi-grupo começam em 0181**, não em 0159: a branch de
+  produção já ocupa 0159–0180 (reservados em `migrations.test.ts`). A 0181
+  cria `grupos`, o grupo 1 (`00000000-…-0001`), `corretores.grupo_id` e
+  `grupo_atual()`.

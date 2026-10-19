@@ -34,8 +34,12 @@ const DIR_MIGRATIONS = join(process.cwd(), "supabase", "migrations");
  * Ao fundir com a branch de produção, esta lista deve ficar VAZIA — e o
  * teste abaixo reprova reserva que já foi ocupada, para ela não virar
  * comentário morto.
+ *
+ * 19/10/2026: a branch `fase-1-multi-grupo` nasceu em 0158, e a branch de
+ * produção (`claude/modernizar-plataforma-imobiliaria-2tm13q`) já tinha
+ * 0159 a 0180. As migrations multi-grupo começam em 0181.
  */
-const RESERVADOS = new Set<number>([]);
+const RESERVADOS = new Set<number>(Array.from({ length: 22 }, (_, i) => 159 + i));
 
 function migrations(): { arquivo: string; prefixo: string }[] {
   return readdirSync(DIR_MIGRATIONS)
