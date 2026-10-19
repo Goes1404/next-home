@@ -10490,11 +10490,53 @@ Nota: [[plataforma-multi-grupo]].
 - **Taxas de crédito por grupo (0181)**: a PK da linha única
   (`id boolean check (id)`) saiu e o grupo virou a chave. `getParametrosCredito`
   exige o grupo, sem padrão: com padrão, tela do painel que esquecesse de
-  passá-lo simularia com as taxas do site, calada. O webhook ainda usa
-  `grupoDoSite()` porque a instância não carrega o grupo.
+  passá-lo simularia com as taxas do site, calada. O webhook lê pelo grupo
+  da instância desde a 0182.
 - **Corretor desativado perde a sessão (0181)**: `grupo_atual()`,
   `corretor_atual()` e `eh_gestor()` filtram `ativo`. Antes, desativar só o
   tirava da roleta e o login seguia lendo o que lia.
+
+## `grupo_id` em toda tabela, pela linha-mãe (0182, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **Toda tabela do `public` tem `grupo_id`**, menos `grupos`,
+  `administradores_da_plataforma`, `whatsapp_disparo_lock` e
+  `whatsapp_diagnosticos` (`TABELAS_GLOBAIS`, conferida no banco pela suíte
+  de isolamento). `admin_eventos.grupo_id` é anulável: nulo = evento da
+  plataforma, e só com `detalhes.origem = 'plataforma'` pela chave de
+  serviço ou por administrador da plataforma.
+- **O gatilho `<tabela>_00_grupo` deriva o grupo das FKs reais**
+  (`pg_constraint`), não do nome da coluna, e confere TODAS as mães: lead de
+  B apontando imóvel de A, ou nota de B destinada a corretor de A, falha com
+  `grupo da linha difere do grupo de <mãe>`. Mãe inexistente falha antes da
+  FK, com o nome da coluna. Sem mãe: o grupo informado, senão o de quem está
+  logado, senão o único (com aviso), senão `grupo_id obrigatório`.
+- **`tg_argv` começa no índice ZERO.** O primeiro carimbo percorria
+  `1 .. array_length` e lia os argumentos deslocados: nenhuma mãe era
+  conferida, e tudo caía no grupo único. Use `array_lower`/`array_upper`.
+- **`current_user` dentro de `security definer` é o DONO.** Por isso o
+  carimbo são duas funções: `carimbar_grupo` (sem definer) confere se quem
+  troca o grupo é `transferidor_de_grupo`; `derivar_grupo_da_linha`
+  (definer) lê as mães de qualquer grupo e se recusa a rodar fora de gatilho
+  (`pg_trigger_depth() = 0`), senão seria um oráculo de "este id existe e é
+  de tal grupo" pela API.
+- **No UPDATE o gatilho só dispara com `update of` das mães e do grupo**:
+  contador de não lidas e status de venda não pagam o carimbo, e mãe que não
+  mudou não é reconferida.
+- **Coluna nova com default constante não reescreve a tabela nem dispara
+  gatilho de UPDATE.** A 0182 põe `grupo_id not null default <grupo 1>` e
+  derruba o default na mesma transação: backfill de graça, e nenhum default
+  sobra para um grupo novo cair calado na Next Home.
+- **Teste de banco com duas recusas seguidas: cada uma num
+  `tx.savepoint`.** Erro aborta a transação, e a segunda conferência
+  rodaria numa transação morta ("current transaction is aborted").
+- **`transferidor_de_grupo` não tem membros.** O Postgres 17 dá ADMIN da
+  role a quem a cria (`postgres`), sem SET: para agir como ela num teste,
+  `grant transferidor_de_grupo to postgres with set true` dentro da
+  transação desfeita.
+- **O webhook e a seleção leem as taxas pelo grupo do dono** (instância e
+  link), não pelo `grupoDoSite()` — guarda em `taxasDoDono.test.ts`.
 
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 

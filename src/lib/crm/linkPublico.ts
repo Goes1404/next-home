@@ -10,6 +10,8 @@ export type LinkPublico = {
   token: string;
   leadId: string;
   corretorId: string;
+  /** Grupo do link, o mesmo do corretor que o mandou (o gatilho da 0182 garante). */
+  grupoId: string;
   dados: Record<string, unknown>;
   primeiroNome: string | null;
   corretor: { nome: string; whatsapp: string | null; fotoUrl: string | null; creci: string | null };
@@ -35,7 +37,7 @@ export async function lerLinkPublico(
   const supabase = createServiceClient();
   const { data: link } = await supabase
     .from("links_do_cliente")
-    .select("token, tipo, lead_id, corretor_id, dados, expira_em, aberto_em")
+    .select("token, tipo, lead_id, corretor_id, grupo_id, dados, expira_em, aberto_em")
     .eq("token", token)
     .eq("tipo", tipo)
     .maybeSingle();
@@ -71,6 +73,7 @@ export async function lerLinkPublico(
     token: link.token,
     leadId: link.lead_id,
     corretorId: link.corretor_id,
+    grupoId: link.grupo_id,
     dados: (link.dados ?? {}) as Record<string, unknown>,
     primeiroNome: primeiroNomeUtil(lead.nome),
     corretor: {

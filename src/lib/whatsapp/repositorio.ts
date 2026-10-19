@@ -49,6 +49,8 @@ import {
 export type InstanciaResolvida = {
   id: string;
   corretorId: string;
+  /** Grupo do número (0182): é por ele que se leem as taxas e o resto do que é do grupo. */
+  grupoId: string;
   instanceName: string;
   nomeCorretor: string;
   creciCorretor: string;
@@ -89,7 +91,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim, regras_da_ia",
+      "id, corretor_id, grupo_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim, regras_da_ia",
     )
     .eq("instance_name", instanceName)
     .maybeSingle();
@@ -108,6 +110,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   return {
     id: data.id,
     corretorId: data.corretor_id,
+    grupoId: data.grupo_id,
     instanceName: data.instance_name,
     nomeCorretor: corretor.nome,
     creciCorretor: corretor.creci,

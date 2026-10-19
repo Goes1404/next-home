@@ -6,7 +6,6 @@ import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina"
 import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { getParametrosCredito } from "@/lib/credito/parametros";
-import { grupoDoSite } from "@/lib/grupos/grupo";
 import { lerLinkPublico } from "@/lib/crm/linkPublico";
 import { getEmpreendimentos } from "@/lib/queries";
 import { linkWhatsappPara } from "@/lib/site";
@@ -37,7 +36,9 @@ export default async function SelecaoPage({
   if (!link) notFound();
 
   const ids = Array.isArray(link.dados.empreendimentos) ? (link.dados.empreendimentos as string[]) : [];
-  const [catalogo, parametros] = await Promise.all([getEmpreendimentos(), getParametrosCredito(grupoDoSite())]);
+  // As taxas do simulador são as do grupo do corretor que mandou o link
+  // (0182), não as do site em que a página por acaso está.
+  const [catalogo, parametros] = await Promise.all([getEmpreendimentos(), getParametrosCredito(link.grupoId)]);
   // Na ordem da seleção; imóvel despublicado depois sai sem deixar buraco.
   const imoveis = ids
     .map((id) => catalogo.find((e) => e.id === id))

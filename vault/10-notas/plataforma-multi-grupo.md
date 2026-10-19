@@ -73,3 +73,11 @@ viraria N migrations.
   `atualizar_parametros_credito` grava só a linha do grupo do gestor ativo
   (quem não é gestor recebe erro, não `false`) e `getParametrosCredito(grupoId)`
   leva o grupo na chave do cache. O site lê as do `grupoDoSite()`.
+- **A 0182 põe `grupo_id` em toda tabela** (menos as quatro de
+  `TABELAS_GLOBAIS`), com o gatilho `<tabela>_00_grupo`: o grupo vem das
+  linhas-mãe tiradas das FKs reais, TODAS conferidas (mãe de outro grupo ou
+  inexistente é erro); sem mãe, o informado, o de quem está logado, o único
+  (com aviso) ou erro. Trocar o grupo de uma linha só pela role
+  `transferidor_de_grupo` (sem login, sem membros). Os gatilhos internos que
+  gravam em outra tabela (evento do lead, campanha da Meta) repassam
+  `new.grupo_id`. O webhook e a seleção leem as taxas pelo grupo do dono.

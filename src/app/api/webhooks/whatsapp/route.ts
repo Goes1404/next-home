@@ -89,7 +89,6 @@ import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos"
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
-import { grupoDoSite } from "@/lib/grupos/grupo";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
 import { candidatosTelefone, marcarSessaoViva, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -1129,9 +1128,9 @@ export async function POST(req: NextRequest) {
       horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
       // A renda do cliente vira teto de compra pela mesma conta do site
       // (`capacidadeDeCompra.ts`); a leitura já cai no seed se o banco falhar.
-      // As taxas são as do grupo do site: a instância ainda não carrega o
-      // grupo do corretor (0181), e hoje só a Next Home tem número conectado.
-      parametrosCredito: await getParametrosCredito(grupoDoSite()).catch(() => undefined),
+      // As taxas são as do grupo do NÚMERO que recebeu a mensagem (0182), e
+      // não as do site: cada imobiliária ajusta as próprias.
+      parametrosCredito: await getParametrosCredito(instancia.grupoId).catch(() => undefined),
     });
 
     const respostaIA = turno.resposta;
