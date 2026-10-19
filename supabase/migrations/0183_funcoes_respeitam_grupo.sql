@@ -48,7 +48,9 @@
 -- src/lib/grupos/tabelasDoGrupo.ts):
 --   empreendimentos (slug), corretores (slug): o site resolve imóvel e
 --     corretor pelo slug, sem grupo, até a fase 3. Por isso a conferência de
---     slug livre é a função da seção 3, que olha todos os grupos.
+--     slug livre é feita pelas funções da seção 3, que olham todos os grupos:
+--     `slug_de_imovel_livre` (criar imóvel) e `slug_de_corretor_livre`
+--     (criar acesso).
 --   corretores (user_id): um login, um grupo.
 --   corretor_whatsapp_instancias (instance_name): identidade da instância no
 --     provedor de WhatsApp, que é um servidor só.
@@ -203,16 +205,22 @@ alter table public.lead_interacoes
 -- 3. Unicidade global conferida por quem enxerga todos os grupos
 -- ---------------------------------------------------------------------------
 --
--- `slug` de corretor é global (o site o resolve sem grupo até a fase 3) e o
--- e-mail de acesso é único no Supabase Auth. Com a policy restritiva da 0184
--- a sessão do gestor só lê `corretores` do próprio grupo: a conferência pela
--- sessão diria "livre" para um slug do grupo A, o update bateria na chave
--- global e o login recém-criado seria apagado ("não vinculado; desfeito").
+-- `slug` de corretor e de imóvel são globais (o site os resolve sem grupo
+-- até a fase 3) e o e-mail de acesso é único no Supabase Auth. Com a policy
+-- restritiva da 0184 a sessão só lê `corretores` e `empreendimentos` do
+-- próprio grupo: a conferência pela sessão diria "livre" para um slug do
+-- grupo A, o insert/update bateria na chave global e quem estava criando
+-- levaria um erro sem entender (o login recém-criado seria apagado, "não
+-- vinculado; desfeito"; o imóvel novo voltaria "já existe" para um nome que
+-- ninguém do grupo usa).
 --
--- As duas olham TODOS os grupos de propósito e devolvem só sim/não: nenhum
--- id, nome ou grupo sai daqui. Só gestor executa (a conferência de
--- `eh_gestor()` mora no corpo), e a chave pública não executa. A guarda de
--- funções `security definer` (parte B) as lista como exceção declarada.
+-- As três olham TODOS os grupos de propósito e devolvem só sim/não: nenhum
+-- id, nome ou grupo sai daqui. A chave pública não executa. A conferência de
+-- quem chama mora no corpo: slug de corretor e e-mail de acesso, só gestor
+-- (é ele quem cria acesso); slug de imóvel, qualquer corretor ativo
+-- (`corretor_atual()`, que ignora o desativado; é quem cria imóvel). A
+-- guarda de funções `security definer` (parte B) as lista como exceção
+-- declarada.
 
 create or replace function public.slug_de_corretor_livre(p_slug text)
 returns boolean
@@ -251,13 +259,33 @@ begin
 end;
 $function$;
 
+create or replace function public.slug_de_imovel_livre(p_slug text)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $function$
+begin
+  if public.corretor_atual() is null then
+    raise exception 'Consulta restrita a corretor ativo.'
+      using errcode = 'insufficient_privilege';
+  end if;
+  return not exists (select 1 from public.empreendimentos e where e.slug = p_slug);
+end;
+$function$;
+
 revoke all on function public.slug_de_corretor_livre(text) from public, anon;
 revoke all on function public.email_de_acesso_livre(text) from public, anon;
 grant execute on function public.slug_de_corretor_livre(text) to authenticated;
 grant execute on function public.email_de_acesso_livre(text) to authenticated;
+revoke all on function public.slug_de_imovel_livre(text) from public, anon;
+grant execute on function public.slug_de_imovel_livre(text) to authenticated;
 
 comment on function public.slug_de_corretor_livre(text) is
   'Sim/não: o slug de corretor está livre em TODOS os grupos (0183). Só gestor.';
+comment on function public.slug_de_imovel_livre(text) is
+  'Sim/não: o slug de imóvel está livre em TODOS os grupos (0183). Só corretor ativo.';
 comment on function public.email_de_acesso_livre(text) is
   'Sim/não: o e-mail de acesso está livre em todos os grupos e no Auth (0183). Só gestor.';
 

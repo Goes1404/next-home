@@ -1323,6 +1323,46 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
+  // Achado B da revisão final: `empreendimentos.slug` é global, e o
+  // corretor que cria imóvel só enxerga o próprio grupo pela sessão. Quem
+  // confere é `slug_de_imovel_livre`, que olha todos os grupos.
+  it("slug de imóvel do outro grupo aparece como ocupado para corretor de B", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`
+        insert into public.empreendimentos (slug, nome, cidade, bairro, grupo_id)
+        values ('imovel-do-grupo-a', 'Imóvel do grupo A', 'Barueri', 'Centro', ${a.grupoId})
+      `;
+      for (const userId of [b.corretorUserId, b.gestorUserId]) {
+        const [r] = await comoUsuario(tx, userId, (eu) =>
+          eu<{ visto: number; ocupado: boolean; livre: boolean }[]>`
+            select (select count(*)::int from public.empreendimentos where slug = 'imovel-do-grupo-a') as visto,
+                   not public.slug_de_imovel_livre('imovel-do-grupo-a') as ocupado,
+                   public.slug_de_imovel_livre('ninguem-tem-este-imovel') as livre
+          `,
+        );
+        // Pela sessão o imóvel de A não aparece (0184); pela função, aparece.
+        expect(r).toEqual({ visto: 0, ocupado: true, livre: true });
+      }
+    });
+  });
+
+  it("só corretor ativo consulta slug de imóvel livre, e a chave pública não executa", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`update public.corretores set ativo = false where id = ${b.corretorId}`;
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) => eu`select public.slug_de_imovel_livre('x')`),
+      ).rejects.toThrow(/restrit/);
+      const [{ anon, logado }] = await tx<{ anon: boolean; logado: boolean }[]>`
+        select has_function_privilege('anon', 'public.slug_de_imovel_livre(text)', 'execute') as anon,
+               has_function_privilege('authenticated', 'public.slug_de_imovel_livre(text)', 'execute') as logado
+      `;
+      expect({ anon, logado }).toEqual({ anon: false, logado: true });
+    });
+  });
+
   // Portas de entrada (Task 12): o porteiro `/wa` sorteia dentro do grupo do
   // site, e a indicação do parceiro não atravessa grupos.
   it("o porteiro sem imóvel só sorteia no grupo pedido", async () => {
@@ -1371,14 +1411,11 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
 
   it("só a chave de serviço sorteia, e o sorteio sem grupo não existe para a API", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
-      // As duas assinaturas: a antiga fica até o deploy (roteiro da Task 9).
-      for (const assinatura of ["(uuid, uuid, uuid)", "(uuid, uuid)"]) {
-        for (const papel of ["anon", "authenticated"]) {
-          const [{ pode }] = await tx<{ pode: boolean }[]>`
-            select has_function_privilege(${papel}, ${`public.sortear_corretor_whatsapp${assinatura}`}, 'execute') as pode
-          `;
-          expect(pode, `${papel} ${assinatura}`).toBe(false);
-        }
+      for (const papel of ["anon", "authenticated"]) {
+        const [{ pode }] = await tx<{ pode: boolean }[]>`
+          select has_function_privilege(${papel}, 'public.sortear_corretor_whatsapp(uuid, uuid, uuid)', 'execute') as pode
+        `;
+        expect(pode, papel).toBe(false);
       }
       const [{ pode }] = await tx<{ pode: boolean }[]>`
         select has_function_privilege('service_role', 'public.sortear_corretor_whatsapp(uuid, uuid, uuid)', 'execute') as pode
@@ -1387,12 +1424,71 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  it("a assinatura antiga do sorteio, que o código no ar chama, sorteia só no grupo 1", async () => {
+  // 0185, pós-deploy: a assinatura antiga (sorteio fixo no grupo 1, que a 0183
+  // manteve para o código anterior ao deploy) deixa de existir, e chamada
+  // sem grupo não casa com mais nada.
+  // 0185, pós-deploy: o formulário e o clique do site gravam pelo servidor,
+  // com o grupo do site. A chave pública, que vai no bundle, não escolhe
+  // mais em que grupo o lead cai.
+  it("depois da 0185 a chave pública não grava lead nem clique, e a chave de serviço grava", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
-      const b = await criarGrupo(tx, { slug: "b" });
-      await conectarNumero(tx, b.corretorId, "5511911110002");
-      const linhas = await tx`select * from public.sortear_corretor_whatsapp()`;
-      expect(linhas).toEqual([]);
+      const a = await criarGrupo(tx, { slug: "a" });
+      const [privilegios] = await tx<{ lead: boolean; clique: boolean }[]>`
+        select has_table_privilege('anon', 'public.leads', 'INSERT')
+                 or has_any_column_privilege('anon', 'public.leads', 'INSERT') as lead,
+               has_table_privilege('anon', 'public.cliques_whatsapp', 'INSERT')
+                 or has_any_column_privilege('anon', 'public.cliques_whatsapp', 'INSERT') as clique
+      `;
+      expect(privilegios).toEqual({ lead: false, clique: false });
+
+      await expect(
+        tx.savepoint(async (s) => {
+          await s`set local role anon`;
+          await s`insert into public.leads (nome, grupo_id) values ('Do site', ${a.grupoId})`;
+        }),
+      ).rejects.toThrow(/permission denied/);
+      await expect(
+        tx.savepoint(async (s) => {
+          await s`set local role anon`;
+          await s`insert into public.cliques_whatsapp (corretor_id, origem) values (${a.corretorId}, 'site')`;
+        }),
+      ).rejects.toThrow(/permission denied/);
+
+      const gravados = await tx.savepoint(async (s) => {
+        await s`set local role service_role`;
+        const [lead] = await s<{ grupo_id: string }[]>`
+          insert into public.leads (nome, corretor_id) values ('Do site', ${a.corretorId}) returning grupo_id
+        `;
+        const [clique] = await s<{ grupo_id: string }[]>`
+          insert into public.cliques_whatsapp (corretor_id, origem) values (${a.corretorId}, 'site') returning grupo_id
+        `;
+        return [lead.grupo_id, clique.grupo_id];
+      });
+      expect(gravados).toEqual([a.grupoId, a.grupoId]);
+
+      // O logado continua cadastrando lead pela sessão (importar, indicação).
+      const [lead] = await comoUsuario(tx, a.corretorUserId, (eu) =>
+        eu<{ grupo_id: string }[]>`
+          insert into public.leads (nome, corretor_id) values ('Importado', ${a.corretorId}) returning grupo_id
+        `,
+      );
+      expect(lead.grupo_id).toBe(a.grupoId);
+    });
+  });
+
+  it("depois da 0185 a assinatura antiga do sorteio não existe", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const assinaturas = await tx<{ args: string }[]>`
+        select pg_get_function_identity_arguments(p.oid) as args
+          from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = 'sortear_corretor_whatsapp'
+      `;
+      expect(assinaturas.map((a) => a.args)).toEqual([
+        "p_grupo uuid, p_empreendimento uuid, preferido uuid",
+      ]);
+      await expect(tx.savepoint((s) => s`select * from public.sortear_corretor_whatsapp()`)).rejects.toThrow(
+        /does not exist/,
+      );
     });
   });
 
@@ -1423,8 +1519,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   // cada uma confere o grupo explicitamente.
   it("o porteiro só sorteia corretor do grupo do imóvel", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
-      // A é a Next Home: a assinatura antiga, que o código no ar chama sem
-      // grupo, sorteia nele.
+      // A é a Next Home, o grupo que já existe no banco.
       const [{ id: deA }] = await tx<{ id: string }[]>`
         insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
         values ('Corretor da Next Home', 'TESTE-nh', '5511900000009', 'corretor-nh', ${GRUPO_NEXT_HOME_ID})
@@ -1434,16 +1529,19 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       const b = await criarGrupo(tx, { slug: "b" });
       const imovelDeB = await criarImovel(tx, b.grupoId, "imovel-de-b");
 
-      // Ninguém de B conectado: nem o grupo de B nem a assinatura antiga
-      // mandam o clique do imóvel de B para A.
+      // Ninguém de B conectado: o clique do imóvel de B não vai para A, nem
+      // pedindo o sorteio no grupo de A.
       expect(await tx`select * from public.sortear_corretor_whatsapp(${b.grupoId}::uuid, ${imovelDeB}::uuid, null::uuid)`).toEqual([]);
-      // Por nome, como o código no ar chama (só posicional seria ambíguo
-      // com a assinatura nova).
-      expect(await tx`select * from public.sortear_corretor_whatsapp(p_empreendimento => ${imovelDeB}::uuid)`).toEqual([]);
       expect(
-        (await tx<{ corretor_id: string }[]>`select corretor_id from public.sortear_corretor_whatsapp()`).map(
-          (l) => l.corretor_id,
-        ),
+        await tx`select * from public.sortear_corretor_whatsapp(${GRUPO_NEXT_HOME_ID}::uuid, ${imovelDeB}::uuid, null::uuid)`,
+      ).toEqual([]);
+      // O lado positivo: sem imóvel, o grupo de A sorteia o conectado dele.
+      expect(
+        (
+          await tx<{ corretor_id: string }[]>`
+            select corretor_id from public.sortear_corretor_whatsapp(${GRUPO_NEXT_HOME_ID}::uuid, null::uuid, null::uuid)
+          `
+        ).map((l) => l.corretor_id),
       ).toEqual([deA]);
 
       await conectarNumero(tx, b.corretorId, "5511911110002");

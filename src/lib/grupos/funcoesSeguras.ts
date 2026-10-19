@@ -27,15 +27,19 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "eh_admin_da_plataforma()": "lê só a linha de quem está logado em administradores_da_plataforma",
   "participa_da_venda(uuid)": "confere só a participação de quem está logado (corretor_atual())",
 
-  // Olham TODOS os grupos de propósito (Task 4): o slug e o e-mail de acesso
-  // são únicos na plataforma inteira, e a resposta é só sim/não, sem id,
-  // nome nem grupo. Só gestor executa.
+  // Olham TODOS os grupos de propósito (Task 4): os slugs e o e-mail de
+  // acesso são únicos na plataforma inteira, e a resposta é só sim/não, sem
+  // id, nome nem grupo. Slug de corretor e e-mail: só gestor executa (é quem
+  // cria acesso). Slug de imóvel: qualquer corretor ativo (é quem cria
+  // imóvel); pela sessão ele só veria o próprio grupo e bateria na chave
+  // global com "já existe" (achado B da revisão final da fase 1).
   "slug_de_corretor_livre(text)": "unicidade global do slug; devolve só sim/não; só gestor",
+  "slug_de_imovel_livre(text)": "unicidade global do slug de imóvel; devolve só sim/não; só corretor ativo",
   "email_de_acesso_livre(text)": "unicidade global do e-mail de acesso (e do Auth); devolve só sim/não; só gestor",
 
-  // Assinatura antiga do porteiro: delega ao grupo 1 (fixo no corpo) e só a
-  // chave de serviço executa. Sai depois do deploy (roteiro da Task 9).
-  "sortear_corretor_whatsapp(uuid, uuid)": "assinatura antiga; sorteia só no grupo 1; só service_role; sai na Task 9",
+  // A assinatura antiga do porteiro, `sortear_corretor_whatsapp(uuid, uuid)`,
+  // ficou aqui da 0183 até a 0185, que a apaga depois do deploy. Se ela
+  // voltar a existir sem grupo no corpo, a guarda reprova.
 
   // Cotas e créditos por id que o servidor já resolveu. Só a chave de
   // serviço executa (o authenticated não tem EXECUTE).

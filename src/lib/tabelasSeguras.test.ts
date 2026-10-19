@@ -33,9 +33,14 @@ const DIR = join(process.cwd(), "supabase", "migrations");
 const VARREDURA = 82;
 
 /**
- * Escrita pelo `anon` que é o PRODUTO, não descuido: o formulário público
+ * Escrita pelo `anon` que era o PRODUTO, não descuido: o formulário público
  * de lead e o registro de clique em "falar no WhatsApp". Exceção declarada,
  * pela mesma razão da lista RESERVADOS de `migrations.test.ts`.
+ *
+ * Desde a 0185 (pós-deploy da fase 1 multi-grupo) as duas gravam pelo
+ * servidor, com o grupo do site, e o `anon` perdeu o INSERT nelas
+ * (isolamento.db.test.ts confere no banco). A exceção fica só porque as duas
+ * nasceram antes da varredura.
  */
 const ESCRITA_PUBLICA_INTENCIONAL = new Set(["leads", "cliques_whatsapp"]);
 

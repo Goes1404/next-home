@@ -11,8 +11,8 @@
  * `vista-alphagran`): sem acento, minúsculo, hífen no lugar do resto.
  *
  * Módulo puro: sem `supabase`, sem `server-only`. A checagem de
- * disponibilidade é I/O e mora na action — aqui só a forma, que é o que se
- * testa.
+ * disponibilidade é I/O e chega por parâmetro (a action passa a função do
+ * banco) — aqui só a forma e a ordem dos candidatos, que é o que se testa.
  */
 
 /** Teto do slug. Nome comprido vira URL comprida, e URL comprida some na SERP. */
@@ -32,21 +32,29 @@ export function slugificarImovel(nome: string): string {
 /**
  * O primeiro slug livre a partir da base.
  *
- * `ocupados` é o conjunto que a action leu do banco. O sufixo começa em 2
- * porque "imovel-2" se lê como o segundo imóvel de mesmo nome; "imovel-1"
- * sugeriria que existe um "imovel-0".
+ * `estaLivre` é a conferência do banco (`slug_de_imovel_livre`, 0183), que
+ * olha TODOS os grupos: o slug é único na plataforma inteira, e a sessão do
+ * corretor só enxerga o próprio grupo (0184). Erro dela sobe: "não sei se
+ * está livre" não pode virar "livre", senão o insert bate na chave global
+ * com "já existe" para um nome que ninguém do grupo usa.
+ *
+ * O sufixo começa em 2 porque "imovel-2" se lê como o segundo imóvel de
+ * mesmo nome; "imovel-1" sugeriria que existe um "imovel-0".
  *
  * Nome que vira slug vazio (só emoji, só pontuação) cai em "imovel": slug
  * vazio produziria a URL da LISTAGEM, e o imóvel novo passaria a responder
  * no lugar de `/empreendimentos`.
  */
-export function slugLivre(nome: string, ocupados: ReadonlySet<string>): string {
+export async function slugLivre(
+  nome: string,
+  estaLivre: (slug: string) => Promise<boolean>,
+): Promise<string> {
   const base = slugificarImovel(nome) || "imovel";
-  if (!ocupados.has(base)) return base;
+  if (await estaLivre(base)) return base;
 
   for (let n = 2; n <= 50; n++) {
     const candidato = `${base}-${n}`;
-    if (!ocupados.has(candidato)) return candidato;
+    if (await estaLivre(candidato)) return candidato;
   }
 
   return `${base}-${Date.now().toString(36)}`;

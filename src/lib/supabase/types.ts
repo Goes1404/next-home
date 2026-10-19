@@ -55,7 +55,7 @@
  * anulável (nulo = evento da plataforma).
  *
  * E, da 0183, o valor `repasse` em `lead_interacoes.tipo` e as funções
- * `slug_de_corretor_livre` e `email_de_acesso_livre`.
+ * `slug_de_corretor_livre`, `slug_de_imovel_livre` e `email_de_acesso_livre`.
  */
 
 export type Json =
@@ -3771,6 +3771,7 @@ export type Database = {
       }
       eh_gestor: { Args: never; Returns: boolean }
       slug_de_corretor_livre: { Args: { p_slug: string }; Returns: boolean }
+      slug_de_imovel_livre: { Args: { p_slug: string }; Returns: boolean }
       email_de_acesso_livre: { Args: { p_email: string }; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
       eh_admin_da_plataforma: { Args: never; Returns: boolean }

@@ -59,13 +59,24 @@ export async function criarImovel(entrada: NovoImovelInput): Promise<ResultadoNo
   const supabase = await createClient();
 
   /*
-   * Os slugs ocupados vêm numa consulta só, de uma coluna. O `slugLivre`
-   * decide a forma; a unicidade de verdade é do índice do banco — se duas
-   * abas criarem o mesmo nome no mesmo instante, a segunda leva erro em vez
-   * de sobrescrever a primeira.
+   * O slug é único na plataforma inteira, e a sessão só enxerga os imóveis
+   * do próprio grupo (0184): ler os ocupados por ela diria "livre" para um
+   * slug de outro grupo. Quem confere é `slug_de_imovel_livre` (0183), que
+   * olha todos os grupos e só diz sim/não. A unicidade de verdade continua
+   * sendo do índice do banco — se duas abas criarem o mesmo nome no mesmo
+   * instante, a segunda leva erro em vez de sobrescrever a primeira.
    */
-  const { data: existentes } = await supabase.from("empreendimentos").select("slug");
-  const slug = slugLivre(nome, new Set((existentes ?? []).map((e) => e.slug)));
+  let slug: string;
+  try {
+    slug = await slugLivre(nome, async (candidato) => {
+      const { data, error } = await supabase.rpc("slug_de_imovel_livre", { p_slug: candidato });
+      if (error) throw new Error(error.message);
+      return data === true;
+    });
+  } catch (erro) {
+    console.error("[novo imóvel] falha ao conferir slug livre:", erro instanceof Error ? erro.message : erro);
+    return { erro: "Não foi possível conferir o endereço do imóvel agora. Tente de novo." };
+  }
 
   const { data: criado, error } = await supabase
     .from("empreendimentos")
