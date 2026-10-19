@@ -56,6 +56,11 @@
  *
  * E, da 0183, o valor `repasse` em `lead_interacoes.tipo` e as funções
  * `slug_de_corretor_livre`, `slug_de_imovel_livre` e `email_de_acesso_livre`.
+ *
+ * E, da 0186, as colunas novas de `grupos` (plano e situação com as uniões
+ * dos CHECKs, contato de cobrança, identidade jurídica, `criado_por`),
+ * `admin_eventos.ator_plataforma_user_id` e as funções `criar_grupo` e
+ * `slug_de_grupo_reservado`.
  */
 
 export type Json =
@@ -107,6 +112,7 @@ export type Database = {
           acao: string
           alvo_corretor_id: string | null
           ator_id: string | null
+          ator_plataforma_user_id: string | null
           created_at: string
           detalhes: Json
           id: string
@@ -116,6 +122,7 @@ export type Database = {
           acao: string
           alvo_corretor_id?: string | null
           ator_id?: string | null
+          ator_plataforma_user_id?: string | null
           created_at?: string
           detalhes?: Json
           id?: string
@@ -125,6 +132,7 @@ export type Database = {
           acao?: string
           alvo_corretor_id?: string | null
           ator_id?: string | null
+          ator_plataforma_user_id?: string | null
           created_at?: string
           detalhes?: Json
           id?: string
@@ -1557,23 +1565,59 @@ export type Database = {
       }
       grupos: {
         Row: {
+          contato_cobranca_email: string | null
+          contato_cobranca_nome: string | null
+          contato_cobranca_telefone: string | null
+          creci: string | null
+          creci_tipo: "J" | "F" | null
           criado_em: string
+          criado_por: string | null
+          documento: string | null
+          encarregado_lgpd_email: string | null
+          encarregado_lgpd_nome: string | null
           id: string
           nome: string
+          plano: "essencial" | "profissional" | "imobiliaria" | "custo"
+          razao_social: string | null
+          situacao: "ativo" | "suspenso" | "encerrado"
           slug: string
           tipo: "imobiliaria" | "independente"
         }
         Insert: {
+          contato_cobranca_email?: string | null
+          contato_cobranca_nome?: string | null
+          contato_cobranca_telefone?: string | null
+          creci?: string | null
+          creci_tipo?: "J" | "F" | null
           criado_em?: string
+          criado_por?: string | null
+          documento?: string | null
+          encarregado_lgpd_email?: string | null
+          encarregado_lgpd_nome?: string | null
           id?: string
           nome: string
+          plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
+          razao_social?: string | null
+          situacao?: "ativo" | "suspenso" | "encerrado"
           slug: string
           tipo: "imobiliaria" | "independente"
         }
         Update: {
+          contato_cobranca_email?: string | null
+          contato_cobranca_nome?: string | null
+          contato_cobranca_telefone?: string | null
+          creci?: string | null
+          creci_tipo?: "J" | "F" | null
           criado_em?: string
+          criado_por?: string | null
+          documento?: string | null
+          encarregado_lgpd_email?: string | null
+          encarregado_lgpd_nome?: string | null
           id?: string
           nome?: string
+          plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
+          razao_social?: string | null
+          situacao?: "ativo" | "suspenso" | "encerrado"
           slug?: string
           tipo?: "imobiliaria" | "independente"
         }
@@ -3775,6 +3819,18 @@ export type Database = {
       email_de_acesso_livre: { Args: { p_email: string }; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
       eh_admin_da_plataforma: { Args: never; Returns: boolean }
+      slug_de_grupo_reservado: { Args: { p_slug: string }; Returns: boolean }
+      criar_grupo: {
+        Args: {
+          p_nome: string
+          p_slug: string
+          p_tipo: "imobiliaria" | "independente"
+          p_plano: "essencial" | "profissional" | "imobiliaria" | "custo"
+          p_contato: Json
+          p_criado_por: string | null
+        }
+        Returns: string
+      }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }
       conversas_com_fala_do_cliente: {
         Args: { p_ids: string[] }
