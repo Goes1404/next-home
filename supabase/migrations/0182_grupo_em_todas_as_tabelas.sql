@@ -185,6 +185,11 @@
 
 begin;
 
+-- A migration põe ACCESS EXCLUSIVE em ~68 tabelas enquanto o webhook do
+-- WhatsApp escreve em produção. Com o teto, ela falha e pode ser repetida,
+-- em vez de enfileirar o tráfego atrás dela.
+set local lock_timeout = '5s';
+
 -- ---------------------------------------------------------------------------
 -- 1. A role que troca o grupo de uma linha
 -- ---------------------------------------------------------------------------

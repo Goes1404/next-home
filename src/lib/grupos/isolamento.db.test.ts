@@ -7,12 +7,22 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Sql, TransactionSql } from "postgres";
 import { comoUsuario, conectar, criarGrupo, emTransacaoDesfeita, type Conexao } from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
-import { TABELAS_GLOBAIS } from "./tabelasDoGrupo";
+import { CHAVES_UNICAS_GLOBAIS, TABELAS_GLOBAIS } from "./tabelasDoGrupo";
 
 /** Um lead do corretor, gravado como `postgres` (a chave de serviço). */
 async function criarLead(sql: Conexao, corretorId: string, nome = "Lead de teste"): Promise<string> {
   const [{ id }] = await sql<{ id: string }[]>`
     insert into public.leads (nome, corretor_id) values (${nome}, ${corretorId}) returning id
+  `;
+  return id;
+}
+
+/** Um imóvel do grupo, gravado como `postgres`. */
+async function criarImovel(sql: Conexao, grupoId: string, slug: string): Promise<string> {
+  const [{ id }] = await sql<{ id: string }[]>`
+    insert into public.empreendimentos (slug, nome, cidade, bairro, grupo_id)
+    values (${slug}, 'Imóvel de teste', 'Barueri', 'Centro', ${grupoId})
+    returning id
   `;
   return id;
 }
@@ -797,6 +807,288 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         select count(*)::int as n from public.catalogo_candidatos where ref_externa = 'ref-0182'
       `;
       expect(n).toBe(2);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Chaves únicas por grupo (0183)
+  // -------------------------------------------------------------------------
+
+  it("toda chave única de tabela com grupo inclui o grupo ou uma linha-mãe", async () => {
+    // A chave conta como escopada quando uma das colunas é `grupo_id` ou tem
+    // FK para outra tabela com grupo (a mãe já é de um grupo só). A primária
+    // `id` uuid é sorteada e não é dado de negócio.
+    const linhas = await sql<{ indice: string; escopada: boolean; id_sorteado: boolean }[]>`
+      with tabelas as (
+        select c.oid, c.relname
+          from pg_class c
+         where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+           and exists (select 1 from pg_attribute a
+                        where a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped)
+      )
+      select i.relname as indice,
+             exists (
+               select 1 from unnest(x.indkey::int2[]) k(attnum)
+                join pg_attribute a on a.attrelid = t.oid and a.attnum = k.attnum
+               where a.attname = 'grupo_id'
+                  or exists (
+                    select 1 from pg_constraint f
+                      join tabelas m on m.oid = f.confrelid
+                     where f.contype = 'f' and f.conrelid = t.oid and k.attnum = any (f.conkey)
+                  )
+             ) as escopada,
+             (x.indisprimary and x.indnatts = 1 and exists (
+               select 1 from pg_attribute a
+                where a.attrelid = t.oid and a.attnum = x.indkey[0]
+                  and a.attname = 'id' and a.atttypid = 'uuid'::regtype
+             )) as id_sorteado
+        from pg_index x
+        join tabelas t on t.oid = x.indrelid
+        join pg_class i on i.oid = x.indexrelid
+       where x.indisunique
+       order by 1
+    `;
+    const declaradas = new Set(Object.keys(CHAVES_UNICAS_GLOBAIS));
+    const globais = linhas.filter((l) => !l.escopada && !l.id_sorteado).map((l) => l.indice);
+    const fora = globais.filter((g) => !declaradas.has(g));
+    expect(fora, `chave única global fora de CHAVES_UNICAS_GLOBAIS: ${fora.join(", ")}`).toEqual([]);
+    // E o contrário: entrada declarada que sumiu ou passou a ser escopada é
+    // comentário velho.
+    const velhas = [...declaradas].filter((d) => !globais.includes(d));
+    expect(velhas, `CHAVES_UNICAS_GLOBAIS cita chave que não é global: ${velhas.join(", ")}`).toEqual([]);
+  });
+
+  // Review Focus 5. O índice de dedup já era por imóvel desde a 0042 (passa
+  // de primeira); o teste fica para a chave não voltar a ser global.
+  it("o mesmo arquivo pode existir em dois grupos", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a, b]) {
+        const imovel = await criarImovel(tx, grupo.grupoId, `imovel-${grupo.grupoId}`);
+        await tx`
+          insert into public.midias (empreendimento_id, url, hash_conteudo)
+          values (${imovel}, ${`https://exemplo/${grupo.grupoId}.jpg`}, 'hash-0183')
+        `;
+      }
+      const [{ n }] = await tx<{ n: number }[]>`
+        select count(*)::int as n from public.midias where hash_conteudo = 'hash-0183'
+      `;
+      expect(n).toBe(2);
+    });
+  });
+
+  it("o mesmo CRECI pode existir em dois grupos, e não duas vezes no mesmo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a, b]) {
+        await tx`
+          insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
+          values ('Mesmo CRECI', 'CRECI-0183', '5511900000003', ${`creci-${grupo.grupoId}`}, ${grupo.grupoId})
+        `;
+      }
+      await expect(
+        tx`
+          insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
+          values ('Repetido', 'CRECI-0183', '5511900000004', 'creci-repetido', ${a.grupoId})
+        `,
+      ).rejects.toThrow(/duplicate key/);
+    });
+  });
+
+  it("cada grupo tem os próprios itens de lazer", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a.grupoId, b.grupoId]) {
+        await tx`insert into public.lazer_itens (nome, grupo_id) values ('Piscina 0183', ${grupo})`;
+      }
+      const [{ n }] = await tx<{ n: number }[]>`
+        select count(*)::int as n from public.lazer_itens where nome = 'Piscina 0183'
+      `;
+      expect(n).toBe(2);
+    });
+  });
+
+  it("a mesma campanha da Meta vira uma campanha canônica em cada grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      // Dias diferentes: a métrica é por (dia, campanha) até a fase 7.
+      const dias = { [a.grupoId]: "2026-10-18", [b.grupoId]: "2026-10-19" };
+      for (const grupo of [a.grupoId, b.grupoId]) {
+        await tx`
+          insert into public.meta_ads_metricas (dia, campanha_id, campanha_nome, grupo_id)
+          values (${dias[grupo]}::date, 'campanha-0183', 'Campanha de teste', ${grupo})
+        `;
+      }
+      const campanhas = await tx<{ grupo_id: string }[]>`
+        select grupo_id from public.marketing_campanhas where external_id = 'campanha-0183'
+      `;
+      expect(new Set(campanhas.map((c) => c.grupo_id))).toEqual(new Set([a.grupoId, b.grupoId]));
+      const [{ ligadas }] = await tx<{ ligadas: number }[]>`
+        select count(*)::int as ligadas
+          from public.meta_ads_metricas m
+          join public.marketing_campanhas c on c.id = m.marketing_campanha_id
+         where m.campanha_id = 'campanha-0183' and c.grupo_id = m.grupo_id
+      `;
+      expect(ligadas).toBe(2);
+    });
+  });
+
+  it("o mesmo evento de marketing pode existir em dois grupos", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a.grupoId, b.grupoId]) {
+        await tx`
+          insert into public.marketing_eventos (event_id, tipo, entidade_tipo, entidade_id, ocorrido_em, grupo_id)
+          values ('evento-0183', 'lead.criado', 'lead', gen_random_uuid(), now(), ${grupo})
+        `;
+      }
+      const [{ n }] = await tx<{ n: number }[]>`
+        select count(*)::int as n from public.marketing_eventos where event_id = 'evento-0183'
+      `;
+      expect(n).toBe(2);
+    });
+  });
+
+  it("cada grupo fecha o próprio mês", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a, b]) {
+        await tx`
+          insert into public.meses_fechados (mes, arquivo_path, fechado_por)
+          values (date '2026-09-01', ${`${grupo.grupoId}/2026-09.xlsx`}, ${grupo.gestorId})
+        `;
+      }
+      await expect(
+        tx`
+          insert into public.meses_fechados (mes, arquivo_path, fechado_por)
+          values (date '2026-09-01', 'repetido.xlsx', ${a.gestorId})
+        `,
+      ).rejects.toThrow(/duplicate key/);
+    });
+  });
+
+  it("cada grupo tem a própria configuração fiscal, uma só", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`insert into public.fiscal_config (grupo_id) values (${b.grupoId})`;
+      const grupos = await tx<{ grupo_id: string }[]>`select grupo_id from public.fiscal_config`;
+      expect(new Set(grupos.map((g) => g.grupo_id))).toEqual(new Set([GRUPO_NEXT_HOME_ID, b.grupoId]));
+      await expect(tx`insert into public.fiscal_config (grupo_id) values (${b.grupoId})`).rejects.toThrow(
+        /duplicate key/,
+      );
+    });
+  });
+
+  it("o mesmo código legado pode existir em dois grupos", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a.grupoId, b.grupoId]) {
+        await tx`
+          insert into public.empreendimentos (slug, nome, cidade, bairro, codigo_legado, grupo_id)
+          values (${`legado-${grupo}`}, 'Legado', 'Barueri', 'Centro', 'LEG-0183', ${grupo})
+        `;
+      }
+      const [{ n }] = await tx<{ n: number }[]>`
+        select count(*)::int as n from public.empreendimentos where codigo_legado = 'LEG-0183'
+      `;
+      expect(n).toBe(2);
+    });
+  });
+
+  // Mensagem de um corretor para outro: o id do WhatsApp é o mesmo nos dois
+  // aparelhos. Com a chave global, a cópia do grupo B era tomada por
+  // reentrega e sumia.
+  it("a mesma mensagem do WhatsApp entra em dois grupos, e a reentrega continua recusada", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const conversas: string[] = [];
+      for (const grupo of [a, b]) {
+        const lead = await criarLead(tx, grupo.corretorId);
+        const conversa = await criarConversa(tx, grupo.corretorId, lead);
+        conversas.push(conversa);
+        await tx`
+          insert into public.whatsapp_mensagens (conversa_id, remetente, conteudo, provider_message_id)
+          values (${conversa}, 'cliente', 'Oi', 'WAID-0183')
+        `;
+      }
+      await expect(
+        tx`
+          insert into public.whatsapp_mensagens (conversa_id, remetente, conteudo, provider_message_id)
+          values (${conversas[0]}, 'cliente', 'Oi', 'WAID-0183')
+        `,
+      ).rejects.toThrow(/duplicate key/);
+    });
+  });
+
+  // L30: a fase 5 recupera a origem de quem foi repassado por aqui.
+  it("o repasse de lead fica registrado com tipo próprio", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const lead = await criarLead(tx, a.corretorId);
+      const [{ tipo }] = await tx<{ tipo: string }[]>`
+        insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+        values (${lead}, ${a.gestorId}, 'repasse', 'Repasse', '{"origem_anterior":"roleta"}'::jsonb)
+        returning tipo
+      `;
+      expect(tipo).toBe("repasse");
+    });
+  });
+
+  // L27: com a policy restritiva da Task 6, a sessão só vê o próprio grupo;
+  // a unicidade é global e precisa de quem enxerga todos.
+  it("slug do outro grupo aparece como ocupado", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [r] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ ocupado: boolean; livre: boolean }[]>`
+          select not public.slug_de_corretor_livre('a-corretor') as ocupado,
+                 public.slug_de_corretor_livre('ninguem-tem-este-slug') as livre
+        `,
+      );
+      expect(r).toEqual({ ocupado: true, livre: true });
+    });
+  });
+
+  it("e-mail de acesso do outro grupo aparece como ocupado", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`update public.corretores set email = 'ficha@a.teste' where slug = 'a-corretor'`;
+      const [r] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ login: boolean; ficha: boolean; livre: boolean }[]>`
+          select not public.email_de_acesso_livre('Gestor@A.teste') as login,
+                 not public.email_de_acesso_livre('ficha@a.teste') as ficha,
+                 public.email_de_acesso_livre('ninguem@lugar.teste') as livre
+        `,
+      );
+      expect(r).toEqual({ login: true, ficha: true, livre: true });
+    });
+  });
+
+  it("só gestor consulta slug e e-mail livres, e a chave pública não executa", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) => eu`select public.slug_de_corretor_livre('x')`),
+      ).rejects.toThrow(/restrit/);
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) => eu`select public.email_de_acesso_livre('x@y.z')`),
+      ).rejects.toThrow(/restrit/);
+      for (const funcao of ["slug_de_corretor_livre", "email_de_acesso_livre"]) {
+        const [{ pode }] = await tx<{ pode: boolean }[]>`
+          select has_function_privilege('anon', ${`public.${funcao}(text)`}, 'execute') as pode
+        `;
+        expect(pode, funcao).toBe(false);
+      }
     });
   });
 
