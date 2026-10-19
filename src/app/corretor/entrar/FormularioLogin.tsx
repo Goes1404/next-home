@@ -6,7 +6,7 @@ import { entrar } from "@/app/corretor/actions";
 import { CampoSenha } from "@/components/ui/CampoSenha";
 
 // Campo alto e texto em tamanho de leitura: este formulário é digitado no
-// celular, quase sempre com uma senha temporária vinda de outro aplicativo.
+// celular, com uma senha que a pessoa acabou de criar pelo link do convite.
 const CAMPO_BASE =
   "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3.5 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
 
@@ -102,8 +102,8 @@ export function FormularioLogin({ next }: { next?: string }) {
         <label htmlFor="senha" className="text-fluid-sm mb-1.5 block text-corpo">
           Senha
         </label>
-        {/* Com o olho: quase sempre é a senha provisória do gestor, digitada
-            num teclado de celular que não mostra o que foi tocado. */}
+        {/* Com o olho: a senha é digitada num teclado de celular que não
+            mostra o que foi tocado. */}
         <CampoSenha id="senha" name="senha" required autoComplete="current-password" className={CAMPO_BASE} />
       </div>
 

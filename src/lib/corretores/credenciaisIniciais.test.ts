@@ -1,102 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  candidatosDeEmail,
-  DOMINIO_ACESSO,
-  ehEmailDeAcesso,
-  emailInicial,
-  normalizarParaEmail,
-  senhaInicial,
-} from "./credenciaisIniciais";
+import { ehEmailDeAcesso, normalizarParaEmail } from "./credenciaisIniciais";
 
-describe("e-mail de acesso", () => {
-  it("monta a partir da parte local escolhida", () => {
-    expect(emailInicial("graziele")).toBe(`graziele@${DOMINIO_ACESSO}`);
-  });
-
-  it("normaliza para minúsculas e apara espaço", () => {
-    expect(emailInicial("  Miro  ")).toBe(`miro@${DOMINIO_ACESSO}`);
-  });
-
-  it("passa na validação de formato da action", () => {
-    // O mesmo regex de `criarAcessoCorretor`. Se o domínio perder o ponto, a
-    // criação falharia para a equipe inteira, e só em produção.
-    expect(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInicial("ramos"))).toBe(true);
-  });
-
-  it("lança com parte local vazia, em vez de montar '@dominio'", () => {
-    expect(() => emailInicial("")).toThrow();
-    expect(() => emailInicial("   ")).toThrow();
-  });
-});
-
-describe("candidatos de e-mail", () => {
-  it("o primeiro é só o primeiro nome", () => {
-    expect(candidatosDeEmail("Carolini Ivina Maia", "carolini-ivina-maia")[0]).toBe("carolini");
-    expect(candidatosDeEmail("Renan Azael", "renan-azael")[0]).toBe("renan");
-  });
-
-  it("degrada do mais curto para o mais específico", () => {
-    expect(candidatosDeEmail("Carolini Ivina Maia", "carolini-ivina-maia")).toEqual([
-      "carolini",
-      "carolini-ivina",
-      "carolini-ivina-maia",
-    ]);
-  });
-
-  it("não repete quando o nome é uma palavra só", () => {
-    // "Ramos" geraria os três candidatos iguais; sem o dedupe, o laço de
-    // escolha tentaria o mesmo endereço três vezes e nunca acharia um livre.
-    expect(candidatosDeEmail("Ramos", "ramos")).toEqual(["ramos"]);
-  });
-
-  it("tira acento e pontuação do nome", () => {
-    expect(candidatosDeEmail("Antônio JOSÉ", "antonio-jose")[0]).toBe("antonio");
-    expect(candidatosDeEmail("Cristal - Bruna", "cristal-bruna")[0]).toBe("cristal");
-  });
-
-  it("o último candidato é sempre o slug, que é UNIQUE no banco", () => {
-    const c = candidatosDeEmail("Eduardo Cezar", "eduardo-cezar");
-    expect(c[c.length - 1]).toBe("eduardo-cezar");
-  });
-
-  it("cada candidato produz um e-mail válido", () => {
-    for (const local of candidatosDeEmail("Graziele Santos", "graziele-santos")) {
-      expect(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInicial(local))).toBe(true);
-    }
-  });
-});
-
-describe("senha inicial", () => {
-  it("é o prefixo mais os 4 últimos dígitos", () => {
-    expect(senhaInicial("5511975594931")).toBe("nexthome4931");
-  });
-
-  it("ignora a pontuação do número digitado à mão", () => {
-    expect(senhaInicial("+55 (11) 99024-4407")).toBe("nexthome4407");
-  });
-
-  it("tem pelo menos 8 caracteres", () => {
-    /*
-     * Os 4 dígitos sozinhos seriam recusados pelo Auth (mínimo 6) e não
-     * passariam na troca de senha do painel (mínimo 8). O prefixo existe
-     * para isso; se alguém encurtá-lo, o lote inteiro falha em produção.
-     */
-    expect(senhaInicial("5511963310790").length).toBeGreaterThanOrEqual(8);
-  });
-
-  it("lança quando não há dígitos suficientes", () => {
-    // Falhar aqui é melhor que falhar no meio do lote, com parte criada.
-    expect(() => senhaInicial("123")).toThrow();
-    expect(() => senhaInicial("")).toThrow();
-  });
-});
+/*
+ * Até a fase 2A (19/10/2026) este arquivo testava a FÁBRICA de credencial:
+ * `emailInicial`, `candidatosDeEmail` e `senhaInicial` (`nome@nexthome.com`
+ * com senha `nexthome` + 4 dígitos do WhatsApp). Esses testes saíram junto
+ * com as funções — o corretor agora recebe convite no e-mail real e cria a
+ * própria senha. O que impede a fábrica de voltar é a guarda
+ * "nenhum arquivo cria e-mail @nexthome.com nem senha derivada", em
+ * `src/app/corretor/(painel)/admin/convite.test.ts`.
+ */
 
 describe("reconhecer endereço de acesso", () => {
   it("reconhece o domínio de acesso", () => {
-    expect(ehEmailDeAcesso(`ramos@${DOMINIO_ACESSO}`)).toBe(true);
-    expect(ehEmailDeAcesso(`  RAMOS@${DOMINIO_ACESSO.toUpperCase()}  `)).toBe(true);
+    expect(ehEmailDeAcesso("ramos" + "@" + "nexthome.com")).toBe(true);
+    expect(ehEmailDeAcesso("  RAMOS" + "@" + "NEXTHOME.COM  ")).toBe(true);
   });
 
   it("não confunde com e-mail de verdade", () => {
@@ -139,12 +59,13 @@ describe("e-mail nunca sai para um endereço de acesso", () => {
 });
 
 /*
- * O aviso da tela de Contas e a action do lote recortam a MESMA população.
- * Enquanto contavam diferente, o botão prometia 7 e criava 6 — e a diferença
- * só apareceria depois do clique, sem erro nenhum, porque quem sobrou é
- * exatamente quem está desativado de propósito.
+ * O aviso da tela de Contas conta só corretor ATIVO sem login. Enquanto
+ * existia o lote de acessos (até a fase 2A), a tela e a action tinham de
+ * recortar a mesma população — o botão chegou a prometer 7 e criar 6. O lote
+ * saiu (cada convite leva o e-mail real da pessoa, que só o gestor sabe);
+ * fica a contagem da tela, e a garantia de que o lote não voltou.
  */
-describe("o botão promete o mesmo número que cria", () => {
+describe("o aviso de quem está sem acesso", () => {
   const tela = readFileSync(
     join(process.cwd(), "src", "app", "corretor", "(painel)", "admin", "contas", "ContasManager.tsx"),
     "utf8",
@@ -157,15 +78,14 @@ describe("o botão promete o mesmo número que cria", () => {
   it("a tela conta só corretor ativo sem login", () => {
     expect(
       /const semAcesso = corretores\.filter\(\(c\) => c\.ativo && !c\.temLogin\)/.test(tela),
-      "O aviso voltou a contar corretor inativo. Ele promete um número que o " +
-        "lote não cria, e a diferença não aparece como erro.",
+      "O aviso voltou a contar corretor inativo: quem está desativado não tem " +
+        "acesso porque não deve ter, e isso não é pendência.",
     ).toBe(true);
   });
 
-  it("a action recorta pela mesma condição", () => {
-    const lote = action.slice(action.indexOf("export async function criarAcessosQueFaltam"));
-    expect(lote.includes('.eq("ativo", true)')).toBe(true);
-    expect(lote.includes('.is("user_id", null)')).toBe(true);
+  it("o lote de credenciais não voltou", () => {
+    expect(action).not.toMatch(/criarAcessosQueFaltam/);
+    expect(tela).not.toMatch(/criarAcessosQueFaltam|CartaoLote/);
   });
 });
 

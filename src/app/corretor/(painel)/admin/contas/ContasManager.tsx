@@ -1,19 +1,23 @@
 "use client";
 
-import { site } from "@/lib/site";
 import { useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
-import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
+import { Check, Copy, KeyRound, Mail, ShieldCheck, TriangleAlert, UserPlus } from "lucide-react";
+import {
+  acoesDeAcesso,
+  MENSAGEM_ENDERECO_PROVISORIO,
+  usaEnderecoProvisorio,
+} from "@/lib/corretores/acessoDaConta";
 import {
   alterarPapelCorretor,
   cadastrarCorretor,
   alternarAtivoCorretor,
   alternarSoWhatsapp,
   criarAcessoCorretor,
-  criarAcessosQueFaltam,
-  redefinirSenhaCorretor,
+  enviarLinkDeSenha,
+  reenviarConvite,
+  trocarEmailDoCorretor,
 } from "../acoes";
-import type { ResultadoLoteAcessos } from "../acoes";
 
 /**
  * Contas de acesso da equipe.
@@ -21,61 +25,116 @@ import type { ResultadoLoteAcessos } from "../acoes";
  * A tela existe porque, até aqui, criar login era trabalho manual no Supabase
  * — e o resultado prático era que 7 dos 8 corretores cadastrados recebiam
  * lead sem conseguir entrar no sistema.
+ *
+ * Desde a fase 2A o gestor não vê nem repassa senha: convida pelo e-mail
+ * real do corretor, que cria a própria senha pelo link. Sem e-mail
+ * configurado no servidor, o link aparece aqui para o gestor mandar pelo
+ * WhatsApp.
  */
 
-type Credencial = { nome: string; email: string; senha: string; slug: string };
+/** O link que acabou de sair (ou que o gestor precisa mandar à mão). */
+type Entrega = {
+  nome: string;
+  email: string;
+  tipo: "convite" | "senha";
+  enviado: boolean;
+  url?: string;
+};
 
-/** A senha aparece UMA vez. Some ao fechar e não volta — só redefinindo. */
-function CartaoCredencial({ cred, aoFechar }: { cred: Credencial; aoFechar: () => void }) {
+function CartaoDoLink({ entrega, aoFechar }: { entrega: Entrega; aoFechar: () => void }) {
   const [copiado, setCopiado] = useState(false);
-
-  const texto = `Acesso ao painel ${site.nome}\nSite: ${typeof window !== "undefined" ? window.location.origin : ""}/corretor/entrar\nE-mail: ${cred.email}\nSenha provisória: ${cred.senha}`;
+  const oQue = entrega.tipo === "convite" ? "Convite" : "Link de senha";
 
   return (
-    <div className="border-ok-linha bg-ok-lavado mb-6 rounded-2xl border p-5">
-      <h3 className="text-fluid-sm flex items-center gap-2 font-bold text-titulo">
-        <Check className="h-4 w-4 text-ok" /> Acesso criado para {cred.nome}
-      </h3>
-      <p className="text-fluid-xs mt-1 text-corpo">
-        Copie e mande para {cred.nome} agora — <strong>esta senha não aparece de novo</strong>. No
-        primeiro acesso o sistema pede para trocá-la.
-      </p>
-
-      <dl className="text-fluid-sm bg-superficie border-linha mt-3 space-y-1 rounded-xl border p-3">
-        <div>
-          <dt className="text-tenue inline">E-mail </dt>
-          <dd className="inline font-medium text-titulo">{cred.email}</dd>
-        </div>
-        <div>
-          <dt className="text-tenue inline">Senha </dt>
-          <dd className="inline font-mono font-bold text-acento-suave">{cred.senha}</dd>
-        </div>
-        <div>
-          <dt className="text-tenue inline">Link pessoal </dt>
-          <dd className="inline text-corpo">/?corretor={cred.slug}</dd>
-        </div>
-      </dl>
+    <div
+      role="status"
+      className="border-ok-linha bg-ok-lavado mb-6 rounded-2xl border p-5"
+    >
+      {entrega.enviado || !entrega.url ? (
+        <h3 className="text-fluid-sm flex items-center gap-2 font-bold text-titulo">
+          <Check className="h-4 w-4 text-ok" /> {oQue} enviado para {entrega.email}
+        </h3>
+      ) : (
+        <>
+          <h3 className="text-fluid-sm flex items-center gap-2 font-bold text-titulo">
+            <Check className="h-4 w-4 text-ok" /> {oQue} de {entrega.nome} pronto
+          </h3>
+          <p className="text-fluid-xs mt-1 text-corpo">
+            Para {entrega.email}: o e-mail não está configurado; mande este link ao corretor pelo
+            WhatsApp. Ele vale por 24 horas.
+          </p>
+          <p className="text-fluid-xs bg-superficie border-linha text-corpo mt-3 rounded-xl border p-3 break-all">
+            {entrega.url}
+          </p>
+        </>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard?.writeText(texto);
-            setCopiado(true);
-            setTimeout(() => setCopiado(false), 2500);
-          }}
-          className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
-        >
-          <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar dados de acesso"}
-        </button>
+        {!entrega.enviado && entrega.url && (
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(entrega.url!);
+              setCopiado(true);
+              setTimeout(() => setCopiado(false), 2500);
+            }}
+            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
+          >
+            <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar link"}
+          </button>
+        )}
         <button
           type="button"
           onClick={aoFechar}
           className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 cursor-pointer items-center rounded-lg border px-4"
         >
-          Já enviei, fechar
+          {entrega.enviado ? "Fechar" : "Já enviei, fechar"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Campo de e-mail com confirmar e cancelar: convidar e trocar e-mail usam o mesmo. */
+function CampoDeEmail({
+  inicial,
+  rotulo,
+  pendente,
+  aoConfirmar,
+  aoCancelar,
+}: {
+  inicial: string;
+  rotulo: string;
+  pendente: boolean;
+  aoConfirmar: (email: string) => void;
+  aoCancelar: () => void;
+}) {
+  const [email, setEmail] = useState(inicial);
+  return (
+    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="email@docorretor.com"
+        aria-label="E-mail do corretor"
+        className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-w-0 flex-1 rounded-xl border px-3.5 py-2.5 focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={() => aoConfirmar(email)}
+        disabled={pendente}
+        className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-4 font-bold text-sobre-cor disabled:opacity-60"
+      >
+        {pendente ? "Enviando…" : rotulo}
+      </button>
+      <button
+        type="button"
+        onClick={aoCancelar}
+        className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg border px-4"
+      >
+        Cancelar
+      </button>
     </div>
   );
 }
@@ -83,34 +142,34 @@ function CartaoCredencial({ cred, aoFechar }: { cred: Credencial; aoFechar: () =
 function LinhaCorretor({
   corretor,
   souEu,
-  aoCriar,
+  aoEntregar,
   aoAvisar,
 }: {
   corretor: CorretorAdmin;
   souEu: boolean;
-  aoCriar: (c: Credencial) => void;
+  aoEntregar: (e: Entrega) => void;
   aoAvisar: (msg: string, erro: boolean) => void;
 }) {
-  const [email, setEmail] = useState(corretor.email ?? "");
-  const [abrindo, setAbrindo] = useState(false);
+  const [editando, setEditando] = useState<null | "convidar" | "trocar_email">(null);
   const [pendente, iniciar] = useTransition();
+  const acoes = acoesDeAcesso(corretor);
+  const provisorio = usaEnderecoProvisorio(corretor);
 
-  const criar = () =>
+  /** Roda uma das actions de link e mostra o desfecho. */
+  const comLink = (
+    tipo: Entrega["tipo"],
+    email: string,
+    acao: () => Promise<{ ok: true; enviado: boolean; url?: string } | { ok: false; erro: string }>,
+  ) =>
     iniciar(async () => {
-      const r = await criarAcessoCorretor(corretor.id, email);
-      if ("erro" in r && r.erro) return aoAvisar(r.erro, true);
-      if (r.ok) {
-        aoCriar({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
-        setAbrindo(false);
+      try {
+        const r = await acao();
+        if (!r.ok) return aoAvisar(r.erro, true);
+        setEditando(null);
+        aoEntregar({ nome: corretor.nome, email: email.trim().toLowerCase(), tipo, enviado: r.enviado, url: r.url });
+      } catch {
+        aoAvisar("Não consegui falar com o servidor. Confira a conexão e tente de novo.", true);
       }
-    });
-
-  const redefinir = () =>
-    iniciar(async () => {
-      if (!confirm(`Gerar nova senha para ${corretor.nome}? A atual deixa de funcionar.`)) return;
-      const r = await redefinirSenhaCorretor(corretor.id);
-      if ("erro" in r && r.erro) return aoAvisar(r.erro, true);
-      if (r.ok) aoCriar({ nome: corretor.nome, email: r.email, senha: r.senha, slug: r.slug });
     });
 
   const trocarPapel = () =>
@@ -153,6 +212,9 @@ function LinhaCorretor({
     });
   };
 
+  const BOTAO =
+    "text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 disabled:opacity-60";
+
   return (
     <li className="border-linha border-t py-4 first:border-t-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -171,7 +233,7 @@ function LinhaCorretor({
             )}
             {souEu && <span className="text-fluid-xs text-tenue">(você)</span>}
           </p>
-          <p className="text-fluid-xs text-apoio mt-0.5">
+          <p className="text-fluid-xs text-apoio mt-0.5 break-all">
             {corretor.email ?? "sem e-mail"} · {corretor.leads} lead
             {corretor.leads === 1 ? "" : "s"}
             {!corretor.ativo && " · desativado"}
@@ -181,88 +243,102 @@ function LinhaCorretor({
 
         <span
           className={`text-fluid-xs h-fit rounded-full border px-2.5 py-1 font-medium ${
-            corretor.temLogin
+            corretor.temLogin && !corretor.convitePendente
               ? "border-ok-linha bg-ok-lavado text-ok"
               : "border-alerta-linha bg-alerta-lavado text-alerta"
           }`}
         >
-          {corretor.temLogin ? "Tem acesso" : "Sem acesso"}
+          {!corretor.temLogin ? "Sem acesso" : corretor.convitePendente ? "Convite não aceito" : "Tem acesso"}
         </span>
       </div>
 
-      {/* Sem login: o buraco que esta tela veio fechar. */}
-      {!corretor.temLogin && !abrindo && (
-        <button
-          type="button"
-          onClick={() => setAbrindo(true)}
-          className="text-fluid-xs bg-acento hover:bg-acento-hover mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
-        >
-          <UserPlus className="h-4 w-4" /> Criar acesso
-        </button>
+      {provisorio && (
+        <p className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-corpo mt-3 flex items-start gap-2 rounded-xl border px-3 py-2">
+          <TriangleAlert className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
+          {MENSAGEM_ENDERECO_PROVISORIO}
+        </p>
       )}
 
-      {!corretor.temLogin && abrindo && (
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="email@doCorretor.com"
-            className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-w-0 flex-1 rounded-xl border px-3.5 py-2.5 focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={criar}
-            disabled={pendente}
-            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-4 font-bold text-sobre-cor disabled:opacity-60"
-          >
-            {pendente ? "Criando…" : "Criar acesso"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAbrindo(false)}
-            className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg border px-4"
-          >
-            Cancelar
-          </button>
-        </div>
+      {editando === "convidar" && (
+        <CampoDeEmail
+          inicial={corretor.email ?? ""}
+          rotulo="Enviar convite"
+          pendente={pendente}
+          aoCancelar={() => setEditando(null)}
+          aoConfirmar={(email) => comLink("convite", email, () => criarAcessoCorretor(corretor.id, email))}
+        />
       )}
 
-      {corretor.temLogin && (
+      {editando === "trocar_email" && (
+        <CampoDeEmail
+          inicial={provisorio ? "" : (corretor.email ?? "")}
+          rotulo="Trocar e mandar link"
+          pendente={pendente}
+          aoCancelar={() => setEditando(null)}
+          aoConfirmar={(email) => comLink("senha", email, () => trocarEmailDoCorretor(corretor.id, email))}
+        />
+      )}
+
+      {editando === null && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={redefinir}
-            disabled={pendente}
-            className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 disabled:opacity-60"
-          >
-            <KeyRound className="h-3.5 w-3.5" /> Redefinir senha
-          </button>
-          <button
-            type="button"
-            onClick={trocarPapel}
-            disabled={pendente || souEu}
-            title={souEu ? "Peça a outro gestor para mudar o seu papel." : undefined}
-            className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-40"
-          >
-            {corretor.papel === "gestor" ? "Tirar administração" : "Tornar administrador"}
-          </button>
-          <button
-            type="button"
-            onClick={trocarSoWhatsapp}
-            disabled={pendente}
-            className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-60"
-          >
-            {corretor.soWhatsapp ? "Voltar a conta comum" : "Tornar só WhatsApp"}
-          </button>
-          <button
-            type="button"
-            onClick={trocarAtivo}
-            disabled={pendente}
-            className="text-fluid-xs border-linha-forte text-apoio hover:text-perigo hover:border-perigo-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-60"
-          >
-            {corretor.ativo ? "Desativar" : "Reativar"}
-          </button>
+          {acoes.includes("convidar") && (
+            <button
+              type="button"
+              onClick={() => setEditando("convidar")}
+              className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
+            >
+              <UserPlus className="h-4 w-4" /> Convidar
+            </button>
+          )}
+          {acoes.includes("reenviar_convite") && (
+            <button
+              type="button"
+              disabled={pendente}
+              onClick={() => comLink("convite", corretor.email ?? "", () => reenviarConvite(corretor.id))}
+              className={BOTAO}
+            >
+              <Mail className="h-3.5 w-3.5" /> Reenviar convite
+            </button>
+          )}
+          {acoes.includes("link_de_senha") && (
+            <button
+              type="button"
+              disabled={pendente}
+              onClick={() => comLink("senha", corretor.email ?? "", () => enviarLinkDeSenha(corretor.id))}
+              className={BOTAO}
+            >
+              <KeyRound className="h-3.5 w-3.5" /> Mandar link de senha
+            </button>
+          )}
+          {acoes.includes("trocar_email") && (
+            <button type="button" disabled={pendente} onClick={() => setEditando("trocar_email")} className={BOTAO}>
+              Trocar e-mail
+            </button>
+          )}
+          {corretor.temLogin && (
+            <>
+              <button
+                type="button"
+                onClick={trocarPapel}
+                disabled={pendente || souEu}
+                title={souEu ? "Peça a outro gestor para mudar o seu papel." : undefined}
+                className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-40"
+              >
+                {corretor.papel === "gestor" ? "Tirar administração" : "Tornar administrador"}
+              </button>
+              <button type="button" onClick={trocarSoWhatsapp} disabled={pendente} className={BOTAO}>
+                {corretor.soWhatsapp ? "Voltar a conta comum" : "Tornar só WhatsApp"}
+              </button>
+              <button
+                type="button"
+                onClick={trocarAtivo}
+                disabled={pendente}
+                className="text-fluid-xs border-linha-forte text-apoio hover:text-perigo hover:border-perigo-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-60"
+              >
+                {corretor.ativo ? "Desativar" : "Reativar"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </li>
@@ -270,90 +346,10 @@ function LinhaCorretor({
 }
 
 /**
- * As credenciais do lote, mostradas UMA vez — mesma regra do cartão avulso.
- *
- * Uma lista e não N cartões: o gestor vai mandar tudo de uma vez, e um botão
- * de copiar por pessoa transformaria seis envios em doze cliques. O texto
- * copiado sai pronto para colar no WhatsApp, uma pessoa por bloco.
- */
-function CartaoLote({ lote, aoFechar }: { lote: ResultadoLoteAcessos; aoFechar: () => void }) {
-  const [copiado, setCopiado] = useState(false);
-  const origem = typeof window !== "undefined" ? window.location.origin : "";
-
-  const texto = lote.criados
-    .map(
-      (c) =>
-        `${c.nome}\nSite: ${origem}/corretor/entrar\nE-mail: ${c.email}\nSenha provisória: ${c.senha}`,
-    )
-    .join("\n\n");
-
-  return (
-    <div className="border-ok-linha bg-ok-lavado mb-6 rounded-2xl border p-5">
-      <h3 className="text-fluid-sm flex items-center gap-2 font-bold text-titulo">
-        <Check className="h-4 w-4 text-ok" /> {lote.criados.length} acesso
-        {lote.criados.length === 1 ? "" : "s"} criado{lote.criados.length === 1 ? "" : "s"}
-      </h3>
-      <p className="text-fluid-xs mt-1 text-corpo">
-        Copie e mande para cada pessoa agora — <strong>estas senhas não aparecem de novo</strong>.
-        No primeiro acesso o sistema pede para trocar.
-      </p>
-
-      {lote.criados.length > 0 && (
-        <ul className="text-fluid-sm bg-superficie border-linha mt-3 space-y-2 rounded-xl border p-3">
-          {lote.criados.map((c) => (
-            <li key={c.email} className="border-linha border-b pb-2 last:border-0 last:pb-0">
-              <p className="font-medium text-titulo">{c.nome}</p>
-              <p className="text-corpo break-all">{c.email}</p>
-              <p className="font-mono font-bold text-acento-suave">{c.senha}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {lote.falhas.length > 0 && (
-        <div className="border-alerta-linha bg-alerta-lavado mt-3 rounded-xl border p-3">
-          <p className="text-fluid-xs font-medium text-titulo">Ficaram de fora:</p>
-          <ul className="text-fluid-xs text-corpo mt-1 space-y-1">
-            {lote.falhas.map((f) => (
-              <li key={f.nome}>
-                <strong>{f.nome}</strong> — {f.motivo}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {lote.criados.length > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(texto);
-              setCopiado(true);
-              setTimeout(() => setCopiado(false), 2500);
-            }}
-            className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
-          >
-            <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar todos os acessos"}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={aoFechar}
-          className="text-fluid-xs border-linha-forte text-corpo flex min-h-11 cursor-pointer items-center rounded-lg border px-4"
-        >
-          Já enviei, fechar
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Cadastro de corretor novo: ficha e login de uma vez. Até 07/10/2026 a
+ * Cadastro de corretor novo: ficha e convite de uma vez. Até 07/10/2026 a
  * ficha só nascia por SQL e esta tela só criava acesso para quem já tinha.
  */
-function NovoCorretor({ aoCriar }: { aoCriar: (c: Credencial) => void }) {
+function NovoCorretor({ aoEntregar }: { aoEntregar: (e: Entrega) => void }) {
   const [aberto, setAberto] = useState(false);
   const [dados, setDados] = useState({ nome: "", creci: "", whatsapp: "", email: "" });
   const [erro, setErro] = useState<string | null>(null);
@@ -378,7 +374,13 @@ function NovoCorretor({ aoCriar }: { aoCriar: (c: Credencial) => void }) {
       try {
         const r = await cadastrarCorretor(dados);
         if (!r.ok) return setErro(r.erro);
-        aoCriar({ nome: dados.nome.trim(), email: r.email, senha: r.senha, slug: r.slug });
+        aoEntregar({
+          nome: dados.nome.trim(),
+          email: dados.email.trim().toLowerCase(),
+          tipo: "convite",
+          enviado: r.enviado,
+          url: r.url,
+        });
         setDados({ nome: "", creci: "", whatsapp: "", email: "" });
         setAberto(false);
       } catch {
@@ -402,14 +404,14 @@ function NovoCorretor({ aoCriar }: { aoCriar: (c: Credencial) => void }) {
     <div className="cartao mb-5 space-y-3 p-5">
       <h3 className="text-fluid-sm font-bold text-titulo">Novo corretor</h3>
       <p className="text-fluid-xs text-corpo">
-        Ele já entra no painel, aparece na página da equipe do site e passa a receber leads da roleta. A
-        senha provisória aparece uma vez e é trocada no primeiro acesso.
+        Ele aparece na página da equipe do site e passa a receber leads da roleta. O convite vai para o
+        e-mail dele, e ele mesmo cria a senha pelo link.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {campo("nome", "Nome", "text", "Nome e sobrenome")}
         {campo("creci", "CRECI", "text", "Número do CRECI")}
         {campo("whatsapp", "WhatsApp", "tel", "(11) 98765-4321")}
-        {campo("email", "E-mail de acesso", "email", "email@docorretor.com")}
+        {campo("email", "E-mail do corretor", "email", "email@docorretor.com")}
       </div>
       {erro && (
         <p className="text-fluid-xs border-perigo-linha bg-perigo-lavado text-perigo rounded-xl border px-3 py-2">{erro}</p>
@@ -421,7 +423,7 @@ function NovoCorretor({ aoCriar }: { aoCriar: (c: Credencial) => void }) {
           disabled={pendente}
           className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center rounded-lg px-4 font-bold text-sobre-cor disabled:opacity-60"
         >
-          {pendente ? "Cadastrando…" : "Cadastrar e criar acesso"}
+          {pendente ? "Cadastrando…" : "Cadastrar e convidar"}
         </button>
         <button
           type="button"
@@ -442,29 +444,28 @@ export function ContasManager({
   corretores: CorretorAdmin[];
   meuId: string;
 }) {
-  const [credencial, setCredencial] = useState<Credencial | null>(null);
-  const [lote, setLote] = useState<ResultadoLoteAcessos | null>(null);
-  const [criandoLote, iniciarLote] = useTransition();
+  const [entrega, setEntrega] = useState<Entrega | null>(null);
   const [aviso, setAviso] = useState<{ msg: string; erro: boolean } | null>(null);
 
   /*
-   * Só quem está ATIVO conta como pendência, e o filtro tem de ser o mesmo
-   * de `criarAcessosQueFaltam` — que também recorta por `ativo`. Contando os
-   * inativos, o botão prometia 7 e criava 6: quem está desativado não tem
-   * acesso ao painel porque não deve ter, e isso não é uma pendência.
+   * Só quem está ATIVO conta como pendência: quem está desativado não tem
+   * acesso ao painel porque não deve ter. Não há mais lote: cada convite
+   * leva o e-mail real da pessoa, que só o gestor sabe.
    */
   const semAcesso = corretores.filter((c) => c.ativo && !c.temLogin).length;
 
+  const entregar = (e: Entrega) => {
+    setEntrega(e);
+    setAviso(null);
+  };
+
   return (
     <div>
-      {credencial && (
-        <CartaoCredencial cred={credencial} aoFechar={() => setCredencial(null)} />
-      )}
-
-      {lote && <CartaoLote lote={lote} aoFechar={() => setLote(null)} />}
+      {entrega && <CartaoDoLink entrega={entrega} aoFechar={() => setEntrega(null)} />}
 
       {aviso && aviso.msg && (
         <p
+          role={aviso.erro ? "alert" : "status"}
           className={`text-fluid-xs mb-4 rounded-xl border px-4 py-3 ${
             aviso.erro
               ? "border-perigo-linha bg-perigo-lavado text-perigo"
@@ -475,47 +476,18 @@ export function ContasManager({
         </p>
       )}
 
-      <NovoCorretor
-        aoCriar={(cred) => {
-          setCredencial(cred);
-          setAviso(null);
-        }}
-      />
+      <NovoCorretor aoEntregar={entregar} />
 
       {semAcesso > 0 && (
         <div className="border-alerta-linha bg-alerta-lavado mb-5 flex items-start gap-2 rounded-2xl border p-4">
           <TriangleAlert className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="text-fluid-xs text-corpo">
-              <strong className="text-titulo">
-                {semAcesso} pessoa{semAcesso === 1 ? "" : "s"} sem acesso ao painel.
-              </strong>{" "}
-              Elas aparecem no site e podem receber leads, mas não conseguem entrar para atender.
-            </p>
-            {/*
-             * O botão mora DENTRO do aviso: a régua da casa é que o cartão só
-             * aparece quando há pendência, e um botão permanente para uma ação
-             * que quase sempre não tem o que fazer vira ruído no topo da tela.
-             */}
-            <button
-              type="button"
-              disabled={criandoLote}
-              onClick={() =>
-                iniciarLote(async () => {
-                  const r = await criarAcessosQueFaltam();
-                  if (r.erro) return setAviso({ msg: r.erro, erro: true });
-                  setAviso(null);
-                  setLote(r);
-                })
-              }
-              className="text-fluid-xs bg-acento hover:bg-acento-hover mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor disabled:opacity-60"
-            >
-              <Users className="h-4 w-4" />
-              {criandoLote
-                ? "Criando…"
-                : `Criar acesso para ${semAcesso === 1 ? "essa pessoa" : `as ${semAcesso}`}`}
-            </button>
-          </div>
+          <p className="text-fluid-xs text-corpo">
+            <strong className="text-titulo">
+              {semAcesso} pessoa{semAcesso === 1 ? "" : "s"} sem acesso ao painel.
+            </strong>{" "}
+            Elas aparecem no site e podem receber leads, mas não conseguem entrar para atender. Use
+            &quot;Convidar&quot; na linha de cada uma, com o e-mail dela.
+          </p>
         </div>
       )}
 
@@ -525,10 +497,7 @@ export function ContasManager({
             key={c.id}
             corretor={c}
             souEu={c.id === meuId}
-            aoCriar={(cred) => {
-              setCredencial(cred);
-              setAviso(null);
-            }}
+            aoEntregar={entregar}
             aoAvisar={(msg, erro) => setAviso({ msg, erro })}
           />
         ))}

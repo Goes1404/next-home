@@ -644,6 +644,12 @@ export type CorretorAdmin = {
   ativo: boolean;
   emPausa: boolean;
   temLogin: boolean;
+  /**
+   * Tem login, mas ainda não criou a própria senha: o convite não foi
+   * aceito. Sai de `deve_trocar_senha`, que o convite liga e a tela de
+   * definir senha desliga.
+   */
+  convitePendente: boolean;
   leads: number;
   /** Conta só WhatsApp (0180): todas as conversas, sem lead, sem IA. */
   soWhatsapp: boolean;
@@ -669,7 +675,7 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
   const [{ data: corretores }, { data: leads }] = await Promise.all([
     supabase
       .from("corretores")
-      .select("id, nome, slug, email, papel, ativo, em_pausa, user_id")
+      .select("id, nome, slug, email, papel, ativo, em_pausa, user_id, deve_trocar_senha")
       .order("papel", { ascending: false })
       .order("nome"),
     // Arquivado não conta na carga do corretor: a coluna "leads" da tela
@@ -696,6 +702,7 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     ativo: c.ativo,
     emPausa: c.em_pausa,
     temLogin: c.user_id !== null,
+    convitePendente: c.user_id !== null && c.deve_trocar_senha,
     leads: porCorretor.get(c.id) ?? 0,
     soWhatsapp: soWhatsapp.has(c.id),
   }));

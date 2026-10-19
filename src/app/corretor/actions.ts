@@ -55,12 +55,14 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
   }
 
   /*
-   * Senha provisória entregue pelo gestor: manda direto para a troca.
+   * Conta antiga, criada com a senha provisória que o gestor entregava
+   * (antes da fase 2A): manda direto para a troca. Quem entra por convite ou
+   * por "Esqueci a senha" já cria a própria senha em /corretor/definir-senha,
+   * que desliga `deve_trocar_senha`, e não passa por aqui.
    *
-   * É redirect, não bloqueio em todas as rotas: bloquear daria loop (a
-   * própria tela de senha é uma rota) e não protegeria ninguém além do dono
-   * da conta. Quem ignorar segue com a senha que o gestor conhece — e o
-   * banner do painel continua lembrando.
+   * É redirect a cada login, não bloqueio em todas as rotas: bloquear daria
+   * loop (a própria tela de senha é uma rota). Não existe outro lembrete —
+   * quem sair da tela de troca sem trocar volta a ela no próximo login.
    */
   if (sessao?.user) {
     const { data: corretor } = await supabase
@@ -323,8 +325,7 @@ export async function trocarSenha(
     return { erro: "Não foi possível trocar a senha agora. Tente novamente." };
   }
 
-  // A senha deixou de ser a provisória do gestor: some o redirect do login e
-  // o aviso do painel.
+  // A senha deixou de ser a provisória do gestor: some o redirect do login.
   await supabase
     .from("corretores")
     .update({ deve_trocar_senha: false })
