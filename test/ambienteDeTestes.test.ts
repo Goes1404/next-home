@@ -6,6 +6,7 @@ import { conferirBaseDoE2E } from "../e2e/baseDoE2E";
 import { conectar } from "../src/lib/grupos/apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "../src/lib/grupos/grupo";
 import { lerOpcoesDoGolden } from "../scripts/eval/opcoesDoGolden";
+import { argumentosDoPushRemoto, conferirBancoRemoto } from "../scripts/banco/bancoRemoto.mjs";
 
 /**
  * Guardas do ambiente de testes (fase 1 da plataforma multi-grupo, spec §14 e
@@ -118,6 +119,58 @@ describe("a conexão dos testes de banco e da semeadura", () => {
     vi.stubEnv("DB_TESTE_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres");
     const sql = conectar();
     await sql.end();
+  });
+});
+
+describe("as migrations do projeto de testes saem do dbTeste.mjs", () => {
+  const PUSH_DE_TESTE = "postgresql://postgres.abcdefghijklmnopqrst:x@aws-0-ca-central-1.pooler.supabase.com:5432/postgres";
+
+  it.each([
+    "postgresql://postgres:x@db.prhhrqyubjcafvucirri.supabase.co:5432/postgres",
+    "postgresql://postgres.prhhrqyubjcafvucirri:x@aws-0-ca-central-1.pooler.supabase.com:5432/postgres",
+  ])("recusa o banco de produção: %s", (url) => {
+    expect(() => conferirBancoRemoto(url)).toThrow(/produção/);
+  });
+
+  it.each([undefined, "", "   "])("recusa URL ausente: %s", (url) => {
+    expect(() => conferirBancoRemoto(url)).toThrow(/DB_TESTE_URL/);
+  });
+
+  it("recusa o que não é connection string do Postgres", () => {
+    expect(() => conferirBancoRemoto("https://abcdefghijklmnopqrst.supabase.co")).toThrow(/postgres/);
+  });
+
+  it.each([
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    "postgresql://postgres:postgres@localhost:54322/postgres",
+  ])("manda o banco local para o npm run db:teste: %s", (url) => {
+    expect(() => conferirBancoRemoto(url)).toThrow(/db:teste/);
+  });
+
+  it("aceita o projeto de testes", () => {
+    expect(conferirBancoRemoto(` ${PUSH_DE_TESTE} `)).toBe(PUSH_DE_TESTE);
+  });
+
+  it("aplica pelo db push, sem semente", () => {
+    const args = argumentosDoPushRemoto(PUSH_DE_TESTE);
+    expect(args).toEqual(["db", "push", "--db-url", PUSH_DE_TESTE]);
+    expect(args).not.toContain("--include-seed");
+  });
+
+  it("o dbTeste.mjs tem o comando remoto, com a conferência antes do push", () => {
+    const script = readFileSync(join(process.cwd(), "scripts/banco/dbTeste.mjs"), "utf8");
+    const remoto = script.slice(script.indexOf('comando === "remoto"'));
+    expect(script).toContain('comando === "remoto"');
+    expect(remoto.indexOf("conferirBancoRemoto(")).toBeGreaterThan(-1);
+    expect(remoto.indexOf("conferirBancoRemoto(")).toBeLessThan(remoto.indexOf("argumentosDoPushRemoto("));
+    const pacote = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
+    expect(pacote.scripts["db:teste:remoto"]).toBe("node scripts/banco/dbTeste.mjs remoto");
+  });
+
+  it("o passo a passo usa o dbTeste.mjs, não o CLI direto", () => {
+    const doc = readFileSync(join(process.cwd(), "docs/AMBIENTE-DE-TESTES.md"), "utf8");
+    expect(doc).toContain("npm run db:teste:remoto");
+    expect(doc).not.toMatch(/npx[^\n]*db push/);
   });
 });
 

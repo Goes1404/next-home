@@ -10,6 +10,7 @@
     "test": "vitest run",
     "db:teste": "node scripts/banco/dbTeste.mjs subir",
     "db:teste:parar": "node scripts/banco/dbTeste.mjs parar",
+    "db:teste:remoto": "node scripts/banco/dbTeste.mjs remoto",
     "test:isolamento": "vitest run .db.test",
     "test:e2e": "playwright test",
     "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts",

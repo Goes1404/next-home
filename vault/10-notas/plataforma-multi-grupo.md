@@ -89,4 +89,5 @@ viraria N migrations.
   com conta sintética e sem artefato. Playwright recusa URL de produção,
   `conectar()` recusa o banco de produção e o export do golden exige
   `--grupo` do grupo 1 e grava fora do repositório
-  (`test/ambienteDeTestes.test.ts`).
+  (`test/ambienteDeTestes.test.ts`). As migrations do projeto de testes
+  entram por `npm run db:teste:remoto`, que recusa produção antes do push.

@@ -46,21 +46,26 @@ Confira, antes de seguir, que a URL copiada **não** contém
 
 ## Passo 2 — Aplicar as migrations do zero
 
-`npm run db:teste` só fala com o Docker local. Para o projeto remoto, use o
-mesmo CLI, na mesma versão fixa (`supabase@2.121.0`, a constante `CLI` de
-`scripts/banco/dbTeste.mjs`), e a mesma pasta `supabase/migrations`:
+As migrations entram pelo mesmo `scripts/banco/dbTeste.mjs` do banco local,
+com o comando `remoto`:
 
 ```bash
-npx --yes supabase@2.121.0 db push --db-url "<connection string do passo 1>"
+DB_TESTE_URL="<connection string do passo 1>" npm run db:teste:remoto
 ```
 
-O `db push` aplica as migrations em ordem e registra cada uma no histórico do
-projeto. Num banco vazio, é a mesma prova do `npm run db:teste`. Se uma
-migration falhar, a correção vai para `supabase/REPRODUCAO.md`, como no banco
-local.
+Ele usa o mesmo CLI na mesma versão fixa (`supabase@2.121.0`, a constante
+`CLI` do script) e a mesma pasta `supabase/migrations`, e roda `db push`, que
+aplica as migrations em ordem e registra cada uma no histórico do projeto.
+Num banco vazio, é a mesma prova do `npm run db:teste`. Se uma migration
+falhar, a correção vai para `supabase/REPRODUCAO.md`, como no banco local.
 
-Não rode `--include-seed`: o `supabase/seed.sql` é de 08/2026 e grava uma
-coluna que a 0129 apagou.
+Antes do push, o script recusa a URL de produção (`prhhrqyubjcafvucirri`), a
+do banco local (para ele, `npm run db:teste`) e URL vazia ou que não seja
+`postgresql://`. A URL vem do ambiente, e não da linha de comando. Não chame
+o CLI direto: a conferência fica no script, e não em quem digita a URL.
+
+O script não passa `--include-seed`: o `supabase/seed.sql` é de 08/2026 e
+grava uma coluna que a 0129 apagou.
 
 ## Passo 3 — Dados sintéticos de dois grupos
 
@@ -102,6 +107,18 @@ no Hobby, o caminho seguro é um projeto da Vercel separado, ligado ao mesmo
 repositório, com as próprias variáveis. Nele, `VERCEL_PROJECT_PRODUCTION_URL`
 é a URL do projeto de teste, e não a de produção (o `autoDisparo` usa essa
 variável para chamar a si mesmo).
+
+**Por que não um Preview do projeto de produção com variáveis próprias.** É a
+outra forma que o plano da fase 1 admite, e ela fica de fora de propósito.
+Variável definida só para a branch de testes sobrescreve a geral de Preview
+apenas quando tem o mesmo nome: toda variável que ficar sem sobrescrever
+(`WHATSAPP_*`, `OPENAI_API_KEY`, `META_*`...) chega ao ambiente de testes com
+o valor de produção, e um esquecimento basta para o E2E mandar WhatsApp de
+verdade. E `VERCEL_PROJECT_PRODUCTION_URL`, que a Vercel define sozinha em todo
+deploy do projeto, aponta para o domínio de produção — o `autoDisparo` do
+ambiente de testes chamaria a rota de disparo de produção. No projeto separado, as duas
+coisas deixam de existir por construção: não há variável de produção para
+herdar.
 
 ### Variáveis do ambiente de testes
 

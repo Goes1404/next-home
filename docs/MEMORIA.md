@@ -10587,6 +10587,11 @@ Nota: [[plataforma-multi-grupo]]. Passo a passo: `docs/AMBIENTE-DE-TESTES.md`.
   recusa `E2E_BASE_URL` de produção (`e2e/baseDoE2E.ts`), `conectar()`
   recusa `DB_TESTE_URL` com `prhhrqyubjcafvucirri`, e `exportarGolden.ts`
   exige `--grupo` do grupo 1 e grava fora do repositório.
+- **As migrations do projeto de testes entram por `npm run
+  db:teste:remoto`** (o mesmo `dbTeste.mjs` e o mesmo CLI fixo do banco
+  local), com `DB_TESTE_URL` no ambiente. A conferência
+  (`scripts/banco/bancoRemoto.mjs`) recusa produção e o banco local antes do
+  `db push`; chamar o CLI direto pularia essa trava.
 - **Preview do projeto de produção não serve de ambiente de testes no
   Hobby**: herda as variáveis gerais de Preview (hoje as de produção), e
   `VERCEL_PROJECT_PRODUCTION_URL` aponta para produção (o `autoDisparo` usa).
