@@ -84,3 +84,9 @@ viraria N migrations.
   e `_zz_grupo_update`, `after`): gatilho `before` que roda depois do carimbo
   (a roleta `leads_distribuir`) não consegue pôr mãe de outro grupo nem
   trocar o grupo. O webhook e a seleção leem as taxas pelo grupo do dono.
+- **O E2E saiu de produção (19/10):** `e2e.yml` só sob demanda, contra o
+  ambiente de testes (`docs/AMBIENTE-DE-TESTES.md`, depende do Matheus),
+  com conta sintética e sem artefato. Playwright recusa URL de produção,
+  `conectar()` recusa o banco de produção e o export do golden exige
+  `--grupo` do grupo 1 e grava fora do repositório
+  (`test/ambienteDeTestes.test.ts`).

@@ -10571,3 +10571,31 @@ Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:
   lixeira de 30 dias; co-corretagem entre empresas por convite; Gmail só
   Next Home; a IA não se anuncia e não nega.
 
+
+## O E2E saiu de produção (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]]. Passo a passo: `docs/AMBIENTE-DE-TESTES.md`.
+
+- **O E2E diário rodava contra o site de produção, com a senha de um
+  corretor de verdade, e subia o rastro das falhas (telas do painel) como
+  artefato.** Agora `e2e.yml` lê a URL da variável `E2E_BASE_URL_TESTE` e a
+  conta sintética de `E2E_TESTE_EMAIL`/`SENHA`, não sobe artefato, e só roda
+  sob demanda até o ambiente de testes existir (depende do Matheus: projeto
+  Supabase de testes + ambiente `teste` da Vercel). Sem a variável, o job
+  para no primeiro passo dizendo o que falta.
+- **Três travas no código, além da guarda de texto:** `playwright.config.ts`
+  recusa `E2E_BASE_URL` de produção (`e2e/baseDoE2E.ts`), `conectar()`
+  recusa `DB_TESTE_URL` com `prhhrqyubjcafvucirri`, e `exportarGolden.ts`
+  exige `--grupo` do grupo 1 e grava fora do repositório.
+- **Preview do projeto de produção não serve de ambiente de testes no
+  Hobby**: herda as variáveis gerais de Preview (hoje as de produção), e
+  `VERCEL_PROJECT_PRODUCTION_URL` aponta para produção (o `autoDisparo` usa).
+  Sem Custom Environment (Pro), o caminho é um projeto da Vercel separado.
+- **`vitrine.spec.ts` procura imóveis reais do catálogo**; contra um banco
+  montado do zero ele vai falhar. Decidir entre spec com imóvel sintético e
+  catálogo de teste inventado — nunca copiar o de produção.
+- **Guarda de texto que lê o YAML no Windows precisa de `split(/\r?\n/)`**:
+  com CRLF, `.` não casa o `\r` e o `#.*$` nunca tirava comentário.
+- **Guarda que conta ocorrências não morde quando há sobra**: com três
+  `.eq("grupo_id", grupo)` e mínimo de dois, tirar um passava. A guarda
+  confere cada consulta do `.from()` até o `;`.
