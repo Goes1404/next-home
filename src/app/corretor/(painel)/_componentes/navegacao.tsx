@@ -1,5 +1,7 @@
 import type { SVGProps } from "react";
 
+import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+
 /**
  * Mapa de navegação do painel — uma fonte só para a barra lateral, a gaveta
  * do celular e a barra inferior.
@@ -44,6 +46,12 @@ export type SubItemNav = {
   /** Só o ADM enxerga. A página também se protege com `exigirGestorNaPagina`. */
   gestor?: boolean;
   /**
+   * Ferramenta de EQUIPE: some do menu no grupo de uma pessoa (corretor
+   * independente), onde não há com quem comparar nem a quem repassar ou
+   * convidar. Esconder não é bloquear: a rota continua abrindo por endereço.
+   */
+  equipe?: boolean;
+  /**
    * Título da seção a que o subtópico pertence dentro da pasta (30/09/2026).
    * O menu desenha o título quando ele muda de um subtópico para o seguinte;
    * hoje só a Administração usa (Equipe · Negócio · Sistema).
@@ -59,6 +67,8 @@ export type ItemNav = {
   tambem?: string[];
   /** Só o gestor enxerga — a própria página também se protege com notFound. */
   gestor?: boolean;
+  /** Ferramenta de equipe: some do menu do corretor independente (ver `SubItemNav`). */
+  equipe?: boolean;
   /**
    * As telas de dentro deste destino.
    *
@@ -189,8 +199,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/financeiro/fiscal", label: "Fiscal", icone: IconeExtrato, gestor: true },
           { href: "/corretor/financeiro/contador", label: "Contador", icone: IconeExtrato, gestor: true },
           { href: "/corretor/financeiro/assistente", label: "Alertas e IA", icone: IconeRobo, gestor: true },
-          { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
-          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true },
+          { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu, equipe: true },
+          { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true, equipe: true },
         ],
       },
       {
@@ -289,8 +299,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * continuam existindo e acendem a Administração pelo prefixo.
            */
           { href: "/corretor/admin", label: "Visão geral", icone: IconeVelocimetro, secao: "Equipe" },
-          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe" },
-          { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe" },
+          { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe", equipe: true },
+          { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe", equipe: true },
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
           { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio" },
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio" },
@@ -364,14 +374,23 @@ export function ehPasta(item: ItemNav): boolean {
   return (item.subitens?.length ?? 0) > 0;
 }
 
-export function gruposVisiveis(ehGestor: boolean): GrupoNav[] {
+/**
+ * O menu que esta sessão enxerga: some o que é do gestor para o corretor
+ * comum, e o que é de equipe (`equipe`) no grupo de uma pessoa só.
+ *
+ * Só ESCONDE. Quem decide o acesso é a página (`exigirGestorNaPagina`) e o
+ * banco; para o independente nem isso: o desenho (§10) não bloqueia função
+ * por tipo de grupo, e a tela de equipe continua abrindo por endereço.
+ */
+export function gruposVisiveis(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo): GrupoNav[] {
+  const temEquipe = tipoDoGrupo === "imobiliaria";
+  const ve = (alvo: { gestor?: boolean; equipe?: boolean }) =>
+    (!alvo.gestor || ehGestor) && (!alvo.equipe || temEquipe);
   return GRUPOS_NAV.map((g) => ({
     ...g,
     itens: g.itens
-      .filter((i) => !i.gestor || ehGestor)
-      .map((i) =>
-        i.subitens ? { ...i, subitens: i.subitens.filter((sub) => !sub.gestor || ehGestor) } : i,
-      ),
+      .filter(ve)
+      .map((i) => (i.subitens ? { ...i, subitens: i.subitens.filter(ve) } : i)),
   })).filter((g) => g.itens.length > 0);
 }
 

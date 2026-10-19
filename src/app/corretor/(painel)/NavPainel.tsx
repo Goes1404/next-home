@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import {
   destinoAtivo,
   ehPasta,
@@ -61,9 +62,17 @@ import { gravarMenuRecolhido } from "./_componentes/menuLateral";
  * Visitas e tudo o mais que só existe no menu desde que a caixa de abas saiu
  * das telas (29/09/2026).
  */
-export function NavPainel({ ehGestor, recolhidoInicial }: { ehGestor: boolean; recolhidoInicial: boolean }) {
+export function NavPainel({
+  ehGestor,
+  tipoDoGrupo,
+  recolhidoInicial,
+}: {
+  ehGestor: boolean;
+  tipoDoGrupo: TipoDoGrupo;
+  recolhidoInicial: boolean;
+}) {
   const atual = usePathname();
-  const grupos = gruposVisiveis(ehGestor);
+  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo);
   const dono = destinoAtivo(atual);
   const marcas = useContadoresDoMenu();
   const [recolhido, setRecolhido] = useState(recolhidoInicial);

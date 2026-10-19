@@ -50,6 +50,9 @@ export default async function PainelLayout({
 }) {
   const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
   const ehGestor = corretor?.papel === "gestor";
+  // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
+  // padrão de antes (imobiliária), que só esconde o que já escondia.
+  const tipoDoGrupo = corretor?.tipoDoGrupo ?? "imobiliaria";
   // A lateral do computador nasce do jeito que a pessoa deixou (ver menuLateral.ts).
   const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
 
@@ -128,11 +131,11 @@ export default async function PainelLayout({
             própria.
           */}
           <div className="mx-auto grid w-full max-w-[84rem] flex-1 grid-cols-1 gap-8 px-4 pt-6 pb-28 md:grid-cols-[auto_minmax(0,1fr)] md:px-8 md:pb-16">
-            <NavPainel ehGestor={ehGestor} recolhidoInicial={menuRecolhido} />
+            <NavPainel ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} recolhidoInicial={menuRecolhido} />
             <TransicaoDeTela>{children}</TransicaoDeTela>
           </div>
           <NavMobileBottom />
-          <GavetaLateral ehGestor={ehGestor} />
+          <GavetaLateral ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} />
           {/*
             O consultor a um toque, de qualquer tela. Mora aqui, e não em
             cada página, porque layout não re-executa entre rotas irmãs: a

@@ -6,6 +6,9 @@ import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
 
 const TRINTA_DIAS_EM_SEGUNDOS = 60 * 60 * 24 * 30;
 
+/** As telas de `/corretor` que abrem sem sessão. */
+const TELAS_SEM_LOGIN = new Set(["/corretor/entrar", "/corretor/esqueci-a-senha"]);
+
 /** Opções do cookie de atribuição — as mesmas nos dois caminhos abaixo. */
 const OPCOES_COOKIE_CORRETOR = {
   maxAge: TRINTA_DIAS_EM_SEGUNDOS,
@@ -57,7 +60,10 @@ export async function proxy(request: NextRequest) {
   // decide se a pessoa é administrador é a guarda de cada página
   // (`exigirAdminDaPlataformaNaPagina`), pelo banco.
   const areaDaPlataforma = pathname === "/plataforma" || pathname.startsWith("/plataforma/");
-  const precisaLogin = (areaDoCorretor && pathname !== "/corretor/entrar") || areaDaPlataforma;
+  // Telas de quem ainda não entrou. A volta do link do e-mail
+  // (`/auth/confirmar` e o botão `/auth/continuar`) mora fora de `/corretor`
+  // justamente para não passar por esta exigência.
+  const precisaLogin = (areaDoCorretor && !TELAS_SEM_LOGIN.has(pathname)) || areaDaPlataforma;
 
   if (areaDoCorretor || areaDaPlataforma) {
     const supabase = createServerClient(supabaseUrl(), supabasePublishableKey(), {

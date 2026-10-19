@@ -32,7 +32,16 @@ export const metadata: Metadata = {
  * não muda com o tema, então o texto sobre ela também não pode mudar — no
  * tema claro um `bg-fundo/70` deixaria letra branca sobre nuvem clara.
  */
-export default function EntrarPage() {
+export default async function EntrarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ link?: string }>;
+}) {
+  // Link do convite ou da recuperação que já foi usado, venceu ou chegou
+  // adulterado (`/auth/confirmar`). Explica e aponta a saída, em vez de um
+  // erro genérico que faria a pessoa achar que a conta não existe.
+  const linkExpirado = (await searchParams).link === "expirado";
+
   return (
     <main className="bg-fundo relative isolate min-h-svh lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* A foto. No celular cobre a tela inteira, atrás; no desktop é a
@@ -73,6 +82,12 @@ export default function EntrarPage() {
         <div className="border-linha bg-superficie shadow-painel-alto mx-auto mt-auto w-full max-w-sm rounded-2xl border p-6 sm:p-7 lg:mt-0">
           <h1 className="text-fluid-xl text-titulo font-medium">Entrar</h1>
           <p className="text-fluid-sm text-apoio mt-1 mb-6">Área do corretor da {site.nome}.</p>
+
+          {linkExpirado && (
+            <p role="alert" className="border-alerta-linha bg-alerta-lavado text-fluid-sm text-titulo -mt-2 mb-5 rounded-xl border px-4 py-3">
+              {"Este link já foi usado ou expirou. Peça outro em 'Esqueci a senha'."}
+            </p>
+          )}
 
           <FormularioLogin />
 

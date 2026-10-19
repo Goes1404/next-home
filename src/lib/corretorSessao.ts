@@ -3,6 +3,7 @@ import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { PADROES_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
 import {
   ETAPAS_FUNIL,
@@ -43,6 +44,12 @@ export type CorretorSessao = CorretorPerfil & {
    * taxas de crédito.
    */
   grupoId: string;
+  /**
+   * Imobiliária (com equipe) ou corretor independente (grupo de uma pessoa).
+   * Só governa o menu: no independente, as ferramentas de equipe saem da
+   * navegação, mas as rotas continuam abrindo (§10 do desenho).
+   */
+  tipoDoGrupo: TipoDoGrupo;
 };
 
 /**
@@ -68,11 +75,26 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
   const user = sessao?.claims.sub ? { id: sessao.claims.sub } : null;
   if (!user) return null;
 
-  const { data } = await supabase
-    .from("corretores")
-    .select(`${SELECT_CORRETOR}, papel, ativo, grupo_id`)
-    .eq("user_id", user.id)
-    .maybeSingle<LinhaCorretor & { papel: PapelCorretor; ativo: boolean; grupo_id: string }>();
+  // O tipo do grupo é lido À PARTE, em paralelo, e nunca derruba a sessão.
+  // Ele só serve ao menu; esta consulta a `corretores` serve a 68 chamadores.
+  // Um embed `grupo:grupos(tipo)` no mesmo pedido faria qualquer erro do
+  // embed (relação ambígua, grant faltando, cache de schema sem a FK)
+  // devolver `data: null` — e o painel inteiro viraria "conta sem vínculo"
+  // para todo mundo, a família do PGRST201 que já derrubou o site.
+  const [{ data }, tipoDoGrupo] = await Promise.all([
+    supabase
+      .from("corretores")
+      .select(`${SELECT_CORRETOR}, papel, ativo, grupo_id`)
+      .eq("user_id", user.id)
+      .maybeSingle<
+        LinhaCorretor & {
+          papel: PapelCorretor;
+          ativo: boolean;
+          grupo_id: string;
+        }
+      >(),
+    lerTipoDoGrupo(supabase),
+  ]);
 
   // Sem `slug` a conta existe mas ainda não foi vinculada a um cadastro
   // publicável — o painel trata esse caso à parte.
@@ -84,8 +106,41 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
   // sem dizer por quê.
   if (!data.ativo) return null;
 
-  return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo, grupoId: data.grupo_id };
+  return {
+    ...mapCorretor(data),
+    papel: data.papel,
+    ativo: data.ativo,
+    grupoId: data.grupo_id,
+    // A linha lida tem de ser a do PRÓPRIO grupo: se um dia uma policy
+    // deixar ler outro, o menu não pega o tipo do vizinho.
+    tipoDoGrupo: tipoDoGrupo?.id === data.grupo_id ? tipoDoGrupo.tipo : "imobiliaria",
+  };
 });
+
+/**
+ * O tipo do grupo do logado, para o menu. Nunca lança e nunca decide a
+ * sessão: erro, ausência da linha ou valor inesperado devolvem `null`, e o
+ * chamador cai em "imobiliária" — o menu completo de antes.
+ *
+ * A policy "grupos: cada um le o proprio" (0181) só deixa ver a linha do
+ * próprio grupo, por isso a consulta não precisa esperar o `grupo_id` de
+ * `corretores` e roda em paralelo com ela. Mais de uma linha visível faz o
+ * `maybeSingle` errar, e o erro também vira `null`.
+ */
+async function lerTipoDoGrupo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<{ id: string; tipo: TipoDoGrupo } | null> {
+  try {
+    const { data, error } = await supabase
+      .from("grupos")
+      .select("id, tipo")
+      .maybeSingle<{ id: string; tipo: string }>();
+    if (error || !data) return null;
+    return { id: data.id, tipo: data.tipo === "independente" ? "independente" : "imobiliaria" };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Se a sessão atual enxerga o funil da equipe inteira.
