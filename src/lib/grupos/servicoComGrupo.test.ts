@@ -535,13 +535,30 @@ function problemasDePlataformaAdmin(codigoSemComentarios: string): { erros: stri
     }
     erros.push(`${d.nome}: createServiceClient( sem exigirAdminDaPlataforma* antes nem a prova da guarda no parâmetro`);
   }
-  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*["'](\w+)["']\s*\)/g)) {
+  // O regex só ancora no NOME da tabela; o resto do argumento pode vir
+  // (`"x" as never`, quando a tabela falta no types.ts editado à mão). O `)`
+  // que fecha o `.from(` é achado à parte, por `fimDoFrom`.
+  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*["'](\w+)["']/g)) {
     if (FORA_DA_PLATAFORMA.includes(m[1])) erros.push(`consulta ${m[1]}: a área da plataforma não lê conversa nem ficha`);
-    if (m[1] === "leads" && !soContaLeads(codigo.slice(m.index! + m[0].length))) {
+    const fim = fimDoFrom(codigo, m.index! + m[0].length);
+    if (m[1] === "leads" && (fim < 0 || !soContaLeads(codigo.slice(fim)))) {
       erros.push("consulta leads: a área da plataforma só conta leads (select com head: true), nunca lê nem escreve");
     }
   }
   return { erros, exigemProva };
+}
+
+/**
+ * Posição logo depois do `)` que fecha o `.from(`, contando parênteses a
+ * partir de `desde` (dentro do argumento). -1 quando não fecha.
+ */
+function fimDoFrom(codigo: string, desde: number): number {
+  let nivel = 1;
+  for (let i = desde; i < codigo.length; i++) {
+    if (codigo[i] === "(") nivel++;
+    else if (codigo[i] === ")" && --nivel === 0) return i + 1;
+  }
+  return -1;
 }
 
 /**
@@ -621,6 +638,33 @@ describe("guarda: a regra de plataforma-admin morde", () => {
       return createServiceClient().from("leads").update({ etapa: "perdido" }).eq("id", "x");
     }`;
     expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  // Rodada 1 da revisão da Task 9: o `.from(` com mais coisa depois do nome
+  // (`as never`, a forma de quando a tabela falta no types.ts editado à mão)
+  // tem de seguir reprovando nas duas regras.
+  it("reprova conversa com `as never` depois do nome", () => {
+    const codigo = `export async function ler() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("whatsapp_mensagens" as never).select("id", { count: "exact", head: true });
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova ler leads com `as never` depois do nome", () => {
+    const codigo = `export async function ler() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("leads" as never).select("id, nome").eq("grupo_id", "g");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("aceita contar leads com `as never` e head: true", () => {
+    const codigo = `export async function contar() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("leads" as never).select("id", { count: "exact", head: true });
+    }`;
+    expect(problemasDePlataformaAdmin(codigo)).toEqual({ erros: [], exigemProva: [] });
   });
 
   it("aceita contar leads com head: true", () => {
