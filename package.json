@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "db:teste": "node scripts/banco/dbTeste.mjs subir",
+    "db:teste:parar": "node scripts/banco/dbTeste.mjs parar",
     "test:e2e": "playwright test",
     "eval": "tsx --conditions=react-server scripts/eval/rodarEval.ts",
     "eval:conversa": "tsx --conditions=react-server scripts/eval/rodarConversa.ts",

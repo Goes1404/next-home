@@ -43,6 +43,7 @@ next-env.d.ts
 
 # supabase cli
 /supabase/.temp/
+/supabase/.branches/
 
 # Snapshots do Playwright MCP — artefato de sessão, não do projeto
 .playwright-mcp/

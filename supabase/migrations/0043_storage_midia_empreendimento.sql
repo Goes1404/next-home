@@ -41,6 +41,17 @@ create policy "corretor gerencia midia de empreendimento"
 -- Guardar UM pdf é mais barato que guardar as sessenta imagens extraídas
 -- dele, e a extração é determinística: o índice de cada imagem continua
 -- valendo na hora de gravar.
+--
+-- [Reprodução, 10/2026] O bucket `empreendimentos` foi criado em produção
+-- pelo painel, fora de qualquer migration; num banco vazio o `update` abaixo
+-- não acharia linha nenhuma. O insert só existe para o banco local de teste:
+-- em produção o bucket já existe e `on conflict do nothing` não toca nele.
+-- Valores do estado de produção registrado na MEMORIA (público, 50 MB). Ver
+-- supabase/REPRODUCAO.md.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('empreendimentos', 'empreendimentos', true, 52428800)
+on conflict (id) do nothing;
+
 update storage.buckets
    set allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'application/pdf']
  where id = 'empreendimentos';
