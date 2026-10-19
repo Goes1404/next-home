@@ -11,7 +11,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/
   - src/app/corretor/(painel)/_componentes/graficos/OrigemDosLeads.tsx
 created: 2026-09-30
-updated: 2026-09-30
+updated: 2026-10-07
 summary: A tela de impulsionamentos só mostrava anúncio que o webhook detectava, sem como cadastrar campanha, sem qualidade do lead e sem comparação. Agora (0132) o corretor cria campanha com canal, valor e período, coloca anúncios detectados dentro dela e liga clientes de outros canais; cada cartão mostra a qualidade pela temperatura da IA e o custo por cliente, por visita e por cliente quente/morno, e um gráfico compara as campanhas pela mais barata por cliente, marcando a melhor por visita. Desde a 0133 o gasto tem data, e a tela desenha o custo por cliente semana a semana.
 ---
 
@@ -95,3 +95,14 @@ antigo não derruba o total.
   separados, o dono grava e o de outro corretor é recusado.
 
 Ver também [[impulsionamento-do-corretor-pela-etiqueta-da-meta]].
+
+## Painel de indicadores no estilo Power BI (07/10/2026)
+
+No topo da tela (`PainelDeIndicadores.tsx`, contas em `painelDosAnuncios.ts`):
+filtros de período (30/90/180 dias, tudo) e canal; seis cartões com variação
+contra o período anterior de mesmo tamanho e tendência semanal; rosca do
+investimento por canal (tocar filtra); colunas empilhadas de clientes por
+semana com dica e tabela; funil do anúncio à venda. O gasto do período é o
+registrado distribuído pelos dias (`gastoAte`), e o custo só conta clientes
+de campanha com valor. Cores por canal fixas (`--color-serie-1..6`, paleta
+validada para daltonismo). Substituiu os dois gráficos da manhã.

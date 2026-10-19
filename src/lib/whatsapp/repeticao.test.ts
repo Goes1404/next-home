@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { marcaDoDado } from "./dadoPedido";
 import {
   aproveitarSoONovo,
   ehRepeticaoDoBot,
@@ -358,4 +359,31 @@ it("a segunda tentativa diz ao modelo o que ele ia repetir", () => {
   const i = instrucaoContraRepeticao("O Viva RSF Vila do Conde começa em R$ 457.000.\n--- O valor exato fechamos na visita.");
   expect(i).toMatch(/Viva RSF Vila do Conde começa em R\$ 457\.000/);
   expect(i).toMatch(/DIFERENTE/);
+});
+
+describe("a frase que responde a pergunta repetida fica (conversa da Rute, 15/10/2026)", () => {
+  const historico = [
+    {
+      remetente: "bot",
+      texto:
+        "O Dom Parque fica na Rua Eduardo Leite da Silva, no Jardim Tupanci, Barueri. --- Você prefere imóvel pronto para morar ou na planta?",
+    },
+  ];
+  const resposta =
+    "O Dom Parque fica na Rua Eduardo Leite da Silva, no Jardim Tupanci, Barueri. --- Quer agendar uma visita para conhecer o decorado e as condições de pagamento?";
+
+  it("sem o dado protegido, o endereço repetido era cortado (o defeito)", () => {
+    expect(aproveitarSoONovo(resposta, historico)).not.toContain("Eduardo Leite");
+  });
+
+  it("com o dado pedido, o endereço fica", () => {
+    const r = aproveitarSoONovo(resposta, historico, marcaDoDado("Rua Eduardo Leite da Silva, Jardim Tupanci, Barueri"));
+    expect(r).toContain("Rua Eduardo Leite da Silva");
+    expect(r).toContain("Quer agendar");
+  });
+
+  it("a marca do preço é o número", () => {
+    expect(marcaDoDado("a partir de R$ 480.000")).toBe("R$ 480.000");
+    expect(marcaDoDado("Rua Eduardo Leite da Silva, Jardim Tupanci, Barueri")).toBe("Rua Eduardo Leite da Silva");
+  });
 });

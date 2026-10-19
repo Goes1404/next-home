@@ -3,6 +3,8 @@ import {
   ETAPAS_DO_CAMINHO,
   ETAPAS_FUNIL,
   ETAPA_LABEL,
+  GRUPOS_FUNIL,
+  GRUPO_DA_ETAPA,
   PROXIMA_ETAPA,
   type EtapaFunil,
 } from "@/lib/types";
@@ -15,8 +17,26 @@ import {
  */
 
 describe("o caminho do funil", () => {
-  it("tem cinco passos — mais que isso vira processo, não venda", () => {
-    expect(ETAPAS_DO_CAMINHO).toHaveLength(5);
+  // Era "cinco passos" (0045). Em 06/10/2026 o usuário pediu o funil
+  // completo (0165): a IA move as etapas do começo sozinha, então o clique a
+  // mais não é do corretor. Quem quer o caminho curto usa o RESUMIDO, que
+  // continua com os cinco grupos de antes.
+  it("o completo tem nove passos e o resumido continua com cinco", () => {
+    expect(ETAPAS_DO_CAMINHO).toHaveLength(9);
+    expect(GRUPOS_FUNIL.filter((g) => g !== "perdido")).toHaveLength(5);
+  });
+
+  it("toda etapa tem um grupo, e as etapas de um grupo são vizinhas", () => {
+    let anterior = GRUPO_DA_ETAPA[ETAPAS_FUNIL[0]];
+    const vistos = new Set([anterior]);
+    for (const etapa of ETAPAS_FUNIL) {
+      const grupo = GRUPO_DA_ETAPA[etapa];
+      if (grupo !== anterior) {
+        expect(vistos.has(grupo)).toBe(false);
+        vistos.add(grupo);
+        anterior = grupo;
+      }
+    }
   });
 
   it("perdido existe, mas fora do caminho: é a saída, não um passo", () => {
@@ -60,7 +80,8 @@ describe("o botão de um toque", () => {
 
   it("de qualquer etapa do caminho, o fim é alcançável só apertando o botão", () => {
     // A prova de que o caminho não tem buraco: partindo do começo e sempre
-    // avançando, chega-se a "fechado" em no máximo quatro toques.
+    // avançando, chega-se a "fechado" (oito toques; os três primeiros a IA
+    // costuma dar sozinha).
     let etapa: EtapaFunil = "novo";
     let toques = 0;
     while (PROXIMA_ETAPA[etapa] && toques < 10) {
@@ -68,6 +89,32 @@ describe("o botão de um toque", () => {
       toques += 1;
     }
     expect(etapa).toBe("fechado");
-    expect(toques).toBe(4);
+    expect(toques).toBe(ETAPAS_DO_CAMINHO.length - 1);
+  });
+});
+
+describe("o funil do banco e o da tela são o mesmo (0165)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync, readdirSync } = require("node:fs") as typeof import("node:fs");
+  const pasta = "supabase/migrations";
+  const ultimaCheck = readdirSync(pasta)
+    .filter((a) => a.endsWith(".sql"))
+    .sort()
+    .map((a) => readFileSync(`${pasta}/${a}`, "utf8"))
+    .filter((sql) => sql.includes("add constraint leads_etapa_check"))
+    .at(-1)!;
+
+  it("o check do banco aceita exatamente as etapas da tela", () => {
+    const dentro = ultimaCheck.slice(ultimaCheck.indexOf("add constraint leads_etapa_check"));
+    const lista = dentro.slice(dentro.indexOf("("), dentro.indexOf(");"));
+    const noBanco = [...lista.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+    expect(noBanco).toEqual([...ETAPAS_FUNIL]);
+  });
+
+  it("resposta do cliente e ficha completa movem o lead sozinhas", () => {
+    const webhook = readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8");
+    const repositorio = readFileSync("src/lib/whatsapp/repositorio.ts", "utf8");
+    expect(webhook).toContain("await avancarLeadParaEmConversa(conversa.leadId);");
+    expect(repositorio).toContain("await avancarLeadParaQualificado(leadId);");
   });
 });

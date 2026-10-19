@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
+import { diaEmSaoPauloISO, ehCliqueDePessoa, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +62,16 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
 
   // Fire-and-forget seria perder o clique se a função for congelada logo
   // após o redirect; o insert é aguardado de propósito (custa ~1 RTT).
+  const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
+  // Toque de pessoa ou robô (0174): só muda a contagem, o destino é o mesmo.
+  const dePessoa = ehCliqueDePessoa({
+    userAgent,
+    doSite,
+    secFetchSite: req.headers.get("sec-fetch-site"),
+    secFetchUser: req.headers.get("sec-fetch-user"),
+    referer: req.headers.get("referer"),
+    host: url.host,
+  });
   const registrarClique = async (corretorId: string | null) => {
     await supabase.from("cliques_whatsapp").insert({
       corretor_id: corretorId,
@@ -68,7 +80,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
       // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
       pelo_porteiro: true,
       url_origem: url.pathname + url.search,
-      user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
+      user_agent: userAgent,
+      de_pessoa: dePessoa,
+      // Conta pessoas, não cliques: um clique repetido é a mesma pessoa (0159).
+      visitante: visitanteDoClique({
+        ip: ipDaRequisicao(req.headers),
+        userAgent,
+        dia: diaEmSaoPauloISO(),
+        segredo: segredoDaMedicao(),
+      }),
     });
   };
 
@@ -80,14 +100,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   }
 
   type Sorteio = { corretor_id: string; telefone: string };
-  // Link pessoal (cookie de 30 dias): PREFERÊNCIA no sorteio, nunca filtro.
-  // Desconectado, o corretor do link simplesmente não ganha a vez.
-  const preferido = (await getCorretorAtivo())?.id ?? undefined;
-  const primeiro = await supabase
-    .rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id, preferido })
-    .maybeSingle<Sorteio>();
-  let sorteio = primeiro.data;
-  const erroDoSorteio = primeiro.error;
+  // Link pessoal (cookie de 30 dias): vai SEMPRE para o corretor do link,
+  // nunca para o sorteio — antes, desconectado, ele perdia o cliente para
+  // outro corretor (07/10/2026). Anúncio pago sem cookie segue no rodízio.
+  const doLink = await getCorretorAtivo();
+  const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
+  let sorteio: Sorteio | null = numeroDoLink ? { corretor_id: doLink!.id, telefone: numeroDoLink } : null;
+  const primeiro = sorteio
+    ? null
+    : await supabase.rpc("sortear_corretor_whatsapp", { p_empreendimento: alvo.id }).maybeSingle<Sorteio>();
+  if (primeiro) sorteio = primeiro.data;
+  const erroDoSorteio = primeiro?.error;
   if (erroDoSorteio) {
     // Banco sem a assinatura nova (0117/0130): sorteia
     // pela versão antiga em vez de perder o clique pago.

@@ -42,7 +42,7 @@ export async function PrimeirosPassos({ corretorId }: { corretorId: string }) {
             ) : (
               <Link
                 href={p.href}
-                className="group flex min-h-11 items-start gap-3 rounded-xl px-2 py-2 -mx-2 hover:bg-vidro-forte"
+                className="group flex min-h-11 items-start gap-3 rounded-xl px-2 py-2 -mx-2 hover:bg-vidro-forte linha-abre"
               >
                 <span aria-hidden className="mt-0.5 size-6 shrink-0 rounded-full border-2 border-linha-forte" />
                 <span className="min-w-0">

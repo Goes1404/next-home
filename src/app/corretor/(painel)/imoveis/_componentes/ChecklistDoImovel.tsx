@@ -104,7 +104,7 @@ export function ChecklistDoImovel({
           type="button"
           onClick={() => onIr(ABA[categoria.chave])}
           title={categoria.explicacao}
-          className="hover:bg-elevado active:bg-vidro-forte flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-1 text-left transition-colors"
+          className="hover:bg-elevado active:bg-vidro-forte flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-1 text-left transition-colors linha-abre"
         >
           <Marca presente={false} />
           <span className="text-fluid-xs text-titulo min-w-0 flex-1 truncate">

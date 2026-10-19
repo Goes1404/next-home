@@ -37,9 +37,10 @@ const DIR_MIGRATIONS = join(process.cwd(), "supabase", "migrations");
  *
  * 19/10/2026: a branch `fase-1-multi-grupo` nasceu em 0158, e a branch de
  * produção (`claude/modernizar-plataforma-imobiliaria-2tm13q`) já tinha
- * 0159 a 0180. As migrations multi-grupo começam em 0181.
+ * 0159 a 0180. As migrations multi-grupo começam em 0181. A branch trouxe a
+ * produção por merge no mesmo dia, e a lista voltou a ficar vazia.
  */
-const RESERVADOS = new Set<number>(Array.from({ length: 22 }, (_, i) => 159 + i));
+const RESERVADOS = new Set<number>([]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
   return readdirSync(DIR_MIGRATIONS)

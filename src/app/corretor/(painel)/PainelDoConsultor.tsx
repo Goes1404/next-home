@@ -5,6 +5,7 @@ import { ChatBase } from "./_componentes/ChatBase";
 import type { PerguntaDeChat } from "./_componentes/chatTipos";
 import { BlocosDaResposta } from "./consultor/BlocosDaResposta";
 import type { EstadoDoChatConsultor } from "./consultor/acoes";
+import { Mascote } from "@/components/marca/Mascote";
 
 const SUGESTOES = [
   "Renda de 8 mil: o que serve?",
@@ -52,6 +53,7 @@ export function PainelDoConsultor({
       className="bg-fundo pb-safe pointer-events-auto absolute inset-0 flex flex-col md:inset-auto md:pb-0 md:right-6 md:bottom-6 md:h-[min(34rem,calc(100dvh-7rem))] md:w-[23.75rem] md:rounded-2xl md:shadow-2xl"
     >
       <header className="border-linha flex items-center gap-2 border-b px-3 py-2.5">
+        <Mascote altura={44} />
         <div className="min-w-0 flex-1">
           <p className="text-titulo text-fluid-sm font-medium">Consultor</p>
           <p className="text-tenue truncate text-[11px]">Estimativas, não proposta oficial</p>
@@ -59,7 +61,7 @@ export function PainelDoConsultor({
         <Link
           href={telaCheia}
           onClick={fechar}
-          className="text-acento-suave hover:bg-vidro flex min-h-11 shrink-0 items-center rounded-full px-3 text-xs font-medium transition-colors"
+          className="text-acento-suave flex min-h-11 shrink-0 items-center px-3 text-xs font-medium transition-colors botao-secundario"
         >
           Tela cheia
         </Link>
@@ -67,7 +69,7 @@ export function PainelDoConsultor({
           type="button"
           onClick={fechar}
           aria-label="Fechar consultor"
-          className="text-tenue hover:text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors"
+          className="text-tenue hover:text-corpo flex size-11 shrink-0 cursor-pointer items-center justify-center transition-colors botao-icone"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
             <path d="M6 6l12 12M18 6L6 18" />

@@ -6,7 +6,7 @@ status: ativo
 custou: pouco — o vídeo só aparecia para quem chegava pelo link da Bruna
 codigo: src/components/motion/FundoDaCasaDesktop.tsx
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-13
 summary: No computador, o fundo da casa passou a ser uma foto de avenida entre torres (WebP, 149 KB), num picture com media para o celular não baixar. O vídeo que aparecia era o vídeo próprio do link da Bruna, que era o arquivo antigo da casa; a 0151 o tirou.
 ---
 
@@ -83,9 +83,16 @@ Medido em produção de 1024x600 a 1920x960: nada passa da primeira tela.
   ancorada na base ao sair; faixas curvas com sombra para cima. O mapa fica
   de fora: `scale` no ancestral desloca o clique e prende o card flutuante.
 - `.cartao-passa` (03/10): a mesma passagem card a card em "Oportunidades em
+- As páginas de região (`/regioes/<slug>`) também usam `.cartao-passa` (13/10/2026). O cartão continua dentro de `<li>`, com `--coluna` = `i % 3` (lá não há cartão de destaque largo).
+- Na página do imóvel, os cards das tipologias (`--coluna` = `i % 2`) e de "Veja também" (`i % 3`) também usam `.cartao-passa` (13/10/2026). A galeria também, no mesmo dia: a foto de abertura e cada foto da grade. Nas fotos da grade o `CartaoTilt` ganhou `semCortina`, que tira a cortina de entrada e mantém o tilt do mouse e o parallax. O Lazer também: cada item da lista passa sozinho, e a prévia da foto continua certa porque abre num portal.
   destaque", substituindo o Reveal (dois donos da opacidade); no computador
   as colunas partem de alturas diferentes (`--coluna`) e chegam juntas. A
   seção perdeu a `secao-passa` para não somar com a dos cards.
+- Desde 13/10 a listagem `/empreendimentos` usa a mesma `.cartao-passa` em
+  todos os cards (pedido: "o efeito da home ficaria legal em toda essa
+  parte"), também no lugar do Reveal. `--coluna` é a coluna REAL no
+  computador: o primeiro card sem filtro ocupa duas colunas, então os
+  seguintes deslocam uma.
 - Zoom na cidade é o PADRÃO desde 03/10 (escolhido no teste `?efeito=zoom`, que saiu): a foto aproxima até 1,7x e sobe 3% enquanto o herói sai. Fica um pouco borrada na ampliação, porque o arquivo tem 1024px.
 
 ## Limite

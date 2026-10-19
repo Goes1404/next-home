@@ -4,10 +4,8 @@ import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { PixelMeta } from "@/components/analytics/PixelMeta";
 import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { FundoDaCasaDesktop } from "@/components/motion/FundoDaCasaDesktop";
-import { HeroImageBackground } from "@/components/motion/HeroImageBackground";
-import { HeroVideoBackground } from "@/components/motion/HeroVideoBackground";
 import { Preloader } from "@/components/motion/Preloader";
-import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { FundoDoLink, PersonalizacaoDoLink, SoComFundoDaCasa } from "@/components/motion/FundoDoLink";
 import {
   FUNDO_HOME_POSTER_URL,
   FUNDO_HOME_VIDEO_URL,
@@ -32,20 +30,22 @@ import {
  * ação e faz o visitante escolher entre dois WhatsApps na mesma tela sem saber
  * que são pessoas diferentes. Quem precisa do CTA, monta o seu.
  */
-export default async function InstitucionalLayout({
+/**
+ * Validade da casca estática (F2b, 12/10/2026). Este layout não lê cookie
+ * nem cabeçalho — o tema e o corretor do link pessoal passaram para o
+ * navegador (lib/tema.ts, FundoDoLink.tsx) —, então as páginas abaixo dele
+ * que também não leem são prerenderizadas e servidas do cache da Vercel.
+ * Uma hora é a rede de segurança: a revalidação de verdade é por
+ * `revalidatePath`/`revalidateTag` nas actions do painel, no instante em que
+ * alguém grava. Páginas com `searchParams` ou token continuam dinâmicas.
+ */
+export const revalidate = 3600;
+
+export default function InstitucionalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const corretorAtivo = await getCorretorAtivo();
-  const usaFotoDeFundo = corretorAtivo?.fundoTipo === "foto" && corretorAtivo.fundoFotoUrl;
-  // Vídeo PRÓPRIO do corretor continua tendo precedência sobre a vinheta:
-  // é personalização explícita dele, e trocá-la pela peça da casa apagaria
-  // uma escolha que ele fez no painel.
-  const videoDoCorretor = corretorAtivo?.videoUrl || null;
-  // Sem foto nem vídeo próprio do corretor, o celular ganha a peça da casa.
-  const fundoDoCelular = !usaFotoDeFundo && !videoDoCorretor;
-
   /*
    * NAO ha `preload()` do poster aqui, e isso foi MEDIDO, nao suposto: o
    * `preload` do react-dom nao emite `<link>` nenhum nesta versao — conferido
@@ -58,6 +58,7 @@ export default async function InstitucionalLayout({
 
   return (
     <GlassBackgroundProvider>
+    <PersonalizacaoDoLink>
       {/* Vinheta da logo na primeira visita da sessão — também vive no
           grupo (vitrine); o sessionStorage garante que aparece uma vez só,
           por qualquer porta que o visitante entre. */}
@@ -90,19 +91,15 @@ export default async function InstitucionalLayout({
             componente e a receita de reencode continuam no repositório
             (HeroVideoBackground, HERO_VIDEO_URL) para quem for retomá-los.
 
-            Foto de fundo do corretor continua tendo precedência: é
-            personalização explícita dele. */}
+            Foto ou vídeo de fundo do corretor do link pessoal continuam
+            tendo precedência: é personalização explícita dele — e desde
+            12/10/2026 quem decide é o navegador (FundoDoLink), para o HTML
+            poder ser estático. */}
         {/* A imagem de poster da vinheta (F2 de performance, 13/09) saiu
             junto com o vídeo de fundo, no mesmo dia: era o MESMO quadro do
             logotipo que o usuário pediu para tirar. O LCP passa a ser o
             conteúdo do herói, que já nasce visível (F1). */}
-        {usaFotoDeFundo ? (
-          <HeroImageBackground src={corretorAtivo.fundoFotoUrl!} />
-        ) : videoDoCorretor ? (
-          <HeroVideoBackground src={videoDoCorretor} />
-        ) : (
-          <FundoDaCasaDesktop />
-        )}
+        <FundoDoLink padrao={<FundoDaCasaDesktop />} />
         {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
             todas as páginas em 13/09/2026, a pedido: o quadro parado do
             logotipo atrás do conteúdo lia como imagem de fundo aleatória, e
@@ -149,7 +146,7 @@ export default async function InstitucionalLayout({
         armadilha é de caixa FIXA, que acompanha a viewport; esta camada
         rola com a página e a unidade é estática.
       */}
-      {fundoDoCelular && (
+      <SoComFundoDaCasa>
         <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-svh overflow-hidden md:hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -177,11 +174,12 @@ export default async function InstitucionalLayout({
           />
           <div className="absolute inset-0 bg-gradient-to-b from-fundo/0 via-fundo/0 to-fundo/85" />
         </div>
-      )}
+      </SoComFundoDaCasa>
 
       {children}
       <PixelMeta />
       <VoltarAoTopo />
+    </PersonalizacaoDoLink>
     </GlassBackgroundProvider>
   );
 }

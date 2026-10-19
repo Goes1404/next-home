@@ -5,6 +5,9 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import type { Empreendimento } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
+import { proporcaoNoCelular } from "@/lib/imagens/proporcao";
+import { fotoDoSobre } from "./cenasDoShowcase";
 /**
  * Sobre, em dupla editorial: texto largo à esquerda, foto com parallax à
  * direita. A ficha técnica saiu daqui — virou a faixa FichaNumeros, onde os
@@ -12,7 +15,7 @@ import type { Empreendimento } from "@/lib/types";
  */
 export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento }) {
   // Segunda foto da galeria (a capa domina o hero; a 1ª abre a Galeria).
-  const foto = e.galeria.find((f) => f.url !== e.capa.url) ?? e.galeria[0] ?? null;
+  const foto = fotoDoSobre(e);
 
   return (
     <section id="sobre" className="mx-auto max-w-6xl scroll-mt-24 px-4 pt-16 sm:px-8 sm:pt-24">
@@ -41,9 +44,16 @@ export function Sobre({ empreendimento: e }: { empreendimento: Empreendimento })
             lado do texto longo. O parallax dela mora no ParallaxImagem. */}
         {foto && (
           <Reveal from="baixo" className="lg:sticky lg:top-28">
-            <ParallaxImagem className="aspect-[3/4] rounded-2xl" intensidade={20}>
+            {/* No celular o quadro segue a foto (ver `proporcaoNoCelular`): um
+                retrato 3:4 de um render 2:1 mostrava um terço da fachada. No
+                desktop a coluna é estreita e alta, e o 3:4 continua. */}
+            <ParallaxImagem
+              className="aspect-[var(--proporcao)] rounded-2xl lg:aspect-[3/4]"
+              style={{ "--proporcao": proporcaoNoCelular(foto) } as React.CSSProperties}
+              intensidade={20}
+            >
               <Image
-                src={foto.url}
+                src={srcDaMidia(foto)}
                 alt={foto.alt}
                 fill
                 sizes="(min-width: 1024px) 40vw, 100vw"

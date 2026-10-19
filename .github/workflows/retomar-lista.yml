@@ -1,0 +1,42 @@
+# Retoma uma lista de transmissão pausada (scripts/ops/retomarLista.ts).
+#
+# Roda aqui porque o botão "Retomar" só funciona com o login do dono da lista,
+# e a chave de serviço mora nos secrets do repositório (as mesmas do worker de
+# vídeo). O script é idempotente: lista que já não está pausada fica como
+# está. Fora da janela de envio ele só retoma a lista que NÃO pode mandar a
+# qualquer hora: o disparador começa às 9h.
+#
+# Dispara quando o pedido muda na branch de produção, ou à mão.
+
+name: Retomar lista de transmissão
+
+on:
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/ops/retomar-lista.json"
+  workflow_dispatch:
+
+concurrency:
+  group: retomar-lista
+  cancel-in-progress: false
+
+jobs:
+  retomar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Retomar a lista
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/ops/retomarLista.ts

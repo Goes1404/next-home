@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { marcarCamposDoCorretor } from "@/lib/crm/camposDoCorretor";
+import { marcarRecusasDesfeitas } from "@/lib/whatsapp/repositorio";
 
 /**
  * Ações da ficha do lead: nota, tarefa e qualificação.
@@ -33,6 +34,43 @@ export async function definirPreferenciaContato(
 
   revalidatePath(`/corretor/leads/${leadId}`);
   return { ok: permitido ? "Canal reativado." : "Canal bloqueado e revogação registrada." };
+}
+
+/**
+ * Desfaz o "não quer contato" (06/10/2026). O detector de recusa é regex e
+ * erra; quando erra, quem paga é um lead de verdade, que some das listas e
+ * fica com a IA calada. O corretor confere e libera, e a linha do tempo
+ * guarda quem liberou: histórico que some sem rastro não explica nada depois.
+ *
+ * Não mexe na etapa nem liga a IA: isso o corretor decide nos controles de
+ * sempre, depois de saber por que a marca existia.
+ */
+export async function liberarContatoDoLead(leadId: string): Promise<ResultadoCrm> {
+  const ctx = await sessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const { data, error } = await ctx.supabase
+    .from("leads")
+    .update({ nao_contatar_em: null, nao_contatar_motivo: null })
+    .eq("id", leadId)
+    .not("nao_contatar_em", "is", null)
+    .select("id");
+  if (error || !data?.length) return { erro: "Não foi possível liberar o contato deste lead." };
+
+  // O rótulo de falso positivo (0162): a decisão que marcou o lead foi
+  // desfeita por quem conhece o cliente. A RLS da sessão, logo acima, já
+  // conferiu que o lead é dele.
+  await marcarRecusasDesfeitas(leadId, ctx.corretor.id);
+
+  await ctx.supabase.from("lead_interacoes").insert({
+    lead_id: leadId,
+    corretor_id: ctx.corretor.id,
+    tipo: "sistema",
+    conteudo: "O corretor liberou o contato: o lead volta a poder receber listas de transmissão e a IA volta a poder responder.",
+  });
+
+  revalidatePath(`/corretor/leads/${leadId}`);
+  return { ok: "Contato liberado. Ele volta a poder receber mensagens." };
 }
 
 async function sessao() {
@@ -214,7 +252,7 @@ export async function arquivarLead(leadId: string): Promise<ResultadoCrm> {
 
   const { data, error } = await ctx.supabase
     .from("leads")
-    .update({ arquivado_em: new Date().toISOString() })
+    .update({ arquivado_em: new Date().toISOString(), arquivado_motivo: null })
     .eq("id", leadId)
     .select("id");
 
@@ -232,7 +270,7 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
 
   const { data, error } = await ctx.supabase
     .from("leads")
-    .update({ arquivado_em: null })
+    .update({ arquivado_em: null, arquivado_motivo: null })
     .eq("id", leadId)
     .select("id");
 

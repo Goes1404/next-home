@@ -3,10 +3,9 @@
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { PERFIL_DE_DOCUMENTO_LABEL, PERFIS_DE_DOCUMENTO, IMOVEIS_NA_SELECAO, type PerfilDeDocumento } from "@/lib/crm/linksDoCliente";
+import { IMOVEIS_NA_SELECAO } from "@/lib/crm/linksDoCliente";
 import { VALIDADES_DA_PROPOSTA } from "@/lib/crm/proposta";
 import {
-  criarLinkDeDocumentos,
   criarPortal,
   criarProposta,
   criarSelecao,
@@ -16,13 +15,13 @@ import {
 } from "./linksAcoes";
 
 /**
- * Os dois botões do cartão "Links para o cliente". Criado o link, a tela
+ * Os botões do cartão "Links para o cliente". Criado o link, a tela
  * oferece as duas saídas que o corretor usa: mandar pelo WhatsApp do
  * cliente com a mensagem pronta, ou copiar.
  *
  * A seleção passa por uma escolha antes do link: a sugestão chega marcada, e
- * o corretor troca o que quiser. Os documentos pedem o perfil (CLT,
- * autônomo, casal), porque a lista muda com ele.
+ * o corretor troca o que quiser. O pedido de documentos mora na seção
+ * "Documentação" da ficha desde 16/10/2026.
  */
 export function BotoesDeLink({
   leadId,
@@ -36,7 +35,6 @@ export function BotoesDeLink({
 }) {
   const [criado, setCriado] = useState<{ url: string; mensagem: string } | null>(null);
   const [escolha, setEscolha] = useState<{ candidatos: CandidatoDaSelecao[]; marcados: string[] } | null>(null);
-  const [perfil, setPerfil] = useState<PerfilDeDocumento>("clt");
   const [proposta, setProposta] = useState<{
     imovel: string;
     unidade: string;
@@ -106,28 +104,6 @@ export function BotoesDeLink({
         >
           Montar seleção de imóveis
         </button>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            aria-label="Perfil de renda do cliente"
-            value={perfil}
-            onChange={(e) => setPerfil(e.target.value as PerfilDeDocumento)}
-            className="select-seta text-fluid-xs border-linha-forte bg-campo text-titulo min-h-11 rounded-xl border px-3"
-          >
-            {PERFIS_DE_DOCUMENTO.map((p) => (
-              <option key={p} value={p}>
-                {PERFIL_DE_DOCUMENTO_LABEL[p]}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={ocupado}
-            onClick={() => criar(() => criarLinkDeDocumentos(leadId, perfil))}
-            className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo hover:border-acento-linha disabled:opacity-60"
-          >
-            Pedir documentos
-          </button>
-        </div>
         <button
           type="button"
           disabled={ocupado}
@@ -222,7 +198,7 @@ export function BotoesDeLink({
             >
               Gerar link da proposta
             </button>
-            <button type="button" onClick={() => setProposta(null)} className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio">
+            <button type="button" onClick={() => setProposta(null)} className="min-h-11 px-3 text-fluid-xs text-apoio botao-secundario">
               Cancelar
             </button>
           </div>
@@ -274,7 +250,7 @@ export function BotoesDeLink({
             <button
               type="button"
               onClick={() => setEscolha(null)}
-              className="min-h-11 rounded-xl px-3 text-fluid-xs text-apoio"
+              className="min-h-11 px-3 text-fluid-xs text-apoio botao-secundario"
             >
               Cancelar
             </button>

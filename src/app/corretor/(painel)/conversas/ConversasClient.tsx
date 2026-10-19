@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { lerMensagens, marcarConversaLida, type MensagemConversa } from "./acoes";
 import { JANELA_DO_RECONCILIO, MENSAGENS_POR_PAGINA, type ContextoDaIA } from "./chatModelo";
@@ -108,7 +108,14 @@ export function ConversasClient({
   // propósito — a RLS já recorta por corretor, e um filtro `in.(...)` com a
   // carteira inteira estoura o limite do parâmetro.
   useEffect(() => {
-    const supabase = createClient();
+    // O supabase-js chega por import assíncrono (clientSobDemanda.ts): a
+    // lista já está na tela quando o canal abre. `cancelado` cobre a tela
+    // que desmonta antes de o módulo chegar.
+    let cancelado = false;
+    let limpar: (() => void) | null = null;
+
+    void createClientSobDemanda().then((supabase) => {
+    if (cancelado) return;
     const canal = supabase
       .channel("conversas-live")
       .on(
@@ -172,8 +179,14 @@ export function ConversasClient({
       )
       .subscribe();
 
-    return () => {
+    limpar = () => {
       void supabase.removeChannel(canal);
+    };
+    });
+
+    return () => {
+      cancelado = true;
+      limpar?.();
     };
   }, []);
 
@@ -380,12 +393,19 @@ export function ConversasClient({
 
         {/* Chat aberto */}
         <section
+          // Com o chat aberto por cima da tela, o cabeçalho não sai de cena:
+          // o fim da conversa escorrega a rolagem para a página de trás, e
+          // o chat inteiro pularia junto (ver CabecalhoDoPainel).
+          data-segura-cabecalho={selecionada ? "" : undefined}
           className={cn(
             "min-w-0 flex-1 flex-col md:static md:z-auto",
             selecionada
               ? // Tela cheia entre o cabeçalho e a barra do polegar. `bg-fundo`
                 // é obrigatório: sem ele o conteúdo da página aparece por trás.
-                "bg-wa-fundo fixed inset-x-0 top-[var(--painel-header-h)] bottom-[var(--nav-mobile-h)] z-30 flex md:bottom-0"
+                // `acima-da-nav` e não `--nav-mobile-h` sozinho (09/10/2026):
+                // no iPhone a barra do polegar cresce com a área do gesto, e o
+                // pé do chat — o campo de digitar — ficava escondido atrás dela.
+                "bg-wa-fundo acima-da-nav fixed inset-x-0 top-[var(--painel-topo-visivel)] z-30 flex md:bottom-0"
               : "hidden md:flex",
           )}
         >

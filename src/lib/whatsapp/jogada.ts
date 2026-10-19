@@ -5,7 +5,9 @@ import { dadoPedido, formatarReais, type DadoPedido } from "./dadoPedido";
 import { perguntaIgnorada, type PerguntaIgnorada } from "./perguntaIgnorada";
 import { horariosJaOferecidos } from "./ofertasDeVisita";
 import { capacidadeEstaPendente } from "./funilQualificacao";
-import { estaMarcando, pedidoDeAgendamento, type PedidoDeAgendamento } from "./pedidoDeAgendamento";
+import { estaMarcando, pedidoDeAgendamento, rotuloDaData, type PedidoDeAgendamento } from "./pedidoDeAgendamento";
+import { detectarMudancaDeVisita, rotuloDaVisita, type MudancaDeVisita } from "./mudancaDeVisita";
+import { duvidaSobreOContato, FALAS_DO_COMECO, ofereceuParar } from "./duvidaDeEngano";
 
 /**
  * A JOGADA: o que esta mensagem vai fazer, decidido ANTES de escrever.
@@ -68,18 +70,41 @@ export type Jogada =
   | { tipo: "indicar_imovel" }
   | { tipo: "propor_horario"; jaOfereceu: number }
   | { tipo: "confirmar_visita"; oQueEleDisse: string }
-  | { tipo: "agendar"; dia: string | null; hora: number | null }
+  | {
+      tipo: "agendar";
+      dia: string | null;
+      hora: number | null;
+      /** A data exata, quando ele a deu por ordem no mês ("último domingo do mês"). */
+      data?: { ano: number; mes: number; dia: number } | null;
+    }
+  /** Já há visita marcada e ele quer outra data (A2, 06/10/2026). */
+  | { tipo: "remarcar_visita"; de: string; dia: string | null; hora: number | null }
+  /** Já há visita marcada e ele não vai poder ir. O código desmarca no CRM. */
+  | { tipo: "cancelar_visita"; de: string }
   | { tipo: "tratar_objecao"; oQueEleDisse: string }
   | { tipo: "indicar_alternativa"; slug: string; nome: string; piso: number | null; emVezDe: string | null }
   | { tipo: "deixar_porta_aberta"; oQueEleDisse: string }
+  /**
+   * Ele pediu um tempo antes de responder ("vou confirmar com você depois",
+   * "amanhã te aviso", "só um momento"). Não é aceite nem pedido de outro
+   * horário (16/10/2026, conversa da Rute).
+   */
+  | { tipo: "aguardar"; oQueEleDisse: string }
   | { tipo: "encerrar_confirmado"; prepararSimulacao: boolean }
   | { tipo: "responder_pergunta_aberta"; oQueEleDisse: string }
   | { tipo: "retomar"; horas: number }
   | { tipo: "acolher_recusa"; familia: FamiliaDeRecusa; oQueEleDisse: string }
   | { tipo: "encerrar_recusado"; familia: FamiliaDeRecusa }
+  /**
+   * Ele não sabe quem escreve ou se a mensagem era para ele (08/10/2026).
+   * `oferecerParar`: ainda no começo da conversa, a resposta termina
+   * perguntando se ele quer continuar recebendo.
+   */
+  | { tipo: "esclarecer_contato"; oQueEleDisse: string; oferecerParar: boolean }
   | { tipo: "entregar_oferta"; oferta: string }
   | { tipo: "devolver_escolha" };
 
+import { primeiroNomeDoCorretor } from "./nomeDoCorretor";
 import type { Fala } from "./rajada";
 import { normalizar } from "./normalizarFala";
 import { detectarRecusa, type FamiliaDeRecusa, type Recusa } from "./recusaDoCliente";
@@ -103,10 +128,19 @@ export interface EstadoDaConversa {
   pediuAlternativa: boolean;
   /** Saída suave ("vou pensar", "vou ver com minha esposa"). */
   saidaSuave: boolean;
+  /** Pediu um tempo para responder (`ADIAMENTO`). */
+  adiou: boolean;
   /** Quantas falas SEGUIDAS do cliente foram objeção de preço (contando a atual). */
   objecoesSeguidas: number;
   /** A IA JÁ confirmou uma visita nesta conversa: o funil acabou. */
   visitaConfirmada: boolean;
+  /**
+   * A visita marcada no CRM, se ainda não aconteceu. Null quando não há, ou
+   * quando quem chama não sabe (eval, playground).
+   */
+  visitaMarcada: Date | null;
+  /** Com visita marcada, ele quer remarcar ou desmarcar. */
+  mudancaDeVisita: MudancaDeVisita | null;
   /**
    * Ele aceitou o que a IA OFERECEU MANDAR na última mensagem (apresentação,
    * fotos, planta). A frase da oferta, ou null.
@@ -136,6 +170,11 @@ export interface EstadoDaConversa {
   agendamento: PedidoDeAgendamento;
   /** O cliente está dizendo que NÃO quer — e de qual das três formas. */
   recusa: Recusa | null;
+  /**
+   * Ele não sabe quem escreve ou se a mensagem era para ele ("acho que você
+   * mandou errado", "quem é?"). O trecho que decidiu, ou null.
+   */
+  duvidaSobreOContato: string | null;
   /** Quantas vezes ele já recusou ANTES desta fala. */
   recusasAnteriores: number;
   /**
@@ -188,6 +227,20 @@ const ASSUNTO_DO_FUNIL: Record<string, AssuntoDoFunil> = {
 const ACEITE =
   /\b(pode ser|fechado|fechou|combinado|perfeito|otimo|beleza|bora|vamos|topo|confirmo|confirmado|pode marcar|marca|esse (horario|dia)|esse mesmo|ta bom|tá bom|ok|sim|então|entao)\b/;
 const NEGACAO = /\b(nao|não|nem|impossivel|impossível|não da|nao da|não consigo|nao consigo|outro (dia|horario)|outra hora)\b/;
+
+/**
+ * O cliente pediu um TEMPO: vai conferir e responde depois.
+ *
+ * Conversa da Rute, 15/10/2026: depois de a IA oferecer horários, ela
+ * escreveu "Vou confirmar com vc depois, pode ser?". O "pode ser" casou em
+ * `ACEITE`, o planner devolveu `confirmar_visita`, e a visita foi gravada no
+ * CRM para uma data que ela nunca escolheu. Um minuto antes, "No máximo
+ * amanhã já te aviso" tinha virado `agendar` para AMANHÃ, por causa da
+ * palavra "amanhã". Quem adia não está marcando: o adiamento vence o aceite
+ * e o dia citado, do mesmo jeito que a negação vence.
+ */
+const ADIAMENTO =
+  /\b(vou confirmar|confirmo (com (vc|voce|vcs|voces|vcs) )?(depois|mais tarde|amanha|ja ja|logo)|depois (eu )?(te |lhe )?(confirmo|aviso|falo|respondo|retorno|digo)|ja te (aviso|falo|respondo|retorno|digo|confirmo)|te (aviso|confirmo|retorno|respondo)|vou ver (aqui|direitinho|e (te )?(aviso|falo|retorno|confirmo))|vou verificar|vou checar|deixa eu ver|vou olhar (a |minha )?agenda|so um (momento|minuto|instante|pouquinho)|um momento|um minutinho|pera ai|perai|espera ai|ja volto)\b/;
 
 const PEDIDO_DE_HORARIO =
   /\b(que horas|qual horario|qual o horario|que dia|quando (da|dá|posso|pode|e possivel|é possível|voces|vocês)|tem horario|horario disponivel)\b/;
@@ -413,6 +466,29 @@ export function estadoDaConversa(params: {
    * escreveu), não oferecido pela IA. Ausente vale false.
    */
   focoDoCliente?: boolean;
+  /**
+   * A recusa já classificada em camadas (regex + IA, `classificarRecusa`).
+   * O turno a calcula porque a IA é assíncrona e este módulo é puro.
+   * Ausente, vale a regex sozinha, que é o que o eval antigo e os traces usam.
+   */
+  recusa?: Recusa | null;
+  /**
+   * Recusas anteriores que a REGEX não enxerga no histórico porque foi a IA
+   * que as reconheceu (contadas no registro `recusas_detectadas`). Sem isto,
+   * o segundo "não" depois de uma recusa reconhecida pela IA ganharia a
+   * pergunta do motivo de novo, em vez de encerrar.
+   */
+  recusasAnterioresExtra?: number;
+  /**
+   * `leads.visita_agendada_em` (ISO), lido pelo webhook. Quando vem (mesmo
+   * null), a VISITA DO CRM decide se o funil acabou, e não o texto da
+   * conversa: depois de desmarcada, a frase "está confirmado" continua no
+   * histórico e mandaria a IA dizer "até lá" para quem não tem mais visita.
+   * Ausente (eval, playground, traces), vale a leitura do texto, como antes.
+   */
+  visitaMarcadaEm?: string | null;
+  /** O instante da conversa, para saber se a visita já passou. Ausente, agora. */
+  agora?: Date;
 }): EstadoDaConversa {
   const { historico, mensagemAtual, dossie } = params;
 
@@ -424,14 +500,21 @@ export function estadoDaConversa(params: {
    * tinha dito não. Uma recusa é acolhida com uma pergunta; a segunda
    * encerra — insistir depois de dois nãos é o que gera denúncia.
    */
-  const recusasAnteriores = falasCliente.filter((f) => detectarRecusa(f) !== null).length;
+  const recusasAnteriores =
+    falasCliente.filter((f) => detectarRecusa(f) !== null).length + (params.recusasAnterioresExtra ?? 0);
   const falaAtualRespondeFunil = assuntosDoFunil(mensagemAtual).length > 0;
   /*
    * O contexto muda o que "não" significa. Depois de ele já ter recusado, um
    * "não, obrigada" é a confirmação; antes disso, é resposta a uma pergunta
    * fechada do funil — e o funil é feito de perguntas fechadas.
    */
-  const recusa = detectarRecusa(mensagemAtual, { jaRecusouAntes: recusasAnteriores > 0 });
+  const recusa =
+    params.recusa !== undefined
+      ? params.recusa
+      : detectarRecusa(mensagemAtual, {
+          jaRecusouAntes: recusasAnteriores > 0,
+          ofereceuParar: ofereceuParar(falasBot[falasBot.length - 1] ?? ""),
+        });
 
   const respondidos = new Set<AssuntoDoFunil>();
   for (const texto of [...falasCliente, mensagemAtual]) {
@@ -549,7 +632,7 @@ export function estadoDaConversa(params: {
     ultimaDoBot.length > 0 &&
     horariosJaOferecidos([{ remetente: "bot", texto: ultimaDoBot }]).frases.length > 0;
   const nAtual = normalizar(mensagemAtual);
-  const aceitouHorario = ultimaDoBotOfereceu && !NEGACAO.test(nAtual) && ACEITE.test(nAtual);
+  const adiou = ADIAMENTO.test(nAtual);
 
   const convidouVisita = falasBot.some((t) =>
     /\b(visita|visitar|conhecer|decorado|apresentar|te mostr)/i.test(t),
@@ -564,7 +647,7 @@ export function estadoDaConversa(params: {
    * Mesma forma do `aceitouHorario` logo acima: exige as DUAS metades, e a
    * negação vence ("não, ainda não quero conhecer").
    */
-  const agendamento = pedidoDeAgendamento(mensagemAtual);
+  const agendamento = pedidoDeAgendamento(mensagemAtual, params.agora ?? new Date());
   const ultimaDoBotConvidou = /\b(visita|visitar|conhecer|decorado|te mostr)/i.test(ultimaDoBot);
   /*
    * Dia SOLTO só é agendamento quando a conversa está falando de visita.
@@ -595,12 +678,48 @@ export function estadoDaConversa(params: {
    */
   if (
     ultimaDoBotConvidou &&
+    !adiou &&
     !NEGACAO.test(nAtual) &&
     ACEITE.test(nAtual) &&
     assuntosDoFunil(mensagemAtual).length === 0
   ) {
     agendamento.pediuVisita = true;
   }
+
+  /*
+   * A visita do CRM, só se ainda não aconteceu. Visita passada não segura o
+   * funil ("até lá" para quem já visitou) nem é remarcável.
+   */
+  const agora = params.agora ?? new Date();
+  const visitaDoCrm = params.visitaMarcadaEm ? new Date(params.visitaMarcadaEm) : null;
+  const visitaMarcada =
+    visitaDoCrm && !Number.isNaN(visitaDoCrm.getTime()) && visitaDoCrm.getTime() > agora.getTime()
+      ? visitaDoCrm
+      : null;
+  /*
+   * CONTRAPROPOSTA não é aceite: "pode ser no último domingo do mês?" depois
+   * de a IA oferecer o domingo 18/10 tem "pode ser" e propõe OUTRO dia. Dia
+   * que a oferta não citou, ou data calculada que ela não trazia, é pedido
+   * novo — vira `agendar` com o dia dele.
+   */
+  const nUltimaDoBot = normalizar(ultimaDoBot);
+  const diaDaFala = agendamento.dia ? normalizar(agendamento.dia).split(/[\s-]/)[0] : null;
+  const contraproposta =
+    (diaDaFala !== null && !nUltimaDoBot.includes(diaDaFala)) ||
+    (agendamento.data != null && !ultimaDoBot.includes(rotuloDaData(agendamento.data)));
+  const aceitouHorario =
+    ultimaDoBotOfereceu && !adiou && !contraproposta && !NEGACAO.test(nAtual) && ACEITE.test(nAtual);
+
+  /*
+   * O dia citado no adiamento é QUANDO ele vai responder, não quando quer
+   * visitar: "amanhã te aviso" não é visita amanhã.
+   */
+  if (adiou) {
+    agendamento.dia = null;
+    agendamento.hora = null;
+    agendamento.pediuVisita = false;
+  }
+  const mudancaDeVisita = detectarMudancaDeVisita({ texto: mensagemAtual, visitaMarcada, agendamento });
 
   return {
     respondidos,
@@ -628,6 +747,9 @@ export function estadoDaConversa(params: {
     oQueEleDisse: mensagemAtual.trim(),
     agendamento,
     recusa,
+    duvidaSobreOContato: duvidaSobreOContato(mensagemAtual, {
+      falasAnterioresDoCliente: falasCliente.length,
+    }),
     recusasAnteriores,
     falaAtualRespondeFunil,
     clienteColaborando:
@@ -648,7 +770,13 @@ export function estadoDaConversa(params: {
     objecoesSeguidas: contarObjecoesSeguidas(falasCliente, nAtual),
     pediuAlternativa: PEDIDO_DE_ALTERNATIVA.test(nAtual),
     saidaSuave: SAIDA_SUAVE.test(nAtual),
-    visitaConfirmada: falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    adiou,
+    visitaConfirmada:
+      params.visitaMarcadaEm !== undefined
+        ? visitaMarcada !== null
+        : falasBot.some((t) => CONFIRMACAO.test(normalizar(t))),
+    visitaMarcada,
+    mudancaDeVisita,
     aceitouOferta: ofertaAceita(ultimaDoBot, mensagemAtual),
     perguntaSemDado: SEM_DADO.test(nAtual) ? mensagemAtual.trim() : null,
     alternativa: alternativaMaisEmConta(params.catalogo, params.imovelEmFoco),
@@ -729,9 +857,45 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
         };
   }
 
+  /*
+   * A DÚVIDA sobre o contato vem logo depois da recusa (08/10/2026).
+   *
+   * "Acho que você mandou errado" virava pedido para parar; sem isso, viraria
+   * pergunta de funil, que é pior ainda: "em qual região você procura?" para
+   * quem quer saber quem está escrevendo. Responder quem escreve e por quê é
+   * a condição de qualquer outra conversa. A recusa vem antes porque "foi
+   * engano, me tira da lista" é pedido para parar, e pedido para parar
+   * encerra.
+   */
+  if (estado.duvidaSobreOContato) {
+    return {
+      tipo: "esclarecer_contato",
+      oQueEleDisse: estado.oQueEleDisse,
+      oferecerParar: estado.falasDoCliente - 1 <= FALAS_DO_COMECO,
+    };
+  }
+
   // O aceite vem antes do resto: é o momento da conversão, e qualquer outra
   // jogada aqui (até entregar um dado) adiaria a confirmação em um turno.
   if (estado.aceitouHorario) return { tipo: "confirmar_visita", oQueEleDisse: estado.oQueEleDisse };
+
+  /*
+   * A visita marcada mudou: remarcar ou desmarcar vem antes de responder
+   * dado e muito antes do "até lá" da visita confirmada. Sem isto, "não vou
+   * conseguir sábado, pode ser domingo?" recebia "qualquer dúvida, me chama"
+   * e a data velha ficava no CRM (A2, 06/10/2026).
+   */
+  if (estado.mudancaDeVisita && estado.visitaMarcada) {
+    const de = rotuloDaVisita(estado.visitaMarcada);
+    return estado.mudancaDeVisita.tipo === "cancelar"
+      ? { tipo: "cancelar_visita", de }
+      : {
+          tipo: "remarcar_visita",
+          de,
+          dia: estado.mudancaDeVisita.dia,
+          hora: estado.mudancaDeVisita.hora,
+        };
+  }
 
   if (estado.pedidoEmAberto) return { tipo: "responder_dado", dado: estado.pedidoEmAberto };
 
@@ -754,6 +918,15 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
       forcaDaPergunta(estado.oQueEleDisse) === "nao";
     return { tipo: "encerrar_confirmado", prepararSimulacao };
   }
+
+  /*
+   * Ele pediu um tempo. Vem antes de marcar e de qualquer pergunta: oferecer
+   * outro horário ou perguntar de novo para quem disse "te aviso amanhã" é
+   * pressão, e foi o que levou à visita falsa da Rute. Perde para a
+   * pergunta em aberto, porque "onde fica? vou ver e te falo" ainda espera a
+   * resposta.
+   */
+  if (estado.adiou) return { tipo: "aguardar", oQueEleDisse: estado.oQueEleDisse };
 
   // Ele aceitou o material oferecido: entregar antes de qualquer outra coisa.
   if (estado.aceitouOferta && !estado.agendamento.dia && estado.agendamento.hora === null) {
@@ -783,6 +956,7 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
       tipo: "agendar",
       dia: estado.agendamento.dia,
       hora: estado.agendamento.hora,
+      ...(estado.agendamento.data ? { data: estado.agendamento.data } : {}),
     };
   }
 
@@ -947,7 +1121,15 @@ const PERGUNTA_DO_ASSUNTO: Record<AssuntoDoFunil, string> = {
  * O bloco que vai no TOPO do prompt. Curto e único: é a tarefa da mensagem,
  * e é a única instrução que precisa ganhar de todas as outras.
  */
-export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | null }): string {
+export function blocoDaJogada(
+  jogada: Jogada,
+  contexto: {
+    nomeDoFoco: string | null;
+    /** Para `esclarecer_contato` dizer quem escreve. Ausente, vale o genérico. */
+    nomeAssistente?: string | null;
+    nomeCorretor?: string | null;
+  },
+): string {
   const cabecalho = "SUA ÚNICA TAREFA NESTA MENSAGEM";
 
   switch (jogada.tipo) {
@@ -1033,10 +1215,20 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
           'Diga que o horário fica guardado para ele e pergunte qual dos imóveis ele quer visitar (se o catálogo abaixo tiver dois ou três que combinam com o que ele contou, cite-os pelo nome). Ainda NÃO confirme: sem imóvel não existe visita. "visitaProposta" fica null nesta mensagem.',
         ].join("\n");
       }
+      const quemRecebe = primeiroNomeDoCorretor(contexto.nomeCorretor);
       return [
         `${cabecalho}: CONFIRMAR a visita que ele acabou de aceitar, com o resumo do combinado.`,
         `Ele disse: "${jogada.oQueEleDisse}".`,
-        `Escreva o combinado inteiro, em duas mensagens curtas: (1) o dia e o horário exatos que ele escolheu, e que a visita é no ${contexto.nomeDoFoco}, e com quem ele vai falar (diga o nome do corretor, nunca o seu: quem recebe o cliente na visita é ele); (2) que o endereço certinho chega antes, e que se precisar remarcar é só responder aqui.`,
+        /*
+         * O nome vai ESCRITO. "Diga o nome do corretor" sem o nome, mais a
+         * regra 21 proibindo dizer que ele vai falar com o corretor, fez o
+         * modelo inventar "o corretor Carlos" na visita da Rute (15/10/2026).
+         */
+        `Escreva o combinado inteiro, em duas mensagens curtas: (1) o dia e o horário exatos que ele escolheu, e que a visita é no ${contexto.nomeDoFoco}, ${
+          quemRecebe
+            ? `e que quem vai recebê-lo na visita é ${quemRecebe} (escreva exatamente esse nome: nunca outro, nunca o seu)`
+            : "e que um corretor da equipe vai recebê-lo (NÃO diga nome nenhum: você não sabe quem é)"
+        }; (2) que o endereço certinho chega antes, e que se precisar remarcar é só responder aqui.`,
         "NUNCA escreva o endereço nem o número da unidade: eles vêm do cadastro, e endereço errado leva o cliente ao lugar errado no dia.",
         'Preencha "visitaProposta" com a data da tabela CALENDÁRIO e "confirmadaPeloCliente": true. Nenhuma pergunta nova, nenhum outro horário — ele já escolheu.',
       ].join("\n");
@@ -1057,14 +1249,25 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         );
       }
 
+      /*
+       * Com a data calculada ("último domingo do mês" = 25/10), ela vai
+       * escrita: na visita da Rute o modelo ofereceu o domingo seguinte.
+       */
+      const dia = jogada.data && jogada.dia ? `${jogada.dia}, ${rotuloDaData(jogada.data)}` : jogada.dia;
+      if (jogada.data) {
+        passos.push(
+          `A data que ele pediu é ${dia} (calculada pelo sistema: use ESTA, nunca outra semana). Se ela não aparece em HORÁRIOS REAIS DE VISITA, pergunte se ele prefere manhã ou tarde nesse dia — não troque o dia.`,
+        );
+      }
+
       if (jogada.dia && jogada.hora !== null) {
         passos.push(
-          `Ele escolheu ${jogada.dia} às ${jogada.hora}h. Confirme ESSE dia e ESSA hora, se estiverem em HORÁRIOS REAIS DE VISITA. Se não estiverem, diga o mais próximo que existe naquele dia — nunca outro dia.`,
+          `Ele escolheu ${dia} às ${jogada.hora}h. Confirme ESSE dia e ESSA hora, se estiverem em HORÁRIOS REAIS DE VISITA. Se não estiverem, diga o mais próximo que existe naquele dia — nunca outro dia.`,
           'Preencha "visitaProposta" com a data da tabela CALENDÁRIO e "confirmadaPeloCliente": true.',
         );
       } else if (jogada.dia) {
         passos.push(
-          `Ele escolheu ${jogada.dia}. Ofereça os horários DESSE DIA que estão em HORÁRIOS REAIS DE VISITA — no máximo dois.`,
+          `Ele escolheu ${dia}. Ofereça os horários DESSE DIA que estão em HORÁRIOS REAIS DE VISITA — no máximo dois.`,
           "NÃO pergunte o dia de novo, e não ofereça outro dia: ele já respondeu.",
         );
       } else if (jogada.hora !== null) {
@@ -1099,6 +1302,12 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
           : "Apresente com UMA razão de encaixe (região, tipologia) e o link da página. Sem cifra: este não tem piso cadastrado.",
         "Não repita o imóvel que ele acabou de achar caro.",
       ].join("\n");
+    case "aguardar":
+      return [
+        `${cabecalho}: ele pediu um tempo para responder — "${jogada.oQueEleDisse}".`,
+        'Concorde em UMA frase curta, sem pressa (ex.: "Claro, sem pressa! Fico no aguardo."). NENHUMA pergunta, NENHUM horário novo, NENHUM material.',
+        'Não confirme nada: ele ainda não escolheu. "visitaProposta" fica null nesta mensagem.',
+      ].join("\n");
     case "deixar_porta_aberta":
       return [
         `${cabecalho}: ele sinalizou que vai pensar / decidir com alguém — "${jogada.oQueEleDisse}".`,
@@ -1110,6 +1319,39 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
         contexto.nomeDoFoco
           ? `Respeite. UMA frase: deixe a porta aberta e ofereça o que ajuda a decidir junto (o link da página do ${contexto.nomeDoFoco} ou as fotos, para mostrar a quem ele citou). NENHUMA pergunta de qualificação, NENHUM horário. Termine sem cobrar resposta.`
           : "Respeite. UMA frase: deixe a porta aberta (\"quando vocês conversarem, me chama que eu te mostro as opções que combinam\"). Ainda não há imóvel escolhido: NÃO prometa link, foto nem material. NENHUMA pergunta, NENHUM horário.",
+      ].join("\n");
+    case "remarcar_visita": {
+      /*
+       * A data nova só vale quando ele deu dia e hora (ou só a hora, com o
+       * dia da visita marcada). Sem isso, a tarefa é oferecer dois horários
+       * da lista real — e nunca dizer que já mudou: quem muda é o código,
+       * quando ele escolher.
+       */
+      const passos = [
+        `${cabecalho}: REMARCAR a visita que estava marcada para ${jogada.de}. Ele quer outra data.`,
+      ];
+      if (jogada.hora !== null) {
+        const quando = jogada.dia ? `${jogada.dia} às ${jogada.hora}h` : `às ${jogada.hora}h, no mesmo dia`;
+        passos.push(
+          `Ele pediu ${quando}. Se estiver em HORÁRIOS REAIS DE VISITA (ou se não houver lista de horários), confirme a troca em duas mensagens curtas: a data nova, e que a de ${jogada.de} foi desmarcada. Se não estiver, ofereça o horário mais próximo que existe naquele dia — nunca outro dia sem ele pedir.`,
+          'Preencha "visitaProposta" com a data NOVA da tabela CALENDÁRIO e "confirmadaPeloCliente": true. Não escreva endereço.',
+        );
+      } else {
+        passos.push(
+          jogada.dia
+            ? `Ele quer ${jogada.dia}, sem dizer a hora. Ofereça DOIS horários de ${jogada.dia} da lista HORÁRIOS REAIS DE VISITA (um de manhã e um à tarde, se houver) e pergunte qual fica melhor.`
+            : "Diga que tudo bem remarcar e ofereça DOIS horários da lista HORÁRIOS REAIS DE VISITA, de dias diferentes. Pergunte qual fica melhor.",
+          `Ainda NÃO diga que mudou: a visita de ${jogada.de} continua marcada até ele escolher. "visitaProposta" fica null nesta mensagem.`,
+        );
+      }
+      passos.push("Nenhuma pergunta de qualificação: ele já tem visita, só está trocando a data.");
+      return passos.join("\n");
+    }
+    case "cancelar_visita":
+      return [
+        `${cabecalho}: ele NÃO VAI PODER IR à visita de ${jogada.de}. O sistema já desmarcou.`,
+        "UMA mensagem curta: diga que tudo bem e que a visita foi desmarcada. Depois, em meia frase, deixe a porta aberta para remarcar (\"quando quiser marcar outro dia, é só me chamar\").",
+        'Não insista, não pergunte o motivo, não ofereça horário agora. "visitaProposta" fica null.',
       ].join("\n");
     case "encerrar_confirmado":
       return [
@@ -1160,6 +1402,27 @@ export function blocoDaJogada(jogada: Jogada, contexto: { nomeDoFoco: string | n
             "Despeça-se em UMA frase, agradecendo e deixando a porta aberta para quando ele quiser voltar.",
             "Nenhuma pergunta, nenhuma oferta.",
           ].join("\n");
+    case "esclarecer_contato": {
+      /*
+       * Ele perguntou quem escreve, então apresentar-se é RESPONDER. A
+       * instrução da lista ("não se apresente de novo") e a regra 21 ("não se
+       * apresente como assistente de ninguém") valem para a conversa que já
+       * existe; aqui ele está dizendo que não sabe com quem fala, e o número
+       * que ele vê é o do corretor. Dizer isso é honestidade, não
+       * intermediação.
+       */
+      const quem = contexto.nomeAssistente?.trim() ? `a ${contexto.nomeAssistente.trim()}` : "a assistente";
+      const corretor = contexto.nomeCorretor?.trim() ? `do corretor ${contexto.nomeCorretor.trim()}` : "do corretor";
+      return [
+        `${cabecalho}: ele não sabe quem está escrevendo ou se a mensagem era para ele ("${jogada.oQueEleDisse.slice(0, 100)}"). Responda ISSO, e só isso.`,
+        `Diga quem escreve: você é ${quem}, assistente digital da imobiliária (diga o nome dela), e este WhatsApp é ${corretor}. Ele perguntou, então aqui apresentar-se é responder, mesmo que outra instrução diga para não se apresentar de novo.`,
+        "Em meia frase, diga por que escrevemos: o assunto da mensagem que mandamos antes (o imóvel ou a lista do CENÁRIO, se houver). NÃO invente de onde veio o número dele, nem diga que ele se cadastrou ou pediu informação: você não sabe.",
+        jogada.oferecerParar
+          ? "Se foi engano, peça desculpa. Termine perguntando se ele quer continuar recebendo novidades de imóveis por aqui, e deixe claro que, se não quiser, você não manda mais nada."
+          : "Depois, siga a conversa de onde ela estava, sem pergunta nova.",
+        "Nenhuma pergunta de região, estágio, dormitórios ou renda; nenhum imóvel novo, foto, link ou convite para visita. Uma ou duas frases curtas.",
+      ].join(QUEBRA);
+    }
     case "entregar_oferta":
       return [
         `${cabecalho}: ENTREGAR o que você ofereceu na última mensagem ("${jogada.oferta.slice(0, 90)}") — ele aceitou.`,
@@ -1200,8 +1463,14 @@ function maiuscula(t: string): string {
  * CRM e avisa o corretor. Só vale quando a jogada era confirmar, ou marcar
  * com a hora dita por ele, e há imóvel em foco.
  */
-export function aceiteDeVisitaValido(jogada: Jogada, temFoco: boolean): boolean {
-  if (!temFoco) return false;
+export function aceiteDeVisitaValido(jogada: Jogada, temFoco: boolean, temVisitaMarcada = false): boolean {
+  /*
+   * Remarcar não precisa de foco: o imóvel é o da visita que já existe. Mas
+   * precisa de dia E hora ditos por ele — trocar só a hora de uma visita
+   * vale com a hora, porque o dia é o da marcada (`resolverDataDaVisita`).
+   */
+  if (jogada.tipo === "remarcar_visita") return temVisitaMarcada && jogada.hora !== null;
+  if (!temFoco && !temVisitaMarcada) return false;
   if (jogada.tipo === "confirmar_visita") return true;
   return jogada.tipo === "agendar" && jogada.hora !== null;
 }
@@ -1229,9 +1498,13 @@ export function pendenteDaQualificacao(estado: EstadoDaConversa): AssuntoDoFunil
 const SEM_TRAVA_DE_QUALIFICACAO = new Set<Jogada["tipo"]>([
   "acolher_recusa",
   "encerrar_recusado",
+  "esclarecer_contato",
   "deixar_porta_aberta",
+  "aguardar",
   "encerrar_confirmado",
   "confirmar_visita",
+  "remarcar_visita",
+  "cancelar_visita",
   "retomar",
   "indicar_alternativa",
 ]);

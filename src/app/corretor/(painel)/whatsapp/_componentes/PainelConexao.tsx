@@ -286,7 +286,7 @@ export function PainelConexao({
             setMetodo(null);
             setErro(null);
           }}
-          className="text-fluid-sm text-apoio hover:text-titulo min-h-11 cursor-pointer transition-colors"
+          className="text-fluid-sm text-apoio hover:text-titulo min-h-11 cursor-pointer transition-colors px-3 botao-secundario"
         >
           ← Começar de novo
         </button>

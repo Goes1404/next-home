@@ -8,6 +8,8 @@ import { Camada } from "@/components/motion/Camada";
 import { Reveal } from "@/components/motion/Reveal";
 import type { Cena } from "./cenasDoShowcase";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
+import { proporcaoNoCelular } from "@/lib/imagens/proporcao";
 /**
  * Seção-vitrine pinada: a página para, e três cenas (foto + uma frase)
  * passam sob o dedo do usuário no ritmo do scroll. É o momento "apresentar
@@ -97,7 +99,7 @@ export function CenaShowcase({ cenas }: { cenas: Cena[] }) {
           {cenas.map((c) => (
             <figure key={c.foto.url} data-cena className="absolute inset-0">
               <Image
-                src={c.foto.url}
+                src={srcDaMidia(c.foto)}
                 alt={c.foto.alt}
                 fill
                 sizes="100vw"
@@ -135,10 +137,16 @@ export function CenaShowcase({ cenas }: { cenas: Cena[] }) {
               {/* O celular fica sem pin, mas não precisa ficar sem
                   profundidade. A velocidade escrita é sempre a de desktop: o
                   fator de 40% do controlador reduz isto a ~0.056 na prática. */}
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
-                <Camada velocidade={0.14} className="absolute inset-0 scale-110">
+              {/* O quadro segue a foto (ver `proporcaoNoCelular`): o 4:5 fixo
+                  recortava um render 2,4:1 até sobrar um terço dele. A folga
+                  de 5% cobre o deslocamento real (~0,056 da altura). */}
+              <div
+                className="relative overflow-hidden rounded-2xl"
+                style={{ aspectRatio: proporcaoNoCelular(c.foto) }}
+              >
+                <Camada velocidade={0.14} className="absolute inset-0 scale-[1.06]">
                   <Image
-                    src={c.foto.url}
+                    src={srcDaMidia(c.foto)}
                     alt={c.foto.alt}
                     fill
                     sizes="100vw"

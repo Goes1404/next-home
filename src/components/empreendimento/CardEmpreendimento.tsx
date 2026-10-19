@@ -11,6 +11,7 @@ import { unidadesRestantes } from "@/lib/imoveis/unidades";
 import { STATUS_PONTO, STATUS_TINTA } from "@/lib/statusCor";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
  * Card de empreendimento, usado na listagem e na régua de similares.
  *
@@ -85,7 +86,7 @@ export function CardEmpreendimento({
           <Camada velocidade={velocidadeCapa} className="absolute inset-0 scale-110">
             <ViewTransition name={`capa-${e.slug}`}>
               <Image
-                src={e.capa.url}
+                src={srcDaMidia(e.capa)}
                 alt={e.capa.alt}
                 fill
                 sizes={sizes}

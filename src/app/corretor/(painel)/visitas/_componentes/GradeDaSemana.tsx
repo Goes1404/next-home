@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { GRADE_PADRAO } from "@/lib/crm/agendaDeVisitas";
 import { salvarDisponibilidade, type FaixaDaSemana } from "../acoes";
 
 /**
@@ -37,8 +38,16 @@ const PADRAO = { horaInicio: 9, horaFim: 12 };
 
 const HORAS = Array.from({ length: 17 }, (_, i) => i + 6); // 6h às 22h
 
+/*
+ * Sem agenda gravada, a tela já mostra a padrão (todos os dias, 9h às 20h):
+ * é ela que a assistente usa (`gradeEfetiva`), e a tela não pode dizer outra
+ * coisa. Salvar grava a grade que estiver na tela.
+ */
+const padraoNaTela = (): FaixaDaSemana[] => GRADE_PADRAO.map((f) => ({ ...f, horasPreferidas: [] }));
+
 export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
-  const [faixas, setFaixas] = useState<FaixaDaSemana[]>(inicial);
+  const usandoPadrao = inicial.length === 0;
+  const [faixas, setFaixas] = useState<FaixaDaSemana[]>(usandoPadrao ? padraoNaTela() : inicial);
   const [aviso, setAviso] = useState<{ ok?: string; erro?: string } | null>(null);
   const [salvando, comecarSalvar] = useTransition();
 
@@ -102,26 +111,31 @@ export function GradeDaSemana({ inicial }: { inicial: FaixaDaSemana[] }) {
     <section className="cartao p-5 sm:p-6">
       <h2 className="font-display text-titulo text-lg">Quando você recebe visita</h2>
       <p className="text-fluid-xs text-apoio mt-1.5 leading-relaxed text-pretty">
-        A assistente só oferece horário que está aqui. Sem esta grade, ela fala de horário de forma
-        genérica — e horário que o cliente aceita e você não pode atender custa a visita inteira.
+        A assistente só oferece horário que está aqui. Desligue o dia ou mude o horário em que você não
+        recebe: horário que o cliente aceita e você não pode atender custa a visita inteira.
       </p>
 
       {/*
-        Grade vazia é o estado em que a assistente NÃO consegue marcar nada, e
-        até 09/09/2026 nada dizia isso: o parágrafo acima explica a regra, mas
-        explicação não é diagnóstico. Medido no banco naquele dia: 1 faixa
-        cadastrada para 7 corretores ativos — ou seja, para quase todo mundo o
-        bloco de horários do prompt saía VAZIO e a IA não tinha o que oferecer.
-        O aviso some assim que existe uma faixa; alerta que fica aceso depois
-        de resolvido vira paisagem.
+        Até 16/10/2026 a grade vazia deixava a assistente sem horário nenhum
+        para oferecer. Hoje vale a agenda padrão, e o aviso diz que ela está
+        valendo: quem nunca abriu esta tela precisa saber que a assistente já
+        marca visita em qualquer dia, das 9h às 20h.
       */}
+      {usandoPadrao && (
+        <p
+          role="status"
+          className="text-fluid-xs border-acento-linha bg-acento-lavado text-corpo mt-4 rounded-xl border px-3.5 py-2.5"
+        >
+          Você ainda não ajustou sua agenda, então vale a <strong>padrão: todos os dias, das 9h às 20h</strong>.
+          Desligue os dias ou mude os horários em que não recebe e salve.
+        </p>
+      )}
       {faixas.length === 0 && (
         <p
           role="status"
           className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-alerta mt-4 rounded-xl border px-3.5 py-2.5"
         >
-          Sua agenda está vazia, então a assistente <strong>não consegue marcar visita</strong> — ela
-          só sabe conversar sobre horário. Ligue pelo menos um dia abaixo.
+          Nenhum dia ligado. Se salvar assim, volta a valer a agenda padrão (todos os dias, das 9h às 20h).
         </p>
       )}
 

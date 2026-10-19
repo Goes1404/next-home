@@ -1,9 +1,15 @@
 import "server-only";
+import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 import { mesclarDossie } from "./mesclarDossie";
 import type { SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
+import { site } from "@/lib/site";
+import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import type { ClassificacaoDeRecusa } from "./recusaEmCamadas";
+import { rotuloDaVisita } from "./mudancaDeVisita";
 import type { ConviteDeEntrada } from "./porteiro";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import {
@@ -16,11 +22,21 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
-import { consultarEstadoConexao } from "./provider";
+import { consultarEstadoConexao, consultarMotivoDaQueda } from "./provider";
+import { diaDaQueda } from "./protecaoDaQueda";
+import { codigoDaQueda } from "./motivoDaQueda";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
+import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import { camposDaFicha } from "./fichaDoLead";
 import type { DossieClienteIA } from "./types";
 import { contaComoRespostaDaLista, type ListaRecenteDoLead } from "./contextoDaCampanha";
+import {
+  citaOImovel,
+  diaEmSaoPauloISO,
+  ehClienteDePessoa,
+  remetenteResumido,
+  segredoDaMedicao,
+} from "./medicaoDoLink";
 
 /**
  * Persistência do fluxo de WhatsApp, do lado do webhook.
@@ -52,6 +68,11 @@ export type InstanciaResolvida = {
   expediente: { inicioHora: number; fimHora: number };
   /** As regras que o corretor escreveu para a IA dele (0154). */
   regrasDaIa: string | null;
+  /**
+   * Conta só WhatsApp (0180): todas as conversas do número aparecem no
+   * painel, sem virar lead, com o texto guardado e a IA desligada.
+   */
+  soWhatsapp: boolean;
 };
 
 /**
@@ -82,6 +103,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     .maybeSingle();
 
   if (!corretor) return null;
+  const soWhatsapp = await ehContaSoWhatsapp(supabase, data.corretor_id);
 
   return {
     id: data.id,
@@ -93,13 +115,16 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     slugCorretor: corretor.slug,
     nomeAssistente: data.nome_assistente,
     tomVoz: data.tom_voz,
-    modoBot: data.modo_bot,
+    // Conta só WhatsApp: a IA fica desligada por desenho, seja qual for o
+    // modo gravado na tela de configuração.
+    modoBot: soWhatsapp ? "desativado" : data.modo_bot,
     webhookSecret: data.webhook_secret,
     palavraChaveAtivacao: data.palavra_chave_ativacao,
     palavraChaveTeste: data.palavra_chave_teste,
     palavrasEntradaCliente: data.palavras_entrada_cliente,
     expediente: { inicioHora: data.expediente_inicio ?? 9, fimHora: data.expediente_fim ?? 21 },
     regrasDaIa: data.regras_da_ia ?? null,
+    soWhatsapp,
   };
 }
 
@@ -131,6 +156,11 @@ export type ConversaPersistida = {
    * número não fala mais com ele (`quandoAIaResponde.ts`).
    */
   leadDeOutroCorretor: boolean;
+  /**
+   * `leads.visita_agendada_em`, para a IA saber que há visita marcada e
+   * poder remarcar ou desmarcar (A2, 06/10/2026).
+   */
+  visitaAgendadaEm: string | null;
 };
 
 /*
@@ -139,9 +169,13 @@ export type ConversaPersistida = {
  * só, em vez de uma segunda leitura no meio do webhook.
  */
 const SELECT_CONVERSA =
-  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em)";
+  "id, corretor_id, lead_id, telefone_cliente, bot_ativo, origem, e_teste, atendida_em, memoria, memoria_do_corretor, lead:leads!whatsapp_conversas_lead_id_fkey(corretor_id, nao_contatar_em, visita_agendada_em)";
 
-type LeadEmbutido = { corretor_id: string | null; nao_contatar_em: string | null };
+type LeadEmbutido = {
+  corretor_id: string | null;
+  nao_contatar_em: string | null;
+  visita_agendada_em?: string | null;
+};
 
 function mapConversa(row: {
   id: string;
@@ -169,6 +203,7 @@ function mapConversa(row: {
     ),
     memoria: row.memoria ?? null,
     memoriaDoCorretor: row.memoria_do_corretor ?? false,
+    visitaAgendadaEm: lead?.visita_agendada_em ?? null,
     eTeste: row.e_teste,
     origem: row.origem,
   };
@@ -459,6 +494,12 @@ export async function obterOuCriarConversa(params: {
    * lead — sem convite, a regra da 0111 continua inteira.
    */
   convite?: ConviteDeEntrada | null;
+  /**
+   * Conta só WhatsApp (0180): número sem lead ganha conversa mesmo assim, e
+   * ninguém é cadastrado. O banco recusa conversa sem lead em qualquer outra
+   * conta (trigger da 0180).
+   */
+  semLead?: boolean;
 }): Promise<ConversaPersistida | null> {
   const supabase = createServiceClient();
 
@@ -495,6 +536,8 @@ export async function obterOuCriarConversa(params: {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
         return mapConversa({ ...existente, lead_id: leadId });
       }
+      // Conta só WhatsApp: a conversa sem lead é o normal, não estoque velho.
+      if (params.semLead) return mapConversa(existente);
       // Estoque anterior à 0111: sem lead não pode continuar visível nem
       // reter mensagens. O cascade remove mensagens e follow-ups.
       await supabase.from("whatsapp_conversas").delete().eq("id", existente.id);
@@ -506,6 +549,7 @@ export async function obterOuCriarConversa(params: {
   const leadId =
     (await encontrarLeadCadastrado(supabase, params)) ??
     (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+  if (!leadId && params.semLead) return criarConversaSemLead(supabase, params);
   if (!leadId) return null;
 
   const origem = params.origem ?? "organica";
@@ -541,6 +585,31 @@ export async function obterOuCriarConversa(params: {
 
   if (error || !criada) return null;
 
+  return mapConversa(criada);
+}
+
+/** A conversa de quem não é lead, numa conta só WhatsApp (0180). */
+async function criarConversaSemLead(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { corretorId: string; telefoneCliente: string; nomeCliente?: string | null },
+): Promise<ConversaPersistida | null> {
+  const { data: criada, error } = await supabase
+    .from("whatsapp_conversas")
+    .insert({
+      corretor_id: params.corretorId,
+      telefone_cliente: params.telefoneCliente,
+      nome_cliente: params.nomeCliente ?? null,
+      lead_id: null,
+      origem: "organica",
+      // IA desligada desde o nascimento: esta conta não tem IA.
+      bot_ativo: false,
+    })
+    .select(SELECT_CONVERSA)
+    .single();
+  if (error || !criada) {
+    console.error("[só WhatsApp] falha ao criar conversa sem lead:", error?.message);
+    return null;
+  }
   return mapConversa(criada);
 }
 
@@ -625,6 +694,78 @@ export async function reivindicarCliqueDoLink(params: {
     nomeImovel,
     doAnuncio: data.origem.startsWith("anuncio/"),
   };
+}
+
+/**
+ * Conta a mensagem que o porteiro vai ignorar (0159): número sem lead que
+ * escreveu sem convite. Grava só o resumo do número, o tipo, quantos minutos
+ * depois de um clique de pessoa no link ela chegou e se citou o imóvel
+ * daquele clique. O texto nunca sai daqui.
+ *
+ * Uma linha por número, por corretor, por dia: a primeira mensagem do dia é
+ * a que conta. Falha nunca derruba o webhook: é medição.
+ */
+export async function registrarMensagemBarrada(p: {
+  corretorId: string;
+  telefone: string;
+  texto: string | null;
+  tipo: "texto" | "audio" | "outro";
+}): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    const { data: cliques } = await supabase
+      .from("cliques_whatsapp")
+      .select("id, created_at, empreendimento_id, user_agent, de_pessoa")
+      .eq("corretor_id", p.corretorId)
+      .eq("pelo_porteiro", true)
+      .gte("created_at", new Date(Date.now() - 60 * 60_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(20);
+    // Só clique de pessoa (0174): o robô que pediu o botão do site no mesmo
+    // minuto contava como "clicou e escreveu outra coisa".
+    const clique = (cliques ?? []).find((c) => c.de_pessoa ?? ehClienteDePessoa(c.user_agent)) ?? null;
+
+    let citou = false;
+    if (clique?.empreendimento_id && p.texto) {
+      const { data: imovel } = await supabase
+        .from("empreendimentos")
+        .select("nome, nomes_alternativos")
+        .eq("id", clique.empreendimento_id)
+        .maybeSingle();
+      if (imovel) citou = citaOImovel(p.texto, [imovel.nome, ...(imovel.nomes_alternativos ?? [])]);
+    }
+
+    const { error } = await supabase.from("porteiro_barrados").upsert(
+      {
+        corretor_id: p.corretorId,
+        dia: diaEmSaoPauloISO(),
+        remetente: remetenteResumido(p.telefone, segredoDaMedicao()),
+        tipo: p.tipo,
+        minutos_desde_clique: clique
+          ? Math.max(0, Math.floor((Date.now() - new Date(clique.created_at).getTime()) / 60_000))
+          : null,
+        clique_id: clique?.id ?? null,
+        empreendimento_id: clique?.empreendimento_id ?? null,
+        citou_imovel: citou,
+      },
+      { onConflict: "corretor_id,remetente,dia", ignoreDuplicates: true },
+    );
+    if (error) console.error("[porteiro] falha ao contar mensagem barrada:", error.message);
+  } catch (e) {
+    console.error("[porteiro] falha ao contar mensagem barrada:", e);
+  }
+}
+
+/** Quanto tempo a contagem de mensagens barradas fica guardada (0159). */
+export const DIAS_DE_MENSAGENS_BARRADAS = 90;
+
+/** Apaga a contagem antiga: depois de 90 dias ela já não decide nada. */
+export async function limparMensagensBarradasAntigas(): Promise<number> {
+  const supabase = createServiceClient();
+  const limite = new Date(Date.now() - DIAS_DE_MENSAGENS_BARRADAS * 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await supabase.from("porteiro_barrados").delete().lt("dia", limite).select("id");
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 /** Grava no clique quem ele cadastrou, para conferir depois. */
@@ -924,7 +1065,11 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
  */
 export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
   const supabase = createServiceClient();
-  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("etapa, visita_agendada_em")
+    .eq("id", leadId)
+    .maybeSingle();
 
   const { data, error } = await supabase.rpc("reservar_horario_visita", {
     p_lead_id: leadId,
@@ -950,7 +1095,90 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
     if (depois?.etapa) await registrarEtapaAutomatica(leadId, antes.etapa, depois.etapa, "ia");
   }
 
+  /*
+   * REMARCAÇÃO (A2): a data mudou. O lembrete de véspera ainda pendente era
+   * da data velha e sairia no dia errado; a linha do tempo diz de onde para
+   * onde, para o corretor não confiar na data que tinha anotado.
+   */
+  const anterior = antes?.visita_agendada_em ? new Date(antes.visita_agendada_em) : null;
+  if (data === true && anterior && anterior.getTime() !== dataVisita.getTime()) {
+    await apagarLembretesPendentesDeVisita(supabase, leadId);
+    const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+      lead_id: leadId,
+      corretor_id: null,
+      tipo: "visita",
+      conteudo: `O cliente remarcou a visita pela conversa: de ${rotuloDaVisita(anterior)} para ${rotuloDaVisita(dataVisita)}.`,
+      detalhes: { de: anterior.toISOString(), para: dataVisita.toISOString(), por: "ia" },
+    });
+    if (erroTimeline) console.error("[visita] falha ao registrar a remarcação:", erroTimeline.message);
+  }
+
   return data === true;
+}
+
+/**
+ * O cliente disse que não vai poder ir: a visita sai do CRM (A2, 06/10/2026).
+ *
+ * Quem decide é o planner (`detectarMudancaDeVisita`), sobre a fala dele,
+ * nunca o modelo. A etapa volta de "visita agendada" para "primeiro
+ * contato" — só ela: lead em documentação não regride por desmarcar uma
+ * visita. O lembrete de véspera pendente é apagado, a linha do tempo diz o
+ * que aconteceu e o corretor é avisado pelo chamador.
+ *
+ * Devolve a data desmarcada, ou null quando não havia visita (nada a fazer).
+ */
+export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
+  const supabase = createServiceClient();
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("etapa, visita_agendada_em")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead?.visita_agendada_em) return null;
+
+  const voltaEtapa = lead.etapa === "visita_agendada";
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      visita_agendada_em: null,
+      ...(voltaEtapa ? { etapa: "em_conversa" as const, etapa_alterada_em: new Date().toISOString() } : {}),
+    })
+    .eq("id", leadId)
+    .eq("visita_agendada_em", lead.visita_agendada_em);
+  if (error) {
+    console.error(`[visita] não foi possível desmarcar a visita do lead ${leadId}: ${error.message}`);
+    return null;
+  }
+
+  const desmarcada = new Date(lead.visita_agendada_em);
+  await apagarLembretesPendentesDeVisita(supabase, leadId);
+  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "em_conversa", "ia");
+  const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+    lead_id: leadId,
+    corretor_id: null,
+    tipo: "visita",
+    conteudo: `O cliente desmarcou pela conversa a visita de ${rotuloDaVisita(desmarcada)}.`,
+    detalhes: { desmarcada: desmarcada.toISOString(), por: "ia" },
+  });
+  if (erroTimeline) console.error("[visita] falha ao registrar o cancelamento:", erroTimeline.message);
+  return desmarcada;
+}
+
+/** O lembrete de véspera ainda não enviado era da data velha. */
+async function apagarLembretesPendentesDeVisita(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string,
+): Promise<void> {
+  const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
+  const ids = (conversas ?? []).map((c) => c.id);
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from("whatsapp_followups")
+    .delete()
+    .in("conversa_id", ids)
+    .eq("tipo", "lembrete_visita")
+    .eq("status", "pendente");
+  if (error) console.error("[visita] falha ao apagar o lembrete da data velha:", error.message);
 }
 
 /**
@@ -1044,13 +1272,68 @@ export async function avancarLeadParaPrimeiroContato(
   if (data && data.length > 0) await registrarEtapaAutomatica(leadId, "novo", "primeiro_contato", por);
 }
 
+/**
+ * O cliente respondeu: o lead está EM CONVERSA (0165).
+ *
+ * Só avança quem está antes disso (novo ou mensagem enviada); nunca volta
+ * ninguém, e chamar de novo não faz nada. Mesmo termostato do primeiro
+ * contato.
+ */
+export async function avancarLeadParaEmConversa(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  const { data: antes } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
+  if (antes?.etapa !== "novo" && antes?.etapa !== "primeiro_contato") return;
+  const { data } = await supabase
+    .from("leads")
+    .update({ etapa: "em_conversa", etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .in("etapa", ["novo", "primeiro_contato"])
+    .select("id");
+  if (data && data.length > 0) await registrarEtapaAutomatica(leadId, antes.etapa, "em_conversa", "ia");
+}
+
+/**
+ * A IA já sabe renda, região e quartos: o lead está QUALIFICADO (0165).
+ *
+ * Os três têm de estar na FICHA (`leads`), que é o que o corretor vê — a
+ * regra é sobre o que a ficha mostra, não sobre um palpite do dossiê. Só
+ * avança quem está antes (até "em conversa"); quem já marcou visita não
+ * volta para trás.
+ */
+export async function avancarLeadParaQualificado(leadId: string | null): Promise<void> {
+  if (!leadId) return;
+  const supabase = createServiceClient();
+  const { data: antes } = await supabase
+    .from("leads")
+    .select("etapa")
+    .eq("id", leadId)
+    .maybeSingle();
+  const { data } = await supabase
+    .from("leads")
+    .update({ etapa: "qualificado", etapa_alterada_em: new Date().toISOString() })
+    .eq("id", leadId)
+    .in("etapa", ["novo", "primeiro_contato", "em_conversa"])
+    .not("renda_mensal", "is", null)
+    .not("regiao_interesse", "is", null)
+    .not("dormitorios_min", "is", null)
+    .select("id");
+  if (data && data.length > 0 && antes?.etapa) {
+    await registrarEtapaAutomatica(leadId, antes.etapa, "qualificado", "ia");
+  }
+}
+
 /** Quem moveu o lead no funil sem o corretor arrastar o cartão. */
 export type QuemMudouAEtapa = "ia" | "lista" | "corretor_no_whatsapp";
 
 const ROTULO_DA_ETAPA: Record<string, string> = {
   novo: "Novo",
-  primeiro_contato: "Primeiro contato",
-  visita_agendada: "Visita agendada",
+  primeiro_contato: "Mensagem enviada",
+  em_conversa: "Em conversa",
+  qualificado: "Qualificado",
+  visita_agendada: "Visita marcada",
+  visitou: "Visitou",
+  proposta: "Proposta",
   documentacao: "Documentação",
   fechado: "Fechado",
   perdido: "Perdido",
@@ -1205,6 +1488,148 @@ export async function registrarRecusaDoCliente(params: {
     detalhes: { familia: params.familia, conversa_id: params.conversaId },
   });
   if (erroTimeline) console.error("[recusa] falha ao registrar na linha do tempo:", erroTimeline.message);
+}
+
+/**
+ * Registra uma decisão de recusa (0162). Nunca lança: perder a linha custa
+ * uma medida; derrubar o atendimento por causa dela custa o cliente.
+ */
+export async function registrarDecisaoDeRecusa(params: {
+  conversaId: string;
+  leadId: string | null;
+  corretorId: string;
+  classificacao: ClassificacaoDeRecusa;
+  caminho: "turno_ia" | "ia_calada";
+  acao: "acolheu" | "encerrou" | "marcou" | "registrou";
+}): Promise<void> {
+  const c = params.classificacao;
+  const familia = c.recusa?.familia ?? c.veredito?.familia;
+  // "nenhuma" não é decisão: registrar toda mensagem com "não" encheria a
+  // tabela de linhas que ninguém revisa.
+  if (!familia || familia === "nenhuma") return;
+  try {
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("recusas_detectadas").insert({
+      conversa_id: params.conversaId,
+      lead_id: params.leadId,
+      corretor_id: params.corretorId,
+      familia,
+      decidido_por: c.decididoPor ?? "ia",
+      confianca: c.veredito?.confianca ?? null,
+      modelo: c.modelo,
+      trecho: (c.recusa?.trecho ?? c.veredito?.trecho ?? "").slice(0, 200) || null,
+      caminho: params.caminho,
+      acao: params.acao,
+    });
+    if (error) console.warn("[recusa] falha ao registrar a decisão:", error.message);
+  } catch (err) {
+    console.warn("[recusa] falha ao registrar a decisão:", err);
+  }
+}
+
+/**
+ * Quantas recusas desta conversa foram reconhecidas pela IA e tratadas. A
+ * regex as conta lendo o histórico; as da IA só existem neste registro.
+ */
+export async function contarRecusasPelaIA(conversaId: string): Promise<number> {
+  try {
+    const supabase = createServiceClient();
+    const { count } = await supabase
+      .from("recusas_detectadas")
+      .select("id", { count: "exact", head: true })
+      .eq("conversa_id", conversaId)
+      .eq("decidido_por", "ia")
+      .in("acao", ["acolheu", "encerrou"])
+      .is("desfeito_em", null);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * O "Liberar contato" carimba as decisões que marcaram este lead: é o
+ * rótulo de falso positivo. Chamado DEPOIS de a action conferir, pela RLS da
+ * sessão, que o lead é de quem clicou.
+ */
+export async function marcarRecusasDesfeitas(leadId: string, corretorId: string): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from("recusas_detectadas")
+      .update({ desfeito_em: new Date().toISOString(), desfeito_por: corretorId })
+      .eq("lead_id", leadId)
+      .in("acao", ["encerrou", "marcou"])
+      .is("desfeito_em", null);
+    if (error) console.warn("[recusa] falha ao marcar como desfeita:", error.message);
+  } catch (err) {
+    console.warn("[recusa] falha ao marcar como desfeita:", err);
+  }
+}
+
+/**
+ * Pedido de parada numa conversa em que a IA está calada (06/10/2026).
+ *
+ * O detector de recusa só rodava no turno da IA, e desde a 0152 a IA desliga
+ * quando o corretor fala: na maioria das conversas, "me tira da lista" não
+ * era gravado, e o lead voltava a receber a próxima lista de transmissão.
+ *
+ * Aqui só vale a família `parada`, e o efeito é menor que o de
+ * `registrarRecusaDoCliente`, de propósito: a conversa é do corretor. Grava o
+ * FATO (`nao_contatar_em`), tira o lead das listas pendentes e avisa o
+ * corretor pelo WhatsApp dele. Não muda a etapa nem a IA: quem decide o resto
+ * é o corretor, que está tocando a conversa. Desinteresse comum não entra:
+ * ele ganha a pergunta do motivo, e isso só a IA faz.
+ *
+ * Devolve `true` quando a marca foi gravada agora (a primeira vez).
+ */
+export async function registrarParadaSemIA(params: {
+  conversaId: string;
+  leadId: string | null;
+  corretorId: string;
+  trecho: string;
+}): Promise<boolean> {
+  if (!params.leadId) return false;
+  const supabase = createServiceClient();
+  const agora = new Date().toISOString();
+
+  // Uma vez só: o carimbo diz QUANDO ele pediu, e reescrever mentiria.
+  const { data: marcado, error } = await supabase
+    .from("leads")
+    .update({ nao_contatar_em: agora, nao_contatar_motivo: "parada" })
+    .eq("id", params.leadId)
+    .is("nao_contatar_em", null)
+    .select("id, nome, telefone");
+  if (error) {
+    console.error("[recusa sem IA] falha ao marcar o lead:", error.message);
+    return false;
+  }
+  const lead = marcado?.[0];
+  if (!lead) return false;
+
+  const { error: erroFila } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .delete()
+    .eq("lead_id", params.leadId)
+    .eq("status", "pendente");
+  if (erroFila) console.error("[recusa sem IA] falha ao tirar das listas:", erroFila.message);
+
+  const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+    lead_id: params.leadId,
+    corretor_id: null,
+    tipo: "sistema",
+    conteudo: `O cliente pediu para não receber mais mensagens ("${params.trecho}"). Saiu das listas de transmissão; a conversa continua com o corretor.`,
+    detalhes: { familia: "parada", conversa_id: params.conversaId, ia_calada: true },
+  });
+  if (erroTimeline) console.error("[recusa sem IA] falha ao registrar na linha do tempo:", erroTimeline.message);
+
+  const nome = nomeParaExibir({ nome: lead.nome, telefone: lead.telefone });
+  await avisarCorretor(
+    supabase,
+    params.corretorId,
+    `🚫 ${nome} pediu para não receber mais mensagens ("${params.trecho}"). Tirei das listas de transmissão. A conversa é sua: se foi engano, dá para reverter na ficha.\n${site.url}/corretor/conversas?c=${params.conversaId}`,
+  );
+  return true;
 }
 
 
@@ -1429,13 +1854,13 @@ export async function calcularLimiteDoDia(instanciaId: string, conectadoEm: Date
   const desde = new Date(Date.now() - (DIAS_DE_USO_RECENTE + 1) * 86_400_000);
   const desdeDia = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(desde);
 
-  const [{ data: historico, error }, { data: instancia }] = await Promise.all([
+  const [{ data: historico, error }, instancia] = await Promise.all([
     supabase
       .from("whatsapp_envios_por_dia")
       .select("dia, enviados")
       .eq("instancia_id", instanciaId)
       .gte("dia", desdeDia),
-    supabase.from("corretor_whatsapp_instancias").select("corretor_id").eq("id", instanciaId).maybeSingle(),
+    instanciaParaOLimite(instanciaId),
   ]);
 
   let recusas = 0;
@@ -1453,7 +1878,32 @@ export async function calcularLimiteDoDia(instanciaId: string, conectadoEm: Date
     historico: error ? [] : (historico ?? []),
     hoje,
     recusasNaSemana: recusas,
+    // Depois de uma queda tratada, só conta o que saiu depois dela (0174).
+    recomecoDepoisDe: instancia?.aquecimento_desde ? diaDaQueda(new Date(instancia.aquecimento_desde)) : null,
   });
+}
+
+/**
+ * O dono do número e o marco do aquecimento. Se a coluna da 0174 ainda não
+ * existir, lê só o dono: perder o dono desligaria o freio por recusas, que é
+ * o lado errado de errar numa trava anti-ban.
+ */
+async function instanciaParaOLimite(
+  instanciaId: string,
+): Promise<{ corretor_id: string; aquecimento_desde: string | null } | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("corretor_id, aquecimento_desde")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  if (!error) return data;
+  const { data: soDono } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("corretor_id")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  return soDono ? { corretor_id: soDono.corretor_id, aquecimento_desde: null } : null;
 }
 
 export async function reservarCotaCampanha(
@@ -1642,6 +2092,101 @@ export async function marcarRespostaCampanha(lista: ListaRecenteDoLead): Promise
     .from("whatsapp_campanhas")
     .update({ total_respondidos: count ?? 0 })
     .eq("id", lista.campanhaId);
+}
+
+/**
+ * O envio voltou "Connection Closed" com o número ainda "conectado" (0174).
+ *
+ * A marca na fila (`MOTIVO_SESSAO_CAIU`) só existe para quem tem lista; o
+ * rodízio do link precisa saber pela instância. Sem isto o sorteio seguia
+ * mandando cliques para um número que a plataforma não enxerga: foram 42
+ * para o da Márcia em dois dias. Grava uma vez (o primeiro sinal) e nunca
+ * lança: quem chama está no meio de um ciclo de disparo.
+ */
+export async function marcarSessaoCaida(instanciaId: string): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("corretor_whatsapp_instancias")
+    .update({ sessao_caida_em: new Date().toISOString() })
+    .eq("id", instanciaId)
+    .is("sessao_caida_em", null);
+  if (error) console.error("[sessao] falha ao marcar a sessão caída:", error.message);
+}
+
+/**
+ * A sessão provou que funciona (reconectou, enviou ou recebeu mensagem):
+ * sai a marca, e o número volta ao rodízio. Sem marca, não muda nada.
+ */
+export async function marcarSessaoViva(instanciaId: string): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("corretor_whatsapp_instancias")
+    .update({ sessao_caida_em: null })
+    .eq("id", instanciaId)
+    .not("sessao_caida_em", "is", null);
+  if (error) console.error("[sessao] falha ao tirar a marca da sessão:", error.message);
+}
+
+/**
+ * A sessão do WhatsApp voltou a funcionar: as mensagens que esperavam por
+ * ela perdem a marca (`MOTIVO_SESSAO_CAIU`) e, quando quem chama é a
+ * reconexão, a pausa que essas falhas abriram cai junto (ver
+ * `sessaoCaida.ts`).
+ *
+ * Só levanta a pausa quando ACHOU marca de sessão: pausa aberta por outro
+ * tipo de falha (recusa do provedor, número restrito) continua de pé.
+ * Devolve quantas mensagens perderam a marca.
+ */
+export async function liberarFilaDaSessao(params: {
+  instanciaId: string;
+  /** Quem chama e já sabe economiza uma consulta. */
+  corretorId?: string;
+  levantarPausa: boolean;
+}): Promise<number> {
+  const supabase = createServiceClient();
+
+  // A sessão funciona de novo: o número volta ao rodízio do link (0174).
+  await marcarSessaoViva(params.instanciaId);
+
+  let corretorId = params.corretorId ?? null;
+  if (!corretorId) {
+    const { data } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("corretor_id")
+      .eq("id", params.instanciaId)
+      .maybeSingle();
+    corretorId = data?.corretor_id ?? null;
+  }
+  if (!corretorId) return 0;
+
+  const { data: campanhas } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretorId);
+  const ids = (campanhas ?? []).map((c) => c.id);
+  if (ids.length === 0) return 0;
+
+  const { data: liberados, error } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .update({ erro_motivo: null })
+    .in("campanha_id", ids)
+    .eq("status", "pendente")
+    .eq("erro_motivo", MOTIVO_SESSAO_CAIU)
+    .select("id");
+  if (error) {
+    console.error("[sessao] falha ao liberar a fila depois da reconexão:", error.message);
+    return 0;
+  }
+
+  const quantos = liberados?.length ?? 0;
+  if (quantos > 0 && params.levantarPausa) {
+    await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ bloqueado_ate: null, falhas_seguidas: 0 })
+      .eq("id", params.instanciaId);
+    console.warn(
+      `[sessao] número reconectado: ${quantos} mensagens voltam para a fila e a pausa por sessão caída foi levantada.`,
+    );
+  }
+  return quantos;
 }
 
 /**
@@ -1846,6 +2391,8 @@ export async function salvarDossie(leadId: string, dossie: DossieClienteIA): Pro
   if (Object.keys(doLead).length > 0) {
     await supabase.from("leads").update(doLead).eq("id", leadId);
   }
+
+  await avancarLeadParaQualificado(leadId);
 }
 
 /**
@@ -2009,6 +2556,9 @@ export async function sincronizarConexaoInstancia(params: {
     );
   }
 
+  // A sessão voltou: a fila que esperava por ela anda (ver `sessaoCaida.ts`).
+  await liberarFilaDaSessao({ instanciaId: params.instanciaId, levantarPausa: true });
+
   return { conectado: true, estado: estado.estado, conectadoEm: new Date(conectadoEm) };
 }
 
@@ -2017,14 +2567,26 @@ export async function sincronizarConexaoInstancia(params: {
  *
  * Mesmo efeito da sincronização ativa, sem a ida à rede — aqui o estado
  * chegou de graça, junto do evento.
+ *
+ * Até 10/10/2026 este caminho só mudava o `status_conexao`: a reconexão não
+ * apagava o marco da queda anterior, e a queda não o carimbava. O número do
+ * Ramos caiu em 08/10, voltou pelo webhook, mandou 59 mensagens e caiu de
+ * novo em 09/10, e o painel seguiu dizendo "caiu em 08/10". O aviso da
+ * segunda queda também não sairia, porque a marca do aviso da primeira
+ * continuava lá. Hoje a reconexão faz o mesmo que a sincronização ativa
+ * (apaga marco e aviso) e a queda carimba o marco, uma vez, junto com o
+ * motivo que o WhatsApp mandou (0174).
  */
 export async function registrarEventoConexao(params: {
   instanceName: string;
   estado: string;
   telefone?: string | null;
+  /** `statusReason` do evento: o código com que o WhatsApp derrubou a conexão. */
+  motivo?: unknown;
 }): Promise<void> {
   const supabase = createServiceClient();
   const conectado = params.estado === "open";
+  const agora = new Date().toISOString();
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
@@ -2048,9 +2610,11 @@ export async function registrarEventoConexao(params: {
       // Só carimba na primeira vez: uma reconexão (queda de internet, troca
       // de celular) não pode zerar a curva de aquecimento de um número que
       // já vinha maduro. A exceção é a troca de número, tratada acima.
-      ...(conectado && !instancia.conectado_em ? { conectado_em: new Date().toISOString() } : {}),
+      ...(conectado && !instancia.conectado_em ? { conectado_em: agora } : {}),
       ...(conectado && params.telefone ? { telefone_conectado: params.telefone } : {}),
-      ...(conectado ? { falhas_seguidas: 0 } : {}),
+      // O número voltou: apaga o marco da queda e a marca do aviso, como a
+      // sincronização ativa faz. É o que arma o alerta da PRÓXIMA queda.
+      ...(conectado ? { falhas_seguidas: 0, desconectado_em: null, aviso_queda_enviado_em: null } : {}),
       ...(reset
         ? {
             conectado_em: reset.conectado_em,
@@ -2059,7 +2623,7 @@ export async function registrarEventoConexao(params: {
             bloqueado_ate: reset.bloqueado_ate,
           }
         : {}),
-      updated_at: new Date().toISOString(),
+      updated_at: agora,
     })
     .eq("id", instancia.id);
 
@@ -2067,6 +2631,33 @@ export async function registrarEventoConexao(params: {
     console.warn(
       `[whatsapp] número trocado em ${params.instanceName}: cota, bloqueio e aquecimento zerados.`,
     );
+  }
+
+  if (conectado) {
+    // A sessão voltou: a fila que esperava por ela anda, e o número volta ao
+    // rodízio do link (ver `sessaoCaida.ts`).
+    await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
+    return;
+  }
+
+  // Número que nunca conectou não caiu: está sendo pareado agora.
+  if (!instancia.conectado_em) return;
+
+  // O marco da queda, uma vez (ver `sincronizarConexaoInstancia`).
+  await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({ desconectado_em: agora })
+    .eq("id", instancia.id)
+    .is("desconectado_em", null);
+
+  const codigo = codigoDaQueda(params.motivo);
+  if (codigo !== null) {
+    const { error } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .update({ motivo_queda_codigo: codigo, motivo_queda_em: agora })
+      .eq("id", instancia.id);
+    if (error) console.error("[whatsapp] falha ao guardar o motivo da queda:", error.message);
+    console.warn(`[whatsapp] ${params.instanceName} caiu com o código ${codigo}.`);
   }
 }
 
@@ -2144,4 +2735,16 @@ export async function registrarVisitaConfirmada(leadId: string): Promise<boolean
     .not("visita_agendada_em", "is", null)
     .select("id");
   return (data?.length ?? 0) > 0;
+}
+
+/**
+ * Guarda a visita que o corretor parece ter combinado no chat, para o Início
+ * perguntar "registrar?" (0163). Nunca grava em `leads`: só o toque dele.
+ */
+export async function guardarVisitaSugerida(conversaId: string, quando: Date): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("whatsapp_conversas")
+    .update({ visita_sugerida_para: quando.toISOString(), visita_sugerida_em: new Date().toISOString() })
+    .eq("id", conversaId);
+  if (error) console.error("[visita] falha ao guardar a visita combinada no chat:", error.message);
 }

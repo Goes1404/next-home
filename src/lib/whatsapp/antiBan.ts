@@ -39,8 +39,16 @@ export type ConfigAntiBan = {
  * `campaignQueue` arrastaria o `llm.ts` (variação por IA) para o grafo de
  * quem só quer um número.
  */
-export const INTERVALO_MINIMO_SEGUNDOS = 35;
-export const INTERVALO_MAXIMO_SEGUNDOS = 75;
+/*
+ * 1min30 a 2min desde 09/10/2026, a pedido do dono da conta ("não tem
+ * problema demorar mais"): eram 35–75s. Continua sorteado a cada envio
+ * (no banco, `consumir_cota_campanha_espacada`), porque intervalo exato e
+ * sempre igual também é padrão de robô. O limite diário não mudou.
+ */
+export const INTERVALO_MINIMO_SEGUNDOS = 90;
+export const INTERVALO_MAXIMO_SEGUNDOS = 120;
+/** O mesmo intervalo, para as telas. Um teste confere que bate com os números. */
+export const INTERVALO_EM_PALAVRAS = "1min30 a 2 minutos";
 
 export const CONFIG_PADRAO: ConfigAntiBan = {
   horaInicio: 9,
@@ -154,7 +162,9 @@ export function podeEnviar(ctx: ContextoEnvio): Veredito {
     return {
       permitido: false,
       motivo: "numero_bloqueado",
-      detalhe: `Envios pausados automaticamente até ${ctx.bloqueadoAte.toLocaleString("pt-BR")} após falhas seguidas.`,
+      // O servidor roda em UTC: sem o fuso, o bloqueio das 21h de Brasília
+      // aparecia como "até 09/10, 00:00" (08/10/2026, número da Márcia).
+      detalhe: `Envios pausados automaticamente até ${ctx.bloqueadoAte.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} após falhas seguidas.`,
     };
   }
 
@@ -242,11 +252,17 @@ export const CRESCIMENTO_POR_USO = 1.5;
 export const DIAS_DE_USO_RECENTE = 7;
 /** Recusas na semana a partir das quais o crescimento trava. */
 export const RECUSAS_PARA_FREAR = 3;
+/**
+ * Dias seguidos sem conectar até o limite recomeçar do piso (0176). Queda
+ * mais curta não mexe no limite: o número volta no ritmo que tinha. Ver
+ * `protecaoDaQueda.ts`.
+ */
+export const DIAS_FORA_PARA_RECOMECAR = 3;
 
 export type LimiteDoDia = {
   limite: number;
   /** O que decidiu o número, para a tela explicar em português. */
-  motivo: "uso" | "idade" | "freio" | "piso";
+  motivo: "uso" | "idade" | "freio" | "piso" | "queda";
   /** O maior dia de envio dos últimos 7 dias (sem contar hoje). */
   maiorDiaRecente: number;
 };
@@ -270,12 +286,20 @@ export type LimiteDoDia = {
  *
  * `historico` = envios por dia (YYYY-MM-DD em São Paulo). `hoje` no mesmo
  * formato. Pura: a tela e o disparador usam a mesma conta.
+ *
+ * `recomecoDepoisDe` (0174) é o dia em que começou a última queda de 3 dias
+ * ou mais sem conectar (o prazo é da 0176): os envios até ele, inclusive,
+ * não contam. O número que ficou esse tempo fora volta ao piso e sobe de
+ * novo com o uso, em vez de retomar no ritmo de antes da queda
+ * (`protecaoDaQueda.ts`). O dia da queda inteiro fica de fora porque o
+ * histórico é por dia e a maior parte do que saiu nele foi antes de cair.
  */
 export function limiteDoDia(params: {
   diasDesdeConexao: number;
   historico: ReadonlyArray<{ dia: string; enviados: number }>;
   hoje: string;
   recusasNaSemana: number;
+  recomecoDepoisDe?: string | null;
 }): LimiteDoDia {
   const tetoPorIdade = limiteDiarioCampanha(params.diasDesdeConexao);
   if (tetoPorIdade <= 0) return { limite: 0, motivo: "idade", maiorDiaRecente: 0 };
@@ -284,29 +308,38 @@ export function limiteDoDia(params: {
   corte.setUTCDate(corte.getUTCDate() - DIAS_DE_USO_RECENTE);
   const desde = corte.toISOString().slice(0, 10);
 
-  const recentes = params.historico.filter((h) => h.dia < params.hoje && h.dia >= desde);
-  const maiorDiaRecente = recentes.reduce((m, h) => Math.max(m, h.enviados), 0);
-  const enviadosNaSemana = recentes.reduce((s, h) => s + h.enviados, 0);
+  const conta = (historico: ReadonlyArray<{ dia: string; enviados: number }>) => {
+    const recentes = historico.filter((h) => h.dia < params.hoje && h.dia >= desde);
+    const maiorDiaRecente = recentes.reduce((m, h) => Math.max(m, h.enviados), 0);
+    const enviadosNaSemana = recentes.reduce((s, h) => s + h.enviados, 0);
 
-  const freio =
-    params.recusasNaSemana >= RECUSAS_PARA_FREAR &&
-    enviadosNaSemana > 0 &&
-    params.recusasNaSemana / enviadosNaSemana >= 0.05;
+    const freio =
+      params.recusasNaSemana >= RECUSAS_PARA_FREAR &&
+      enviadosNaSemana > 0 &&
+      params.recusasNaSemana / enviadosNaSemana >= 0.05;
 
-  const porUso = Math.max(
-    PISO_POR_USO,
-    Math.round(maiorDiaRecente * (freio ? 1 : CRESCIMENTO_POR_USO)),
-  );
-  const limite = Math.min(tetoPorIdade, porUso);
+    const porUso = Math.max(
+      PISO_POR_USO,
+      Math.round(maiorDiaRecente * (freio ? 1 : CRESCIMENTO_POR_USO)),
+    );
+    return { maiorDiaRecente, freio, porUso, limite: Math.min(tetoPorIdade, porUso) };
+  };
+
+  const recomeco = params.recomecoDepoisDe ?? null;
+  const semQueda = conta(params.historico);
+  const atual = recomeco ? conta(params.historico.filter((h) => h.dia > recomeco)) : semQueda;
+  const { maiorDiaRecente, freio, porUso, limite } = atual;
 
   const motivo: LimiteDoDia["motivo"] =
     limite === tetoPorIdade && porUso > tetoPorIdade
       ? "idade"
-      : freio
-        ? "freio"
-        : maiorDiaRecente === 0 || porUso === PISO_POR_USO
-          ? "piso"
-          : "uso";
+      : limite < semQueda.limite
+        ? "queda"
+        : freio
+          ? "freio"
+          : maiorDiaRecente === 0 || porUso === PISO_POR_USO
+            ? "piso"
+            : "uso";
   return { limite, motivo, maiorDiaRecente };
 }
 
@@ -321,5 +354,7 @@ export function fraseDoLimite(l: LimiteDoDia): string {
       return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. Ele ainda é novo no sistema: o teto sobe sozinho com os dias.`;
     case "freio":
       return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. O limite parou de subir porque várias pessoas pediram para sair esta semana — vale rever a mensagem ou o público.`;
+    case "queda":
+      return `Hoje seu número pode mandar até ${l.limite} mensagens de lista. Ele ficou ${DIAS_FORA_PARA_RECOMECAR} dias ou mais sem conectar, e o limite recomeçou devagar para proteger a linha: sobe de novo conforme ele é usado.`;
   }
 }

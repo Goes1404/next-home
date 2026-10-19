@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { BotaoConcluirTarefa } from "./BotaoConcluirTarefa";
 import { BotaoConcluirAnotacao } from "./BotaoConcluirAnotacao";
 import { BotaoResponderComIA } from "./BotaoResponderComIA";
+import { BotoesDaVisitaCombinada } from "./BotoesDaVisitaCombinada";
 import { BotoesDaSugestao } from "./BotoesDaSugestao";
 import type { ItemFila, TipoItemFila } from "@/lib/crm/filaDeTrabalho";
 
@@ -44,6 +45,8 @@ const REGUA: Record<TipoItemFila, string> = {
   lead_novo: "bg-etapa-novo",
   // Sugestão da IA (0147): a cor da IA, porque é o texto dela esperando você.
   sugestao_de_mensagem: "bg-acento",
+  // Visita combinada no chat (0163): a cor da etapa que ela vai virar.
+  visita_combinada: "bg-etapa-visita",
   tarefa_hoje: "bg-info",
   lembrete_hoje: "bg-info",
   sem_revisao: "bg-linha-forte",
@@ -89,7 +92,7 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             <Link
               href={item.href}
-              className="hover:bg-vidro active:bg-vidro-forte flex min-w-0 flex-1 items-center gap-2 rounded-lg py-3.5 pr-1 pl-2 transition-colors"
+              className="hover:bg-vidro active:bg-vidro-forte flex min-w-0 flex-1 items-center gap-2 rounded-lg py-3.5 pr-1 pl-2 transition-colors linha-abre"
             >
               <span className="min-w-0 flex-1">
                 <span className="text-fluid-sm text-titulo block truncate font-medium">
@@ -129,6 +132,11 @@ export function FilaAgora({ itens }: { itens: ItemFila[] }) {
 
             {/* Pós-visita e indicação (0147): a IA escreveu, o corretor envia. */}
             {item.followupId && <BotoesDaSugestao followupId={item.followupId} titulo={item.titulo} />}
+
+            {/* Visita combinada no chat (0163): o corretor confirma o registro. */}
+            {item.visitaCombinada && item.conversaId && (
+              <BotoesDaVisitaCombinada conversaId={item.conversaId} titulo={item.titulo} />
+            )}
           </li>
         ))}
       </ul>

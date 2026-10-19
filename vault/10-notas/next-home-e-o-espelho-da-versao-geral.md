@@ -15,6 +15,11 @@ summary: SUBSTITUÍDA em 18/10/2026 por [[plataforma-multi-grupo]]. Decisão de 
 > **Substituída em 18/10/2026.** O produto passou a ser multi-empresa num
 > banco só. Ver [[plataforma-multi-grupo]]. O texto abaixo fica como
 > história da decisão anterior.
+>
+> **Decisão REVERTIDA em 06/10/2026:** o dono do produto escolheu o banco
+> compartilhado (`empresa_id` + RLS, um deploy para todos), depois de comparar
+> com o silo automatizado. Motivo: atualizar N instalações enquanto a
+> plataforma ainda evolui toda semana. O texto abaixo é a decisão de 26/09.
 
 Decisão do dono do produto (26/09/2026):
 

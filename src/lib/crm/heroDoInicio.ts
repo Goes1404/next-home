@@ -1,5 +1,5 @@
 import { momentoEmSaoPaulo } from "@/lib/whatsapp/antiBan";
-import type { EtapaFunil } from "@/lib/types";
+import { somarPorGrupo, type EtapaFunil } from "@/lib/types";
 
 /**
  * O que o cartão de abertura do Início diz — em função pura, testável.
@@ -41,13 +41,16 @@ export type ResumoDaCarteira = {
 };
 
 export function resumoDaCarteira(c: Partial<Record<EtapaFunil, number>>): ResumoDaCarteira {
-  const n = (e: EtapaFunil) => Math.max(0, c[e] ?? 0);
-  const novo = n("novo");
-  const emConversa = n("primeiro_contato");
-  const visitas = n("visita_agendada");
-  const doc = n("documentacao");
-  const fechados = n("fechado");
-  const ativos = novo + emConversa + visitas + doc + fechados;
+  // Pelos GRUPOS (0165): "em conversa" aqui é a coluna Contatei do resumido.
+  const g = somarPorGrupo(
+    Object.fromEntries(Object.entries(c).map(([e, v]) => [e, Math.max(0, v ?? 0)])),
+  );
+  const novo = g.novo;
+  const emConversa = g.contato;
+  // "Visitas marcadas" na frase: só quem ainda vai visitar.
+  const visitas = Math.max(0, c.visita_agendada ?? 0);
+  const fechados = g.fechado;
+  const ativos = novo + emConversa + g.visita + g.negociacao + fechados;
   const andaram = ativos - novo;
   return {
     ativos,

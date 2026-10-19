@@ -7,7 +7,7 @@ status: evergreen
 custou: alto
 codigo: [src/lib/whatsapp/campaignDispatcher.ts, supabase/migrations/0062_espacamento_no_envio.sql, supabase/migrations/0063_ponte_espacamento_funcao_antiga.sql]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-10-09
 fonte: docs/MEMORIA.md — espaçamento anti-ban (28/08/2026)
 summary: O intervalo de 35-75s era calculado na criação e gravado em agendado_para; item VENCIDO saía na hora. 15 mensagens de 14 min saíram em 57 segundos. Dois números restringidos.
 ---
@@ -74,3 +74,14 @@ intervalos abaixo de 30s é a medida que importa.
 ## Relacionadas
 - [[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]
 - [[numero-sem-whatsapp-nao-e-falha-nossa]] — cota reservada antes e devolvida
+
+## O intervalo passou para 1min30–2min (09/10/2026)
+
+A pedido do dono da conta ("não tem problema demorar mais"). Continua
+sorteado a cada concessão, no banco, com o piso e o teto vindos do código
+(`INTERVALO_MINIMO_SEGUNDOS` 90 e `INTERVALO_MAXIMO_SEGUNDOS` 120 em
+`antiBan.ts`): sem migration. As telas dizem o intervalo a partir de
+`INTERVALO_EM_PALAVRAS`, e um teste reprova tela que ainda prometa 35-75s. O
+limite diário não mudou. Efeito colateral: o botão em que a IA escreve e o
+corretor manda passa pelo mesmo espaçamento e pode pedir até 2 minutos de
+espera entre um envio e outro.

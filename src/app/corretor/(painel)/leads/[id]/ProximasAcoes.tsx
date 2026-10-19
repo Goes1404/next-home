@@ -9,10 +9,10 @@ import { Check } from "lucide-react";
 /**
  * As tarefas do lead: o que precisa ser feito e quando.
  *
- * Não existe notificação por e-mail nem push (o projeto não tem SMTP) — o
- * lembrete é a tela. Por isso a mesma tarefa aparece aqui E no bloco "Para
- * hoje" da tela inicial: um dado que só vive na ficha é um dado que ninguém
- * lê, o mesmo erro que deixou 53 envios invisíveis em `historico_envios`.
+ * No horário marcado, a tarefa chega no WhatsApp do próprio corretor
+ * (0178, `processarLembretesDeTarefa`). Ela também aparece aqui E na fila do
+ * Início: um dado que só vive na ficha é um dado que ninguém lê, o mesmo
+ * erro que deixou 53 envios invisíveis em `historico_envios`.
  */
 
 const dataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -150,6 +150,9 @@ export function ProximasAcoes({ leadId, tarefas }: { leadId: string; tarefas: Ta
             Agendar
           </button>
         </div>
+        <p className="text-fluid-xs text-tenue">
+          Na hora marcada, o lembrete chega no seu WhatsApp.
+        </p>
       </div>
 
       {feitas.length > 0 && (

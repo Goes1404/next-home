@@ -139,6 +139,12 @@ export type Database = {
           mime: string | null
           nome_arquivo: string | null
           tamanho: number | null
+          conferido_em: string | null
+          fase: "financiamento" | "contrato"
+          mensagem_id: string | null
+          motivo_recusa: string | null
+          origem: "link" | "corretor" | "whatsapp"
+          situacao: "recebido" | "conferido" | "recusado"
         }
         Insert: {
           alerta?: string | null
@@ -152,6 +158,12 @@ export type Database = {
           mime?: string | null
           nome_arquivo?: string | null
           tamanho?: number | null
+          conferido_em?: string | null
+          fase?: "financiamento" | "contrato"
+          mensagem_id?: string | null
+          motivo_recusa?: string | null
+          origem?: "link" | "corretor" | "whatsapp"
+          situacao?: "recebido" | "conferido" | "recusado"
         }
         Update: {
           alerta?: string | null
@@ -165,6 +177,39 @@ export type Database = {
           mime?: string | null
           nome_arquivo?: string | null
           tamanho?: number | null
+          conferido_em?: string | null
+          fase?: "financiamento" | "contrato"
+          mensagem_id?: string | null
+          motivo_recusa?: string | null
+          origem?: "link" | "corretor" | "whatsapp"
+          situacao?: "recebido" | "conferido" | "recusado"
+        }
+        Relationships: []
+      }
+      lead_documentos_lista: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          fase: "financiamento" | "contrato"
+          itens: string[]
+          lead_id: string
+          perfil: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          fase: "financiamento" | "contrato"
+          itens?: string[]
+          lead_id: string
+          perfil?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          fase?: "financiamento" | "contrato"
+          itens?: string[]
+          lead_id?: string
+          perfil?: string | null
         }
         Relationships: []
       }
@@ -596,6 +641,7 @@ export type Database = {
           status: "ativa" | "distratada"
           distratada_em: string | null
           comissao_recebida_em: string | null
+          comissao_prevista_em: string | null
           observacao: string | null
           created_at: string
           atualizado_em: string
@@ -614,6 +660,7 @@ export type Database = {
           status?: "ativa" | "distratada"
           distratada_em?: string | null
           comissao_recebida_em?: string | null
+          comissao_prevista_em?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -632,6 +679,7 @@ export type Database = {
           status?: "ativa" | "distratada"
           distratada_em?: string | null
           comissao_recebida_em?: string | null
+          comissao_prevista_em?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -663,6 +711,175 @@ export type Database = {
           repasse_percentual?: number | null
           repasse_valor?: number
           repasse_pago_em?: string | null
+        }
+        Relationships: []
+      }
+      /** 0166 — contas a pagar e a receber do caixa da imobiliária (só o gestor). */
+      caixa_lancamentos: {
+        Row: {
+          id: string
+          tipo: "entrada" | "saida"
+          categoria: string
+          descricao: string
+          valor: number
+          vencimento: string
+          pago_em: string | null
+          recorrencia_id: string | null
+          observacao: string | null
+          criado_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          tipo: "entrada" | "saida"
+          categoria: string
+          descricao: string
+          valor: number
+          vencimento: string
+          pago_em?: string | null
+          recorrencia_id?: string | null
+          observacao?: string | null
+          criado_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          tipo?: "entrada" | "saida"
+          categoria?: string
+          descricao?: string
+          valor?: number
+          vencimento?: string
+          pago_em?: string | null
+          recorrencia_id?: string | null
+          observacao?: string | null
+          criado_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0166 — saldo da conta informado pelo gestor. */
+      caixa_saldos: {
+        Row: { id: string; valor: number; informado_em: string; criado_por: string | null; created_at: string }
+        Insert: { id?: string; valor: number; informado_em: string; criado_por?: string | null; created_at?: string }
+        Update: { id?: string; valor?: number; informado_em?: string; criado_por?: string | null; created_at?: string }
+        Relationships: []
+      }
+      /** 0167 — configuração fiscal da imobiliária (uma linha só, id = 1; só o gestor). */
+      fiscal_config: {
+        Row: {
+          id: number
+          regime: "simples" | "presumido"
+          aliquota_simples: number
+          aliquota_iss: number
+          teto_inss: number
+          cnpj: string | null
+          razao_social: string | null
+          conferido_em: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: number
+          regime?: "simples" | "presumido"
+          aliquota_simples?: number
+          aliquota_iss?: number
+          teto_inss?: number
+          cnpj?: string | null
+          razao_social?: string | null
+          conferido_em?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: number
+          regime?: "simples" | "presumido"
+          aliquota_simples?: number
+          aliquota_iss?: number
+          teto_inss?: number
+          cnpj?: string | null
+          razao_social?: string | null
+          conferido_em?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
+      venda_fiscal: {
+        Row: {
+          venda_id: string
+          comprador_nome: string | null
+          comprador_documento: string | null
+          vendedor_nome: string | null
+          vendedor_documento: string | null
+          nota_numero: string | null
+          nota_emitida_em: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          venda_id: string
+          comprador_nome?: string | null
+          comprador_documento?: string | null
+          vendedor_nome?: string | null
+          vendedor_documento?: string | null
+          nota_numero?: string | null
+          nota_emitida_em?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          venda_id?: string
+          comprador_nome?: string | null
+          comprador_documento?: string | null
+          vendedor_nome?: string | null
+          vendedor_documento?: string | null
+          nota_numero?: string | null
+          nota_emitida_em?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0167 — vínculo fiscal do corretor: autônomo (RPA) ou PJ (só o gestor). */
+      corretor_fiscal: {
+        Row: { corretor_id: string; vinculo: "autonomo" | "pj"; atualizado_em: string }
+        Insert: { corretor_id: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Update: { corretor_id?: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Relationships: []
+      }
+      /** 0168 — meses fechados e enviados ao contador (só o gestor). */
+      meses_fechados: {
+        Row: { mes: string; arquivo_path: string; totais: Json; observacao: string | null; fechado_por: string | null; fechado_em: string }
+        Insert: { mes: string; arquivo_path: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Update: { mes?: string; arquivo_path?: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Relationships: []
+      }
+      /** 0168 — links do contador (o token é a credencial; só o gestor). */
+      acessos_contador: {
+        Row: {
+          token: string
+          nome: string
+          criado_por: string | null
+          criado_em: string
+          expira_em: string
+          revogado_em: string | null
+          ultimo_acesso_em: string | null
+        }
+        Insert: {
+          token?: string
+          nome: string
+          criado_por?: string | null
+          criado_em?: string
+          expira_em?: string
+          revogado_em?: string | null
+          ultimo_acesso_em?: string | null
+        }
+        Update: {
+          token?: string
+          nome?: string
+          criado_por?: string | null
+          criado_em?: string
+          expira_em?: string
+          revogado_em?: string | null
+          ultimo_acesso_em?: string | null
         }
         Relationships: []
       }
@@ -761,6 +978,7 @@ export type Database = {
           corretor_id: string | null
           consumido_em: string | null
           created_at: string
+          de_pessoa: boolean | null
           empreendimento_id: string | null
           id: string
           lead_id: string | null
@@ -768,11 +986,13 @@ export type Database = {
           pelo_porteiro: boolean
           url_origem: string | null
           user_agent: string | null
+          visitante: string | null
         }
         Insert: {
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
+          de_pessoa?: boolean | null
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null
@@ -780,11 +1000,13 @@ export type Database = {
           pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
+          visitante?: string | null
         }
         Update: {
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
+          de_pessoa?: boolean | null
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null
@@ -792,6 +1014,7 @@ export type Database = {
           pelo_porteiro?: boolean
           url_origem?: string | null
           user_agent?: string | null
+          visitante?: string | null
         }
         Relationships: [
           {
@@ -883,6 +1106,7 @@ export type Database = {
       }
       corretor_whatsapp_instancias: {
         Row: {
+          aquecimento_desde: string | null
           aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
           conectado_em: string | null
@@ -896,12 +1120,16 @@ export type Database = {
           falhas_seguidas: number
           id: string
           instance_name: string
+          motivo_queda_codigo: number | null
+          motivo_queda_em: string | null
           modo_bot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente: string
           palavra_chave_ativacao: string | null
           palavra_chave_teste: string | null
           palavras_entrada_cliente: string | null
           qrcode_base64: string | null
+          queda_tratada_em: string | null
+          sessao_caida_em: string | null
           status_conexao: "desconectado" | "conectando" | "conectado"
           regras_da_ia: string | null
           telefone_conectado: string | null
@@ -910,6 +1138,7 @@ export type Database = {
           webhook_secret: string | null
         }
         Insert: {
+          aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -923,12 +1152,16 @@ export type Database = {
           falhas_seguidas?: number
           id?: string
           instance_name: string
+          motivo_queda_codigo?: number | null
+          motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
+          queda_tratada_em?: string | null
+          sessao_caida_em?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           regras_da_ia?: string | null
           telefone_conectado?: string | null
@@ -937,6 +1170,7 @@ export type Database = {
           webhook_secret?: string | null
         }
         Update: {
+          aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -950,12 +1184,16 @@ export type Database = {
           falhas_seguidas?: number
           id?: string
           instance_name?: string
+          motivo_queda_codigo?: number | null
+          motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
           palavras_entrada_cliente?: string | null
           qrcode_base64?: string | null
+          queda_tratada_em?: string | null
+          sessao_caida_em?: string | null
           status_conexao?: "desconectado" | "conectando" | "conectado"
           regras_da_ia?: string | null
           telefone_conectado?: string | null
@@ -995,6 +1233,7 @@ export type Database = {
           papel: string
           regioes: string[] | null
           slug: string | null
+          so_whatsapp: boolean
           user_id: string | null
           video_url: string | null
           whatsapp: string
@@ -1020,6 +1259,7 @@ export type Database = {
           papel?: string
           regioes?: string[] | null
           slug?: string | null
+          so_whatsapp?: boolean
           user_id?: string | null
           video_url?: string | null
           whatsapp: string
@@ -1045,6 +1285,7 @@ export type Database = {
           papel?: string
           regioes?: string[] | null
           slug?: string | null
+          so_whatsapp?: boolean
           user_id?: string | null
           video_url?: string | null
           whatsapp?: string
@@ -1367,7 +1608,7 @@ export type Database = {
           id: string
           latencia_ms: number | null
           modelo: string | null
-          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor"
+          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro"
           prompt_versao: string
           sugeriu_visita: boolean | null
           temperatura_score: number | null
@@ -1391,7 +1632,7 @@ export type Database = {
           id?: string
           latencia_ms?: number | null
           modelo?: string | null
-          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor"
+          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro"
           prompt_versao: string
           sugeriu_visita?: boolean | null
           temperatura_score?: number | null
@@ -1651,6 +1892,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      porteiro_barrados: {
+        Row: {
+          citou_imovel: boolean
+          clique_id: string | null
+          corretor_id: string
+          criado_em: string
+          dia: string
+          empreendimento_id: string | null
+          id: string
+          minutos_desde_clique: number | null
+          remetente: string
+          tipo: "texto" | "audio" | "outro"
+        }
+        Insert: {
+          citou_imovel?: boolean
+          clique_id?: string | null
+          corretor_id: string
+          criado_em?: string
+          dia: string
+          empreendimento_id?: string | null
+          id?: string
+          minutos_desde_clique?: number | null
+          remetente: string
+          tipo: "texto" | "audio" | "outro"
+        }
+        Update: {
+          citou_imovel?: boolean
+          clique_id?: string | null
+          corretor_id?: string
+          criado_em?: string
+          dia?: string
+          empreendimento_id?: string | null
+          id?: string
+          minutos_desde_clique?: number | null
+          remetente?: string
+          tipo?: "texto" | "audio" | "outro"
+        }
+        Relationships: []
+      }
+      recusas_detectadas: {
+        Row: {
+          acao: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho: "turno_ia" | "ia_calada"
+          confianca: number | null
+          conversa_id: string | null
+          corretor_id: string | null
+          created_at: string
+          decidido_por: "regex" | "ia"
+          desfeito_em: string | null
+          desfeito_por: string | null
+          familia: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id: string
+          lead_id: string | null
+          modelo: string | null
+          trecho: string | null
+        }
+        Insert: {
+          acao: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho: "turno_ia" | "ia_calada"
+          confianca?: number | null
+          conversa_id?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          decidido_por: "regex" | "ia"
+          desfeito_em?: string | null
+          desfeito_por?: string | null
+          familia: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id?: string
+          lead_id?: string | null
+          modelo?: string | null
+          trecho?: string | null
+        }
+        Update: {
+          acao?: "acolheu" | "encerrou" | "marcou" | "registrou"
+          caminho?: "turno_ia" | "ia_calada"
+          confianca?: number | null
+          conversa_id?: string | null
+          corretor_id?: string | null
+          created_at?: string
+          decidido_por?: "regex" | "ia"
+          desfeito_em?: string | null
+          desfeito_por?: string | null
+          familia?: "parada" | "desinteresse" | "ja_resolvido" | "nenhuma"
+          id?: string
+          lead_id?: string | null
+          modelo?: string | null
+          trecho?: string | null
+        }
+        Relationships: []
       }
       parametros_credito: {
         Row: {
@@ -1969,6 +2300,8 @@ export type Database = {
           created_at: string
           id: string
           lead_id: string
+          lembrete_enviado_em: string | null
+          lembrete_erro: string | null
           prazo: string
           titulo: string
         }
@@ -1978,6 +2311,8 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id: string
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
           prazo: string
           titulo: string
         }
@@ -1987,6 +2322,8 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id?: string
+          lembrete_enviado_em?: string | null
+          lembrete_erro?: string | null
           prazo?: string
           titulo?: string
         }
@@ -2209,6 +2546,7 @@ export type Database = {
         Row: {
           anuncio_origem: string | null
           arquivado_em: string | null
+          arquivado_motivo: string | null
           campos_do_corretor: Json
           consentimento_lgpd: boolean
           corretor_id: string | null
@@ -2250,6 +2588,7 @@ export type Database = {
           telefone: string | null
           telefone_e164: string | null
           tentativas_contato: number
+          primeira_tentativa_sem_resposta_em: string | null
           tentativas_sem_resposta: number
           ultima_tentativa_em: string | null
           tipo: string
@@ -2265,6 +2604,7 @@ export type Database = {
         Insert: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
@@ -2306,6 +2646,7 @@ export type Database = {
           telefone?: string | null
           telefone_e164?: string | null
           tentativas_contato?: number
+          primeira_tentativa_sem_resposta_em?: string | null
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
@@ -2321,6 +2662,7 @@ export type Database = {
         Update: {
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
           corretor_id?: string | null
@@ -2362,6 +2704,7 @@ export type Database = {
           telefone?: string | null
           telefone_e164?: string | null
           tentativas_contato?: number
+          primeira_tentativa_sem_resposta_em?: string | null
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
@@ -2411,6 +2754,7 @@ export type Database = {
           ordem: number
           tipo: Database["public"]["Enums"]["tipo_midia"]
           url: string
+          variantes: number[] | null
         }
         Insert: {
           alt?: string | null
@@ -2424,6 +2768,7 @@ export type Database = {
           ordem?: number
           tipo?: Database["public"]["Enums"]["tipo_midia"]
           url: string
+          variantes?: number[] | null
         }
         Update: {
           alt?: string | null
@@ -2437,6 +2782,7 @@ export type Database = {
           ordem?: number
           tipo?: Database["public"]["Enums"]["tipo_midia"]
           url?: string
+          variantes?: number[] | null
         }
         Relationships: [
           {
@@ -2573,6 +2919,8 @@ export type Database = {
           viva_ate: string | null
           viva_varrida_em: string | null
           janela_liberada_ate: string | null
+          pausa_automatica: string | null
+          pausa_base: Json | null
           vencedora_em: string | null
           midias: Json
           contexto_template: Json | null
@@ -2597,6 +2945,8 @@ export type Database = {
           viva_ate?: string | null
           viva_varrida_em?: string | null
           janela_liberada_ate?: string | null
+          pausa_automatica?: string | null
+          pausa_base?: Json | null
           vencedora_em?: string | null
           midias?: Json
           contexto_template?: Json | null
@@ -2621,6 +2971,8 @@ export type Database = {
           viva_ate?: string | null
           viva_varrida_em?: string | null
           janela_liberada_ate?: string | null
+          pausa_automatica?: string | null
+          pausa_base?: Json | null
           vencedora_em?: string | null
           midias?: Json
           contexto_template?: Json | null
@@ -2669,9 +3021,11 @@ export type Database = {
           mensagem_personalizada: string
           personalizado_por_ia: boolean
           resposta_em: string | null
+          semelhanca_max: number | null
           status: "pendente" | "enviado" | "erro" | "respondido"
           telefone: string
           tentativas: number
+          tentativas_texto: number
         }
         Insert: {
           agendado_para?: string
@@ -2685,9 +3039,11 @@ export type Database = {
           mensagem_personalizada: string
           personalizado_por_ia?: boolean
           resposta_em?: string | null
+          semelhanca_max?: number | null
           status?: "pendente" | "enviado" | "erro" | "respondido"
           telefone: string
           tentativas?: number
+          tentativas_texto?: number
         }
         Update: {
           agendado_para?: string
@@ -2701,9 +3057,11 @@ export type Database = {
           mensagem_personalizada?: string
           personalizado_por_ia?: boolean
           resposta_em?: string | null
+          semelhanca_max?: number | null
           status?: "pendente" | "enviado" | "erro" | "respondido"
           telefone?: string
           tentativas?: number
+          tentativas_texto?: number
         }
         Relationships: [
           {
@@ -2726,6 +3084,7 @@ export type Database = {
         Row: {
           alerta_quente_em: string | null
           atendida_em: string | null
+          aviso_sem_resposta_em: string | null
           memoria: string | null
           memoria_atualizada_em: string | null
           memoria_do_corretor: boolean
@@ -2736,7 +3095,7 @@ export type Database = {
           e_teste: boolean
           historico_anterior: "importado" | "indisponivel" | null
           id: string
-          lead_id: string
+          lead_id: string | null
           nao_lidas: number
           nome_cliente: string | null
           origem: "organica" | "campanha"
@@ -2745,10 +3104,13 @@ export type Database = {
           ultima_interacao_em: string
           ultima_mensagem: string | null
           ultimo_aviso_evolucao_em: string | null
+          visita_sugerida_para: string | null
+          visita_sugerida_em: string | null
         }
         Insert: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          aviso_sem_resposta_em?: string | null
           memoria?: string | null
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean
@@ -2759,7 +3121,7 @@ export type Database = {
           e_teste?: boolean
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
-          lead_id: string
+          lead_id?: string | null
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
@@ -2768,10 +3130,13 @@ export type Database = {
           ultima_interacao_em?: string
           ultima_mensagem?: string | null
           ultimo_aviso_evolucao_em?: string | null
+          visita_sugerida_para?: string | null
+          visita_sugerida_em?: string | null
         }
         Update: {
           alerta_quente_em?: string | null
           atendida_em?: string | null
+          aviso_sem_resposta_em?: string | null
           memoria?: string | null
           memoria_atualizada_em?: string | null
           memoria_do_corretor?: boolean
@@ -2782,7 +3147,7 @@ export type Database = {
           e_teste?: boolean
           historico_anterior?: "importado" | "indisponivel" | null
           id?: string
-          lead_id?: string
+          lead_id?: string | null
           nao_lidas?: number
           nome_cliente?: string | null
           origem?: "organica" | "campanha"
@@ -2791,6 +3156,8 @@ export type Database = {
           ultima_interacao_em?: string
           ultima_mensagem?: string | null
           ultimo_aviso_evolucao_em?: string | null
+          visita_sugerida_para?: string | null
+          visita_sugerida_em?: string | null
         }
         Relationships: [
           {

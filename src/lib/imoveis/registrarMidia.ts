@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { gerarBlur, medirImagem } from "./imagemDerivada";
+import { gerarBlur, gerarVariantes, medirImagem } from "./imagemDerivada";
+import { caminhoDaVariante, largurasParaGerar } from "@/lib/imagens/variantes";
 
 /**
  * Único caminho de gravação de mídia de empreendimento — upload avulso do
@@ -28,6 +29,8 @@ export type LinhaMidiaNova = {
   blur_data_url: string | null;
   ordem: number;
   hash_conteudo: string;
+  /** Larguras das variantes WebP que SUBIRAM (0177); `[]` = nenhuma possível. */
+  variantes: number[];
 };
 
 export type DepsMidia = {
@@ -90,6 +93,21 @@ export async function registrarMidia(deps: DepsMidia, entrada: EntradaMidia): Pr
   }
 
   const url = deps.urlPublica(caminho);
+
+  // As versões responsivas (ver lib/imagens/variantes.ts) sobem ao lado do
+  // original, e só as que de fato subiram entram na linha: variante listada
+  // sem arquivo seria foto quebrada no srcset. Falha aqui não barra a foto —
+  // ela entra servida no original, como antes da 0177.
+  const variantes: number[] = [];
+  for (const variante of await gerarVariantes(entrada.bytes, largurasParaGerar(medida?.largura ?? null))) {
+    const subida = await deps.subir(caminhoDaVariante(caminho, variante.largura), variante.bytes, "image/webp");
+    if (subida.erro) {
+      console.error(`[imagem] variante de ${variante.largura}px não subiu:`, subida.erro);
+      continue;
+    }
+    variantes.push(variante.largura);
+  }
+
   const insercao = await deps.inserir({
     empreendimento_id: entrada.empreendimentoId,
     tipo: entrada.tipo,
@@ -100,6 +118,7 @@ export async function registrarMidia(deps: DepsMidia, entrada: EntradaMidia): Pr
     blur_data_url: blur,
     ordem: entrada.ordem ?? 10,
     hash_conteudo: hash,
+    variantes,
   });
 
   if (insercao.erro) {

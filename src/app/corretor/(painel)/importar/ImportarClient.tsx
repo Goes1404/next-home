@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import {
   analisarArquivo,
   analisarTexto,
@@ -243,8 +244,10 @@ function Importador({
   ehGestor: boolean;
 }) {
   const [etapa, setEtapa] = useState<Etapa>("entrada");
-  const [modo, setModo] = useState<"colar" | "arquivo">("colar");
+  const [modo, setModo] = useState<"colar" | "arquivo" | "foto">("colar");
   const [texto, setTexto] = useState("");
+  /** Quantos telefones o último colar trouxe inteiros pela versão em HTML da planilha. */
+  const [recuperadosAoColar, setRecuperadosAoColar] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [metodo, setMetodo] = useState<ResultadoAnalise["metodo"] | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -262,6 +265,7 @@ function Importador({
   const [consentimento, setConsentimento] = useState(false);
 
   const [analisando, iniciarAnalise] = useTransition();
+  const [lendoFoto, setLendoFoto] = useState<{ atual: number; total: number } | null>(null);
   const [importando, iniciarImportacao] = useTransition();
 
   const selecionados = linhas.filter((l) => l.incluir);
@@ -284,14 +288,53 @@ function Importador({
      * decidir por ele.
      */
     setLinhas(
-      resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste && Boolean(c.telefone) })),
+      resultado.candidatos.map((c) => ({ ...c, incluir: !c.jaExiste && Boolean(c.telefone) && !c.semDdd })),
     );
     setEtapa("revisao");
   }
 
   function analisar(formData?: FormData) {
     iniciarAnalise(async () => {
-      receber(formData ? await analisarArquivo(formData) : await analisarTexto(texto));
+      try {
+        receber(formData ? await analisarArquivo(formData) : await analisarTexto(texto));
+      } catch (falha) {
+        setErro(
+          ehActionDeOutroBuild(falha)
+            ? "O painel foi atualizado enquanto esta tela estava aberta. Recarregue a página e tente de novo."
+            : "A leitura não terminou. Confira a conexão e tente de novo.",
+        );
+      }
+    });
+  }
+
+  /**
+   * As fotos são lidas assim que escolhidas, UMA chamada por foto: juntas
+   * passariam do teto de corpo da Server Action (12 MB), e uma foto ruim não
+   * pode derrubar a leitura das outras.
+   */
+  function lerFotos(campo: HTMLInputElement) {
+    const arquivos = Array.from(campo.files ?? []).slice(0, TETO_DE_FOTOS);
+    const passou = (campo.files?.length ?? 0) > TETO_DE_FOTOS;
+    campo.value = "";
+    if (arquivos.length === 0) return;
+    iniciarAnalise(async () => {
+      try {
+        const juntos = await lerVariasFotos(arquivos, (n) => setLendoFoto({ atual: n, total: arquivos.length }));
+        if (passou) {
+          juntos.aviso = [`Lemos as ${TETO_DE_FOTOS} primeiras fotos; envie o resto numa próxima leva.`, juntos.aviso]
+            .filter(Boolean)
+            .join(" ");
+        }
+        receber(juntos);
+      } catch (falha) {
+        setErro(
+          ehActionDeOutroBuild(falha)
+            ? "O painel foi atualizado enquanto esta tela estava aberta. Recarregue a página e tente de novo."
+            : "A leitura não terminou. Confira a conexão e tente de novo.",
+        );
+      } finally {
+        setLendoFoto(null);
+      }
     });
   }
 
@@ -347,6 +390,13 @@ function Importador({
             {resumo.ignorados} sem telefone aproveitável ficaram de fora.
           </p>
         )}
+        {(resumo.repetidos ?? 0) > 0 && (
+          <p className="text-fluid-xs text-apoio mt-2">
+            {resumo.repetidos === 1
+              ? "1 telefone já estava cadastrado (ou repetido na lista) e não entrou de novo."
+              : `${resumo.repetidos} telefones já estavam cadastrados (ou repetidos na lista) e não entraram de novo.`}
+          </p>
+        )}
         {(resumo.falhas ?? 0) > 0 && (
           <p className="text-fluid-xs text-perigo mt-2">
             {resumo.falhas} não puderam ser gravados. Tente esses de novo.
@@ -384,7 +434,7 @@ function Importador({
             <button
               type="button"
               onClick={recomecar}
-              className="text-fluid-sm text-apoio hover:text-titulo cursor-pointer underline-offset-4 hover:underline"
+              className="text-fluid-sm text-apoio hover:text-titulo cursor-pointer link-acao"
             >
               Trocar a lista
             </button>
@@ -489,8 +539,8 @@ function Importador({
 
   return (
     <div className="cartao max-w-2xl p-6">
-      <div className="flex gap-1">
-        {(["colar", "arquivo"] as const).map((m) => (
+      <div className="flex flex-wrap gap-1">
+        {(["colar", "foto", "arquivo"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -502,7 +552,7 @@ function Importador({
                 : "text-apoio hover:text-titulo",
             )}
           >
-            {m === "colar" ? "Colar lista" : "Enviar arquivo"}
+            {m === "colar" ? "Colar lista" : m === "foto" ? "Foto ou print" : "Enviar arquivo"}
           </button>
         ))}
       </div>
@@ -516,13 +566,47 @@ function Importador({
             id="lista"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
+            onPaste={(e) => {
+              /*
+               * Celular com 55 copiado da planilha chega como "5,51198E+12", sem
+               * os últimos dígitos. A cópia traz o número inteiro na versão em
+               * HTML, e é ela que vale quando bate com o texto (ver
+               * `coladoDaPlanilha.ts`). O módulo só é baixado quando a colagem
+               * tem a notação: o resto cola do jeito de sempre.
+               */
+              const plano = e.clipboardData.getData("text/plain");
+              const html = e.clipboardData.getData("text/html");
+              setRecuperadosAoColar(0);
+              if (!html || !/\d[.,]\d+[eE][+]?\d{1,2}/.test(plano)) return;
+              e.preventDefault();
+              const campo = e.currentTarget;
+              const inicio = campo.selectionStart;
+              const fim = campo.selectionEnd;
+              import("@/lib/leads/coladoDaPlanilha")
+                .then(({ recuperarNumerosColados }) => recuperarNumerosColados(plano, html))
+                // Sem o módulo (rede caiu), cola o texto como veio: a importação marca as linhas.
+                .catch(() => ({ texto: plano, recuperados: 0 }))
+                .then((recuperado) => {
+                  setRecuperadosAoColar(recuperado.recuperados);
+                  const colar = recuperado.texto.replace(/\r\n?/g, "\n");
+                  setTexto((atual) => atual.slice(0, inicio) + colar + atual.slice(fim));
+                });
+            }}
             rows={9}
             placeholder={"nome;telefone;email\nAna Prado;(11) 99123-4567;ana@exemplo.com"}
             className={cn(CAMPO, "font-mono text-[13px]")}
           />
+          {recuperadosAoColar > 0 && (
+            <p role="status" className="text-fluid-xs text-ok mt-2">
+              {recuperadosAoColar === 1
+                ? "1 telefone que a planilha mostrava cortado (como 5,51198E+12) veio com o número inteiro."
+                : `${recuperadosAoColar} telefones que a planilha mostrava cortados (como 5,51198E+12) vieram com o número inteiro.`}
+            </p>
+          )}
           <p className="text-fluid-xs text-tenue mt-2">
-            Funciona com tabela colada do Excel ou do Google Sheets, CSV, ou uma lista solta —
-            neste último caso a IA lê o texto.
+            Funciona com tabela colada do Excel ou do Google Planilhas, CSV, ou uma lista solta —
+            neste último caso a IA lê o texto. Também dá para colar só o link da planilha do
+            Google, se ela estiver compartilhada como &quot;qualquer pessoa com o link&quot;.
           </p>
 
           <button
@@ -533,6 +617,55 @@ function Importador({
           >
             {analisando ? "Lendo…" : "Ler contatos"}
           </button>
+        </div>
+      ) : modo === "foto" ? (
+        <div className="mt-5">
+          <p className="text-fluid-sm text-corpo">
+            Print de conversa do WhatsApp, foto de uma lista escrita à mão, da ficha do plantão ou da tela de outro
+            sistema. A IA lê nome e telefone de cada contato, e você confere antes de importar.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <label
+              className={cn(
+                "bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 cursor-pointer items-center rounded-full px-6 text-sm font-medium transition-colors",
+                analisando && "pointer-events-none opacity-50",
+              )}
+            >
+              {lendoFoto
+                ? `Lendo foto ${lendoFoto.atual} de ${lendoFoto.total}…`
+                : analisando
+                  ? "Lendo…"
+                  : "Escolher fotos ou prints"}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                disabled={analisando}
+                onChange={(e) => lerFotos(e.currentTarget)}
+              />
+            </label>
+            <label
+              className={cn(
+                "border-linha-forte text-titulo hover:bg-vidro flex min-h-11 cursor-pointer items-center rounded-full border px-6 text-sm font-medium transition-colors",
+                analisando && "pointer-events-none opacity-50",
+              )}
+            >
+              Tirar foto agora
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={analisando}
+                onChange={(e) => lerFotos(e.currentTarget)}
+              />
+            </label>
+          </div>
+          <p className="text-fluid-xs text-tenue mt-3">
+            Até {TETO_DE_FOTOS} fotos de uma vez, 10 MB cada. Foto de perto e com boa luz é lida melhor; número que a IA não consegue ler
+            fica de fora em vez de sair errado.
+          </p>
         </div>
       ) : (
         <form
@@ -587,6 +720,71 @@ function Importador({
       )}
     </div>
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Várias fotos                                                                */
+/* -------------------------------------------------------------------------- */
+
+const TETO_DE_FOTOS = 10;
+
+/**
+ * Lê uma foto por vez e junta o resultado. O mesmo contato em dois prints
+ * (a mesma conversa, dois pedaços da mesma lista) entra uma vez só. Foto que
+ * não rendeu ninguém vira aviso nomeando o arquivo, sem cancelar as outras.
+ */
+async function lerVariasFotos(
+  arquivos: File[],
+  aoComecar: (n: number) => void,
+): Promise<ResultadoAnalise> {
+  const candidatos: CandidatoRevisado[] = [];
+  const vistos = new Set<string>();
+  const semNada: string[] = [];
+  let algumaComIa = false;
+
+  for (const [i, arquivo] of arquivos.entries()) {
+    aoComecar(i + 1);
+    const dados = new FormData();
+    dados.set("arquivo", arquivo);
+    const r = await analisarArquivo(dados);
+    if (!r.candidatos?.length) {
+      semNada.push(arquivo.name || `foto ${i + 1}`);
+      continue;
+    }
+    if (r.metodo === "ia") algumaComIa = true;
+    for (const c of r.candidatos) {
+      const chave = c.telefone ? c.telefone.replace(/\D/g, "") : `${c.nome}#${i}`;
+      if (vistos.has(chave)) continue;
+      vistos.add(chave);
+      candidatos.push(c);
+    }
+  }
+
+  if (candidatos.length === 0) {
+    return {
+      erro:
+        arquivos.length === 1
+          ? "Não achamos nenhum telefone legível na foto. Uma foto mais de perto, com boa luz, costuma resolver."
+          : "Não achamos nenhum telefone legível nas fotos. Fotos mais de perto, com boa luz, costumam resolver.",
+    };
+  }
+
+  // Print de planilha mostra o celular com 55 como "5,51198E+12": o número
+  // inteiro não está na imagem, só no arquivo da planilha.
+  const cortados = candidatos.filter((c) => c.telefoneCortado).length;
+  const semDddNasFotos = candidatos.filter((c) => c.semDdd).length;
+  const avisos = [
+    algumaComIa ? "Lido por IA a partir das fotos: confira nome e telefone de cada linha antes de confirmar." : null,
+    semNada.length > 0 ? `Sem telefone legível em: ${semNada.join(", ")}.` : null,
+    cortados > 0
+      ? `${cortados === 1 ? "1 telefone aparece cortado" : `${cortados} telefones aparecem cortados`} na foto (como 5,51198E+12), sem os últimos dígitos. Digite o número na linha ou envie a planilha em .xlsx.`
+      : null,
+    semDddNasFotos > 0
+      ? `${semDddNasFotos === 1 ? "1 telefone veio" : `${semDddNasFotos} telefones vieram`} com +55 e sem DDD: digite o DDD antes de importar.`
+      : null,
+  ].filter(Boolean);
+
+  return { candidatos, metodo: algumaComIa ? "ia" : undefined, aviso: avisos.join(" ") || undefined };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -748,10 +946,15 @@ function ListaRevisao({
               )}
               <CampoLinha
                 rotulo="Telefone"
+                placeholder={linha.telefoneCortado ? "Digite o número" : undefined}
                 valor={linha.telefone}
                 onChange={(v) => alterar(i, "telefone", v)}
                 // Número digitado de qualquer jeito sai escrito certo ao sair do campo.
-                onBlur={(v) => alterar(i, "telefone", formatarTelefoneBr(v))}
+                // O que veio sem DDD continua sem DDD até o corretor digitar um:
+                // formatar poria o 11 e apagaria o aviso.
+                onBlur={(v) =>
+                  alterar(i, "telefone", linha.semDdd && semDdd(v) ? v : formatarTelefoneBr(v))
+                }
               />
               {!fora.has("email") && (
                 <CampoLinha
@@ -783,7 +986,17 @@ function ListaRevisao({
               */}
             {!linha.telefone ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
-                falta o telefone
+                {/* O número que a planilha cortou ("5,51198E+12") não é falta do
+                    cadastro: o aviso no topo explica como trazer o inteiro. */}
+                {linha.telefoneCortado
+                  ? /e/i.test(linha.telefoneCortado)
+                    ? "número cortado"
+                    : "faltam dígitos"
+                  : "falta o telefone"}
+              </span>
+            ) : linha.semDdd && semDdd(linha.telefone) ? (
+              <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
+                sem DDD
               </span>
             ) : linha.jaExiste ? (
               <span className="text-alerta bg-alerta-lavado border-alerta-linha col-start-2 h-fit w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium sm:col-start-3 sm:mt-2 sm:justify-self-end">
@@ -797,13 +1010,20 @@ function ListaRevisao({
   );
 }
 
+/** Só o número, sem DDD: oito ou nove dígitos. */
+function semDdd(telefone: string): boolean {
+  return telefone.replace(/\D/g, "").length <= 9;
+}
+
 function CampoLinha({
   rotulo,
+  placeholder,
   valor,
   onChange,
   onBlur,
 }: {
   rotulo: string;
+  placeholder?: string;
   valor: string;
   onChange: (v: string) => void;
   onBlur?: (v: string) => void;
@@ -815,7 +1035,7 @@ function CampoLinha({
         value={valor}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur ? (e) => onBlur(e.target.value) : undefined}
-        placeholder={rotulo}
+        placeholder={placeholder ?? rotulo}
         className="border-linha bg-campo text-corpo focus:border-acento text-fluid-xs min-h-11 w-full rounded-lg border px-3 outline-none transition-colors"
       />
     </label>

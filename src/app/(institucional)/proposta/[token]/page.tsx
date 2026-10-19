@@ -12,6 +12,7 @@ import { linkWhatsappPara } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
 import { RespostaDaProposta } from "./RespostaDaProposta";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 export const metadata: Metadata = {
   title: "Sua proposta",
   robots: { index: false, follow: false },
@@ -74,7 +75,7 @@ export default async function PropostaPage({
         <div className="max-w-2xl space-y-6">
           {imovel && (
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-              <Image src={imovel.capa.url} alt={imovel.capa.alt} fill sizes="(min-width: 768px) 672px, 100vw" className="object-cover" />
+              <Image src={srcDaMidia(imovel.capa)} alt={imovel.capa.alt} fill sizes="(min-width: 768px) 672px, 100vw" className="object-cover" />
             </div>
           )}
 

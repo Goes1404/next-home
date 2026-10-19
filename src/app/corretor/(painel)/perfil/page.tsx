@@ -40,7 +40,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
           <CabecalhoDeTela secao="Conta" titulo="Meu perfil" descricao={<>O que o cliente vê na sua{" "}
             <Link
               href={`/corretores/${corretor.slug}`}
-              className="text-acento-suave underline-offset-4 hover:underline"
+              className="text-acento-suave link-acao"
             >
               página pública
             </Link>

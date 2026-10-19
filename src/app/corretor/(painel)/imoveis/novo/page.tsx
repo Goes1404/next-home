@@ -50,7 +50,7 @@ export default async function NovoImovelPage({
       <div className="space-y-1">
         <Link
           href={candidato ? "/corretor/imoveis/candidatos" : "/corretor/imoveis"}
-          className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-9 items-center transition-colors"
+          className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-9 items-center transition-colors px-3 botao-secundario"
         >
           ← {candidato ? "Fila de cadastro" : "Imóveis"}
         </Link>

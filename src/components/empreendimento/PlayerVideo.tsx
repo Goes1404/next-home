@@ -30,6 +30,7 @@ export function PlayerVideo({ url, titulo }: { url: string; titulo: string }) {
       >
         <Image
           src={`https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`}
+          unoptimized
           alt={titulo}
           fill
           sizes="(min-width: 768px) 768px, 100vw"

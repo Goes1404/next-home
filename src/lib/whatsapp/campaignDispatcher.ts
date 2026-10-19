@@ -3,23 +3,42 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
-import { variarMensagemComIA } from "./campaignQueue";
-import { enviarMensagemWhatsapp } from "./provider";
+import { protegerNumerosQueCairam } from "./quedaDoNumero";
+import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
+import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
+import { site } from "@/lib/site";
+import { textosRecentesDoNumero } from "./textosDoNumero";
+import {
+  ajustarSaudacaoAoHorario,
+  CICLOS_ATE_PAUSAR,
+  fatosDaLista,
+  MOTIVO_PAUSA_POR_TEXTO,
+  MOTIVO_TEXTO_PARECIDO,
+  MOTIVO_TEXTO_SEM_IA,
+  type TextoAnterior,
+  versoesDiferentes,
+} from "./variacaoDeTexto";
+import { consultarEstadoConexao, enviarMensagemWhatsapp } from "./provider";
+import { ehFalhaDeSessao, MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import { normalizarTelefoneBr } from "./telefone";
 import { aplicarVencedoras } from "./vencedoraAB";
 import { HORAS_DA_GUARDA_HUMANA, MOTIVO_CONVERSA_RECENTE } from "./contextoDaCampanha";
 import {
   classificarFalhaDeEnvio,
   falhaContaParaDisjuntor,
+  motivoDoMesmoTelefone,
   motivoParaNaoEnviar,
   MOTIVO_ENVIO_INCERTO,
   MOTIVO_TELEFONE_INVALIDO,
   resolverHorarios,
+  type ContextoTemplate,
   type LeadNoEnvio,
 } from "./listaDeTransmissao";
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
 import { enviarMidiasDaLista, type MidiaDaLista } from "./midiasDaLista";
 import { alimentarListasVivas } from "./listasVivas";
+import { MOTIVO_SEM_WHATSAPP, motivoDePausaAutomatica, sinaisDesdeABase } from "./pausaAutomatica";
+import { lerSinaisDaLista } from "./sinaisDaLista";
 import {
   avancarLeadParaPrimeiroContato,
   destravarDisparo,
@@ -28,6 +47,8 @@ import {
   gravarMensagem,
   obterOuCriarConversa,
   devolverCotaCampanha,
+  liberarFilaDaSessao,
+  marcarSessaoCaida,
   registrarResultadoEnvio,
   reservarCotaCampanha,
   sincronizarConexaoInstancia,
@@ -119,7 +140,9 @@ export type MotivoParada =
   | "fila_vazia"
   | "aguardando_horario"
   | "sem_tempo"
-  | "outro_disparador";
+  | "outro_disparador"
+  /** A próxima mensagem sairia parecida com outra do número: a fila espera. */
+  | "texto_repetido";
 
 export type ResultadoDispatch = {
   processados: number;
@@ -203,6 +226,10 @@ export async function processarFilaCampanhas(params?: {
    * A varredura não lança e sai barata quando não há o que avisar.
    */
   await varrerQuedasDeNumero();
+  // Número fora do ar por 30 min: pausa as listas dele, recomeça o
+  // aquecimento e guarda o motivo da queda (0174). Mesmo motivo do aviso
+  // para rodar antes de tudo: não pode depender de janela nem de fila.
+  await protegerNumerosQueCairam();
 
   // Listas vivas (0155) ganham quem passou a se encaixar no critério. Só no
   // tique geral: o botão de um corretor não varre a equipe.
@@ -339,7 +366,7 @@ async function processarInstancia(ctx: {
   if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date()) {
     return vazio(
       "numero_bloqueado",
-      `Envios deste número estão pausados até ${new Date(instancia.bloqueado_ate).toLocaleString("pt-BR")} após falhas seguidas do provedor.`,
+      `Envios deste número estão pausados até ${new Date(instancia.bloqueado_ate).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} após falhas seguidas do provedor.`,
     );
   }
 
@@ -411,6 +438,12 @@ async function processarInstancia(ctx: {
 
   // Os horários livres da agenda, lidos uma vez por chamada (`{horarios}`).
   let rotulosDaAgenda: string[] | null = null;
+  // As mensagens recentes do número e o nome do corretor, lidos uma vez por
+  // chamada e só quando algum texto precisa ser conferido.
+  let recentes: TextoAnterior[] | null | undefined;
+  let nomeDoCorretor: string | null | undefined;
+  // A marca de sessão caída sai no primeiro envio que dá certo (uma vez).
+  let sessaoConferida = false;
 
   try {
     // Com a trava na mão: só um disparador reescreve a fila por vez.
@@ -420,7 +453,7 @@ async function processarInstancia(ctx: {
       const { data: itens } = await supabase
         .from("whatsapp_campanhas_fila")
         .select(
-          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para, variante",
+          "id, campanha_id, lead_id, telefone, mensagem_personalizada, personalizado_por_ia, tentativas, agendado_para, variante, semelhanca_max, tentativas_texto",
         )
         .in("campanha_id", idsCampanhas)
         .eq("status", "pendente")
@@ -460,11 +493,35 @@ async function processarInstancia(ctx: {
        */
       const { data: aindaAtiva } = await supabase
         .from("whatsapp_campanhas")
-        .select("id, corretor_id, criterio, midias, empreendimento_id")
+        .select(
+          "id, corretor_id, criterio, midias, empreendimento_id, pausa_base, contexto_template, mensagem_base, mensagem_base_b, empreendimento:empreendimentos(nome)",
+        )
         .eq("id", item.campanha_id)
         .eq("status", "em_andamento")
         .maybeSingle();
       if (!aindaAtiva) {
+        idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
+        if (idsCampanhas.length === 0) {
+          parcial.motivo = "fila_vazia";
+          break;
+        }
+        continue;
+      }
+
+      /*
+       * Pausa automática (07/10/2026): números sem WhatsApp demais ou gente
+       * pedindo para sair param a lista antes da próxima mensagem. Nasceu da
+       * restrição da conta da Bruna pelo WhatsApp no meio de uma lista de
+       * 300. Conta só o que veio depois do último "Retomar" (`pausa_base`).
+       */
+      const sinais = await lerSinaisDaLista(supabase, item.campanha_id);
+      const motivoDaPausa = sinais ? motivoDePausaAutomatica(sinaisDesdeABase(sinais, aindaAtiva.pausa_base)) : null;
+      if (motivoDaPausa) {
+        await supabase
+          .from("whatsapp_campanhas")
+          .update({ status: "pausada", pausa_automatica: motivoDaPausa })
+          .eq("id", item.campanha_id)
+          .eq("status", "em_andamento");
         idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
         if (idsCampanhas.length === 0) {
           parcial.motivo = "fila_vazia";
@@ -496,11 +553,34 @@ async function processarInstancia(ctx: {
       }
 
       /*
+       * O mesmo telefone em outro cadastro (16/10/2026): a pessoa é o
+       * número, e lead duplicado não pode fazer a lista sair duas vezes, nem
+       * passar por cima de um pedido de parada feito no outro cadastro.
+       */
+      const irmaos = item.lead_id ? await cadastrosDoMesmoTelefone(supabase, item.lead_id) : [];
+      const doMesmoTelefone = motivoDoMesmoTelefone({
+        outroCadastroNaoContatar: irmaos.some((l) => l.nao_contatar_em !== null),
+        jaRecebeuEstaLista:
+          irmaos.length > 0 && (await listaJaSaiuPara(supabase, item.campanha_id, irmaos.map((l) => l.id))),
+      });
+      if (doMesmoTelefone) {
+        parcial.processados++;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({ status: "erro", erro_motivo: doMesmoTelefone })
+          .eq("id", item.id)
+          .eq("status", "pendente");
+        continue;
+      }
+
+      /*
        * A guarda de conversa humana (Fase 2): o corretor falou com este lead
        * nas últimas 24h, então a mensagem da lista não sai. Antes da cota:
-       * o que não sai não gasta a cota do número.
+       * o que não sai não gasta a cota do número. Vale para qualquer
+       * cadastro do mesmo telefone.
        */
-      if (item.lead_id && (await corretorFalouComOLead(supabase, item.lead_id))) {
+      const outrosCadastros = irmaos.map((l) => l.id);
+      if (item.lead_id && (await corretorFalouComOLead(supabase, item.lead_id, outrosCadastros))) {
         parcial.processados++;
         await supabase
           .from("whatsapp_campanhas_fila")
@@ -508,6 +588,125 @@ async function processarInstancia(ctx: {
           .eq("id", item.id)
           .eq("status", "pendente");
         continue;
+      }
+
+      /*
+       * O texto, conferido ANTES da cota (08/10/2026): a mensagem só sai se não
+       * ficou parecida com outra que o número mandou nos últimos 30 dias.
+       * Medido na semana em que o WhatsApp restringiu a conta da Bruna: 65 das
+       * 114 mensagens dela saíram idênticas, porque o teste A/B suspendia a
+       * reescrita, e as que a IA reescrevia convergiam para o mesmo molde.
+       *
+       * Vale também no teste A/B: lá a IA troca só as palavras e mantém a
+       * abertura de cada versão, que é o que o teste compara. Antes da cota,
+       * porque o que não sai não gasta a cota. E gravado de volta na fila: se a
+       * corrente cair antes do envio, a próxima tentativa reaproveita o texto.
+       */
+      let texto = item.mensagem_personalizada;
+      // Conferido = tem a semelhança gravada. Item reescrito pela versão antiga
+      // da reescrita (sem conferência, antes da 0173) passa pela conferência
+      // também: era dela que saíam os textos com 0,95 de semelhança.
+      if (item.semelhanca_max === null) {
+        recentes ??= await textosRecentesDoNumero(supabase, instancia.corretor_id);
+        if (!recentes) {
+          parcial.motivo = "texto_repetido";
+          parcial.diagnostico =
+            "Não consegui conferir as mensagens anteriores do número agora. A fila tenta de novo no próximo ciclo.";
+          break;
+        }
+        if (nomeDoCorretor === undefined) {
+          const { data: corretor } = await supabase
+            .from("corretores")
+            .select("nome")
+            .eq("id", instancia.corretor_id)
+            .maybeSingle();
+          nomeDoCorretor = corretor?.nome ?? null;
+        }
+        const imovelDaLista = (
+          Array.isArray(aindaAtiva.empreendimento) ? aindaAtiva.empreendimento[0] : aindaAtiva.empreendimento
+        ) as { nome: string } | null;
+        const tempoRestante = fimDoOrcamento - Date.now() - margemMs;
+        const tentativasDaIA = tempoRestante > 30_000 ? 3 : tempoRestante > 20_000 ? 2 : 1;
+        const variacao = await variarSemRepetir({
+          texto,
+          nome: primeiroNomeUtil(lead?.nome),
+          nomes: nomesDaPessoa(lead?.nome),
+          fatos: fatosDaLista({
+            contexto: aindaAtiva.contexto_template as ContextoTemplate | null,
+            imovelNome: imovelDaLista?.nome,
+            corretorNome: nomeDoCorretor,
+            nomeDaCasa: site.nome,
+          }),
+          anteriores: recentes.filter((a) => a.id !== item.id),
+          // Abertura mantida só quando o teste compara duas versões de
+          // verdade: A e B iguais não testam nada, e o modo A/B prende a IA
+          // ao molde (`versoesDiferentes`).
+          manterAbertura: Boolean(item.variante) && versoesDiferentes(aindaAtiva.mensagem_base, aindaAtiva.mensagem_base_b),
+          tentativas: tentativasDaIA,
+          orcamentoMs: Math.max(4_000, Math.min(9_000, Math.floor(tempoRestante / (tentativasDaIA + 1)))),
+        });
+
+        if (!variacao.ok) {
+          /*
+           * Não sai texto repetido. O item fica na frente da fila com o motivo
+           * à vista (é o que a tela lê) e o próximo ciclo tenta de novo, com
+           * outro estilo sorteado. Se a IA respondeu e mesmo assim nada passou
+           * na conferência por vários ciclos seguidos, o problema é o texto (curto
+           * demais, ou igual ao de uma lista recente): a lista pausa sozinha
+           * com o conselho, em vez de girar para sempre. IA fora do ar não conta
+           * para a pausa: ela volta sozinha, e a fila junto.
+           */
+          const parecida = variacao.motivo === "parecida";
+          const ciclos = (item.tentativas_texto ?? 0) + (parecida ? 1 : 0);
+          // O porquê fica no log: sem ele, a pausa da lista do Ramos em
+          // 08/10 não dizia se a IA errou um fato ou só repetiu o molde.
+          console.warn(
+            `[campanha] item ${item.id}: reescrita não passou (${variacao.motivo}, ciclo ${ciclos}): ${variacao.detalhe}`,
+          );
+          await supabase
+            .from("whatsapp_campanhas_fila")
+            .update({
+              erro_motivo: parecida ? MOTIVO_TEXTO_PARECIDO : MOTIVO_TEXTO_SEM_IA,
+              tentativas_texto: ciclos,
+            })
+            .eq("id", item.id)
+            .eq("status", "pendente");
+
+          if (parecida && ciclos >= CICLOS_ATE_PAUSAR) {
+            await supabase
+              .from("whatsapp_campanhas")
+              .update({ status: "pausada", pausa_automatica: MOTIVO_PAUSA_POR_TEXTO })
+              .eq("id", item.campanha_id)
+              .eq("status", "em_andamento");
+            idsCampanhas.splice(idsCampanhas.indexOf(item.campanha_id), 1);
+            if (idsCampanhas.length === 0) {
+              parcial.motivo = "fila_vazia";
+              break;
+            }
+            continue;
+          }
+
+          parcial.motivo = "texto_repetido";
+          parcial.diagnostico = parecida
+            ? "A IA ainda não conseguiu escrever a próxima mensagem diferente das anteriores. A fila tenta de novo no próximo ciclo, para não mandar texto repetido."
+            : "A IA que reescreve as mensagens não respondeu agora. Sem ela, a próxima sairia igual a uma anterior, então a fila espera o próximo ciclo.";
+          break;
+        }
+
+        texto = variacao.texto;
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({
+            mensagem_personalizada: texto,
+            personalizado_por_ia: variacao.personalizadoPorIA,
+            semelhanca_max: variacao.semelhanca,
+            erro_motivo: null,
+          })
+          .eq("id", item.id);
+        recentes = [
+          { id: item.id, texto, nomes: nomesDaPessoa(lead?.nome) },
+          ...recentes.filter((a) => a.id !== item.id),
+        ];
       }
 
       /*
@@ -553,29 +752,6 @@ async function processarInstancia(ctx: {
 
       parcial.processados++;
 
-      // Variação anti-ban feita agora, no envio, e gravada de volta: se a
-      // corrente cair depois desta linha e antes do envio, a próxima
-      // tentativa reaproveita o texto em vez de pagar a IA de novo.
-      let texto = item.mensagem_personalizada;
-      /*
-       * Durante o teste A/B a IA NÃO reescreve (roadmap, Fase 2): reescrever
-       * saudação e vocabulário das duas versões dilui exatamente a diferença
-       * de abertura que o teste quer medir. O espaçamento e o nome de cada
-       * pessoa continuam variando a mensagem. Item com `variante` nula (sem
-       * teste, ou reescrito depois da decisão) segue com a variação.
-       */
-      if (!item.personalizado_por_ia && !item.variante) {
-        const nomeLead = lead?.nome ?? "";
-        const variacao = await variarMensagemComIA({ texto, nomeLead });
-        if (variacao.personalizadoPorIA) {
-          texto = variacao.texto;
-          await supabase
-            .from("whatsapp_campanhas_fila")
-            .update({ mensagem_personalizada: texto, personalizado_por_ia: true })
-            .eq("id", item.id);
-        }
-      }
-
       /*
        * `{horarios}` é resolvido AGORA, e não na criação: a fila anda devagar
        * de propósito, e um horário oferecido na criação pode ter sido marcado
@@ -585,6 +761,10 @@ async function processarInstancia(ctx: {
         rotulosDaAgenda ??= (await horariosDeVisita(instancia.corretor_id).catch(() => [])).map((h) => h.rotulo);
         texto = resolverHorarios(texto, rotulosDaAgenda);
       }
+
+      // A saudação acompanha a hora do ENVIO, não a da escrita: "Bom dia"
+      // escrito de manhã sairia errado à tarde (`ajustarSaudacaoAoHorario`).
+      texto = ajustarSaudacaoAoHorario(texto, new Date());
 
       const envio = await enviarMensagemWhatsapp({
         instanceName: instancia.instance_name,
@@ -609,6 +789,43 @@ async function processarInstancia(ctx: {
        *   vezes. Erro definitivo com aviso para conferir a conversa;
        * - recusa clara do provedor: nada saiu, então vale tentar de novo.
        */
+      /*
+       * A SESSÃO do WhatsApp caiu (`sessaoCaida.ts`, 08/10/2026): nada saiu,
+       * então a cota volta e o item não gasta tentativa; a falha conta para o
+       * disjuntor, e a fila guarda o motivo que faz o painel pedir para
+       * reconectar. Mandar o próximo item agora daria no mesmo: a vez acaba
+       * aqui. Se o provedor também diz que o número caiu, o banco passa a
+       * dizer "desconectado", e a faixa do painel já sabe o que mostrar.
+       */
+      if (!envio.enviado && ehFalhaDeSessao(envio.detalhe)) {
+        await devolverCotaCampanha(instancia.id);
+        await registrarResultadoEnvio(instancia.id, false);
+        // Fora do rodízio do link até a sessão voltar (0174).
+        await marcarSessaoCaida(instancia.id);
+        await supabase
+          .from("whatsapp_campanhas_fila")
+          .update({
+            erro_motivo: MOTIVO_SESSAO_CAIU,
+            agendado_para: new Date(Date.now() + MINUTOS_ATE_RETENTAR * 60_000).toISOString(),
+          })
+          .eq("id", item.id);
+        parcial.erros++;
+        console.warn(`[campanha] item ${item.id}: sessão do WhatsApp caiu (${envio.detalhe ?? ""})`);
+
+        const estado = await consultarEstadoConexao(instancia.instance_name);
+        if (estado.ok && !estado.conectado) {
+          await sincronizarConexaoInstancia({
+            instanciaId: instancia.id,
+            instanceName: instancia.instance_name,
+            conectadoEmAtual: conectadoEm,
+          });
+        }
+        parcial.motivo = "nao_conectado";
+        parcial.diagnostico =
+          "A conexão do WhatsApp caiu e a mensagem não saiu. Reconecte o número em Minha IA → WhatsApp: a fila volta sozinha quando ele reconectar.";
+        break;
+      }
+
       const classe = envio.enviado ? null : classificarFalhaDeEnvio(envio);
       if (classe === "inexistente" || classe === "dados") {
         // A cota foi reservada antes do envio e este envio não aconteceu
@@ -629,7 +846,7 @@ async function processarInstancia(ctx: {
         // adiada) ou vira erro definitivo.
         const atualizacao =
           classe === "inexistente"
-            ? { status: "erro" as const, erro_motivo: "Número não está no WhatsApp", tentativas }
+            ? { status: "erro" as const, erro_motivo: MOTIVO_SEM_WHATSAPP, tentativas }
             : classe === "dados"
               ? { status: "erro" as const, erro_motivo: MOTIVO_TELEFONE_INVALIDO, tentativas }
               : classe === "incerto"
@@ -649,6 +866,16 @@ async function processarInstancia(ctx: {
       }
 
       parcial.enviados++;
+      // Um envio deu certo: a sessão funciona, e as mensagens que esperavam
+      // por ela voltam ao normal (ver `sessaoCaida.ts`).
+      if (!sessaoConferida) {
+        sessaoConferida = true;
+        await liberarFilaDaSessao({
+          instanciaId: instancia.id,
+          corretorId: instancia.corretor_id,
+          levantarPausa: false,
+        });
+      }
       await supabase
         .from("whatsapp_campanhas_fila")
         .update({
@@ -795,7 +1022,9 @@ async function processarInstancia(ctx: {
       }
     }
 
-    if (parcial.processados >= ctx.vagas) {
+    // A sessão caída encerra a vez mesmo na última vaga: continuar a
+    // corrente mandaria o próximo item para a mesma sessão morta.
+    if (parcial.processados >= ctx.vagas && parcial.motivo !== "nao_conectado") {
       parcial.motivo = "sem_tempo";
       parcial.deveContinuar = true;
     }
@@ -827,6 +1056,44 @@ async function leadParaEnvio(
     .eq("id", leadId)
     .maybeSingle();
   return data ? { ...data, nome: data.nome ?? "" } : null;
+}
+
+/**
+ * Os OUTROS cadastros do mesmo corretor com o mesmo telefone. Compara pela
+ * coluna gerada `telefone_e164`, que normaliza pontuação e DDI.
+ */
+async function cadastrosDoMesmoTelefone(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string,
+): Promise<{ id: string; nao_contatar_em: string | null }[]> {
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("telefone_e164, corretor_id")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead?.telefone_e164 || !lead.corretor_id) return [];
+  const { data } = await supabase
+    .from("leads")
+    .select("id, nao_contatar_em")
+    .eq("corretor_id", lead.corretor_id)
+    .eq("telefone_e164", lead.telefone_e164)
+    .neq("id", leadId);
+  return data ?? [];
+}
+
+/** Algum item desta lista, de um desses cadastros, já saiu? */
+async function listaJaSaiuPara(
+  supabase: ReturnType<typeof createServiceClient>,
+  campanhaId: string,
+  leadIds: string[],
+): Promise<boolean> {
+  const { count } = await supabase
+    .from("whatsapp_campanhas_fila")
+    .select("id", { count: "exact", head: true })
+    .eq("campanha_id", campanhaId)
+    .in("lead_id", leadIds)
+    .in("status", ["enviado", "respondido"]);
+  return (count ?? 0) > 0;
 }
 
 /** As mídias da lista que de fato pertencem ao imóvel dela no catálogo. */
@@ -925,9 +1192,13 @@ async function atualizarProgressoCampanhas(
 async function corretorFalouComOLead(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
+  outrosCadastros: string[] = [],
 ): Promise<boolean> {
   const desde = new Date(Date.now() - HORAS_DA_GUARDA_HUMANA * 3_600_000).toISOString();
-  const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
+  const { data: conversas } = await supabase
+    .from("whatsapp_conversas")
+    .select("id")
+    .in("lead_id", [leadId, ...outrosCadastros]);
   const ids = (conversas ?? []).map((c) => c.id);
   if (ids.length === 0) return false;
   const { count } = await supabase

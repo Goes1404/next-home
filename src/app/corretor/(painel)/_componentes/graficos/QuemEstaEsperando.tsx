@@ -129,7 +129,7 @@ export function EsperaVisual({
           ))}
         </ul>
         {total > primeiros.length && (
-          <Link href="/corretor/pessoas" className="text-fluid-xs text-apoio hover:text-titulo mt-1 inline-flex min-h-11 items-center">
+          <Link href="/corretor/pessoas" className="text-fluid-xs text-apoio hover:text-titulo mt-1 inline-flex min-h-11 items-center link-acao">
             Ver os outros {total - primeiros.length} →
           </Link>
         )}

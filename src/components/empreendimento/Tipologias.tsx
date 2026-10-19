@@ -79,7 +79,13 @@ export function Tipologias({
             t.unidadesDisponiveis <= LIMIAR_POUCAS_UNIDADES;
 
           return (
-            <Reveal key={t.nome} delay={i * 0.08} from="baixo">
+            // A passagem dos cards da home (`cartao-passa`, 13/10/2026), no
+            // lugar do Reveal: os dois juntos seriam dois donos da opacidade.
+            <div
+              key={t.nome}
+              className="cartao-passa h-full"
+              style={{ "--coluna": i % 2 } as React.CSSProperties}
+            >
               <article className="flex h-full flex-col rounded-2xl border border-linha/10 bg-superficie px-6 py-6">
                 <h3 className="font-display text-lg text-titulo">{t.nome}</h3>
                 <p className="text-fluid-sm mt-1 text-legenda">
@@ -98,6 +104,7 @@ export function Tipologias({
                     <Camada velocidade={0.09} className="absolute inset-0 scale-105">
                       <Image
                         src={t.plantaUrl}
+                        unoptimized
                         alt=""
                         fill
                         sizes="(min-width: 640px) 340px, 100vw"
@@ -138,7 +145,7 @@ export function Tipologias({
                   </p>
                 )}
               </article>
-            </Reveal>
+            </div>
           );
         })}
       </div>

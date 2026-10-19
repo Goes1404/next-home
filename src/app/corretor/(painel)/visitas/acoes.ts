@@ -75,7 +75,7 @@ export async function salvarDisponibilidade(
   return {
     ok:
       validas.length === 0
-        ? "Agenda limpa. A assistente volta a falar de horário de forma genérica."
+        ? "Agenda limpa. Volta a valer a padrão: todos os dias, das 9h às 20h."
         : "Agenda salva. A assistente passa a oferecer só estes horários.",
   };
 }

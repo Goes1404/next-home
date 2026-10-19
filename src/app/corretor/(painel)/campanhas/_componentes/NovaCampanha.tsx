@@ -1,5 +1,6 @@
 "use client";
 
+import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
 import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
@@ -33,6 +34,7 @@ import {
 } from "@/lib/types";
 import { preencherTemplate } from "@/lib/mensagem";
 import { VARIAVEIS_DA_MENSAGEM } from "@/lib/whatsapp/listaDeTransmissao";
+import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { criarTemplate } from "@/app/corretor/actions";
 import {
   criarCampanha,
@@ -118,8 +120,12 @@ function horarioEstaNaJanelaSegura(valor: string): boolean {
   return !domingo && hora >= 9 && hora <= 20;
 }
 
+/*
+ * Sem `{nome}` (09/10/2026): o corretor apagava o marcador toda vez. Quem
+ * quiser o nome põe pelo botão de variáveis.
+ */
 const MENSAGEM_PADRAO =
-  "Olá, {nome}! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
+  "Olá! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
 
 const CONVITE_COM_HORARIOS = " Se quiser conhecer pessoalmente, tenho {horarios}. Qual fica melhor?";
 
@@ -141,7 +147,6 @@ export function NovaCampanha({
   aoCriar,
   inicial,
   modelos,
-  temAgenda,
   numeroConectado,
   corretor,
 }: {
@@ -150,8 +155,6 @@ export function NovaCampanha({
   inicial?: InicialDaLista;
   /** Modelos de mensagem do corretor (templates_mensagens). */
   modelos: TemplateMensagem[];
-  /** Há horários de visita na agenda? Sem isso `{horarios}` não tem o que oferecer. */
-  temAgenda: boolean;
   /** O número do corretor está conectado? Sem isso a lista nasceria parada. */
   numeroConectado: boolean;
   corretor: { nome: string; whatsapp: string };
@@ -175,6 +178,8 @@ export function NovaCampanha({
   const [agendarPara, setAgendarPara] = useState("");
   const [exemplos, setExemplos] = useState<string[]>([]);
   const [exemploB, setExemploB] = useState<string | null>(null);
+  // O recado embaixo dos exemplos quando a IA não reescreveu algum deles.
+  const [observacaoExemplos, setObservacaoExemplos] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
   const [sugerindo, setSugerindo] = useState(false);
   const [criando, iniciarCriacao] = useTransition();
@@ -385,6 +390,7 @@ export function NovaCampanha({
         }
         setExemplos(resultado.mensagens);
         setExemploB(resultado.mensagemB);
+        setObservacaoExemplos(resultado.observacao);
       } catch (err) {
         falhar(ehActionDeOutroBuild(err) ? avisoDePaginaVelha() : "Sem conexão. Tente de novo.");
       } finally {
@@ -509,9 +515,10 @@ export function NovaCampanha({
             midias: midias.length,
             viva: viva && !selecaoManual,
           }),
-          modoEnvio === "agendado"
+          (modoEnvio === "agendado"
             ? `Lista agendada para ${new Date(iniciarEm!).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}, com ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}.`
-            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`,
+            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`) +
+            fraseSemWhatsapp(resultado.semWhatsapp),
         );
 
         // Volta ao começo para a próxima lista, sem nada da anterior.
@@ -523,7 +530,7 @@ export function NovaCampanha({
   }
 
   const variaveisDisponiveis = VARIAVEIS_DA_MENSAGEM.filter(
-    (v) => (imovel || !DO_IMOVEL.has(v.chave)) && (temAgenda || v.chave !== "horarios"),
+    (v) => imovel || !DO_IMOVEL.has(v.chave),
   );
 
   return (
@@ -660,7 +667,7 @@ export function NovaCampanha({
                       type="button"
                       onClick={() => setBuscaLead("")}
                       aria-label="Limpar busca"
-                      className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg"
+                      className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center botao-icone"
                     >
                       <X aria-hidden className="h-4 w-4" />
                     </button>
@@ -699,7 +706,7 @@ export function NovaCampanha({
                   <button
                     type="button"
                     onClick={alternarVisiveis}
-                    className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 font-semibold transition-colors"
+                    className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 px-3 font-semibold botao-secundario"
                   >
                     <CheckCheck aria-hidden className="h-4 w-4" />
                     {todosVisiveisEscolhidos
@@ -760,7 +767,7 @@ export function NovaCampanha({
                     <button
                       type="button"
                       onClick={() => setEscolhidos(new Set())}
-                      className="text-fluid-xs text-apoio hover:text-perigo min-h-9 transition-colors"
+                      className="text-fluid-xs text-apoio hover:text-perigo min-h-9 transition-colors px-3 botao-secundario"
                     >
                       Limpar seleção
                     </button>
@@ -834,8 +841,8 @@ export function NovaCampanha({
           <p className="text-fluid-xs text-apoio">
             Escreva como você falaria.{" "}
             {testandoDuas
-              ? "Durante o teste de duas versões a IA não reescreve o texto, para a comparação ser justa: cada pessoa recebe a versão como está, com o nome dela."
-              : "A IA reescreve cada mensagem com palavras um pouco diferentes — mensagens idênticas em massa é o que faz o WhatsApp bloquear números."}
+              ? "A IA reescreve cada mensagem com outras palavras, mantendo a abertura de cada versão para a comparação continuar justa. Nenhuma sai parecida com as que o seu número já mandou."
+              : "A IA reescreve cada mensagem com outras palavras e confere antes de mandar: nenhuma sai parecida com as que o seu número já mandou. Texto repetido em massa é o que faz o WhatsApp restringir números."}
           </p>
           <textarea
             rows={4}
@@ -849,8 +856,8 @@ export function NovaCampanha({
           />
 
           {/* Variáveis do cadastro em um toque (Fase 2). Só aparecem as que
-              têm valor: sem imóvel, nada de {bairro}; sem agenda, nada de
-              {horarios}. */}
+              têm valor: sem imóvel, nada de {bairro}. {horarios} sempre tem:
+              sem agenda preenchida vale a padrão. */}
           <div className="flex flex-wrap gap-1.5" aria-label="Inserir variável na mensagem">
             {variaveisDisponiveis.map((v) => (
               <button
@@ -875,7 +882,7 @@ export function NovaCampanha({
               <Sparkles className="h-4 w-4" />
               {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
             </button>
-            {temAgenda && !/\{horarios\}/i.test(mensagemBase) && (
+            {!/\{horarios\}/i.test(mensagemBase) && (
               <button
                 type="button"
                 onClick={() => setMensagemBase((m) => `${m.trimEnd()}${CONVITE_COM_HORARIOS}`)}
@@ -954,6 +961,11 @@ export function NovaCampanha({
                   <span className="text-tenue">Versão B · </span>“{exemploB}”
                 </p>
               )}
+              {observacaoExemplos && (
+                <p className="text-fluid-xs text-apoio border-acento-linha border-t pt-2 leading-relaxed break-words">
+                  {observacaoExemplos}
+                </p>
+              )}
             </div>
           )}
 
@@ -980,7 +992,7 @@ export function NovaCampanha({
                     setTestandoDuas(false);
                     setMensagemB("");
                   }}
-                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors"
+                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors px-3 botao-secundario"
                 >
                   remover
                 </button>
@@ -1132,8 +1144,8 @@ export function NovaCampanha({
                   id="janela-segura-campanha"
                   className="text-fluid-xs text-apoio mt-1.5"
                 >
-                  Segunda a sábado, entre 9h e 20h59. A pausa de 35–75 segundos continua
-                  valendo.
+                  Segunda a sábado, entre 9h e 20h59. A pausa de {INTERVALO_EM_PALAVRAS} entre as
+                  mensagens continua valendo.
                 </p>
               </div>
             )}
@@ -1155,7 +1167,7 @@ export function NovaCampanha({
 
           <p className="text-fluid-xs text-apoio flex items-start gap-2">
             <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
-            As mensagens saem uma a uma, com 35 a 75 segundos entre elas e só em horário comercial
+            As mensagens saem uma a uma, com {INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial
             — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
           </p>
         </div>
@@ -1167,7 +1179,7 @@ export function NovaCampanha({
           <button
             type="button"
             onClick={() => setPasso((p) => (p === 3 ? 2 : 1))}
-            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 transition-colors"
+            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 transition-colors px-3 botao-secundario"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
           </button>

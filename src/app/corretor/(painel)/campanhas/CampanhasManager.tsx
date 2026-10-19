@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import type { Empreendimento, TemplateMensagem } from "@/lib/types";
-import { EnvioImediato } from "./_componentes/EnvioImediato";
 import { HistoricoCampanhas } from "./_componentes/HistoricoCampanhas";
 import { NovaCampanha, type InicialDaLista } from "./_componentes/NovaCampanha";
 import { StatusFila } from "./_componentes/StatusFila";
@@ -25,7 +24,6 @@ interface Props {
   /** Pré-preenchimento vindo de "leads que combinam", listas sugeridas, repetir ou rascunho. */
   inicial?: InicialDaLista;
   modelos: TemplateMensagem[];
-  temAgenda: boolean;
   corretor: { nome: string; whatsapp: string };
 }
 
@@ -35,7 +33,6 @@ export function CampanhasManager({
   statusInicial,
   inicial,
   modelos,
-  temAgenda,
   corretor,
 }: Props) {
   const [campanhas, setCampanhas] = useState<CampanhaListada[]>(campanhasIniciais);
@@ -58,7 +55,6 @@ export function CampanhasManager({
         empreendimentos={empreendimentos}
         inicial={inicial}
         modelos={modelos}
-        temAgenda={temAgenda}
         numeroConectado={numeroConectado}
         corretor={corretor}
         aoCriar={(campanha, aviso) => {
@@ -68,21 +64,9 @@ export function CampanhasManager({
         }}
       />
 
-      {/* Depois do assistente, e não antes: o caminho normal é criar uma
-          lista escolhendo o público. Este é o atalho para a carteira
-          inteira agora. */}
-      <EnvioImediato
-        aoEnviar={(campanha, aviso) => {
-          setCampanhas((prev) => [campanha, ...prev]);
-          avisar(aviso);
-          void recarregar();
-        }}
-      />
-
       <HistoricoCampanhas
         campanhas={campanhas}
         aoMudar={recarregar}
-        foraDoHorario={status?.impedimentoTipo === "horario" || status?.impedimentoTipo === "expediente"}
       />
     </div>
   );

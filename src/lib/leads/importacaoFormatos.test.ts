@@ -252,13 +252,14 @@ describe("Importação — Excel (.xlsx)", () => {
 describe("Importação — foto ou print", () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it("sem a IA disponível, diz que a leitura de foto depende dela", async () => {
+  it("sem a IA disponível, diz que não leu e oferece a caixa de texto", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.stubEnv("GOOGLE_AI_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
 
     const resultado = await extrairDeImagem(Buffer.from([0xff, 0xd8, 0xff]), "image/jpeg");
 
     expect(resultado.candidatos).toHaveLength(0);
-    expect(resultado.aviso).toContain("IA");
+    expect(resultado.aviso).toContain("digite os contatos");
   });
 });

@@ -178,6 +178,15 @@
    * é o contrário. As duas famílias não se encontram em tela nenhuma.
    */
   --color-realce: light-dark(#034b8e, #5695d3);
+  /* Séries de gráfico por canal (07/10/2026): paleta categórica validada
+     (CVD e contraste) nas duas cores do tema. A cor segue o CANAL, nunca a
+     posição: o mapa fixo está em graficosDosAnuncios. */
+  --color-serie-1: light-dark(#2a78d6, #3987e5);
+  --color-serie-2: light-dark(#eb6834, #d95926);
+  --color-serie-3: light-dark(#1baf7a, #199e70);
+  --color-serie-4: light-dark(#eda100, #c98500);
+  --color-serie-5: light-dark(#e87ba4, #d55181);
+  --color-serie-6: light-dark(#008300, #008300);
   --color-realce-suave: light-dark(#023a6f, #8fb9e3);
   --color-realce-lavado: light-dark(rgb(3 75 142 / 0.08), rgb(86 149 211 / 0.16));
   --color-realce-linha: light-dark(rgb(3 75 142 / 0.3), rgb(86 149 211 / 0.34));
@@ -525,6 +534,12 @@
     /* Altura da barra superior do painel — o que a lateral fixa precisa
        descontar para não escorregar por baixo dela ao rolar. */
     --painel-header-h: 3.75rem;
+
+    /* Quanto do topo o cabeçalho do painel ocupa AGORA: a altura dele, ou
+       zero quando ele saiu de cena ao rolar no celular (CabecalhoDoPainel
+       escreve `data-cabecalho` no <main>). É por ela que se posiciona quem
+       gruda logo abaixo dele. */
+    --painel-topo-visivel: var(--painel-header-h);
   }
 
   /*
@@ -532,7 +547,8 @@
    * escolhido no arquivo de cada componente é como os três elementos fixos
    * do painel foram parar na mesma faixa:
    *
-   *   30  cabeçalhos de seção grudentos
+   *   30  cabeçalhos de seção grudentos e a lateral do computador (o
+   *       cartão do trilho mora nela e precisa passar por cima da tela)
    *   40  cabeçalho do painel, cabeçalhos do site
    *   45  barras de ação flutuantes (seleção em massa, salvar imóvel)
    *   50  navegação inferior do celular
@@ -1304,6 +1320,11 @@
   }
   header[data-oculto="sim"] {
     transform: translateY(-130%);
+  }
+  /* Quem chega nele pelo teclado (Tab) precisa vê-lo: o foco não pode
+     morar num botão fora da tela. */
+  header[data-oculto="sim"]:focus-within {
+    transform: none;
   }
 
   /* Menu do celular: véu que esmaece e painel que desliza da direita; ao
@@ -2470,6 +2491,110 @@
   }
 }
 
+/*
+ * Botões que parecem botões (09/10/2026). Relatado: "temos botões que os
+ * usuários não sabem que são botões". O levantamento achou ~200 botões e
+ * links do painel sem fundo, borda nem sublinhado — só texto colorido ou só
+ * ícone, cuja única pista era a cor mudar no hover. No celular não existe
+ * hover.
+ *
+ * A régua: todo controle mostra que é controle EM REPOUSO.
+ *  - `botao-secundario`: contorno e fundo leve. Ação que não é a principal.
+ *  - `botao-icone`: ícone sozinho ganha círculo de fundo sempre visível.
+ *  - `link-acao`: link de texto sempre sublinhado (mais forte no hover).
+ *  - `linha-abre`: linha ou cartão que abre outra tela ganha a seta › no fim.
+ * A ação principal já tinha forma (`bg-acento text-sobre-cor`).
+ *
+ * Os quatro só acrescentam a PISTA (borda, fundo, sublinhado, seta): cor do
+ * texto, tamanho e espaçamento continuam com quem usa. Assim não brigam com
+ * os utilitários do Tailwind na mesma classe.
+ */
+/*
+ * A pista sai da COR do próprio controle (`currentColor`), não de um cinza
+ * fixo: cada botão fica tingido da cor do seu texto, e a tela não vira uma
+ * grade de caixas iguais. Primeira versão (cinza com borda forte) ficou
+ * pesada — "assim ficou feio", 09/10/2026.
+ */
+@utility botao-secundario {
+  border: 1px solid color-mix(in oklab, currentColor 24%, transparent);
+  background-color: color-mix(in oklab, currentColor 6%, transparent);
+  /* O mesmo raio do botão principal (`rounded-xl`): formas iguais lado a
+     lado leem como um conjunto; pílula ao lado de retângulo parecia remendo. */
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+  &:hover:not(:disabled) {
+    border-color: color-mix(in oklab, currentColor 42%, transparent);
+    background-color: color-mix(in oklab, currentColor 12%, transparent);
+  }
+}
+
+/* O círculo é DESENHADO menor que o botão: o alvo de toque continua com os
+   44px do elemento, mas o que se vê é um círculo de ~80% dele, com um fio. */
+@utility botao-icone {
+  --ic-fundo: color-mix(in oklab, currentColor 8%, transparent);
+  --ic-fio: color-mix(in oklab, currentColor 16%, transparent);
+  background: radial-gradient(
+    circle closest-side,
+    var(--ic-fundo) 0 78%,
+    var(--ic-fio) 78% 81%,
+    transparent 83%
+  );
+  border-radius: 9999px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    --ic-fundo: color-mix(in oklab, currentColor 15%, transparent);
+  }
+}
+
+@utility link-acao {
+  cursor: pointer;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  text-decoration-color: color-mix(in oklab, currentColor 32%, transparent);
+  transition: text-decoration-color 0.18s ease;
+  &:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+@utility linha-abre {
+  &::after {
+    content: "";
+    flex-shrink: 0;
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-left: auto;
+    background-color: currentColor;
+    opacity: 0.35;
+    transition:
+      opacity 0.18s ease,
+      translate 0.18s ease;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  &:hover::after {
+    opacity: 0.7;
+    translate: 2px 0;
+  }
+}
+
+/*
+ * Reação ao toque em todo controle do painel: escurece enquanto o dedo está
+ * em cima. O realce nativo está desligado (`-webkit-tap-highlight-color`), e
+ * sem isto o toque no celular não dá sinal de que pegou. Sombra interna, e
+ * não `transform` nem `filter`: os dois criam containing block, e há
+ * `position: fixed` dentro de controles do painel.
+ */
+[data-rota="painel"] :is(button, a[href], [role="button"]):active:not(:disabled) {
+  box-shadow: inset 0 0 0 999px color-mix(in oklab, currentColor 8%, transparent);
+}
+
 @utility cartao {
   position: relative;
   border-radius: 1.25rem;
@@ -2657,6 +2782,9 @@
    a bolha ganhou este fundo opaco em z-55 e cobriu o painel inteiro
    (24/09/2026) — cliques passavam, nada aparecia. */
 main[data-rota="painel"] {
+  /* Recalculado AQUI porque o cabeçalho escreve a altura medida no <main>
+     (CabecalhoDoPainel): o valor herdado do :root seria o de 3,75rem. */
+  --painel-topo-visivel: var(--painel-header-h);
   background-image: linear-gradient(
     180deg,
     color-mix(in oklab, var(--color-acento) var(--tinta-topo), var(--color-fundo)) 0,
@@ -2668,6 +2796,68 @@ main[data-rota="painel"] {
 :root:has([data-rota="painel"]) {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
+}
+
+/* O cabeçalho do painel saiu de cena ao rolar no celular: quem gruda logo
+   abaixo dele sobe junto (ver CabecalhoDoPainel). */
+main[data-cabecalho="oculto"] {
+  --painel-topo-visivel: 0px;
+}
+
+/*
+ * A lateral do painel rola sozinha (09/10/2026): com uma pasta longa aberta
+ * ela passava da altura da janela, e o fim do menu só aparecia no fim da
+ * página. `scrollbar-width` não é herdado do <main>, então vem aqui.
+ *
+ * O esmaecido das bordas diz "tem mais menu para lá" — no Mac a barra de
+ * rolagem fica escondida até alguém rolar, e sem ele nada avisa. Ele segue
+ * a rolagem da própria caixa (`scroll(self)`): some na borda em que não há
+ * mais nada, e não existe quando o menu cabe inteiro (a linha do tempo fica
+ * inativa e as duas medidas voltam a zero). Navegador sem rolagem em CSS só
+ * não esmaece.
+ */
+@property --lateral-esmaece-topo {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --lateral-esmaece-base {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.lateral-rolagem {
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+@supports (animation-timeline: scroll()) {
+  .lateral-rolagem-esmaece {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--lateral-esmaece-topo),
+      #000 calc(100% - var(--lateral-esmaece-base)),
+      transparent 100%
+    );
+    animation: lateral-esmaece linear both;
+    animation-timeline: scroll(self);
+  }
+  @keyframes lateral-esmaece {
+    0% {
+      --lateral-esmaece-topo: 0px;
+      --lateral-esmaece-base: 28px;
+    }
+    8% {
+      --lateral-esmaece-topo: 28px;
+    }
+    92% {
+      --lateral-esmaece-base: 28px;
+    }
+    100% {
+      --lateral-esmaece-topo: 28px;
+      --lateral-esmaece-base: 0px;
+    }
+  }
 }
 
 /*

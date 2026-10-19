@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import { deMensagemRow, type MensagemRow } from "./chatModelo";
 import type { MensagemConversa } from "./acoes";
 
@@ -41,25 +41,39 @@ export function useConversaAoVivo({
   useEffect(() => {
     if (!conversaId) return;
 
-    const supabase = createClient();
-    const alvo = {
-      schema: "public",
-      table: "whatsapp_mensagens",
-      filter: `conversa_id=eq.${conversaId}`,
-    } as const;
+    // O supabase-js chega por import assíncrono (clientSobDemanda.ts): a
+    // gaveta já está na tela quando o canal abre, então o peso dele não
+    // entra na primeira pintura. `cancelado` cobre a conversa que fecha
+    // antes de o módulo chegar — sem isso o canal nasceria órfão.
+    let cancelado = false;
+    let limpar: (() => void) | null = null;
 
-    const canal = supabase
-      .channel(`conversa-live:${conversaId}`)
-      .on("postgres_changes", { event: "INSERT", ...alvo }, (payload) => {
-        aoInserir(deMensagemRow(payload.new as MensagemRow));
-      })
-      .on("postgres_changes", { event: "UPDATE", ...alvo }, (payload) => {
-        aoAtualizar(deMensagemRow(payload.new as MensagemRow));
-      })
-      .subscribe();
+    void createClientSobDemanda().then((supabase) => {
+      if (cancelado) return;
+      const alvo = {
+        schema: "public",
+        table: "whatsapp_mensagens",
+        filter: `conversa_id=eq.${conversaId}`,
+      } as const;
+
+      const canal = supabase
+        .channel(`conversa-live:${conversaId}`)
+        .on("postgres_changes", { event: "INSERT", ...alvo }, (payload) => {
+          aoInserir(deMensagemRow(payload.new as MensagemRow));
+        })
+        .on("postgres_changes", { event: "UPDATE", ...alvo }, (payload) => {
+          aoAtualizar(deMensagemRow(payload.new as MensagemRow));
+        })
+        .subscribe();
+
+      limpar = () => {
+        void supabase.removeChannel(canal);
+      };
+    });
 
     return () => {
-      void supabase.removeChannel(canal);
+      cancelado = true;
+      limpar?.();
     };
     /*
      * As duas funções precisam vir de `useCallback` no chamador. Sem isso o

@@ -12,6 +12,7 @@ import {
   destinoAtivo,
   gruposVisiveis,
   moduloAtivo,
+  moduloDaSecao,
   moduloDoTopico,
   subitemAtivo,
   type ItemNav,
@@ -411,10 +412,22 @@ function Topico({
             const aberto = subAtivo?.href === sub.href;
             const IconeSub = sub.icone;
             const novaSecao = sub.secao && sub.secao !== subs[i - 1]?.secao;
+            // Cor da seção (Equipe · Negócio · Sistema): o `data-modulo` no
+            // item reaponta o acento, então título, ícone e realce do ativo
+            // saem na cor da categoria sem classe nova.
+            const modSecao = moduloDaSecao(sub.secao);
             return (
-              <li key={sub.href}>
+              <li key={sub.href} data-modulo={modSecao ?? undefined}>
                 {novaSecao && (
-                  <p className="text-tenue px-3 pt-3 pb-1 text-[11px] font-semibold tracking-[0.14em] uppercase">
+                  <p
+                    className={cn(
+                      "flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold tracking-[0.14em] uppercase",
+                      modSecao ? "text-acento-suave" : "text-tenue",
+                      // Da segunda seção em diante, um fio separa a anterior.
+                      i > 0 ? "border-linha mt-2 border-t pt-3" : "pt-2",
+                    )}
+                  >
+                    {modSecao && <span aria-hidden className="bg-acento h-2 w-2 shrink-0 rounded-full" />}
                     {sub.secao}
                   </p>
                 )}
@@ -430,7 +443,17 @@ function Topico({
                       : "text-corpo hover:bg-vidro",
                   )}
                 >
-                  {IconeSub && <IconeSub aria-hidden className="h-[18px] w-[18px] shrink-0" />}
+                  {IconeSub &&
+                    (modSecao ? (
+                      <span
+                        aria-hidden
+                        className="bg-acento-lavado text-acento-suave grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                      >
+                        <IconeSub className="h-4 w-4" />
+                      </span>
+                    ) : (
+                      <IconeSub aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                    ))}
                   {sub.label}
                   <MarcaDoMenu marca={marcas[sub.href]} />
                   <CarregandoLink />

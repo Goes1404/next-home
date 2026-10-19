@@ -1,8 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { after, NextRequest, NextResponse } from "next/server";
+import { guardarMidiaRecebida } from "@/lib/whatsapp/midiaRecebida";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
-import { conversaEhAtendimento } from "@/lib/whatsapp/privacidadeDaConversa";
+import { conversaEhAtendimento, guardaOTextoDaConversa } from "@/lib/whatsapp/privacidadeDaConversa";
+import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -23,12 +25,15 @@ import {
 } from "@/lib/whatsapp/provider";
 import {
   agendarVisitaLead,
+  cancelarVisitaLead,
+  guardarVisitaSugerida,
   aplicarAckDeEntrega,
   avancarLeadParaPrimeiroContato,
   contarFalasNaoGravadas,
   marcarConversaAtendida,
   registrarImovelDeInteresse,
   registrarRespostaDoLead,
+  avancarLeadParaEmConversa,
   situacaoDaConversa,
   buscarDossieAtual,
   cancelarFollowupsPendentes,
@@ -53,6 +58,9 @@ import {
   resolverInstancia,
   salvarDossie,
   registrarRecusaDoCliente,
+  registrarParadaSemIA,
+  registrarDecisaoDeRecusa,
+  contarRecusasPelaIA,
   salvarMemoriaDaConversa,
   ultimaExtracaoDoLead,
   ultimaFalaDoCorretor,
@@ -74,6 +82,7 @@ import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
+import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
@@ -81,7 +90,7 @@ import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
-import { candidatosTelefone } from "@/lib/whatsapp/repositorio";
+import { candidatosTelefone, marcarSessaoViva, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -326,11 +335,23 @@ export async function POST(req: NextRequest) {
     const evento = String(payload.event || payload.type || "").toLowerCase().replace(/_/g, ".");
     const estadoConexao: string = payload.data?.state || payload.state || "";
 
+    /*
+     * Chegou evento de mensagem: a sessão deste número está viva, então ele
+     * volta ao rodízio do link se tinha ficado de fora por "Connection
+     * Closed" (0174). Em segundo plano, para não atrasar a resposta; sem
+     * marca, a atualização não muda nada.
+     */
+    if (evento !== "connection.update" && !estadoConexao) {
+      after(() => marcarSessaoViva(instancia.id));
+    }
+
     if (evento === "connection.update" || (!text && !sender && estadoConexao)) {
       await registrarEventoConexao({
         instanceName,
         estado: estadoConexao,
         telefone: (payload.data?.wuid || payload.data?.owner || "").replace(/\D/g, "") || null,
+        // Por que o WhatsApp derrubou a conexão (401, 403...). Era descartado (0174).
+        motivo: payload.data?.statusReason ?? payload.statusReason,
       });
       return NextResponse.json({ ok: true, action: "conexao_atualizada", estado: estadoConexao });
     }
@@ -434,8 +455,9 @@ export async function POST(req: NextRequest) {
      * dono, nada é criado aqui, e a IA não responde neste número. O aviso vai
      * só para quem digitou, pela fila do Início, sem o nome do dono.
      */
+    // Conta só WhatsApp (0180) não tem IA: a palavra-chave não cadastra nem liga nada.
     const palavraDoCorretor =
-      fromMe && text
+      fromMe && text && !instancia.soWhatsapp
         ? palavraDoCorretorNaMensagem({
             mensagem: text,
             palavraChaveConfigurada: instancia.palavraChaveAtivacao,
@@ -475,7 +497,13 @@ export async function POST(req: NextRequest) {
       corretorId: instancia.corretorId,
       telefoneCliente: sender,
       nomeCliente: payload.senderName || null,
-      convite,
+      /*
+       * Conta só WhatsApp (0180): toda conversa do número aparece no painel,
+       * e ninguém vira lead — nem pelo convite. A trava da 0111 continua no
+       * banco para todas as outras contas.
+       */
+      convite: instancia.soWhatsapp ? null : convite,
+      semLead: instancia.soWhatsapp,
     });
 
     /*
@@ -504,6 +532,24 @@ export async function POST(req: NextRequest) {
      */
     if (!conversa && chavesDeContexto(payload).length > 0) {
       console.info("[porteiro] número sem lead com contextInfo:", chavesDeContexto(payload).join(","));
+    }
+
+    /*
+     * Medição do link do anúncio (0159): conta quem escreveu sem convite e
+     * vai ser ignorado — só o resumo do número, o tipo e a distância até o
+     * último clique de pessoa no link. O texto é lido aqui para saber se citou
+     * o imóvel e não é gravado. Depois da resposta, para não atrasar nada.
+     */
+    if (!conversa && !fromMe) {
+      const corretorDaMedicao = instancia.corretorId;
+      after(() =>
+        registrarMensagemBarrada({
+          corretorId: corretorDaMedicao,
+          telefone: sender,
+          texto: text || null,
+          tipo: text ? "texto" : ehAudio ? "audio" : "outro",
+        }),
+      );
     }
 
     if (!conversa) {
@@ -581,15 +627,20 @@ export async function POST(req: NextRequest) {
       }
 
       await gravarMensagem({
-        // O porteiro acima já garantiu o vínculo com um lead. A função
-        // central continua decidindo a gravação para manter o mesmo contrato
-        // dos demais caminhos de atendimento.
-        conversaLiberada: conversaEhAtendimento(conversa),
+        // O porteiro acima já garantiu o vínculo com um lead (ou a conta é
+        // só WhatsApp, que guarda tudo). A função central continua decidindo
+        // a gravação para manter o mesmo contrato dos demais caminhos.
+        conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
         conversaId: conversa.id,
         remetente: "corretor",
         conteudo: text,
         tipo: ehAudio ? "audio" : "texto",
       });
+
+      // Conversa sem lead (conta só WhatsApp): é só registro, sem CRM nem IA.
+      if (!conversa.leadId) {
+        return NextResponse.json({ ok: true, action: "fala_registrada_sem_lead", sender });
+      }
 
       const decisao = decidirPorFalaDoCorretor({
         mensagem: text,
@@ -663,6 +714,16 @@ export async function POST(req: NextRequest) {
       }
 
       await desligarIaPorFalaDoCorretor(conversa.id);
+      /*
+       * "Combinado, sábado às 10": a visita que ele marcou de cabeça vira
+       * sugestão de registro no Início (A2, 0163). Nunca grava sozinho.
+       */
+      const combinadaPeloCorretor = visitaCombinadaNoChat({
+        falaDoCorretor: text,
+        agora: new Date(),
+        visitaMarcada: conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null,
+      });
+      if (combinadaPeloCorretor) await guardarVisitaSugerida(conversa.id, combinadaPeloCorretor);
       // O corretor falou com o cliente: é o primeiro contato, com a IA
       // calada ou não (plano de ativação, 3.2). Só anda quem está em "Novo".
       if (conversa.leadId) await avancarLeadParaPrimeiroContato(conversa.leadId, "corretor_no_whatsapp");
@@ -674,7 +735,7 @@ export async function POST(req: NextRequest) {
     }
 
     const gravacao = await gravarMensagem({
-      conversaLiberada: conversaEhAtendimento(conversa),
+      conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
       conversaId: conversa.id,
       remetente: "cliente",
       conteudo: text,
@@ -690,6 +751,39 @@ export async function POST(req: NextRequest) {
     }
 
     /*
+     * Conversa sem lead (conta só WhatsApp, 0180): a mensagem fica guardada
+     * para a pessoa ler no painel, e nada mais acontece — sem ficha, sem
+     * funil, sem lista e sem IA.
+     */
+    if (!conversa.leadId) {
+      if (payload.senderName) {
+        await preencherNomeContato({ conversaId: conversa.id, nome: String(payload.senderName) });
+      }
+      return NextResponse.json({ ok: true, action: "mensagem_registrada_sem_lead", sender });
+    }
+
+    /*
+     * Foto ou PDF do cliente vai para o bucket privado (16/10/2026): é o que
+     * deixa o corretor ver no painel e guardar como documento do lead. Depois
+     * da resposta, para não atrasar o atendimento.
+     */
+    if (tipoMidiaRecebida && gravacao.id && conversa.leadId && providerMessageId) {
+      const mensagemId = gravacao.id;
+      const leadDaMidia = conversa.leadId;
+      const idNoProvedor = providerMessageId;
+      after(() =>
+        guardarMidiaRecebida({
+          instanceName: instancia.instanceName,
+          providerMessageId: idNoProvedor,
+          mensagemCompleta: payload.data ?? null,
+          leadId: leadDaMidia,
+          mensagemId,
+          nomeDoArquivo: documentoMsg?.fileName ?? null,
+        }),
+      );
+    }
+
+    /*
      * O cliente falou: a contagem de insistência volta a zero (0060).
      *
      * Vem depois da guarda de reentrega de propósito — o provedor reentrega
@@ -699,6 +793,8 @@ export async function POST(req: NextRequest) {
      * cliente respondeu, e é isso que o número guarda.
      */
     await registrarRespostaDoLead(conversa.leadId);
+    // Respondeu: sai de "novo"/"mensagem enviada" para "em conversa" (0165).
+    await avancarLeadParaEmConversa(conversa.leadId);
 
     /*
      * Mensagem pronta de anúncio (link porteiro /wa/<campanha>): quem
@@ -825,6 +921,56 @@ export async function POST(req: NextRequest) {
         silencio: registroDoSilencio(decisaoIA, numero),
       });
       /*
+       * Pedido de parada com a IA calada (06/10/2026). O detector de recusa
+       * só rodava no turno da IA, e desde a 0152 a IA desliga quando o
+       * corretor fala: "me tira da lista" não era gravado, e o lead voltava
+       * a receber a próxima lista. Só a família `parada`, e o efeito é menor
+       * que no turno da IA (ver `registrarParadaSemIA`).
+       */
+      const historicoCalado = await historicoRecente(conversa.id);
+      /*
+       * O corretor propôs ("sábado às 10 fica bom?") e o cliente aceitou
+       * ("pode ser"): a mesma sugestão de registro (A2, 0163).
+       */
+      const ultimaAntes = [...historicoCalado].reverse().find((m) => m.remetente !== "cliente");
+      const aceitouOCorretor =
+        ultimaAntes?.remetente === "corretor"
+          ? visitaCombinadaNoChat({
+              falaDoCliente: text,
+              propostaDoCorretor: ultimaAntes.texto,
+              agora: new Date(),
+              visitaMarcada: conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null,
+            })
+          : null;
+      if (aceitouOCorretor) await guardarVisitaSugerida(conversa.id, aceitouOCorretor);
+      if (decisaoIA.motivo !== "lead_pediu_para_sair") {
+        // Em camadas: regex para o óbvio, IA para o duvidoso. Aqui só a
+        // PARADA age; o resto fica registrado para a revisão semanal.
+        const classificacao = await classificarRecusa({
+          texto: text,
+          ultimaFalaNossa:
+            [...historicoCalado].reverse().find((m) => m.remetente !== "cliente")?.texto ?? "",
+        });
+        let acao: "marcou" | "registrou" = "registrou";
+        if (classificacao.recusa?.familia === "parada") {
+          const marcou = await registrarParadaSemIA({
+            conversaId: conversa.id,
+            leadId: conversa.leadId,
+            corretorId: instancia.corretorId,
+            trecho: classificacao.recusa.trecho,
+          });
+          if (marcou) acao = "marcou";
+        }
+        await registrarDecisaoDeRecusa({
+          conversaId: conversa.id,
+          leadId: conversa.leadId,
+          corretorId: instancia.corretorId,
+          classificacao,
+          caminho: "ia_calada",
+          acao,
+        });
+      }
+      /*
        * A ficha é atualizada MESMO com a IA calada — e este é o caminho
        * mais comum: medido em 7 dias, 127 das 191 falas de cliente foram
        * atendidas pelo CORRETOR, e nenhuma delas gerava extração. As travas
@@ -832,7 +978,7 @@ export async function POST(req: NextRequest) {
        */
       await atualizarFichaEMemoria({
         conversa,
-        historico: await historicoRecente(conversa.id),
+        historico: historicoCalado,
         telefone: sender,
       });
       return NextResponse.json({ ok: true, action: "ia_calada", motivo: decisaoIA.motivo, sender });
@@ -948,6 +1094,9 @@ export async function POST(req: NextRequest) {
       catalogo,
       historico,
       dossie: dossieAnterior,
+      recusasPelaIA: await contarRecusasPelaIA(conversa.id),
+      // A visita marcada no CRM: com ela a IA remarca e desmarca (A2).
+      visitaMarcadaEm: conversa.visitaAgendadaEm,
       /*
        * A MEMÓRIA (0110): o estado da negociação que sobrevive à janela de
        * 40 falas. Nas conversas ativas, até 27 dessas 40 são do CORRETOR —
@@ -969,8 +1118,8 @@ export async function POST(req: NextRequest) {
        * Os horários que EXISTEM na agenda do corretor (0073). Até aqui a
        * Sofia oferecia horário de cabeça: o eval de 31/08 mediu os mesmos
        * dois inventados quatro vezes seguidas, e o funil mostra 6 visitas
-       * propostas para 1 marcada. Vazio para quem não configurou agenda —
-       * e aí o prompt segue com o calendário genérico de sempre.
+       * propostas para 1 marcada. Quem não configurou agenda usa a padrão
+       * (todos os dias, 9h às 20h); vazio só sem vaga nos próximos 14 dias.
        *
        * Vai CRU: quem filtra o que já foi oferecido nesta conversa é o
        * turno, que é onde o histórico está. Montar o bloco aqui faria a
@@ -1154,6 +1303,22 @@ export async function POST(req: NextRequest) {
         familia: turno.jogada.familia,
       });
     }
+    // O registro da decisão (0162): quem decidiu e o que a IA fez com isso.
+    if (turno.recusa) {
+      await registrarDecisaoDeRecusa({
+        conversaId: conversa.id,
+        leadId: conversa.leadId,
+        corretorId: instancia.corretorId,
+        classificacao: turno.recusa,
+        caminho: "turno_ia",
+        acao:
+          turno.jogada.tipo === "encerrar_recusado"
+            ? "encerrou"
+            : turno.jogada.tipo === "acolher_recusa"
+              ? "acolheu"
+              : "registrou",
+      });
+    }
 
     const dossie =
       (await atualizarFichaEMemoria({ conversa, historico, telefone: sender, iaRespondeu: true })) ??
@@ -1180,12 +1345,28 @@ export async function POST(req: NextRequest) {
      * degrada para o alerta comum de "visita solicitada", nunca grava lixo.
      */
     let visitaConfirmada = false;
+    let dataGravada: Date | null = null;
     if (respostaIA.visitaProposta?.confirmadaPeloCliente && conversa.leadId) {
       const dataVisita = validarDataVisita(respostaIA.visitaProposta.dataHoraISO);
       if (dataVisita) {
         visitaConfirmada = await agendarVisitaLead(conversa.leadId, dataVisita);
+        if (visitaConfirmada) dataGravada = dataVisita;
       }
     }
+    /*
+     * REMARCAR e DESMARCAR (A2, 06/10/2026). A remarcação é a confirmação
+     * acima com uma visita que já existia em outra data; o desmarque é
+     * decidido pelo planner sobre a fala do cliente, nunca pelo modelo.
+     */
+    const visitaAnterior = conversa.visitaAgendadaEm ? new Date(conversa.visitaAgendadaEm) : null;
+    const visitaRemarcada =
+      dataGravada !== null && visitaAnterior !== null && visitaAnterior.getTime() !== dataGravada.getTime()
+        ? visitaAnterior
+        : null;
+    const visitaDesmarcada =
+      turno.jogada.tipo === "cancelar_visita" && conversa.leadId
+        ? await cancelarVisitaLead(conversa.leadId)
+        : null;
 
     // Duas classes de aviso ao corretor, nunca as duas juntas na mesma
     // mensagem: o alerta grande pede ação imediata (lead quente, visita,
@@ -1216,7 +1397,8 @@ export async function POST(req: NextRequest) {
      * ninguém ficou sabendo que precisava acontecer.
      */
     const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
-    const exigeAcaoAgora = visitaConfirmada || respostaIA.transferirHumano || pediuLigacao;
+    const exigeAcaoAgora =
+      visitaConfirmada || visitaDesmarcada !== null || respostaIA.transferirHumano || pediuLigacao;
     /*
      * A IA prometeu que o corretor traz a resposta ("confirmo com o corretor
      * e te trago"). Sem este aviso ninguém ficava sabendo, e a promessa
@@ -1242,12 +1424,20 @@ export async function POST(req: NextRequest) {
         telefoneCliente: sender,
         empreendimentoNome: respostaIA.empreendimentoCitado,
         temperaturaScore: dossie.temperaturaScore,
-        resumoDossie: visitaConfirmada
+        resumoDossie: visitaRemarcada
+          ? `O cliente remarcou a visita: era ${rotuloDaVisita(visitaRemarcada)}, agora é ${rotuloDaVisita(dataGravada!)}. ${dossie.resumoExecutivo}`
+          : visitaDesmarcada
+          ? `O cliente desmarcou a visita de ${rotuloDaVisita(visitaDesmarcada)}. Ele disse: "${turno.vezDoCliente.join(" / ")}". ${dossie.resumoExecutivo}`
+          : visitaConfirmada
           ? `Visita confirmada para ${new Date(respostaIA.visitaProposta!.dataHoraISO).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. ${dossie.resumoExecutivo}`
           : prometeuRetorno
           ? `O cliente perguntou: "${turno.vezDoCliente.join(" / ")}". A assistente disse que você responde. ${dossie.resumoExecutivo}`
           : dossie.resumoExecutivo,
-        motivoAlerta: visitaConfirmada
+        motivoAlerta: visitaRemarcada
+          ? "visita_remarcada"
+          : visitaDesmarcada
+          ? "visita_desmarcada"
+          : visitaConfirmada
           ? "visita_confirmada"
           : pediuLigacao
           ? "ligacao_solicitada"

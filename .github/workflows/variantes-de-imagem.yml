@@ -1,0 +1,49 @@
+# Variantes responsivas das fotos do catálogo (0177, 12/10/2026).
+#
+# `registrarMidia` gera as WebP de 480/960/1440px para toda foto NOVA. Este
+# workflow cobre o estoque anterior (1.174 linhas em 12/10, 1.103 com largura
+# ≥ 480px): baixa cada original, sobe as versões menores ao lado dele e grava
+# em `midias.variantes` só as que subiram. Linha conferida sai do recorte, então
+# rodar de novo é barato e seguro — e é por isso que ele também corre uma vez
+# por semana: foto que entrar por um caminho que ainda não gere variante (ou
+# que falhou no upload) é apanhada aqui.
+#
+# Roda aqui porque escrever no Storage exige a chave de serviço, que mora nos
+# secrets do repositório. Dispara quando o script muda na branch de produção
+# (a primeira rodada vem do próprio merge), à mão, e no domingo de madrugada.
+
+name: Variantes responsivas das imagens
+
+on:
+  push:
+    branches: ["claude/modernizar-plataforma-imobiliaria-2tm13q"]
+    paths:
+      - "scripts/catalogo/gerarVariantes.ts"
+      - "src/lib/imagens/variantes.ts"
+  schedule:
+    - cron: "17 6 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: variantes-de-imagem
+  cancel-in-progress: false
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Gerar as variantes que faltam
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: npx tsx --conditions=react-server scripts/catalogo/gerarVariantes.ts

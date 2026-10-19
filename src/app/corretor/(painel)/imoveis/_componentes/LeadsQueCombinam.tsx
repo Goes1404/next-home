@@ -84,7 +84,7 @@ export async function LeadsQueCombinam({ imovel }: { imovel: Empreendimento }) {
             <li key={l.id} className="py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <Link
                 href={`/corretor/leads/${l.id}`}
-                className="min-h-11 flex items-center font-semibold text-titulo hover:underline min-w-0 break-words"
+                className="min-h-11 flex items-center font-semibold text-titulo min-w-0 break-words link-acao"
               >
                 {nomeParaExibir(l)}
               </Link>

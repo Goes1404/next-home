@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-04
+updated: 2026-10-10
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -16,7 +16,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
-2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa.
+2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa. Desde a 0174 o `connection.update` também apaga o marco da queda ao reconectar, carimba a queda uma vez e guarda o `statusReason`; qualquer outro evento tira a marca de sessão caída em segundo plano ([[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]).
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).
@@ -60,6 +60,13 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
      de imóvel que o cliente não trouxe ([[perguntas-antes-da-indicacao]]);
      confirmação de visita só passa se o planner viu o aceite
      ([[eval-de-28-09-e-a-v41]]);
+   - com visita futura no CRM (`visitaMarcadaEm`), o planner reconhece
+     remarcar e desmarcar; desmarcar é decidido pelo planner e gravado por
+     `cancelarVisitaLead` ([[visita-remarcada-e-desmarcada-pela-conversa]]);
+   - dúvida sobre o contato ("acho que você mandou errado", "quem é?") não
+     vai à IA de recusa e vira a jogada `esclarecer_contato`, logo depois da
+     recusa: quem escreve, por quê e, no começo, a oferta de parar; o "não" a
+     essa oferta é parada ([[duvida-de-engano-nao-e-pedido-para-parar]]);
    - LLM ([[motor-unico-openai]], [[timeout-nao-e-retentado]]);
    - guardrails ([[midia-por-slug-nunca-por-url]]), `semValores`
      ([[a-ia-nao-fala-valores]]), prazo
@@ -75,10 +82,14 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 12. **Dossiê** (extração p/ `leads` + `lead_observacoes_ia`) e **aviso ao
     corretor** ([[aviso-por-evolucao-nao-por-mensagem]]; também quando a IA
     promete que o corretor traz a resposta, `duvida_pendente`),
-    **visita** ([[visita-e-gravada-com-validacao]]), **etapa do funil**
+    **visita** ([[visita-e-gravada-com-validacao]]; remarcada ou desmarcada, alerta próprio — [[visita-remarcada-e-desmarcada-pela-conversa]]), **etapa do funil**
     ([[campanha-tambem-mexe-no-funil]]).
 
 Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
+
+Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
+a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um
+"Registrar?" no Início, nunca registro automático (0163).
 
 ## Relacionadas
 - [[visao-geral-do-sistema]]

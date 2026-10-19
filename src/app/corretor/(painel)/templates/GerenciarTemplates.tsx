@@ -142,14 +142,14 @@ export function GerenciarTemplates({
               <button
                 type="button"
                 onClick={() => iniciarEdicao(template)}
-                className="text-fluid-xs text-acento-suave underline-offset-4 hover:underline"
+                className="text-fluid-xs text-acento-suave link-acao"
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => apagar(template.id)}
-                className="text-fluid-xs text-alerta underline-offset-4 hover:underline"
+                className="text-fluid-xs text-alerta link-acao"
               >
                 Apagar
               </button>

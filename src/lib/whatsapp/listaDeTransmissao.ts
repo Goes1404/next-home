@@ -14,7 +14,7 @@
  * 4. A PREVISÃO de quando a lista termina, que a tela mostra no lugar de
  *    "uma a cada minuto".
  */
-import { momentoEmSaoPaulo } from "./antiBan";
+import { INTERVALO_MAXIMO_SEGUNDOS, INTERVALO_MINIMO_SEGUNDOS, momentoEmSaoPaulo } from "./antiBan";
 import { precoAPartirDe } from "@/lib/format";
 import type { Empreendimento } from "@/lib/types";
 
@@ -87,18 +87,18 @@ export function variaveisUsadas(texto: string): string[] {
 /**
  * As variáveis do texto que vão sair VAZIAS.
  *
- * `{nome}` nunca entra: quem não tem nome útil recebe "Tudo bem?" no lugar,
- * e isso é decisão antiga da casa. Variável desconhecida também conta como
- * sem valor: mandar "{bairo}" para o cliente é o mesmo defeito.
+ * `{nome}` nunca entra: quem não tem nome útil recebe a frase sem o nome
+ * (`trocarNome`). Variável desconhecida também conta como sem valor: mandar
+ * "{bairo}" para o cliente é o mesmo defeito.
  */
 export function variaveisSemValor(
   texto: string,
   contexto: ContextoTemplate,
-  opcoes: { temAgenda: boolean },
 ): string[] {
   return variaveisUsadas(texto).filter((chave) => {
     if (chave === "nome") return false;
-    if (chave === "horarios") return !opcoes.temAgenda;
+    // Sempre há horário: sem agenda preenchida vale a padrão (GRADE_PADRAO).
+    if (chave === "horarios") return false;
     return !contexto[chave as keyof ContextoTemplate];
   });
 }
@@ -110,6 +110,30 @@ export function aplicarContexto(texto: string, contexto: ContextoTemplate): stri
     if (k === "nome" || k === "horarios") return inteiro;
     return contexto[k as keyof ContextoTemplate] ?? inteiro;
   });
+}
+
+/**
+ * Troca `{nome}` pelo primeiro nome, ou tira o marcador sem deixar buraco.
+ *
+ * Quem não tinha nome útil recebia "Tudo bem?" no lugar do nome, e o
+ * resultado dependia de onde o corretor tinha posto o marcador: "Oi {nome},
+ * tudo bem?" saía "Oi Tudo bem?, tudo bem?". Agora o marcador some com a
+ * pontuação que só existia por causa dele: "Olá, {nome}!" vira "Olá!",
+ * "Oi {nome}, tudo bem?" vira "Oi, tudo bem?", e "{nome}, saiu..." vira
+ * "Saiu...". Quebra de linha é preservada: parágrafo é decisão do corretor.
+ */
+export function trocarNome(texto: string, primeiroNome: string | null): string {
+  if (!/\{nome\}/i.test(texto)) return texto;
+  if (primeiroNome) return texto.replace(/\{nome\}/gi, primeiroNome);
+  const semMarcador = texto
+    .replace(/^\s*\{nome\}[ \t]*[,!.:;]?[ \t]*/i, "")
+    .replace(/[ \t]*,[ \t]*\{nome\}(?=[ \t]*[,.!?;:]|[ \t]*$)/gim, "")
+    .replace(/[ \t]+\{nome\}(?=[ \t]*[,.!?;:])/gi, "")
+    .replace(/[ \t]*\{nome\}/gi, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+([,.!?;:])/g, "$1")
+    .replace(/^[\s,.;:!]+/, "");
+  return semMarcador.charAt(0).toUpperCase() + semMarcador.slice(1);
 }
 
 /**
@@ -159,6 +183,32 @@ export function motivoParaNaoEnviar(
   return null;
 }
 
+/**
+ * A PESSOA é o telefone, não o cadastro (16/10/2026).
+ *
+ * A Rute tinha quatro leads na carteira da Carol: dois telefones, cada um
+ * importado duas vezes. A lista saiu para os dois telefones e ficaram dois
+ * itens pendentes, dos cadastros duplicados — ela receberia a mesma lista
+ * de novo depois de já ter conversado e marcado visita. A conferência antes
+ * do envio olhava só o lead do item, e o duplicado não tinha conversa, nem
+ * pedido de parada, nem nada que o barrasse.
+ */
+export const MOTIVO_TELEFONE_JA_RECEBEU =
+  "Este telefone já recebeu esta lista por outro cadastro (lead duplicado).";
+export const MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR =
+  "Este telefone pediu para não receber mais mensagens (em outro cadastro).";
+
+export function motivoDoMesmoTelefone(p: {
+  /** Outro item desta lista, para este telefone, já saiu. */
+  jaRecebeuEstaLista: boolean;
+  /** Algum outro cadastro deste telefone pediu para parar. */
+  outroCadastroNaoContatar: boolean;
+}): string | null {
+  if (p.outroCadastroNaoContatar) return MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR;
+  if (p.jaRecebeuEstaLista) return MOTIVO_TELEFONE_JA_RECEBEU;
+  return null;
+}
+
 // --------------------------------------------------------- falhas de envio
 
 /**
@@ -195,8 +245,8 @@ export const MOTIVO_TELEFONE_INVALIDO = "Telefone do cadastro não é um número
 
 // ----------------------------------------------------------------- previsão
 
-/** Intervalo médio entre duas mensagens, no meio dos 35-75s. */
-export const SEGUNDOS_MEDIOS_ENTRE_ENVIOS = 55;
+/** Intervalo médio entre duas mensagens, no meio do sorteio (`antiBan.ts`). */
+export const SEGUNDOS_MEDIOS_ENTRE_ENVIOS = (INTERVALO_MINIMO_SEGUNDOS + INTERVALO_MAXIMO_SEGUNDOS) / 2;
 
 /**
  * Quando a fila deve terminar, contando a janela do dia e a cota.

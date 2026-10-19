@@ -61,10 +61,14 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[gravar-mensagem-antes-do-vinculo]]
 - [[aviso-por-evolucao-nao-por-mensagem]]
 - [[visita-e-gravada-com-validacao]]
+- [[visita-remarcada-e-desmarcada-pela-conversa]] — a IA remarca e desmarca; a visita do CRM decide o fim do funil; a combinada no chat vira "Registrar?" no Início (0163, 06/10)
 - [[conversa-pessoal-do-corretor-e-gravada]] (LGPD, em aberto)
 - [[o-contexto-da-decisao-da-ia]] — por que ela disse aquilo, no balão
 - [[fato-e-permissao-moram-em-campos-diferentes]] — o retravamento parou de apagar o texto (0106)
 - [[memoria-da-conversa-e-ficha-viva]] — memória em prosa, recusa com consequência e pergunta antes do funil (0110)
+- [[quem-nao-quer-contato-e-lido-sempre]] — o pedido de parada passou a ser lido com a IA calada; vocabulário ampliado; "Liberar contato" na ficha (06/10)
+- [[recusa-em-camadas]] — regex para o óbvio, IA para o duvidoso, registro e frases de referência no CI (0162)
+- [[duvida-de-engano-nao-e-pedido-para-parar]] ⚠️ "acho que você mandou errado" virava despedida; agora a IA diz quem escreve, por quê, e oferece parar (v49, 09/10)
 - [[eval-de-28-09-e-a-v41]] — "Next Home" travava o foco no Breeze Home; guarda anti-eco enlatada; visita confirmada sem aceite; renda em 1 de 17 (v41)
 - [[a-renda-da-ficha-nao-chegava-ao-atendimento]] — a renda da ficha entrava null no turno; "o que cabe" passou a olhar o catálogo inteiro e nomear o mais perto (v45)
 - [[perguntas-antes-da-indicacao]] — v42: as quatro perguntas vêm antes de indicar imóvel; o código corta indicação prematura
@@ -81,6 +85,9 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[palavra-chave-cadastra-o-lead]] — a palavra do corretor cadastra número novo; lead de outro corretor só gera aviso para quem digitou (0146, 03/10)
 - [[a-ia-so-responde]] — a IA nunca escreve primeiro; pós-visita vira sugestão, listas sugeridas, resumo do lead, expediente único (0147-0148, 03/10)
 - [[quando-a-ia-responde]] — a decisão de responder numa função só, em duas camadas; trava de liberação removida; motivo do silêncio gravado (0149-0150, 04/10)
+- [[cliente-sem-resposta-avisa-o-corretor]] — 30 min sem resposta vira aviso no WhatsApp do corretor, uma vez por espera (0161, 06/10)
+- [[pedir-um-tempo-nao-e-aceitar-a-visita]] — "vou confirmar depois, pode ser?" gravou visita; "corretor Carlos" inventado; último domingo do mês; lista duplicada por telefone (v50, 16/10)
+- [[agenda-padrao-aberta]] — sem agenda preenchida, vale todos os dias das 9h às 20h (16/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

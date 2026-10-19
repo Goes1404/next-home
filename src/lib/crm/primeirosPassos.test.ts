@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { configuracaoCompleta, passosDoCorretor, progressoDaConfiguracao } from "./primeirosPassos";
 
-const nada = { whatsappConectado: false, faixasDeAgenda: 0, temFoto: false, temApresentacao: false, leads: 0 };
-const tudo = { whatsappConectado: true, faixasDeAgenda: 2, temFoto: true, temApresentacao: true, leads: 10 };
+const nada = { whatsappConectado: false, temFoto: false, temApresentacao: false, leads: 0 };
+const tudo = { whatsappConectado: true, temFoto: true, temApresentacao: true, leads: 10 };
 
 describe("primeiros passos", () => {
   it("o WhatsApp vem primeiro: sem ele nada mais produz efeito", () => {
@@ -15,10 +15,12 @@ describe("primeiros passos", () => {
   });
 
   it("progresso e completude", () => {
-    expect(progressoDaConfiguracao(nada)).toEqual({ feitos: 0, total: 4 });
-    expect(progressoDaConfiguracao({ ...nada, leads: 3 })).toEqual({ feitos: 1, total: 4 });
+    expect(progressoDaConfiguracao(nada)).toEqual({ feitos: 0, total: 3 });
+    expect(progressoDaConfiguracao({ ...nada, leads: 3 })).toEqual({ feitos: 1, total: 3 });
     expect(configuracaoCompleta(tudo)).toBe(true);
-    expect(configuracaoCompleta({ ...tudo, faixasDeAgenda: 0 })).toBe(false);
+    expect(configuracaoCompleta({ ...tudo, whatsappConectado: false })).toBe(false);
+    // Agenda não é passo: sem ela vale a padrão.
+    expect(passosDoCorretor(nada).some((p) => (p.id as string) === "agenda")).toBe(false);
   });
 
   it("todo passo diz por que importa e aponta para uma tela do painel", () => {

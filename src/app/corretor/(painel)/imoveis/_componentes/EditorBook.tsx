@@ -212,7 +212,7 @@ export function EditorBook({
               <button
                 type="button"
                 onClick={() => setModoManual(!modoManual)}
-                className="text-fluid-xs text-apoio hover:text-titulo underline-offset-4 hover:underline py-2"
+                className="text-fluid-xs text-apoio hover:text-titulo py-2 link-acao"
               >
                 {modoManual ? "Ocultar link manual" : "Ou colar link direto (Drive/Dropbox)"}
               </button>

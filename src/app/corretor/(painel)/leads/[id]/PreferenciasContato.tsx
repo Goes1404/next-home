@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ShieldCheck } from "lucide-react";
+import { Ban, ShieldCheck } from "lucide-react";
 import type { PreferenciaContato } from "@/lib/crm/dadosLead";
-import { definirPreferenciaContato } from "./acoes";
+import { definirPreferenciaContato, liberarContatoDoLead } from "./acoes";
 
 const CANAL: Record<string, string> = { email: "E-mail", whatsapp: "WhatsApp", telefone: "Ligação" };
 
-export function PreferenciasContato({ leadId, preferencias }: { leadId: string; preferencias: PreferenciaContato[] }) {
+export function PreferenciasContato({
+  leadId,
+  preferencias,
+  naoContatarEm = null,
+}: {
+  leadId: string;
+  preferencias: PreferenciaContato[];
+  /** Quando ele pediu para não ser contatado (0110). */
+  naoContatarEm?: string | null;
+}) {
   const [pendente, iniciar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -21,6 +30,17 @@ export function PreferenciasContato({ leadId, preferencias }: { leadId: string; 
       setAviso(resultado.ok ?? resultado.erro ?? null);
     });
   }
+  function liberar() {
+    iniciar(async () => {
+      try {
+        const resultado = await liberarContatoDoLead(leadId);
+        setAviso(resultado.ok ?? resultado.erro ?? null);
+      } catch {
+        setAviso("Não foi possível liberar agora. Recarregue a página e tente de novo.");
+      }
+    });
+  }
+
   return (
     <section className="rounded-2xl border border-linha bg-elevado p-4 sm:p-5" aria-labelledby="preferencias-titulo">
       <div className="flex items-start gap-3">
@@ -32,6 +52,26 @@ export function PreferenciasContato({ leadId, preferencias }: { leadId: string; 
           <p className="text-fluid-xs mt-1 text-tenue">Finalidade: responder à solicitação deste lead.</p>
         </div>
       </div>
+      {naoContatarEm && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-perigo/40 bg-perigo-lavado px-3 py-3">
+          <p className="flex min-w-0 items-start gap-2 text-fluid-sm text-titulo">
+            <Ban className="mt-0.5 h-4 w-4 shrink-0 text-perigo" aria-hidden="true" />
+            <span>
+              Pediu para não receber mensagens em{" "}
+              {new Date(naoContatarEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}. Está fora
+              das listas e a IA não responde. Se foi engano, libere.
+            </span>
+          </p>
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={liberar}
+            className="min-h-11 rounded-lg border border-linha-forte px-3 text-xs font-medium text-titulo transition-colors hover:bg-vidro disabled:opacity-60"
+          >
+            Liberar contato
+          </button>
+        </div>
+      )}
       {preferencias.length === 0 ? (
         <p className="text-fluid-sm mt-4 rounded-xl border border-dashed border-linha px-4 py-4 text-tenue">
           Sem registro detalhado — lead anterior à fundação de consentimentos.

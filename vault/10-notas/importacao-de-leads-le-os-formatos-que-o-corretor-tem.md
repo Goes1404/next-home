@@ -6,13 +6,14 @@ type: nota
 status: growing
 custou: medio
 codigo:
+  - src/lib/leads/googlePlanilhas.ts
   - src/lib/leads/importacao.ts
   - src/lib/leads/xlsxLeitura.ts
   - src/lib/leads/vcard.ts
   - src/app/corretor/(painel)/importar/actions.ts
   - src/app/corretor/(painel)/importar/ImportarClient.tsx
 created: 2026-09-24
-updated: 2026-10-03
+updated: 2026-10-09
 fonte: pedido do usuário em 24/09/2026 ("adicionar leads de mais tipos de arquivo")
 summary: Além de PDF, CSV e o .zip do WhatsApp, a importação passou a ler o .txt solto da conversa (Android), .vcf, .xlsx sem dependência nova, foto/print por IA, e o CSV do Google Contatos — que antes saía vazio, calado.
 ---
@@ -67,5 +68,39 @@ Formatos aceitos desde 24/09/2026: conversa do WhatsApp (`.zip` **e**
   tem onze dígitos, igual a um celular daqui, e viraria "(14) 15555-2671".
 
 ## Relacionadas
+- [[telefone-com-55-que-a-planilha-corta]] — o número com 55 que a planilha mostra como "5,51198E+12"
 - [[importar-conversa-do-whatsapp]]
 - [[falha-calada-e-a-pior]]
+
+## Google Planilhas (06/10/2026)
+
+- **Colar o link da planilha** na caixa de texto importa a aba do link
+  (`googlePlanilhas.ts`: exportação CSV com o `gid`, baixada por
+  `buscarSeguro`). Antes o link virava "lista solta" sem telefone. Planilha
+  privada redireciona para o login do Google e a tela pede para compartilhar
+  como "qualquer pessoa com o link".
+- **Cabeçalho procurado nas 10 primeiras linhas**: planilha feita à mão abre
+  com título e linha em branco. O separador sai da primeira linha que tem
+  separador, senão o título fazia um CSV com vírgula ser lido por tabulação.
+- **Título exato ganha do que só contém a palavra**: na planilha de leads da
+  Meta, "ad_name" vinha antes de "full_name" e virava o nome do cliente.
+  `_` conta como espaço ("phone_number").
+
+## Foto ou print ganhou aba própria e passou a ser lida pela OpenAI (07/10/2026)
+
+- A leitura de foto existia desde 24/09, mas **só pelo Gemini** (cota
+  gratuita de 20 chamadas por dia, por modelo) e escondida como último item
+  da aba "Enviar arquivo". Agora vai primeiro ao motor do atendimento
+  (`chamarLlmJson`, OpenAI) com `detalheImagem: "high"`: em `low` a foto é
+  reduzida a 512px e telefone escrito à mão vira palpite. O Gemini ficou de
+  reserva, e é o único que tenta HEIC (o `sharp` não abre).
+- A foto é normalizada pelo `sharp` antes (gira pelo EXIF, 2048px, JPEG) e
+  vai como data URL.
+- Aba **Foto ou print** com "Escolher foto ou print" e "Tirar foto agora"
+  (`capture="environment"`); a leitura começa ao escolher.
+- `detalheImagem` atravessa `llm.ts` → `openai.ts`; o padrão continua `low`
+  (o tradutor de imagem não muda).
+- **Várias fotos de uma vez** (07/10, mesmo dia): até 10, lidas uma chamada
+  por foto (juntas passariam dos 12 MB da Server Action), com o mesmo
+  telefone em dois prints entrando uma vez só. Foto sem telefone legível vira
+  aviso com o nome do arquivo.

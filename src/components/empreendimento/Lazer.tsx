@@ -8,6 +8,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 const semInscricao = () => () => {};
 
 /** `false` no servidor; `true` depois de hidratar. O portal precisa de `document`. */
@@ -85,8 +86,10 @@ export function Lazer({
   };
 
   return (
-    // A lista é alvo de toque e a prévia é `fixed` num portal — nada aqui
-    // pode ganhar transform. Quem dá profundidade é o fundo.
+    // A prévia é `fixed` num PORTAL, então o `translate`/`scale` da passagem
+    // dos itens (`cartao-passa`, 13/10/2026) não a prende a eles. A passagem
+    // só move o item enquanto ele entra ou sai da tela; parado no meio da
+    // tela, o alvo de toque fica onde está.
     <section
       id="lazer"
       className="relative overflow-hidden scroll-mt-24 bg-superficie/40 px-4 py-16 sm:px-8 sm:py-24"
@@ -101,19 +104,20 @@ export function Lazer({
           </p>
         </Reveal>
 
-        <Reveal
-          stagger={0.04}
-          from="nenhuma"
-          className="mt-10 grid grid-cols-2 gap-x-6 sm:gap-x-12 lg:grid-cols-3"
-        >
-          {itens.map((item) => {
+        {/* A passagem dos cards da home (`cartao-passa`, 13/10/2026), item a
+            item, no lugar do Reveal em cascata: os dois juntos seriam dois
+            donos da opacidade. `--coluna` só vale no computador (3 colunas). */}
+        <div className="mt-10 grid grid-cols-2 gap-x-6 sm:gap-x-12 lg:grid-cols-3">
+          {itens.map((item, i) => {
+            const passa = { "--coluna": i % 3 } as React.CSSProperties;
             const foto = comFoto.get(item);
 
             if (!foto) {
               return (
                 <span
                   key={item}
-                  className="text-fluid-base flex min-w-0 items-center gap-3 border-b border-linha/10 py-3.5 break-words text-corpo"
+                  style={passa}
+                  className="cartao-passa text-fluid-base flex min-w-0 items-center gap-3 border-b border-linha/10 py-3.5 break-words text-corpo"
                 >
                   <span className="h-1 w-1 shrink-0 rounded-full bg-linha/40" />
                   {item}
@@ -127,8 +131,9 @@ export function Lazer({
               <button
                 key={item}
                 type="button"
+                style={passa}
                 // min-h-11 = 44px, o alvo de toque mínimo confortável.
-                className="text-fluid-base flex min-h-11 w-full min-w-0 items-center gap-3 break-words border-b border-linha/10 py-3.5 text-left text-corpo transition-colors hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+                className="cartao-passa text-fluid-base flex min-h-11 w-full min-w-0 items-center gap-3 break-words border-b border-linha/10 py-3.5 text-left text-corpo transition-colors hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
                 aria-expanded={ativo}
                 onClick={() => setAberto(ativo ? null : { item, foto })}
                 onMouseEnter={() => abrirComCarencia(item, foto)}
@@ -146,7 +151,7 @@ export function Lazer({
               </button>
             );
           })}
-        </Reveal>
+        </div>
       </div>
 
       {montado &&
@@ -163,7 +168,7 @@ export function Lazer({
               <div className="relative aspect-[4/3] w-full">
                 <Image
                   key={aberto.foto.url}
-                  src={aberto.foto.url}
+                  src={srcDaMidia(aberto.foto)}
                   alt={aberto.foto.alt}
                   fill
                   sizes="(min-width: 640px) 384px, 100vw"

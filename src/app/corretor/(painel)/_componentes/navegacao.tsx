@@ -184,6 +184,11 @@ export const GRUPOS_NAV: GrupoNav[] = [
         subitens: [
           { href: "/corretor/financeiro", label: "Vendas", icone: IconeCifrao },
           { href: "/corretor/financeiro/extrato", label: "Extrato e meta", icone: IconeExtrato },
+          { href: "/corretor/financeiro/caixa", label: "Caixa", icone: IconeExtrato, gestor: true },
+          { href: "/corretor/financeiro/resultado", label: "Resultado do mês", icone: IconeGrafico, gestor: true },
+          { href: "/corretor/financeiro/fiscal", label: "Fiscal", icone: IconeExtrato, gestor: true },
+          { href: "/corretor/financeiro/contador", label: "Contador", icone: IconeExtrato, gestor: true },
+          { href: "/corretor/financeiro/assistente", label: "Alertas e IA", icone: IconeRobo, gestor: true },
           { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu },
           { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true },
         ],
@@ -479,6 +484,27 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
  */
 export function moduloDoTopico(href: string): Modulo | null {
   return MODULO_POR_DESTINO[href] ?? null;
+}
+
+/**
+ * A cor de cada SEÇÃO de subtópicos (14/10/2026, pedido do usuário: "deixe
+ * separadinho por cores e por categoria"). Doze linhas da mesma cor numa
+ * lista só não se separam pelo olho; com cor por seção, o título e os ícones
+ * de Equipe, Negócio e Sistema se distinguem antes da leitura.
+ *
+ * Reaproveita cores de módulo que já querem dizer a mesma coisa no painel:
+ * Equipe é gente (a cor de Pessoas), Negócio é imóvel e construtora (a cor
+ * de Imóveis), Sistema é a marca da casa (a cor de Marketing). Cor nova não
+ * cabe: o círculo cromático do painel está cheio.
+ */
+const MODULO_POR_SECAO: Record<string, Modulo> = {
+  Equipe: "leads",
+  "Negócio": "imoveis",
+  Sistema: "marketing",
+};
+
+export function moduloDaSecao(secao: string | undefined): Modulo | null {
+  return secao ? (MODULO_POR_SECAO[secao] ?? null) : null;
 }
 
 /*

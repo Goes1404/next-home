@@ -70,7 +70,7 @@ export default async function EditarImovelPage({ params }: Props) {
           <div className="flex items-center gap-2 mb-1">
             <Link
               href="/corretor/imoveis"
-              className="text-fluid-xs text-apoio hover:text-titulo transition-colors"
+              className="text-fluid-xs text-apoio hover:text-titulo transition-colors px-3 min-h-11 botao-secundario"
             >
               ← Todos os Imóveis
             </Link>

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   bloqueadoAtePor,
@@ -331,5 +332,56 @@ describe("Fila com a exceção de janela", () => {
         new Date(fila[i].agendadoPara).getTime() - new Date(fila[i - 1].agendadoPara).getTime();
       expect(delta).toBeGreaterThanOrEqual(INTERVALO_MINIMO_SEGUNDOS * 1000);
     }
+  });
+});
+
+describe("horário dos avisos", () => {
+  // O servidor roda em UTC: o bloqueio das 21h de Brasília aparecia como
+  // "até 09/10, 00:00" no aviso do disjuntor (08/10/2026).
+  it("mostra no relógio de Brasília, não do servidor", () => {
+    const veredito = podeEnviar({
+      tipo: "campanha",
+      conectadoEm: new Date("2026-09-01T12:00:00Z"),
+      enviosCampanhaHoje: 0,
+      bloqueadoAte: new Date("2026-10-09T00:00:18Z"),
+      agora: new Date("2026-10-08T15:00:00Z"),
+    });
+    expect(veredito.permitido).toBe(false);
+    if (!veredito.permitido) expect(veredito.detalhe).toContain("08/10/2026, 21:00");
+  });
+
+  it("nenhum aviso de horário do disparo sai sem o fuso", () => {
+    for (const arquivo of ["src/lib/whatsapp/antiBan.ts", "src/lib/whatsapp/campaignDispatcher.ts"]) {
+      expect(readFileSync(arquivo, "utf8")).not.toMatch(/toLocaleString\("pt-BR"\)/);
+    }
+  });
+});
+
+describe("intervalo entre mensagens (09/10/2026)", () => {
+  it("é de 1min30 a 2min, a pedido: \"não tem problema demorar mais\"", async () => {
+    const { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS } = await import("./antiBan");
+    expect(INTERVALO_MINIMO_SEGUNDOS).toBe(90);
+    expect(INTERVALO_MAXIMO_SEGUNDOS).toBe(120);
+  });
+
+  it("o texto das telas diz o mesmo que os números", async () => {
+    const { INTERVALO_MINIMO_SEGUNDOS, INTERVALO_MAXIMO_SEGUNDOS, INTERVALO_EM_PALAVRAS } = await import("./antiBan");
+    const emPalavras = (s: number) =>
+      s % 60 === 0 ? `${s / 60} minuto${s === 60 ? "" : "s"}` : `${Math.floor(s / 60)}min${String(s % 60).padStart(2, "0")}`;
+    expect(INTERVALO_EM_PALAVRAS).toBe(`${emPalavras(INTERVALO_MINIMO_SEGUNDOS)} a ${emPalavras(INTERVALO_MAXIMO_SEGUNDOS)}`);
+  });
+
+  it("nenhuma tela das listas promete o intervalo antigo", async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const pasta = "src/app/corretor/(painel)/campanhas/_componentes";
+    const comTextoVelho = readdirSync(pasta)
+      .filter((a) => a.endsWith(".tsx"))
+      .filter((a) => /35 ?(a|–|-) ?75 ?(segundos|s\b)/.test(readFileSync(`${pasta}/${a}`, "utf8")));
+    expect(comTextoVelho).toEqual([]);
+  });
+
+  it("a previsão de término usa a média do sorteio", async () => {
+    const { SEGUNDOS_MEDIOS_ENTRE_ENVIOS } = await import("./listaDeTransmissao");
+    expect(SEGUNDOS_MEDIOS_ENTRE_ENVIOS).toBe(105);
   });
 });

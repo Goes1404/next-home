@@ -40,11 +40,15 @@ import { estaNaTela } from "./estaNaTela";
 export function CartaoTilt({
   children,
   className,
+  style,
   indice = 0,
   velocidadeCamada = 0,
+  semCortina = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Repassado à moldura (ex.: `--proporcao` da galeria no celular). */
+  style?: React.CSSProperties;
   /** Posição na grade — escalona a entrada sem depender de um pai. */
   indice?: number;
   /**
@@ -56,6 +60,12 @@ export function CartaoTilt({
    * mesma matriz de transform.
    */
   velocidadeCamada?: number;
+  /**
+   * Pula a cortina de entrada e fica só com o tilt e a camada. Para quem já
+   * tem outra entrada no mesmo nó (a galeria usa `.cartao-passa`, 13/10/2026):
+   * as duas juntas seriam duas entradas na mesma foto.
+   */
+  semCortina?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   // Dois refs, um por ramo: registrar o wrapper do zoom como camada (mesmo a
@@ -87,7 +97,7 @@ export function CartaoTilt({
     // só a cortina é pulada, o tilt liga do mesmo jeito (regra de
     // 13/09/2026, ver estaNaTela.ts — esconder o que está sob o olho de quem
     // lê era o que fazia o LCP esperar o GSAP).
-    const contexto = estaNaTela(el)
+    const contexto = semCortina || estaNaTela(el)
       ? null
       : gsap.context(() => {
       // A cortina do clip-path é quem esconde daqui em diante.
@@ -158,7 +168,7 @@ export function CartaoTilt({
       contexto?.revert();
       limpar?.();
     };
-  }, [indice, velocidadeCamada]);
+  }, [indice, velocidadeCamada, semCortina]);
 
   return (
     <div
@@ -168,6 +178,7 @@ export function CartaoTilt({
       // `overflow-clip` é o corte de LAYOUT que a cortina de clip-path não
       // dá: sem ele, o filho a 1.18 alargava a página (ver cabeçalho).
       className={`group/tilt relative overflow-clip [transform-style:preserve-3d] [perspective:1000px] ${className ?? ""}`}
+      style={style}
     >
       {/* O conteúdo SEMPRE ganha um nó próprio. Com camada, o nó absoluto com a
           folga do `scale-110`; sem ela, o wrapper em fluxo que a entrada

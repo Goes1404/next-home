@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Phone } from "lucide-react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { linkWhatsappLead } from "./CartaoLead";
+import { BotaoMensagemPelaIA } from "./MensagemPelaIA";
 import { cn } from "@/lib/utils";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
 
@@ -80,6 +81,14 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
             >
               Chamar no WhatsApp
             </a>
+          )}
+          {lead.telefone && (
+            <BotaoMensagemPelaIA
+              leadId={lead.id}
+              nome={lead.nome}
+              tamanho="compacto"
+              className="text-fluid-sm col-span-2 min-h-12"
+            />
           )}
           {lead.telefone && (
             <a

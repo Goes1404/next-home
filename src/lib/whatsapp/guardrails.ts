@@ -85,6 +85,8 @@ export function sanearRespostaIA(
    * apresentação: aí ela sai como LINK da página, nunca como foto.
    */
   falaDoCliente?: string | null,
+  /** O dado que ele pediu nesta fala: a frase que o traz não é cortada como eco. */
+  dadoPedido?: string | null,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -215,7 +217,7 @@ export function sanearRespostaIA(
    * (mesmaPessoa 2,00 → 1,88) e levou junto a parte que respondia. O
    * enlatado só sai quando não sobra frase inédita nenhuma.
    */
-  const soONovo = repetiu ? aproveitarSoONovo(identidade.texto, historico) : identidade.texto;
+  const soONovo = repetiu ? aproveitarSoONovo(identidade.texto, historico, dadoPedido) : identidade.texto;
   const semRepeticao = repetiu
     ? soONovo.length >= 40
       ? soONovo

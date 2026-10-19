@@ -425,7 +425,7 @@ export function AnotacoesClient({
               {a.lead && (
                 <Link
                   href={`/corretor/leads/${a.lead.id}`}
-                  className="group flex min-h-11 w-fit items-center gap-2"
+                  className="group flex min-h-11 w-fit items-center gap-2 link-acao"
                 >
                   {/* A mesma régua de cor da lista e do quadro: a etapa se lê
                       antes do texto, em toda tela de lead. */}

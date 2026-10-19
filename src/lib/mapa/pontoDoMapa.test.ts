@@ -50,7 +50,7 @@ describe("o globo e o mapa recebem pontos, não o catálogo", () => {
     expect(Object.keys(p).sort()).toEqual(
       ["bairro", "capa", "cidade", "endereco", "lat", "lng", "nome", "precoAPartir", "slug", "status", "tipo"].sort(),
     );
-    expect(p.capa).toEqual({ url: "u", alt: "a", blurDataUrl: "data:" });
+    expect(p.capa).toEqual({ url: "u", alt: "a", blurDataUrl: "data:", variantes: null });
     // Sem corretor dono (28/09): o cartão do mapa fala pelo porteiro.
     expect("corretor" in p).toBe(false);
     expect("galeria" in p).toBe(false);

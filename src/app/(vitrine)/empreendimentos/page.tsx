@@ -14,7 +14,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { ehEstagio } from "@/lib/estagioDeCompra";
 import { site } from "@/lib/site";
-import { getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
+import { getEmpreendimentosDoLink, getRegioesDisponiveis } from "@/lib/queries";
 import { Map } from "lucide-react";
 import {
   ORDENACAO_LABEL,
@@ -87,7 +87,7 @@ export default async function EmpreendimentosPage({
   const ordenacao = parseOrdenacao(sp);
 
   const [empreendimentos, regioes] = await Promise.all([
-    getEmpreendimentos(filtros, ordenacao),
+    getEmpreendimentosDoLink(filtros, ordenacao),
     getRegioesDisponiveis(),
   ]);
 
@@ -170,14 +170,18 @@ export default async function EmpreendimentosPage({
               // O primeiro resultado sem filtro é a vitrine da vitrine:
               // ocupa duas colunas com capa panorâmica.
               const destaqueGrande = i === 0 && !temFiltroAtivo && empreendimentos.length > 3;
+              // A mesma passagem dos cards da home (`cartao-passa`, 13/10/2026):
+              // cada card sobe e acende ao entrar e encolhe ao sair, pela
+              // própria posição na tela. Substitui o Reveal: os dois juntos
+              // seriam dois donos da opacidade. `--coluna` é a coluna REAL no
+              // computador, contando as duas que o destaque grande ocupa.
+              const temGrande = !temFiltroAtivo && empreendimentos.length > 3;
+              const coluna = (i + (temGrande && i > 0 ? 1 : 0)) % 3;
               return (
-                <Reveal
+                <div
                   key={e.slug}
-                  // Stagger por coluna, não por índice: card do fim da lista
-                  // entra na viewport sozinho e não pode esperar 1,5s.
-                  delay={(i % 3) * 0.08}
-                  from="baixo"
-                  className={destaqueGrande ? "sm:col-span-2" : undefined}
+                  className={`cartao-passa h-full${destaqueGrande ? " sm:col-span-2" : ""}`}
+                  style={{ "--coluna": coluna } as React.CSSProperties}
                 >
                   <CardEmpreendimento
                     empreendimento={e}
@@ -191,7 +195,7 @@ export default async function EmpreendimentosPage({
                         : undefined
                     }
                   />
-                </Reveal>
+                </div>
               );
             })}
           </div>

@@ -8,6 +8,7 @@ import { Flip } from "gsap/Flip";
 import { Observer } from "gsap/Observer";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
 /*
  * ILHA ESCURA — este arquivo não usa os tokens de tema, e é a única exceção
  * de arquivo inteiro.
@@ -258,7 +259,7 @@ export function Lightbox({
         onClick={(ev) => ev.stopPropagation()}
       >
         <Image
-          src={atual.url}
+          src={srcDaMidia(atual)}
           alt={atual.alt}
           fill
           sizes="(min-width: 896px) 896px, 100vw"

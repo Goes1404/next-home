@@ -1,4 +1,9 @@
-import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
+import {
+  assinanteValido,
+  lerNumeroDePlanilha,
+  normalizarTelefoneBrasileiro,
+  numeroSemDddComDdi,
+} from "@/lib/inbound/phoneUtils";
 import { extrairVariosLeadsViaRegex } from "@/lib/inbound/regexFallback";
 import { extrairTextoDePdf } from "./pdfTexto";
 import {
@@ -11,6 +16,7 @@ import { ehArquivoVcard, parsearVcards } from "./vcard";
 import { lerPlanilhaXlsx } from "./xlsxLeitura";
 import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
 import { lerListaComIa } from "./leituraPorIa";
+import { chamarLlmJson } from "@/lib/whatsapp/llm";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -34,6 +40,18 @@ export type CandidatoLead = {
   email: string | null;
   mensagem: string | null;
   imovelInteresse: string | null;
+  /**
+   * O que a planilha mostrava no lugar do telefone quando ela o cortou
+   * ("5,51198E+12"). A linha vem com o telefone em branco e desmarcada: os
+   * dígitos que faltam não estão no arquivo, e completar seria inventar.
+   */
+  telefoneCortado?: string;
+  /**
+   * O telefone veio com o 55 do país e sem o DDD ("+55 98191-8127"). Em
+   * `telefone` fica só o número; a linha vem desmarcada, para o corretor pôr
+   * o DDD. Marcada sem corrigir, entra como DDD 11.
+   */
+  semDdd?: true;
 };
 
 export type ResultadoExtracao = {
@@ -53,8 +71,8 @@ export const LIMITE_POR_IMPORTACAO = 300;
  */
 const CABECALHOS = {
   sobrenome: ["sobrenome", "last name", "family name", "ultimo nome"],
-  nome: ["nome", "name", "cliente", "contato", "lead", "nome completo", "nome do cliente"],
-  telefone: ["telefone", "tel", "celular", "fone", "whatsapp", "whats", "phone", "contato telefone"],
+  nome: ["nome", "name", "cliente", "contato", "lead", "nome completo", "nome do cliente", "full name"],
+  telefone: ["telefone", "tel", "celular", "fone", "whatsapp", "whats", "phone", "contato telefone", "phone number", "numero"],
   email: ["email", "e-mail", "mail", "correio"],
   mensagem: ["mensagem", "obs", "observacao", "observação", "observacoes", "comentario", "comentário", "descricao", "descrição"],
   imovel: ["imovel", "imóvel", "empreendimento", "interesse", "produto", "anuncio", "anúncio", "referencia", "referência"],
@@ -67,6 +85,7 @@ function semAcento(texto: string): string {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
+    .replace(/_+/g, " ")
     .trim();
 }
 
@@ -76,6 +95,16 @@ function detectarSeparador(linha: string): string {
   if (linha.includes("|")) return "|";
   if (linha.includes(",")) return ",";
   return "\t";
+}
+
+/**
+ * O separador sai da primeira linha que TEM separador: um título solto no
+ * topo ("Leads de outubro") não tem nenhum, e decidir por ele faria um CSV
+ * com vírgulas ser lido por tabulação.
+ */
+function separadorDoTexto(linhas: string[]): string {
+  const comSeparador = linhas.slice(0, LINHAS_ATE_O_CABECALHO + 1).find((l) => /[\t;|,]/.test(l));
+  return detectarSeparador(comSeparador ?? linhas[0] ?? "");
 }
 
 function celulas(linha: string, sep: string): string[] {
@@ -134,35 +163,131 @@ function primeiroValor(celula: string | undefined): string {
   return (celula ?? "").split(":::")[0].trim();
 }
 
-/** Um telefone brasileiro tem 8 a 13 dígitos; menos que isso é código, mais é ruído. */
+/**
+ * Um telefone brasileiro tem 8 a 13 dígitos; menos que isso é código, mais é
+ * ruído. O número que a planilha cortou ("5,51198E+12") também é telefone:
+ * estragado, mas é a coluna do telefone, e a linha tem de aparecer marcada em
+ * vez de sumir.
+ */
 function pareceTelefone(valor: string): boolean {
-  const digitos = valor.replace(/\D/g, "");
+  const daPlanilha = lerNumeroDePlanilha(valor);
+  if (daPlanilha?.tipo === "cortado") return true;
+  const texto = daPlanilha ? daPlanilha.digitos : valor;
+  const digitos = texto.replace(/\D/g, "");
   if (digitos.length < 8 || digitos.length > 13) return false;
   // Descarta o que é claramente outra coisa: só dígitos com separador de
   // milhar, data, valor em reais.
-  if (/^\d{1,3}([.,]\d{3})+([.,]\d{2})?$/.test(valor.trim())) return false;
-  if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(valor)) return false;
+  if (/^\d{1,3}([.,]\d{3})+([.,]\d{2})?$/.test(texto.trim())) return false;
+  if (/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(texto)) return false;
   return true;
+}
+
+/**
+ * Quantos telefones vieram sem os últimos dígitos, e o que fazer. Dois casos
+ * com conserto diferente: a notação científica ("5,51198E+12"), em que o
+ * número inteiro está no arquivo da planilha, e o número que já chegou
+ * incompleto ("55119819181"), em que não está em lugar nenhum.
+ */
+export function avisoDeNumerosCortados(candidatos: CandidatoLead[]): string | undefined {
+  const cortados = candidatos.filter((c) => c.telefoneCortado);
+  if (cortados.length === 0) return undefined;
+  const naNotacao = cortados.filter((c) => /e/i.test(c.telefoneCortado ?? ""));
+  const incompletos = cortados.filter((c) => !/e/i.test(c.telefoneCortado ?? ""));
+  const avisos: string[] = [];
+
+  if (naNotacao.length > 0) {
+    const um = naNotacao.length === 1;
+    avisos.push(
+      `${um ? "1 telefone veio cortado" : `${naNotacao.length} telefones vieram cortados`} pela planilha, ` +
+        `como “${naNotacao[0].telefoneCortado}”: a planilha mostra o número com 55 na frente nesse formato e apaga os últimos dígitos. ` +
+        `${um ? "Esse contato veio desmarcado" : "Esses contatos vieram desmarcados"} e com o telefone em branco. ` +
+        "Para trazer o número inteiro, envie o arquivo .xlsx da planilha ou, na planilha, formate a coluna do telefone como Número sem casas decimais e copie de novo.",
+    );
+  }
+  if (incompletos.length > 0) {
+    const um = incompletos.length === 1;
+    avisos.push(
+      `${um ? "1 telefone veio incompleto" : `${incompletos.length} telefones vieram incompletos`} (como “${incompletos[0].telefoneCortado}”): faltam dígitos, e completar seria adivinhar. ` +
+        `${um ? "Ele veio desmarcado" : "Eles vieram desmarcados"} e com o telefone em branco; digite o número certo na linha, se você o tiver.`,
+    );
+  }
+  return avisos.join(" ");
+}
+
+/** Quantos telefones vieram sem DDD, e o que fazer com eles. */
+export function avisoDeNumerosSemDdd(candidatos: CandidatoLead[]): string | undefined {
+  const semDdd = candidatos.filter((c) => c.semDdd).length;
+  if (semDdd === 0) return undefined;
+  const um = semDdd === 1;
+  return (
+    `${um ? "1 telefone veio" : `${semDdd} telefones vieram`} com o 55 do país mas sem o DDD (como 55 98191-8127). ` +
+    `${um ? "Ele veio desmarcado" : "Eles vieram desmarcados"}: digite o DDD antes de importar. Marcado sem DDD, entra como DDD 11.`
+  );
+}
+
+/**
+ * Numa tabela em que os telefones vêm com o 55 do país na frente, o número de
+ * 10 ou 11 dígitos que começa com 55 não é do DDD 55: é o 55 do país com o
+ * número sem DDD ("55 98191-8127", como a Meta grava quem digitou sem DDD), ou
+ * um número cortado. Lido sozinho, ele virava "(55) 98191-8127".
+ */
+function aplicarConvencaoDoDdi(candidatos: CandidatoLead[]): CandidatoLead[] {
+  const digitosDe = (c: CandidatoLead) => c.telefone.replace(/\D/g, "");
+  const comTelefone = candidatos.filter((c) => c.telefone);
+  const com55 = comTelefone.filter((c) => c.semDdd || digitosDe(c).startsWith("55"));
+  if (comTelefone.length < 3 || com55.length < comTelefone.length * 0.6) return candidatos;
+
+  return candidatos.map((c) => {
+    if (c.semDdd || !c.telefone) return c;
+    const digitos = digitosDe(c);
+    if (!digitos.startsWith("55") || (digitos.length !== 10 && digitos.length !== 11)) return c;
+    const resto = digitos.slice(2);
+    if (assinanteValido(resto)) return { ...c, telefone: resto, telefoneE164: null, semDdd: true as const };
+    // Nem número sem DDD, nem telefone de DDD 55: faltam dígitos.
+    return { ...c, telefone: "", telefoneE164: null, telefoneCortado: c.telefone };
+  });
+}
+
+/**
+ * O texto tem algum telefone que a planilha cortou? Antes da leitura por IA:
+ * o modelo tende a "limpar" o "5,51198E+12" para "55119812", que tem cara de
+ * telefone e é de outra pessoa. Com número cortado na lista, quem lê é o
+ * leitor de tabela, que marca a linha.
+ */
+export function temNumeroCortado(texto: string): boolean {
+  for (const m of texto.matchAll(/[+]?\d+(?:[.,]\d+)?[eE][+]?\d{1,2}/g)) {
+    if (lerNumeroDePlanilha(m[0])?.tipo === "cortado") return true;
+  }
+  return false;
 }
 
 /** Casa o cabeçalho de cada coluna com o campo que ela alimenta. */
 function mapearCabecalho(colunas: string[]): Partial<Record<Campo, number>> | null {
   const mapa: Partial<Record<Campo, number>> = {};
 
-  colunas.forEach((coluna, indice) => {
-    const chave = semAcento(coluna);
-    if (!chave) return;
-    // "Phone 1 - Label" (Google Contatos) diz o TIPO do número, não o número:
-    // mapeá-la como telefone faria a planilha inteira sair sem nenhum lead.
-    if (RE_COLUNA_DE_ROTULO.test(chave)) return;
-    for (const campo of Object.keys(CABECALHOS) as Campo[]) {
-      if (mapa[campo] !== undefined) continue;
-      if (CABECALHOS[campo].some((c) => chave === c || chave.includes(c))) {
-        mapa[campo] = indice;
-        return;
+  // Duas passadas: o título EXATO ganha do que só contém a palavra. Sem
+  // isso, na planilha de leads da Meta (exportada para o Google Planilhas)
+  // "ad_name" vem antes de "full_name" e o nome do anúncio virava o nome do
+  // cliente; e "Data do lead" disputava com "Nome".
+  const usadas = new Set<number>();
+  for (const exato of [true, false]) {
+    colunas.forEach((coluna, indice) => {
+      if (usadas.has(indice)) return;
+      const chave = semAcento(coluna);
+      if (!chave) return;
+      // "Phone 1 - Label" (Google Contatos) diz o TIPO do número, não o número:
+      // mapeá-la como telefone faria a planilha inteira sair sem nenhum lead.
+      if (RE_COLUNA_DE_ROTULO.test(chave)) return;
+      for (const campo of Object.keys(CABECALHOS) as Campo[]) {
+        if (mapa[campo] !== undefined) continue;
+        if (CABECALHOS[campo].some((c) => chave === c || (!exato && chave.includes(c)))) {
+          mapa[campo] = indice;
+          usadas.add(indice);
+          return;
+        }
       }
-    }
-  });
+    });
+  }
 
   // Com mais de um telefone na planilha (Outlook traz comercial, residencial
   // e celular), o celular vence: é ele que tem WhatsApp.
@@ -208,8 +333,17 @@ function montar(bruto: {
   mensagem: string | null;
   imovelInteresse: string | null;
 }): CandidatoLead | null {
-  const telefone = bruto.telefone?.trim();
-  if (!telefone || !pareceTelefone(telefone)) return null;
+  const celula = bruto.telefone?.trim();
+  if (!celula || !pareceTelefone(celula)) return null;
+
+  // Número guardado como número na planilha: o inteiro segue com os próprios
+  // dígitos, e o cortado entra em branco, marcado (ver `telefoneCortado`).
+  const daPlanilha = lerNumeroDePlanilha(celula);
+  const cortado = daPlanilha?.tipo === "cortado";
+  const lido = daPlanilha?.tipo === "inteiro" ? daPlanilha.digitos : cortado ? "" : celula;
+  // "+55 98191-8127": o 55 é o país e falta o DDD (ver `semDdd`).
+  const semDdd = cortado ? null : numeroSemDddComDdi(lido);
+  const telefone = semDdd ?? lido;
 
   const email = bruto.email?.trim();
   const nome = bruto.nome?.trim();
@@ -219,10 +353,12 @@ function montar(bruto: {
     // genérico deixa claro na lista que o nome precisa ser preenchido.
     nome: nome && nome.length >= 2 ? nome.slice(0, 120) : "Contato sem nome",
     telefone: telefone.slice(0, 40),
-    telefoneE164: normalizarTelefoneBrasileiro(telefone),
+    telefoneE164: cortado || semDdd ? null : normalizarTelefoneBrasileiro(telefone),
     email: email && RE_EMAIL.test(email) ? email.slice(0, 160) : null,
     mensagem: bruto.mensagem?.trim().slice(0, 2000) || null,
     imovelInteresse: bruto.imovelInteresse?.trim().slice(0, 160) || null,
+    ...(cortado ? { telefoneCortado: celula.slice(0, 40) } : {}),
+    ...(semDdd ? { semDdd: true as const } : {}),
   };
 }
 
@@ -233,10 +369,34 @@ function montar(bruto: {
  * (`leituraPorIa.ts`).
  */
 export function temCabecalhoDeContatos(conteudo: string): boolean {
-  const primeira = conteudo.trim().split(/\r?\n/)[0] ?? "";
-  if (!primeira) return false;
-  const registros = registrosDelimitados(conteudo.trim(), detectarSeparador(primeira));
-  return registros.length > 0 && mapearCabecalho(registros[0]) !== null;
+  const linhas = conteudo.trim().split(/\r?\n/).filter((l) => l.trim());
+  if (linhas.length === 0) return false;
+  const registros = registrosDelimitados(conteudo.trim(), separadorDoTexto(linhas));
+  return acharCabecalho(registros) !== null;
+}
+
+/**
+ * O cabeçalho costuma estar na 1ª linha, mas planilha montada à mão no
+ * Google Planilhas ou no Excel muitas vezes abre com um título ("Leads de
+ * outubro") e uma linha em branco. Procura nas primeiras linhas.
+ */
+const LINHAS_ATE_O_CABECALHO = 10;
+
+function acharCabecalho(
+  registros: string[][],
+): { indice: number; mapa: Partial<Record<Campo, number>> } | null {
+  for (let i = 0; i < Math.min(registros.length, LINHAS_ATE_O_CABECALHO); i += 1) {
+    const mapa = mapearCabecalho(registros[i]);
+    if (mapa) return { indice: i, mapa };
+  }
+  return null;
+}
+
+/** As linhas de um texto delimitado (CSV, TSV), com o leitor que respeita aspas. */
+export function lerLinhasDelimitadas(conteudo: string): string[][] {
+  const texto = conteudo.replace(/^\uFEFF/, "").trim();
+  const linhas = texto.split(/\r?\n/).filter((l) => l.trim());
+  return linhas.length === 0 ? [] : registrosDelimitados(texto, separadorDoTexto(linhas));
 }
 
 /**
@@ -252,15 +412,16 @@ export function parsearTabelaLeads(conteudo: string): CandidatoLead[] {
 
   if (linhas.length === 0) return [];
 
-  const sep = detectarSeparador(linhas[0]);
+  const sep = separadorDoTexto(linhas);
   const registros = registrosDelimitados(conteudo.trim(), sep);
-  const mapa = registros.length > 0 ? mapearCabecalho(registros[0]) : null;
+  const cabecalho = acharCabecalho(registros);
+  const mapa = cabecalho?.mapa ?? null;
 
   // Com cabeçalho, o arquivo é uma tabela de verdade e merece o leitor com
   // aspas. Sem cabeçalho, é lista solta colada — cada linha pode ter o seu
   // separador, e o leitor linha a linha é o que acerta.
   const corpo: string[][] = mapa
-    ? registros.slice(1)
+    ? registros.slice(cabecalho!.indice + 1)
     : linhas.map((linha) => celulas(linha, detectarSeparador(linha)));
   const resultados: CandidatoLead[] = [];
 
@@ -288,7 +449,7 @@ export function parsearTabelaLeads(conteudo: string): CandidatoLead[] {
     if (resultados.length >= LIMITE_POR_IMPORTACAO) break;
   }
 
-  return resultados;
+  return aplicarConvencaoDoDdi(resultados);
 }
 
 /** Tira repetidos dentro do próprio arquivo, mantendo o primeiro de cada telefone. */
@@ -297,7 +458,13 @@ export function dedupInterno(candidatos: CandidatoLead[]): CandidatoLead[] {
   const unicos: CandidatoLead[] = [];
   for (const c of candidatos) {
     const chave = c.telefoneE164 ?? c.telefone.replace(/\D/g, "");
-    if (!chave || vistos.has(chave)) continue;
+    if (!chave) {
+      // O número cortado não tem chave, e nem por isso é repetido: dez
+      // telefones diferentes aparecem como o mesmo "5,51198E+12".
+      if (c.telefoneCortado) unicos.push(c);
+      continue;
+    }
+    if (vistos.has(chave)) continue;
     vistos.add(chave);
     unicos.push(c);
   }
@@ -406,7 +573,7 @@ export async function extrairDeTexto(
   // erra (ver `leituraPorIa.ts`). Tudo o que ela devolve foi conferido
   // contra o texto; se ela não responder, a escada antiga segue abaixo.
   let iaFalhou = false;
-  if (!comCabecalho) {
+  if (!comCabecalho && !temNumeroCortado(limpo)) {
     const daIa = await lerListaComIa(limpo);
     if (daIa.ok) {
       const candidatos = dedupInterno(
@@ -865,24 +1032,95 @@ export const TIPOS_DE_IMAGEM = ["image/jpeg", "image/png", "image/webp", "image/
  * a imagem, como no PDF escaneado. Sem a chave, a tela diz isso em vez de
  * "nenhum contato encontrado" — que mandaria procurar defeito na foto.
  */
+/** O que o leitor de foto pede à IA, além do `PROMPT` geral. */
+const INSTRUCAO_DA_FOTO =
+  "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
+  "ignore o número do dono do celular. Numa lista, ficha ou agenda (inclusive escrita à mão), extraia cada " +
+  "contato com telefone. Copie os dígitos exatamente como aparecem; dígito ilegível, deixe o contato de fora. " +
+  // Print de planilha mostra o número com 55 como "5,51198E+12": copiado
+  // assim, a importação marca a linha; "convertido", vira o número de outra pessoa.
+  "Telefone que aparece em notação científica, como 5,51198E+12, é copiado exatamente assim, sem converter.";
+
+/**
+ * Deixa a foto num JPEG que a OpenAI lê: gira pelo EXIF (foto de celular
+ * chega deitada) e reduz para 2048px no lado maior, que é o que o modo
+ * `high` aproveita. `null` quando o `sharp` não abre o arquivo (HEIC, por
+ * exemplo): aí só o Gemini, que aceita o formato, tenta.
+ */
+async function fotoParaJpeg(imagem: Buffer | Uint8Array): Promise<Buffer | null> {
+  try {
+    const sharp = (await import("sharp")).default;
+    return await sharp(Buffer.from(imagem))
+      .rotate()
+      .resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
+function candidatosDoJson(json: unknown): CandidatoLead[] {
+  const bruto = json as { leads?: unknown } | unknown[] | null;
+  const lista = Array.isArray(bruto) ? bruto : Array.isArray(bruto?.leads) ? bruto.leads : [];
+  return (lista as Record<string, unknown>[])
+    .slice(0, LIMITE_POR_IMPORTACAO)
+    .map((item) =>
+      montar({
+        nome: String(item?.nome ?? ""),
+        telefone: String(item?.telefone ?? ""),
+        email: item?.email ? String(item.email) : null,
+        mensagem: item?.mensagem ? String(item.mensagem) : null,
+        imovelInteresse: item?.imovelInteresse ? String(item.imovelInteresse) : null,
+      }),
+    )
+    .filter((c): c is CandidatoLead => c !== null);
+}
+
+/**
+ * Print de conversa, foto de uma lista escrita à mão, foto de uma ficha de
+ * plantão. Aqui não há texto dentro do arquivo para ler de graça: só a IA vê
+ * a imagem.
+ *
+ * Primeiro o motor do atendimento (OpenAI, pelo `llm.ts`) em detalhe ALTO,
+ * porque o que se lê aqui é dígito; o Gemini fica de reserva. Até 07/10/2026
+ * só o Gemini lia foto, e a cota gratuita dele (20 chamadas por dia, por
+ * modelo) é a mesma que já derrubou o atendimento: a leitura caía calada e a
+ * tela dizia que a IA não estava disponível.
+ */
 export async function extrairDeImagem(
   imagem: Buffer | Uint8Array,
   mimeType: string,
 ): Promise<ResultadoExtracao> {
-  const daIa = await chamarGemini([
-    {
-      text:
-        "A imagem pode ser um print do WhatsApp: numa conversa, o cliente é o nome ou número no TOPO da tela; " +
-        "ignore o número do dono do celular. Numa lista ou ficha, extraia cada contato com telefone.",
-    },
-    { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
-  ]);
+  let daIa: CandidatoLead[] | null = null;
+
+  const jpeg = await fotoParaJpeg(imagem);
+  const legivelPelaOpenai = jpeg ?? (/^image\/(jpeg|png|webp)$/.test(mimeType) ? Buffer.from(imagem) : null);
+  if (legivelPelaOpenai) {
+    const tipo = jpeg ? "image/jpeg" : mimeType;
+    const r = await chamarLlmJson(`${PROMPT}\n\n${INSTRUCAO_DA_FOTO}`, {
+      temperature: 0,
+      orcamentoMs: 40_000,
+      fatia: 1,
+      imagens: [`data:${tipo};base64,${legivelPelaOpenai.toString("base64")}`],
+      detalheImagem: "high",
+    });
+    if (r.ok) daIa = candidatosDoJson(r.json);
+    else console.error("[importacao] leitura da foto pela OpenAI falhou:", r.erro, r.detalhe ?? "");
+  }
+
+  if (daIa === null) {
+    daIa = await chamarGemini([
+      { text: INSTRUCAO_DA_FOTO },
+      { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
+    ]);
+  }
 
   if (daIa === null) {
     return {
       candidatos: [],
       metodo: "nenhum",
-      aviso: "A leitura de fotos depende da IA, que não está disponível agora. Digite os contatos na caixa de texto.",
+      aviso: "Não consegui ler a foto agora. Tente de novo em instantes ou digite os contatos na caixa de texto.",
     };
   }
 
@@ -892,7 +1130,7 @@ export async function extrairDeImagem(
     metodo: "ia",
     aviso:
       unicos.length === 0
-        ? "Não achamos nenhum telefone legível na imagem."
+        ? "Não achamos nenhum telefone legível na imagem. Uma foto mais de perto, com boa luz, costuma resolver."
         : "Lido por IA a partir da imagem: confira nome e telefone de cada linha antes de confirmar.",
   };
 }

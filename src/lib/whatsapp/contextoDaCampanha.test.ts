@@ -75,7 +75,7 @@ describe("as guardas que leem o código", () => {
     const codigo = semComentarios("src/lib/whatsapp/campaignDispatcher.ts");
     const cota = codigo.indexOf("await reservarCotaCampanha(");
     const status = codigo.indexOf("if (!aindaAtiva)");
-    const humano = codigo.indexOf("corretorFalouComOLead(supabase, item.lead_id)");
+    const humano = codigo.indexOf("corretorFalouComOLead(supabase, item.lead_id, outrosCadastros)");
     expect(status).toBeGreaterThan(-1);
     expect(humano).toBeGreaterThan(-1);
     expect(status).toBeLessThan(cota);

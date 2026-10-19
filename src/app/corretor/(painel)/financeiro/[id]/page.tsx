@@ -88,7 +88,7 @@ export default async function VendaPage({ params }: { params: Promise<{ id: stri
   const editavel = gestor || (venda.registradaPor === corretor.id && !venda.comissaoRecebidaEm);
 
   const voltar = (
-    <Link href="/corretor/financeiro" className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5">
+    <Link href="/corretor/financeiro" className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 px-3 botao-secundario">
       ← Vendas
     </Link>
   );

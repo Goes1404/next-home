@@ -18,6 +18,9 @@ import {
 import { Suspense } from "react";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
+import { DoCliqueAConversa } from "./DoCliqueAConversa";
+import { PainelDeIndicadores } from "./PainelDeIndicadores";
+import { montarDadosDoPainel } from "@/lib/crm/painelDosAnuncios";
 
 export const metadata: Metadata = { title: "Anúncios pagos" };
 export const dynamic = "force-dynamic";
@@ -103,7 +106,7 @@ export default async function PaginaImpulsionamentos() {
       .from("whatsapp_conversas")
       .select("id, lead_id")
       .in("lead_id", ids.slice(i, i + 300));
-    for (const c of data ?? []) conversaDoLead.set(c.id, c.lead_id);
+    for (const c of data ?? []) if (c.lead_id) conversaDoLead.set(c.id, c.lead_id);
   }
   const falas = new Map<string, number>();
   const conversas = [...conversaDoLead.keys()];
@@ -221,6 +224,7 @@ export default async function PaginaImpulsionamentos() {
         titulo="Anúncios pagos"
         descricao="Quanto cada campanha trouxe de clientes, se eles valem a conversa e quanto custou cada um."
       />
+      {!error && <PainelDeIndicadores dados={montarDadosDoPainel(resumos, leadsDeAnuncio, pontos, hoje)} />}
       <ListaDeImpulsionamentos
         resumos={resumos}
         totais={totaisDosImpulsionamentos(resumos)}
@@ -235,6 +239,10 @@ export default async function PaginaImpulsionamentos() {
         hoje={hoje}
         indisponivel={Boolean(error)}
       />
+      {/* Onde o clique no link do anúncio se perde (0159). */}
+      <Suspense fallback={null}>
+        <DoCliqueAConversa />
+      </Suspense>
       {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de
           anúncios da imobiliária, só para o ADM. */}
       {corretor.papel === "gestor" && (

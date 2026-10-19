@@ -38,3 +38,15 @@ describe("mensagem de WhatsApp do lembrete", () => {
     expect(m.trim().endsWith("Revisar a tabela nova")).toBe(true);
   });
 });
+
+describe("mensagem de WhatsApp da tarefa do lead", () => {
+  it("leva o link da ficha no rodapé", () => {
+    const m = formatarLembreteWhatsapp({
+      texto: "Retornar a ligação",
+      leadNome: "Ana Prado",
+      link: "https://exemplo.com/corretor/leads/abc",
+    });
+    expect(m).toContain("👤 Ana Prado");
+    expect(m).toContain("🔗 https://exemplo.com/corretor/leads/abc");
+  });
+});

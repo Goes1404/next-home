@@ -60,3 +60,15 @@ Com um único número conectado (Bruna, em 28/09), todo lead do site sem link
 pessoal vai para ela.
 
 Ver [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]].
+
+## O link pessoal deixou de ser só preferência (07/10/2026)
+
+- Com a 0130 o corretor do link pessoal só GANHAVA A VEZ no sorteio. Número
+  dele desconectado ou ele em pausa, o clique ia para outro corretor, e quem
+  divulgou o próprio link perdia o cliente.
+- Agora `/wa` e `/wa/<imóvel>` consultam primeiro `numeroDoLinkPessoal`: o
+  número conectado na plataforma e, sem ele, o WhatsApp do perfil. O sorteio
+  só roda para quem chegou sem link pessoal (anúncio pago, site direto).
+- Custo aceito: com o número do corretor desconectado, o cliente cai no
+  WhatsApp do perfil, fora da plataforma. A IA não atende e o lead não nasce
+  sozinho no CRM. Guarda em `numeroDoLinkPessoal.test.ts`.

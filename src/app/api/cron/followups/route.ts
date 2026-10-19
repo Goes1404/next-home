@@ -1,3 +1,4 @@
+import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -31,9 +32,12 @@ import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
+import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
+import { site } from "@/lib/site";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
+import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
@@ -127,7 +131,7 @@ async function agendarLembretesDeVisita(
   const agora = Date.now();
   const { data: visitas } = await supabase
     .from("leads")
-    .select("id, corretor_id, visita_agendada_em")
+    .select("id, corretor_id, visita_agendada_em, visita_marcada_em")
     .gte("visita_agendada_em", new Date(agora + LEMBRETE_MIN_HORAS * 3600_000).toISOString())
     .lte("visita_agendada_em", new Date(agora + LEMBRETE_MAX_HORAS * 3600_000).toISOString())
     .not("corretor_id", "is", null)
@@ -146,13 +150,21 @@ async function agendarLembretesDeVisita(
     // para lembrar por aqui — o lembrete é do canal, não do CRM.
     if (!conversa) continue;
 
+    /*
+     * Só conta lembrete criado DEPOIS da última marcação: visita remarcada
+     * (A2) ganha lembrete novo mesmo que o da data velha já tenha saído.
+     */
+    const desde = Math.max(
+      agora - 7 * 86_400_000,
+      lead.visita_marcada_em ? new Date(lead.visita_marcada_em).getTime() : 0,
+    );
     const { data: jaTem } = await supabase
       .from("whatsapp_followups")
       .select("id")
       .eq("conversa_id", conversa.id)
       .eq("tipo", "lembrete_visita")
       .in("status", ["pendente", "enviado"])
-      .gte("created_at", new Date(agora - 7 * 86_400_000).toISOString())
+      .gte("created_at", new Date(desde).toISOString())
       .limit(1)
       .maybeSingle();
     if (jaTem) continue;
@@ -440,6 +452,8 @@ async function responderAtrasada(
     .eq("id", instancia.corretor_id)
     .single();
   if (!corretor) return "pulada";
+  // Conta só WhatsApp (0180): não há IA, seja qual for o modo gravado.
+  if (await ehContaSoWhatsapp(supabase, instancia.corretor_id)) return "pulada";
 
   const [catalogo, historicoCompleto, dossie] = await Promise.all([
     getEmpreendimentos().catch(() => []),
@@ -602,13 +616,36 @@ export async function GET(req: NextRequest) {
     console.error("[lead sem contato]", e);
     return 0;
   });
+  /*
+   * Cliente sem resposta há 30 min (0161): aviso no WhatsApp do corretor.
+   * Antes da janela comercial: é aviso ao corretor, não contato com cliente,
+   * e tem horário próprio (7h às 21h59).
+   */
+  const semResposta = await alertarClientesSemResposta(supabase).catch((e) => {
+    console.error("[cliente sem resposta]", e);
+    return 0;
+  });
   const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
+
+  /*
+   * Lembretes do corretor: os das anotações (0100) e os das tarefas da ficha
+   * do lead (0178). Vão para o WhatsApp do PRÓPRIO corretor, na hora que ELE
+   * marcou — por isso antes da janela comercial e fora da cota anti-ban.
+   * Atrás da janela, um lembrete das 8h só sairia às 9h.
+   */
+  await processarLembretesDeAnotacao(supabase).catch((e) => {
+    console.error("[lembrete de anotação]", e);
+  });
+  const lembretesDeTarefa = await processarLembretesDeTarefa(supabase).catch((e) => {
+    console.error("[lembrete de tarefa]", e);
+    return 0;
+  });
 
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -633,9 +670,6 @@ export async function GET(req: NextRequest) {
       console.error("[aviso de novidade]", e);
       return 0;
     });
-    // Lembretes das anotações (0100): mensagem para o PRÓPRIO corretor, não
-    // para cliente — por isso não passa por cota anti-ban nem pela janela.
-    await processarLembretesDeAnotacao(supabase);
 
     const { data: vencidos } = await supabase
       .from("whatsapp_followups")
@@ -653,7 +687,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, reservasLiberadas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
@@ -664,9 +698,10 @@ export const POST = GET;
 /**
  * Lembretes das anotações vencidos → WhatsApp do próprio corretor (0100).
  *
- * Roda no MESMO tique (e sob a mesma trava) dos follow-ups: o pg_cron já
- * bate aqui a cada 5 min, e criar um segundo cron para meia dúzia de
- * lembretes seria configuração nova em produção sem ganho nenhum.
+ * Roda no MESMO tique dos follow-ups, antes da janela comercial (14/10): o
+ * pg_cron já bate aqui a cada 5 min, e criar um segundo cron para meia dúzia
+ * de lembretes seria configuração nova em produção sem ganho nenhum. Fica
+ * fora da trava dos follow-ups porque o claim abaixo já impede envio duplo.
  *
  * O claim é atômico (`lembrete_enviado_em is null` no próprio UPDATE):
  * entre dois tiques concorrentes, só um manda. Falha de envio carimba
@@ -729,6 +764,7 @@ async function processarLembretesDeAnotacao(
         texto: nota.texto,
         leadNome: lead?.nome ?? null,
         autorNome: autor?.nome ?? null,
+        link: nota.lead_id ? `${site.url}/corretor/leads/${nota.lead_id}` : null,
       }),
     });
 

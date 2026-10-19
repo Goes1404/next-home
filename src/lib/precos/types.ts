@@ -13,6 +13,8 @@ export interface EmpreendimentoSimples {
   cidade: string;
   bairro: string;
   precoAtual: number | null;
+  /** "Também conhecido como" do cadastro: a tabela da RSF escreve "Viva RSF Jaguaribe" para o "Viva Jaguaribe". */
+  apelidos?: string[];
 }
 
 export interface ItemConciliado {

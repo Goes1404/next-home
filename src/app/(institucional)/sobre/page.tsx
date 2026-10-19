@@ -19,7 +19,7 @@ import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 export const metadata: Metadata = {
   title: `Sobre a ${site.nome}`,
-  description: `Imobiliária de Alphaville com CRECI ${site.creci}: lançamentos e imóveis prontos em Alphaville, Barueri e região, com atendimento direto no WhatsApp.`,
+  description: `Imobiliária de ${site.endereco.cidade} com CRECI ${site.creci}: lançamentos e imóveis prontos em Alphaville e região, com atendimento direto no WhatsApp.`,
   alternates: { canonical: "/sobre" },
   openGraph: {
     title: `Sobre a ${site.nomeCompleto}`,
@@ -104,8 +104,8 @@ export default async function SobrePage() {
             titulo="Quem está do outro lado do WhatsApp"
             lead={
               <>
-                A {site.nomeCompleto} é uma imobiliária de Alphaville, com registro no CRECI,
-                especializada em lançamentos e imóveis prontos em Alphaville, Barueri e região.
+                A {site.nomeCompleto} é uma imobiliária de {site.endereco.cidade}, com registro no CRECI,
+                especializada em lançamentos e imóveis prontos em Alphaville e região.
                 O atendimento acontece no WhatsApp, com corretores registrados — e esta página
                 mostra o que dá para conferir.
               </>

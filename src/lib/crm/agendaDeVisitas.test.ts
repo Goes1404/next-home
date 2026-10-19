@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   blocoDeHorarios,
   proximosHorarios,
-  temAgendaConfigurada,
+  GRADE_PADRAO,
+  gradeEfetiva,
   type FaixaDisponivel,
 } from "./agendaDeVisitas";
 
@@ -180,10 +181,25 @@ describe("blocoDeHorarios", () => {
   });
 });
 
-describe("temAgendaConfigurada", () => {
-  it("separa 'agenda cheia' de 'nunca configurou'", () => {
-    expect(temAgendaConfigurada([])).toBe(false);
-    expect(temAgendaConfigurada(GRADE)).toBe(true);
+describe("agenda padrão (16/10/2026)", () => {
+  it("quem não preencheu a agenda tem todos os dias abertos, das 9h às 20h", () => {
+    expect(gradeEfetiva([])).toBe(GRADE_PADRAO);
+    expect(GRADE_PADRAO.map((f) => f.diaSemana).sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(GRADE_PADRAO.every((f) => f.horaInicio === 9 && f.horaFim === 20)).toBe(true);
+  });
+
+  it("a agenda preenchida vale no lugar da padrão", () => {
+    expect(gradeEfetiva(GRADE)).toBe(GRADE);
+  });
+
+  it("com a padrão a IA tem horário para oferecer, inclusive no domingo", () => {
+    const h = proximosHorarios({ grade: gradeEfetiva([]), ocupados: [], agora: SABADO_8H });
+    expect(h.length).toBeGreaterThan(0);
+    expect(h.some((x) => x.rotulo.startsWith("domingo"))).toBe(true);
+    expect(h.every((x) => {
+      const hora = Number(x.rotulo.split(" às ")[1].replace("h", ""));
+      return hora >= 9 && hora < 20;
+    })).toBe(true);
   });
 });
 

@@ -23,6 +23,7 @@ import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/
 import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
 import { pontosDoMapa } from "@/lib/mapa/ponto";
 import { enderecoLinha, site } from "@/lib/site";
+import { homeJsonLd, OG_IMAGEM } from "@/lib/dadosEstruturados";
 
 export const metadata: Metadata = {
   // 39 + 12 do sufixo " · Next Home" = 51, dentro dos 60 do Google. O nome
@@ -36,6 +37,9 @@ export const metadata: Metadata = {
     title: `${site.nomeCompleto} — Imóveis e Oportunidades em Alphaville, Barueri e Região`,
     description: site.descricao,
     url: site.url,
+    // O `openGraph` da página SUBSTITUI o do layout (não mescla): sem repetir
+    // a imagem aqui, a home era compartilhada sem figura.
+    images: [OG_IMAGEM],
   },
 };
 
@@ -86,29 +90,9 @@ export default async function HomeInstitucional() {
   }
   const equipe = corretores.slice(0, 4);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    name: site.nomeCompleto,
-    description: site.descricao,
-    url: site.url,
-    telephone: site.whatsapp.map((w) => `+${w.numero}`),
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: `${site.endereco.logradouro} — ${site.endereco.bairro}`,
-      addressLocality: site.endereco.cidade,
-      addressRegion: site.endereco.uf,
-      postalCode: site.endereco.cep,
-      addressCountry: "BR",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: site.endereco.lat,
-      longitude: site.endereco.lng,
-    },
-    areaServed: site.regioes.map((r) => ({ "@type": "Place", name: r })),
-    sameAs: Object.values(site.social),
-  };
+  // Organização (com os nomes pelos quais procuram a marca) + WebSite, num
+  // grafo só: ver `lib/dadosEstruturados.ts`.
+  const jsonLd = homeJsonLd();
 
   return (
     <>

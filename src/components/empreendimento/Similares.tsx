@@ -25,13 +25,18 @@ export function Similares({ empreendimentos }: { empreendimentos: Empreendimento
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {empreendimentos.map((e, i) => (
-            <Reveal key={e.slug} delay={i * 0.08} from="baixo">
+            // A passagem dos cards da home (`cartao-passa`, 13/10/2026).
+            <div
+              key={e.slug}
+              className="cartao-passa h-full"
+              style={{ "--coluna": i % 3 } as React.CSSProperties}
+            >
               <CardEmpreendimento
                 empreendimento={e}
                 velocidadeCapa={0.08 + (i % 3) * 0.05}
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               />
-            </Reveal>
+            </div>
           ))}
         </div>
       </div>

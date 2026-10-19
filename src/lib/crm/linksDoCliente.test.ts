@@ -3,7 +3,6 @@ import {
   alertaDeResolucao,
   caminhoDoLink,
   documentosDoPerfil,
-  documentosQueFaltam,
   textoDoAvisoDoLink,
   linkValido,
   mensagemParaCliente,
@@ -57,11 +56,6 @@ describe("documentos por perfil, legibilidade e avisos", () => {
     expect(alertaDeResolucao(600, 800)).toMatch(/600×800/);
     expect(alertaDeResolucao(1200, 1600)).toBeNull();
     expect(alertaDeResolucao(undefined, undefined)).toBeNull();
-  });
-
-  it("faltam os itens sem arquivo", () => {
-    expect(documentosQueFaltam(["A", "B", "C"], ["A", "A", "C"])).toEqual(["B"]);
-    expect(documentosQueFaltam(["A"], ["A"])).toEqual([]);
   });
 
   it("só abertura, primeiro documento e lista completa viram aviso", () => {

@@ -76,7 +76,7 @@ export function EditarDestaques({
                 onClick={() => mover(i, -1)}
                 disabled={i === 0}
                 aria-label="Subir"
-                className="rounded-lg p-1.5 text-apoio hover:text-titulo disabled:opacity-30"
+                className="grid size-9 place-items-center text-apoio hover:text-titulo disabled:opacity-30 botao-icone"
               >
                 ↑
               </button>
@@ -85,7 +85,7 @@ export function EditarDestaques({
                 onClick={() => mover(i, 1)}
                 disabled={i === ordem.length - 1}
                 aria-label="Descer"
-                className="rounded-lg p-1.5 text-apoio hover:text-titulo disabled:opacity-30"
+                className="grid size-9 place-items-center text-apoio hover:text-titulo disabled:opacity-30 botao-icone"
               >
                 ↓
               </button>
@@ -93,9 +93,9 @@ export function EditarDestaques({
                 type="button"
                 onClick={() => remover(slug)}
                 aria-label="Remover"
-                className="rounded-lg p-1.5 text-apoio hover:text-perigo"
+                className="grid size-9 place-items-center text-apoio hover:text-perigo botao-icone"
               >
-                 <X className="inline-block w-5 h-5 align-text-bottom mr-1" /> 
+                <X className="h-5 w-5" />
               </button>
             </div>
           </li>

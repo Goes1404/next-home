@@ -51,17 +51,20 @@ const PADRAO = {
    */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://next-home-drab.vercel.app",
 
+  // Escritório no Office Bethaville desde 09/10/2026 (antes: Calçada
+  // Antares, 264, Alphaville, Santana de Parnaíba).
   endereco: {
-    logradouro: "Calçada Antares, 264 — 2º andar",
-    bairro: "Alphaville",
-    cidade: "Santana de Parnaíba",
+    logradouro: "Av. Trindade, 254 — Office Bethaville",
+    bairro: "Bethaville I",
+    cidade: "Barueri",
     uf: "SP",
-    cep: "06541-065",
-    // Centroide da via (geocodificado via Nominatim) — o cadastro não tem
-    // coordenada exata do prédio, mesma honestidade de escala usada no
-    // mapa de cada empreendimento (ver Localizacao.tsx).
-    lat: -23.4633543,
-    lng: -46.8774165,
+    cep: "06404-326",
+    // Estimada pelo número: o OpenStreetMap não tem o prédio, e o pino do
+    // anúncio do Office Bethaville cai na avenida vizinha. Os números 344 e
+    // 522 da mesma calçada (lado par) andam ~1 m por número; o 254 fica
+    // ~90 m antes do 344. O mapa diz "aproximado" por isso.
+    lat: -23.50618,
+    lng: -46.86848,
   },
 
   /** Formato E.164 em `numero`, legível em `label`. */
@@ -132,6 +135,18 @@ export const HERO_VIDEO_URL: string | null = null;
 export const HERO_VIDEO_WEBM_URL: string | null = null;
 
 /** Vinheta da logo exibida como preloader na primeira visita da sessão (ver Preloader.tsx). */
+/*
+ * Os quatro arquivos de vídeo em `public/video` foram CORTADOS ao trecho que
+ * aparece na tela, sem reencodar (12/10/2026): `ffmpeg -i <in> -t <s> -c copy`.
+ * Cortar o FIM de um stream com `-c copy` é sem perda em qualquer codec — só
+ * cortar o começo exige keyframe. A vinheta (`intro`) tinha 7,77 s e o
+ * overlay do Preloader sai, no pior caso, em 4,5 s + 0,95 s de cortina:
+ * ficou com 5,5 s (webm 736 → 511 KB; mp4 1.080 → 759 KB). O fundo do
+ * celular (`fundo-home`) tinha 8 s e congela em 1,5 s (`pararEm`): ficou com
+ * 1,75 s (webm 622 → 208 KB; mp4 714 → 226 KB). Um quadro que ninguém vê
+ * custava 0,9 MB a cada primeira visita no celular. `videosSobMedida.test.ts`
+ * trava os tamanhos; se uma peça nova for mais longa, cortar antes de subir.
+ */
 export const INTRO_VIDEO_URL = "/video/intro.mp4";
 export const INTRO_VIDEO_WEBM_URL = "/video/intro.webm";
 /**

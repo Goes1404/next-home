@@ -466,7 +466,7 @@ export function GmailLeadsExtractor({
                             href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-fluid-xs font-medium text-[#25D366] hover:underline"
+                            className="inline-flex items-center gap-1 text-fluid-xs font-medium text-[#25D366] link-acao"
                           >
                             <span> <MessageCircle className="inline-block w-5 h-5 align-text-bottom mr-1" /> </span> Abrir WhatsApp
                           </a>
@@ -690,7 +690,7 @@ export function GmailLeadsExtractor({
                         setCopiadoFiltro(true);
                         setTimeout(() => setCopiadoFiltro(false), 2000);
                       }}
-                      className="text-[10px] text-brand-300 hover:underline"
+                      className="text-[10px] text-brand-300 link-acao"
                     >
                       {copiadoFiltro ? <Check className="inline-block w-5 h-5 align-text-bottom mr-1" /> : "Copiar"}
                     </button>

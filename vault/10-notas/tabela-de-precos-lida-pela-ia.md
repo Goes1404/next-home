@@ -10,8 +10,9 @@ codigo:
   - src/lib/leads/pdfTexto.ts
   - src/app/corretor/(painel)/admin/precos/actions.ts
   - src/app/corretor/(painel)/admin/precos/PrecosManager.tsx
-summary: A tabela da construtora tem o empreendimento no cabeçalho e as unidades embaixo; o leitor por linha não achava nada. A IA casa com o catálogo e aponta o menor valor de unidade, que só entra se estiver escrito no arquivo.
-updated: 2026-10-02
+  - src/app/corretor/(painel)/admin/precos/page.tsx
+summary: PDF e prints (13/10). A tabela da construtora tem o empreendimento no cabeçalho e as unidades embaixo; o leitor por linha não achava nada. A IA casa com o catálogo e aponta o menor valor de unidade, que só entra se estiver escrito no arquivo.
+updated: 2026-10-13
 ---
 
 # Tabela de preços lida pela IA
@@ -73,3 +74,80 @@ provado com a IA de verdade**: não há chave nesta máquina.
 O casamento da IA com nome pouco parecido (abaixo de 0,5) vira sugestão
 desmarcada. O Acqua Park não está no catálogo, e contra o "Alpha Park View"
 o nome dá 0,43.
+
+## Prints e o guia de 53 páginas (13/10/2026)
+
+Pedido: ler o "tabelão" da RSF tanto do PDF (guia de parceria, 53 páginas)
+quanto dos prints da tela do celular.
+
+- **PDF e prints sobem DIRETO para o Storage** (`corretores/<id>/tabelas/`,
+  pasta pessoal da 0015) e só o caminho vai à action
+  (`lerArquivosDaTabela`), que apaga os arquivos depois de ler. Antes o PDF
+  cruzava a action, com teto de 8 MB; agora o teto é 40 MB.
+- **Print: dois passos.** A IA transcreve cada imagem em detalhe alto, uma
+  linha por unidade com o nome do empreendimento repetido
+  (`transcreverPrintDaTabela`); a transcrição passa pela mesma leitura do
+  PDF, com a trava "o valor está escrito" valendo contra a transcrição. O
+  texto fica na caixa para o gestor conferir com o print.
+- **"Unidades de referência, não o mínimo da tabela"**: o rodapé do tabelão
+  diz isso. Quando o arquivo avisa (`avisaValoresDeReferencia`), item que
+  SUBIRIA o "a partir de" entra desmarcado: o Breeze tem unidade de
+  R$ 349.900 e a de referência é de R$ 381.405.
+- **Apelidos do cadastro entram no catálogo da IA e na conferência de
+  nome**: a tabela escreve "Viva RSF Jaguaribe" para o "Viva Jaguaribe".
+- **Pedaço sem valor de imóvel não vai à IA**, seis pedaços por vez e prazo
+  total de 50 s: o guia inteiro estourava os 60 s da página com três por
+  vez. O que sobrar sem ler é dito na tela.
+- **Não provado com a IA de verdade**: não há chave da OpenAI nesta máquina.
+  A prova é subir os prints do tabelão em produção.
+
+Do tabelão de out/2026, sem cadastro no catálogo: Bless Shopping Barueri,
+Reserva Urano Ecopark, Viva RSF Carapicuíba, Bless Praça da Árvore, Bless
+Ipiranga e Murat 208. Esses vêm como "não encontrado".
+
+## PDF que desenha letra por letra (13/10/2026)
+
+Relatado logo depois: "A IA achou valores, mas nenhum estava escrito no
+arquivo", com o texto da caixa saindo `T / E / S / T / E`, uma letra por
+linha. O defeito era do extrator (`pdfTexto.ts`), não da IA.
+
+- **Todo `Td`/`Tm` virava quebra de linha.** Chrome, Canva e ferramentas de
+  design posicionam cada letra (ou cada trecho com espaçamento entre letras)
+  com um operador próprio, e o preço "381.405,62" saía em dez linhas. A IA lia
+  o número pela forma, mas a trava "o valor está escrito" procurava o número
+  inteiro no texto e não achava.
+- **Hoje o fluxo é interpretado pela posição**: matriz de texto, `cm`/`q`/`Q`,
+  e a largura de cada glifo (`/Widths` ou `/W` da fonte; estimada quando o
+  arquivo não diz). Mesma linha de base = mesma linha de texto; salto para a
+  frente = espaço. Bônus: as células de uma linha da tabela saem juntas, o que
+  é exatamente a "unidade por linha" que a leitura espera.
+- **Fonte dentro de `/ObjStm`** (PDF 1.5+, comum em exportação de design) agora
+  é lida: antes o dicionário comprimido não era achado, e sem `/ToUnicode` o
+  texto saía em códigos de glifo.
+- **Reproduzido sem o arquivo do usuário**: um PDF impresso pelo Chromium do
+  Playwright com `letter-spacing` dá o mesmo `T / E / S / T / E` no extrator
+  antigo. É o jeito barato de testar PDF real neste ambiente.
+- Texto com espaçamento grande entre letras sai como "T E S T E" (é como está
+  desenhado); números e nomes de imóvel saem inteiros.
+
+## O guia da RSF, testado com o arquivo real (13/10/2026)
+
+O "Guia do Parceiro" de outubro (53 páginas, 13,3 MB) passou pelo extrator em
+0,4 s: 28 mil caracteres, o tabelão inteiro com uma linha por unidade e os 35
+valores escritos. O defeito estava depois da extração:
+
+- **Centavos arredondados não batiam com o arquivo.** `lerResposta` arredonda o
+  preço da IA (381.405,62 vira 381.406), e `valoresEscritos` guardava só a parte
+  inteira (381.405). Todo valor com 50 centavos ou mais era descartado como "não
+  está escrito no arquivo": 8 dos 15 empreendimentos do guia. Hoje
+  `valoresEscritos` guarda também o valor arredondado.
+- **Simulado com a resposta que uma IA correta daria e o catálogo real** (39
+  publicados): 15 lidos, 0 descartados. Entram marcados os que baixam ou criam o
+  "a partir de" (Liv Stay, Beyond, Symmetry, Eternity, Vila do Conde). Os que
+  subiriam o valor ficam desmarcados, porque o guia avisa que são unidades de
+  referência (Breeze, Manacá, Bless Jardim Esperança, Viva Jaguaribe). Seis
+  empreendimentos do guia não existem no catálogo (Bless Shopping Barueri,
+  Reserva Urano, Viva Carapicuíba, Bless Praça da Árvore, Bless Ipiranga, Murat
+  208) e aparecem como "não encontrado".
+- Sem chave de IA nesta máquina, a leitura pelo modelo de verdade só se prova
+  subindo o arquivo em produção.

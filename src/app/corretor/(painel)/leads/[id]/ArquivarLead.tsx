@@ -21,11 +21,14 @@ import { arquivarLead, excluirLeadDefinitivo, restaurarLead } from "./acoes";
 export function ArquivarLead({
   leadId,
   arquivado,
+  semResposta = false,
   nome,
   podeExcluir,
 }: {
   leadId: string;
   arquivado: boolean;
+  /** Arquivado pela regra das 7 tentativas: volta sozinho se o cliente responder. */
+  semResposta?: boolean;
   nome: string;
   /** Desde 02/10/2026 todo corretor exclui os próprios leads (0145). */
   podeExcluir: boolean;
@@ -104,7 +107,9 @@ export function ArquivarLead({
         {arquivado ? "Este lead está arquivado" : "Tirar este lead da lista"}
       </h2>
       <p className="text-fluid-xs text-tenue mt-1">
-        {arquivado
+        {arquivado && semResposta
+          ? "Arquivado sozinho depois de 7 tentativas sem resposta. Se ele escrever, volta para a lista."
+          : arquivado
           ? "Ele não aparece nas listas, no funil nem nas contagens. Dá para restaurar a qualquer momento."
           : "Arquivar tira o lead das listas e do funil sem apagar nada — dá para restaurar depois."}
       </p>

@@ -7,18 +7,21 @@
  * configurou. Cada passo diz POR QUE importa, não só o que falta: "conecte
  * o WhatsApp" sem motivo é tarefa; "sem ele a assistente não atende ninguém"
  * é razão.
+ *
+ * A agenda de visitas saiu dos passos em 16/10/2026: quem não preenche usa a
+ * padrão (todos os dias, 9h às 20h), então não há o que configurar para a
+ * assistente marcar visita.
  */
 
 export type EstadoDaConfiguracao = {
   whatsappConectado: boolean;
-  faixasDeAgenda: number;
   temFoto: boolean;
   temApresentacao: boolean;
   leads: number;
 };
 
 export type Passo = {
-  id: "whatsapp" | "agenda" | "perfil" | "carteira";
+  id: "whatsapp" | "perfil" | "carteira";
   titulo: string;
   porque: string;
   href: string;
@@ -33,13 +36,6 @@ export function passosDoCorretor(e: EstadoDaConfiguracao): Passo[] {
       porque: "Sem ele a assistente não atende ninguém e nenhum aviso chega até você.",
       href: "/corretor/whatsapp",
       feito: e.whatsappConectado,
-    },
-    {
-      id: "agenda",
-      titulo: "Preencher sua agenda de visitas",
-      porque: "Sem os seus horários, a assistente não consegue marcar visita.",
-      href: "/corretor/visitas",
-      feito: e.faixasDeAgenda > 0,
     },
     {
       id: "perfil",

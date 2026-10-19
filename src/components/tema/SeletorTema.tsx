@@ -1,46 +1,41 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import type { Tema } from "@/lib/tema";
-import { definirTema } from "@/lib/temaActions";
+import { useSyncExternalStore } from "react";
+import { aplicarTemaNoDom, assinarTema, gravarCookieDoTema, lerEscolhaDoDom, type Tema } from "@/lib/tema";
 
 const OPCOES: { valor: Tema | null; rotulo: string }[] = [
   { valor: "claro", rotulo: "Usar tema claro" },
   { valor: "escuro", rotulo: "Usar tema escuro" },
-  { valor: null, rotulo: "Seguir o tema do sistema" },
+  { valor: null, rotulo: "Voltar ao tema padrão do site" },
 ];
 
-/** Fora do componente de propósito: o compilador do React não deixa mutar
- *  o DOM direto dentro de um handler. */
-function aplicarTemaNoDom(tema: Tema | null) {
-  if (tema === null) delete document.documentElement.dataset.tema;
-  else document.documentElement.dataset.tema = tema;
-}
+/** No servidor (e durante a hidratação) ninguém sabe o cookie: sem escolha. */
+const SEM_ESCOLHA = () => null;
 
 /**
- * Três estados, um só controle: claro, escuro, ou seguir o sistema.
+ * Três estados, um só controle: claro, escuro, ou o padrão da casa.
  *
- * `atual` vem do servidor (o cookie lido em `getTemaEscolhido`, repassado
- * por quem monta este componente) — não há `useState` espelhando o tema,
- * porque a fonte da verdade é sempre o cookie. Ao escolher, dois passos:
- * o `<html>` ganha o atributo na hora (sem esperar o servidor, para não
- * haver flash do tema antigo) e, em paralelo, a Server Function grava o
- * cookie e `router.refresh()` refaz a árvore server-side — é o que
- * sincroniza a cor da barra do navegador (`generateViewport`) e qualquer
- * outra leitura de `getTemaEscolhido` na página.
+ * A fonte da verdade continua sendo o cookie — mas quem o lê agora é o
+ * script inline do layout raiz, antes da primeira pintura, e ele deixa a
+ * escolha no `<html>` (`data-tema-escolhido`). Este componente só OBSERVA o
+ * DOM, por `useSyncExternalStore`: no servidor a página é estática e não
+ * sabe o cookie (é isso que a torna cacheável, F2b), então o HTML sai com
+ * "sem escolha" marcado e o navegador corrige no primeiro quadro depois da
+ * hidratação. Não há `useState` espelhando o tema nem `setState` em efeito.
+ *
+ * Ao escolher: o `<html>`, a cor da barra e o `color-scheme` mudam na hora
+ * (`aplicarTemaNoDom`), e o cookie é gravado pelo navegador para a PRÓXIMA
+ * visita (`gravarCookieDoTema`). Nenhuma ida ao servidor: a página é
+ * estática e nada nela depende do cookie lá — a Server Action que existia
+ * aqui refazia a árvore da rota e devolvia o `<meta theme-color>` claro por
+ * cima do escuro recém-aplicado (medido no navegador em 12/10/2026).
  */
-export function SeletorTema({ atual }: { atual: Tema | null }) {
-  const router = useRouter();
-  const [, iniciar] = useTransition();
+export function SeletorTema() {
+  const atual = useSyncExternalStore(assinarTema, lerEscolhaDoDom, SEM_ESCOLHA);
 
   function escolher(tema: Tema | null) {
     aplicarTemaNoDom(tema);
-
-    iniciar(async () => {
-      await definirTema(tema);
-      router.refresh();
-    });
+    gravarCookieDoTema(tema);
   }
 
   return (

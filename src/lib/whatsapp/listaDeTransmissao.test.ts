@@ -7,7 +7,10 @@ import {
   contextoDaLista,
   dormitoriosEmPalavras,
   falhaContaParaDisjuntor,
+  motivoDoMesmoTelefone,
   motivoParaNaoEnviar,
+  MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR,
+  MOTIVO_TELEFONE_JA_RECEBEU,
   previsaoDeTermino,
   resolverHorarios,
   retornoDasListas,
@@ -92,13 +95,11 @@ describe("variáveis da mensagem (Fase 2)", () => {
   });
 
   it("avisa o que vai sair vazio antes de a lista nascer", () => {
-    expect(variaveisSemValor("Oi {nome}, no {bairro} tem {horarios}", {}, { temAgenda: false })).toEqual([
-      "bairro",
-      "horarios",
-    ]);
-    expect(variaveisSemValor("Oi {nome} no {bairro}", ctx, { temAgenda: true })).toEqual([]);
+    // `{horarios}` sempre tem valor: sem agenda preenchida vale a padrão.
+    expect(variaveisSemValor("Oi {nome}, no {bairro} tem {horarios}", {})).toEqual(["bairro"]);
+    expect(variaveisSemValor("Oi {nome} no {bairro}", ctx)).toEqual([]);
     // Variável com erro de digitação também conta: o cliente leria "{bairo}".
-    expect(variaveisSemValor("no {bairo}", ctx, { temAgenda: true })).toEqual(["bairo"]);
+    expect(variaveisSemValor("no {bairo}", ctx)).toEqual(["bairo"]);
   });
 
   it("dormitórios em palavras", () => {
@@ -118,7 +119,8 @@ describe("previsão de término (Fase 1)", () => {
     const p = previsaoDeTermino({ pendentes: 10, saldoHoje: 30, agora, expediente });
     expect(p.terminaHoje).toBe(true);
     expect(p.continuaAmanha).toBe(0);
-    expect(p.terminaEm!.getTime() - agora.getTime()).toBe(10 * 55 * 1000);
+    // 10 mensagens × a média do sorteio de 90–120s (09/10/2026).
+    expect(p.terminaEm!.getTime() - agora.getTime()).toBe(10 * 105 * 1000);
   });
 
   it("o que passa do saldo continua no próximo dia", () => {
@@ -174,13 +176,12 @@ describe("guardas de código (Fase 4)", () => {
     expect(achados.filter((a) => !permitidos.has(a))).toEqual([]);
   });
 
-  it("liberar a fila nunca devolve à fila quem deu erro", () => {
+  it("não existe atalho que solte a fila fora do disparador (09/10/2026)", () => {
     const acoes = ler("src/app/corretor/(painel)/campanhas/acoes.ts");
-    const ini = acoes.indexOf("export async function liberarEnvioAgora");
-    const corpo = acoes.slice(ini, acoes.indexOf("\nexport ", ini + 10));
-    expect(corpo).not.toMatch(/\.eq\("status",\s*"erro"\)/);
-    expect(corpo).not.toContain("ignorar_janela: true");
-    expect(corpo).toContain("janela_liberada_ate");
+    for (const nome of ["liberarEnvioAgora", "processarFilaAgora", "enviarAgoraParaTodosOsLeads"]) {
+      expect(acoes).not.toContain(`export async function ${nome}`);
+    }
+    expect(acoes).not.toContain("ignorarJanela");
   });
 
   it("o disparador confere o lead ANTES de gastar a cota", () => {
@@ -208,5 +209,28 @@ describe("guardas de código (Fase 4)", () => {
     const fonte = ler("src/lib/whatsapp/publicoDaLista.ts");
     expect(fonte).toMatch(/\.eq\("corretor_id", corretorId\)\s*\.is\("arquivado_em", null\)/);
     expect(ler("src/app/corretor/(painel)/campanhas/acoes.ts")).not.toContain("getMeusLeads");
+  });
+});
+
+describe("a pessoa é o telefone, não o cadastro (lista da Rute, 16/10/2026)", () => {
+  it("cadastro duplicado não recebe a lista de novo", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: true, outroCadastroNaoContatar: false })).toBe(
+      MOTIVO_TELEFONE_JA_RECEBEU,
+    );
+  });
+  it("pedido de parada em outro cadastro vale para o telefone", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: false, outroCadastroNaoContatar: true })).toBe(
+      MOTIVO_OUTRO_CADASTRO_NAO_CONTATAR,
+    );
+  });
+  it("telefone sem outro cadastro segue", () => {
+    expect(motivoDoMesmoTelefone({ jaRecebeuEstaLista: false, outroCadastroNaoContatar: false })).toBeNull();
+  });
+  it("o disparador confere o mesmo telefone ANTES da cota", () => {
+    const fonte = fs.readFileSync(path.join(__dirname, "campaignDispatcher.ts"), "utf8");
+    const confere = fonte.indexOf("motivoDoMesmoTelefone({");
+    const cota = fonte.indexOf("reservarCotaCampanha(");
+    expect(confere).toBeGreaterThan(0);
+    expect(cota).toBeGreaterThan(confere);
   });
 });

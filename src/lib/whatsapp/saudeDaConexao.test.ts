@@ -164,6 +164,37 @@ describe("avaliarSaudeDaConexao", () => {
   });
 });
 
+describe("motivo da queda e sessão caída (0174)", () => {
+  const CAIU = {
+    ...NO_AR,
+    statusConexao: "desconectado",
+    desconectadoEm: new Date("2026-08-28T19:23:00Z"),
+  };
+
+  it("diz o motivo que o WhatsApp mandou e, se foi pela conta, pede olhar o celular", () => {
+    const aviso = avaliarSaudeDaConexao({ ...CAIU, motivoQuedaCodigo: 403 }, AGORA);
+    expect(aviso?.detalhe).toContain("Motivo informado pelo WhatsApp: o WhatsApp recusou a conexão");
+    expect(aviso?.detalhe).toContain("veja se há aviso de restrição");
+  });
+
+  it("queda de rede diz o motivo, sem mandar procurar restrição", () => {
+    const aviso = avaliarSaudeDaConexao({ ...CAIU, motivoQuedaCodigo: 428 }, AGORA);
+    expect(aviso?.detalhe).toContain("a conexão com o WhatsApp foi perdida");
+    expect(aviso?.detalhe).not.toContain("restrição");
+  });
+
+  it("sem motivo conhecido, o texto continua o de antes", () => {
+    const aviso = avaliarSaudeDaConexao(CAIU, AGORA);
+    expect(aviso?.detalhe).not.toContain("Motivo informado");
+  });
+
+  it("a sessão caída marcada na instância avisa mesmo sem lista na fila", () => {
+    const aviso = avaliarSaudeDaConexao({ ...NO_AR, sessaoCaidaEm: new Date("2026-08-31T08:00:00Z") }, AGORA);
+    expect(aviso?.tipo).toBe("sessao_caiu");
+    expect(aviso?.detalhe).toContain("vão para outro corretor");
+  });
+});
+
 describe("quandoEmSaoPaulo", () => {
   /*
    * A armadilha do calendário desta base: formatar o rótulo num fuso e a

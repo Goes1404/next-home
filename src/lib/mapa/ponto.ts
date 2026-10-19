@@ -26,7 +26,7 @@ export type PontoDoMapa = {
   status: StatusObra;
   tipo: TipoImovel;
   precoAPartir: number | null;
-  capa: Pick<Midia, "url" | "alt" | "blurDataUrl">;
+  capa: Pick<Midia, "url" | "alt" | "blurDataUrl" | "variantes">;
 };
 
 export function pontoDoMapa(e: Empreendimento): PontoDoMapa {
@@ -41,7 +41,7 @@ export function pontoDoMapa(e: Empreendimento): PontoDoMapa {
     status: e.status,
     tipo: e.tipo,
     precoAPartir: e.precoAPartir,
-    capa: { url: e.capa.url, alt: e.capa.alt, blurDataUrl: e.capa.blurDataUrl },
+    capa: { url: e.capa.url, alt: e.capa.alt, blurDataUrl: e.capa.blurDataUrl, variantes: e.capa.variantes ?? null },
   };
 }
 

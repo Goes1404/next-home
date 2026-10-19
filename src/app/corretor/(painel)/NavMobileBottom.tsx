@@ -76,7 +76,10 @@ export function NavMobileBottom() {
         onClick={() => alternarGaveta(atual)}
         aria-expanded={aberta}
         aria-controls="gaveta-do-painel"
-        aria-label="Todas as seções"
+        // O nome acessível começa pelo que está escrito no botão ("Menu"):
+        // quem usa comando de voz fala o que vê, e "Todas as seções" sozinho
+        // não respondia a "tocar em Menu".
+        aria-label="Menu, todas as seções"
         className={cn(
           "flex w-full min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 transition-colors",
           aberta ? "text-acento-suave" : "text-tenue",

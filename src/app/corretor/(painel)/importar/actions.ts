@@ -1,11 +1,14 @@
 "use server";
 
+import { baixarPlanilhaDoGoogle, linkDoGooglePlanilhas } from "@/lib/leads/googlePlanilhas";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCorretorLogado, souGestor } from "@/lib/corretorSessao";
 import {
   LIMITE_POR_IMPORTACAO,
   TIPOS_DE_IMAGEM,
+  avisoDeNumerosCortados,
+  avisoDeNumerosSemDdd,
   extrairDeImagem,
   extrairDePdf,
   extrairDeTexto,
@@ -67,6 +70,8 @@ export type ResultadoAnalise = {
 export type ResumoImportacao = {
   inseridos?: number;
   ignorados?: number;
+  /** Telefones que já estavam cadastrados, ou repetidos na mesma lista. */
+  repetidos?: number;
   falhas?: number;
   erro?: string;
 };
@@ -136,7 +141,16 @@ async function marcarExistentes(
   lidos: CandidatoLead[],
 ): Promise<CandidatoRevisado[]> {
   // O telefone já chega à revisão escrito do jeito certo: "(11) 98191-8127".
-  const candidatos = lidos.map((c) => ({ ...c, telefone: c.telefone ? formatarTelefoneBr(c.telefone) : c.telefone }));
+  // O que veio sem DDD chega sem DDD ("98191-8127"): pôr o 11 aqui esconderia
+  // que o DDD não estava na planilha.
+  const candidatos = lidos.map((c) => ({
+    ...c,
+    telefone: c.semDdd
+      ? `${c.telefone.slice(0, -4)}-${c.telefone.slice(-4)}`
+      : c.telefone
+        ? formatarTelefoneBr(c.telefone)
+        : c.telefone,
+  }));
   const chaves = candidatos
     .map((c) => c.telefoneE164)
     .filter((t): t is string => Boolean(t));
@@ -170,6 +184,14 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
     return { erro: "Texto grande demais. Divida em partes menores ou envie um arquivo." };
   }
 
+  // Link do Google Planilhas colado: vira a exportação CSV da aba citada.
+  const link = linkDoGooglePlanilhas(conteudo);
+  if (link) {
+    const baixada = await baixarPlanilhaDoGoogle(link);
+    if (!baixada.ok) return { erro: baixada.erro };
+    conteudo = baixada.texto;
+  }
+
   // Conversa do WhatsApp colada na caixa também chega aqui, e a fala de quem
   // colou não pode virar lead.
   const resultado = await extrairDeTexto(conteudo, {
@@ -182,8 +204,20 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
     metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
-    aviso: resultado.aviso,
+    aviso: juntarAvisos(resultado),
   };
+}
+
+/**
+ * O aviso da leitura e os dos telefones que vieram cortados ou sem DDD: podem
+ * valer ao mesmo tempo, e são eles que explicam as linhas desmarcadas.
+ */
+function juntarAvisos(resultado: ResultadoExtracao): string | undefined {
+  return (
+    [resultado.aviso, avisoDeNumerosCortados(resultado.candidatos), avisoDeNumerosSemDdd(resultado.candidatos)]
+      .filter(Boolean)
+      .join(" ") || undefined
+  );
 }
 
 export async function analisarArquivo(formData: FormData): Promise<ResultadoAnalise> {
@@ -248,7 +282,7 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
   return {
     candidatos: await marcarExistentes(supabase, resultado.candidatos),
     metodo: resultado.metodo === "nenhum" ? "tabela" : resultado.metodo,
-    aviso: resultado.aviso,
+    aviso: juntarAvisos(resultado),
   };
 }
 
@@ -313,13 +347,49 @@ export async function importarLeads(
     return { erro: "Nenhum dos contatos tem telefone válido.", ignorados };
   }
 
+  /*
+   * Telefone já cadastrado não entra de novo (16/10/2026). A tela marcava
+   * "já existe", mas o servidor gravava o que viesse: a mesma planilha
+   * importada duas vezes, com dois minutos de diferença, deu quatro leads
+   * para a Rute na carteira da Carol, e a lista de transmissão ficou com
+   * dois envios a mais para ela. A pessoa é o telefone; a régua é a mesma
+   * coluna gerada que o banco usa (`telefone_e164`), vista pela RLS: o
+   * corretor compara com a carteira dele, o gestor com a da equipe.
+   */
+  const chaveDe = (telefone: string) => normalizarTelefoneBrasileiro(telefone);
+  const chaves = [...new Set(linhas.map((l) => chaveDe(l.telefone)).filter((c): c is string => Boolean(c)))];
+  const jaCadastrados = new Set<string>();
+  if (chaves.length > 0) {
+    const { data: existentes, error: erroExistentes } = await supabase
+      .from("leads")
+      .select("telefone_e164")
+      .in("telefone_e164", chaves);
+    if (erroExistentes) {
+      console.error("[importar] falha ao conferir telefones já cadastrados:", erroExistentes.message);
+      return { erro: "Não consegui conferir quem já está cadastrado. Tente de novo em instantes." };
+    }
+    for (const l of existentes ?? []) if (l.telefone_e164) jaCadastrados.add(l.telefone_e164);
+  }
+  const vistos = new Set<string>();
+  const novas = linhas.filter((l) => {
+    const chave = chaveDe(l.telefone);
+    if (!chave) return true;
+    if (jaCadastrados.has(chave) || vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+  const repetidos = linhas.length - novas.length;
+  if (novas.length === 0) {
+    return { inseridos: 0, ignorados, repetidos };
+  }
+
   // Em lotes: um insert de 300 linhas que falha na última perde as 299.
   let inseridos = 0;
   let falhas = 0;
   const TAMANHO_LOTE = 50;
 
-  for (let i = 0; i < linhas.length; i += TAMANHO_LOTE) {
-    const lote = linhas.slice(i, i + TAMANHO_LOTE);
+  for (let i = 0; i < novas.length; i += TAMANHO_LOTE) {
+    const lote = novas.slice(i, i + TAMANHO_LOTE);
     const { data, error } = await supabase.from("leads").insert(lote).select("id");
 
     if (error) {
@@ -335,7 +405,7 @@ export async function importarLeads(
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor");
 
-  return { inseridos, ignorados, falhas };
+  return { inseridos, ignorados, repetidos, falhas };
 }
 
 export async function criarLeadUnico(

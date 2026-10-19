@@ -165,7 +165,7 @@ export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada })
       <button
         type="button"
         onClick={abrir}
-        className="text-fluid-xs text-acento flex min-h-11 cursor-pointer items-center gap-1 rounded-xl px-2 font-medium hover:underline"
+        className="text-fluid-xs text-acento flex min-h-11 cursor-pointer items-center gap-1 rounded-xl px-2 font-medium link-acao"
       >
         Ver quem recebeu
         <ChevronRight className="h-3.5 w-3.5" />
@@ -190,7 +190,7 @@ export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada })
             type="button"
             onClick={() => dialogo.current?.close()}
             aria-label="Fechar"
-            className="text-apoio flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl hover:opacity-80"
+            className="text-apoio flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center hover:opacity-80 botao-icone"
           >
             <X className="h-5 w-5" />
           </button>
@@ -222,7 +222,7 @@ export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada })
                     {i.leadId ? (
                       <Link
                         href={`/corretor/leads/${i.leadId}`}
-                        className="text-fluid-sm text-titulo block truncate font-medium hover:underline"
+                        className="text-fluid-sm text-titulo block truncate font-medium link-acao"
                       >
                         {i.nome}
                       </Link>

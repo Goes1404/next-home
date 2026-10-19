@@ -7,9 +7,9 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-03
+updated: 2026-10-16
 fonte: leitura do código + docs/MEMORIA.md
-summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, cota/espaçamento no banco e variação por IA.
+summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
 # Fluxo de campanhas
 
@@ -27,10 +27,12 @@ summary: Criação monta a fila com agendado_para (e guarda o critério); a list
 - O início opcional vira o primeiro `agendado_para` da própria fila; não há
   tabela nem cron paralelo. Action valida futuro, fuso de Brasília e janela
   de segunda a sábado, 9h–20h59 ([[agendamento-comeca-na-propria-fila]]).
-- Fila gravada com `agendado_para` espaçado (35-75s) e guarda de
+- Fila gravada com `agendado_para` espaçado (1min30–2min desde 09/10/2026; era 35-75s) e guarda de
   monotonicidade ([[e2e-contra-producao|flake didático]]).
-- **Sem chamada de IA na criação** — a variação anti-ban acontece no ENVIO
-  (`variarMensagemComIA`), um item por vez ([[fila-parada-tres-causas]]).
+- **Sem chamada de IA na criação** — a reescrita acontece no ENVIO
+  (`variarSemRepetir`), um item por vez, e só sai texto abaixo de 0,70 de
+  semelhança com as mensagens do número ([[fila-parada-tres-causas]],
+  [[texto-da-lista-conferido-antes-de-sair]]). `{nome}` vira o primeiro nome.
 
 ## Disparo (`campaignDispatcher.ts`)
 
@@ -57,6 +59,9 @@ Cada envio passa por:
    lead, em paralelo à orgânica ([[a-conversa-fantasma-do-disparo-sem-ddi]]);
 7. destinatário inexistente = erro definitivo + cota devolvida
    ([[numero-sem-whatsapp-nao-e-falha-nossa]]);
+   sessão do WhatsApp caída ("Connection Closed") = cota devolvida, item
+   esperando sem gastar tentativa, e reconectar levanta a pausa
+   ([[sessao-caida-com-o-numero-conectado]]);
 8. gravação na conversa + avanço de etapa
    ([[campanha-tambem-mexe-no-funil]]) + tentativa de contato
    ([[tentativas-de-contato-sao-duas-contagens]]).
@@ -76,6 +81,9 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
    corretor (antes da janela).
 3. `alertarLeadsSemContato` — lead de portal/anúncio sem mensagem nossa em
    30 min vira aviso ao corretor, uma vez (antes da janela, 0121).
+3b. `alertarClientesSemResposta` — cliente sem resposta há 30 min (IA desligada
+   ou não) vira aviso no WhatsApp do corretor, uma vez por espera, das 7h às
+   21h59 de SP (antes da janela, 0161).
 4. `liberarReservasVencidas` (0121).
 5. *(fora da janela 9h–20h59: para aqui)*
 6. trava `followups` →
@@ -105,13 +113,16 @@ pendentes da perdedora com o texto da vencedora. Ver
 [[aprimoramentos-das-oito-funcionalidades]].
 
 Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
-`varrerQuedasDeNumero` → `alimentarListasVivas` (só no tique geral, 1x/hora
+`varrerQuedasDeNumero` → `protegerNumerosQueCairam` (0174: motivo da queda, e queda de 30+ min pausa as listas; 0176: só 3 dias seguidos sem conectar recomeçam o aquecimento; [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]) → `alimentarListasVivas` (só no tique geral, 1x/hora
 por lista) → instância a instância: bloqueio → conexão → listas
 `em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
 no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
-**`motivoParaNaoEnviar`** (pediu para sair, arquivado, perdido, transferido,
-comprou) → guarda de 24h → cota → texto (sem IA durante o A/B; `{horarios}`
-resolvido agora) → envio → `classificarFalhaDeEnvio` → conversa, IA ligada,
+pausa automática (0172) → **`motivoParaNaoEnviar`** (pediu para sair,
+arquivado, perdido, transferido, comprou) → **mesmo telefone em outro cadastro** (a lista já saiu para ele ou ele pediu parada; [[pedir-um-tempo-nao-e-aceitar-a-visita]]) → guarda de 24h (em qualquer cadastro do telefone) → **texto conferido**
+(`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de
+abertura e de pergunta, e só quando A e B são diferentes de verdade; sem texto
+próprio, o item espera, o motivo vai para o log e a lista pausa em 4 ciclos) → cota → `{horarios}` e saudação do
+horário resolvidos agora → envio → **sessão caída** ("Connection Closed": cota devolvida, item marcado sem gastar tentativa, disjuntor, `sessao_caida_em` tira o número do rodízio do link, vez encerrada; [[sessao-caida-com-o-numero-conectado]]) → `classificarFalhaDeEnvio` → conversa, IA ligada,
 **fotos do imóvel** (`enviarMidiasDaLista`), funil e tentativa. Ver
 [[lista-de-transmissao-visivel-e-controlavel]].
 

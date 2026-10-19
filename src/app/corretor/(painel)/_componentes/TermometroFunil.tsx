@@ -28,7 +28,7 @@ export function TermometroFunil({ contagens }: { contagens: Record<EtapaFunil, n
         <h2 className="font-display text-titulo text-lg">Seu funil agora</h2>
         <Link
           href="/corretor/funil"
-          className="text-fluid-sm text-acento-suave underline-offset-4 hover:underline"
+          className="text-fluid-sm text-acento-suave link-acao"
         >
           Abrir quadro →
         </Link>

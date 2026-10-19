@@ -237,3 +237,13 @@ export function blocoDadoPedido(d: DadoPedido): string {
 function maiuscula(texto: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
+
+/**
+ * O pedaço do dado que identifica a frase que o responde: o número (preço,
+ * metragem) ou o começo do texto (a rua do endereço). É por ele que a trava
+ * anti-eco reconhece a frase que NÃO pode cortar.
+ */
+export function marcaDoDado(resposta: string): string {
+  const numero = resposta.match(/R\$\s?[\d.]+|\d+(?:\s*a\s*\d+)?\s*m²/)?.[0];
+  return (numero ?? resposta.split(",")[0]).trim();
+}

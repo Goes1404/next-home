@@ -51,11 +51,14 @@ export function formatarLembreteWhatsapp(params: {
   leadNome?: string | null;
   /** Preenchido quando a nota veio de OUTRO corretor (autor ≠ destinatário). */
   autorNome?: string | null;
+  /** Endereço da ficha do lead, para abrir direto do WhatsApp. */
+  link?: string | null;
 }): string {
   const linhas = [`⏰ *Lembrete*`, "", params.texto.trim()];
   const rodape: string[] = [];
   if (params.leadNome) rodape.push(`👤 ${params.leadNome}`);
   if (params.autorNome) rodape.push(`✍️ Anotado por ${params.autorNome}`);
+  if (params.link) rodape.push(`🔗 ${params.link}`);
   if (rodape.length > 0) linhas.push("", rodape.join("\n"));
   return linhas.join("\n");
 }

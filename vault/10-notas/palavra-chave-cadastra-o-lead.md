@@ -12,10 +12,11 @@ codigo:
   - src/lib/whatsapp/importarHistorico.ts
   - src/lib/crm/filaDeTrabalho.ts
   - supabase/migrations/0146_palavra_chave_cadastra_o_lead.sql
+  - supabase/migrations/0160_arquiva_cadastros_do_oii.sql
 fonte: plano de ativação da IA, Fase 1 (03/10/2026)
 created: 2026-10-03
-updated: 2026-10-03
-summary: Num número sem lead, o porteiro da 0111 descartava a mensagem do corretor antes de ler a palavra-chave. Agora a palavra é lida antes do porteiro e cadastra o número na carteira de quem digitou, com o histórico do chat quando a Evolution o tiver. Número que já é lead de outro corretor não muda de carteira, a IA fica calada e só quem digitou recebe aviso. A palavra nova precisa ser discreta (6+ caracteres, fora da lista de expressões comuns).
+updated: 2026-10-05
+summary: Num número sem lead, o porteiro da 0111 descartava a mensagem do corretor antes de ler a palavra-chave. Agora a palavra é lida antes do porteiro e cadastra o número na carteira de quem digitou, com o histórico do chat quando a Evolution o tiver. Número que já é lead de outro corretor não muda de carteira, a IA fica calada e só quem digitou recebe aviso. A palavra precisa ser discreta (6+ caracteres, fora da lista de expressões comuns); desde 05/10/2026 a que não é discreta não vale, nem a já salva.
 ---
 
 # A palavra-chave do corretor cadastra o lead
@@ -63,3 +64,21 @@ telefone é procurado em todas as carteiras, com e sem o nono dígito:
 - [[trava-de-palavra-chave-e-cliente-conhecido]]
 - [[conversa-casa-com-lead-por-telefone]]
 - [[fluxo-do-webhook-whatsapp]]
+
+## A palavra antiga valia, e era "Oii" (05/10/2026)
+
+A 0146 deixou valer a palavra salva antes da régua, só com aviso na tela.
+Em produção ela era **"Oii"**, e o casamento é por trecho da mensagem:
+todo "Oii" (ou "Oiii") que a corretora mandava a um amigo cadastrava o
+número como lead e ligava a IA. Foram 5 cadastros entre 03 e 05/10, e a
+queixa chegou como "conversas que não são de leads aparecem na plataforma".
+
+- `somenteDiscretas` (`modoBot.ts`) filtra a palavra pela mesma régua da
+  tela (`problemaDaPalavraChave`) antes de casar, para ativação e teste.
+  Palavra fora da régua não liga a IA nem cadastra ninguém.
+- A tela mostra só as palavras que valem e diz que a antiga deixou de valer.
+- A 0160 arquivou os 5 cadastros e desligou a IA neles (reversível).
+
+**Régua:** exceção que mantém uma regra de segurança desligada "para não
+surpreender" é a regra desligada. Se a régua existe para proteger, ela vale
+para o que já está salvo também.

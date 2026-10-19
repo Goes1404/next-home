@@ -165,3 +165,33 @@ where modelo is not null
 group by prompt_versao
 order by ultima_sp desc nulls last
 limit 10;
+
+-- ---------------------------------------------------------------------------
+-- 8. O TEXTO DA LISTA SAIU REPETIDO?  (a prova da 0173)
+-- ---------------------------------------------------------------------------
+-- Na semana em que o WhatsApp restringiu a conta da Bruna, 65 das 114
+-- mensagens dela saíram idênticas. Desde a 0173, cada mensagem é conferida
+-- antes de sair (variacaoDeTexto.ts) e `semelhanca_max` guarda a maior
+-- semelhança com as mensagens do número nos 30 dias anteriores. A régua é
+-- 0,70: `parecidas` tem de dar zero. `identicas` conta texto exatamente igual
+-- (sem caixa nem espaço), e também tem de dar zero. `esperando_ia` são itens
+-- parados porque a IA não reescreveu e o texto repetiria outro.
+select
+  c.corretor_id,
+  count(*) filter (where f.enviado_em > now() - interval '7 days')                    as enviadas_7d,
+  count(*) filter (where f.enviado_em > now() - interval '7 days'
+                     and f.semelhanca_max is not null)                                 as conferidas_7d,
+  count(*) filter (where f.enviado_em > now() - interval '7 days'
+                     and f.semelhanca_max >= 0.7)                                      as parecidas_7d,
+  round(max(f.semelhanca_max) filter (where f.enviado_em > now() - interval '7 days')::numeric, 2)
+                                                                                       as mais_parecida_7d,
+  count(*) filter (where f.enviado_em > now() - interval '7 days')
+    - count(distinct md5(lower(regexp_replace(f.mensagem_personalizada, '\s+', ' ', 'g'))))
+        filter (where f.enviado_em > now() - interval '7 days')                       as identicas_7d,
+  count(*) filter (where f.status = 'pendente' and f.erro_motivo like 'Esperando a IA reescrever%')
+                                                                                       as esperando_ia,
+  count(*) filter (where f.status = 'pendente' and f.tentativas_texto > 0)             as com_tentativas_de_texto
+from public.whatsapp_campanhas_fila f
+join public.whatsapp_campanhas c on c.id = f.campanha_id
+group by c.corretor_id
+order by enviadas_7d desc;

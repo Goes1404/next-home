@@ -22,7 +22,9 @@ import { describe, expect, it } from "vitest";
  * 3. Quem grava `parametros_credito` derruba a etiqueta de crédito.
  * 4. O proxy só fala com o Auth dentro de `/corretor`, com `getClaims`
  *    (verificação local), e o matcher deixa arquivos de fora.
- * 5. `getCorretorAtivo` e `getTemaEscolhido` são deduplicados por `cache()`.
+ * 5. `getCorretorAtivo` é deduplicado por `cache()`. (`getTemaEscolhido`
+ *    deixou de existir em 12/10/2026: o tema passou a ser lido no navegador,
+ *    pela casca estática — ver `cascaEstatica.test.ts`.)
  */
 
 const RAIZ = join(__dirname, "..", "..", "..");
@@ -92,9 +94,8 @@ describe("o site público não vai ao banco por requisição", () => {
     expect(fonte).toMatch(/matcher:\s*\["\/\(\(\?!_next\/\|api\/\|\.\*\\\\\.\.\*\)\.\*\)"\]/);
   });
 
-  it("getCorretorAtivo e getTemaEscolhido são deduplicados por cache()", () => {
+  it("getCorretorAtivo é deduplicado por cache()", () => {
     expect(ler("lib/corretorAtivo.ts")).toMatch(/export const getCorretorAtivo = cache\(/);
-    expect(ler("lib/tema.ts")).toMatch(/export const getTemaEscolhido = cache\(/);
     // E o corretor ativo sai da lista cacheada, não do banco.
     expect(ler("lib/corretorAtivo.ts")).not.toContain("from(");
   });

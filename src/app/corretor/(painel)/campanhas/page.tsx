@@ -4,8 +4,6 @@ import { CampanhasManager } from "./CampanhasManager";
 import { carregarListaParaReabrir, listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
 import { getCorretorLogado, getMeusTemplates } from "@/lib/corretorSessao";
-import { createClient } from "@/lib/supabase/server";
-import { corretorTemAgenda } from "@/lib/whatsapp/publicoDaLista";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { ListasSugeridasBloco } from "../_componentes/ListasSugeridas";
 import { getListasSugeridas } from "@/lib/crm/listasSugeridasDados";
@@ -17,9 +15,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * As server actions desta página (`processarFilaAgora`) chegam a mandar
- * WhatsApp de verdade antes de responder. O teto padrão de 10s de uma
- * função Hobby cortaria o envio no meio.
+ * Criar a lista confere os números no WhatsApp antes de responder; o teto
+ * padrão de 10s de uma função Hobby cortaria a conferência no meio.
  */
 export const maxDuration = 60;
 
@@ -66,13 +63,12 @@ export default async function CampanhasPainelPage({
   };
 
   const corretor = await getCorretorLogado();
-  const [empreendimentos, campanhas, status, listas, modelos, temAgenda] = await Promise.all([
+  const [empreendimentos, campanhas, status, listas, modelos] = await Promise.all([
     getEmpreendimentos(),
     listarCampanhas(),
     statusDisparo(),
     getListasSugeridas(diasParado),
     getMeusTemplates(),
-    corretor ? corretorTemAgenda(await createClient(), corretor.id) : Promise.resolve(false),
   ]);
 
   return (
@@ -107,7 +103,6 @@ export default async function CampanhasPainelPage({
         statusInicial={status}
         inicial={inicial}
         modelos={modelos}
-        temAgenda={temAgenda}
         corretor={{ nome: corretor?.nome ?? "", whatsapp: corretor?.whatsapp ?? "" }}
       />
     </div>

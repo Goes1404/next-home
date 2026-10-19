@@ -136,6 +136,31 @@ const DIAS_DE_HORIZONTE = 14;
  */
 const POR_DIA = 2;
 
+/**
+ * A agenda de quem não preencheu a sua: todos os dias, das 9h às 20h
+ * (último horário às 19h).
+ *
+ * Até 16/10/2026, grade vazia significava "a assistente não marca visita":
+ * o bloco de horários saía vazio e ela só falava de horário de forma
+ * genérica. Medido em 09/09: 1 faixa cadastrada para 7 corretores ativos,
+ * ou seja, quase ninguém tinha agenda. A decisão do dono da conta foi
+ * inverter o padrão: agenda aberta, e quem não recebe em algum dia ou
+ * horário fecha na tela de Visitas.
+ *
+ * 9h às 20h e não as 24 horas: visita de madrugada não existe, e a tela de
+ * Visitas já não deixa marcar antes das 6h nem depois das 22h.
+ */
+export const GRADE_PADRAO: readonly FaixaDisponivel[] = [0, 1, 2, 3, 4, 5, 6].map((diaSemana) => ({
+  diaSemana,
+  horaInicio: 9,
+  horaFim: 20,
+}));
+
+/** A grade que vale: a do corretor, ou a padrão quando ele não preencheu nenhuma. */
+export function gradeEfetiva(grade: readonly FaixaDisponivel[]): readonly FaixaDisponivel[] {
+  return grade.length > 0 ? grade : GRADE_PADRAO;
+}
+
 /** Antecedência mínima: ninguém marca visita para daqui a dez minutos. */
 const HORAS_DE_ANTECEDENCIA = 3;
 
@@ -221,10 +246,9 @@ export function proximosHorarios(params: {
 /**
  * O bloco que vai ao prompt.
  *
- * Vazio quando o corretor não configurou agenda — e aí o prompt segue com
- * o calendário genérico de sempre. Nunca quebrar o que já funciona por
- * causa de uma configuração que ninguém preencheu ainda é a regra que
- * salvou o link do catálogo (só entra quando o slug existe).
+ * Vazio só quando não há horário livre nos próximos 14 dias (ou a leitura
+ * da agenda falhou): aí o prompt segue com o calendário genérico. Sem grade
+ * configurada vale `GRADE_PADRAO`, então o caso comum é ter horário.
  */
 export function blocoDeHorarios(horarios: readonly HorarioDeVisita[]): string {
   if (horarios.length === 0) return "";
@@ -262,15 +286,4 @@ export function blocoDeHorarios(horarios: readonly HorarioDeVisita[]): string {
     "É proibido inventar outro horário: o que não está aqui, o corretor não pode receber — o cliente aceitaria e alguém teria de desmarcar, gastando a única coisa que a conversa conquistou.",
     "Se ele recusar os dois, ofereça os DOIS SEGUINTES da lista, nunca os mesmos de novo.",
   ].join("\n");
-}
-
-/**
- * Quem estiver sem grade nenhuma não deve ouvir promessa de horário.
- *
- * Existe para o chamador saber a diferença entre "não há vaga nos próximos
- * 14 dias" (agenda cheia — notícia) e "este corretor nunca configurou
- * agenda" (o caso de hoje, para todos).
- */
-export function temAgendaConfigurada(grade: readonly FaixaDisponivel[]): boolean {
-  return grade.length > 0;
 }

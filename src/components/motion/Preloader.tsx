@@ -19,9 +19,10 @@ import { INTRO_POSTER_URL, INTRO_VIDEO_URL, INTRO_VIDEO_WEBM_URL } from "@/lib/s
  *    performance é que a página já está pronta atrás da cortina, então quem
  *    rola quer a página, e recebe a página).
  * 0. **Só no desktop.** No celular o fundo da home JÁ É a vinheta
- *    (`fundo-home`, 0,6 MB, ver FundoVideoIntro): tocar a mesma peça duas
- *    vezes custava 0,7 MB e até 9,5 s de espera a quem chega pelo Google no
- *    telefone — e o LCP do celular era medido DEPOIS dela.
+ *    (`fundo-home`, 0,2 MB desde 12/10/2026 — era 0,6, ver FundoVideoIntro):
+ *    tocar a mesma peça duas vezes custava 0,7 MB e até 9,5 s de espera a
+ *    quem chega pelo Google no telefone — e o LCP do celular era medido
+ *    DEPOIS dela.
  * 2. **Uma vez por sessão.** Navegar entre páginas ou dar F5 não repete a
  *    abertura (`sessionStorage`). O controle é feito por um script inline
  *    ANTES da primeira pintura — sem ele, quem já viu a vinheta veria o

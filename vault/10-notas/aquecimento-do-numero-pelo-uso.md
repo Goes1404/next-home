@@ -11,9 +11,11 @@ codigo:
   - src/app/corretor/(painel)/campanhas/acoes.ts
   - src/app/corretor/(painel)/campanhas/_componentes/StatusFila.tsx
   - src/lib/whatsapp/aquecimentoPeloUso.test.ts
+  - src/lib/whatsapp/limitesConservadores.test.ts
+  - src/lib/whatsapp/protecaoDaQueda.ts
   - supabase/migrations/0158_aquecimento_pelo_uso.sql
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-10
 fonte: pedido do usuário ("se não enviarem todo dia, as contas vão tomar ban")
 summary: O limite diário de mensagens por iniciativa nossa parte do maior dia dos últimos 7 (×1,5, piso 15), com a curva por idade como teto e freio quando muita gente pede para sair.
 ---
@@ -48,6 +50,34 @@ Lista de 300 num número velho e parado: 15, 23, 35, 53, 80, 120, 150.
   manda menos ([[o-lado-certo-de-errar-numa-trava]]).
 - `statusDisparo` mostra o saldo pela mesma conta e a frase
   (`fraseDoLimite`) explicando por que o limite de hoje é esse.
+
+## Decisão de 09/10/2026: só para o lado conservador
+
+O dono da conta decidiu: "vamos ser bem conservadores com esses limites".
+Foi depois de a conta da Bruna ser restringida (07/10) e de a lista do Ramos
+parar no teto de 15 de um número conectado havia dois dias. Quem pedir mais
+volume ganha mais dias de uso ou mais números conectados, nunca um limite
+maior.
+
+`limitesConservadores.test.ts` congela a política de 09/10 (curva por
+idade, ×1,5, piso 15, 7 dias, freio com 3 recusas, intervalo de 1min30 a
+2min, janela 9h às 20h59 sem domingo) e reprova qualquer afrouxamento,
+inclusive mudança na fórmula que não troque constante nenhuma. Apertar passa.
+Mordida com sete afrouxamentos (todos reprovaram) e dois apertos (passaram).
+
+Conferido no mesmo dia: nenhum botão do painel nem função do banco passa por
+cima desses limites (`resetar_cota_campanha` não existe mais, e nenhuma
+lista com pendentes tem a janela afrouxada).
+
+## Depois de uma queda (0174 e 0176, 10/10/2026)
+
+Número com 3 dias seguidos sem conectar grava `aquecimento_desde`, e o
+`limiteDoDia` (`recomecoDepoisDe`) ignora os envios até o dia da queda: volta
+ao piso de 15 e sobe de novo com o uso. Na 0174 bastavam 30 minutos fora do
+ar; o dono da conta afrouxou para 3 dias no mesmo dia, porque os números
+caem com frequência e voltavam a 15 a toda hora. A guarda de 09/10 registra
+o afrouxamento com data e reprova prazo maior que 3 dias; a queda nunca
+aumenta o limite. Ver [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
 
 ## Guardas
 

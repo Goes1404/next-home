@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
   BadgePortal,
+  ContagemDeTentativas,
   dataDoCartao,
   dataHora,
   EtiquetaEtapa,
@@ -13,6 +14,7 @@ import {
 import { FolhaAcoesLead } from "@/app/corretor/(painel)/_componentes/FolhaAcoesLead";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
+import { BotaoMensagemPelaIA } from "@/app/corretor/(painel)/_componentes/MensagemPelaIA";
 import type { Lead } from "@/lib/types";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 
@@ -141,7 +143,7 @@ function DetalhesLead({ lead, gestor }: { lead: Lead; gestor: boolean }) {
             <dd className="inline">
               <Link
                 href={`/empreendimentos/${lead.empreendimento.slug}`}
-                className="text-acento-suave underline-offset-4 hover:underline"
+                className="text-acento-suave link-acao"
               >
                 {lead.empreendimento.nome}
               </Link>
@@ -239,6 +241,7 @@ export function TabelaLeads({
                     </span>
                     <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
                       <EtiquetaEtapa etapa={lead.etapa} />
+                      <ContagemDeTentativas lead={lead} />
                       <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
                     </span>
                   </span>
@@ -247,6 +250,7 @@ export function TabelaLeads({
                   />
                 </button>
 
+                {lead.telefone && <BotaoMensagemPelaIA leadId={lead.id} nome={lead.nome} />}
                 {whatsapp && (
                   <a
                     href={whatsapp}
@@ -394,7 +398,7 @@ function FragmentoLinha({
             <Link
               href={`/corretor/leads/${lead.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-fluid-sm truncate font-medium text-titulo underline-offset-4 hover:text-acento-suave hover:underline"
+              className="text-fluid-sm truncate font-medium text-titulo hover:text-acento-suave link-acao"
             >
               {lead.nome}
             </Link>
@@ -410,13 +414,19 @@ function FragmentoLinha({
           </td>
         )}
         <td className="px-3 py-2.5">
-          <EtiquetaEtapa etapa={lead.etapa} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <EtiquetaEtapa etapa={lead.etapa} />
+            <ContagemDeTentativas lead={lead} />
+          </div>
         </td>
         <td className="text-fluid-sm px-3 py-2.5 whitespace-nowrap text-apoio">
           {dataDoCartao(lead)}
         </td>
         <td className="px-3 py-2.5">
           <div className="flex items-center justify-end gap-1.5">
+            {lead.telefone && (
+              <BotaoMensagemPelaIA leadId={lead.id} nome={lead.nome} className="h-9 w-9" />
+            )}
             <AcoesContato lead={lead} aoVivo />
             <ChevronDown
               className={`h-4 w-4 text-tenue transition-transform ${aberto ? "rotate-180" : ""}`}

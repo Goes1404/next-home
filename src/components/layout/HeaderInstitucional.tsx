@@ -3,8 +3,8 @@ import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
 import { MenuMobile } from "@/components/layout/MenuMobile";
+import { LinksDoCabecalho } from "@/components/layout/LinksDoCabecalho";
 import { SeletorTema } from "@/components/tema/SeletorTema";
-import { getTemaEscolhido } from "@/lib/tema";
 
 const LINKS = [
   { href: "/empreendimentos", label: "Imóveis" },
@@ -26,9 +26,7 @@ const LINKS = [
  * captar proprietário é o outro lado do negócio e, sem destaque, some no meio
  * dos links de quem quer comprar.
  */
-export async function HeaderInstitucional() {
-  const tema = await getTemaEscolhido();
-
+export function HeaderInstitucional() {
   return (
     <HeaderCondensado className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
       <GlassSurface
@@ -43,21 +41,13 @@ export async function HeaderInstitucional() {
           <Wordmark destaque="text-acento-forte" />
         </Link>
 
-        <ul className="hidden items-center gap-6 text-sm text-corpo sm:flex">
-          {LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="link-nav transition-colors hover:text-acento-suave">
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <LinksDoCabecalho links={LINKS} />
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {/* Some no mobile, junto com os links: só o essencial cabe ao lado
               da logo sem apertar — quem quer trocar o tema chega pelo rodapé. */}
           <div className="hidden sm:block">
-            <SeletorTema atual={tema} />
+            <SeletorTema />
           </div>
 
           {/* "Anunciar meu imóvel" saiu do menu em 13/09/2026 (pedido do

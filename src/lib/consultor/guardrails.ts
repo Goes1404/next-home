@@ -89,7 +89,7 @@ export function numerosPermitidos(
  * cortava a frase CERTA. Achado lendo a transcrição de uma sonda com API,
  * não em teste: nenhum caso escrito à mão usava a forma que gente usa.
  */
-function numerosDaFrase(frase: string): number[] {
+export function numerosDaFrase(frase: string): number[] {
   const achados =
     frase.match(
       /(\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?)(\s*(?:milh(?:ão|ões|ao|oes)|mil))?/gi,
@@ -105,7 +105,7 @@ function numerosDaFrase(frase: string): number[] {
 }
 
 /** Tolerância de 1% absorve quem arredondou "R$ 2.431,55" para "R$ 2.432". */
-function estaPermitido(n: number, permitidos: number[]): boolean {
+export function estaPermitido(n: number, permitidos: number[]): boolean {
   return permitidos.some((p) => Math.abs(p - n) <= Math.max(1, p * 0.01));
 }
 

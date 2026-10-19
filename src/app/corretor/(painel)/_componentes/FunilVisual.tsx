@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
+import { GRUPO_LABEL, somarPorGrupo, type EtapaFunil, type GrupoFunil } from "@/lib/types";
 
 /**
  * O funil desenhado como FUNIL — faixas que estreitam, uma por etapa.
@@ -37,14 +37,19 @@ import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
  * é a saída dele. Cada banda leva à lista já filtrada (`?etapa=`).
  */
 
-const CAMINHO: EtapaFunil[] = ["novo", "primeiro_contato", "visita_agendada", "documentacao", "fechado"];
+/*
+ * Desde a 0165 o funil tem 10 etapas, e nove bandas não cabem neste desenho.
+ * O Início mostra os cinco GRUPOS (o funil resumido); o completo mora na
+ * tela do Funil.
+ */
+const CAMINHO: GrupoFunil[] = ["novo", "contato", "visita", "negociacao", "fechado"];
 
-/** Token de cor da etapa — vai para o `stop-color` do gradiente da banda. */
-const TOKEN: Record<EtapaFunil, string> = {
+/** Token de cor do grupo — vai para o `stop-color` do gradiente da banda. */
+const TOKEN: Record<GrupoFunil, string> = {
   novo: "var(--color-etapa-novo)",
-  primeiro_contato: "var(--color-etapa-contato)",
-  visita_agendada: "var(--color-etapa-visita)",
-  documentacao: "var(--color-etapa-doc)",
+  contato: "var(--color-etapa-contato)",
+  visita: "var(--color-etapa-visita)",
+  negociacao: "var(--color-etapa-doc)",
   fechado: "var(--color-etapa-fechado)",
   perdido: "var(--color-etapa-perdido)",
 };
@@ -69,7 +74,8 @@ function banda(i: number) {
   return { d, brilho, y, cx };
 }
 
-export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, number> }) {
+export function FunilVisual({ contagens: porEtapa }: { contagens: Record<EtapaFunil, number> }) {
+  const contagens = somarPorGrupo(porEtapa);
   const alturaBandas = CAMINHO.length * (ALTURA_BANDA + VAO) - VAO;
   const alturaTotal = alturaBandas + ALVO_ALTURA;
   const perdidos = contagens.perdido ?? 0;
@@ -80,7 +86,7 @@ export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, numbe
       <svg
         viewBox={`0 0 ${LARGURA} ${alturaTotal}`}
         role="img"
-        aria-label={`Funil: ${CAMINHO.map((e) => `${ETAPA_LABEL[e]} ${contagens[e] ?? 0}`).join(", ")}`}
+        aria-label={`Funil: ${CAMINHO.map((e) => `${GRUPO_LABEL[e]} ${contagens[e] ?? 0}`).join(", ")}`}
         className="mx-auto block w-full max-w-md overflow-visible"
       >
         <defs>
@@ -129,7 +135,7 @@ export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, numbe
           return (
             <Link
               key={etapa}
-              href={`/corretor/leads?etapa=${etapa}`}
+              href={`/corretor/leads?grupo=${etapa}`}
               className={`funil-banda group focus:outline-none ${vazia ? "opacity-45" : ""}`}
               style={{ "--i": i } as React.CSSProperties}
             >
@@ -153,7 +159,7 @@ export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, numbe
                 dominantBaseline="middle"
                 className="fill-sobre-cor font-display text-[15px] font-semibold"
               >
-                <tspan>{ETAPA_LABEL[etapa]}</tspan>
+                <tspan>{GRUPO_LABEL[etapa]}</tspan>
                 <tspan className="text-[13px] font-normal" dx="8">
                   {n}
                 </tspan>
@@ -165,7 +171,7 @@ export function FunilVisual({ contagens }: { contagens: Record<EtapaFunil, numbe
 
       {perdidos > 0 && (
         <p className="text-tenue mt-2 text-center text-xs">
-          <Link href="/corretor/leads?etapa=perdido" className="hover:text-corpo underline-offset-4 hover:underline">
+          <Link href="/corretor/leads?grupo=perdido" className="hover:text-corpo underline-offset-4 hover:underline">
             {perdidos === 1 ? "1 contato perdido" : `${perdidos} contatos perdidos`} fora do funil
           </Link>
         </p>

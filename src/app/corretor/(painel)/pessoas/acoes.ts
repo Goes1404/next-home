@@ -5,6 +5,7 @@ import { getPaginaDePessoas, type PessoaNaLista } from "@/lib/crm/pessoas";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import type { ConversaResumo } from "../conversas/chatModelo";
+import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 
 /**
  * A próxima página da lista.
@@ -36,15 +37,18 @@ export async function carregarConversaDaPessoa(
   if (!corretor) return null;
 
   const supabase = await createClient();
-  const { data } = await supabase
+  let consulta = supabase
     .from("whatsapp_conversas")
     .select(
       "id, telefone_cliente, nome_cliente, bot_ativo, ultima_mensagem, ultima_interacao_em, lead_id, nao_lidas, memoria, memoria_do_corretor, historico_anterior, lead:leads!whatsapp_conversas_lead_id_fkey(nao_contatar_em)",
     )
     .eq("id", conversaId)
-    .eq("corretor_id", corretor.id)
-    .not("lead_id", "is", null)
-    .maybeSingle();
+    .eq("corretor_id", corretor.id);
+  // Conta só WhatsApp (0180) abre também a conversa de quem não é lead.
+  if (!(await ehContaSoWhatsapp(supabase, corretor.id))) {
+    consulta = consulta.not("lead_id", "is", null);
+  }
+  const { data } = await consulta.maybeSingle();
 
   if (!data) return null;
 

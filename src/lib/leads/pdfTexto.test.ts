@@ -155,3 +155,87 @@ describe("tabela de preço gerada de HTML", () => {
     expect(texto).toContain("Qço");
   });
 });
+
+/**
+ * PDF que posiciona LETRA POR LETRA (Canva, exportação de design, o tabelão
+ * da RSF de 13/10/2026). Antes, todo `Td`/`Tm` virava quebra de linha e o
+ * texto saía com uma letra por linha: "T\nE\nS\nT\nE", e o preço
+ * "381.405,62" em dez linhas, que a leitura de tabela não reconhecia.
+ */
+describe("PDF que desenha cada letra numa posição própria", () => {
+  /** Uma letra por `Tm`, avançando `passo` pontos, na linha de base `y`. */
+  function letraPorLetra(texto: string, x: number, y: number, passo = 6.6, tamanho = 12): string {
+    return [...texto]
+      .map((c, k) =>
+        c === " "
+          ? ""
+          : `1 0 0 1 ${(x + k * passo).toFixed(2)} ${y} Tm (${c.replace(/[()\\]/g, (m) => "\\" + m)}) Tj`,
+      )
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  it("junta as letras da mesma linha e separa as palavras", () => {
+    const conteudo = [
+      "BT /F1 12 Tf",
+      letraPorLetra("TESTE", 50, 700),
+      letraPorLetra("Breeze Home Clube", 50, 680),
+      letraPorLetra("R$ 381.405,62", 50, 660),
+      "ET",
+    ].join("\n");
+
+    const linhas = extrairTextoDePdf(criarPdf(conteudo, { comprimir: true })).split("\n");
+    expect(linhas).toEqual(["TESTE", "Breeze Home Clube", "R$ 381.405,62"]);
+  });
+
+  it("mede a letra pela largura da fonte quando o arquivo diz", () => {
+    // Fonte com /Widths: "W" largo (944) e "i" estreito (222). Com a largura
+    // de verdade, letras coladas não ganham espaço no meio.
+    const larguras = Array.from({ length: 95 }, (_, k) => {
+      const c = String.fromCharCode(32 + k);
+      return c === "W" ? 944 : c === "i" ? 222 : c === " " ? 278 : 556;
+    });
+    const avancos = (t: string) => [...t].map((c) => larguras[c.charCodeAt(0) - 32] * 0.012);
+    const desenhar = (t: string, x: number, y: number) => {
+      let pos = x;
+      const ops: string[] = [];
+      avancos(t).forEach((w, k) => {
+        if (t[k] !== " ") ops.push(`1 0 0 1 ${pos.toFixed(3)} ${y} Tm (${t[k]}) Tj`);
+        pos += w;
+      });
+      return ops.join("\n");
+    };
+    const conteudo = `BT /F1 12 Tf\n${desenhar("Wi Wi", 50, 700)}\nET`;
+    const fluxo = deflateSync(Buffer.from(conteudo, "latin1"));
+    const partes = [
+      "%PDF-1.4",
+      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+      "3 0 obj << /Type /Page /Parent 2 0 R /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >> endobj",
+      `5 0 obj << /Type /Font /Subtype /TrueType /FirstChar 32 /LastChar 126 /Widths [${larguras.join(" ")}] >> endobj`,
+      `4 0 obj << /Length ${fluxo.length} /Filter /FlateDecode >>\nstream\n`,
+    ];
+    const pdf = Buffer.concat([
+      Buffer.from(partes.join("\n"), "latin1"),
+      fluxo,
+      Buffer.from("\nendstream\nendobj\ntrailer << /Root 1 0 R >>\n%%EOF", "latin1"),
+    ]);
+    expect(extrairTextoDePdf(pdf)).toBe("Wi Wi");
+  });
+
+  it("respeita a escala da matriz (fonte de tamanho 1 com Tm 12)", () => {
+    const conteudo = [
+      "BT /F1 1 Tf",
+      "12 0 0 12 50 700 Tm (Valor) Tj",
+      "12 0 0 12 86 700 Tm (total) Tj",
+      "12 0 0 12 50 680 Tm (608.923,68) Tj",
+      "ET",
+    ].join("\n");
+    expect(extrairTextoDePdf(criarPdf(conteudo)).split("\n")).toEqual(["Valor total", "608.923,68"]);
+  });
+
+  it("ignora o binário de uma imagem embutida no meio do texto", () => {
+    const conteudo = "BT /F1 12 Tf 50 700 Td (Antes) Tj ET\nBI /W 2 /H 1 /BPC 8 /CS /G ID \x00Tj(X)Tj\xff EI\nBT /F1 12 Tf 50 680 Td (Depois) Tj ET";
+    expect(extrairTextoDePdf(criarPdf(conteudo)).split("\n")).toEqual(["Antes", "Depois"]);
+  });
+});

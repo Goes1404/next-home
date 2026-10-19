@@ -48,6 +48,19 @@
   para o plano atual — não fique só olhando o histórico de deployments
   (deployment recusado na criação nunca aparece lá). Force um deploy manual
   via API/MCP da Vercel para ver o erro de verdade.
+- **Se só uma das branches ficou sem deployment, o push dela não chegou à
+  Vercel** (10/10/2026: dois previews e nenhum de produção para o mesmo
+  commit). Os status do commit no GitHub (`/commits/<sha>/statuses`) têm um
+  `pending` por push que a Vercel recebeu. Commit só de documentação não
+  precisa de nada; com código, Redeploy no painel ou o próximo push.
+- **`WHATSAPP_API_URL` e `WHATSAPP_API_KEY` são variáveis sensíveis**
+  (10/10/2026): a Vercel não mostra o valor nem ao dono, e o conector desta
+  sessão leva 403 até para listar. O valor está no servidor da Evolution,
+  em `/opt/evolution/.env` (`EVOLUTION_DOMAIN` e `AUTHENTICATION_API_KEY`).
+  O endereço não está gravado no repositório nem no banco
+  ([[url-e-chave-da-evolution-so-existem-no-servidor]]). Revelar pela
+  própria aplicação (página protegida pela Vercel ou o host na resposta do
+  cron) foi bloqueado pelo controle de permissões da sessão: não contornar.
 - **`CRON_SECRET`**: precisa estar configurado em Settings → Environment
   Variables → Production. Sem ele, `/api/cron/campanhas` recusa toda
   requisição em produção (falha fechada, mesmo padrão do webhook de
@@ -9247,6 +9260,1152 @@ Nota: [[dominio-proprio-nexthomeimoveis]].
   OAuth do Gmail); trocar antes manda gente para um endereço morto.
 - **O retorno do Gmail muda junto**: acrescentar
   `https://nexthomeimoveis.com/api/gmail/retorno` no Google Cloud Console.
+
+## Onde o clique do anúncio se perde (0159, 05/10/2026)
+
+Nota: [[onde-o-clique-do-anuncio-se-perde]]. Primeiro item do roadmap da
+nota 10 (link do anúncio), decidido com o usuário: medir antes de mexer.
+
+- **679 cliques de gente, 5 leads em 7 dias** (Dom Parque). Dos 1.356
+  acessos, 643 eram o robô da Meta. O resto é quase todo o navegador interno
+  do Instagram e do Facebook no Android (`wv` no user agent).
+- **Pessoas**: `cliques_whatsapp.visitante` = hash de IP + navegador + dia,
+  com a chave de serviço como segredo. Muda todo dia.
+- **Quem escreveu sem a mensagem pronta**: `porteiro_barrados`, uma linha por
+  número desconhecido/corretor/dia, só com resumo do número, tipo, minutos
+  desde o clique e se citou o imóvel. O texto nunca é gravado. Retenção de
+  90 dias pela limpeza diária.
+- **O MCP do Supabase cancela migration com `drop policy`**, inclusive
+  `if exists` numa tabela nova. Aplicar sem o `drop`.
+- **A migration vai antes do deploy**: o link grava `visitante` no insert, e
+  sem a coluna o clique pago se perderia.
+- **A catraca de peso estava vermelha desde 04/10** (listas de transmissão
+  806 KB, home 757). Teto ajustado com o motivo. Ninguém tinha visto.
+
+## A palavra-chave "Oii" cadastrava amigos (0160, 05/10/2026)
+
+Nota: [[palavra-chave-cadastra-o-lead]].
+
+- **"Conversas que não são de leads aparecem na plataforma"**: toda conversa
+  tinha lead, e os 5 leads de origem `whatsapp/ativado_pelo_corretor` foram
+  criados pela palavra-chave "Oii", casada por trecho. A 0146 tinha deixado a
+  palavra antiga valer, só com aviso. Agora `somenteDiscretas` ignora palavra
+  fora da régua (inclusive a já salva), e a 0160 arquivou os 5.
+- **Para conferir quem criou um lead estranho:** `leads.origem`.
+  `ativado_pelo_corretor` = palavra-chave; `painel/importacao` = planilha.
+
+## Cliente sem resposta vira aviso no WhatsApp do corretor (0161, 06/10/2026)
+
+Nota: [[cliente-sem-resposta-avisa-o-corretor]].
+
+- **Desde a 0152 a fala do corretor desliga a IA**, e o cliente que ele
+  esquece fica esperando. A fila do Início já mostrava, só para quem abre o
+  painel. Agora 30 min sem resposta viram aviso no WhatsApp dele
+  (`alertarClientesSemResposta`, no tique dos follow-ups), uma vez por
+  espera, das 7h às 21h59 de SP, até seis pessoas por mensagem.
+- **"Uma vez por espera" sem tabela nova**: `aviso_sem_resposta_em` só vale
+  se for posterior à última mensagem do bot ou do corretor.
+
+## Quem não quer contato só era lido no turno da IA (06/10/2026)
+
+Nota: [[quem-nao-quer-contato-e-lido-sempre]].
+
+- **`detectarRecusa` só rodava dentro de `planejarJogada`**, e desde a 0152 a
+  IA desliga quando o corretor fala. Na maioria das conversas, "me tira da
+  lista" não era gravado, e o lead voltava a receber listas. Agora o ramo do
+  silêncio do webhook lê o pedido de PARADA (`registrarParadaSemIA`). Ele grava
+  a marca, tira das listas e avisa o corretor, sem mexer em etapa nem IA.
+- **Vocabulário medido por sonda de 40 frases**: zero falsos positivos, mas
+  "mais" no meio quebrava o casamento, e "agora" desarmava recusa temporária.
+  Ampliado, com teste para cada frase. Com o banco quase vazio, a precisão se
+  mede por sonda de frases, não por consulta.
+- **Não havia como desfazer `nao_contatar_em`** (o grant existia, a tela não).
+  O botão "Liberar contato" fica na ficha do lead, em "Contato autorizado".
+- **Religar a IA sozinha depois de X horas foi recusado (06/10/2026).** A
+  conversa assumida pelo corretor fica com a IA desligada até ele ativar. A
+  rede é o aviso de 30 min no WhatsApp dele. Nota: [[quando-a-ia-responde]].
+
+## Recusa em camadas: regex, IA e registro (0162, 06/10/2026)
+
+Nota: [[recusa-em-camadas]].
+
+- **Regex nenhuma é definitiva**: cada frase nova que escapa pede remendo. A
+  regex agora decide só o óbvio; o que tem sinal de "não" e escapou vai à IA
+  (`classificarRecusa`, 4s, temperatura 0) com a última fala nossa como
+  contexto. A IA só age com confiança ≥ 0,8 e trecho copiado da fala.
+- **Toda decisão vai para `recusas_detectadas`**, e o "Liberar contato" marca
+  `desfeito_em` (rótulo de falso positivo). Revisão: `scripts/revisarRecusas.sql`.
+- **`frasesDeRecusa.ts` é a régua no CI**: nunca acusar conversa normal, toda
+  recusa passar no filtro, regex só melhorar (catraca de 28 em 35).
+- **Guarda que recorta código por um texto quebra quando o texto aparece
+  antes**: "ia_calada" virou nome de caminho do registro, e a guarda da ficha
+  passou a ancorar no `return` do ramo.
+
+## Remarcar, desmarcar e a visita combinada no chat (0163, 06/10/2026)
+
+Nota: [[visita-remarcada-e-desmarcada-pela-conversa]]. Área A2 do roadmap da
+nota 10.
+
+- **A IA só sabia marcar.** Com visita no CRM, "não vou conseguir sábado,
+  pode ser domingo?" virava "qualquer dúvida, me chama", e a data velha
+  ficava no funil. Agora `detectarMudancaDeVisita` (pura) vira as jogadas
+  `remarcar_visita` e `cancelar_visita`. Desmarcar só pelo planner, nunca
+  pelo modelo; "não vou poder ir" com outro dia é remarcação.
+- **`visitaConfirmada` lia o texto do histórico**: depois de desmarcada, a
+  frase "está confirmado" seguiria mandando a IA dizer "até lá". Com
+  `visitaMarcadaEm` vindo do webhook, vale o CRM; eval e playground seguem
+  pelo texto (por isso o eval não exercita estas jogadas).
+- **O lembrete de véspera não voltava depois de remarcar**: o cron contava
+  qualquer lembrete dos últimos 7 dias. Agora só conta o criado depois de
+  `visita_marcada_em`, e o pendente da data velha é apagado.
+- **`pedidoDeAgendamento` escolhia o dia recusado** em "não vou poder ir
+  sábado": a negação não conhecia "não vou poder/conseguir".
+- **Visita combinada pelo corretor no chat** (com a IA calada) vira
+  `whatsapp_conversas.visita_sugerida_para` e um "Registrar?" no Início.
+  Nunca grava sozinho.
+
+## Multitenant: banco compartilhado (decisão, 06/10/2026)
+
+Nota: [[next-home-e-o-espelho-da-versao-geral]]. A decisão de 26/09 (uma
+instalação por cliente) foi revertida: vai ser **um deploy e um banco para
+todas as empresas, com `empresa_id` + RLS**. Motivo: atualizar N instalações
+enquanto a plataforma muda toda semana. O risco aceito é o vazamento entre
+empresas por filtro esquecido; toda tabela, consulta e cache passa a levar a
+empresa.
+
+## O catálogo exporta para Excel (06/10/2026)
+
+Nota: [[catalogo-exportado-em-excel]].
+
+- **Imóveis → "Exportar Excel"** baixa o catálogo inteiro numa tabela
+  (`/api/painel/catalogo-excel`). O `.xlsx` é escrito sem biblioteca
+  (`xlsxEscrita.ts`), como o leitor de ZIP da importação.
+- **Leads pela RLS da sessão**, sem arquivados, um por lead pelo imóvel de
+  interesse ou do cadastro, paginando de 1000 em 1000.
+- **LibreOffice headless não abre `.xlsx` neste contêiner**, nem o gerado
+  pelo openpyxl ("source file could not be loaded"). Para validar planilha
+  aqui, use `pip install openpyxl` e leia por ele.
+
+## Importação do Google Planilhas (06/10/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **O `.xlsx` baixado do Google já era lido** (conferido com uma planilha
+  pública real). O que falhava era o resto: link colado, título acima do
+  cabeçalho e cabeçalho ambíguo ("ad_name" × "full_name").
+- **Link colado vira exportação CSV** (`/export?format=csv&gid=`), só com a
+  planilha compartilhada por link. Exportação pública do Google responde por
+  `curl` neste contêiner, então dá para testar com planilha real.
+
+## Lead sem resposta sai da base sozinho (0164, 06/10/2026)
+
+Nota: [[lead-sem-resposta-sai-da-base-sozinho]].
+
+- **7 tentativas sem resposta e 30 dias desde a primeira: arquiva, nunca
+  exclui.** Quem faz isso é o pg_cron `arquivar-leads-sem-resposta` (06h10
+  SP). O lead volta sozinho quando responde, porque `registrar_resposta_do_lead`
+  desarquiva o que foi arquivado com `arquivado_motivo = 'sem_resposta'`.
+  Lead arquivado à mão continua arquivado. Etapa `fechado` e visita futura
+  ficam fora.
+- **O cartão do funil e a lista mostram "3/7"** (`ContagemDeTentativas`): a
+  partir de 3 fica âmbar, e na 6ª, vermelho. O teto está em dois lugares (SQL
+  e `higieneDaBase.ts`), e o teste confere que é o mesmo número.
+- **Arquivar ou restaurar pelo painel limpa `arquivado_motivo`.** Sem isso,
+  um lead que o corretor arquivou de propósito voltaria sozinho.
+
+## Funil de 10 etapas, completo ou resumido (0165, 06/10/2026)
+
+Nota: [[funil-completo-e-resumido]]. Substitui o "funil de cinco" da 0045.
+
+- **O banco guarda um funil só; o resumido é agrupamento** (`GRUPO_DA_ETAPA`).
+  Quem escolhe o modo é o botão da tela do Funil, salvo no cookie
+  `nh-funil-modo`.
+- **`primeiro_contato` agora se chama "Mensagem enviada".** A chave não mudou.
+- **Movimentos automáticos:** resposta do cliente → `em_conversa`
+  (`avancarLeadParaEmConversa`, no webhook); renda + região + quartos na
+  ficha → `qualificado` (`avancarLeadParaQualificado`, depois de gravar o
+  dossiê). "Visitou" é só o corretor.
+- **Ao listar "visita em diante" use `ETAPAS_DE_VISITA_EM_DIANTE`/`chegouEm`**
+  de `types.ts`. As listas escritas à mão em quatro arquivos e em duas
+  funções SQL foram o que a 0165 teve de caçar.
+- **Deploy antes da migration**: o código novo aceita as etapas antigas, mas
+  o código antigo não conhece as novas.
+
+## A IA escreve e o corretor manda (06/10/2026)
+
+Nota: [[ia-escreve-e-o-corretor-manda]].
+
+- **Botão ✨ no cartão do funil, na lista e na folha de ações.** A IA faz o
+  rascunho com o mesmo turno do webhook; o corretor revisa e envia. A regra
+  N1 continua: a IA não inicia sozinha.
+- **Rascunho e envio são funções separadas** (`rascunharPelaIA` não chama o
+  provedor nem gasta cota; `enviarRascunhoDaIA` pega a trava, a cota e o
+  espaçamento). O envio liga a IA na conversa, ao contrário do Live Chat (0152).
+- **O toque fura a IA desligada da conversa, não o pedido do cliente**:
+  `silencioDaConversa` com `botAtivo: true` forçado.
+- Só o dono do lead envia; o ADM recebe recusa (sairia do número dele).
+
+## O caixa da imobiliária (0166, 06/10/2026)
+
+Nota: [[caixa-da-imobiliaria]]. Primeiro bloco do financeiro do dono.
+
+- **Comissão e repasse saem de `vendas`, nunca de lançamento.** A comissão
+  entra em `comissao_prevista_em` (nova); o repasse vence quando a comissão
+  entrou. Lançar de novo contaria duas vezes.
+- **A projeção erra para o lado pessimista**: entrada atrasada fora, saída
+  atrasada hoje, comissão sem data numa lista à parte. Sem saldo informado,
+  a tela não inventa saldo.
+- **`exigirGestorNaAcao` devolve união sem discriminante**: `if (guarda.erro)`
+  não estreita `corretor` para o TS. Use `if (!guarda.corretor)`.
+- Limites: 200 vendas lidas, sem parcelas de comissão, sem conciliação OFX.
+
+## O resultado do mês (06/10/2026)
+
+Nota: [[resultado-do-mes-da-imobiliaria]].
+
+- **DRE pelo regime de caixa**, sobre os mesmos movimentos do Caixa
+  (`movimentosDo`): nada de segunda conta nem tabela nova.
+- **O `next build` local pode logar "statement timeout" ao revalidar o
+  catálogo** e ainda assim sair com código 0: é o banco de produção lento
+  naquele instante, não o código. Conferir o código de saída, não o log.
+
+## O fiscal da imobiliária (0167, 06/10/2026)
+
+Nota: [[fiscal-da-imobiliaria]].
+
+- **Financeiro → Fiscal, só gestor**: impostos estimados do mês, comissões
+  recebidas sem NFS-e, RPA dos autônomos e DIMOB do ano, cada um com planilha
+  `.xlsx` (`/api/painel/fiscal-excel`).
+- **CPF/CNPJ fica em `venda_fiscal`**, nunca em `vendas`, que o corretor lê.
+- **Alíquotas e teto do INSS são dado** (`fiscal_config`, linha única id=1,
+  sem insert pela sessão). Tabela do IRRF e redução de 2026 estão no código
+  (`fiscal.ts`): mudou a lei, muda lá e no teste.
+- Estimativa, não apuração: IRPJ/CSLL são trimestrais e a tela diz isso.
+
+## O contador da imobiliária (0168, 07/10/2026)
+
+Nota: [[contador-da-imobiliaria]].
+
+- **Fechar o mês guarda o pacote (.xlsx de 5 abas) no bucket privado
+  `contabilidade` e trava o mês**: caixa, comissão recebida, repasse pago e
+  edição de venda com dinheiro no mês fechado são recusados. Ao criar caminho
+  novo que grava pagamento, chamar `mesFechadoEntre`.
+- **`gerarXlsx` aceita `Planilha[]`** (várias abas). Para validar arquivo
+  neste contêiner, ler com openpyxl.
+- **Link do contador = token em `acessos_contador`**, lido pela chave de
+  serviço; `/contador` entrou na lista de fora do Pixel.
+
+## A IA do financeiro (0169, 07/10/2026)
+
+Nota: [[ia-do-financeiro]].
+
+- **Financeiro → Alertas e IA, só gestor.** Os alertas saem de conta pura
+  (`alertas.ts`), sem modelo. O chat recebe um bloco com os números já
+  calculados e o guardrail corta a frase que cita valor fora dele.
+- **Origem nova em `ia_interacoes` exige mudar o CHECK** (0169), senão o
+  insert falha calado dentro do try/catch de `registrarInteracao`.
+- `formatarReais` imprime sem centavos quando o valor é redondo ("R$ 30.000"):
+  teste de texto não deve esperar ",00".
+
+## Cadastrar corretor pelo painel (07/10/2026)
+
+Nota: [[cadastrar-corretor-pelo-painel]].
+
+- **Administração → Contas → "Cadastrar corretor"** cria ficha e login de uma
+  vez. `corretores` não tem policy de INSERT; a ficha é gravada pela chave de
+  serviço depois de `exigirGestorNaAcao()`, e apagada se o login falhar.
+
+## Perfil de demonstração do corretor (07/10/2026)
+
+Nota: [[perfil-de-demonstracao-do-corretor]].
+
+- **"Lucas Andrade" (`demo-lucas-andrade`)**, login `demo@nexthomeimoveis.com`,
+  `ativo = false`, sem WhatsApp: 49 leads nas 10 etapas, 30 conversas, 5
+  visitas futuras, 4 vendas. Apagar com `scripts/demo/apagarPerfilDemo.sql`.
+- **O site listava todo corretor com slug, ativo ou não.** Agora
+  `corretoresPublicos` filtra `ativo` (chave do cache `-v3`).
+- **Anúncios pagos ganhou painel estilo Power BI** (`PainelDeIndicadores`,
+  `painelDosAnuncios.ts`): filtro de período e canal recalcula cartões com
+  variação, rosca, colunas por semana e funil. Cor de série precisa de
+  CLASSE (`bg-serie-1`): token só em `var()` é removido pelo Tailwind.
+- **Anúncios pagos do demo**: `scripts/demo/semearAnunciosDemo.sql` (5 campanhas,
+  2 anúncios detectados, clientes ligados pela origem dos leads demo).
+- **`leads_visita_sem_conflito_idx`** recusa duas visitas do mesmo corretor no
+  mesmo instante: seed de visitas precisa de horários únicos.
+- Até ser apagado, ele entra nos números da equipe do ADM e no ranking.
+
+## Indicadores e gráficos na tela de Vendas (07/10/2026)
+
+Nota: [[painel-da-tela-de-vendas]].
+
+- **Seis indicadores e três gráficos** (VGV por mês, comissão recebida /
+  liberada / aguardando, ranking de imóveis), calculados em
+  `montarPainelDeVendas` (pura). Corretor soma a parte dele; gestor, a equipe.
+- **Rótulo sem quebra dentro de item de grid estoura o cartão no celular**
+  (`min-width: auto`), e o `scrollWidth` da página não acusa porque o site
+  corta o excesso. Medir o `getBoundingClientRect` dos cartões.
+- O perfil demo ganhou 10 vendas de maio a setembro (segundo bloco de
+  `scripts/demo/semearPerfilDemo.sql`), para as colunas por mês terem ritmo.
+- **Extrato também ganhou gráficos** (07/10): comissão recebida por mês,
+  "quando entra o que falta" pela previsão de pagamento (vencida em vermelho,
+  sem previsão à parte, nunca um mês inventado) e, para o gestor, quanto cada
+  construtora deve. Contas em `graficosDoExtrato.ts` (pura).
+- **Ranking também ganhou gráficos** (07/10): pódio, fatia do VGV da equipe e
+  posição mês a mês. **`ranking_vgv` só lista corretor ativo**; a 0170 faz por
+  grupo (desativado vê desativados com slug), para o perfil demo ter colegas
+  de demonstração (`demo-*`) sem que eles cheguem à equipe real. O script de
+  remoção apaga os colegas também.
+
+## O mascote da IA (07/10/2026)
+
+Nota: [[mascote-da-ia]].
+
+- O botão flutuante do consultor virou o mascote (robô azul 3D, sem fundo),
+  `public/marca/mascote.webp`, 80px de altura. O voltar ao topo subiu para
+  `nav+6.5rem` para não encostar nele.
+- **Recortar um objeto de uma imagem com fundo detalhado não vale a briga**:
+  o rembg manteve o disco brilhante atrás do robô, e cor ou pontos (SAM)
+  deixaram bordas sujas. Pedir a imagem sem o elemento ao lado resolveu.
+- **O mascote é só do painel** (07/10): chegou a virar o botão de WhatsApp do
+  site e foi desfeito no mesmo dia, a pedido — no site o botão é o do
+  WhatsApp, com o símbolo dele. `Mascote` mora em `src/components/marca/`, com
+  a variante `destaque` (disco cheio + anel que pulsa) no botão do painel.
+
+## Identidade da marca para o Google (07/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- **Medido antes de mexer:** títulos, canonical, sitemap (58 URLs, todas 200)
+  e dados estruturados já estavam certos; `www.nexthomeimoveis.com` no ar e
+  `NEXT_PUBLIC_SITE_URL` apontando para ele. O que faltava era IDENTIDADE,
+  não base técnica.
+- **`dadosEstruturados.ts`**: `RealEstateAgent` com `@id`, `alternateName`
+  ("Next Home", "Next Home Imóveis", "Next Home Imobiliária"), `logo`; `WebSite`
+  com `name` igual ao sufixo dos títulos e `SearchAction` para `?busca=`.
+  BreadcrumbList no imóvel e na região.
+- **O `openGraph` da PÁGINA substitui o do layout, não mescla**: a home
+  estava sem `og:image`. `OG_IMAGEM` é constante única.
+- **`next-home-drab.vercel.app` → domínio (308) só nas páginas públicas.**
+  `/api` fica (webhook, crons e `/api/versao` chamam o host pelo nome),
+  `/corretor` fica (sessão por domínio) e arquivos com extensão ficam. Provado
+  em `next start` com `Host:` antes de subir.
+- **O que pesa mais está fora do código:** `nexthomeimobiliaria.com.br`
+  ainda serve o site legado (é o domínio com histórico); precisa de 301 para o
+  domínio novo. E Search Console + Perfil da Empresa no Google com o site novo.
+- **O site antigo ficou no ar por decisão do dono** (uma venda saiu por ele),
+  então vira concorrente da marca. Medido: 65 páginas, 2,5 s, sem viewport,
+  sem dados estruturados, títulos por bairro. Resposta em código: título do
+  imóvel com tipo e bairro quando cabem (`tituloDoImovel`, 39/39 ≤ 48) e
+  perguntas frequentes por imóvel do cadastro (`perguntasDoImovel` +
+  `FAQPage`, mesmo texto na tela). `${#t}` do bash conta bytes: "—" vale 3.
+- **A tela de Vendas também ganhou o painel no estilo Power BI** (07/10):
+  período, imóvel (pela rosca) e corretor (gestor, pelo ranking) filtram tudo;
+  contas em `indicadoresDeVendas.ts`. A cor do imóvel segue o ranking de todas
+  as vendas, não o do período.
+
+## Cadastrar lead por foto (07/10/2026)
+
+Nota: [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]].
+
+- **A leitura de foto só usava o Gemini**, cuja cota gratuita é de 20
+  chamadas por dia por modelo. Agora vai primeiro à OpenAI pelo `llm.ts`, em
+  `detalheImagem: "high"` (em `low` a foto vira 512px e o dígito some). O
+  Gemini é reserva e o único que tenta HEIC.
+- **Aba "Foto ou print"** em Adicionar leads, com câmera direta no celular.
+- **Log de runtime do Hobby guarda 1 hora**: `get_runtime_logs` com `since`
+  maior devolve 400. Para saber se algo falhou ontem, não há log.
+- **Até 10 fotos de uma vez**, uma chamada da action por foto (o corpo de
+  12 MB não cabe tudo junto); contato repetido entre prints entra uma vez.
+
+## O link pessoal não manda mais o cliente para outro corretor (07/10/2026)
+
+Nota: [[o-imovel-nao-tem-mais-corretor-dono]].
+
+- **A 0130 só dava preferência no sorteio**: número do corretor do link
+  desconectado ou ele em pausa, o clique ia para outro corretor. Agora `/wa`
+  e `/wa/<imóvel>` usam `numeroDoLinkPessoal` antes do sorteio (conectado na
+  plataforma, senão o WhatsApp do perfil). Sem link pessoal, segue o rodízio.
+- Desconectado, o cliente vai para o WhatsApp do perfil, fora da plataforma:
+  sem IA e sem lead automático no CRM.
+
+
+## A conta da Bruna foi restringida pelo WhatsApp (0171-0172, 07/10/2026)
+
+Nota: [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]].
+
+- **Restrição por "mensagens automáticas ou em massa"** no meio de uma lista
+  fria de 300 (114 enviadas, 17 sem WhatsApp). Aquecimento e espaçamento
+  estavam certos: o que o WhatsApp restringe é primeira mensagem para quem
+  nunca escreveu, de número comum. Massa segura só pela API oficial.
+- **A criação da lista confere os números** (`/chat/whatsappNumbers`, lotes de
+  50) e tira só quem vem com `exists: false`.
+- **A lista para sozinha** (≥20% sem WhatsApp com 5+, ou ≥3 pedidos para sair
+  e ≥2%), com o motivo em `pausa_automatica`. Retomar grava `pausa_base` para
+  não repausar pelos mesmos sinais.
+- A Evolution já confere o número antes de enviar: "Número não está no
+  WhatsApp" nunca chegou a ser mensagem. E pelas regras novas a lista da
+  Bruna não teria parado (13% sem WhatsApp).
+- **O teste A/B mandava texto idêntico** (medido em 08/10). A IA não reescreve
+  durante o A/B, e sem `{nome}` no texto as mensagens saem iguais: 65 das 114
+  da Bruna (30 A, 35 B). Depois do A/B, a IA deu 35 textos em 49 envios, um
+  repetido 8 vezes. O A/B estava em 4 das 5 listas frias da semana.
+- Só 1 destinatário da lista da Bruna pediu para sair. A pausa automática já
+  parou a lista da Grazi (8 de 34 sem WhatsApp).
+
+## O texto da lista é conferido antes de sair (0173, 08/10/2026)
+
+Nota: [[texto-da-lista-conferido-antes-de-sair]].
+
+- **Pedir variação à IA não garantia variação.** As reescritas tinham mediana
+  de 0,95 de semelhança com uma mensagem anterior do mesmo número, e o A/B
+  desligava a reescrita: 77 de 114 mensagens da Bruna idênticas, letra por
+  letra. Hoje `variarSemRepetir` confere fatos, invenções e semelhança, e só
+  sai texto abaixo de 0,70 contra as mensagens do número nos últimos 30 dias.
+  Sem texto próprio, a mensagem espera (`erro_motivo` no item pendente); 4
+  ciclos assim pausam a lista.
+- **Medir semelhança só por trincas de palavras não pega o molde com
+  sinônimos** (0,25 a 0,40 para o mesmo texto). A subsequência comum de
+  palavras pega. Calibrado com 30 variações boas (máximo 0,62) e cópias com
+  palavras trocadas (0,79 a 0,96).
+- **A conferência vem antes da cota**: o que não sai não gasta a cota, e o
+  texto aprovado fica gravado (`semelhanca_max`). Item com a semelhança nula
+  é o que ainda não foi conferido, inclusive o reescrito pela versão antiga.
+- **`{nome}` agora é o primeiro nome** e, sem nome útil, o marcador some com a
+  pontuação dele. "Tudo bem?" no lugar do nome quebrava a frase.
+- **Para testar sintaxe de PostgREST sem a chave de serviço**: a chave
+  publicável com RLS devolve 200 e `[]` para consulta válida, e 400 com
+  `PGRST100` para consulta mal formada. Serve para filtros `or()` aninhados.
+
+
+## O primeiro dia da conferência de texto (08/10/2026)
+
+Notas: [[texto-da-lista-conferido-antes-de-sair]], [[recusa-em-camadas]].
+
+- **A lista do Ramos pausou na 7ª mensagem.** As versões A e B eram iguais, e
+  o modo A/B mandava a IA trocar só as palavras. Sinônimos mantêm a sequência,
+  que é o que a conferência mede: as 6 reescritas ficaram entre 0,46 e 0,70 umas
+  das outras, e reescritas com outra ordem de ideias dão 0,29 a 0,38. Agora B
+  igual à A não é A/B (`versoesDiferentes`, recusado ao criar), nenhum estilo
+  pede só sinônimos, e o motivo de cada recusa vai para o log.
+- **Antes de mexer no limite de semelhança, ler os textos que a IA escreveu.**
+  O limite estava certo; o molde vinha do pedido à IA.
+- **O pg_net guarda a resposta do disparador por algumas horas**
+  (`net._http_response`), com o `diagnostico` de cada ciclo. É onde se vê o que
+  aconteceu depois que o log de 1 hora do Hobby já sumiu.
+- **"Acho que você mandou errado" foi lido como pedido para parar** (IA 0,90),
+  porque o pedido de classificação põe "número errado" em `parada`. A IA se
+  despediu e o lead ficou "não contatar". Em aberto: tirar a frase da `parada`
+  sozinha faria o turno seguir o funil.
+- **"Connection Closed" (HTTP 500 da Evolution) em todo envio** abre o
+  disjuntor por 12 h, com o painel ainda dizendo "conectado". Aconteceu com o
+  número da Márcia às 9h; o Ramos mandava normal no mesmo minuto, então era a
+  sessão dela, não o servidor.
+- **O aviso do disjuntor mostrava o horário em UTC** ("pausados até 09/10,
+  00:00" para um bloqueio das 21h). `toLocaleString` no servidor precisa de
+  `timeZone: "America/Sao_Paulo"`.
+
+## A dúvida de engano e a sessão caída (09/10/2026)
+
+Notas: [[duvida-de-engano-nao-e-pedido-para-parar]],
+[[sessao-caida-com-o-numero-conectado]].
+
+- **"Acho que você mandou errado" virava despedida.** A regex não pegava, o
+  filtro largo mandava à IA de recusa por causa de "errado", e o pedido à IA
+  dizia que "número errado" é parada (0,90). Hoje a dúvida sai do filtro
+  antes (`semADuvidaDeEngano`) e vira a jogada `esclarecer_contato`: quem
+  escreve, por quê e, no começo da conversa, se ele quer continuar
+  recebendo. "Mandou errado" só conta como dúvida no começo e sem "a foto",
+  "o link" etc. logo depois; no meio do atendimento é queixa de conteúdo.
+- **A afirmação continua parada**, decidida pela regex: "número errado",
+  "pessoa errada", "não sou eu", "não conheço vocês".
+- **O "não" depois da oferta de parar é parada mesmo sem a IA**
+  (`ofereceuParar` em `detectarRecusa`). Sem isso, caindo a IA de recusa, o
+  "não" recebia "em qual região você procura?".
+- **Ao criar resposta para um caso novo, conferir também a fala seguinte do
+  cliente.** A jogada pergunta "quer continuar recebendo?", e a resposta a
+  essa pergunta precisava de leitura própria.
+- **"Connection Closed" é sessão caída com o número "conectado".** O
+  disjuntor abria por 12h e o painel prometia "volta sozinho às 21h"; não
+  voltaria. Agora o envio com esse erro devolve a cota, não gasta tentativa,
+  marca a fila (`MOTIVO_SESSAO_CAIU`) e encerra a vez; a faixa e a tela de
+  listas pedem para reconectar; reconectar tira a marca e levanta a pausa,
+  só quando achou marca de sessão.
+- **Sem migration de propósito**: a marca mora em `erro_motivo` da fila,
+  porque esta sessão não tinha acesso ao banco e o código não pode esperar
+  coluna que ninguém aplicou.
+- **"Desconectar" no painel zera `conectado_em`** (a curva de aquecimento
+  recomeça). Só é preciso quando o provedor diz "open" com a sessão morta.
+- **Prompt v49.** Sem chave de LLM aqui, o efeito na conversa só se mede na
+  próxima dúvida real: `ia_interacoes.contexto->'jogada'->>'tipo' =
+  'esclarecer_contato'`.
+- **O texto pré-pronto da lista e as aberturas da IA não trazem `{nome}`**, a
+  pedido: o corretor apagava o marcador toda vez. O pedido à IA proíbe, e o
+  que vier com ele é limpo por `trocarNome`. A variável continua no botão de
+  variáveis ([[texto-da-lista-conferido-antes-de-sair]]).
+- **Retomar a lista de outro corretor sem o login dele**: o botão filtra pelo
+  corretor da sessão (nem o ADM retoma). `scripts/ops/retomarLista.ts` faz o
+  mesmo que o botão pelo GitHub Actions, disparado por push do id em
+  `scripts/ops/retomar-lista.json` na branch de produção
+  ([[retomar-lista-sem-o-login-do-dono]]).
+- **O intervalo entre mensagens passou para 1min30–2min** (era 35–75s), a
+  pedido: o piso e o teto vão do código para o banco
+  (`consumir_cota_campanha_espacada`), então mudar não precisa de migration.
+  O limite diário ficou como estava
+  ([[espacamento-anti-ban-so-existia-no-papel]]).
+
+## As barras de navegação (09/10/2026)
+
+Nota: [[lateral-recolhe-e-rola-sozinha]].
+
+- **A lateral do computador passava da dobra e não rolava**: é `sticky` sem
+  altura máxima. Com o Financeiro aberto, 335px do menu ficavam abaixo da
+  tela num notebook (1343x598). Agora rola por dentro.
+- **Botão "Recolher menu"**: trilho de ícones de 64px, cookie
+  `nh-menu-lateral` lido no layout. Cartão do trilho é `fixed` posicionado
+  por script: rolagem da página reposiciona, só a do trilho fecha. O `sticky`
+  precisa de `z-30`, senão os cartões do conteúdo pintam por cima.
+- **No celular o cabeçalho do painel some ao rolar para baixo.** A altura
+  real (69px, não os 60 do CSS) vai para `--painel-header-h`; quem gruda
+  abaixo dele lê `--painel-topo-visivel`.
+- **Site:** cabeçalho do computador marca a página atual (`aria-current`, o
+  CSS já existia); a vitrine ganhou menu no celular.
+- Peso: +8 a +10 KB em toda rota do painel (vai no layout); tetos subiram.
+
+## O botão de enviar para todos a qualquer hora saiu (09/10/2026)
+
+- **"Enviar agora para todos os leads"** (`EnvioImediato`, 0058) criava uma
+  lista com a carteira inteira marcada `ignorar_janela`, saindo inclusive de
+  madrugada. Era de teste e saiu a pedido, junto com a ação
+  `enviarAgoraParaTodosOsLeads`. `criarCampanha` não aceita mais
+  `ignorarJanela` do navegador: grava sempre `false`. Conferido no banco:
+  só 5 listas concluídas tinham a marca, nenhuma com pendente.
+- **No mesmo dia saíram também "Liberar envio agora" (e o "Liberar agora"
+  de cada lista) e "Enviar agora"**, com as ações `liberarEnvioAgora` e
+  `processarFilaAgora`. A fila só anda pelo disparador (pg_cron e corrente),
+  dentro do horário. Guarda em `listaDeTransmissao.test.ts`. A coluna
+  `janela_liberada_ate` continua lida pelo disparador, mas nada a grava mais.
+
+## Botões que parecem botões (09/10/2026)
+
+Nota: [[botoes-que-parecem-botoes]].
+
+- **"Os usuários não sabem que são botões."** ~200 botões e links do painel
+  eram só texto colorido ou só ícone; a única pista era a cor mudar no
+  hover, que o celular não tem. É a mesma lição de 07/09 ("link tem de
+  parecer link"), que tinha sido aplicada só na administração.
+- **Quatro estilos no globals.css**: `botao-secundario` (contorno),
+  `botao-icone` (círculo de fundo), `link-acao` (sublinhado sempre),
+  `linha-abre` (seta › por `::after`). Só acrescentam a pista; cor e tamanho
+  ficam com quem usa.
+- **Toque escurece o controle** com sombra interna, não `transform`/`filter`
+  (containing block).
+- **Achar controle sem pista exige AST**, não regex: `className` vive em
+  `cn()`, template e variável. `botoesComPista.test.ts` faz isso e reprova
+  controle novo sem pista; exceções por arquivo, com motivo, só descem.
+- **A primeira versão ficou feia** (cinza com borda forte em tudo). Hoje a
+  pista é tingida pela cor do próprio texto (`currentColor` a 24%/6%), com o
+  raio do botão principal, e o círculo do ícone é desenhado menor que o
+  alvo de toque.
+
+## Limites do número só para o lado conservador (09/10/2026)
+
+Nota: [[aquecimento-do-numero-pelo-uso]].
+
+- **Decisão do dono da conta: "vamos ser bem conservadores com esses
+  limites".** Pedido de mais volume se resolve com mais dias de uso ou mais
+  números conectados, nunca com limite maior.
+- **`limitesConservadores.test.ts` congela a política de 09/10** (curva por
+  idade, ×1,5, piso 15, 7 dias, freio com 3 recusas, 1min30 a 2min, janela 9h
+  às 20h59 sem domingo) e reprova afrouxar, inclusive pela fórmula. Apertar
+  passa. Para afrouxar, a referência do teste muda junto, com data e motivo.
+- **Número conectado há menos de 3 dias manda no máximo 15 por dia, e os
+  dias contam em horas, não no calendário** (`diasDesdeConexao` arredonda
+  para baixo). A lista do Ramos (número de 07/10 13h54) parou às 9h30 de
+  09/10 com 15 enviadas; em 10/10 o teto continua 15 até 13h54 e só então
+  sobe (para 23, pelo maior dia da semana × 1,5).
+
+## As fotos quebravam: a cota do otimizador de imagens acabou (09/10/2026)
+
+Nota: [[otimizador-de-imagens-tem-cota-no-hobby]].
+
+- **Foto quebrada com o arquivo respondendo 200 no Storage não é o arquivo.**
+  As fotos do Dom apareciam só com o texto alternativo, e `/_next/image`
+  respondia 402 com `x-vercel-error: OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED`:
+  a cota mensal de otimização do Hobby acabou. A variante já em cache abre, a
+  nova quebra, então parte das fotos aparecia e parte não, no painel e no site.
+- **Hoje `images.unoptimized: true`**: a foto sai direto do Storage. Custo
+  medido: mediana de 134 KB entre as 1.076 publicadas, mas 79 passam de
+  500 KB e 34 de 1 MB. Reduzi-las é dado de produção (arquivo novo + URL em
+  `midias`) e espera decisão.
+- **Imagem de `public/` precisa chegar leve**: nada a reduz no caminho. O
+  fundo do login era JPEG de 757 KB e virou WebP de 78 KB. Guarda:
+  `imagensSemOtimizador.test.ts` (teto de 300 KB e `unoptimized` mantido).
+- O `/render/image` do Supabase respondeu neste projeto, mas a organização
+  está no plano free e o recurso é do Pro: não depender dele.
+
+## O ícone da aba era o do Next.js (09/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- `src/app/favicon.ico` era o padrão do `create-next-app` (md5 `c30c7d42…`).
+  Agora `favicon.ico`, `icon.png` (192) e `apple-icon.png` (180, opaco) saem
+  de `node scripts/marca/gerarIcones.mjs`, com o símbolo da logo sobre fundo
+  branco arredondado: a casa da logo é espaço vazio e sumiria na aba escura.
+
+## O escritório mudou para o Office Bethaville (09/10/2026)
+
+Nota: [[identidade-da-marca-para-o-google]].
+
+- Endereço novo em `site.endereco` (`src/lib/site.ts`): Av. Trindade, 254 —
+  Office Bethaville, Bethaville I, Barueri/SP, CEP 06404-326. Não há outra
+  cópia no código; as frases que diziam "Alphaville" como lugar do escritório
+  (Contato, Sobre) e o `geo.placename` passaram a ler o endereço.
+- **Pino de anúncio imobiliário não é a porta do prédio.** O da Lopes caiu na
+  avenida vizinha (reverse do Nominatim). Quando o OpenStreetMap não tem o
+  prédio, a numeração métrica resolve: dois números conhecidos da mesma
+  calçada dão metros por número (aqui ~1 m), e o número procurado sai por
+  extrapolação. Conferir o ponto com o reverse do Nominatim.
+
+## O telefone com 55 que a planilha corta (09/10/2026)
+
+Nota: [[telefone-com-55-que-a-planilha-corta]].
+
+- **"Tabela com 55 na frente sai sem os últimos dígitos" era a notação
+  científica.** Excel e Google Planilhas mostram número de 12+ dígitos (todo
+  celular com 55) como "5,51198E+12", e é o que se cola ou exporta em CSV. A
+  importação lia os dígitos que sobravam: virava "(11) 5511-9812", e
+  "5.5119819181E+12" virava (11) 98191-81**12**, com o expoente no final.
+  Nenhum lead gravado tinha o padrão (o erro aparecia na revisão).
+- **`normalizarTelefoneBrasileiro` devolve `null` para notação cortada**
+  (`lerNumeroDePlanilha`), e a notação com todos os dígitos ou o decimal
+  "5511981918127.0" viram o número. A linha cortada vem em branco, desmarcada,
+  com etiqueta e aviso; lista solta com número cortado não vai à IA.
+- **O número inteiro existe em três lugares:** no HTML da área de
+  transferência (`x:num` do Excel, `data-sheets-value` do Google, `sdval` do
+  LibreOffice), no `.xlsx` exportado pelo Google e no `.xlsx` enviado. O colar
+  troca só quando a linha e o arredondamento batem (`coladoDaPlanilha.ts`).
+- **Formato do clipboard conferido em documentação, não num Excel de
+  verdade.** Se não recuperar, a linha vem marcada e o aviso explica o
+  caminho do `.xlsx`.
+- **E o 55 virava DDD** (mesmo dia, relatado ao enviar o `.xlsx`). Com o
+  número inteiro o `.xlsx` sempre esteve certo (16 formas conferidas no
+  pipeline real); o "(55)" vinha de célula de 11 dígitos começando com 55:
+  "+55 98191-8127" (a Meta grava assim quem digita sem DDD) ou número já
+  cortado. "+55" explícito agora é sempre o país; em tabela onde a maioria
+  começa com 55, o número curto vem "sem DDD" e desmarcado; e
+  `normalizarTelefoneBrasileiro` recusa número sem forma de telefone daqui
+  (celular que não começa com 9, DDD com zero), o que pega o cortado.
+  **Diagnóstico**: "(55)" numa importação de lista paga é quase sempre o 55 do
+  país lido como DDD, não cliente de Santa Maria.
+
+## O atalho da tela inicial guarda o ícone antigo (09/10/2026)
+
+Nota: [[atalho-da-tela-inicial-guarda-o-icone-antigo]].
+
+- **"O favicon ainda não está certo" era um atalho antigo.** O print mostrava
+  o triângulo do Next borrado; os ícones de produção já eram a marca (mesmo
+  md5 do repositório). Atalho guarda o ícone de quando foi criado e não
+  atualiza: apagar e adicionar de novo.
+- **`src/app/manifest.ts`**: ícone de 512 px e versão mascarável (branca até a
+  borda, símbolo dentro do círculo de 80%). Sem `start_url`: o Chrome usa o
+  `start_url` como endereço do atalho, e com `"/"` o corretor que põe o painel
+  na tela inicial ganharia a home do site. `display: "browser"`: com
+  "standalone" o Chrome oferece "Instalar app" a todo visitante.
+- **O Next liga `mobile-web-app-capable` sozinho** quando há `appleWebApp` no
+  metadata, mesmo só com `title`. O layout passa `capable: false`.
+- `public/apple-touch-icon.png` (e `-precomposed`): caminho que alguns
+  navegadores pedem sem ler o `<head>`; antes davam 404.
+- Para conferir sem celular: `Page.getAppManifest` e
+  `Page.getInstallabilityErrors` pelo CDP no Chromium do Playwright.
+- **O mesmo print voltou em 10/10.** O servidor seguia certo nos três
+  endereços, e o favicon do site antigo também é o símbolo da marca. Se o
+  atalho recriado ainda mostrar o triângulo, falta apagar os dados do site no
+  navegador, ou o atalho aponta para um deploy antigo da Vercel (endereço com
+  sufixo), que serve o favicon padrão do Next para sempre.
+- **No resultado de busca do Google o triângulo é a cópia DO GOOGLE (13/10).**
+  O servidor já entregava a marca. O que o Google guardou se vê em
+  `google.com/s2/favicons?domain=www.nexthomeimoveis.com&sz=64` (em 13/10,
+  ainda o triângulo). Troca quando ele recolhe a home de novo; para apressar,
+  Search Console → Inspeção de URL → Solicitar indexação.
+
+## A primeira semana em produção (03-09/10/2026)
+
+Nota: [[primeira-semana-em-producao]]. Consultas em
+`scripts/relatorioDaSemana.sql`.
+
+- **O que aconteceu**: 897 leads novos (855 de planilha), 47 clientes
+  conversaram, a IA respondeu 96 vezes e o corretor 115 (mediana de 20 s; 12
+  vezes sem resposta, todas com a IA desligada), 245 mensagens de lista e 31
+  respostas (12,7%), 1 visita marcada e nenhuma venda. Nota, tarefa, arte e
+  vídeo: zero.
+- **O perfil demo entra na semana por duas colunas que o banco carimba.** O
+  seed de 07/10 pôs leads e mensagens no passado, mas `visita_marcada_em`
+  (trigger da 0122) e `vendas.created_at` ficaram em 07/10. Sem
+  `slug not like 'demo-%'`, a semana teria 19 visitas e 39 vendas em vez de
+  1 e 0.
+- **Mensagem `bot` não é resposta da IA**: inclui lista e lembrete (07/10:
+  200 `bot`, 26 respostas da IA). Contar a IA em `ia_interacoes`
+  (`acao = 'respondida'`).
+- **71% dos cliques do site são robôs**: ClaudeBot, GPTBot e MJ12bot seguem
+  os botões `/wa/<imóvel>?de=site` das fichas (~21 por imóvel na semana); o
+  `robots.txt` só bloqueia `/corretor` e `/api`. Contar `visitante` distinto
+  sem os robôs: 81 pessoas no site, 118 no anúncio.
+- **Visitas ao site não se leem por aqui**: a API de Web Analytics da Vercel
+  responde 404 "Web Analytics not found" com o script no ar. Conferir na aba
+  Analytics do projeto.
+- **Em 10/10, 4 dos 6 números estavam desconectados** (Ana, Carolini, Bruna,
+  Ramos) e a sessão da Márcia caída; a lista dela (36, criada em 07/10) nunca
+  mandou nada. Ninguém foi avisado fora do painel: o e-mail precisa de
+  `RESEND_API_KEY` e o aviso por WhatsApp sai do número que caiu.
+
+## A queda do número protege a lista, e o robô sai da conta (0174, 10/10/2026)
+
+Notas: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]],
+[[clique-de-pessoa-pelo-sec-fetch]]. Saíram do relatório da primeira semana.
+
+- **A reconexão pelo webhook não apagava a queda anterior.** Só a
+  sincronização ativa limpava `desconectado_em`. O Ramos aparecia como "caiu
+  em 08/10 17h37" e mandou 59 mensagens depois disso; caiu de novo em 09/10,
+  depois das 12h53. Agora `registrarEventoConexao` apaga o marco e a marca do
+  aviso ao voltar e carimba a queda uma vez. **Para conferir uma data de
+  queda, compare `desconectado_em` com a última mensagem que saiu do número.**
+- **O motivo da queda vinha e era descartado.** O `connection.update` traz
+  `statusReason` (401 = aparelho desconectado da conta, 403 = conexão
+  recusada). Quando o webhook não traz, a varredura pergunta uma vez por
+  queda à Evolution (`/instance/fetchInstances`, `disconnectionReasonCode`).
+  A Evolution guarda só a última queda que não reconecta sozinha: o código
+  só vale com `disconnectionAt` perto da nossa queda.
+- **Número fora do ar por 30 minutos pausa as listas dele e o limite volta a
+  15** (`aquecimento_desde`, `recomecoDepoisDe` no `limiteDoDia`). (O limite
+  voltar a 15 passou a exigir 3 dias sem conectar na 0176, no mesmo dia.) As quedas
+  de 10/10 não pausaram lista nenhuma, por decisão do dono da conta ("não
+  pause as listas"): a migration as marcou como tratadas e só recomeçou o
+  aquecimento. Sem isso a Bruna voltaria a 60–75 mensagens por dia logo
+  depois de cair.
+- **Sessão caída sai do rodízio do link** (`sessao_caida_em`). O
+  `sortear_corretor_whatsapp` só olhava `status_conexao`, e a Márcia
+  ("conectada" com a sessão morta) recebeu 42 cliques em dois dias.
+- **Robô disfarçado contava como pessoa.** Navegador de computador comum, em
+  3 versões, pediu exatamente 39 vezes cada um dos 4 botões (os 39 imóveis),
+  nenhum lead. O clique do site agora só é de pessoa com
+  `Sec-Fetch-Site: same-origin` + `Sec-Fetch-User: ?1` (ou `Referer` do
+  site em navegador antigo): `cliques_whatsapp.de_pessoa`. Não foi para o
+  `robots.txt`: o link do anúncio é `/wa/<imóvel>` e o robô da Meta precisa
+  abri-lo.
+- **Migration que redefine o sorteio põe o sorteio por último no arquivo**:
+  `sorteioDoPorteiro.test.ts` lê do `create or replace` dele até o fim.
+- **Primeiro resultado, minutos depois do deploy:** Bruna, Ramos e Ana
+  caíram com 401 (aparelho desconectado da conta); a Carolini ficou sem
+  motivo guardado. Nenhuma foi queda de internet. Para consultar:
+  `motivo_queda_codigo` em `corretor_whatsapp_instancias`.
+
+## O estado do número só o servidor escreve (0175, 10/10/2026)
+
+Nota: [[estado-do-numero-so-o-servidor-escreve]].
+
+- **O corretor reescrevia a própria linha de `corretor_whatsapp_instancias`
+  pela API.** O `authenticated` tinha o grant padrão de tabela e a policy do
+  dono é `for all`: dava para zerar o contador do dia, apagar aquecimento,
+  disjuntor e espaçamento, voltar ao rodízio com a sessão caída, gravar um
+  `webhook_secret` (o webhook o aceita como senha da instância) ou trocar o
+  `instance_name` pelo de um colega. As 6 linhas estavam íntegras: nada
+  indica que o buraco tenha sido usado.
+- **Hoje a sessão lê e altera só a configuração da assistente** (10
+  colunas). A linha nasce, conecta e desconecta pela chave de serviço
+  (`whatsapp/acoes.ts`), depois de conferir a sessão. Guarda:
+  `estadoDoNumero.test.ts`.
+- **Upsert pela sessão não convive com grant por coluna** (faz UPDATE de toda
+  coluna enviada, inclusive a chave): salvar a configuração virou "linha pelo
+  servidor + update pela sessão". A linha que já existe mantém o nome da
+  instância, que precisa bater com a instância criada na Evolution.
+- **Esta migration foi aplicada DEPOIS do deploy**, ao contrário do normal:
+  ela tira um privilégio que o código antigo usava (o conectar gravava o
+  estado pela sessão e ignorava o erro).
+- **Conferido nos dois sentidos**: com a sessão de um corretor, numa
+  transação desfeita, a configuração atualiza 1 linha e contador,
+  `conectado_em`, `webhook_secret`, `instance_name` e insert são recusados;
+  o `anon` (que tinha SELECT de tabela) não lê mais nada; crons em 200 depois
+  da migração.
+- **Antes de fechar grant de uma tabela, procurar quem mais escreve nela no
+  banco** (`pg_proc.prosrc`, triggers, views): aqui todas as funções que
+  escrevem são `security definer` sem execute para o `authenticated`.
+
+## O limite só volta a 15 depois de 3 dias sem conectar (0176, 10/10/2026)
+
+Nota: [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
+
+- **Decisão do dono da conta: "se estiver 3 dias sem conectar volta a 15,
+  para não ficar voltando a 15 toda hora".** Na 0174 o limite recomeçava aos
+  30 minutos fora do ar; em 10/10 quatro números caíram (22 a 50 horas) e
+  todos voltariam a 15. A pausa da lista continua aos 30 minutos.
+- **Pausa e recomeço são duas perguntas** (`quedaPedePausa`,
+  `quedaPedeRecomeco`), cada uma uma vez por queda. O prazo é
+  `DIAS_FORA_PARA_RECOMECAR`, e `limitesConservadores.test.ts` reprova
+  prazo maior que 3.
+- **O recomeço medido em dias depende de o marco ser o da queda ATUAL.** O
+  registro da queda só carimba `desconectado_em` quando o campo está vazio;
+  um marco esquecido num número conectado faz a próxima queda já contar
+  como 3 dias. A Márcia tinha um de 07/10, e o botão Conectar com o número
+  já no ar não apagava o marco (corrigido). Ao mudar regra que mede tempo a
+  partir de um marco, procurar todo caminho que deveria apagá-lo.
+- **Aplicada depois do deploy.** O passo que desfaz o recomeço usa
+  `aquecimento_desde > now() - 3 dias`: um recomeço desses não pode ter
+  vindo da regra nova, então a condição também pega o que o código antigo
+  gravasse até o deploy.
+
+## Menos bytes sem perder os efeitos (12/10/2026)
+
+Nota: [[menos-bytes-sem-perder-os-efeitos]]. Pedido: "melhorar o desempenho
+sem perder os efeitos e a qualidade". Medido antes de mexer, e a medição
+mudou a lista: nenhum efeito saiu.
+
+- **Vídeo com segundos que ninguém via.** `fundo-home` (fundo do celular)
+  tinha 8 s e congela em 1,5 s; a vinheta tinha 7,77 s para um overlay que
+  sai em 5,45 s no pior caso. **Cortar o FIM com `ffmpeg -t <s> -c copy` é
+  sem perda em qualquer codec** (só cortar o começo exige keyframe): webm
+  622 → 208 KB e 736 → 511 KB; mp4 714 → 226 e 1.080 → 759. Reencodar
+  (crf 36) dava SSIM 0,967 e saía MAIOR que a cópia: os webm da casa são
+  all-intra. `videosSobMedida.test.ts` trava os tamanhos.
+- **GSAP + Lenis em toda tela do painel** por um `import` do `SmoothScroll`
+  no layout raiz (~120 KB por rota de `/corretor`, sem um ScrollTrigger
+  para usar). `MovimentoDoSite` carrega por `next/dynamic` só fora do
+  painel. Um `if` em volta do import esconde o componente, não o chunk.
+- **supabase-js (245 KB) no primeiro carregamento de cinco rotas** para
+  abrir Realtime depois ou subir arquivo ao escolher. `createClientSobDemanda`
+  faz `import()` no efeito/handler: Pessoas 1.019 → 712 KB, Conversas 1.056
+  → 749, Criar arte 1.024 → 717, Criar vídeo 1.016 → 709, Importar 1.034 →
+  726. Guarda `pesoDoPainel.test.ts`; catraca de bundle desceu em toda rota.
+- **Capa de 430 KB num cartão de 360px.** Sem o otimizador da Vercel,
+  `unoptimized: true` mandava o original cru e sem `srcset`. Agora
+  `registrarMidia` gera WebP em 480/960/1440 (só menores que o original) e
+  grava `midias.variantes` (0177, aplicada); `srcDaMidia` põe a lista num
+  FRAGMENTO da URL (`#v=480,960`) e o loader próprio (`images.loaderFile`)
+  escolhe a variante; URL sem marca volta como veio. **A marca existe
+  porque candidato 404 no `srcset` quebra a foto inteira** — a mesma falha
+  calada do 402. Backfill das 1.174 linhas em `gerarVariantes.ts`, pelo
+  Actions (`variantes-de-imagem.yml`), quando o script chegar à branch de
+  produção; até lá o site serve o original, como antes.
+- **O Playwright instalado pede um `chromium_headless_shell-1234` que o
+  sandbox não tem**: `scripts/perf/medir.ts` passou a aceitar
+  `E2E_CHROMIUM`, como o `playwright.config.ts` já aceitava.
+- **A/B local honesto é `git worktree` do commit anterior** com
+  `node_modules` por `cp -al`, os dois `next start` em portas diferentes e
+  `npm run perf -- --base=http://localhost:<porta>`. Medir contra produção
+  compara a rede de duas horas diferentes, não os dois builds.
+- **Medido local, antes × depois (3 rodadas):** LCP das rotas públicas
+  igual (home 1,94 → 1,98 s; listagem 4,27 → 4,29 s — a capa crua é o LCP
+  dela, e isso só muda com o backfill das variantes); tarefas longas no
+  celular −7 a −20% nas quatro páginas; mídia no desktop 719 → 499 KB. O
+  painel não entra na medição (login); lá o ganho é o do manifesto.
+  **`imagens` = 0 KB para o Storage não é foto ausente**: cross-origin sem
+  `Timing-Allow-Origin` não expõe `transferSize`.
+- **O maior ganho estrutural ficou para a F2b, feita no mesmo dia** (seção
+  seguinte): `cookies()` no layout raiz mantinha toda rota dinâmica
+  (`X-Vercel-Cache: MISS` em tudo, TTFB de função).
+
+## A casca estática sem perder o tema (F2b, 12/10/2026)
+
+Nota: [[a-casca-estatica-sem-perder-o-tema]]. Pedido: "faça a casca estática
+(F2b) sem perder o tema". Saiu SEM `cacheComponents`.
+
+- **Três leituras de requisição em lugar compartilhado tornavam TODA rota
+  dinâmica**: o cookie do tema no layout raiz (`generateViewport` +
+  `<html data-tema>`), no Footer e no Header; o corretor do link
+  (`getCorretorAtivo`) nos dois layouts de grupo e DENTRO de
+  `getEmpreendimentos`; e `searchParams` em `/contato` e `/mapa` para
+  pré-selecionar uma opção. Hoje 11 das 14 páginas públicas saem
+  `s-maxage=3600` (ficha do imóvel e financiamento 5 min). Continuam
+  dinâmicas, declaradas na guarda: `/empreendimentos`, `/portfolio`,
+  `/comparar`, páginas de token, `/wa`.
+- **O HTML não sabe o tema.** Sai sempre `data-tema="claro"` e um script
+  inline, primeiro filho do `<body>`, lê o cookie e corrige `<html>`,
+  `theme-color` e `color-scheme` antes da primeira pintura (o contrato do
+  `Preloader`). O seletor observa o DOM por `useSyncExternalStore`.
+  Medido: com cookie `escuro`, em `DOMContentLoaded` o `<html>` já está
+  escuro e a barra em `#040b0a`; HTML da home byte a byte igual com e sem
+  cookies.
+- **Server Action que mexe em cookie refaz a árvore da rota**, e a árvore
+  nova trouxe o `<meta theme-color>` claro por cima do escuro recém-
+  aplicado — `<html>` escuro, barra do navegador clara até recarregar. Só o
+  Playwright mostrou. Como o servidor não lê mais o cookie, ele não o
+  escreve: `document.cookie` no clique, 0 requisições ao servidor.
+- **O fundo do corretor do link é ilha** (`FundoDoLink` +
+  `/api/corretor-ativo`, zero banco): sem cookie nada é pedido; com cookie
+  troca depois da primeira pintura. Os dois fundos chegam por
+  `next/dynamic` — importados estaticamente, entravam em toda página
+  pública (+1 a +2 KB, a catraca pegou).
+- **`?param=` que só pré-seleciona vai para `useSearchParams` em
+  `<Suspense>` com o próprio componente como fallback**: o HTML estático
+  traz o formulário e o mapa inteiros.
+- **Comentário JSX sai antes do comentário de bloco** em guarda que lê
+  código; e `pkill -f "[n]ext start"` numa linha que contém `npx next
+  start` mata a própria sessão (a régua é `[n]ext-server`).
+- **Conferido em produção depois do merge (01h38 UTC)**: `PRERENDER` na
+  primeira requisição e `HIT` na segunda em todas as páginas estáticas;
+  `/empreendimentos` e `/portfolio` seguem `MISS`, como declarado. **Na
+  Vercel o `Cache-Control` visível é sempre `public, max-age=0,
+  must-revalidate`** — quem diz se veio do cache é o `x-vercel-cache`, não
+  o `Cache-Control`. O registro `Production` nasceu ~2,5 min depois do
+  `Preview` (mais que os ~70 s medidos em 16/09; consultar cedo imita
+  recusa).
+
+## A semana do link do anúncio e a primeira revisão das recusas (12/10/2026)
+
+Notas: [[onde-o-clique-do-anuncio-se-perde]], [[recusa-em-camadas]].
+
+- **O anúncio só rodou em 05 e 06/10**: 118 pessoas na semana, 87% de dentro
+  do navegador de um app, e nenhum lead do anúncio. Antes de medir "a semana
+  do anúncio", conferir em que dias houve clique.
+- **Quem clica e não manda a mensagem pronta não escreve outra coisa.** Nos
+  dias de anúncio, 28,6% dos barrados chegaram até 15 min depois de um
+  clique, contra 28,2% nos mesmos barrados deslocados no mesmo dia. **O
+  acaso se mede no mesmo dia**: deslocar ±1 a 3 dias deu 7% contra 19% e
+  parecia sinal, porque caía em dias sem anúncio. O "6 de 8 perto do clique"
+  do primeiro dia era densidade de cliques.
+- **Barrados são o tráfego de fundo do WhatsApp pessoal**: 12 a 22 por dia em
+  cada número, com ou sem anúncio.
+- **Lead do botão de imóvel do SITE nasce `meta/ctwa`**, com o imóvel em
+  `anuncio_origem`: o botão manda a mesma mensagem pronta do anúncio. O único
+  "lead de anúncio" da semana era do site, e com campanha do mesmo imóvel no
+  ar ele contaria na campanha paga. O clique ligado ao lead diz a verdade
+  (`origem = site/<imóvel>`).
+- **Recusas: 11 decisões, nenhuma desfeita, duas erradas no efeito.**
+  `desfeito_em` subconta: o corretor assume a conversa sem tocar em "Liberar
+  contato". "Comprei um apto na planta" virou "já resolvido" pelo primeiro
+  balão; os seguintes contavam que o imóvel atrasou três anos. Toda família
+  de recusa (inclusive "já resolvido") tira o lead das listas e o marca
+  perdido e "não contatar".
+- **O filtro da recusa não tinha "adquiri" nem os plurais** (compramos,
+  fechamos, alugamos): "já adquiri imóvel" sozinho se perderia nas duas
+  camadas. Entraram no filtro, não na regex.
+- **O aviso de sem resposta (0161) saiu 10 vezes** em 4 corretores; em 2 o
+  corretor respondeu depois. O carimbo é gravado ANTES do envio: carimbo não
+  prova entrega.
+- **Palavra-chave**: a da Bruna continua "Oii" (ignorada desde a 0160); o
+  Ramos cadastrou 30 leads pela palavra em 21 minutos em 07/10, e 3
+  responderam.
+
+## A conta ADM de demonstração enxerga a equipe real (12/10/2026)
+
+Nota: [[perfil-de-demonstracao-do-corretor]].
+
+- **`admdemo@nexthomeimoveis.com` (slug `demo-adm`) é `gestor` de verdade.**
+  Foi criada para fotografar a Administração, por escolha do dono da conta,
+  que aceitou o risco: `eh_gestor()` só olha `papel`, então ela vê os leads
+  reais da equipe inteira (911 em 12/10). Não existe papel de ADM só de
+  demonstração enquanto o multi-empresa não estiver pronto.
+- **Foto de tela com dado real vai borrada.** O script de captura aplica
+  `filter: blur()` a telefone, e-mail e nome de corretor real antes da foto.
+  A apresentação tem link público.
+- **Número de resultado se mede sem a demo.** Com o perfil demo semeado,
+  a Visão geral do ADM mistura conversas fictícias. Medido só com corretores
+  reais (12/10, últimos 30 dias): a IA respondeu 45 de 52 clientes que
+  escreveram, com mediana de 22 s até a primeira resposta.
+
+## Foto panorâmica num quadro de retrato (13/10/2026)
+
+Nota: [[foto-panoramica-num-quadro-de-retrato]].
+
+- **"No celular as fotos ficam sem sentido" era recorte.** Os renders das
+  construtoras medem 2:1 a 2,4:1, e o Sobre (3:4) e as cenas (4:5) os
+  recortavam em retrato: sobrava um terço da largura. O quadro do celular
+  agora segue a foto, entre 4:5 e 3:2 (`proporcaoNoCelular`).
+- **`ParallaxImagem` amplia `1 + 2 × intensidade`** para a folga do
+  deslocamento, e no celular o movimento é 40% do desktop: o Sobre ampliava
+  1,4x à toa. No celular a folga agora é `1 + 0,8 × intensidade`.
+- **A fachada aparecia duas vezes**: Sobre e primeira cena usavam a mesma
+  foto. As cenas pulam `fotoDoSobre`.
+- **A Galeria do celular virou uma coluna**, cada foto no formato dela (a
+  abertura até 16:9, as demais até 3:2). Duas colunas de ~180px cortavam
+  render panorâmico em 4:3 ou numa célula alta. Do `sm` para cima o mosaico
+  não mudou.
+
+## A passagem dos cards da home chegou à listagem (13/10/2026)
+
+Nota: [[fundo-do-computador-e-a-foto-da-avenida]].
+
+- **`/empreendimentos` usa `.cartao-passa` em todos os cards**, no lugar do
+  Reveal (os dois juntos seriam dois donos da opacidade). `--coluna` conta a
+  coluna real: sem filtro, o primeiro card ocupa duas colunas.
+- **As páginas de região também usam a passagem (13/10)**: `.cartao-passa` direto no `<li>` (com `Reveal` a lista perderia o `<li>`), `--coluna` = `i % 3`.
+- **Na página do imóvel também (13/10)**: tipologias (`i % 2`, a grade tem duas colunas) e "Veja também" (`i % 3`). A galeria fica de fora: já tem a entrada do `CartaoTilt`, e as duas juntas seriam duas entradas.
+- **E na galeria (13/10)**: abertura e grade com `.cartao-passa`. O `CartaoTilt` ganhou `semCortina`: sem ela, a foto teria duas entradas (cortina + passagem). Tilt e parallax continuam.
+- **E no Lazer (13/10)**: cada item da lista com `.cartao-passa`, no lugar do Reveal em cascata. A prévia `fixed` não se prende ao item porque mora num portal; conferido abrindo a prévia no celular e no computador.
+
+## O tabelão da RSF lido de PDF e de print (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **Print da tabela agora é lido**: a IA transcreve a imagem (detalhe alto,
+  uma linha por unidade) e a transcrição passa pela leitura de sempre, com a
+  trava "o valor está escrito". PDF e prints sobem direto ao Storage
+  (`corretores/<id>/tabelas/`), saem do teto de 12 MB da action e são
+  apagados depois de lidos.
+- **O tabelão avisa que os valores são de unidades de referência, não o
+  mínimo.** Nesse caso, o que subiria o "a partir de" entra desmarcado.
+- **O catálogo que a IA recebe leva os apelidos**, e a conferência de nome
+  também.
+- Sem chave de IA aqui: a leitura do print está provada só com o modelo
+  simulado no teste.
+
+## O PDF saía com uma letra por linha (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **"A IA achou valores, mas nenhum estava escrito no arquivo" era o
+  extrator.** `pdfTexto.ts` transformava todo `Td`/`Tm` em quebra de linha,
+  e PDF que posiciona letra por letra (Chrome com `letter-spacing`, Canva,
+  design) saía `T\nE\nS\nT\nE`; o preço virava dez linhas e a trava de valor
+  escrito não o achava. Hoje a linha sai da posição (matriz de texto + `cm` +
+  largura do glifo), e a linha da tabela sai inteira.
+- **Fonte em `/ObjStm` passou a ser lida** (largura e `/ToUnicode`).
+- **PDF de teste real sem arquivo do usuário**: `page.pdf()` do Chromium do
+  Playwright (`/opt/pw-browsers/chromium-*/chrome-linux/chrome`) sobre um HTML
+  com tabela. O extrator antigo reproduz o defeito com ele.
+- O extrator é usado também pela importação de leads, pelo rascunho de imóvel
+  e pelas unidades: todos ganham a mesma leitura.
+
+## Centavos descartavam metade do tabelão (13/10/2026)
+
+Nota: [[tabela-de-precos-lida-pela-ia]].
+
+- **Testado com o guia real da RSF** (53 páginas): o extrator novo tira o
+  tabelão inteiro, mas 8 dos 15 valores eram descartados. A IA devolve o preço
+  arredondado (381.405,62 → 381.406) e a trava "o valor está escrito" só
+  conhecia a parte inteira. Hoje `valoresEscritos` guarda as duas.
+- **Para testar a leitura sem chave de IA**: extrair o texto com
+  `extrairTextoDePdf`, ler o catálogo com a chave publicável e simular a
+  resposta da IA num teste com `chamarLlmJson` mockado. Log do teste vai para
+  arquivo: o vitest às vezes engole `console.log`.
+
+## Cada seção da Administração com a própria cor (14/10/2026)
+
+Nota: [[menu-do-painel-reorganizado]].
+
+- **Seção de subtópico ganha cor por `moduloDaSecao`** (Equipe = Pessoas,
+  Negócio = Imóveis, Sistema = Marketing), aplicada com `data-modulo` no
+  `<li>`. Seção nova no menu precisa entrar no mapa: a guarda de
+  `navegacao.test.ts` reprova seção sem cor ou com cor repetida.
+
+## O lembrete da tarefa do lead chega no WhatsApp (0178, 14/10/2026)
+
+Nota: [[lembrete-da-tarefa-chega-no-whatsapp]].
+
+- **A tarefa da ficha do lead só avisava na tela.** Agora o tique dos
+  follow-ups manda a tarefa vencida para o WhatsApp do próprio corretor
+  (`processarLembretesDeTarefa`, pelo `avisarCorretor`), com o link da ficha.
+- **O lembrete da anotação esperava a janela comercial**: rodava depois do
+  `return` de fora da janela, e um lembrete das 8h saía às 9h. Os dois rodam
+  antes dela; guarda em `lembretesDeTarefa.test.ts`.
+- **A 0178 foi aplicada pelo usuário no editor SQL em 16/10** (o MCP do
+  Supabase desta sessão segue sem permissão). Antes dela o código devolvia 0
+  sem quebrar; a migration marca como enviado o que já venceu, para o
+  primeiro tique não mandar tudo de uma vez.
+- **A catraca de peso estava vermelha** desde o menu colorido do mesmo dia
+  (10 rotas do painel, menos de 1 KB cada, pelo layout). Tetos subiram 1 KB.
+
+
+## A documentação do lead (0179, 16/10/2026)
+
+Nota: [[documentacao-do-lead]].
+
+- **A ficha ganhou a seção Documentação**: lista por fase (financiamento e
+  contrato), editável, com cada arquivo recebido, conferido ou recusado com
+  motivo. O recusado volta para o link do cliente com o motivo. O pedido de
+  documentos saiu de "Links para o cliente" e mora nela.
+- **A lista mora no lead (`lead_documentos_lista`), não no link.** Link antigo
+  sem lista gravada continua valendo pela lista que veio nele
+  (`listaEfetiva`).
+- **Foto e PDF que o cliente manda no WhatsApp passaram a ser guardados** no
+  bucket privado (`guardarMidiaRecebida`, depois da resposta). `midia_url`
+  guarda `privado:<caminho>`, que o painel assina na leitura. Embaixo do
+  balão: "Guardar como documento".
+- **O .zip é montado no navegador** (resposta da Vercel tem teto de 4,5 MB).
+- **Escrita só pela chave de serviço**, depois de a action conferir que o lead
+  é do corretor. O gestor lê e baixa, não confere nem recusa.
+- **Antes da 0179 o código não quebra**: a leitura cai nas colunas antigas e a
+  seção avisa que a conferência depende da migration.
+
+## Pedir um tempo não é aceitar a visita (v50, 16/10/2026)
+
+Nota: [[pedir-um-tempo-nao-e-aceitar-a-visita]]. Conversa da Carol com a Rute.
+
+- **"Vou confirmar com vc depois, pode ser?" gravou visita no CRM.** O "pode
+  ser" casou em `ACEITE`. Agora `ADIAMENTO` (vou confirmar, te aviso, só um
+  momento, vou ver e te falo) vence o aceite e apaga o dia citado ("amanhã te
+  aviso" não é visita amanhã), e vira a jogada `aguardar`. Contraproposta de
+  dia ("pode ser no último domingo?") também não é aceite.
+- **A IA inventou "o corretor Carlos".** A instrução de confirmar pedia o nome
+  do corretor sem dar o nome, e a regra 21 proíbe dizer que o cliente vai
+  falar com ele. Agora o nome vai escrito, a regra 21 tem a exceção da visita
+  e `corrigirNomeDoCorretor` troca nome inventado depois de "corretor(a)".
+- **"Último domingo do mês" virou o domingo seguinte.** `pedidoDeAgendamento`
+  recebe `agora` e calcula a data no fuso de SP.
+- **"Onde fica exatamente?" ficou sem resposta**: o planner achou o endereço
+  "não dito" (comparação por texto exato) e o anti-eco achou repetido (por
+  semelhança) e cortou. A frase com a marca do dado pedido não é cortada.
+- **A mesma planilha importada duas vezes deu 4 leads para a Rute**, e a lista
+  ficou com dois envios a mais para ela. O "já existe" só existia na tela.
+  Agora `importarLeads` recusa telefone já cadastrado ou repetido na lista, e o
+  disparador confere os outros cadastros do mesmo telefone antes da cota.
+- **Para ler uma conversa sem o MCP do Supabase**: o conector desta sessão
+  estava em outra conta. A consulta de linha do tempo (lead + mensagens +
+  `ia_interacoes` + recusas + fila) unida por `union all` e ordenada por
+  horário cabe numa colagem só no editor SQL. Lead com nome em maiúsculas
+  ("RUTE") não casa com a grafia "Ruth": buscar por `ilike any` com variações.
+
+## Agenda aberta por padrão (16/10/2026)
+
+Nota: [[agenda-padrao-aberta]].
+
+- **Sem agenda preenchida, vale todos os dias das 9h às 20h** (`GRADE_PADRAO`,
+  `gradeEfetiva`). Antes, grade vazia deixava a IA sem horário para oferecer.
+  Mora no código, sem migration: vale para corretor novo sem seed.
+- Desligar todos os dias na tela de Visitas e salvar volta à padrão.
+- `{horarios}` nas listas sempre tem valor (`corretorTemAgenda` saiu) e a
+  agenda saiu dos primeiros passos.
+- O nome na confirmação da visita (v50) é o do corretor dono do número que
+  atende: vale igual para todos.
+- **`git checkout --` na provocação apagou trabalho não commitado de novo**
+  (o arquivo inteiro voltou ao commit). Salvou a cópia feita antes da
+  mordida: copiar sempre antes de morder.
+
+## Link de documentos em dois tempos (16/10/2026)
+
+Nota: [[arquivo-grande-nao-passa-pela-server-action]].
+
+- **A Vercel recusa corpo acima de 4,5 MB** (413 `FUNCTION_PAYLOAD_TOO_LARGE`,
+  medido) antes do código rodar; o `bodySizeLimit: 12mb` não muda isso. O
+  link de documentos e o anexar da ficha mandavam o arquivo pela Server
+  Action, e a tela dizia "sem conexão". Agora: o servidor autoriza um caminho
+  (`createSignedUploadUrl`), o navegador sobe direto e o servidor confere
+  tamanho e formato pelo armazenamento antes de registrar.
+- **Foto reduzida no aparelho** (2400 px, JPEG), HEIC vira JPEG quando o
+  navegador abre; tipo vazio sai da extensão. O erro diz a causa; link vencido
+  tem página com o botão de pedir outro; cada item tem dica.
+- **Arquivo novo que precise subir do navegador**: use
+  `autorizarEnvio`/`conferirArquivoEnviado`, nunca `File` numa Server Action.
+- Não provado contra o bucket real (sem chave de serviço nesta sessão).
+
+
+## Conta só WhatsApp (0180, 17/10/2026)
+
+Nota: [[conta-so-whatsapp]].
+
+- **Pedido: uma pessoa usa o painel só como WhatsApp Web.** Marca por conta
+  (`corretores.so_whatsapp`, ADM em Contas): toda conversa do número aparece,
+  quem não é lead não vira lead, o texto é guardado (exceção declarada à
+  privacidade) e a IA fica desligada.
+- **A trava da 0111 virou trigger** (`conversa_exige_lead`): `lead_id` nulo
+  só passa em conta só WhatsApp.
+- **Coluna nova lida por consulta à parte e tolerante** (`ehContaSoWhatsapp`):
+  embutida no select da instância, a falta da migration faria o webhook
+  devolver "instância não cadastrada" para todo número. Antes de pôr coluna
+  nova num select de caminho quente, perguntar o que acontece se a migration
+  ainda não foi aplicada.
+- **Fora do sorteio do anúncio, por último na roleta, fora do site.**
+- Conversas antigas não aparecem (a Evolution não guarda histórico); foto de
+  quem não é lead fica só como texto.
 
 ## A plataforma vira multi-grupo (decisão, 18/10/2026)
 

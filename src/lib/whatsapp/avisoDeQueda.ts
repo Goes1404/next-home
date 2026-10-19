@@ -3,6 +3,7 @@ import "server-only";
 import { enviarEmail } from "@/lib/email";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
+import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import {
   avaliarSaudeDaConexao,
   montarEmailDeQueda,
@@ -46,12 +47,14 @@ interface LinhaInstancia {
   envios_campanha_data: string | null;
   envios_campanha_contador: number;
   aviso_queda_enviado_em: string | null;
+  sessao_caida_em: string | null;
+  motivo_queda_codigo: number | null;
 }
 
 const COLUNAS =
-  "id, corretor_id, status_conexao, conectado_em, desconectado_em, bloqueado_ate, envios_campanha_data, envios_campanha_contador, aviso_queda_enviado_em";
+  "id, corretor_id, status_conexao, conectado_em, desconectado_em, bloqueado_ate, envios_campanha_data, envios_campanha_contador, aviso_queda_enviado_em, sessao_caida_em, motivo_queda_codigo";
 
-function fotoDe(linha: LinhaInstancia, pendentes: number): FotoDaConexao {
+function fotoDe(linha: LinhaInstancia, pendentes: number, falhasDeSessao = 0): FotoDaConexao {
   return {
     statusConexao: linha.status_conexao,
     conectadoEm: linha.conectado_em ? new Date(linha.conectado_em) : null,
@@ -60,6 +63,9 @@ function fotoDe(linha: LinhaInstancia, pendentes: number): FotoDaConexao {
     enviosCampanhaData: linha.envios_campanha_data,
     enviosCampanhaContador: linha.envios_campanha_contador ?? 0,
     pendentes,
+    falhasDeSessao,
+    sessaoCaidaEm: linha.sessao_caida_em ? new Date(linha.sessao_caida_em) : null,
+    motivoQuedaCodigo: linha.motivo_queda_codigo,
   };
 }
 
@@ -70,7 +76,7 @@ function fotoDe(linha: LinhaInstancia, pendentes: number): FotoDaConexao {
  * magras (ids das campanhas, depois um `count` com `head`) custam menos que
  * trazer linha de fila para contar na aplicação.
  */
-async function contarPendentes(corretorId: string): Promise<number> {
+async function contarFila(corretorId: string): Promise<{ pendentes: number; falhasDeSessao: number }> {
   const supabase = createServiceClient();
 
   const { data: campanhas } = await supabase
@@ -79,15 +85,25 @@ async function contarPendentes(corretorId: string): Promise<number> {
     .eq("corretor_id", corretorId);
 
   const ids = (campanhas ?? []).map((c) => c.id);
-  if (ids.length === 0) return 0;
+  if (ids.length === 0) return { pendentes: 0, falhasDeSessao: 0 };
 
-  const { count } = await supabase
-    .from("whatsapp_campanhas_fila")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pendente")
-    .in("campanha_id", ids);
+  // A segunda contagem separa a pausa que volta sozinha da que só volta
+  // reconectando (`sessaoCaida.ts`).
+  const [{ count: pendentes }, { count: falhasDeSessao }] = await Promise.all([
+    supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente")
+      .in("campanha_id", ids),
+    supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente")
+      .eq("erro_motivo", MOTIVO_SESSAO_CAIU)
+      .in("campanha_id", ids),
+  ]);
 
-  return count ?? 0;
+  return { pendentes: pendentes ?? 0, falhasDeSessao: falhasDeSessao ?? 0 };
 }
 
 /**
@@ -133,7 +149,8 @@ export async function carregarAvisoDaConexao(
   const semFila = avaliarSaudeDaConexao(fotoDe(data, 0), agora);
   if (!semFila) return null;
 
-  return avaliarSaudeDaConexao(fotoDe(data, await contarPendentes(data.corretor_id)), agora);
+  const fila = await contarFila(data.corretor_id);
+  return avaliarSaudeDaConexao(fotoDe(data, fila.pendentes, fila.falhasDeSessao), agora);
 }
 
 /**
@@ -202,7 +219,8 @@ export async function avisarQuedaSeNecessario(
 
     if (!data || data.aviso_queda_enviado_em) return;
 
-    const aviso = avaliarSaudeDaConexao(fotoDe(data, await contarPendentes(data.corretor_id)), agora);
+    const fila = await contarFila(data.corretor_id);
+    const aviso = avaliarSaudeDaConexao(fotoDe(data, fila.pendentes, fila.falhasDeSessao), agora);
     if (!aviso?.mereceEmail) return;
 
     const { data: corretor } = await supabase

@@ -26,12 +26,14 @@ import { PreferenciasContato } from "./PreferenciasContato";
 import { AdicionarALista } from "./AdicionarALista";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
+import { Documentacao } from "./Documentacao";
 import { Indicacoes } from "./Indicacoes";
 import { PedidoDoSite } from "./PedidoDoSite";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { lerResumoDoLead } from "@/lib/crm/resumoDoLead";
 import { ResumoDoLeadCartao } from "@/app/corretor/(painel)/_componentes/ResumoDoLeadCartao";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
+import { TETO_SEM_RESPOSTA } from "@/lib/crm/higieneDaBase";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -88,7 +90,7 @@ export default async function FichaLeadPage({
         href="/corretor/pessoas"
         /* Rótulo e destino batem: dizia "Meus leads" e levava para Pessoas.
            Link que promete um lugar e leva a outro é o começo do labirinto. */
-        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 transition-colors"
+        className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center gap-1.5 transition-colors px-3 botao-secundario"
       >
         <ArrowLeft className="h-4 w-4" /> Pessoas
       </Link>
@@ -127,7 +129,11 @@ export default async function FichaLeadPage({
         {lead.tentativasContato > 0 && (
           <p
             className={`text-fluid-xs mt-2 ${
-              lead.tentativasSemResposta >= 3 ? "text-alerta" : "text-tenue"
+              lead.tentativasSemResposta >= TETO_SEM_RESPOSTA - 1
+                ? "text-perigo"
+                : lead.tentativasSemResposta >= 3
+                  ? "text-alerta"
+                  : "text-tenue"
             }`}
           >
             {lead.tentativasContato}{" "}
@@ -135,8 +141,9 @@ export default async function FichaLeadPage({
             {lead.ultimaTentativaEm &&
               ` · última em ${dataHora.format(new Date(lead.ultimaTentativaEm))}`}
             {lead.tentativasSemResposta > 0 &&
-              ` · ${lead.tentativasSemResposta} sem resposta`}
-            {lead.tentativasSemResposta >= 3 && " — talvez seja hora de parar"}
+              ` · ${lead.tentativasSemResposta} de ${TETO_SEM_RESPOSTA} sem resposta`}
+            {lead.tentativasSemResposta === TETO_SEM_RESPOSTA - 1 &&
+              " — a próxima é a última antes de arquivar"}
           </p>
         )}
 
@@ -228,7 +235,7 @@ export default async function FichaLeadPage({
         <div className="space-y-4">
           <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} />
           <OrigemJornada touchpoints={touchpoints} />
-          <PreferenciasContato leadId={lead.id} preferencias={preferencias} />
+          <PreferenciasContato leadId={lead.id} preferencias={preferencias} naoContatarEm={lead.naoContatarEm} />
           <Qualificacao
             leadId={lead.id}
             inicial={{
@@ -243,6 +250,13 @@ export default async function FichaLeadPage({
           />
 
           <PedidoDoSite leadId={lead.id} />
+          <Documentacao
+            leadId={lead.id}
+            nome={lead.nome}
+            telefone={lead.telefone}
+            etapa={lead.etapa}
+            corretorDoLead={lead.corretor?.id ?? null}
+          />
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <Indicacoes leadId={lead.id} />
           <AtalhoDoConsultor lead={lead} />
@@ -298,6 +312,7 @@ export default async function FichaLeadPage({
       <ArquivarLead
         leadId={lead.id}
         arquivado={Boolean(lead.arquivadoEm)}
+        semResposta={lead.arquivadoMotivo === "sem_resposta"}
         nome={lead.nome}
         podeExcluir
       />

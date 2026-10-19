@@ -39,10 +39,28 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    formats: ["image/avif", "image/webp"],
-    // Larguras alinhadas aos breakpoints reais do layout, evitando gerar
-    // variantes que nunca são pedidas.
-    deviceSizes: [390, 640, 828, 1080, 1280, 1920, 2560],
+    /*
+     * Sem o otimizador de imagens da Vercel desde 09/10/2026: no plano Hobby
+     * ele tem cota mensal e, quando ela acabou, respondia 402
+     * `OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` — foto quebrada, calada.
+     * A primeira saída foi `unoptimized: true`: a foto original crua, 70 a
+     * 430 KB por capa na listagem para um cartão de ~360px no celular.
+     *
+     * Desde 12/10/2026 o loader é NOSSO (`loaderDeImagem.ts`): as variantes
+     * WebP já estão no Storage (geradas em `registrarMidia` e pelo backfill),
+     * e o loader só escolhe entre as que a linha de `midias` diz que
+     * existem. URL sem essa marca volta como veio — o comportamento de
+     * `unoptimized`, imagem a imagem. Nada é redimensionado em tempo de
+     * requisição, então nada tem cota. Imagem nova em `public/` continua
+     * precisando chegar leve: nada a reduz no caminho.
+     *
+     * `deviceSizes` casa com as variantes que existem (480/960/1440) mais
+     * 1920, em que o loader devolve o original: candidato do srcset que não
+     * existe no Storage seria foto quebrada.
+     */
+    loader: "custom",
+    loaderFile: "./src/lib/imagens/loaderDeImagem.ts",
+    deviceSizes: [480, 960, 1440, 1920],
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
       // Thumbnails oficiais do YouTube — a facade do PlayerVideo mostra a
@@ -105,6 +123,26 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      /*
+       * O endereço da Vercel (next-home-drab.vercel.app) servia o site inteiro
+       * em paralelo ao domínio: duas cópias do mesmo conteúdo dividindo
+       * sinal. Desde 07/10/2026 as páginas PÚBLICAS dali vão para o domínio
+       * com 308. Ficam de fora, de propósito: `/api` (webhook do WhatsApp,
+       * crons do pg_cron e da Vercel, /api/versao — tudo que chama este
+       * host pelo nome), `/corretor` (o painel; sessão é por domínio, e
+       * mandar a equipe para o outro endereço derrubaria quem está logado) e
+       * arquivos com extensão. Só vale quando o domínio está configurado.
+       */
+      ...(process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("vercel.app")
+        ? [
+            {
+              source: "/:path((?!api/|api$|corretor/|corretor$|_next/|.*\\.).*)",
+              has: [{ type: "host" as const, value: "next-home-drab.vercel.app" }],
+              destination: `${process.env.NEXT_PUBLIC_SITE_URL}/:path`,
+              permanent: true,
+            },
+          ]
+        : []),
       // O site legado servia uma versão mobile separada; agora o layout é
       // responsivo e /m/ redireciona para a raiz preservando o SEO acumulado.
       { source: "/m", destination: "/", permanent: true },

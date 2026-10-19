@@ -1,4 +1,6 @@
 import "server-only";
+import { corrigirNomeDoCorretor } from "./nomeDoCorretor";
+import { marcaDoDado } from "./dadoPedido";
 import { estagioIncompativel } from "./estagioIncompativel";
 
 import type { Empreendimento } from "@/lib/types";
@@ -21,6 +23,9 @@ import {
   type Jogada,
 } from "./jogada";
 import { blocoDaMemoria } from "./memoriaDaConversa";
+import { classificarRecusa } from "./classificarRecusa";
+import { detectarRecusa } from "./recusaDoCliente";
+import type { ClassificacaoDeRecusa } from "./recusaEmCamadas";
 import { regrasCondicionais } from "./regrasCondicionais";
 import {
   blocoNaoRepitaHorario,
@@ -143,6 +148,17 @@ export type PedidoDeTurno = {
    * teste não deveria depender de haver banco.
    */
   fewShot?: { corretorId: string; conversaAtualId?: string };
+  /**
+   * Quantas recusas desta conversa a IA (não a regex) já reconheceu. Vem do
+   * registro `recusas_detectadas`; ausente vale 0 (eval, playground).
+   */
+  recusasPelaIA?: number;
+  /**
+   * `leads.visita_agendada_em` (ISO) da conversa, lido pelo webhook. Com
+   * ele, a IA sabe que há visita marcada e consegue remarcar ou desmarcar
+   * (A2). Ausente (eval, playground), vale a leitura do texto da conversa.
+   */
+  visitaMarcadaEm?: string | null;
 };
 
 export type TurnoDeAtendimento = {
@@ -185,6 +201,11 @@ export type TurnoDeAtendimento = {
   jogada: Jogada;
   /** Quantos exemplos de conversa real entraram no prompt. */
   fewShot: number;
+  /**
+   * Como a recusa desta vez foi decidida (regex, IA ou nenhuma), para o
+   * registro `recusas_detectadas`. Nulo quando não houve fala do cliente.
+   */
+  recusa: ClassificacaoDeRecusa | null;
 };
 
 export async function executarTurnoDeAtendimento(
@@ -318,6 +339,25 @@ export async function executarTurnoDeAtendimento(
       .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo).length > 0);
 
   const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
+
+  /*
+   * RECUSA EM CAMADAS (06/10/2026): a regex decide o óbvio; o que tem sinal
+   * de "não" e ela não pegou vai à IA, com a última fala nossa de contexto.
+   * Calculada aqui porque é assíncrona e o planner é puro.
+   */
+  const recusasPelaIA = pedido.recusasPelaIA ?? 0;
+  const ultimaFalaNossa =
+    [...historicoAnterior].reverse().find((m) => m.remetente !== "cliente")?.texto ?? "";
+  const classificacaoDeRecusa =
+    vezDoCliente.length > 0
+      ? await classificarRecusa({
+          texto: textoDaVez,
+          ultimaFalaNossa,
+          jaRecusouAntes:
+            recusasPelaIA > 0 || falasDoCliente.some((f) => detectarRecusa(f) !== null),
+        })
+      : null;
+
   const estado = estadoDaConversa({
     historico: historicoAnterior,
     mensagemAtual: textoDaVez,
@@ -329,6 +369,9 @@ export async function executarTurnoDeAtendimento(
     focoDoCliente: foco
       ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo).includes(foco.slug))
       : false,
+    ...(classificacaoDeRecusa ? { recusa: classificacaoDeRecusa.recusa } : {}),
+    recusasAnterioresExtra: recusasPelaIA,
+    ...(pedido.visitaMarcadaEm !== undefined ? { visitaMarcadaEm: pedido.visitaMarcadaEm } : {}),
   });
   const jogada = planejarJogada(estado);
 
@@ -369,16 +412,29 @@ export async function executarTurnoDeAtendimento(
       foco,
       blocoMemoria: blocoDaMemoria(pedido.memoria ?? null),
       blocoJogada: [
-        blocoDaJogada(jogada, { nomeDoFoco: foco?.nome ?? null }),
-        estagio?.bloco ?? "",
-        pendenteDaTrava
-          ? blocoDeQualificacao(pendenteDaTrava, {
-              nomeDoFoco: foco?.nome ?? null,
-              jogadaJaPergunta: jogada.tipo === "perguntar",
-            })
-          : "",
-        teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
-        blocoPalpite,
+        blocoDaJogada(jogada, {
+          nomeDoFoco: foco?.nome ?? null,
+          nomeAssistente: pedido.identidade.nomeAssistente,
+          nomeCorretor: pedido.identidade.nomeCorretor,
+        }),
+        /*
+         * Quem perguntou quem escreve recebe SÓ a resposta: estágio, renda e
+         * palpite de nome empurrariam imóvel para quem ainda nem sabe com
+         * quem fala (08/10/2026).
+         */
+        ...(jogada.tipo === "esclarecer_contato"
+          ? []
+          : [
+              estagio?.bloco ?? "",
+              pendenteDaTrava
+                ? blocoDeQualificacao(pendenteDaTrava, {
+                    nomeDoFoco: foco?.nome ?? null,
+                    jogadaJaPergunta: jogada.tipo === "perguntar",
+                  })
+                : "",
+              teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
+              blocoPalpite,
+            ]),
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -410,7 +466,7 @@ export async function executarTurnoDeAtendimento(
    */
   const conferir = (bruta: Awaited<ReturnType<typeof gerarRespostaIA>>) => {
     const confirmacaoInventada =
-      bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco));
+      bruta.visitaProposta?.confirmadaPeloCliente === true && !aceiteDeVisitaValido(jogada, Boolean(foco), estado.visitaMarcada !== null);
     if (confirmacaoInventada) {
       console.warn(`[turno] confirmação de visita sem aceite do cliente descartada (jogada ${jogada.tipo})`);
     }
@@ -443,13 +499,22 @@ export async function executarTurnoDeAtendimento(
         }
       : brutaConferida;
 
+    // Nome de corretor inventado ("o corretor Carlos") vira o do cadastro.
+    const comNome = corrigirNomeDoCorretor(
+      brutaNaHora.textoResposta ?? "",
+      pedido.identidade.nomeCorretor,
+      pedido.identidade.nomeAssistente,
+    );
+    if (comNome.corrigiu) console.warn("[turno] nome de corretor inventado trocado pelo do cadastro");
+
     return sanearRespostaIA(
-      brutaNaHora,
+      comNome.corrigiu ? { ...brutaNaHora, textoResposta: comNome.texto } : brutaNaHora,
       pedido.catalogo,
       pedido.historico,
       pedido.identidade.slugCorretor,
       pedido.identidade.nomeAssistente,
       textoDaVez,
+      jogada.tipo === "responder_dado" ? marcaDoDado(jogada.dado.resposta) : null,
     );
   };
 
@@ -501,5 +566,6 @@ export async function executarTurnoDeAtendimento(
     bloqueios: saneada.anexosBloqueados + saneada.slugsBloqueados,
     jogada,
     fewShot: contarExemplosDoAprendizado(exemplosFewShot),
+    recusa: classificacaoDeRecusa,
   };
 }

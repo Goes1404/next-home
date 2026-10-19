@@ -50,6 +50,22 @@ describe("palavra do corretor na mensagem", () => {
     ).toBe("ativacao");
   });
 
+  it("palavra fora da régua não liga nem cadastra, mesmo já salva (o \"Oii\" de 05/10/2026)", () => {
+    expect(palavraDoCorretorNaMensagem({ mensagem: "Oiii, tudo bem?", palavraChaveConfigurada: "Oii" })).toBeNull();
+    expect(
+      palavraDoCorretorNaMensagem({ mensagem: "Oii", palavraChaveConfigurada: "Oii, vou te passar os detalhes.." }),
+    ).toBeNull();
+    expect(
+      palavraDoCorretorNaMensagem({
+        mensagem: "vou te passar os detalhes..",
+        palavraChaveConfigurada: "Oii, vou te passar os detalhes..",
+      }),
+    ).toBe("ativacao");
+    expect(
+      palavraDoCorretorNaMensagem({ mensagem: "teste", palavraChaveConfigurada: null, palavraChaveTeste: "teste" }),
+    ).toBeNull();
+  });
+
   it("emoji sozinho vale como palavra-chave na hora de casar", () => {
     expect(listarPalavrasChave("🗝️")).toEqual(["🗝️"]);
     expect(contemPalavraChave("Já te mando 🗝️", "🗝️")).toBe(true);

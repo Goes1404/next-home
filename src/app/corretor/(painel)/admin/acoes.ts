@@ -6,6 +6,7 @@ import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import {
   candidatosDeEmail,
   emailInicial,
@@ -162,6 +163,56 @@ export async function criarAcessoCorretor(
   revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: true, email: emailLimpo, senha, slug };
+}
+
+export type DadosNovoCorretor = { nome: string; creci: string; whatsapp: string; email: string };
+
+/**
+ * Cadastra um corretor novo (ficha + login) de uma vez (07/10/2026).
+ *
+ * Até aqui só existia "Criar acesso" para quem JÁ tinha ficha, e ficha nova
+ * só nascia por SQL. `corretores` não tem policy de INSERT de propósito (a
+ * tabela é pública para leitura), então quem grava é a chave de serviço,
+ * depois de `exigirGestorNaAcao()` decidir que pode.
+ *
+ * Se o login falhar, a ficha é apagada: sem isso sobraria um corretor sem
+ * acesso que aparece no site, e a próxima tentativa com o mesmo nome
+ * ganharia slug com sufixo.
+ */
+export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoCriarAcesso> {
+  const guarda = await exigirGestorNaAcao();
+  if (!guarda.corretor) return { erro: guarda.erro ?? "Acesso negado." };
+
+  const nome = dados.nome.trim().replace(/\s+/g, " ");
+  const creci = dados.creci.trim();
+  const email = dados.email.trim().toLowerCase();
+  const whatsapp = normalizarTelefoneBr(dados.whatsapp);
+  if (nome.length < 3) return { erro: "Informe o nome do corretor." };
+  if (!creci) return { erro: "Informe o CRECI." };
+  if (!whatsapp || whatsapp.length < 12 || whatsapp.length > 13) {
+    return { erro: "WhatsApp inválido. Use DDD + número, por exemplo (11) 98765-4321." };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "E-mail inválido." };
+
+  const supabase = await createClient();
+  const slug = await slugDisponivel(supabase, slugificar(nome), "");
+  const servico = createServiceClient();
+  const { data: ficha, error } = await servico
+    .from("corretores")
+    .insert({ nome, creci, whatsapp, slug, ativo: true })
+    .select("id")
+    .single();
+  if (error || !ficha) {
+    console.error("[admin] falha ao cadastrar corretor:", error?.message);
+    return { erro: "Não foi possível cadastrar o corretor agora. Tente de novo." };
+  }
+
+  const acesso = await criarAcessoCorretor(ficha.id, email);
+  if (!acesso.ok) {
+    await servico.from("corretores").delete().eq("id", ficha.id);
+    return { erro: acesso.erro };
+  }
+  return acesso;
 }
 
 export type AcessoEmLote = {
@@ -358,6 +409,61 @@ export async function alternarAtivoCorretor(
   revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: ativo ? "Corretor reativado." : "Corretor desativado — sai da roleta de leads." };
+}
+
+/**
+ * Conta só WhatsApp (0180): a pessoa usa o painel como WhatsApp Web. Todas
+ * as conversas do número aparecem (inclusive de quem não é lead, que não
+ * vira lead), o texto de todas é guardado e a IA fica desligada.
+ *
+ * Pela chave de serviço, depois da guarda: `so_whatsapp` não tem grant de
+ * UPDATE para a sessão — se tivesse, qualquer corretor ligaria sozinho a
+ * exceção à regra de privacidade.
+ */
+export async function alternarSoWhatsapp(
+  corretorId: string,
+  ligar: boolean,
+): Promise<ResultadoAdmin> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const servico = createServiceClient();
+  const { data, error } = await servico
+    .from("corretores")
+    .update({ so_whatsapp: ligar })
+    .eq("id", corretorId)
+    .select("id");
+  if (error) {
+    console.error("[admin] falha ao marcar conta só WhatsApp:", error.message);
+    return {
+      erro: /so_whatsapp/.test(error.message)
+        ? "O banco ainda não tem a conta só WhatsApp (migration 0180)."
+        : traduzirErroBanco(error.message),
+    };
+  }
+  if (!data || data.length === 0) return { erro: "Corretor não encontrado." };
+
+  // A IA da instância desliga junto: o webhook já a ignora nesta conta, e a
+  // tela de configuração passa a dizer a mesma coisa.
+  if (ligar) {
+    await servico
+      .from("corretor_whatsapp_instancias")
+      .update({ modo_bot: "desativado" })
+      .eq("corretor_id", corretorId);
+  }
+  console.info(`[admin] conta só WhatsApp ${ligar ? "ligada" : "desligada"}`, {
+    ator: guarda.corretor.id,
+    alvo: corretorId,
+  });
+
+  revalidarCorretores();
+  revalidatePath("/corretor/admin/contas");
+  revalidatePath("/corretor/pessoas");
+  return {
+    ok: ligar
+      ? "Agora é só WhatsApp: todas as conversas aparecem, sem virar lead e sem IA."
+      : "Voltou a ser conta comum: conversas sem lead ficam escondidas.",
+  };
 }
 
 /**

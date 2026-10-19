@@ -18,6 +18,10 @@ export interface ParametrosNotificacaoCorretor {
   motivoAlerta:
     | "visita_solicitada"
     | "visita_confirmada"
+    /** O cliente trocou a data pela conversa; o CRM já está com a nova (A2). */
+    | "visita_remarcada"
+    /** O cliente disse que não vai; a visita já saiu do CRM (A2). */
+    | "visita_desmarcada"
     | "lead_quente_score_alto"
     | "transferencia_humana"
     /** O cliente pediu para ser ligado. Quem liga é o corretor — ver `pedidoDeLigacao.ts`. */
@@ -43,6 +47,10 @@ export function formatarAlertaCorretor(
   const emojiAlerta =
     motivoAlerta === "visita_confirmada"
       ? "✅ *VISITA CONFIRMADA PELA IA — JÁ ESTÁ NO SEU FUNIL*"
+      : motivoAlerta === "visita_remarcada"
+      ? "🔁 *VISITA REMARCADA PELO CLIENTE — A DATA NOVA JÁ ESTÁ NO SEU FUNIL*"
+      : motivoAlerta === "visita_desmarcada"
+      ? "❌ *VISITA DESMARCADA PELO CLIENTE — JÁ SAIU DA SUA AGENDA*"
       : motivoAlerta === "visita_solicitada"
       ? "📅 *SOLICITAÇÃO DE VISITA AGENDADA*"
       : motivoAlerta === "lead_quente_score_alto"

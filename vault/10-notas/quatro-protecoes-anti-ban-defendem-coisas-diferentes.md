@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/lib/whatsapp/antiBan.ts, supabase/migrations/0058_disparo_fora_da_janela.sql]
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-10-09
 fonte: docs/MEMORIA.md — espaçamento anti-ban (0058)
 summary: Espaçamento, cota e disjuntor protegem o NÚMERO; a janela 9h-20h59 protege a REPUTAÇÃO. O botão "enviar a qualquer hora" afrouxa SÓ a janela, e há teste para cada uma das outras três.
 ---
@@ -15,7 +15,7 @@ summary: Espaçamento, cota e disjuntor protegem o NÚMERO; a janela 9h-20h59 pr
 
 | proteção | defende |
 |---|---|
-| espaçamento 35-75s | o número (padrão de robô) |
+| espaçamento sorteado (1min30–2min desde 09/10/2026; era 35-75s) | o número (padrão de robô) |
 | cota da curva de aquecimento | o número (volume em linha nova) |
 | disjuntor de falhas seguidas | o número (comportamento suspeito) |
 | janela 9h-20h59 | a **reputação** junto a quem recebe |

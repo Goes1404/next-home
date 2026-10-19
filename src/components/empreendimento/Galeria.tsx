@@ -9,6 +9,8 @@ import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { LightboxAdiado } from "@/components/ui/LightboxAdiado";
 import type { Midia } from "@/lib/types";
 
+import { srcDaMidia } from "@/lib/imagens/variantes";
+import { proporcaoNoCelular } from "@/lib/imagens/proporcao";
 /**
  * Quantas fotos da grade aparecem antes do "Ver mais".
  *
@@ -55,7 +57,9 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
         </Reveal>
       </div>
 
-      <Reveal>
+      {/* A passagem dos cards da home (`cartao-passa`, 13/10/2026), no lugar
+          do Reveal: os dois juntos seriam dois donos da opacidade. */}
+      <div className="cartao-passa">
         <button
           type="button"
           onClick={(ev) => abrir(0, ev)}
@@ -64,9 +68,20 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
         >
           {/* A foto de abertura é grande o bastante para aguentar o dobro da
               intensidade das demais — é ela que dá o tom da seção. */}
-          <ParallaxImagem className="aspect-[16/9] w-full rounded-2xl" intensidade={18}>
+          {/* No celular o quadro segue a foto (até 16:9): a abertura do Dom
+              Parque é uma torre EM PÉ, e o 16:9 fixo mostrava só o miolo
+              dela (13/10/2026). Do tablet para cima, 16:9 como sempre. */}
+          <ParallaxImagem
+            className="aspect-[var(--proporcao)] w-full rounded-2xl sm:aspect-[16/9]"
+            style={
+              {
+                "--proporcao": proporcaoNoCelular(destaque, { max: 16 / 9 }),
+              } as React.CSSProperties
+            }
+            intensidade={18}
+          >
             <Image
-              src={destaque.url}
+              src={srcDaMidia(destaque)}
               alt={destaque.alt}
               fill
               sizes="(min-width: 1280px) 1216px, 100vw"
@@ -76,10 +91,14 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
             />
           </ParallaxImagem>
         </button>
-      </Reveal>
+      </div>
 
       {resto.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-3">
+        // Celular: UMA coluna, cada foto no formato dela (até 3:2). Em duas
+        // colunas de ~180px, um render 2,4:1 cortado em 4:3 ou numa célula
+        // alta virava um pedaço de parede (13/10/2026). O mosaico começa no
+        // `sm`, onde a célula já é larga o bastante para o recorte.
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {visiveis.map((foto, i) => (
             <CartaoTilt
               key={foto.url}
@@ -88,8 +107,18 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
               // diferença ENTRE colunas que produz o ritmo de revista; todas
               // no mesmo passo pareceria a grade inteira tremendo junta.
               velocidadeCamada={0.06 + (i % 3) * 0.06}
+              // A entrada é a passagem dos cards da home (`cartao-passa`,
+              // 13/10/2026), não a cortina: as duas juntas seriam duas
+              // entradas. O tilt e a camada continuam.
+              semCortina
+              style={
+                {
+                  "--proporcao": proporcaoNoCelular(foto),
+                  "--coluna": i % 3,
+                } as React.CSSProperties
+              }
               className={
-                "overflow-hidden rounded-2xl " +
+                "cartao-passa overflow-hidden rounded-2xl aspect-[var(--proporcao)] " +
                 // Ritmo do mosaico: a cada bloco de 5, a primeira célula é
                 // alta e ocupa as duas linhas das quatro paisagens ao lado.
                 // Sem proporção própria: ela ESTICA até a altura das duas
@@ -97,7 +126,9 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
                 // paisagens e deixava um buraco embaixo (30/09/2026). Bloco
                 // incompleto no fim não ganha célula alta: sozinha, ela não
                 // teria linhas vizinhas para medir.
-                (i % 5 === 0 && i + 4 < visiveis.length ? "row-span-2" : "aspect-[4/3]")
+                (i % 5 === 0 && i + 4 < visiveis.length
+                  ? "sm:row-span-2 sm:aspect-auto"
+                  : "sm:aspect-[4/3]")
               }
             >
               <button
@@ -107,10 +138,10 @@ export function Galeria({ fotos }: { fotos: Midia[] }) {
                 className="group absolute inset-0 h-full w-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-acento-forte"
               >
                 <Image
-                  src={foto.url}
+                  src={srcDaMidia(foto)}
                   alt={foto.alt}
                   fill
-                  sizes="(min-width: 1024px) 33vw, 50vw"
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   placeholder={foto.blurDataUrl ? "blur" : "empty"}
                   blurDataURL={foto.blurDataUrl ?? undefined}
                   className="object-cover"

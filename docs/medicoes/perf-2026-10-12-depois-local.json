@@ -1,0 +1,1838 @@
+[
+  {
+    "pagina": "/",
+    "perfil": "celular",
+    "rodadas": [
+      {
+        "lcp": 2008,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 2008,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0,
+        "ttfb": 54.39999999990687,
+        "domContentLoaded": 1471,
+        "load": 5357.0999999996275,
+        "tarefasLongasMs": 923,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 253173,
+            "decoded": 787024
+          },
+          "rsc-prefetch": {
+            "n": 1,
+            "transfer": 2088,
+            "decoded": 5015
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 1952,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 1952,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0.00003599118573861368,
+        "ttfb": 39,
+        "domContentLoaded": 1503,
+        "load": 5297.199999999721,
+        "tarefasLongasMs": 790,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 253173,
+            "decoded": 787024
+          },
+          "rsc-prefetch": {
+            "n": 1,
+            "transfer": 2084,
+            "decoded": 5015
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 1976,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 1976,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0,
+        "ttfb": 50.59999999962747,
+        "domContentLoaded": 1516.5,
+        "load": 5350.799999999814,
+        "tarefasLongasMs": 831,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 253173,
+            "decoded": 787024
+          },
+          "rsc-prefetch": {
+            "n": 1,
+            "transfer": 2087,
+            "decoded": 5015
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1976,
+      "lcpElemento": "img.fundo-poster.absolute.inset-0",
+      "cls": 0,
+      "ttfb": 50.59999999962747,
+      "domContentLoaded": 1503,
+      "load": 5350.799999999814,
+      "tarefasLongasMs": 831,
+      "html": {
+        "transfer": 57213,
+        "decoded": 223141
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 4,
+          "transfer": 32197,
+          "decoded": 31897
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 18,
+          "transfer": 253173,
+          "decoded": 787024
+        },
+        "rsc-prefetch": {
+          "n": 1,
+          "transfer": 2087,
+          "decoded": 5015
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 208093,
+          "decoded": 207793
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/empreendimentos",
+    "perfil": "celular",
+    "rodadas": [
+      {
+        "lcp": 4352,
+        "lcpElemento": "img.object-cover.transition-transform.duration-700",
+        "historicoLcp": [
+          {
+            "t": 4352,
+            "elemento": "img.object-cover.transition-transform.duration-700",
+            "area": 107163
+          }
+        ],
+        "cls": 0.00003599118573861368,
+        "ttfb": 54.700000000186265,
+        "domContentLoaded": 2570.399999999907,
+        "load": 4804.100000000093,
+        "tarefasLongasMs": 964,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5087,
+            "decoded": 9820
+          }
+        }
+      },
+      {
+        "lcp": 4292,
+        "lcpElemento": "img.object-cover.transition-transform.duration-700",
+        "historicoLcp": [
+          {
+            "t": 4292,
+            "elemento": "img.object-cover.transition-transform.duration-700",
+            "area": 107163
+          }
+        ],
+        "cls": 0.00003599118573861368,
+        "ttfb": 68.10000000009313,
+        "domContentLoaded": 2591.2000000001863,
+        "load": 4781.200000000186,
+        "tarefasLongasMs": 1036,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5088,
+            "decoded": 9820
+          }
+        }
+      },
+      {
+        "lcp": 4256,
+        "lcpElemento": "img.object-cover.transition-transform.duration-700",
+        "historicoLcp": [
+          {
+            "t": 4256,
+            "elemento": "img.object-cover.transition-transform.duration-700",
+            "area": 107163
+          }
+        ],
+        "cls": 0.00003599118573861368,
+        "ttfb": 45.200000000186265,
+        "domContentLoaded": 2574.2000000001863,
+        "load": 4771.800000000279,
+        "tarefasLongasMs": 943,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 4,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5092,
+            "decoded": 9820
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 4292,
+      "lcpElemento": "img.object-cover.transition-transform.duration-700",
+      "cls": 0.00003599118573861368,
+      "ttfb": 54.700000000186265,
+      "domContentLoaded": 2574.2000000001863,
+      "load": 4781.200000000186,
+      "tarefasLongasMs": 964,
+      "html": {
+        "transfer": 88425,
+        "decoded": 424356
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 4,
+          "transfer": 0,
+          "decoded": 0
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 20,
+          "transfer": 252523,
+          "decoded": 780265
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        },
+        "rsc-prefetch": {
+          "n": 4,
+          "transfer": 5088,
+          "decoded": 9820
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/empreendimentos/eternity-alphaville",
+    "perfil": "celular",
+    "rodadas": [
+      {
+        "lcp": 1952,
+        "lcpElemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+        "historicoLcp": [
+          {
+            "t": 1952,
+            "elemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+            "area": 25521
+          }
+        ],
+        "cls": 0,
+        "ttfb": 25.5,
+        "domContentLoaded": 1492.2999999998137,
+        "load": 3665.5999999996275,
+        "tarefasLongasMs": 1618,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "imagem": {
+            "n": 11,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5107,
+            "decoded": 10042
+          }
+        }
+      },
+      {
+        "lcp": 1864,
+        "lcpElemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+        "historicoLcp": [
+          {
+            "t": 1864,
+            "elemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+            "area": 25521
+          }
+        ],
+        "cls": 0,
+        "ttfb": 35.3000000002794,
+        "domContentLoaded": 1473.3999999999069,
+        "load": 3744,
+        "tarefasLongasMs": 1569,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 11,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5111,
+            "decoded": 10042
+          }
+        }
+      },
+      {
+        "lcp": 1928,
+        "lcpElemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+        "historicoLcp": [
+          {
+            "t": 1928,
+            "elemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+            "area": 25521
+          }
+        ],
+        "cls": 0,
+        "ttfb": 29,
+        "domContentLoaded": 1479.1000000000931,
+        "load": 3608.100000000093,
+        "tarefasLongasMs": 1607,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 11,
+            "transfer": 0,
+            "decoded": 0
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 4,
+            "transfer": 5105,
+            "decoded": 10042
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1928,
+      "lcpElemento": "h1.text-fluid-5xl.max-w-[12ch].leading-[0.98]",
+      "cls": 0,
+      "ttfb": 29,
+      "domContentLoaded": 1479.1000000000931,
+      "load": 3665.5999999996275,
+      "tarefasLongasMs": 1607,
+      "html": {
+        "transfer": 51039,
+        "decoded": 211572
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "css": {
+          "n": 3,
+          "transfer": 41883,
+          "decoded": 245752
+        },
+        "imagem": {
+          "n": 11,
+          "transfer": 0,
+          "decoded": 0
+        },
+        "js": {
+          "n": 23,
+          "transfer": 312762,
+          "decoded": 978532
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        },
+        "rsc-prefetch": {
+          "n": 4,
+          "transfer": 5107,
+          "decoded": 10042
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/financiamento",
+    "perfil": "celular",
+    "rodadas": [
+      {
+        "lcp": 1660,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 1660,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0,
+        "ttfb": 34.60000000009313,
+        "domContentLoaded": 1351.7000000001863,
+        "load": 4620,
+        "tarefasLongasMs": 603,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 3,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 251035,
+            "decoded": 780935
+          },
+          "rsc-prefetch": {
+            "n": 2,
+            "transfer": 2554,
+            "decoded": 5209
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 1612,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 1612,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0,
+        "ttfb": 35,
+        "domContentLoaded": 1347.8999999999069,
+        "load": 4522.899999999907,
+        "tarefasLongasMs": 441,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 3,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 251035,
+            "decoded": 780935
+          },
+          "rsc-prefetch": {
+            "n": 2,
+            "transfer": 2554,
+            "decoded": 5209
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 1632,
+        "lcpElemento": "img.fundo-poster.absolute.inset-0",
+        "historicoLcp": [
+          {
+            "t": 1632,
+            "elemento": "img.fundo-poster.absolute.inset-0",
+            "area": 255794
+          }
+        ],
+        "cls": 0,
+        "ttfb": 26.399999999906868,
+        "domContentLoaded": 1337,
+        "load": 4525,
+        "tarefasLongasMs": 525,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 3,
+            "transfer": 32197,
+            "decoded": 31897
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 18,
+            "transfer": 251035,
+            "decoded": 780935
+          },
+          "rsc-prefetch": {
+            "n": 2,
+            "transfer": 2550,
+            "decoded": 5209
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 208093,
+            "decoded": 207793
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 1632,
+      "lcpElemento": "img.fundo-poster.absolute.inset-0",
+      "cls": 0,
+      "ttfb": 34.60000000009313,
+      "domContentLoaded": 1347.8999999999069,
+      "load": 4525,
+      "tarefasLongasMs": 525,
+      "html": {
+        "transfer": 28389,
+        "decoded": 102711
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 3,
+          "transfer": 32197,
+          "decoded": 31897
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 18,
+          "transfer": 251035,
+          "decoded": 780935
+        },
+        "rsc-prefetch": {
+          "n": 2,
+          "transfer": 2554,
+          "decoded": 5209
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 208093,
+          "decoded": 207793
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 836,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 424,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 836,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 27.399999999906868,
+        "domContentLoaded": 247.79999999981374,
+        "load": 1690.5,
+        "tarefasLongasMs": 68,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 9,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 265352,
+            "decoded": 813918
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 17997,
+            "decoded": 43970
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 852,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 540,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 852,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 33.89999999990687,
+        "domContentLoaded": 247.10000000009313,
+        "load": 1612.6999999997206,
+        "tarefasLongasMs": 74,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 9,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 265352,
+            "decoded": 813918
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 18008,
+            "decoded": 43970
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 892,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 468,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 892,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 36.10000000009313,
+        "domContentLoaded": 257.60000000009313,
+        "load": 1618.6000000000931,
+        "tarefasLongasMs": 81,
+        "html": {
+          "transfer": 57213,
+          "decoded": 223141
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 9,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 265352,
+            "decoded": 813918
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 18001,
+            "decoded": 43970
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 852,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 33.89999999990687,
+      "domContentLoaded": 247.79999999981374,
+      "load": 1618.6000000000931,
+      "tarefasLongasMs": 74,
+      "html": {
+        "transfer": 57213,
+        "decoded": 223141
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 9,
+          "transfer": 194084,
+          "decoded": 193184
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 21,
+          "transfer": 265352,
+          "decoded": 813918
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 511098,
+          "decoded": 510798
+        },
+        "rsc-prefetch": {
+          "n": 11,
+          "transfer": 18001,
+          "decoded": 43970
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/empreendimentos",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 920,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 584,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 920,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 40.39999999990687,
+        "domContentLoaded": 257.59999999962747,
+        "load": 2098.5999999996275,
+        "tarefasLongasMs": 54,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 10,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 9,
+            "transfer": 12255,
+            "decoded": 23791
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 864,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 596,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 864,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 37.6999999997206,
+        "domContentLoaded": 265.60000000009313,
+        "load": 2098.600000000093,
+        "tarefasLongasMs": 55,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 10,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 9,
+            "transfer": 12266,
+            "decoded": 23791
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 948,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 628,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 948,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 45.700000000186265,
+        "domContentLoaded": 260.3000000002794,
+        "load": 2094.600000000093,
+        "tarefasLongasMs": 79,
+        "html": {
+          "transfer": 88425,
+          "decoded": 424356
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 10,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 20,
+            "transfer": 252523,
+            "decoded": 780265
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 9,
+            "transfer": 12264,
+            "decoded": 23791
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 920,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 40.39999999990687,
+      "domContentLoaded": 260.3000000002794,
+      "load": 2098.5999999996275,
+      "tarefasLongasMs": 55,
+      "html": {
+        "transfer": 88425,
+        "decoded": 424356
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 10,
+          "transfer": 161887,
+          "decoded": 161287
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 20,
+          "transfer": 252523,
+          "decoded": 780265
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 511098,
+          "decoded": 510798
+        },
+        "rsc-prefetch": {
+          "n": 9,
+          "transfer": 12264,
+          "decoded": 23791
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/empreendimentos/eternity-alphaville",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 892,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 512,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 892,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 29,
+        "domContentLoaded": 252.20000000018626,
+        "load": 1078.6000000000931,
+        "tarefasLongasMs": 308,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 21,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 10,
+            "transfer": 12740,
+            "decoded": 24068
+          }
+        }
+      },
+      {
+        "lcp": 1020,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 572,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 1020,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 21.100000000093132,
+        "domContentLoaded": 237.5,
+        "load": 1191.5,
+        "tarefasLongasMs": 447,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 21,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          },
+          "rsc-prefetch": {
+            "n": 10,
+            "transfer": 12739,
+            "decoded": 24068
+          }
+        }
+      },
+      {
+        "lcp": 980,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 536,
+            "elemento": "a.link-nav.transition-colors.hover:text-acento-suave",
+            "area": 2057
+          },
+          {
+            "t": 980,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 23.5,
+        "domContentLoaded": 236.1999999997206,
+        "load": 939.5999999996275,
+        "tarefasLongasMs": 294,
+        "html": {
+          "transfer": 51039,
+          "decoded": 211572
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 21,
+            "transfer": 161887,
+            "decoded": 161287
+          },
+          "css": {
+            "n": 3,
+            "transfer": 41883,
+            "decoded": 245752
+          },
+          "js": {
+            "n": 23,
+            "transfer": 312762,
+            "decoded": 978532
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 10,
+            "transfer": 12739,
+            "decoded": 24068
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 980,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 23.5,
+      "domContentLoaded": 237.5,
+      "load": 1078.6000000000931,
+      "tarefasLongasMs": 308,
+      "html": {
+        "transfer": 51039,
+        "decoded": 211572
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 21,
+          "transfer": 161887,
+          "decoded": 161287
+        },
+        "css": {
+          "n": 3,
+          "transfer": 41883,
+          "decoded": 245752
+        },
+        "js": {
+          "n": 23,
+          "transfer": 312762,
+          "decoded": 978532
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 511098,
+          "decoded": 510798
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        },
+        "rsc-prefetch": {
+          "n": 10,
+          "transfer": 12739,
+          "decoded": 24068
+        }
+      }
+    }
+  },
+  {
+    "pagina": "/financiamento",
+    "perfil": "desktop",
+    "rodadas": [
+      {
+        "lcp": 832,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 468,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 832,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 24,
+        "domContentLoaded": 243.60000000009313,
+        "load": 1242.5,
+        "tarefasLongasMs": 44,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 6,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 263214,
+            "decoded": 807829
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 17997,
+            "decoded": 43939
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      },
+      {
+        "lcp": 796,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 472,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 796,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 24.09999999962747,
+        "domContentLoaded": 247.1999999997206,
+        "load": 579.1999999997206,
+        "tarefasLongasMs": 42,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 6,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 263214,
+            "decoded": 807829
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 17990,
+            "decoded": 43939
+          },
+          "outro": {
+            "n": 1,
+            "transfer": 4634,
+            "decoded": 4334
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          }
+        }
+      },
+      {
+        "lcp": 852,
+        "lcpElemento": "video.h-full.w-full",
+        "historicoLcp": [
+          {
+            "t": 480,
+            "elemento": "a.font-display.shrink-0.text-lg",
+            "area": 2047
+          },
+          {
+            "t": 852,
+            "elemento": "video.h-full.w-full",
+            "area": 920703
+          }
+        ],
+        "cls": 0,
+        "ttfb": 21.200000000186265,
+        "domContentLoaded": 242.5,
+        "load": 1141.6000000000931,
+        "tarefasLongasMs": 9,
+        "html": {
+          "transfer": 28389,
+          "decoded": 102711
+        },
+        "tipos": {
+          "fonte": {
+            "n": 2,
+            "transfer": 116420,
+            "decoded": 115820
+          },
+          "imagem": {
+            "n": 6,
+            "transfer": 194084,
+            "decoded": 193184
+          },
+          "css": {
+            "n": 2,
+            "transfer": 38934,
+            "decoded": 235180
+          },
+          "js": {
+            "n": 21,
+            "transfer": 263214,
+            "decoded": 807829
+          },
+          "midia": {
+            "n": 1,
+            "transfer": 511098,
+            "decoded": 510798
+          },
+          "rsc-prefetch": {
+            "n": 11,
+            "transfer": 17987,
+            "decoded": 43939
+          },
+          "outro": {
+            "n": 2,
+            "transfer": 4950,
+            "decoded": 4350
+          }
+        }
+      }
+    ],
+    "mediana": {
+      "lcp": 832,
+      "lcpElemento": "video.h-full.w-full",
+      "cls": 0,
+      "ttfb": 24,
+      "domContentLoaded": 243.60000000009313,
+      "load": 1141.6000000000931,
+      "tarefasLongasMs": 42,
+      "html": {
+        "transfer": 28389,
+        "decoded": 102711
+      },
+      "tipos": {
+        "fonte": {
+          "n": 2,
+          "transfer": 116420,
+          "decoded": 115820
+        },
+        "imagem": {
+          "n": 6,
+          "transfer": 194084,
+          "decoded": 193184
+        },
+        "css": {
+          "n": 2,
+          "transfer": 38934,
+          "decoded": 235180
+        },
+        "js": {
+          "n": 21,
+          "transfer": 263214,
+          "decoded": 807829
+        },
+        "midia": {
+          "n": 1,
+          "transfer": 511098,
+          "decoded": 510798
+        },
+        "rsc-prefetch": {
+          "n": 11,
+          "transfer": 17990,
+          "decoded": 43939
+        },
+        "outro": {
+          "n": 2,
+          "transfer": 4950,
+          "decoded": 4350
+        }
+      }
+    }
+  }
+]
