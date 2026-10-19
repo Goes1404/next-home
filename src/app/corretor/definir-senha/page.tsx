@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { DESTINO_SEM_LINK, sessaoAbertaPorLink } from "@/lib/auth/sessaoPorLink";
 import { createClient } from "@/lib/supabase/server";
 import { FormularioDefinirSenha } from "./FormularioDefinirSenha";
 
@@ -15,13 +16,17 @@ export const metadata: Metadata = {
  * Fora do grupo `(painel)` de propósito: o menu e as faixas do painel não
  * servem a quem ainda nem tem senha. A sessão continua exigida (o
  * `proxy.ts` barra `/corretor/*` sem ela) — sem o link aberto não há o que
- * definir.
+ * definir. E só a sessão que o link abriu há menos de 15 minutos
+ * (`sessaoAbertaPorLink`): as outras vão para `/corretor/senha`.
  */
 export default async function DefinirSenhaPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
   if (!data?.claims?.sub) redirect("/corretor/entrar");
+  // A mesma régua da action: só a sessão que o link abriu há pouco cria
+  // senha sem a atual. As outras vão para a troca que pede a atual.
+  if (!sessaoAbertaPorLink(data.claims)) redirect(DESTINO_SEM_LINK);
 
   return (
     <main className="bg-fundo flex min-h-svh items-center justify-center px-5 py-10">

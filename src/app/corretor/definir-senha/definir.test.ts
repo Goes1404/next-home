@@ -1,12 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Quem chega pelo link do convite ou da recuperação já tem sessão (o
- * `/auth/confirmar` abriu), mas não tem senha que conheça: a tela não pede a
+ * Quem chega pelo link do convite ou da recuperação já tem sessão (o botão de
+ * `/auth/continuar` abriu), mas não tem senha que conheça: a tela não pede a
  * atual — é a diferença para `trocarSenha`.
+ *
+ * Por isso ela só vale para a sessão que o LINK abriu, há menos de 15
+ * minutos (claim `amr`). Qualquer outra sessão — login com senha, link
+ * aberto ontem, sessão roubada — vai para `/corretor/senha`, que pede a
+ * senha atual.
  */
 
-let usuario: { id: string; email: string } | null = { id: "usuario-1", email: "ana@exemplo.com.br" };
+const AGORA_S = 1_792_448_121;
+const linkRecente = () => ({ sub: "usuario-1", email: "ana@exemplo.com.br", amr: [{ method: "otp", timestamp: AGORA_S - 60 }] });
+
+let claims: Record<string, unknown> | null = linkRecente();
 let erroDoUpdateUser: unknown = null;
 const senhasGravadas: unknown[] = [];
 const updatesDeCorretores: { valores: unknown; coluna: string; valor: unknown }[] = [];
@@ -14,7 +22,7 @@ const updatesDeCorretores: { valores: unknown; coluna: string; valor: unknown }[
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: {
-      getUser: async () => ({ data: { user: usuario }, error: null }),
+      getClaims: async () => ({ data: claims ? { claims } : null, error: null }),
       updateUser: async (attrs: unknown) => {
         senhasGravadas.push(attrs);
         return { data: {}, error: erroDoUpdateUser };
@@ -55,7 +63,9 @@ async function enviar(nova: string, confirmacao: string): Promise<{ erro?: strin
 }
 
 beforeEach(() => {
-  usuario = { id: "usuario-1", email: "ana@exemplo.com.br" };
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(AGORA_S * 1000);
+  claims = linkRecente();
   erroDoUpdateUser = null;
   senhasGravadas.length = 0;
   updatesDeCorretores.length = 0;
@@ -83,8 +93,27 @@ describe("definirSenha", () => {
   });
 
   it("sem sessão (link não aberto ou já vencido) volta para entrar", async () => {
-    usuario = null;
+    claims = null;
     expect(await enviar("senha-boa-1", "senha-boa-1")).toEqual({ destino: "/corretor/entrar" });
+    expect(senhasGravadas).toEqual([]);
+  });
+
+  it("sessão de login com senha não troca a senha sem a atual", async () => {
+    claims = { sub: "usuario-1", amr: [{ method: "password", timestamp: AGORA_S - 30 }] };
+    expect(await enviar("senha-boa-1", "senha-boa-1")).toEqual({ destino: "/corretor/senha?link=vencido" });
+    expect(senhasGravadas).toEqual([]);
+    expect(updatesDeCorretores).toEqual([]);
+  });
+
+  it("link aberto há mais de 15 minutos manda para a troca com a senha atual", async () => {
+    claims = { sub: "usuario-1", amr: [{ method: "otp", timestamp: AGORA_S - 15 * 60 - 1 }] };
+    expect(await enviar("senha-boa-1", "senha-boa-1")).toEqual({ destino: "/corretor/senha?link=vencido" });
+    expect(senhasGravadas).toEqual([]);
+  });
+
+  it("sessão sem amr não conta como link", async () => {
+    claims = { sub: "usuario-1" };
+    expect(await enviar("senha-boa-1", "senha-boa-1")).toEqual({ destino: "/corretor/senha?link=vencido" });
     expect(senhasGravadas).toEqual([]);
   });
 
