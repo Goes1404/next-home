@@ -10663,6 +10663,48 @@ Nota: [[plataforma-multi-grupo]].
   `portas.test.ts` impede o padrão de voltar e o grupo do site de entrar no
   painel ou nas páginas de link.
 
+## As funções `security definer` respeitam o grupo (0183 parte B, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **A RLS não vale dentro de `security definer`, e a regressão é calada.**
+  Medido no banco local com dois grupos, antes da correção: o ranking de B
+  listava os corretores de A, as taxas da equipe de B contavam leads e vendas
+  de A, gestor de B marcava a comissão de uma venda de A como recebida e
+  mudava a preferência de contato de lead de A, e o único gestor de A podia
+  ser desativado porque B tinha gestor. Nada disso aparece em tela.
+- **`funcoesSeguras.ts` declara as exceções com motivo** e duas guardas a
+  leem: `funcoesSeguras.test.ts` (última definição VIVA de cada função nas
+  migrations; `drop function` apaga, comentários saem antes) e
+  `funcoesSeguras.db.test.ts` (`pg_proc`: função só no banco reprova; função
+  que o `authenticated` executa e recebe id de corretor, instância ou lead
+  tem de conferir o chamador). A guarda de texto é por "cita grupo", que é
+  fraca: por isso a roleta tem a asserção própria em `roletaDeLeads.test.ts`
+  (`c.grupo_id = new.grupo_id` no WHERE). Uma trava por grupo no
+  `pg_advisory_xact_lock` teria feito a guarda de texto aprovar a roleta
+  sem o filtro — por isso a trava continua global.
+- **Assinatura de função tem sobrecarga**: guarda por nome confunde
+  `sortear_corretor_whatsapp(uuid, uuid)` com a de três argumentos. A chave é
+  `nome(tipos)`, como `oidvectortypes` escreve.
+- **A roleta deixa o lead SEM DONO dentro do grupo** quando ninguém do grupo
+  é elegível (antes da 0183, a conferência final da 0182 recusava o lead).
+- **EXECUTE também conta**: `reservar_credito_video`, `devolver_credito_video`
+  e `reservar_horario_visita` saíram do `authenticated` (só a chave de
+  serviço as chama). Antes, qualquer logado gastava o crédito de vídeo de
+  outro corretor pelo id.
+- **A marca `origem = 'plataforma'` em `admin_eventos` não vale para
+  `postgres`**: dentro de qualquer função `security definer` chamada por um
+  logado o papel é `postgres`, e a marca virava um jeito de gravar evento sem
+  grupo. Só `service_role` ou administrador da plataforma, e só sem nenhuma
+  mãe com valor (ajuste na 0182, ainda não aplicada). SQL rodado à mão como
+  `postgres` que precise de evento da plataforma faz `set local role
+  service_role`.
+- **`comoUsuario` desfaz tudo no fim**: o efeito de uma função chamada como
+  usuário se lê DENTRO do callback, não depois.
+- `salvar_venda` recusa participante de outro grupo com
+  `participante_de_outro_grupo`, que a tela traduz (co-corretagem entre
+  grupos fica para fase posterior).
+
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 
 Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:
