@@ -46,6 +46,13 @@
  * `administradores_da_plataforma`, a função `eh_admin_da_plataforma()` e
  * `parametros_credito.grupo_id` (que substituiu a coluna `id` da linha
  * única), todos da 0181.
+ *
+ * E, da 0182, `grupo_id` em TODA tabela de `Tables` menos `grupos`,
+ * `administradores_da_plataforma`, `whatsapp_disparo_lock` e
+ * `whatsapp_diagnosticos` (ver `src/lib/grupos/tabelasDoGrupo.ts`):
+ * obrigatório no Row e opcional no Insert/Update, porque o gatilho
+ * `<tabela>_00_grupo` o deriva da linha-mãe. `admin_eventos.grupo_id` é
+ * anulável (nulo = evento da plataforma).
  */
 
 export type Json =
@@ -66,6 +73,7 @@ export type Database = {
     Tables: {
       ativacoes_em_lead_alheio: {
         Row: {
+          grupo_id: string
           corretor_id: string
           created_at: string
           id: string
@@ -73,6 +81,7 @@ export type Database = {
           telefone: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           created_at?: string
           id?: string
@@ -80,6 +89,7 @@ export type Database = {
           telefone: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           created_at?: string
           id?: string
@@ -90,6 +100,7 @@ export type Database = {
       }
       admin_eventos: {
         Row: {
+          grupo_id: string | null
           acao: string
           alvo_corretor_id: string | null
           ator_id: string | null
@@ -98,6 +109,7 @@ export type Database = {
           id: string
         }
         Insert: {
+          grupo_id?: string | null
           acao: string
           alvo_corretor_id?: string | null
           ator_id?: string | null
@@ -106,6 +118,7 @@ export type Database = {
           id?: string
         }
         Update: {
+          grupo_id?: string | null
           acao?: string
           alvo_corretor_id?: string | null
           ator_id?: string | null
@@ -132,6 +145,7 @@ export type Database = {
       }
       lead_documentos: {
         Row: {
+          grupo_id: string
           alerta: string | null
           caminho: string
           corretor_id: string
@@ -151,6 +165,7 @@ export type Database = {
           situacao: "recebido" | "conferido" | "recusado"
         }
         Insert: {
+          grupo_id?: string
           alerta?: string | null
           caminho: string
           corretor_id: string
@@ -170,6 +185,7 @@ export type Database = {
           situacao?: "recebido" | "conferido" | "recusado"
         }
         Update: {
+          grupo_id?: string
           alerta?: string | null
           caminho?: string
           corretor_id?: string
@@ -192,6 +208,7 @@ export type Database = {
       }
       lead_documentos_lista: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           corretor_id: string
           fase: "financiamento" | "contrato"
@@ -200,6 +217,7 @@ export type Database = {
           perfil: string | null
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id: string
           fase: "financiamento" | "contrato"
@@ -208,6 +226,7 @@ export type Database = {
           perfil?: string | null
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id?: string
           fase?: "financiamento" | "contrato"
@@ -219,6 +238,7 @@ export type Database = {
       }
       links_do_cliente_eventos: {
         Row: {
+          grupo_id: string
           corretor_id: string
           created_at: string
           detalhe: string | null
@@ -228,6 +248,7 @@ export type Database = {
           token: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           created_at?: string
           detalhe?: string | null
@@ -237,6 +258,7 @@ export type Database = {
           token: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           created_at?: string
           detalhe?: string | null
@@ -249,6 +271,7 @@ export type Database = {
       }
       links_do_cliente: {
         Row: {
+          grupo_id: string
           aberto_em: string | null
           corretor_id: string
           created_at: string
@@ -259,6 +282,7 @@ export type Database = {
           token: string
         }
         Insert: {
+          grupo_id?: string
           aberto_em?: string | null
           corretor_id: string
           created_at?: string
@@ -269,6 +293,7 @@ export type Database = {
           token?: string
         }
         Update: {
+          grupo_id?: string
           aberto_em?: string | null
           corretor_id?: string
           created_at?: string
@@ -282,6 +307,7 @@ export type Database = {
       }
       obra_atualizacoes: {
         Row: {
+          grupo_id: string
           id: string
           empreendimento_id: string
           corretor_id: string | null
@@ -292,6 +318,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           empreendimento_id: string
           corretor_id?: string | null
@@ -302,6 +329,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           empreendimento_id?: string
           corretor_id?: string | null
@@ -315,6 +343,7 @@ export type Database = {
       }
       ia_correcoes: {
         Row: {
+          grupo_id: string
           id: string
           corretor_id: string
           interacao_id: string | null
@@ -326,6 +355,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           corretor_id: string
           interacao_id?: string | null
@@ -337,6 +367,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           corretor_id?: string
           interacao_id?: string | null
@@ -351,6 +382,7 @@ export type Database = {
       }
       contas_email_google: {
         Row: {
+          grupo_id: string
           corretor_id: string
           email: string
           refresh_token: string
@@ -360,6 +392,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           email: string
           refresh_token: string
@@ -369,6 +402,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           email?: string
           refresh_token?: string
@@ -381,6 +415,7 @@ export type Database = {
       }
       parceiros: {
         Row: {
+          grupo_id: string
           id: string
           nome: string
           imobiliaria: string | null
@@ -392,6 +427,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           nome: string
           imobiliaria?: string | null
@@ -403,6 +439,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           nome?: string
           imobiliaria?: string | null
@@ -417,6 +454,7 @@ export type Database = {
       }
       impulsionamento_gastos: {
         Row: {
+          grupo_id: string
           id: string
           impulsionamento_id: string
           corretor_id: string
@@ -425,6 +463,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           impulsionamento_id: string
           corretor_id: string
@@ -433,6 +472,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           impulsionamento_id?: string
           corretor_id?: string
@@ -444,6 +484,7 @@ export type Database = {
       }
       impulsionamentos: {
         Row: {
+          grupo_id: string
           id: string
           corretor_id: string
           chave: string
@@ -463,6 +504,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           corretor_id: string
           chave: string
@@ -482,6 +524,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           corretor_id?: string
           chave?: string
@@ -504,16 +547,19 @@ export type Database = {
       }
       corretor_agenda: {
         Row: {
+          grupo_id: string
           corretor_id: string
           token: string
           created_at: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           token?: string
           created_at?: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           token?: string
           created_at?: string
@@ -522,6 +568,7 @@ export type Database = {
       }
       unidades: {
         Row: {
+          grupo_id: string
           andar: number | null
           area_m2: number | null
           atualizado_em: string
@@ -535,6 +582,7 @@ export type Database = {
           reservada_ate: string | null
         }
         Insert: {
+          grupo_id?: string
           andar?: number | null
           area_m2?: number | null
           atualizado_em?: string
@@ -548,6 +596,7 @@ export type Database = {
           reservada_ate?: string | null
         }
         Update: {
+          grupo_id?: string
           andar?: number | null
           area_m2?: number | null
           atualizado_em?: string
@@ -564,6 +613,7 @@ export type Database = {
       }
       anotacoes: {
         Row: {
+          grupo_id: string
           id: string
           corretor_id: string
           destinatario_id: string
@@ -578,6 +628,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           corretor_id: string
           destinatario_id: string
@@ -592,6 +643,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           corretor_id?: string
           destinatario_id?: string
@@ -632,6 +684,7 @@ export type Database = {
       /** 0114 — a venda (F1 do módulo financeiro). */
       vendas: {
         Row: {
+          grupo_id: string
           id: string
           corretor_id: string
           lead_id: string | null
@@ -651,6 +704,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           corretor_id: string
           lead_id?: string | null
@@ -670,6 +724,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           corretor_id?: string
           lead_id?: string | null
@@ -693,6 +748,7 @@ export type Database = {
       /** 0114 — quem participou de cada venda (co-corretagem). */
       venda_participantes: {
         Row: {
+          grupo_id: string
           venda_id: string
           corretor_id: string
           parte_percentual: number
@@ -701,6 +757,7 @@ export type Database = {
           repasse_pago_em: string | null
         }
         Insert: {
+          grupo_id?: string
           venda_id: string
           corretor_id: string
           parte_percentual: number
@@ -709,6 +766,7 @@ export type Database = {
           repasse_pago_em?: string | null
         }
         Update: {
+          grupo_id?: string
           venda_id?: string
           corretor_id?: string
           parte_percentual?: number
@@ -721,6 +779,7 @@ export type Database = {
       /** 0166 — contas a pagar e a receber do caixa da imobiliária (só o gestor). */
       caixa_lancamentos: {
         Row: {
+          grupo_id: string
           id: string
           tipo: "entrada" | "saida"
           categoria: string
@@ -735,6 +794,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           id?: string
           tipo: "entrada" | "saida"
           categoria: string
@@ -749,6 +809,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           id?: string
           tipo?: "entrada" | "saida"
           categoria?: string
@@ -766,14 +827,15 @@ export type Database = {
       }
       /** 0166 — saldo da conta informado pelo gestor. */
       caixa_saldos: {
-        Row: { id: string; valor: number; informado_em: string; criado_por: string | null; created_at: string }
-        Insert: { id?: string; valor: number; informado_em: string; criado_por?: string | null; created_at?: string }
-        Update: { id?: string; valor?: number; informado_em?: string; criado_por?: string | null; created_at?: string }
+        Row: { grupo_id: string; id: string; valor: number; informado_em: string; criado_por: string | null; created_at: string }
+        Insert: { grupo_id?: string; id?: string; valor: number; informado_em: string; criado_por?: string | null; created_at?: string }
+        Update: { grupo_id?: string; id?: string; valor?: number; informado_em?: string; criado_por?: string | null; created_at?: string }
         Relationships: []
       }
       /** 0167 — configuração fiscal da imobiliária (uma linha só, id = 1; só o gestor). */
       fiscal_config: {
         Row: {
+          grupo_id: string
           id: number
           regime: "simples" | "presumido"
           aliquota_simples: number
@@ -785,6 +847,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           id?: number
           regime?: "simples" | "presumido"
           aliquota_simples?: number
@@ -796,6 +859,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           id?: number
           regime?: "simples" | "presumido"
           aliquota_simples?: number
@@ -811,6 +875,7 @@ export type Database = {
       /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
       venda_fiscal: {
         Row: {
+          grupo_id: string
           venda_id: string
           comprador_nome: string | null
           comprador_documento: string | null
@@ -821,6 +886,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           venda_id: string
           comprador_nome?: string | null
           comprador_documento?: string | null
@@ -831,6 +897,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           venda_id?: string
           comprador_nome?: string | null
           comprador_documento?: string | null
@@ -844,21 +911,22 @@ export type Database = {
       }
       /** 0167 — vínculo fiscal do corretor: autônomo (RPA) ou PJ (só o gestor). */
       corretor_fiscal: {
-        Row: { corretor_id: string; vinculo: "autonomo" | "pj"; atualizado_em: string }
-        Insert: { corretor_id: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
-        Update: { corretor_id?: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Row: { grupo_id: string; corretor_id: string; vinculo: "autonomo" | "pj"; atualizado_em: string }
+        Insert: { grupo_id?: string; corretor_id: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
+        Update: { grupo_id?: string; corretor_id?: string; vinculo?: "autonomo" | "pj"; atualizado_em?: string }
         Relationships: []
       }
       /** 0168 — meses fechados e enviados ao contador (só o gestor). */
       meses_fechados: {
-        Row: { mes: string; arquivo_path: string; totais: Json; observacao: string | null; fechado_por: string | null; fechado_em: string }
-        Insert: { mes: string; arquivo_path: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
-        Update: { mes?: string; arquivo_path?: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Row: { grupo_id: string; mes: string; arquivo_path: string; totais: Json; observacao: string | null; fechado_por: string | null; fechado_em: string }
+        Insert: { grupo_id?: string; mes: string; arquivo_path: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
+        Update: { grupo_id?: string; mes?: string; arquivo_path?: string; totais?: Json; observacao?: string | null; fechado_por?: string | null; fechado_em?: string }
         Relationships: []
       }
       /** 0168 — links do contador (o token é a credencial; só o gestor). */
       acessos_contador: {
         Row: {
+          grupo_id: string
           token: string
           nome: string
           criado_por: string | null
@@ -868,6 +936,7 @@ export type Database = {
           ultimo_acesso_em: string | null
         }
         Insert: {
+          grupo_id?: string
           token?: string
           nome: string
           criado_por?: string | null
@@ -877,6 +946,7 @@ export type Database = {
           ultimo_acesso_em?: string | null
         }
         Update: {
+          grupo_id?: string
           token?: string
           nome?: string
           criado_por?: string | null
@@ -890,6 +960,7 @@ export type Database = {
       /** 0115 — a meta mensal do corretor (F5 do financeiro). */
       metas_corretor: {
         Row: {
+          grupo_id: string
           corretor_id: string
           mes: string
           meta_comissao: number
@@ -898,6 +969,7 @@ export type Database = {
           atualizado_em: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           mes: string
           meta_comissao: number
@@ -906,6 +978,7 @@ export type Database = {
           atualizado_em?: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           mes?: string
           meta_comissao?: number
@@ -917,6 +990,7 @@ export type Database = {
       }
       catalogo_candidatos: {
         Row: {
+          grupo_id: string
           area: string | null
           bairro: string | null
           criado_em: string
@@ -934,6 +1008,7 @@ export type Database = {
           visto_em: string
         }
         Insert: {
+          grupo_id?: string
           area?: string | null
           bairro?: string | null
           criado_em?: string
@@ -951,6 +1026,7 @@ export type Database = {
           visto_em?: string
         }
         Update: {
+          grupo_id?: string
           area?: string | null
           bairro?: string | null
           criado_em?: string
@@ -979,6 +1055,7 @@ export type Database = {
       }
       cliques_whatsapp: {
         Row: {
+          grupo_id: string
           corretor_id: string | null
           consumido_em: string | null
           created_at: string
@@ -993,6 +1070,7 @@ export type Database = {
           visitante: string | null
         }
         Insert: {
+          grupo_id?: string
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
@@ -1007,6 +1085,7 @@ export type Database = {
           visitante?: string | null
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string | null
           consumido_em?: string | null
           created_at?: string
@@ -1039,16 +1118,19 @@ export type Database = {
       }
       corretor_destaques: {
         Row: {
+          grupo_id: string
           corretor_id: string
           empreendimento_slug: string
           posicao: number
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           empreendimento_slug: string
           posicao: number
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           empreendimento_slug?: string
           posicao?: number
@@ -1072,6 +1154,7 @@ export type Database = {
       }
       corretor_disponibilidade: {
         Row: {
+          grupo_id: string
           corretor_id: string
           criado_em: string
           dia_semana: number
@@ -1081,6 +1164,7 @@ export type Database = {
           id: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           criado_em?: string
           dia_semana: number
@@ -1090,6 +1174,7 @@ export type Database = {
           id?: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           criado_em?: string
           dia_semana?: number
@@ -1110,6 +1195,7 @@ export type Database = {
       }
       corretor_whatsapp_instancias: {
         Row: {
+          grupo_id: string
           aquecimento_desde: string | null
           aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
@@ -1142,6 +1228,7 @@ export type Database = {
           webhook_secret: string | null
         }
         Insert: {
+          grupo_id?: string
           aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
@@ -1174,6 +1261,7 @@ export type Database = {
           webhook_secret?: string | null
         }
         Update: {
+          grupo_id?: string
           aquecimento_desde?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
@@ -1306,14 +1394,17 @@ export type Database = {
       }
       empreendimento_lazer: {
         Row: {
+          grupo_id: string
           empreendimento_id: string
           lazer_item_id: string
         }
         Insert: {
+          grupo_id?: string
           empreendimento_id: string
           lazer_item_id: string
         }
         Update: {
+          grupo_id?: string
           empreendimento_id?: string
           lazer_item_id?: string
         }
@@ -1336,6 +1427,7 @@ export type Database = {
       }
       empreendimentos: {
         Row: {
+          grupo_id: string
           bairro: string
           book_titulo: string | null
           book_url: string | null
@@ -1371,6 +1463,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          grupo_id?: string
           bairro: string
           book_titulo?: string | null
           book_url?: string | null
@@ -1406,6 +1499,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          grupo_id?: string
           bairro?: string
           book_titulo?: string | null
           book_url?: string | null
@@ -1484,6 +1578,7 @@ export type Database = {
       }
       historico_envios: {
         Row: {
+          grupo_id: string
           corretor_id: string
           created_at: string
           id: string
@@ -1492,6 +1587,7 @@ export type Database = {
           status_envio: string
         }
         Insert: {
+          grupo_id?: string
           corretor_id: string
           created_at?: string
           id?: string
@@ -1500,6 +1596,7 @@ export type Database = {
           status_envio?: string
         }
         Update: {
+          grupo_id?: string
           corretor_id?: string
           created_at?: string
           id?: string
@@ -1526,6 +1623,7 @@ export type Database = {
       }
       historico_precos_itens: {
         Row: {
+          grupo_id: string
           created_at: string
           empreendimento_id: string
           id: string
@@ -1536,6 +1634,7 @@ export type Database = {
           variacao_reais: number | null
         }
         Insert: {
+          grupo_id?: string
           created_at?: string
           empreendimento_id: string
           id?: string
@@ -1546,6 +1645,7 @@ export type Database = {
           variacao_reais?: number | null
         }
         Update: {
+          grupo_id?: string
           created_at?: string
           empreendimento_id?: string
           id?: string
@@ -1574,6 +1674,7 @@ export type Database = {
       }
       historico_precos_lotes: {
         Row: {
+          grupo_id: string
           created_at: string
           gestor_id: string | null
           id: string
@@ -1583,6 +1684,7 @@ export type Database = {
           total_imoveis: number
         }
         Insert: {
+          grupo_id?: string
           created_at?: string
           gestor_id?: string | null
           id?: string
@@ -1592,6 +1694,7 @@ export type Database = {
           total_imoveis?: number
         }
         Update: {
+          grupo_id?: string
           created_at?: string
           gestor_id?: string | null
           id?: string
@@ -1612,6 +1715,7 @@ export type Database = {
       }
       ia_interacoes: {
         Row: {
+          grupo_id: string
           acao: string | null
           anexos_bloqueados: number | null
           anexos_enviados: number | null
@@ -1636,6 +1740,7 @@ export type Database = {
           transferiu_humano: boolean | null
         }
         Insert: {
+          grupo_id?: string
           acao?: string | null
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
@@ -1660,6 +1765,7 @@ export type Database = {
           transferiu_humano?: boolean | null
         }
         Update: {
+          grupo_id?: string
           acao?: string | null
           anexos_bloqueados?: number | null
           anexos_enviados?: number | null
@@ -1695,6 +1801,7 @@ export type Database = {
       }
       inbound_logs: {
         Row: {
+          grupo_id: string
           assunto: string | null
           created_at: string
           de: string | null
@@ -1706,6 +1813,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          grupo_id?: string
           assunto?: string | null
           created_at?: string
           de?: string | null
@@ -1717,6 +1825,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          grupo_id?: string
           assunto?: string | null
           created_at?: string
           de?: string | null
@@ -1739,16 +1848,19 @@ export type Database = {
       }
       lazer_itens: {
         Row: {
+          grupo_id: string
           icone: string | null
           id: string
           nome: string
         }
         Insert: {
+          grupo_id?: string
           icone?: string | null
           id?: string
           nome: string
         }
         Update: {
+          grupo_id?: string
           icone?: string | null
           id?: string
           nome?: string
@@ -1757,6 +1869,7 @@ export type Database = {
       }
       video_jobs: {
         Row: {
+          grupo_id: string
           altura: number | null
           briefing: Json
           cobranca: "cota" | "credito"
@@ -1777,6 +1890,7 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          grupo_id?: string
           altura?: number | null
           briefing?: Json
           cobranca?: "cota" | "credito"
@@ -1797,6 +1911,7 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          grupo_id?: string
           altura?: number | null
           briefing?: Json
           cobranca?: "cota" | "credito"
@@ -1820,6 +1935,7 @@ export type Database = {
       }
       video_creditos: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           ciclo_inicio: string
           corretor_id: string
@@ -1828,6 +1944,7 @@ export type Database = {
           usados_no_ciclo: number
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           ciclo_inicio?: string
           corretor_id: string
@@ -1836,6 +1953,7 @@ export type Database = {
           usados_no_ciclo?: number
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           ciclo_inicio?: string
           corretor_id?: string
@@ -1847,6 +1965,7 @@ export type Database = {
       }
       consultor_conversas: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           corretor_id: string
           created_at: string
@@ -1854,6 +1973,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id: string
           created_at?: string
@@ -1861,6 +1981,7 @@ export type Database = {
           titulo?: string
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id?: string
           created_at?: string
@@ -1879,6 +2000,7 @@ export type Database = {
       }
       consultor_mensagens: {
         Row: {
+          grupo_id: string
           conteudo: string
           conversa_id: string
           created_at: string
@@ -1887,6 +2009,7 @@ export type Database = {
           papel: "corretor" | "ia"
         }
         Insert: {
+          grupo_id?: string
           conteudo: string
           conversa_id: string
           created_at?: string
@@ -1895,6 +2018,7 @@ export type Database = {
           papel: "corretor" | "ia"
         }
         Update: {
+          grupo_id?: string
           conteudo?: string
           conversa_id?: string
           created_at?: string
@@ -1914,6 +2038,7 @@ export type Database = {
       }
       porteiro_barrados: {
         Row: {
+          grupo_id: string
           citou_imovel: boolean
           clique_id: string | null
           corretor_id: string
@@ -1926,6 +2051,7 @@ export type Database = {
           tipo: "texto" | "audio" | "outro"
         }
         Insert: {
+          grupo_id?: string
           citou_imovel?: boolean
           clique_id?: string | null
           corretor_id: string
@@ -1938,6 +2064,7 @@ export type Database = {
           tipo: "texto" | "audio" | "outro"
         }
         Update: {
+          grupo_id?: string
           citou_imovel?: boolean
           clique_id?: string | null
           corretor_id?: string
@@ -1953,6 +2080,7 @@ export type Database = {
       }
       recusas_detectadas: {
         Row: {
+          grupo_id: string
           acao: "acolheu" | "encerrou" | "marcou" | "registrou"
           caminho: "turno_ia" | "ia_calada"
           confianca: number | null
@@ -1969,6 +2097,7 @@ export type Database = {
           trecho: string | null
         }
         Insert: {
+          grupo_id?: string
           acao: "acolheu" | "encerrou" | "marcou" | "registrou"
           caminho: "turno_ia" | "ia_calada"
           confianca?: number | null
@@ -1985,6 +2114,7 @@ export type Database = {
           trecho?: string | null
         }
         Update: {
+          grupo_id?: string
           acao?: "acolheu" | "encerrou" | "marcou" | "registrou"
           caminho?: "turno_ia" | "ia_calada"
           confianca?: number | null
@@ -2058,6 +2188,7 @@ export type Database = {
       }
       estudio_conversas: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           corretor_id: string
           created_at: string
@@ -2066,6 +2197,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id: string
           created_at?: string
@@ -2074,6 +2206,7 @@ export type Database = {
           titulo?: string
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           corretor_id?: string
           created_at?: string
@@ -2093,6 +2226,7 @@ export type Database = {
       }
       estudio_mensagens: {
         Row: {
+          grupo_id: string
           conteudo: string
           conversa_id: string
           created_at: string
@@ -2103,6 +2237,7 @@ export type Database = {
           video_job_id: string | null
         }
         Insert: {
+          grupo_id?: string
           conteudo: string
           conversa_id: string
           created_at?: string
@@ -2113,6 +2248,7 @@ export type Database = {
           video_job_id?: string | null
         }
         Update: {
+          grupo_id?: string
           conteudo?: string
           conversa_id?: string
           created_at?: string
@@ -2148,6 +2284,7 @@ export type Database = {
       }
       imagens_geradas: {
         Row: {
+          grupo_id: string
           altura: number | null
           arte_url: string | null
           briefing: Json | null
@@ -2164,6 +2301,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          grupo_id?: string
           altura?: number | null
           arte_url?: string | null
           briefing?: Json | null
@@ -2180,6 +2318,7 @@ export type Database = {
           url: string
         }
         Update: {
+          grupo_id?: string
           altura?: number | null
           arte_url?: string | null
           briefing?: Json | null
@@ -2214,6 +2353,7 @@ export type Database = {
       }
       lead_interacoes: {
         Row: {
+          grupo_id: string
           conteudo: string
           corretor_id: string | null
           created_at: string
@@ -2223,6 +2363,7 @@ export type Database = {
           tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
         }
         Insert: {
+          grupo_id?: string
           conteudo: string
           corretor_id?: string | null
           created_at?: string
@@ -2232,6 +2373,7 @@ export type Database = {
           tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
         }
         Update: {
+          grupo_id?: string
           conteudo?: string
           corretor_id?: string | null
           created_at?: string
@@ -2259,6 +2401,7 @@ export type Database = {
       }
       lead_observacoes_ia: {
         Row: {
+          grupo_id: string
           created_at: string
           exigencias_especificas: Json | null
           forma_pagamento: string | null
@@ -2276,6 +2419,7 @@ export type Database = {
           urgencia_mudanca: string | null
         }
         Insert: {
+          grupo_id?: string
           created_at?: string
           exigencias_especificas?: Json | null
           forma_pagamento?: string | null
@@ -2293,6 +2437,7 @@ export type Database = {
           urgencia_mudanca?: string | null
         }
         Update: {
+          grupo_id?: string
           created_at?: string
           exigencias_especificas?: Json | null
           forma_pagamento?: string | null
@@ -2321,6 +2466,7 @@ export type Database = {
       }
       lead_tarefas: {
         Row: {
+          grupo_id: string
           concluida_em: string | null
           corretor_id: string
           created_at: string
@@ -2332,6 +2478,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          grupo_id?: string
           concluida_em?: string | null
           corretor_id: string
           created_at?: string
@@ -2343,6 +2490,7 @@ export type Database = {
           titulo: string
         }
         Update: {
+          grupo_id?: string
           concluida_em?: string | null
           corretor_id?: string
           created_at?: string
@@ -2372,6 +2520,7 @@ export type Database = {
       }
       event_outbox: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           criado_em: string
           destino: string
@@ -2383,6 +2532,7 @@ export type Database = {
           ultimo_erro: string | null
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           criado_em?: string
           destino: string
@@ -2394,6 +2544,7 @@ export type Database = {
           ultimo_erro?: string | null
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           criado_em?: string
           destino?: string
@@ -2415,13 +2566,14 @@ export type Database = {
         ]
       }
       marketing_consentimentos: {
-        Row: { base_legal: string; canal: string; criado_em: string; estado: string; finalidade: string; id: string; lead_id: string; ocorrido_em: string; origem: string | null; versao_aviso: string }
-        Insert: { base_legal?: string; canal: string; criado_em?: string; estado: string; finalidade: string; id?: string; lead_id: string; ocorrido_em?: string; origem?: string | null; versao_aviso: string }
-        Update: { base_legal?: string; canal?: string; criado_em?: string; estado?: string; finalidade?: string; id?: string; lead_id?: string; ocorrido_em?: string; origem?: string | null; versao_aviso?: string }
+        Row: { grupo_id: string; base_legal: string; canal: string; criado_em: string; estado: string; finalidade: string; id: string; lead_id: string; ocorrido_em: string; origem: string | null; versao_aviso: string }
+        Insert: { grupo_id?: string; base_legal?: string; canal: string; criado_em?: string; estado: string; finalidade: string; id?: string; lead_id: string; ocorrido_em?: string; origem?: string | null; versao_aviso: string }
+        Update: { grupo_id?: string; base_legal?: string; canal?: string; criado_em?: string; estado?: string; finalidade?: string; id?: string; lead_id?: string; ocorrido_em?: string; origem?: string | null; versao_aviso?: string }
         Relationships: [{ foreignKeyName: "marketing_consentimentos_lead_id_fkey"; columns: ["lead_id"]; isOneToOne: false; referencedRelation: "leads"; referencedColumns: ["id"] }]
       }
       marketing_eventos: {
         Row: {
+          grupo_id: string
           criado_em: string
           entidade_id: string
           entidade_tipo: string
@@ -2433,6 +2585,7 @@ export type Database = {
           tipo: string
         }
         Insert: {
+          grupo_id?: string
           criado_em?: string
           entidade_id: string
           entidade_tipo: string
@@ -2444,6 +2597,7 @@ export type Database = {
           tipo: string
         }
         Update: {
+          grupo_id?: string
           criado_em?: string
           entidade_id?: string
           entidade_tipo?: string
@@ -2466,6 +2620,7 @@ export type Database = {
       }
       marketing_touchpoints: {
         Row: {
+          grupo_id: string
           criado_em: string
           fbclid: string | null
           gbraid: string | null
@@ -2484,6 +2639,7 @@ export type Database = {
           wbraid: string | null
         }
         Insert: {
+          grupo_id?: string
           criado_em?: string
           fbclid?: string | null
           gbraid?: string | null
@@ -2502,6 +2658,7 @@ export type Database = {
           wbraid?: string | null
         }
         Update: {
+          grupo_id?: string
           criado_em?: string
           fbclid?: string | null
           gbraid?: string | null
@@ -2530,13 +2687,14 @@ export type Database = {
         ]
       }
       marketing_preferencias: {
-        Row: { atualizado_em: string; canal: string; finalidade: string; id: string; lead_id: string; permitido: boolean }
-        Insert: { atualizado_em?: string; canal: string; finalidade: string; id?: string; lead_id: string; permitido?: boolean }
-        Update: { atualizado_em?: string; canal?: string; finalidade?: string; id?: string; lead_id?: string; permitido?: boolean }
+        Row: { grupo_id: string; atualizado_em: string; canal: string; finalidade: string; id: string; lead_id: string; permitido: boolean }
+        Insert: { grupo_id?: string; atualizado_em?: string; canal: string; finalidade: string; id?: string; lead_id: string; permitido?: boolean }
+        Update: { grupo_id?: string; atualizado_em?: string; canal?: string; finalidade?: string; id?: string; lead_id?: string; permitido?: boolean }
         Relationships: [{ foreignKeyName: "marketing_preferencias_lead_id_fkey"; columns: ["lead_id"]; isOneToOne: false; referencedRelation: "leads"; referencedColumns: ["id"] }]
       }
       meta_ads_metricas: {
         Row: {
+          grupo_id: string
           atualizado_em: string
           campanha_id: string
           campanha_nome: string
@@ -2547,6 +2705,7 @@ export type Database = {
           resultados_meta: number
         }
         Insert: {
+          grupo_id?: string
           atualizado_em?: string
           campanha_id: string
           campanha_nome?: string
@@ -2557,6 +2716,7 @@ export type Database = {
           resultados_meta?: number
         }
         Update: {
+          grupo_id?: string
           atualizado_em?: string
           campanha_id?: string
           campanha_nome?: string
@@ -2570,6 +2730,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          grupo_id: string
           anuncio_origem: string | null
           arquivado_em: string | null
           arquivado_motivo: string | null
@@ -2628,6 +2789,7 @@ export type Database = {
           wbraid: string | null
         }
         Insert: {
+          grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
           arquivado_motivo?: string | null
@@ -2686,6 +2848,7 @@ export type Database = {
           wbraid?: string | null
         }
         Update: {
+          grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
           arquivado_motivo?: string | null
@@ -2769,6 +2932,7 @@ export type Database = {
       }
       midias: {
         Row: {
+          grupo_id: string
           alt: string | null
           altura: number | null
           blur_data_url: string | null
@@ -2783,6 +2947,7 @@ export type Database = {
           variantes: number[] | null
         }
         Insert: {
+          grupo_id?: string
           alt?: string | null
           altura?: number | null
           blur_data_url?: string | null
@@ -2797,6 +2962,7 @@ export type Database = {
           variantes?: number[] | null
         }
         Update: {
+          grupo_id?: string
           alt?: string | null
           altura?: number | null
           blur_data_url?: string | null
@@ -2822,6 +2988,7 @@ export type Database = {
       }
       templates_mensagens: {
         Row: {
+          grupo_id: string
           conteudo: string
           corretor_id: string
           created_at: string
@@ -2830,6 +2997,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          grupo_id?: string
           conteudo: string
           corretor_id: string
           created_at?: string
@@ -2838,6 +3006,7 @@ export type Database = {
           titulo: string
         }
         Update: {
+          grupo_id?: string
           conteudo?: string
           corretor_id?: string
           created_at?: string
@@ -2857,6 +3026,7 @@ export type Database = {
       }
       tipologias: {
         Row: {
+          grupo_id: string
           area_privativa: number | null
           banheiros: number
           dormitorios: number
@@ -2871,6 +3041,7 @@ export type Database = {
           vagas: number
         }
         Insert: {
+          grupo_id?: string
           area_privativa?: number | null
           banheiros?: number
           dormitorios?: number
@@ -2885,6 +3056,7 @@ export type Database = {
           vagas?: number
         }
         Update: {
+          grupo_id?: string
           area_privativa?: number | null
           banheiros?: number
           dormitorios?: number
@@ -2933,13 +3105,14 @@ export type Database = {
         Relationships: []
       }
       whatsapp_envios_por_dia: {
-        Row: { instancia_id: string; dia: string; enviados: number }
-        Insert: { instancia_id: string; dia: string; enviados?: number }
-        Update: { instancia_id?: string; dia?: string; enviados?: number }
+        Row: { grupo_id: string; instancia_id: string; dia: string; enviados: number }
+        Insert: { grupo_id?: string; instancia_id: string; dia: string; enviados?: number }
+        Update: { grupo_id?: string; instancia_id?: string; dia?: string; enviados?: number }
         Relationships: []
       }
       whatsapp_campanhas: {
         Row: {
+          grupo_id: string
           criterio: Json | null
           viva: boolean
           viva_ate: string | null
@@ -2966,6 +3139,7 @@ export type Database = {
           total_respondidos: number
         }
         Insert: {
+          grupo_id?: string
           criterio?: Json | null
           viva?: boolean
           viva_ate?: string | null
@@ -2992,6 +3166,7 @@ export type Database = {
           total_respondidos?: number
         }
         Update: {
+          grupo_id?: string
           criterio?: Json | null
           viva?: boolean
           viva_ate?: string | null
@@ -3036,6 +3211,7 @@ export type Database = {
       }
       whatsapp_campanhas_fila: {
         Row: {
+          grupo_id: string
           agendado_para: string
           campanha_id: string
           created_at: string
@@ -3054,6 +3230,7 @@ export type Database = {
           tentativas_texto: number
         }
         Insert: {
+          grupo_id?: string
           agendado_para?: string
           campanha_id: string
           created_at?: string
@@ -3072,6 +3249,7 @@ export type Database = {
           tentativas_texto?: number
         }
         Update: {
+          grupo_id?: string
           agendado_para?: string
           campanha_id?: string
           created_at?: string
@@ -3108,6 +3286,7 @@ export type Database = {
       }
       whatsapp_conversas: {
         Row: {
+          grupo_id: string
           alerta_quente_em: string | null
           atendida_em: string | null
           aviso_sem_resposta_em: string | null
@@ -3134,6 +3313,7 @@ export type Database = {
           visita_sugerida_em: string | null
         }
         Insert: {
+          grupo_id?: string
           alerta_quente_em?: string | null
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
@@ -3160,6 +3340,7 @@ export type Database = {
           visita_sugerida_em?: string | null
         }
         Update: {
+          grupo_id?: string
           alerta_quente_em?: string | null
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
@@ -3225,6 +3406,7 @@ export type Database = {
       }
       whatsapp_followups: {
         Row: {
+          grupo_id: string
           agendado_para: string
           conversa_id: string
           created_at: string
@@ -3239,6 +3421,7 @@ export type Database = {
           tipo: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Insert: {
+          grupo_id?: string
           agendado_para: string
           conversa_id: string
           created_at?: string
@@ -3253,6 +3436,7 @@ export type Database = {
           tipo?: "reengajamento" | "lembrete_visita" | "pos_visita" | "indicacao"
         }
         Update: {
+          grupo_id?: string
           agendado_para?: string
           conversa_id?: string
           created_at?: string
@@ -3285,6 +3469,7 @@ export type Database = {
       }
       whatsapp_mensagens: {
         Row: {
+          grupo_id: string
           conteudo: string
           conversa_id: string
           created_at: string
@@ -3297,6 +3482,7 @@ export type Database = {
           tipo: "texto" | "audio" | "imagem" | "documento"
         }
         Insert: {
+          grupo_id?: string
           conteudo: string
           conversa_id: string
           created_at?: string
@@ -3309,6 +3495,7 @@ export type Database = {
           tipo?: "texto" | "audio" | "imagem" | "documento"
         }
         Update: {
+          grupo_id?: string
           conteudo?: string
           conversa_id?: string
           created_at?: string
