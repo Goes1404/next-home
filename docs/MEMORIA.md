@@ -10407,6 +10407,25 @@ Nota: [[conta-so-whatsapp]].
 - Conversas antigas não aparecem (a Evolution não guarda histórico); foto de
   quem não é lead fica só como texto.
 
+## A prévia do link do corretor (0188, 19/10/2026)
+
+Nota: [[previa-do-link-do-corretor]].
+
+- **O redirect de `/?corretor=<slug>` para `/portfolio` soltava a query**, e o
+  robô do WhatsApp não guarda o cookie do redirect: a prévia nunca podia saber
+  de quem era o link. O proxy leva a query agora, e `generateMetadata` lê o
+  slug da URL (sem ele, o cookie).
+- **A prévia era fixa** ("Portfólio de Imóveis de Alto Padrão em Alphaville").
+  Hoje: "Portfólio de <nome>" + "Portfólio de produtos", ou o texto que o
+  corretor escreve em Meu perfil (`corretores.chamada_do_link`, até 160).
+- **Ordem: migration 0188, depois deploy.** O código tolera a coluna ausente
+  (lê à parte), mas o campo só salva depois dela.
+- **A `OG_IMAGEM` do site inteiro responde 404** (`marca/og-image.jpg` não
+  existe no Storage). Toda prévia sai sem imagem. Não corrigido.
+- 0181–0187 estão reservadas para a branch da fase 2 (`RESERVADOS` em
+  `migrations.test.ts`); ao juntar, a 0187 precisa incluir `chamada_do_link`
+  entre as colunas públicas para o `anon`.
+
 ## O ADM via a carteira da equipe nas telas de trabalho (19/10/2026)
 
 Nota: [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]].

@@ -125,7 +125,10 @@ export async function salvarPerfil(
     };
   }
 
-  // A página pública do corretor e a vitrine da equipe leem esses campos.
+  // A página pública do corretor, a vitrine da equipe e a prévia do link do
+  // portfólio ("Portfólio de <nome>") leem esses campos — pelo cache de
+  // corretores, que só a etiqueta derruba.
+  revalidarCorretores();
   revalidatePath("/corretor/perfil");
   revalidatePath("/corretores");
   return { ok: "Perfil atualizado." };

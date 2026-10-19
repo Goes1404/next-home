@@ -59,7 +59,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
+    default: `${site.nomeCompleto} — Imobiliária em Alphaville e Barueri`,
     template: `%s · ${site.nome}`,
   },
   description: site.descricao,
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: site.url,
     siteName: site.nomeCompleto,
-    title: `${site.nomeCompleto} — Imobiliária de Alto Padrão em Alphaville`,
+    title: `${site.nomeCompleto} — Imobiliária em Alphaville e Barueri`,
     description: site.descricao,
     images: [OG_IMAGEM],
   },

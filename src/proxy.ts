@@ -86,8 +86,16 @@ export async function proxy(request: NextRequest) {
     //
     // Redirect em vez de rewrite para a URL final ficar compartilhável e a
     // `/` continuar sendo, para o Google, só o institucional.
+    //
+    // A query vai junto (19/10/2026): o robô do WhatsApp segue este
+    // redirecionamento para montar a prévia e NÃO guarda o cookie, então é o
+    // `?corretor=<slug>` na URL de `/portfolio` que deixa a prévia dizer de
+    // quem é o portfólio (`previaDoLink.ts`). Leva também o `origem=ig` do
+    // link do carrossel, que o redirect perdia.
     if (pathname === "/") {
-      const paraPortfolio = NextResponse.redirect(new URL("/portfolio", request.url));
+      const destino = request.nextUrl.clone();
+      destino.pathname = "/portfolio";
+      const paraPortfolio = NextResponse.redirect(destino);
       paraPortfolio.cookies.set(COOKIE_CORRETOR_ATIVO, slugCompartilhado, OPCOES_COOKIE_CORRETOR);
       return paraPortfolio;
     }
