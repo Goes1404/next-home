@@ -668,21 +668,47 @@ permissão). O executor entrega o roteiro em
 - Create: `docs/ROTEIRO-FASE-1-PRODUCAO.md`
 - Modify: `docs/MEMORIA.md`, `vault/10-notas/plataforma-multi-grupo.md`, MOC de Banco de Dados
 
-Ordem, cada passo verificável:
-1. Aplicar 0181 e 0182. Conferir: `select count(*) from <t> where grupo_id
-   is null` = 0 em toda tabela; o site e o painel abrem; uma mensagem de
-   teste no WhatsApp da Bruna é respondida; logs do Postgres mostram o
-   `warning` de grupo único só nas tabelas sem linha-mãe.
-2. Deploy do código das Tasks 4 e 7 nas duas branches de produção
-   (MEMORIA: conferir qual commit está servindo antes e depois).
-3. Aplicar 0183. Conferir: lead novo pelo formulário público cai na roleta
-   como antes; `/wa/<imóvel>` sorteia como antes.
-4. Aplicar 0184. Conferir: como gestor da Next Home, contagens de leads,
-   conversas e imóveis iguais às de antes do passo 1; corretor comum vê só o
-   que via; upload de foto funciona.
-5. Rodar `get_advisors` de segurança: nada novo.
+Ordem, cada passo verificável. **Corrigida na revisão final (19/10)**: o
+código desta branch depende da 0183 (sorteio com `p_grupo`, slug e e-mail
+livres, tipo `repasse`) e o build da Vercel lê produção e quebra sem a 0182;
+o código antigo funciona com 0181–0184. O roteiro executável, com as
+consultas exatas, o "pare aqui se" e o desfazer de cada passo, é
+`docs/ROTEIRO-FASE-1-PRODUCAO.md`.
+0. Fotografia (inventário, definições de funções/policies/views, advisors,
+   totais e o que gestor e corretor enxergam) e conferências que fariam uma
+   migration falhar: corretores `ativo = false` com `user_id`, nome da policy
+   de `parametros_credito`, consulta da seção 8a da 0182, donos de tabela,
+   RLS, views e policies do Storage fora das migrations, nomes das chaves que
+   a 0183 apaga, as 4 policies de `migrations_pendentes.sql`.
+1. Com o código ANTIGO no ar, aplicar 0181 → 0182 → 0183 → 0184, uma por
+   vez, em horário de pouco tráfego, com `pg_stat_activity` conferido antes
+   de cada uma (o `lock_timeout` de 5s faz falhar em vez de travar; repetir;
+   o índice único de `whatsapp_mensagens` da 0183 é o candidato). Conferir
+   depois de cada uma: `grupo_id` nulo = 0 em toda tabela (inclusive
+   `event_outbox`); site e painel abrem; uma mensagem de teste no WhatsApp é
+   respondida; o log do Postgres só tem o `warning` de grupo único; lead pelo
+   formulário cai na roleta e gera evento; `/wa` e `/wa/<imóvel>` sorteiam
+   (depois da 0183, pela assinatura antiga, que só vive até a 0185);
+   `has_function_privilege('authenticated',
+   'public.reservar_credito_video(uuid)', 'execute')` = `false`; como gestor
+   da Next Home, contagens de leads, conversas e imóveis iguais às de antes;
+   corretor comum vê só o que via; upload de foto; Live Chat em tempo real.
+2. Deploy do código desta branch nas duas branches de produção, só depois da
+   0184. Antes: desligar os 5 workflows que disparam por push quando os
+   scripts de catálogo mudam (este deploy muda os cinco); conferir o commit
+   servindo (`/api/versao` e `target = production`) e que ele e as duas
+   branches de produção estão contidos na branch. Depois: o commit novo em
+   `/api/versao`, e repetir as conferências do passo 1.
+3. Aplicar 0185 (drop da assinatura antiga do sorteio, revoke do insert do
+   `anon` em `leads`/`cliques_whatsapp`) de 24 a 48 horas depois do deploy,
+   conferindo antes as policies de INSERT dessas tabelas fora das migrations.
+   Depois dela, o rollback instantâneo da Vercel para o código anterior deixa
+   de ser seguro.
+4. Rodar o Security Advisor: nada novo (um aviso sobre
+   `derivar_grupo_da_linha` executável por todos, se aparecer, é de
+   propósito).
 
-- [ ] **Step 1:** Escreva o roteiro com as consultas exatas de cada
+- [x] **Step 1:** Escreva o roteiro com as consultas exatas de cada
   conferência e o desfazer de cada passo (as policies e gatilhos caem com
   `drop`; colunas ficam).
 - [ ] **Step 2:** Acompanhe o Matheus passo a passo.
@@ -693,15 +719,18 @@ Ordem, cada passo verificável:
 
 #### Acréscimos da revisão de lacunas (19/10)
 
-- Passo 2 inclui o código das Tasks 4b e 7 (portas que leem, telas do gestor,
-  scripts). Ele funciona com um grupo só, então sobe antes da 0183.
-- Depois do passo 1, conferir: `select count(*) from event_outbox where
+- O deploy inclui o código das Tasks 4b, 7, 12 e 13 (portas que leem, telas
+  do gestor, scripts). Ele depende da 0183, então sobe **depois** das quatro
+  migrations. Esta linha dizia o contrário ("sobe antes da 0183"), e o Ruling
+  da Task 13 também; os dois foram corrigidos na revisão final.
+- Depois da 0182, conferir: `select count(*) from event_outbox where
   grupo_id is null` = 0; um lead pelo formulário público gera evento.
-- Depois do passo 3, conferir: `/wa` (sem imóvel) sorteia como antes;
+- Depois da 0183, conferir: `/wa` (sem imóvel) sorteia como antes;
   `has_function_privilege('authenticated', 'public.reservar_credito_video(uuid)',
   'execute')` = `false`.
-- Depois do passo 4, conferir: Visão geral do gestor mostra os mesmos números
-  de antes; o Live Chat recebe mensagem nova em tempo real.
+- Depois da 0184 e de novo depois do deploy, conferir: Visão geral do gestor
+  mostra os mesmos números de antes; o Live Chat recebe mensagem nova em tempo
+  real.
 - Antes de qualquer grupo além do 1 existir em produção (fase 2): a suíte de
   isolamento e o E2E do ambiente de testes verdes no mesmo commit.
 
