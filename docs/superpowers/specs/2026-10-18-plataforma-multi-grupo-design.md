@@ -338,13 +338,13 @@ mim, para o Matheus conferir:
 O Matheus mandou seguir sem responder estas quatro. Vale o padrão abaixo,
 que é **provisório** e pode mudar o plano quando houver resposta:
 
-1. **Região do banco.** O projeto Supabase está em `ca-central-1` (Canadá).
-   Vender para empresas brasileiras com dados fora do país é transferência
-   internacional pela LGPD, e a região de um projeto não muda: mudar é criar
-   banco novo e copiar, barato só **antes** de outros grupos entrarem.
-   **Padrão:** consultar o advogado antes de começar a fase 1. Se a resposta
-   for "precisa estar no Brasil", entra um passo 0 na fase 1: projeto novo em
-   `sa-east-1`, cópia da Next Home, virada. Até lá, nenhum grupo externo entra.
+1. **Região do banco — decidido em 18/10: fica no Canadá (`ca-central-1`).**
+   Decisão do Matheus, por dar menos trabalho. Custo aceito: o painel perde
+   ~0,2–0,5 s por tela em relação a tudo em São Paulo (estimativa, não
+   medida), e a função da Vercel continua em `iad1` (mudar só a função para
+   `gru1` piora, ver MEMORIA de 13/09). Consequência jurídica: a política de
+   privacidade e o contrato de tratamento de dados precisam declarar a
+   transferência internacional; isso vai para o advogado e não trava código.
 2. **Pacote extra.** **Padrão:** o pacote só libera depois que o Matheus
    marca como pago no painel da plataforma. Evita uso que ninguém pagou e
    respeita "nunca cobrar sem ele ver".

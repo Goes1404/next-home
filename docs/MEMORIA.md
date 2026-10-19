@@ -9264,8 +9264,10 @@ Nota: [[plataforma-multi-grupo]]. Desenho:
 - **A resposta da IA é mais de dois terços do custo de qualquer plano.** No
   pior caso (cota inteira) o Profissional de R$ 147 empata. Medir o custo por
   resposta e o cache de prompt antes de publicar preço.
-- **Região do banco é `ca-central-1` e não muda depois de criada.** Se a
-  LGPD exigir Brasil, a migração só é barata antes do segundo grupo entrar.
+- **O banco fica em `ca-central-1`** (decisão de 18/10, menos trabalho).
+  Tudo em São Paulo ganharia ~0,2–0,5 s por tela no painel (estimado); mudar
+  só a função para `gru1` piora. A política de privacidade e o contrato
+  precisam declarar a transferência internacional.
 - **Leitura pública pela chave `anon` vira vazamento num banco único**: ela
   listaria catálogo e telefones de todos os grupos. Passa ao servidor,
   escopada pelo `Host`.

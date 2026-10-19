@@ -49,8 +49,10 @@ viraria N migrations.
 - **A resposta da IA é mais de dois terços do custo de qualquer plano.** No
   pior caso o Profissional empata (~R$ 144 de custo para R$ 147). Medir o
   custo real e o cache de prompt antes de publicar preço.
-- **O banco está em `ca-central-1`.** Região de projeto Supabase não muda;
-  se a LGPD exigir Brasil, a mudança só é barata antes do segundo grupo.
+- **O banco fica em `ca-central-1`** (decisão de 18/10, por dar menos
+  trabalho). A política de privacidade e o contrato precisam declarar a
+  transferência internacional. Região de projeto Supabase não muda depois;
+  rever isso só seria barato antes do segundo grupo.
 - **A leitura pública pela chave `anon` vira vazamento** num banco único
   (catálogo e telefones de todos os grupos pelo PostgREST): passa a ser
   feita no servidor, escopada pelo grupo.
