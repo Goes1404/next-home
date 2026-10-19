@@ -39,7 +39,8 @@ import { leiturasDe, semComentarios, type Leitura } from "./codigoFonte";
  *   entrada, ou numa função exportada que recebe a prova dessa guarda
  *   (`_prova: { userId: string }`) — e aí todo importador chama a guarda
  *   antes de usá-la. Nenhuma consulta toca tabela de conversa, mensagem,
- *   dossiê ou nota (§4, §11: o administrador nunca vê conversa nem ficha).
+ *   dossiê ou nota (§4, §11: o administrador nunca vê conversa nem ficha), e
+ *   `leads` só entra para CONTAR (`select` com `head: true`).
  *
  * Arquivo novo fora do MAPA reprova pedindo a categoria. A regressão é
  * calada: o código segue funcionando com um grupo só.
@@ -534,10 +535,33 @@ function problemasDePlataformaAdmin(codigoSemComentarios: string): { erros: stri
     }
     erros.push(`${d.nome}: createServiceClient( sem exigirAdminDaPlataforma* antes nem a prova da guarda no parâmetro`);
   }
-  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*["'](\w+)["']/g)) {
+  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*["'](\w+)["']\s*\)/g)) {
     if (FORA_DA_PLATAFORMA.includes(m[1])) erros.push(`consulta ${m[1]}: a área da plataforma não lê conversa nem ficha`);
+    if (m[1] === "leads" && !soContaLeads(codigo.slice(m.index! + m[0].length))) {
+      erros.push("consulta leads: a área da plataforma só conta leads (select com head: true), nunca lê nem escreve");
+    }
   }
   return { erros, exigemProva };
+}
+
+/**
+ * `leads` é ficha: a área da plataforma só pode CONTAR (Task 9). O próximo
+ * passo da cadeia depois de `.from("leads")` tem de ser um `.select(...)`
+ * cujos argumentos tragam `head: true` — aí nenhuma linha volta, só a
+ * contagem. Qualquer outro passo (ler colunas, escrever, `rpc`) reprova.
+ */
+function soContaLeads(resto: string): boolean {
+  const select = /^\s*\.select\(/.exec(resto);
+  if (!select) return false;
+  let nivel = 1;
+  let i = select[0].length;
+  for (; i < resto.length && nivel > 0; i++) {
+    if (resto[i] === "(") nivel++;
+    else if (resto[i] === ")") nivel--;
+  }
+  if (nivel !== 0) return false;
+  const argumentos = resto.slice(select[0].length, i - 1);
+  return /\bhead\s*:\s*true\b/.test(argumentos);
 }
 
 describe("guarda: a regra de plataforma-admin morde", () => {
@@ -570,6 +594,44 @@ describe("guarda: a regra de plataforma-admin morde", () => {
       return createServiceClient().from("whatsapp_mensagens").select("id", { count: "exact", head: true });
     }`;
     expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  // Junção das frentes (Task 9): `leads` é ficha. A área da plataforma só
+  // pode CONTAR leads (`head: true`, nenhuma linha volta), nunca ler nem
+  // escrever.
+  it("reprova ler leads, mesmo depois da guarda", () => {
+    const codigo = `export async function ler() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("leads").select("id, nome, telefone").eq("grupo_id", "g");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova contar leads sem head: true (as linhas voltariam junto)", () => {
+    const codigo = `export async function ler() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("leads").select("id, nome", { count: "exact" });
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova escrever em leads", () => {
+    const codigo = `export async function mexer() {
+      await exigirAdminDaPlataformaNaAcao();
+      return createServiceClient().from("leads").update({ etapa: "perdido" }).eq("id", "x");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("aceita contar leads com head: true", () => {
+    const codigo = `export async function contar(grupoId: string) {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient()
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("grupo_id", grupoId);
+    }`;
+    expect(problemasDePlataformaAdmin(codigo)).toEqual({ erros: [], exigemProva: [] });
   });
 
   it("aceita a guarda antes da chave", () => {
