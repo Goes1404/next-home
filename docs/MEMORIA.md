@@ -9271,3 +9271,21 @@ Nota: [[plataforma-multi-grupo]]. Desenho:
 - **Leitura pública pela chave `anon` vira vazamento num banco único**: ela
   listaria catálogo e telefones de todos os grupos. Passa ao servidor,
   escopada pelo `Host`.
+
+## As migrations reproduzem do zero, e o que não reproduzia era calado (19/10/2026)
+
+Nota: [[banco-local-reproduzivel-das-migrations]]. Roteiro e edições:
+`supabase/REPRODUCAO.md`.
+
+- **`npm run db:teste`** sobe o Supabase local no Docker (CLI fixo
+  `supabase@2.121.0`, `project_id = "next-home-teste"`) e aplica as 158
+  migrations num banco vazio; `db:teste:parar` apaga o volume.
+- **Aplicaram sem erro na primeira tentativa.** O que não reproduzia era o
+  bucket `empreendimentos`, criado pelo painel: o `update` da 0043/0108
+  passava com zero linhas. A 0043 ganhou `insert ... on conflict do nothing`.
+- **`migrations_pendentes.sql` deixou quatro policies que nenhuma migration
+  derruba** (dossiê, fila de campanha, insert de mensagem). Podem existir só
+  em produção e abrem acesso por OR. A conferência contra produção
+  (`scripts/banco/inventario.sql` nos dois bancos, diff) está pendente: falta
+  `SUPABASE_PAT`.
+- Seed desligado: grava `empreendimentos.corretor_id`, que a 0129 apagou.

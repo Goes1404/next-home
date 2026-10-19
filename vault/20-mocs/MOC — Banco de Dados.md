@@ -4,7 +4,7 @@ tags: [moc, banco, supabase]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-09-15
+updated: 2026-10-19
 summary: Supabase, migrations, policies, grants, colunas geradas, types.
 ---
 # Banco de Dados — Map of Content
@@ -17,6 +17,7 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[list-migrations-esta-dessincronizado]]
 - [[execute-sql-bloqueado-para-update]]
 - [[medir-carga-com-rollback]]
+- [[banco-local-reproduzivel-das-migrations]] — `npm run db:teste`: as 158 migrations do zero no Docker; conferência contra produção pendente (19/10)
 
 ## Permissões (RLS + grants)
 - [[grant-por-coluna-em-leads]]
