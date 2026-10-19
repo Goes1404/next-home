@@ -839,7 +839,34 @@ procura quem escreveu enquanto ele estava parado).
    folga de cada lado) e procure requisição com status 5xx, `504` ou
    `FUNCTION_INVOCATION_TIMEOUT`. Ou peça a uma sessão do Claude com o
    conector da Vercel que rode `get_runtime_logs` nessa janela, nessa rota.
-   **Esperado:** nenhuma.
+   Procure também, na mesma janela e na mesma rota:
+   - **Linhas de `console.error`** (nível *error* no filtro de logs), em
+     especial `Erro ao processar webhook do WhatsApp`, `[porteiro]` e
+     `[supabase] … falhou`. Cada uma é uma leitura ou gravação que o banco
+     recusou durante a trava.
+   - **Respostas 200 que descartaram a mensagem.** O código ANTIGO, que está
+     no ar durante as migrations, tem um defeito (corrigido no código da
+     branch, ver MEMORIA de 19/10): quando a leitura da conversa falha, ele
+     trata o erro como "número sem lead" e responde **200** com
+     `ignored: "numero_sem_lead_cadastrado"`. O provedor não reentrega 200,
+     e a mensagem some. O status 200 não distingue isso de uma mensagem
+     normal, e esse corpo de resposta não aparece no log; o rastro que sobra
+     é a contagem de barrados. Rode, com as mesmas duas horas:
+     ```sql
+     select corretor_id, count(*) as barrados_na_janela
+       from public.porteiro_barrados
+      where criado_em between timestamptz 'HORA_DO_RUN' - interval '1 minute'
+                          and timestamptz 'HORA_DO_RESULTADO' + interval '5 minutes'
+      group by corretor_id;
+     ```
+     Cada linha é o PRIMEIRO barrado do dia daquele número (a tabela guarda
+     um por número por dia, sem o telefone). Barrado na janela não prova
+     perda: pode ser alguém de fora da carteira de verdade. Mas, se o número
+     for maior que o normal desse corretor, trate como perda e passe a hora
+     a ele.
+
+   **Esperado:** nenhuma requisição 5xx, nenhuma linha de erro, e nenhum
+   barrado na janela (ou só o que o corretor reconhece como gente de fora).
 
 **Se houver mensagem sem resposta:** não é motivo para desfazer a 0182 (o
 webhook já voltou, a 2c provou). É atendimento atrasado, e quem resolve é o
@@ -853,8 +880,8 @@ corretor dono do número:
   escreveu naquele minuto e responde de lá. Para essas pessoas a conversa no
   painel fica sem aquela fala, e isso é esperado.
 - Anote na planilha quantas foram em cada item. Se passar de duas ou três,
-  avise o Claude: é o sinal de que a 0183 (que também trava
-  `whatsapp_mensagens`) precisa de horário ainda mais vazio.
+  avise o Claude: é o sinal de que a 0183 e a 0184 (que também travam
+  `whatsapp_mensagens`) precisam de horário ainda mais vazio.
 
 O preview da branch `fase-1-multi-grupo` na Vercel, que estava vermelho, passa
 a conseguir fazer build a partir daqui (é a 0182 que ele esperava).
@@ -960,8 +987,17 @@ select current_user                                                         as p
 
 ## Passo 4. Migration 0184 (isolamento)
 
+A 0184 também trava as tabelas do WhatsApp. Ela faz `CREATE POLICY` em
+**toda** tabela com `grupo_id`, dentro do mesmo `begin; … commit;`, e criar
+policy pede trava exclusiva na tabela até o `commit`. Isso inclui
+`whatsapp_mensagens` e `whatsapp_conversas`: enquanto a 0184 roda, o webhook
+espera, como no passo 2.
+
 1. Rode a **C1**.
-2. Cole `supabase/migrations/0184_isolamento_por_grupo.sql` inteiro e rode.
+2. **Anote a hora exata** (com segundos) em que clicar em Run.
+3. Cole `supabase/migrations/0184_isolamento_por_grupo.sql` inteiro e rode.
+4. **Anote a hora exata** em que o resultado aparecer. Depois da 4d, repita
+   a **conferência 2e** inteira (os dois itens) com essas duas horas.
 
 **Esperado:** sucesso. Se falhar com `view do public sem grupo_id` ou
 `tabela com grupo_id sem RLS`, pare (o passo 0.8/0.9 deveria ter pegado; nada
@@ -1037,8 +1073,12 @@ de verdade vai para **as duas** branches: `claude/modernizar-plataforma-imobilia
 Cinco workflows do GitHub Actions disparam por **push** na branch de produção
 quando certos scripts mudam. Este deploy muda os cinco scripts (eles ganharam
 o parâmetro `--grupo`), então o push dispararia os cinco **contra produção**.
-Um deles, "Publicar a fila de cadastro", **republica rascunhos** da fila, o que
-pode pôr no ar imóvel que alguém despublicou de propósito.
+Um deles, "Publicar a fila de cadastro" (`scripts/catalogo/operacao0129.ts`,
+lista em `scripts/catalogo/operacao-0129.json`), faz duas coisas que não se
+desfazem com um clique: **apaga** cada slug da lista `apagar` que estiver
+despublicado, junto com os arquivos dele no Storage (hoje a lista tem **1**
+slug, `serenne-barueri-2`), e **republica** os 15 rascunhos da lista
+`publicar`, o que pode pôr no ar imóvel que alguém despublicou de propósito.
 
 No GitHub → **Actions**, abra cada um destes e clique em **⋯ → Disable
 workflow**:
