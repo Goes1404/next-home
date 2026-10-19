@@ -3529,9 +3529,12 @@ export type Database = {
       }
     }
     Views: {
+      // 0184: toda view do public tem `grupo_id` (no fim da lista de colunas no
+      // banco). Nulo só no tipo: o gerador marca coluna de view como anulável.
       /** 0115 — tempo de primeira resposta por conversa (security_invoker). */
       whatsapp_primeira_resposta: {
         Row: {
+          grupo_id: string | null
           conversa_id: string
           corretor_id: string
           lead_id: string
@@ -3543,6 +3546,7 @@ export type Database = {
       }
       sla_leads_metricas: {
         Row: {
+          grupo_id: string | null
           canal_automatico: string | null
           canal_humano: string | null
           iniciado_em: string | null
@@ -3556,6 +3560,7 @@ export type Database = {
       }
       whatsapp_resposta_metricas: {
         Row: {
+          grupo_id: string | null
           atendidas_em_ate_60s: number | null
           conversas_atendidas: number | null
           conversas_com_fala_do_cliente: number | null
@@ -3574,6 +3579,7 @@ export type Database = {
       }
       pessoas_do_corretor: {
         Row: {
+          grupo_id: string | null
           conversa_id: string | null
           corretor_id: string | null
           etapa: string | null
@@ -3591,6 +3597,7 @@ export type Database = {
       }
       whatsapp_esperando_resposta: {
         Row: {
+          grupo_id: string | null
           conversa_id: string | null
           corretor_id: string | null
           esperando_desde: string | null
@@ -3602,6 +3609,7 @@ export type Database = {
       }
       whatsapp_funil_metricas: {
         Row: {
+          grupo_id: string | null
           conversas: number | null
           conversas_com_lead: number | null
           corretor_id: string | null

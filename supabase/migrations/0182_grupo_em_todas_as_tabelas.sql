@@ -303,6 +303,15 @@ alter table public.catalogo_candidatos
 --      erro. Hoje (só a Next Home) deixa a produção de pé; no dia do segundo
 --      grupo, o insert que não diz o grupo falha em voz alta em vez de cair
 --      calado na Next Home.
+--   e. Quem grava é um usuário logado (`authenticated`) que não é
+--      administrador da plataforma: o grupo da linha tem de ser o
+--      `grupo_atual()` dele, venha de uma mãe ou de `grupo_id` informado
+--      (inclusive em tabela sem mãe: empreendimentos, lazer_itens,
+--      parceiros, marketing_campanhas). Defesa em profundidade pedida pela
+--      revisão de segurança: a policy restritiva da 0184 já recusa a linha,
+--      mas uma policy apagada por engano não pode bastar para um logado
+--      gravar no grupo de outro. A chave de serviço e as funções
+--      `security definer` (papel `postgres`) seguem informando o grupo.
 --
 -- `p_maes` é a lista plana (coluna, tabela-mãe, coluna referenciada, ...)
 -- que o gatilho recebe nos argumentos. `p_papel` é o `current_user` de quem
@@ -404,6 +413,14 @@ begin
     end if;
   end if;
 
+  -- e. Logado só grava no próprio grupo (defesa em profundidade da 0184).
+  if p_papel = 'authenticated' then
+    if v_grupo is distinct from public.grupo_atual() and not public.eh_admin_da_plataforma() then
+      raise exception 'grupo da linha difere do grupo de quem grava em %', v_nome
+        using errcode = 'insufficient_privilege';
+    end if;
+  end if;
+
   return v_grupo;
 end
 $$;
@@ -432,7 +449,8 @@ begin
       using errcode = 'insufficient_privilege';
   end if;
 
-  -- 2 a 4. Mães, grupo informado, grupo de quem está logado, grupo único.
+  -- 2 a 5. Mães, grupo informado, grupo de quem está logado, grupo único e,
+  -- para logado, o próprio grupo (passos a–e de derivar_grupo_da_linha).
   new.grupo_id := public.derivar_grupo_da_linha(
     tg_relid,
     tg_op,

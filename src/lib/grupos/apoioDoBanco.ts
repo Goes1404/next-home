@@ -36,6 +36,24 @@ export function conectar({ avisos }: { avisos?: string[] } = {}): Sql {
   });
 }
 
+/**
+ * Chave da trava de sessão (`pg_advisory_lock`) que separa os arquivos de
+ * teste que precisam gravar DE VERDADE (realtime.db.test.ts: o Realtime lê o
+ * WAL, e transação desfeita nunca chega lá) dos que contam com o banco limpo
+ * entre transações ("com um grupo só"). O vitest roda arquivos em paralelo.
+ */
+const TRAVA_DA_SUITE = 1_840_001;
+
+/** Espera a vez da suíte. A trava é da sessão: dure o arquivo inteiro. */
+export async function travarSuite(sql: Sql): Promise<void> {
+  await sql`select pg_advisory_lock(${TRAVA_DA_SUITE})`;
+}
+
+/** Devolve a vez da suíte. */
+export async function soltarSuite(sql: Sql): Promise<void> {
+  await sql`select pg_advisory_unlock(${TRAVA_DA_SUITE})`;
+}
+
 /** Erro sentinela: lançado de dentro da transação só para desfazê-la. */
 class Desfazer extends Error {}
 

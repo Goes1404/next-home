@@ -30,9 +30,11 @@ const URL_DO_BANCO = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 // Fica de fora o que nenhum teste de banco usa. Auth (gotrue), storage-api,
 // postgrest e kong ficam: as migrations escrevem em auth.* e storage.*, e os
-// testes de isolamento entram pelo mesmo caminho que o app.
+// testes de isolamento entram pelo mesmo caminho que o app. O realtime fica
+// também: o painel assina mudanças de whatsapp_mensagens/whatsapp_conversas
+// por ele, e realtime.db.test.ts confere que ele não entrega linha de outro
+// grupo (0184).
 const FORA = [
-  "realtime",
   "imgproxy",
   "mailpit",
   "postgres-meta",

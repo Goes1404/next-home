@@ -5,7 +5,17 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Sql, TransactionSql } from "postgres";
-import { comoUsuario, conectar, criarGrupo, emTransacaoDesfeita, type Conexao } from "./apoioDoBanco";
+import {
+  comoUsuario,
+  conectar,
+  criarGrupo,
+  criarUsuario,
+  emTransacaoDesfeita,
+  soltarSuite,
+  travarSuite,
+  type Conexao,
+  type GrupoDeTeste,
+} from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
 import { CHAVES_UNICAS_GLOBAIS, TABELAS_GLOBAIS } from "./tabelasDoGrupo";
 
@@ -56,14 +66,155 @@ async function conectarNumero(sql: Conexao, corretorId: string, telefone: string
   `;
 }
 
+/** Uma pessoa com login no grupo da Next Home (grupo 1), gravada como `postgres`. */
+async function criarPessoaDoGrupo1(
+  sql: Conexao,
+  papel: "gestor" | "corretor",
+): Promise<{ userId: string; id: string }> {
+  const userId = await criarUsuario(sql, `${papel}-nh-0184@next-home.teste`);
+  const [{ id }] = await sql<{ id: string }[]>`
+    insert into public.corretores (nome, creci, whatsapp, slug, papel, user_id, grupo_id)
+    values (${`${papel} nh 0184`}, ${`TESTE-nh-0184-${papel}`}, '5511900000000',
+            ${`nh-0184-${papel}`}, ${papel}, ${userId}, ${GRUPO_NEXT_HOME_ID})
+    returning id
+  `;
+  return { userId, id };
+}
+
+/** Sentinela para desfazer o savepoint de `semAPolicy`. */
+class DesfazerSavepoint extends Error {}
+
+/**
+ * Roda `fn` num savepoint em que a policy `isolamento_por_grupo` das tabelas
+ * pedidas não existe, e desfaz no fim: é o "antes da 0184" medido no mesmo
+ * banco. Sem `if exists` de propósito: sem a policy, este teste não mede nada.
+ */
+async function semAPolicy<T>(
+  tx: TransactionSql,
+  tabelas: string[],
+  fn: (c: Conexao) => Promise<T>,
+): Promise<T> {
+  let resultado!: T;
+  await tx
+    .savepoint(async (sp) => {
+      for (const t of tabelas) await sp.unsafe(`drop policy isolamento_por_grupo on public."${t}"`);
+      resultado = await fn(sp);
+      throw new DesfazerSavepoint();
+    })
+    .catch((e) => {
+      if (!(e instanceof DesfazerSavepoint)) throw e;
+    });
+  return resultado;
+}
+
+/** Ids do que `semearGrupo` gravou. */
+type Semente = {
+  lead: string;
+  conversa: string;
+  mensagem: string;
+  imovel: string;
+  imovelSlug: string;
+  midia: string;
+  venda: string;
+  anotacao: string;
+  interacao: string;
+};
+
+/**
+ * Um pouco de tudo num grupo, como `postgres`: lead, conversa com mensagem do
+ * cliente, imóvel com mídia, venda com participante, anotação, interação da
+ * IA, meta e evento de auditoria. É o que as telas do gestor e as views leem.
+ */
+async function semearGrupo(sql: Conexao, g: GrupoDeTeste, sufixo: string): Promise<Semente> {
+  const lead = await criarLead(sql, g.corretorId, `Lead ${sufixo}`);
+  const conversa = await criarConversa(sql, g.corretorId, lead);
+  const [{ id: mensagem }] = await sql<{ id: string }[]>`
+    insert into public.whatsapp_mensagens (conversa_id, conteudo, remetente)
+    values (${conversa}, 'oi', 'cliente') returning id
+  `;
+  const imovelSlug = `imovel-0184-${sufixo}`;
+  const imovel = await criarImovel(sql, g.grupoId, imovelSlug);
+  const [{ id: midia }] = await sql<{ id: string }[]>`
+    insert into public.midias (empreendimento_id, url) values (${imovel}, ${`https://exemplo/${sufixo}.jpg`})
+    returning id
+  `;
+  const venda = await criarVenda(sql, g.corretorId, lead);
+  await sql`
+    insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_valor)
+    values (${venda}, ${g.corretorId}, 100, 1000)
+  `;
+  const [{ id: anotacao }] = await sql<{ id: string }[]>`
+    insert into public.anotacoes (corretor_id, destinatario_id, texto)
+    values (${g.corretorId}, ${g.gestorId}, ${`Anotação ${sufixo}`}) returning id
+  `;
+  const [{ id: interacao }] = await sql<{ id: string }[]>`
+    insert into public.ia_interacoes (conversa_id, origem, prompt_versao)
+    values (${conversa}, 'webhook', 'teste-0184') returning id
+  `;
+  await sql`
+    insert into public.metas_corretor (corretor_id, mes, meta_comissao)
+    values (${g.corretorId}, date '2026-10-01', 50000)
+  `;
+  await sql`
+    insert into public.admin_eventos (acao, alvo_corretor_id, detalhes)
+    values ('corretor_desativado', ${g.corretorId}, '{}'::jsonb)
+  `;
+  return { lead, conversa, mensagem, imovel, imovelSlug, midia, venda, anotacao, interacao };
+}
+
+/**
+ * Tabelas com `grupo_id` que o `authenticated` consegue ler pela coluna. As
+ * que ficam de fora não podem ter leitura nenhuma (senão seriam um caminho
+ * que o laço não mede).
+ */
+async function tabelasLegiveisComGrupo(sql: Conexao): Promise<{ legiveis: string[]; semColuna: string[] }> {
+  const linhas = await sql<{ tabela: string; grupo: boolean; alguma: boolean }[]>`
+    with t as materialized (
+      select c.oid, c.relname
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        join pg_attribute a on a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
+       where n.nspname = 'public' and c.relkind in ('r', 'p')
+    )
+    select relname as tabela,
+           has_column_privilege('authenticated', oid, 'grupo_id', 'SELECT') as grupo,
+           has_any_column_privilege('authenticated', oid, 'SELECT') as alguma
+      from t
+     order by relname
+  `;
+  return {
+    legiveis: linhas.filter((l) => l.grupo).map((l) => l.tabela),
+    semColuna: linhas.filter((l) => !l.grupo && l.alguma).map((l) => l.tabela),
+  };
+}
+
+/** Uma consulta por tabela ou view: quantas linhas de outro grupo (ou sem grupo) aparecem. */
+async function linhasDeFora(eu: Conexao, relacoes: string[], grupoId: string): Promise<string[]> {
+  const vazadas: string[] = [];
+  for (const r of relacoes) {
+    const [{ n }] = await eu.unsafe<{ n: number }[]>(
+      `select count(*)::int as n from public."${r}" where grupo_id is distinct from $1`,
+      [grupoId],
+    );
+    if (n > 0) vazadas.push(`${r} (${n})`);
+  }
+  return vazadas;
+}
+
 describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   let sql: Sql;
 
-  beforeAll(() => {
+  // A trava existe por causa de realtime.db.test.ts, que precisa GRAVAR de
+  // verdade (o Realtime lê o WAL, que não vê transação desfeita) e por alguns
+  // segundos deixa um segundo grupo no banco. Os testes "com um grupo só"
+  // daqui veriam esse grupo se rodassem ao mesmo tempo.
+  beforeAll(async () => {
     sql = conectar();
-  });
+    await travarSuite(sql);
+  }, 180_000);
 
   afterAll(async () => {
+    if (sql) await soltarSuite(sql);
     await sql?.end();
   });
 
@@ -1470,6 +1621,317 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         ),
       ).rejects.toThrow(/participante_de_outro_grupo/);
     });
+  });
+
+  // ---------------------------------------------------------------------
+  // 0184: a policy restritiva por grupo, as views, o Storage e a defesa
+  // em profundidade no carimbo.
+  // ---------------------------------------------------------------------
+
+  it("nenhuma tabela mostra linha de outro grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await semearGrupo(tx, a, "a");
+      await semearGrupo(tx, b, "b");
+      // Evento da plataforma, sem grupo, pela chave de serviço (fora de
+      // `comoUsuario`, que desfaria o insert): nenhum logado o vê (0184).
+      await tx`set local role service_role`;
+      await tx`select set_config('request.jwt.claims', '{"role":"service_role"}', true)`;
+      await tx`insert into public.admin_eventos (acao, detalhes) values ('conta_criada', '{"origem":"plataforma"}'::jsonb)`;
+      await tx`reset role`;
+      await tx`select set_config('request.jwt.claims', '', true)`;
+      // A semente gravou mesmo, senão a contagem zero não provaria nada.
+      const [{ total }] = await tx<{ total: number }[]>`
+        select (select count(*) from public.leads where grupo_id = ${a.grupoId})
+             + (select count(*) from public.admin_eventos where grupo_id is null) as total
+      `;
+      expect(Number(total)).toBeGreaterThanOrEqual(2);
+
+      const { legiveis, semColuna } = await tabelasLegiveisComGrupo(tx);
+      expect(semColuna, "tabela que o logado lê sem poder filtrar grupo_id").toEqual([]);
+      expect(legiveis.length).toBeGreaterThan(40);
+
+      for (const [quem, userId] of [
+        ["gestor de B", b.gestorUserId],
+        ["corretor de B", b.corretorUserId],
+      ] as const) {
+        const vazadas = await comoUsuario(tx, userId, (eu) => linhasDeFora(eu, legiveis, b.grupoId));
+        expect(vazadas, `${quem} lê linha de outro grupo em`).toEqual([]);
+      }
+    });
+  });
+
+  it("toda tabela com grupo_id tem a policy restritiva isolamento_por_grupo", async () => {
+    const faltando = await sql<{ tabela: string }[]>`
+      select c.relname as tabela
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        join pg_attribute a on a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
+       where n.nspname = 'public' and c.relkind in ('r', 'p')
+         and not exists (
+           select 1 from pg_policies p
+            where p.schemaname = 'public' and p.tablename = c.relname
+              and p.policyname = 'isolamento_por_grupo'
+              and p.permissive = 'RESTRICTIVE'
+              and p.cmd = 'ALL'
+              and p.roles = '{authenticated}'
+              and p.qual like '%grupo_atual()%'
+              and p.with_check like '%grupo_atual()%'
+         )
+       order by 1
+    `;
+    expect(faltando.map((f) => f.tabela)).toEqual([]);
+  });
+
+  it("não escreve em linha de outro grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeA = await criarLead(tx, a.corretorId);
+
+      const mudou = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu`update public.leads set nome = 'x' where id = ${leadDeA} returning id`,
+      );
+      expect(mudou).toEqual([]);
+      const apagou = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu`delete from public.leads where id = ${leadDeA} returning id`,
+      );
+      expect(apagou).toEqual([]);
+
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) =>
+          eu`insert into public.leads (nome, grupo_id) values ('Lead em A', ${a.grupoId})`,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) =>
+          eu`insert into public.empreendimentos (slug, nome, cidade, bairro, grupo_id)
+             values ('imovel-de-b-em-a', 'Imóvel', 'Barueri', 'Centro', ${a.grupoId})`,
+        ),
+      ).rejects.toThrow();
+
+      const [{ nome }] = await tx<{ nome: string }[]>`select nome from public.leads where id = ${leadDeA}`;
+      expect(nome).toBe("Lead de teste");
+    });
+  });
+
+  // Defesa em profundidade (revisão de segurança da 0182): mesmo que a policy
+  // restritiva suma, o carimbo recusa logado gravando no grupo de outro.
+  it("o carimbo recusa logado gravando em outro grupo, mesmo sem a policy", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`drop policy if exists isolamento_por_grupo on public.empreendimentos`;
+      await tx`drop policy if exists isolamento_por_grupo on public.leads`;
+
+      // Tabela sem mãe: o grupo informado.
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) =>
+          eu`insert into public.empreendimentos (slug, nome, cidade, bairro, grupo_id)
+             values ('imovel-de-b-em-a', 'Imóvel', 'Barueri', 'Centro', ${a.grupoId})`,
+        ),
+      ).rejects.toThrow(/grupo da linha difere do grupo de quem grava/);
+      // Tabela com mãe: o grupo vem do corretor de A.
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) =>
+          eu`insert into public.leads (nome, corretor_id) values ('Lead em A', ${a.corretorId})`,
+        ),
+      ).rejects.toThrow(/grupo da linha difere do grupo de quem grava/);
+
+      // No próprio grupo segue gravando.
+      const [{ grupo_id }] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ grupo_id: string }[]>`
+          insert into public.empreendimentos (slug, nome, cidade, bairro)
+          values ('imovel-de-b', 'Imóvel', 'Barueri', 'Centro')
+          returning grupo_id
+        `,
+      );
+      expect(grupo_id).toBe(b.grupoId);
+    });
+  });
+
+  it("a chave de serviço continua informando o grupo de qualquer linha", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [{ grupo_id }] = await comoUsuario(tx, b.gestorUserId, async (eu) => {
+        await eu`reset role`;
+        await eu`set local role service_role`;
+        await eu`select set_config('request.jwt.claims', '{"role":"service_role"}', true)`;
+        return eu<{ grupo_id: string }[]>`
+          insert into public.empreendimentos (slug, nome, cidade, bairro, grupo_id)
+          values ('imovel-de-a-pelo-servico', 'Imóvel', 'Barueri', 'Centro', ${a.grupoId})
+          returning grupo_id
+        `;
+      });
+      expect(grupo_id).toBe(a.grupoId);
+    });
+  });
+
+  it("views respeitam o grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await semearGrupo(tx, a, "a");
+      await semearGrupo(tx, b, "b");
+
+      const views = await tx<{ view: string; tem_grupo: boolean }[]>`
+        select v.viewname as view,
+               exists (
+                 select 1 from information_schema.columns c
+                  where c.table_schema = 'public' and c.table_name = v.viewname and c.column_name = 'grupo_id'
+               ) as tem_grupo
+          from pg_views v
+         where v.schemaname = 'public'
+         order by 1
+      `;
+      expect(views.length).toBeGreaterThanOrEqual(6);
+      expect(views.filter((v) => !v.tem_grupo).map((v) => v.view), "view sem grupo_id").toEqual([]);
+
+      // As views leem do grupo A (sem isso o zero abaixo não provaria nada).
+      const nomes = views.map((v) => v.view);
+      const [{ n: deA }] = await tx.unsafe<{ n: number }[]>(
+        `select count(*)::int as n from public.pessoas_do_corretor where grupo_id = $1`,
+        [a.grupoId],
+      );
+      expect(deA).toBeGreaterThan(0);
+
+      for (const [quem, userId] of [
+        ["gestor de B", b.gestorUserId],
+        ["corretor de B", b.corretorUserId],
+      ] as const) {
+        const vazadas = await comoUsuario(tx, userId, (eu) => linhasDeFora(eu, nomes, b.grupoId));
+        expect(vazadas, `${quem} lê linha de outro grupo na view`).toEqual([]);
+      }
+      const proprias = await comoUsuario(tx, b.corretorUserId, (eu) =>
+        eu<{ n: number }[]>`select count(*)::int as n from public.pessoas_do_corretor where grupo_id = ${b.grupoId}`,
+      );
+      expect(proprias[0].n).toBeGreaterThan(0);
+    });
+  });
+
+  it("não grava no Storage de outro grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const imovelDeA = await criarImovel(tx, a.grupoId, "imovel-storage-a");
+      const imovelDeB = await criarImovel(tx, b.grupoId, "imovel-storage-b");
+      const gravar = (caminho: string) =>
+        comoUsuario(tx, b.corretorUserId, (eu) =>
+          eu`insert into storage.objects (bucket_id, name) values ('empreendimentos', ${caminho}) returning name`,
+        );
+
+      await expect(gravar(`${imovelDeA}/x.jpg`)).rejects.toThrow(/row-level security/);
+      await expect(gravar(`corretores/${a.corretorId}/x.jpg`)).rejects.toThrow(/row-level security/);
+      // O próprio grupo continua gravando pelos dois caminhos.
+      await expect(gravar(`${imovelDeB}/x.jpg`)).resolves.toEqual([{ name: `${imovelDeB}/x.jpg` }]);
+      await expect(gravar(`corretores/${b.corretorId}/x.jpg`)).resolves.toEqual([
+        { name: `corretores/${b.corretorId}/x.jpg` },
+      ]);
+    });
+  });
+
+  // O teste acima passaria só pela RLS de `empreendimentos` (a subconsulta
+  // da policy a atravessa). Este cobra a regra escrita na própria policy do
+  // Storage, nos dois caminhos e nas duas cláusulas.
+  it("as policies do Storage conferem o grupo do caminho", async () => {
+    const policies = await sql<{ policyname: string; qual: string; with_check: string }[]>`
+      select policyname, qual, with_check from pg_policies
+       where schemaname = 'storage' and tablename = 'objects'
+         and 'authenticated' = any(roles)
+       order by policyname
+    `;
+    expect(policies.map((p) => p.policyname)).toEqual([
+      "corretor gerencia a propria pasta de midia",
+      "corretor gerencia midia de empreendimento",
+    ]);
+    for (const p of policies) {
+      expect(p.qual, `${p.policyname} (using)`).toMatch(/grupo_id = \( SELECT grupo_atual\(\)/);
+      expect(p.with_check, `${p.policyname} (with check)`).toMatch(/grupo_id = \( SELECT grupo_atual\(\)/);
+    }
+  });
+
+  it("a Next Home continua vendo o que via", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const [{ todos }] = await tx<{ todos: number }[]>`select count(*)::int as todos from grupos`;
+      expect(todos).toBe(1);
+
+      const gestor = await criarPessoaDoGrupo1(tx, "gestor");
+      const outro = await criarPessoaDoGrupo1(tx, "corretor");
+      for (const dono of [gestor.id, outro.id]) {
+        const lead = await criarLead(tx, dono);
+        await criarConversa(tx, dono, lead);
+      }
+      await criarImovel(tx, GRUPO_NEXT_HOME_ID, "imovel-nh-0184");
+
+      const contar = (c: Conexao) =>
+        comoUsuario(c, gestor.userId, (eu) =>
+          eu<{ leads: number; conversas: number; imoveis: number }[]>`
+            select (select count(*)::int from public.leads) as leads,
+                   (select count(*)::int from public.whatsapp_conversas) as conversas,
+                   (select count(*)::int from public.empreendimentos) as imoveis
+          `,
+        );
+      const [depois] = await contar(tx);
+      expect(depois.leads).toBeGreaterThanOrEqual(2);
+      expect(depois.imoveis).toBeGreaterThanOrEqual(1);
+
+      // "Antes da 0184" = as mesmas permissivas sem a restritiva.
+      const [antes] = await semAPolicy(tx, ["leads", "whatsapp_conversas", "empreendimentos"], contar);
+      expect(depois).toEqual(antes);
+    });
+  });
+
+  // Leituras feitas pela sessão do gestor que a Task 7 deixou para a 0184
+  // (getEquipeAtiva, getAgregadoDaEquipe, financeiro/dados.ts,
+  // getEmpreendimentoDoPainel): as mesmas tabelas e colunas, como gestor de B.
+  it("as leituras do gestor pela sessão não trazem o outro grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const sa = await semearGrupo(tx, a, "a");
+      const sb = await semearGrupo(tx, b, "b");
+      const idsDeA = new Set<string>([a.gestorId, a.corretorId, ...Object.values(sa)]);
+
+      const lido = await comoUsuario(tx, b.gestorUserId, async (eu) => ({
+        // getEquipeAtiva
+        equipe: await eu<{ id: string }[]>`
+          select id, nome, em_pausa from public.corretores where ativo and slug is not null`,
+        // getAgregadoDaEquipe
+        agregado: await eu<{ id: string }[]>`
+          select id, etapa, etapa_alterada_em, created_at, origem_atribuicao, corretor_id
+            from public.leads where arquivado_em is null`,
+        // financeiro/dados.ts
+        vendas: await eu<{ id: string }[]>`select id from public.vendas`,
+        participantes: await eu<{ id: string }[]>`select venda_id as id from public.venda_participantes`,
+        metas: await eu<{ id: string }[]>`select corretor_id as id from public.metas_corretor`,
+        imoveis: await eu<{ id: string }[]>`select id, nome, construtora from public.empreendimentos`,
+        primeiraResposta: await eu<{ id: string }[]>`
+          select conversa_id as id from public.whatsapp_primeira_resposta`,
+        // getEmpreendimentoDoPainel (rota de imagens), pelo slug do imóvel de A
+        doPainel: await eu<{ id: string }[]>`
+          select id from public.empreendimentos where slug = ${sa.imovelSlug}`,
+      }));
+
+      const vazou = Object.entries(lido)
+        .filter(([, linhas]) => linhas.some((l) => idsDeA.has(l.id)))
+        .map(([nome]) => nome);
+      expect(vazou).toEqual([]);
+      // E o gestor de B vê o próprio grupo (senão "nada de A" seria vácuo).
+      expect(lido.agregado.map((l) => l.id)).toContain(sb.lead);
+      expect(lido.vendas.map((l) => l.id)).toContain(sb.venda);
+      expect(lido.equipe.map((l) => l.id)).toContain(b.corretorId);
+    });
+  });
+
+  it("a chave pública não executa definir_preferencia_contato", async () => {
+    const [p] = await sql<{ anon: boolean; logado: boolean; servico: boolean }[]>`
+      select has_function_privilege('anon', 'public.definir_preferencia_contato(uuid, text, boolean)', 'execute') as anon,
+             has_function_privilege('authenticated', 'public.definir_preferencia_contato(uuid, text, boolean)', 'execute') as logado,
+             has_function_privilege('service_role', 'public.definir_preferencia_contato(uuid, text, boolean)', 'execute') as servico
+    `;
+    expect(p).toEqual({ anon: false, logado: true, servico: true });
   });
 
   it("o apoio desfaz tudo: papel volta a postgres e o grupo de teste some", async () => {
