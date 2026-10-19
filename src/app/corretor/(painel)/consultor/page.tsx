@@ -24,7 +24,7 @@ export default async function ConsultorPage({
 
   const [conversas, credito, params] = await Promise.all([
     listarConversas(),
-    getParametrosCredito(),
+    getParametrosCredito(corretor.grupoId),
     searchParams,
   ]);
 

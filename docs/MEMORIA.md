@@ -10483,6 +10483,18 @@ Nota: [[plataforma-multi-grupo]].
   `src/lib/grupos/apoioDoBanco.ts`. Cada teste roda em
   `emTransacaoDesfeita`; `comoUsuario` usa savepoint, e o `set local role`
   volta junto com ele (há teste que confere).
+- **`comoUsuario` desfaz o que o usuário gravou**: para conferir o efeito
+  de uma função chamada como usuário, leia dentro do callback, depois de
+  `reset role` (o savepoint ainda está aberto). Ler depois de voltar mostra
+  a linha como estava antes.
+- **Taxas de crédito por grupo (0181)**: a PK da linha única
+  (`id boolean check (id)`) saiu e o grupo virou a chave. `getParametrosCredito`
+  exige o grupo, sem padrão: com padrão, tela do painel que esquecesse de
+  passá-lo simularia com as taxas do site, calada. O webhook ainda usa
+  `grupoDoSite()` porque a instância não carrega o grupo.
+- **Corretor desativado perde a sessão (0181)**: `grupo_atual()`,
+  `corretor_atual()` e `eh_gestor()` filtram `ativo`. Antes, desativar só o
+  tirava da roleta e o login seguia lendo o que lia.
 
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 

@@ -64,3 +64,12 @@ viraria N migrations.
   cria `grupos`, o grupo 1 (`00000000-…-0001`), `corretores.grupo_id`,
   `grupo_atual()` e o gatilho `corretores_00_grupo`, que deixa a 0181
   aplicável sozinha em produção (o código no ar insere corretor sem grupo).
+- **A 0181 também faz corretor desativado perder a sessão**: `grupo_atual()`,
+  `corretor_atual()` e `eh_gestor()` filtram `ativo`, e `getCorretorLogado()`
+  devolve nulo para ele. Antes, desativar só tirava o corretor da roleta; o
+  login seguia lendo o que lia. Cria ainda `administradores_da_plataforma` +
+  `eh_admin_da_plataforma()` (sem acesso pela API) e põe as **taxas de
+  crédito por grupo**: `parametros_credito.grupo_id` vira a chave,
+  `atualizar_parametros_credito` grava só a linha do grupo do gestor ativo
+  (quem não é gestor recebe erro, não `false`) e `getParametrosCredito(grupoId)`
+  leva o grupo na chave do cache. O site lê as do `grupoDoSite()`.

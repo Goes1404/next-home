@@ -10,6 +10,7 @@ import { WhatsappCta } from "@/components/layout/WhatsappCta";
 import { Reveal } from "@/components/motion/Reveal";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getParametrosCredito } from "@/lib/credito/parametros";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { getEmpreendimentos } from "@/lib/queries";
 import { site } from "@/lib/site";
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function PaginaFinanciamento() {
-  const [parametros, catalogo] = await Promise.all([getParametrosCredito(), getEmpreendimentos()]);
+  const [parametros, catalogo] = await Promise.all([getParametrosCredito(grupoDoSite()), getEmpreendimentos()]);
 
   const comPreco = catalogo
     .filter((e) => typeof e.precoAPartir === "number" && e.precoAPartir > 0)

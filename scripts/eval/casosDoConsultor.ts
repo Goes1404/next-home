@@ -38,6 +38,7 @@ import { SELECT_EMPREENDIMENTO } from "@/lib/queries";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 // Estáticos de propósito: `await import()` com alias do tsconfig não resolve
 // no tsx — só os imports de topo passam pelo resolvedor de paths.
 import { turnoDoConsultor } from "@/lib/consultor/turno";
@@ -275,7 +276,11 @@ async function main() {
     conferidoEm: "2026-09-09",
   };
   if (SECRETA) {
-    const [p] = await rest<Record<string, unknown>>("parametros_credito?select=*", SECRETA);
+    // Uma linha por grupo desde a 0181; o eval mede a Next Home.
+    const [p] = await rest<Record<string, unknown>>(
+      `parametros_credito?select=*&grupo_id=eq.${GRUPO_NEXT_HOME_ID}`,
+      SECRETA,
+    );
     if (p) {
       credito = {
         faixas: p.faixas as ParametrosCredito["faixas"],

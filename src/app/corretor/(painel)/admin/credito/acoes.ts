@@ -33,6 +33,12 @@ export async function salvarParametrosCredito(
 
   if (error) {
     console.error("[crédito] falha ao salvar:", error.message);
+    // Desde a 0181 o banco RECUSA quem não é gestor ativo do grupo (antes
+    // devolvia `false`, e a tela dizia "valor recusado" a quem não tinha
+    // permissão). Tentar de novo não resolve esse caso.
+    if (error.code === "42501") {
+      return { erro: "Só o gestor ativo do grupo altera os parâmetros de crédito." };
+    }
     return { erro: "Não consegui salvar. Tente de novo." };
   }
   if (data !== true) {

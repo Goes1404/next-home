@@ -42,7 +42,10 @@
  * Também escritos à mão: a tabela `grupos`, a coluna `corretores.grupo_id`
  * (opcional no Insert: o gatilho `corretores_00_grupo`, da própria 0181,
  * preenche o grupo de quem insere; com dois grupos e sem login, o insert sem
- * grupo falha no banco) e a função `grupo_atual()`, todos da 0181.
+ * grupo falha no banco), a função `grupo_atual()`, a tabela
+ * `administradores_da_plataforma`, a função `eh_admin_da_plataforma()` e
+ * `parametros_credito.grupo_id` (que substituiu a coluna `id` da linha
+ * única), todos da 0181.
  */
 
 export type Json =
@@ -1440,6 +1443,21 @@ export type Database = {
         Relationships: [
         ]
       }
+      administradores_da_plataforma: {
+        Row: {
+          criado_em: string
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grupos: {
         Row: {
           criado_em: string
@@ -1991,7 +2009,7 @@ export type Database = {
           conferido_em: string
           conferido_por: string | null
           faixas: Json
-          id: boolean
+          grupo_id: string
           itbi_por_cidade: Json
           prazo_maximo_meses: number
           taxa_sbpe_anual: number
@@ -2003,7 +2021,7 @@ export type Database = {
           conferido_em: string
           conferido_por?: string | null
           faixas: Json
-          id?: boolean
+          grupo_id: string
           itbi_por_cidade: Json
           prazo_maximo_meses: number
           taxa_sbpe_anual: number
@@ -2015,7 +2033,7 @@ export type Database = {
           conferido_em?: string
           conferido_por?: string | null
           faixas?: Json
-          id?: boolean
+          grupo_id?: string
           itbi_por_cidade?: Json
           prazo_maximo_meses?: number
           taxa_sbpe_anual?: number
@@ -2027,6 +2045,13 @@ export type Database = {
             columns: ["conferido_por"]
             isOneToOne: false
             referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parametros_credito_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: true
+            referencedRelation: "grupos"
             referencedColumns: ["id"]
           },
         ]
@@ -3546,6 +3571,7 @@ export type Database = {
       }
       eh_gestor: { Args: never; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
+      eh_admin_da_plataforma: { Args: never; Returns: boolean }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }
       conversas_com_fala_do_cliente: {
         Args: { p_ids: string[] }

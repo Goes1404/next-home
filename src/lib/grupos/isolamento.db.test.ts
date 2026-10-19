@@ -4,7 +4,7 @@
 // teste roda numa transação desfeita no fim (ver apoioDoBanco.ts).
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { Sql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 import { comoUsuario, conectar, criarGrupo, emTransacaoDesfeita } from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
 
@@ -110,6 +110,151 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       `;
       expect(grupo_id).toBe(b.grupoId);
     });
+  });
+
+  it("corretor desativado perde o grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      // `garantir_gestor_remanescente` (0030) ainda conta gestores do banco
+      // inteiro, e no banco de teste o gestor de B é o único: sem outro
+      // gestor ativo, desativá-lo seria recusado antes de medir alguma coisa.
+      // O corretor de B vira gestor e serve também de contraste: ativo, ele
+      // continua com grupo e com papel.
+      await tx`update corretores set papel = 'gestor' where id = ${b.corretorId}`;
+      await tx`update corretores set ativo = false where id = ${b.gestorId}`;
+
+      const desativado = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ grupo: string | null; corretor: string | null; gestor: boolean }[]>`
+          select public.grupo_atual() as grupo, public.corretor_atual() as corretor,
+                 public.eh_gestor() as gestor
+        `,
+      );
+      expect(desativado).toEqual([{ grupo: null, corretor: null, gestor: false }]);
+
+      const ativo = await comoUsuario(tx, b.corretorUserId, (eu) =>
+        eu<{ grupo: string | null; corretor: string | null; gestor: boolean }[]>`
+          select public.grupo_atual() as grupo, public.corretor_atual() as corretor,
+                 public.eh_gestor() as gestor
+        `,
+      );
+      expect(ativo).toEqual([{ grupo: b.grupoId, corretor: b.corretorId, gestor: true }]);
+    });
+  });
+
+  it("a chave pública não executa grupo_atual", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await tx`set local role anon`;
+      await expect(tx`select public.grupo_atual()`).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("administrador da plataforma: só a tabela decide, e ninguém a lê pela API", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      const antes = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ admin: boolean }[]>`select public.eh_admin_da_plataforma() as admin`,
+      );
+      // Gestor de grupo não é administrador da plataforma.
+      expect(antes).toEqual([{ admin: false }]);
+
+      await tx`insert into public.administradores_da_plataforma (user_id) values (${b.gestorUserId})`;
+      const depois = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ admin: boolean }[]>`select public.eh_admin_da_plataforma() as admin`,
+      );
+      expect(depois).toEqual([{ admin: true }]);
+
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) => eu`select user_id from public.administradores_da_plataforma`),
+      ).rejects.toThrow(/permission denied/);
+      await tx`set local role anon`;
+      await expect(tx`select user_id from public.administradores_da_plataforma`).rejects.toThrow(
+        /permission denied/,
+      );
+    });
+  });
+
+  it("gestor muda só as taxas do próprio grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      // Grupo novo nasce com a cópia das taxas da Next Home na fase 2; aqui
+      // a cópia é feita à mão.
+      await tx`
+        insert into public.parametros_credito (
+          grupo_id, faixas, teto_fgts_imovel, taxa_sbpe_anual, prazo_maximo_meses,
+          comprometimento_maximo, itbi_por_cidade, conferido_em
+        )
+        select ${b.grupoId}, faixas, teto_fgts_imovel, taxa_sbpe_anual, prazo_maximo_meses,
+               comprometimento_maximo, itbi_por_cidade, conferido_em
+          from public.parametros_credito where grupo_id = ${GRUPO_NEXT_HOME_ID}
+      `;
+      const nextHomeAntes = await tx`
+        select * from public.parametros_credito where grupo_id = ${GRUPO_NEXT_HOME_ID}
+      `;
+      expect(nextHomeAntes).toHaveLength(1);
+
+      const atualizar = (eu: TransactionSql) => eu<{ ok: boolean }[]>`
+        select public.atualizar_parametros_credito(
+          '[{"nome":"Faixa 1","rendaMax":3000,"subsidioMaximo":50000,"taxaAnual":0.05}]'::jsonb,
+          400000, 0.1300, 360, 0.30, '{"Barueri":0.02}'::jsonb, date '2026-10-19'
+        ) as ok
+      `;
+      // `comoUsuario` desfaz tudo no fim, então o efeito é lido lá dentro,
+      // depois de voltar a `postgres` (que enxerga as duas linhas).
+      const { gravou, deB, nextHomeDepois } = await comoUsuario(tx, b.gestorUserId, async (eu) => {
+        const gravou = await atualizar(eu);
+        await eu`reset role`;
+        const [deB] = await eu<{ taxa: string; conferido_por: string }[]>`
+          select taxa_sbpe_anual::text as taxa, conferido_por
+            from public.parametros_credito where grupo_id = ${b.grupoId}
+        `;
+        const nextHomeDepois = await eu`
+          select * from public.parametros_credito where grupo_id = ${GRUPO_NEXT_HOME_ID}
+        `;
+        return { gravou, deB, nextHomeDepois };
+      });
+      expect(gravou).toEqual([{ ok: true }]);
+      expect(deB).toEqual({ taxa: "0.1300", conferido_por: b.gestorId });
+      expect(nextHomeDepois).toEqual(nextHomeAntes);
+
+      await expect(comoUsuario(tx, b.corretorUserId, atualizar)).rejects.toThrow(
+        /gestor ativo do grupo/,
+      );
+    });
+  });
+
+  it("logado lê só as taxas do próprio grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`
+        insert into public.parametros_credito (
+          grupo_id, faixas, teto_fgts_imovel, taxa_sbpe_anual, prazo_maximo_meses,
+          comprometimento_maximo, itbi_por_cidade, conferido_em
+        )
+        select ${b.grupoId}, faixas, teto_fgts_imovel, taxa_sbpe_anual, prazo_maximo_meses,
+               comprometimento_maximo, itbi_por_cidade, conferido_em
+          from public.parametros_credito where grupo_id = ${GRUPO_NEXT_HOME_ID}
+      `;
+      const visiveis = await comoUsuario(tx, b.corretorUserId, (eu) =>
+        eu<{ grupo_id: string }[]>`select grupo_id from public.parametros_credito`,
+      );
+      expect(visiveis).toEqual([{ grupo_id: b.grupoId }]);
+    });
+  });
+
+  it("o aviso do grupo único chega a quem pede os avisos", async () => {
+    const avisos: string[] = [];
+    const comAvisos = conectar({ avisos });
+    try {
+      await emTransacaoDesfeita(comAvisos, async (tx) => {
+        await tx`
+          insert into public.corretores (nome, creci, whatsapp, slug, ativo)
+          values ('Corretor sem grupo', 'TESTE-aviso', '5511900000003', 'corretor-aviso', true)
+        `;
+      });
+    } finally {
+      await comAvisos.end();
+    }
+    expect(avisos).toContain("grupo_id inferido pelo grupo único em corretores");
   });
 
   it("o apoio desfaz tudo: papel volta a postgres e o grupo de teste some", async () => {

@@ -19,6 +19,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { ScrollCue } from "@/components/home/ScrollCue";
 import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { getParametrosCredito } from "@/lib/credito/parametros";
+import { grupoDoSite } from "@/lib/grupos/grupo";
 import { getCorretores, getEmpreendimentos, getRegioesDisponiveis } from "@/lib/queries";
 import { GloboOuMapa } from "@/components/mapa/GloboOuMapa";
 import { pontosDoMapa } from "@/lib/mapa/ponto";
@@ -72,7 +73,7 @@ export default async function HomeInstitucional() {
     getEmpreendimentos(),
     getRegioesDisponiveis(),
     getCorretores(),
-    getParametrosCredito(),
+    getParametrosCredito(grupoDoSite()),
   ]);
 
   /* Só os preços viajam para o cliente, não o catálogo inteiro: a conta do

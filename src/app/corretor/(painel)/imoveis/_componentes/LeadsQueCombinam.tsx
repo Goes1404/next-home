@@ -43,7 +43,7 @@ export async function LeadsQueCombinam({ imovel }: { imovel: Empreendimento }) {
       .limit(1000),
     // RLS recorta pelos leads que o corretor enxerga.
     supabase.from("lead_observacoes_ia").select("lead_id, orcamento_max").not("orcamento_max", "is", null).limit(2000),
-    getParametrosCredito(),
+    getParametrosCredito(corretor.grupoId),
   ]);
   const dossiePorLead = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
 

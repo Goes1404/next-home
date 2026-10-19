@@ -36,10 +36,17 @@ export type PapelCorretor = "corretor" | "gestor";
 export type CorretorSessao = CorretorPerfil & {
   papel: PapelCorretor;
   ativo: boolean;
+  /**
+   * O grupo (imobiliária ou corretor independente) do login (0181). É por
+   * ele que o painel escolhe o que é do grupo e não da plataforma, como as
+   * taxas de crédito.
+   */
+  grupoId: string;
 };
 
 /**
- * Corretor da sessão atual, ou `null` se não há sessão/vínculo.
+ * Corretor da sessão atual, ou `null` se não há sessão/vínculo ou se o
+ * corretor foi desativado.
  *
  * Embrulhado em `cache()` do React: são 68 chamadas espalhadas pelo painel, e
  * numa única requisição o layout, a página e `souGestor()` costumam pedir a
@@ -62,15 +69,21 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
 
   const { data } = await supabase
     .from("corretores")
-    .select(`${SELECT_CORRETOR}, papel, ativo`)
+    .select(`${SELECT_CORRETOR}, papel, ativo, grupo_id`)
     .eq("user_id", user.id)
-    .maybeSingle<LinhaCorretor & { papel: PapelCorretor; ativo: boolean }>();
+    .maybeSingle<LinhaCorretor & { papel: PapelCorretor; ativo: boolean; grupo_id: string }>();
 
   // Sem `slug` a conta existe mas ainda não foi vinculada a um cadastro
   // publicável — o painel trata esse caso à parte.
   if (!data?.slug) return null;
 
-  return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo };
+  // Desativado é o mesmo que sem vínculo: o banco já não o reconhece
+  // (`corretor_atual()`, `eh_gestor()` e `grupo_atual()` filtram `ativo`,
+  // 0181), e abrir o painel para ele seria mostrar telas que voltam vazias
+  // sem dizer por quê.
+  if (!data.ativo) return null;
+
+  return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo, grupoId: data.grupo_id };
 });
 
 /**

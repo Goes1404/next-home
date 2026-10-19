@@ -14,14 +14,26 @@ import postgres, { type Sql, type TransactionSql } from "postgres";
 /** A conexão crua ou uma transação aberta nela. */
 export type Conexao = Sql | TransactionSql;
 
-export function conectar(): Sql {
+/**
+ * Conexão com o banco de teste.
+ *
+ * Os avisos do Postgres (`raise notice`/`raise warning`) iriam para o console
+ * de todo teste, então são descartados por padrão. Quem precisa afirmar um
+ * aviso (o do grupo único, por exemplo) passa `avisos`, e cada mensagem é
+ * acrescentada ali. O aviso é da CONEXÃO, então o teste que o lê abre a
+ * própria e a fecha no fim.
+ */
+export function conectar({ avisos }: { avisos?: string[] } = {}): Sql {
   const url = process.env.DB_TESTE_URL;
   if (!url) {
     throw new Error("DB_TESTE_URL ausente. Suba o banco local com `npm run db:teste`.");
   }
-  // Os avisos do Postgres (raise notice/warning) iriam para o console de
-  // todo teste; quem precisar deles lê o resultado da consulta.
-  return postgres(url, { max: 1, onnotice: () => {} });
+  return postgres(url, {
+    max: 1,
+    onnotice: (aviso) => {
+      avisos?.push(aviso.message);
+    },
+  });
 }
 
 /** Erro sentinela: lançado de dentro da transação só para desfazê-la. */

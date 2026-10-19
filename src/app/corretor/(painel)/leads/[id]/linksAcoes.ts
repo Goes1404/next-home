@@ -82,11 +82,11 @@ export async function sugerirSelecao(
 ): Promise<{ candidatos: CandidatoDaSelecao[]; marcados: string[] } | { erro: string }> {
   const r = await leadDaCarteira(leadId);
   if ("erro" in r) return { erro: r.erro! };
-  const { supabase, lead } = r;
+  const { supabase, lead, corretor } = r;
 
   const [catalogo, credito, { data: dossie }] = await Promise.all([
     getEmpreendimentos().catch(() => []),
-    getParametrosCredito(),
+    getParametrosCredito(corretor.grupoId),
     supabase.from("lead_observacoes_ia").select("orcamento_max").eq("lead_id", leadId).maybeSingle(),
   ]);
   const perfil = perfilDoLead(lead, dossie, credito);

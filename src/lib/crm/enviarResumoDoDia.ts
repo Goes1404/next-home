@@ -46,7 +46,7 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
   for (const inst of instancias) {
     const { data: corretor } = await supabase
       .from("corretores")
-      .select("id, nome, whatsapp, ativo, resumo_diario_em, resumo_hora, resumo_fim_de_semana")
+      .select("id, nome, whatsapp, ativo, grupo_id, resumo_diario_em, resumo_hora, resumo_fim_de_semana")
       .eq("id", inst.corretor_id)
       .maybeSingle();
     if (!corretor?.ativo || !corretor.whatsapp) continue;
@@ -68,7 +68,7 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
     if (!claim || claim.length === 0) continue;
 
     const texto = montarResumoDoDia(
-      { ...(await coletar(supabase, corretor.id, hoje, agora)), nomeCorretor: corretor.nome },
+      { ...(await coletar(supabase, corretor.id, corretor.grupo_id, hoje, agora)), nomeCorretor: corretor.nome },
       site.url,
     );
     if (!texto) continue;
@@ -84,7 +84,7 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
   return enviados;
 }
 
-async function coletar(supabase: Supa, corretorId: string, hoje: string, agora: Date) {
+async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje: string, agora: Date) {
   const { inicio, fim } = limitesDoDiaSP(hoje);
   const painel = `${site.url}/corretor`;
 
@@ -120,7 +120,7 @@ async function coletar(supabase: Supa, corretorId: string, hoje: string, agora: 
   const [semRetorno, ontem, imoveisNovos, valeRetomar] = await Promise.all([
     visitasSemRetorno(supabase, corretorId, agora, painel),
     placarDeOntem(supabase, corretorId, hoje),
-    imoveisNovosQueCombinam(supabase, corretorId, agora, painel),
+    imoveisNovosQueCombinam(supabase, corretorId, grupoId, agora, painel),
     segundaEmSP(agora) ? leadsQueValemRetomar(supabase, corretorId, agora, painel) : Promise.resolve([]),
   ]);
 
@@ -262,6 +262,7 @@ const ETAPAS_ABERTAS = "(novo,primeiro_contato,visita_agendada,documentacao)";
 async function imoveisNovosQueCombinam(
   supabase: Supa,
   corretorId: string,
+  grupoId: string,
   agora: Date,
   painel: string,
 ): Promise<ItemDoResumo[]> {
@@ -283,7 +284,8 @@ async function imoveisNovosQueCombinam(
       .filter("etapa", "in", ETAPAS_ABERTAS)
       .limit(1000),
     supabase.from("lead_observacoes_ia").select("lead_id, orcamento_max").not("orcamento_max", "is", null).limit(2000),
-    getParametrosCredito(),
+    // As taxas do grupo do corretor (0181): cada imobiliária ajusta as dela.
+    getParametrosCredito(grupoId),
   ]);
   const dossie = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
 

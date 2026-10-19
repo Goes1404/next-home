@@ -108,7 +108,7 @@ export async function enviarMensagemDoConsultor(params: {
 
   const [catalogo, credito] = await Promise.all([
     getEmpreendimentosDoPainel(),
-    getParametrosCredito(),
+    getParametrosCredito(corretor.grupoId),
   ]);
   // O consultor recomenda o que dá para vender: rascunho fica de fora.
   const publicados = catalogo.filter((e) => e.publicado !== false);
