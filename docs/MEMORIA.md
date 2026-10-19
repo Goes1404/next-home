@@ -10427,3 +10427,22 @@ Nota: [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]].
   nenhuma** (`botoesComPista`, `paradaSemIA`), e `next build` local para no
   type-check pelo par `PixelMeta.tsx`/`pixelMeta.ts`. Não é o seu código.
 
+
+## Conta oculta (0189, 19/10/2026)
+
+Nota: [[conta-oculta]]. Pedido: a conta só WhatsApp de uma pessoa "não pode
+aparecer para ninguém"; só o gestor a vê, em Contas → "Contas ocultas".
+
+- **A RLS não protege as telas da equipe.** Elas são do gestor, a quem a
+  policy de `corretores` mostra tudo, e várias leem pela chave de serviço. Por
+  isso a 0189 tem duas camadas: policy (anon e corretor comum não leem a linha
+  oculta) e recorte no código, num ponto só (`src/lib/corretores/contaOculta.ts`),
+  com guarda que lê as telas (`contaOculta.test.ts`).
+- **Visão "equipe" em leads:** `corretor_id not in (...)` sozinho tira também
+  o lead SEM dono (nulo nunca está "fora" de nada). O filtro é
+  `corretor_id.is.null,corretor_id.not.in.(...)`.
+- **Na roleta a conta oculta é filtro**, exceção declarada à régua "ordem,
+  nunca filtro" da 0093.
+- **A 0189 depende da 0180** e redefine `distribuir_lead`, `ranking_vgv` e o
+  sorteio. A fase multi-grupo (0183/0185) redefine as três de novo: ao fundir,
+  carregar o `not c.oculta` — a guarda reprova a última definição sem ele.

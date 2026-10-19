@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { filtrarContasOcultas } from "@/lib/corretores/contaOculta";
 import { extrairVariosLeadsComIA } from "@/lib/inbound/aiParser";
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import type { EmailInboundInput } from "@/lib/inbound/types";
@@ -67,10 +68,13 @@ export async function processarEmailDeLead(
     return { ok: false, totalEncontrados: 0, totalInseridos: 0, totalDeduplicados: 0, totalFalhas: 0, leads: [] };
   }
 
-  const [{ data: empreendimentos }, { data: corretores }] = await Promise.all([
+  const [{ data: empreendimentos }, { data: todosCorretores }] = await Promise.all([
     supabase.from("empreendimentos").select("id, nome, slug").limit(50),
     supabase.from("corretores").select("id, nome, slug").eq("ativo", true),
   ]);
+  // Conta oculta (0189) não recebe lead nem por nome citado no e-mail: a
+  // chave de serviço não passa pela RLS, então o recorte é aqui.
+  const corretores = await filtrarContasOcultas(supabase, todosCorretores ?? []);
 
   const processados: { id: string; deduplicado: boolean; nome: string; telefone: string }[] = [];
   const falhas: { telefone: string; motivo: string }[] = [];

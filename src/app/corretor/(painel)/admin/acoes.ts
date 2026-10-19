@@ -467,6 +467,57 @@ export async function alternarSoWhatsapp(
 }
 
 /**
+ * Marca ou desmarca a conta como OCULTA (0189): ela sai do site, da roleta,
+ * do sorteio do anúncio e de todas as telas da equipe. Só o gestor a vê, na
+ * seção recolhida "Contas ocultas" da tela de Contas — é por ela que se volta.
+ *
+ * Mesmo caminho do `alternarSoWhatsapp`: a coluna não tem grant de UPDATE para
+ * `authenticated`, então quem grava é a chave de serviço, depois da guarda. O
+ * CHECK de `admin_eventos.acao` não tem valor para isto: o registro é o log.
+ */
+export async function alternarContaOculta(
+  corretorId: string,
+  ocultar: boolean,
+): Promise<ResultadoAdmin> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const servico = createServiceClient();
+  const { data, error } = await servico
+    .from("corretores")
+    .update({ oculta: ocultar })
+    .eq("id", corretorId)
+    .select("id");
+  if (error) {
+    console.error("[admin] falha ao marcar conta oculta:", error.message);
+    return {
+      erro: /oculta/.test(error.message)
+        ? "O banco ainda não tem a conta oculta (migration 0189)."
+        : traduzirErroBanco(error.message),
+    };
+  }
+  if (!data || data.length === 0) return { erro: "Corretor não encontrado." };
+
+  console.info(`[admin] conta ${ocultar ? "ocultada" : "mostrada de novo"}`, {
+    ator: guarda.corretor.id,
+    alvo: corretorId,
+  });
+
+  // O site e o link pessoal leem a equipe de um cache de dados: sem limpar a
+  // etiqueta, a conta seguiria na página da equipe até o cache vencer.
+  revalidarCorretores();
+  revalidatePath("/corretor/admin", "layout");
+  revalidatePath("/corretor/financeiro", "layout");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/anotacoes");
+  return {
+    ok: ocultar
+      ? "Conta oculta: ela sai do site, da roleta e das telas da equipe. Para voltar, abra \"Contas ocultas\"."
+      : "A conta voltou a aparecer para a equipe.",
+  };
+}
+
+/**
  * Passa a carteira INTEIRA de um corretor (ou todos os leads sem dono) para
  * outro corretor, de uma vez.
  *

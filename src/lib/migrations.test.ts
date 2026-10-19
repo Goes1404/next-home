@@ -35,7 +35,12 @@ const DIR_MIGRATIONS = join(process.cwd(), "supabase", "migrations");
  * teste abaixo reprova reserva que já foi ocupada, para ela não virar
  * comentário morto.
  */
-const RESERVADOS = new Set<number>([]);
+/*
+ * 19/10/2026 (hotfix da conta oculta, 0189): 0181–0187 são da fase
+ * multi-grupo (branch `fase-2-plataforma`, ainda não publicada) e 0188 de
+ * outra correção de produção. Ao fundir aquelas branches, tirar daqui.
+ */
+const RESERVADOS = new Set<number>([181, 182, 183, 184, 185, 186, 187, 188]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
   return readdirSync(DIR_MIGRATIONS)

@@ -3,6 +3,11 @@ import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import {
+  filtrarContasOcultas,
+  filtroForaDasContasOcultas,
+  idsDeContasOcultas,
+} from "@/lib/corretores/contaOculta";
 import { PADROES_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
 import {
   CARTEIRA_EQUIPE,
@@ -113,6 +118,16 @@ export async function recorteDaVisao(pedido?: string | null): Promise<string | n
   return corretorDoRecorte(await getCarteiraDaVisao(pedido));
 }
 
+/**
+ * O filtro que tira da visão da EQUIPE os leads de conta oculta (0189). Só
+ * entra quando não há `dono` — a carteira de uma pessoa não precisa dele, e
+ * a da própria conta oculta continua sendo dela. `cache()`: o Início e a
+ * lista perguntam isto várias vezes na mesma requisição.
+ */
+const filtroForaDasOcultas = cache(async function filtroForaDasOcultas(): Promise<string | null> {
+  return filtroForaDasContasOcultas(await idsDeContasOcultas(await createClient()));
+});
+
 /** E-mail da conta autenticada — usado para revalidar a senha atual. */
 export async function getEmailLogado(): Promise<string | null> {
   const supabase = await createClient();
@@ -199,8 +214,11 @@ export function mapLead(row: LinhaLead): Lead {
 export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
   const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
   let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
   const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
@@ -325,11 +343,14 @@ function diaEmSaoPaulo(): string {
 export async function contarLeadsArquivados(pedido?: string | null): Promise<number> {
   const supabase = await createClient();
   const dono = await recorteDaVisao(pedido);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
   let query = supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
     .not("arquivado_em", "is", null);
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
   const { count } = await query;
   return count ?? 0;
 }
@@ -342,12 +363,15 @@ export async function getPaginaDeLeads(
   const de = Math.max(0, pagina) * LEADS_POR_PAGINA;
   // "Sem dono" só existe na equipe: lead sem corretor nunca é "meu".
   const dono = await recorteDaVisao(filtro.semDono ? CARTEIRA_EQUIPE : filtro.corretorId);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase.from("leads").select(SELECT_LEAD, { count: "exact" });
   query = filtro.arquivados
     ? query.not("arquivado_em", "is", null)
     : query.is("arquivado_em", null);
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
@@ -419,6 +443,8 @@ export async function getEmpreendimentosParaFiltro(): Promise<{ id: string; nome
 export const getContagemPorEtapa = cache(async (pedido?: string | null): Promise<Record<EtapaFunil, number>> => {
   const supabase = await createClient();
   const dono = await recorteDaVisao(pedido);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
   const pares = await Promise.all(
     ETAPAS_FUNIL.map(async (etapa) => {
       let query = supabase
@@ -427,6 +453,7 @@ export const getContagemPorEtapa = cache(async (pedido?: string | null): Promise
         .is("arquivado_em", null)
         .eq("etapa", etapa);
       if (dono) query = query.eq("corretor_id", dono);
+      else if (foraDasOcultas) query = query.or(foraDasOcultas);
       const { count, error } = await query;
       if (error) throw new Error(`Falha ao contar o funil: ${error.message}`);
       return [etapa, count ?? 0] as const;
@@ -443,9 +470,12 @@ export const getContagemPorEtapa = cache(async (pedido?: string | null): Promise
 export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
   const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   // A busca é a MESMA das outras abas — mesmo saneamento, mesmas colunas.
   // Duas buscas com regras diferentes na mesma tela seria pior que nenhuma.
@@ -468,6 +498,8 @@ export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
 export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
   const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase
     .from("leads")
@@ -475,6 +507,7 @@ export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
     .is("arquivado_em", null)
     .eq("etapa", "visita_agendada");
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   const termo = busca ? sanearBusca(busca) : "";
   if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
@@ -496,6 +529,8 @@ export async function getVisitasDeHoje(): Promise<number> {
   const supabase = await createClient();
   const dia = diaEmSaoPaulo();
   const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase
     .from("leads")
@@ -505,6 +540,7 @@ export async function getVisitasDeHoje(): Promise<number> {
     .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
     .lte("visita_agendada_em", `${dia}T23:59:59-03:00`);
   if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
   const { count, error } = await query;
 
   if (error) throw new Error(`Falha ao contar as visitas: ${error.message}`);
@@ -531,7 +567,10 @@ export async function getEquipeAtiva(): Promise<
     .order("nome");
 
   if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
-  return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
+  // Conta oculta (0189) não é equipe para ninguém: nem na reatribuição, nem
+  // nos seletores, nem nos placares que partem desta lista.
+  const visiveis = await filtrarContasOcultas(supabase, data ?? []);
+  return visiveis.map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
 }
 
 /**
@@ -626,6 +665,11 @@ export type CorretorAdmin = {
   leads: number;
   /** Conta só WhatsApp (0180): todas as conversas, sem lead, sem IA. */
   soWhatsapp: boolean;
+  /**
+   * Conta oculta (0189): fora do site, da roleta e das telas da equipe. A
+   * tela de Contas a mostra só na seção recolhida "Contas ocultas".
+   */
+  oculta: boolean;
 };
 
 /**
@@ -660,6 +704,8 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
   // não pode cair por isso.
   const { data: marcas } = await supabase.from("corretores").select("id, so_whatsapp");
   const soWhatsapp = new Set((marcas ?? []).filter((m) => m.so_whatsapp).map((m) => m.id));
+  // Idem para a 0189: sem ela, ninguém é oculto.
+  const ocultas = await idsDeContasOcultas(supabase);
 
   const porCorretor = new Map<string, number>();
   for (const lead of leads ?? []) {
@@ -677,6 +723,7 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     temLogin: c.user_id !== null,
     leads: porCorretor.get(c.id) ?? 0,
     soWhatsapp: soWhatsapp.has(c.id),
+    oculta: ocultas.has(c.id),
   }));
 }
 

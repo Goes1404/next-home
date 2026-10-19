@@ -38,6 +38,7 @@ F0–F6.
 - [[documentacao-do-lead]] — listas por fase, conferir/recusar com motivo, guardar do WhatsApp, .zip (16/10)
 - [[arquivo-grande-nao-passa-pela-server-action]] — o link de documentos sobe direto ao armazenamento (Vercel recusa > 4,5 MB), foto reduzida, link vencido, dica por item (16/10)
 - [[conta-so-whatsapp]] — conta usada só como WhatsApp Web: todas as conversas, sem virar lead, texto guardado, IA desligada (0180, 17/10)
+- [[conta-oculta]] — conta que trabalha e não aparece para ninguém: fora do site, roleta, ranking e telas da equipe; só o gestor a vê em "Contas ocultas" (0189, 19/10)
 - [[fila-do-inicio-e-uma-fila]]
 - [[nome-util-do-lead-e-modulo-puro]]
 - [[alerta-sempre-aceso-vira-paisagem]]

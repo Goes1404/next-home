@@ -12,6 +12,8 @@ import {
 import { intervaloDo, lerPeriodo, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { exigirGestorNaPagina } from "@/lib/guardas";
+import { createClient } from "@/lib/supabase/server";
+import { idsDeContasOcultas } from "@/lib/corretores/contaOculta";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { Suspense } from "react";
 import { MetasDaEquipe } from "./MetasDaEquipe";
@@ -104,6 +106,12 @@ export default async function DesempenhoPage({
     nomeDoImovel,
   });
   const tempos = tempoDeRespostaPorCorretor(respostas);
+  // Conta oculta (0189) não é equipe: sai da tabela, das metas e da frase de
+  // "o que os melhores fazem". A lista `equipe` já vem sem ela.
+  for (const id of await idsDeContasOcultas(await createClient())) {
+    desempenho.delete(id);
+    tempos.delete(id);
+  }
   const nomes = new Map(equipe.map((c) => [c.id, c.nome]));
   nomes.set(corretor.id, corretor.nome);
 

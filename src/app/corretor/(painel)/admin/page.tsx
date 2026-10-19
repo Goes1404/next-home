@@ -4,6 +4,7 @@ import { getEquipeAtiva } from "@/lib/corretorSessao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
+import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { ETAPA_LABEL, ETAPAS_FUNIL } from "@/lib/types";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { Suspense } from "react";
@@ -107,7 +108,7 @@ export default async function AdminVisaoGeralPage() {
     getAgregadoDaEquipe(equipe),
     supabase
       .from("whatsapp_funil_metricas")
-      .select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao"),
+      .select("corretor_id, conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao"),
     /*
      * As métricas-norte 1 e 3 do roadmap (cobertura e tempo até a primeira
      * resposta), que nunca tinham tela — embora o dado estivesse no banco
@@ -115,10 +116,15 @@ export default async function AdminVisaoGeralPage() {
      */
     supabase
       .from("whatsapp_resposta_metricas")
-      .select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
+      .select("corretor_id, conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
   ]);
 
-  const whats = (funilWhats ?? []).reduce(
+  // Conta oculta (0189): as conversas dela não entram nos números da equipe.
+  const ocultas = await idsDeContasOcultas(supabase);
+  const funilVisivel = semContasOcultas(funilWhats ?? [], ocultas, (l) => l.corretor_id);
+  const respostaVisivel = semContasOcultas(respostaWhats ?? [], ocultas, (l) => l.corretor_id);
+
+  const whats = funilVisivel.reduce(
     (acc, l) => ({
       conversas: acc.conversas + (l.conversas ?? 0),
       quentes: acc.quentes + (l.leads_quentes ?? 0),
@@ -133,7 +139,7 @@ export default async function AdminVisaoGeralPage() {
    * atendendo, o valor é o dele; com vários, mostramos a MAIOR, que é a
    * leitura conservadora: "o pior tempo de resposta da equipe".
    */
-  const resposta = (respostaWhats ?? []).reduce(
+  const resposta = respostaVisivel.reduce(
     (acc, l) => ({
       escreveram: acc.escreveram + (l.conversas_com_fala_do_cliente ?? 0),
       atendidas: acc.atendidas + (l.conversas_atendidas ?? 0),

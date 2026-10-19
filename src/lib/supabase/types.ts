@@ -1224,6 +1224,7 @@ export type Database = {
           fundo_tipo: string
           id: string
           nome: string
+          oculta: boolean
           papel: string
           regioes: string[] | null
           slug: string | null
@@ -1249,6 +1250,7 @@ export type Database = {
           fundo_tipo?: string
           id?: string
           nome: string
+          oculta?: boolean
           papel?: string
           regioes?: string[] | null
           slug?: string | null
@@ -1274,6 +1276,7 @@ export type Database = {
           fundo_tipo?: string
           id?: string
           nome?: string
+          oculta?: boolean
           papel?: string
           regioes?: string[] | null
           slug?: string | null
