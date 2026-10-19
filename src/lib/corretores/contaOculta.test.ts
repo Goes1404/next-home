@@ -117,6 +117,10 @@ const arquivos = readdirSync(DIR).filter((n) => n.endsWith(".sql")).sort();
 const migration = readFileSync(join(DIR, "0189_conta_oculta.sql"), "utf8");
 const semComentarioSql = (s: string) => s.replace(/--.*$/gm, "");
 
+// A última migration que já estava no ar antes da conta oculta. Toda migration
+// de número maior pode rodar DEPOIS da 0189 em produção, ordene antes ou não.
+const ULTIMA_ANTES_DA_CONTA_OCULTA = "0180";
+
 function ultimaDefinicaoDe(nome: string): string {
   let ultima = "";
   for (const arquivo of arquivos) {
@@ -151,10 +155,15 @@ describe("0189 no banco", () => {
     expect(logado).toMatch(/\(select public\.eh_gestor\(\)\)/);
   });
 
-  it("nenhuma migration depois da 0189 devolve o `using (true)` à leitura de corretores", () => {
-    for (const arquivo of arquivos.filter((a) => a.slice(0, 4) > "0189")) {
+  it("nenhuma migration posterior à 0180 devolve o `using (true)` à leitura de corretores", () => {
+    // Posterior à 0180, não à 0189: 0181–0187 ordenam antes da 0189 e rodam
+    // DEPOIS dela em produção (ver o bloco da ordem de aplicação, abaixo).
+    for (const arquivo of arquivos.filter((a) => a.slice(0, 4) > ULTIMA_ANTES_DA_CONTA_OCULTA)) {
       const sql = semComentarioSql(readFileSync(join(DIR, arquivo), "utf8")).toLowerCase();
       expect(sql, arquivo).not.toMatch(/create policy "corretores sao publicos"/);
+      for (const policy of sql.match(/create policy "[^"]*"\s+on public\.corretores[^;]*;/g) ?? []) {
+        if (/for (select|all)/.test(policy)) expect(policy, `${arquivo}: ${policy}`).toMatch(/not oculta/);
+      }
     }
   });
 
@@ -171,6 +180,99 @@ describe("0189 no banco", () => {
 
   it("o ranking de VGV não lista conta oculta (só para ela mesma)", () => {
     expect(ultimaDefinicaoDe("ranking_vgv")).toMatch(/\(not c\.oculta or c\.id = v_eu\)/);
+  });
+});
+
+/*
+ * A ÚLTIMA definição pela ordem dos ARQUIVOS não é a última APLICADA em
+ * produção. A fase multi-grupo traz 0181–0187, que ordenam antes da 0189 mas
+ * rodam DEPOIS dela (a 0189 sobe primeiro, como correção). A 0183 redefine as
+ * três funções; vindo sem o recorte, `ultimaDefinicaoDe` lê a 0189 e passa,
+ * enquanto o banco fica com a versão da 0183 — conta oculta de volta na
+ * roleta, no ranking e no sorteio, sem nada vermelho.
+ *
+ * Por isso a régua vale para TODA definição em migration posterior à 0180,
+ * qualquer que seja a ordem em que ela rode: definição que lê `corretores`
+ * traz `not oculta`. O invólucro que só repassa para outra sobrecarga (o de
+ * dois argumentos da 0183) não lê `corretores` e não é cobrado.
+ */
+const FUNCOES_QUE_LISTAM_CORRETORES = ["distribuir_lead", "ranking_vgv", "sortear_corretor_whatsapp"];
+
+function todasAsDefinicoes(sql: string, nome: string): string[] {
+  const minusculo = semComentarioSql(sql).toLowerCase();
+  const ancora = `create or replace function public.${nome}(`;
+  const saida: string[] = [];
+  let i = minusculo.indexOf(ancora);
+  while (i !== -1) {
+    const resto = minusculo.slice(i);
+    const fim = resto.search(/\$(function)?\$\s*;/);
+    saida.push(fim === -1 ? resto : resto.slice(0, fim));
+    i = minusculo.indexOf(ancora, i + ancora.length);
+  }
+  return saida;
+}
+
+function definicoesSemRecorte(migrations: { arquivo: string; sql: string }[]): string[] {
+  const falhas: string[] = [];
+  for (const { arquivo, sql } of migrations) {
+    if (arquivo.slice(0, 4) <= ULTIMA_ANTES_DA_CONTA_OCULTA) continue;
+    for (const nome of FUNCOES_QUE_LISTAM_CORRETORES) {
+      todasAsDefinicoes(sql, nome).forEach((corpo, n) => {
+        if (/\b(public\.)?corretores\b/.test(corpo) && !/not\s+(\w+\.)?oculta\b/.test(corpo)) {
+          falhas.push(`${arquivo}: ${nome} (definição ${n + 1})`);
+        }
+      });
+    }
+  }
+  return falhas;
+}
+
+const SORTEIO_SEM_RECORTE =
+  "create or replace function public.sortear_corretor_whatsapp(p_grupo uuid) returns table(x uuid) " +
+  "language sql as $function$ select c.id from public.corretores c where c.ativo $function$;";
+
+describe("toda redefinição posterior à 0180 carrega o recorte (ordem de aplicação ≠ ordem dos arquivos)", () => {
+  it("nas migrations do repositório, nenhuma definição lê corretores sem `not oculta`", () => {
+    const todas = arquivos.map((arquivo) => ({ arquivo, sql: readFileSync(join(DIR, arquivo), "utf8") }));
+    expect(definicoesSemRecorte(todas)).toEqual([]);
+  });
+
+  it("reprova a definição que ordena ANTES da 0189 (o caso da 0183 da fase multi-grupo)", () => {
+    expect(definicoesSemRecorte([{ arquivo: "0183_funcoes_respeitam_grupo.sql", sql: SORTEIO_SEM_RECORTE }])).toEqual([
+      "0183_funcoes_respeitam_grupo.sql: sortear_corretor_whatsapp (definição 1)",
+    ]);
+  });
+
+  it("cobra cada sobrecarga do mesmo arquivo, não só a última", () => {
+    const comRecorte = SORTEIO_SEM_RECORTE.replace("where c.ativo", "where c.ativo and not c.oculta");
+    expect(
+      definicoesSemRecorte([{ arquivo: "0190_x.sql", sql: SORTEIO_SEM_RECORTE + "\n" + comRecorte }]),
+    ).toEqual(["0190_x.sql: sortear_corretor_whatsapp (definição 1)"]);
+  });
+
+  it("não cobra o histórico até a 0180 nem o invólucro que só repassa", () => {
+    expect(definicoesSemRecorte([{ arquivo: "0130_antiga.sql", sql: SORTEIO_SEM_RECORTE }])).toEqual([]);
+    const involucro =
+      "create or replace function public.sortear_corretor_whatsapp(p_empreendimento uuid) returns table(x uuid) " +
+      "language plpgsql as $function$ begin return query select s.x " +
+      "from public.sortear_corretor_whatsapp('1'::uuid, p_empreendimento) s; end; $function$;";
+    expect(definicoesSemRecorte([{ arquivo: "0183_x.sql", sql: involucro }])).toEqual([]);
+  });
+
+  it("a coluna nasce antes da primeira migration que a cita (instalação nova, em ordem de arquivo)", () => {
+    // Função `language sql` tem o corpo conferido na criação: numa instalação
+    // nova (replay na ordem dos arquivos), uma 0183 citando `c.oculta` antes de
+    // a 0189 criar a coluna quebra. Quem citar antes da 0189 cria a coluna
+    // antes (`add column if not exists oculta ...`, idempotente com a 0189).
+    for (const arquivo of arquivos) {
+      const sql = semComentarioSql(readFileSync(join(DIR, arquivo), "utf8")).toLowerCase();
+      const citacao = sql.search(/\boculta\b/);
+      if (citacao === -1) continue;
+      const add = sql.search(/add column if not exists oculta\b/);
+      expect(add, `${arquivo} é a primeira a citar oculta e não cria a coluna`).not.toBe(-1);
+      expect(add, `${arquivo} cita oculta antes do add column`).toBeLessThanOrEqual(citacao);
+      break;
+    }
   });
 });
 

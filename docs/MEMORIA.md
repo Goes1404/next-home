@@ -10444,5 +10444,14 @@ aparecer para ninguém"; só o gestor a vê, em Contas → "Contas ocultas".
 - **Na roleta a conta oculta é filtro**, exceção declarada à régua "ordem,
   nunca filtro" da 0093.
 - **A 0189 depende da 0180** e redefine `distribuir_lead`, `ranking_vgv` e o
-  sorteio. A fase multi-grupo (0183/0185) redefine as três de novo: ao fundir,
-  carregar o `not c.oculta` — a guarda reprova a última definição sem ele.
+  sorteio. A fase multi-grupo (0183) redefine as três de novo e ordena ANTES
+  da 0189, mas em produção roda DEPOIS dela. **Ler "a última definição pela
+  ordem dos arquivos" não pega isso**: ela seria a da 0189, e o banco ficaria
+  com a da 0183, sem o recorte. A guarda cobra TODA definição em migration
+  posterior à 0180 que leia `corretores` (provada com a 0183 real: reprova
+  roleta, ranking e o sorteio de três argumentos). Na fusão, a 0183 leva o
+  `not c.oculta` e cria a coluna antes (`add column if not exists oculta`,
+  idempotente com a 0189), senão uma instalação nova quebra no sorteio, que é
+  `language sql` e tem o corpo conferido na criação. **Régua: número de
+  migration é ordem de arquivo, não de aplicação, sempre que uma correção sobe
+  com número maior que uma branch ainda não publicada.**

@@ -50,8 +50,20 @@ desativar, reativar ou mostrar de novo.
 ## Ao fundir a fase multi-grupo (0181–0187)
 
 A 0183 redefine `distribuir_lead`, `ranking_vgv` e `sortear_corretor_whatsapp`
-e a 0185 apaga a assinatura `(uuid, uuid)` do sorteio. Essas versões precisam
-carregar o `not c.oculta`; `contaOculta.test.ts` lê a ÚLTIMA definição de cada
-função e reprova a que vier sem ele.
+e a 0185 apaga a assinatura `(uuid, uuid)` do sorteio. A 0183 ordena antes da
+0189, mas em produção roda DEPOIS dela: a "última definição pela ordem dos
+arquivos" seria a da 0189 e o banco ficaria com a da 0183, sem o recorte.
+
+Por isso `contaOculta.test.ts` cobra TODA definição dessas funções em migration
+posterior à 0180 que leia `corretores` (o invólucro de dois argumentos, que só
+repassa, não é cobrado). Provado com a 0183 real da branch: reprova roleta,
+ranking e o sorteio de três argumentos. Na fusão:
+
+1. a 0183 leva `and not c.oculta` nas três (no ranking,
+   `(not c.oculta or c.id = v_eu)`);
+2. a 0183 cria a coluna antes de citá-la
+   (`alter table public.corretores add column if not exists oculta boolean not null default false`),
+   senão uma instalação nova, que roda em ordem de arquivo, quebra no sorteio
+   (`language sql`, corpo conferido na criação). A guarda também cobra isso.
 
 Ver [[conta-so-whatsapp]], [[navegacao-do-painel-tem-regua]].
