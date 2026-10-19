@@ -40,5 +40,17 @@ describe("repasse de lead", () => {
       expect(origem, "detalhes.origem_anterior").toBeGreaterThan(repasse);
       expect(sobrescreve, "update da origem").toBeGreaterThan(origem);
     });
+
+    // A linha de repasse não se apaga (lead_interacoes não tem DELETE). Se o
+    // destino for de outro grupo, o gatilho da 0182 recusa o update DEPOIS
+    // dela, e sobra um repasse que não houve. O grupo do destino tem de ser
+    // conferido antes da linha.
+    it(`${funcao} confere o grupo do destino antes de gravar o repasse`, () => {
+      const corpo = corpoDaFuncao(arquivo, funcao);
+      const repasse = corpo.indexOf('tipo: "repasse"');
+      const grupo = corpo.indexOf(".grupo_id !== guarda.corretor.grupoId");
+      expect(grupo, "checagem de grupo do destino").toBeGreaterThanOrEqual(0);
+      expect(repasse, "linha de repasse").toBeGreaterThan(grupo);
+    });
   }
 });

@@ -554,14 +554,20 @@ export async function redistribuirCarteira(
 
   const supabase = await createClient();
 
-  // O destino precisa existir e estar ativo — mandar uma carteira para um
-  // corretor desativado só trocaria um limbo por outro.
+  // O destino precisa existir, ser do grupo de quem repassa e estar ativo —
+  // mandar uma carteira para um corretor desativado só trocaria um limbo por
+  // outro. O grupo é conferido AQUI, antes da linha de repasse: `corretores`
+  // é legível por todos, então um id de outro grupo passaria pela leitura, o
+  // gatilho da 0182 recusaria o update, e as linhas `repasse` (que não se
+  // apagam) ficariam dizendo à fase 5 que o lead foi repassado sem ter sido.
   const { data: destino } = await supabase
     .from("corretores")
-    .select("id, nome, ativo")
+    .select("id, nome, ativo, grupo_id")
     .eq("id", paraId)
     .maybeSingle();
-  if (!destino) return { erro: "Corretor de destino não encontrado." };
+  if (!destino || destino.grupo_id !== guarda.corretor.grupoId) {
+    return { erro: "Corretor de destino não encontrado." };
+  }
   if (!destino.ativo) {
     return { erro: `${destino.nome} está desativado — reative antes de passar leads para ele.` };
   }
@@ -569,7 +575,13 @@ export async function redistribuirCarteira(
   // Primeiro a carteira e a origem de cada lead: o update abaixo sobrescreve
   // `origem_atribuicao` com `manual`, e a fase 5 precisa saber de onde cada
   // um veio (L30).
-  let leitura = supabase.from("leads").select("id, origem_atribuicao");
+  // Só a carteira do grupo de quem repassa: até a 0184 a sessão do gestor
+  // ainda enxerga outros grupos, e um lead alheio (ou sem dono, de outro
+  // grupo) ganharia linha de repasse antes de o gatilho recusar o update.
+  let leitura = supabase
+    .from("leads")
+    .select("id, origem_atribuicao")
+    .eq("grupo_id", guarda.corretor.grupoId);
   leitura = deId === null ? leitura.is("corretor_id", null) : leitura.eq("corretor_id", deId);
   const { data: carteira, error: erroLeitura } = await leitura;
   if (erroLeitura) return { erro: traduzirErroBanco(erroLeitura.message) };
@@ -578,8 +590,12 @@ export async function redistribuirCarteira(
   }
 
   // O registro da origem vem ANTES do update: gravado depois, uma falha no
-  // meio perderia a origem para sempre. Se o update falhar, sobra uma linha
-  // de repasse com a origem que o lead ainda tem, o que não engana ninguém.
+  // meio perderia a origem para sempre. O preço é o inverso: se o update
+  // falhar, sobra uma linha de repasse para um lead que não mudou de dono, e
+  // a fase 5 a leria como repasse. Por isso tudo o que dá para conferir antes
+  // (destino no grupo e ativo, carteira do grupo) é conferido antes; o que
+  // sobra é falha de banco no meio, e o leitor da fase 5 deve confirmar que o
+  // dono atual do lead é o `detalhes.para` da linha.
   const { error: erroRepasse } = await createServiceClient()
     .from("lead_interacoes")
     .insert(
