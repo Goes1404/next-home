@@ -83,10 +83,13 @@ describe("o site público não vai ao banco por requisição", () => {
     expect(culpados).toEqual([]);
   });
 
-  it("o proxy só fala com o Auth dentro de /corretor, e localmente", () => {
+  // A área da plataforma (fase 2A) também exige sessão: ela entra na mesma
+  // condição, com fronteira explícita, e a vitrine continua fora do Auth.
+  it("o proxy só fala com o Auth dentro de /corretor e /plataforma, e localmente", () => {
     const fonte = ler("proxy.ts");
     expect(fonte).not.toContain("getUser(");
-    const guarda = fonte.indexOf("if (areaDoCorretor)");
+    expect(fonte).toContain('pathname === "/plataforma" || pathname.startsWith("/plataforma/")');
+    const guarda = fonte.indexOf("if (areaDoCorretor || areaDaPlataforma)");
     const auth = fonte.indexOf("auth.getClaims(");
     expect(guarda).toBeGreaterThan(-1);
     expect(auth).toBeGreaterThan(guarda);

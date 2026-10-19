@@ -2,6 +2,7 @@ import "server-only";
 
 import { notFound } from "next/navigation";
 import { getCorretorLogado, type CorretorSessao } from "@/lib/corretorSessao";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Guardas de papel para as áreas de gestão.
@@ -48,4 +49,43 @@ export async function exigirGestorNaAcao(): Promise<ResultadoGuarda> {
     return { erro: "Esta ação é restrita a quem administra a imobiliária." };
   }
   return { corretor };
+}
+
+/**
+ * O administrador da PLATAFORMA (área `/plataforma`), não o gestor de um grupo.
+ *
+ * Decide pela SESSÃO: `eh_admin_da_plataforma()` lê
+ * `administradores_da_plataforma` com o `auth.uid()` do JWT (0181). Nunca
+ * pela chave de serviço, que ignora quem chama e diria "sim" a qualquer um.
+ *
+ * Não passa por `getCorretorLogado()`: o administrador da plataforma pode não
+ * ter ficha em `corretores`, e aí a sessão do painel seria `null` para ele.
+ *
+ * Erro do banco recusa: numa guarda, "não sei se é administrador" vale "não é".
+ *
+ * O resultado (`{ userId }`) é a PROVA que as leituras da plataforma pedem
+ * por parâmetro (`src/lib/plataforma/`): quem chama não tem como pular a guarda.
+ */
+async function adminDaPlataformaDaSessao(): Promise<{ userId: string } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (!userId) return null;
+  const { data: ehAdmin, error } = await supabase.rpc("eh_admin_da_plataforma");
+  if (error || ehAdmin !== true) return null;
+  return { userId };
+}
+
+/** Para `page.tsx`/`layout.tsx` de `/plataforma`. Em CADA página (ver acima). */
+export async function exigirAdminDaPlataformaNaPagina(): Promise<{ userId: string }> {
+  const admin = await adminDaPlataformaDaSessao();
+  if (!admin) notFound();
+  return admin;
+}
+
+/** Para Server Actions de `/plataforma`. */
+export async function exigirAdminDaPlataformaNaAcao(): Promise<{ userId: string } | { erro: string }> {
+  const admin = await adminDaPlataformaDaSessao();
+  if (!admin) return { erro: "Esta ação é restrita a quem administra a plataforma." };
+  return admin;
 }

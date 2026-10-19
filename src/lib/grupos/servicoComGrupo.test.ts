@@ -33,6 +33,13 @@ import { leiturasDe, semComentarios, type Leitura } from "./codigoFonte";
  *   lado, casado depois da leitura, pode ter o grupo apenas na projeção.
  * - `plataforma`: só o que age linha a linha, sem juntar nem somar (cada
  *   linha fica no próprio grupo).
+ * - `plataforma-admin`: a área `/plataforma`, que lê VÁRIOS grupos de
+ *   propósito (o painel do administrador da plataforma). A chave só entra
+ *   depois de `exigirAdminDaPlataformaNaPagina`/`NaAcao` no mesmo ponto de
+ *   entrada, ou numa função exportada que recebe a prova dessa guarda
+ *   (`_prova: { userId: string }`) — e aí todo importador chama a guarda
+ *   antes de usá-la. Nenhuma consulta toca tabela de conversa, mensagem,
+ *   dossiê ou nota (§4, §11: o administrador nunca vê conversa nem ficha).
  *
  * Arquivo novo fora do MAPA reprova pedindo a categoria. A regressão é
  * calada: o código segue funcionando com um grupo só.
@@ -48,6 +55,7 @@ type Categoria =
   | { categoria: "agrega-por-grupo" }
   | { categoria: "cruza-conjuntos"; lados: [string, string] }
   | { categoria: "plataforma" }
+  | { categoria: "plataforma-admin" }
   | { categoria: "helper" };
 
 type Entrada = Categoria & { motivo: string };
@@ -169,6 +177,9 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },
   "src/lib/whatsapp/sonda.ts": { categoria: "plataforma", motivo: "diagnóstico do provedor por instância, em tabela global" },
   "src/lib/whatsapp/vencedoraAB.ts": { categoria: "plataforma", motivo: "decide o A/B lista a lista, nos itens da própria lista" },
+
+  // ── Área da plataforma: lê vários grupos, só depois da guarda dela ────────
+  "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
 };
 
 /** A definição da chave: não é uso. */
@@ -477,6 +488,104 @@ function leiturasSemGrupo(codigo: string, ignorar: string[] = []): string[] {
     .map((l) => l.cadeia.replace(/\s+/g, " ").slice(0, 120));
 }
 
+/** As duas guardas da área da plataforma (`src/lib/guardas.ts`). */
+const GUARDAS_DA_PLATAFORMA = ["exigirAdminDaPlataformaNaPagina", "exigirAdminDaPlataformaNaAcao"];
+const CHAMA_GUARDA_DA_PLATAFORMA = /(?<![\w$.])exigirAdminDaPlataforma(NaPagina|NaAcao)\s*\(/;
+/** O parâmetro que carrega o resultado da guarda: o chamador não tem como esquecê-la. */
+const PROVA_DE_ADMIN = /\(\s*_?prova\s*:\s*\{\s*userId\s*:\s*string\s*;?\s*\}/;
+/** O que o administrador da plataforma nunca lê: conversa, mensagem, dossiê, nota. */
+const FORA_DA_PLATAFORMA = [
+  "whatsapp_mensagens",
+  "whatsapp_conversas",
+  "lead_observacoes_ia",
+  "lead_interacoes",
+  "anotacoes",
+  "ia_interacoes",
+];
+
+/**
+ * Um arquivo `plataforma-admin`, lido sem comentários. Cada declaração que
+ * chama `createServiceClient(` precisa, ANTES da chamada e dentro dela, de
+ * uma de duas coisas: a chamada a `exigirAdminDaPlataforma*` (é ela própria o
+ * ponto de entrada), ou a prova no parâmetro (`_prova: { userId: string }`),
+ * e então ser exportada: quem a importa é cobrado à parte. `exigemProva`
+ * lista essas funções.
+ */
+function problemasDePlataformaAdmin(codigoSemComentarios: string): { erros: string[]; exigemProva: string[] } {
+  const codigo = semImports(codigoSemComentarios);
+  const erros: string[] = [];
+  const exigemProva: string[] = [];
+  const decls = declaracoes(codigo);
+  const primeira = codigo.indexOf("createServiceClient(");
+  if (primeira < 0) erros.push("não achei createServiceClient(");
+  else if (primeira < (decls[0]?.inicio ?? codigo.length)) erros.push("createServiceClient( no topo do módulo");
+  for (const d of decls) {
+    const corpo = codigo.slice(d.inicio, d.fim);
+    const chave = corpo.indexOf("createServiceClient(");
+    if (chave < 0) continue;
+    const antes = corpo.slice(0, chave);
+    if (CHAMA_GUARDA_DA_PLATAFORMA.test(antes)) continue;
+    if (PROVA_DE_ADMIN.test(antes)) {
+      if (d.exportado) exigemProva.push(d.nome);
+      else erros.push(`${d.nome}: a prova da guarda só vale em função exportada (quem importa é cobrado)`);
+      continue;
+    }
+    erros.push(`${d.nome}: createServiceClient( sem exigirAdminDaPlataforma* antes nem a prova da guarda no parâmetro`);
+  }
+  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*["'](\w+)["']/g)) {
+    if (FORA_DA_PLATAFORMA.includes(m[1])) erros.push(`consulta ${m[1]}: a área da plataforma não lê conversa nem ficha`);
+  }
+  return { erros, exigemProva };
+}
+
+describe("guarda: a regra de plataforma-admin morde", () => {
+  it("reprova a chave antes da guarda", () => {
+    const codigo = `export async function ler() {
+      const s = createServiceClient();
+      await exigirAdminDaPlataformaNaAcao();
+      return s.from("grupos").select("id");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova a chave sem guarda nem prova", () => {
+    const codigo = `export async function ler(grupoId: string) {
+      return createServiceClient().from("grupos").select("id").eq("id", grupoId);
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova a prova em função que não é exportada", () => {
+    const codigo = `async function ler(_prova: { userId: string }) {
+      return createServiceClient().from("grupos").select("id");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("reprova consulta de conversa, mesmo depois da guarda", () => {
+    const codigo = `export async function ler() {
+      await exigirAdminDaPlataformaNaPagina();
+      return createServiceClient().from("whatsapp_mensagens").select("id", { count: "exact", head: true });
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("aceita a guarda antes da chave", () => {
+    const codigo = `export async function ler() {
+      const prova = await exigirAdminDaPlataformaNaAcao();
+      return createServiceClient().from("grupos").select("id");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo)).toEqual({ erros: [], exigemProva: [] });
+  });
+
+  it("aceita a prova no parâmetro e pede a guarda a quem importa", () => {
+    const codigo = `export async function ler(_prova: { userId: string }) {
+      return createServiceClient().from("grupos").select("id");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo)).toEqual({ erros: [], exigemProva: ["ler"] });
+  });
+});
+
 describe("guarda: a chave de serviço está classificada por grupo", () => {
   it("a varredura acha os usuários (senão a guarda aprova tudo calada)", () => {
     expect(usuarios.length).toBeGreaterThanOrEqual(80);
@@ -486,7 +595,7 @@ describe("guarda: a chave de serviço está classificada por grupo", () => {
     const fora = usuarios.filter((f) => !MAPA[f]);
     expect(
       fora,
-      `Classifique em MAPA (servicoComGrupo.test.ts) com a categoria: por-id, helper, equipe, agrega-por-grupo, cruza-conjuntos ou plataforma.\n${fora.join("\n")}`,
+      `Classifique em MAPA (servicoComGrupo.test.ts) com a categoria: por-id, helper, equipe, agrega-por-grupo, cruza-conjuntos, plataforma ou plataforma-admin.\n${fora.join("\n")}`,
     ).toEqual([]);
   });
 
@@ -653,6 +762,39 @@ describe("guarda: a chave de serviço está classificada por grupo", () => {
         const soNaProjecao = l.tabela === primeiro && casaDepois && l.cadeia.includes("grupo_id");
         if (!soNaProjecao) erros.push(`${arquivo}: ${l.tabela} lido sem filtrar grupo_id`);
       }
+    }
+    expect(erros).toEqual([]);
+  });
+
+  it("plataforma-admin: a chave só depois da guarda da plataforma (e quem importa a chama antes)", () => {
+    const erros: string[] = [];
+    const arquivos = Object.entries(MAPA).filter(([, e]) => e.categoria === "plataforma-admin").map(([f]) => f);
+    expect(arquivos.length).toBeGreaterThanOrEqual(1);
+    for (const arquivo of arquivos) {
+      const { erros: doArquivo, exigemProva } = problemasDePlataformaAdmin(semComentarios(ler(arquivo)));
+      erros.push(...doArquivo.map((e) => `${arquivo}: ${e}`));
+      if (exigemProva.length === 0) continue;
+      let importadores = 0;
+      for (const quem of todosOsArquivos) {
+        if (quem === arquivo) continue;
+        const imp = importacoesDe(quem).find((i) => i.alvo === arquivo);
+        if (!imp) continue;
+        const usos = [...imp.dinamico];
+        for (const [nome, posicoes] of imp.usos) {
+          if (nome === "*" || exigemProva.includes(nome)) usos.push(...posicoes);
+        }
+        if (usos.length === 0) continue;
+        importadores++;
+        const codigo = semImports(semComentarios(ler(quem)));
+        for (const pos of usos) {
+          const problemas = GUARDAS_DA_PLATAFORMA.map((g) => usoValidado(codigo, pos, g));
+          if (problemas.every(Boolean)) {
+            erros.push(`${quem} (usa ${arquivo}): ${problemas[0]}`);
+            break;
+          }
+        }
+      }
+      if (importadores === 0) erros.push(`${arquivo}: ninguém importa; não há quem chame a guarda`);
     }
     expect(erros).toEqual([]);
   });

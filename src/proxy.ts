@@ -53,9 +53,13 @@ export async function proxy(request: NextRequest) {
   // que mandaria todo visitante para a tela de login (e, agora, faria a
   // vitrine pagar o Auth que só o painel precisa).
   const areaDoCorretor = pathname === "/corretor" || pathname.startsWith("/corretor/");
-  const precisaLogin = areaDoCorretor && pathname !== "/corretor/entrar";
+  // A área do administrador da plataforma (fase 2A): só sessão aqui; quem
+  // decide se a pessoa é administrador é a guarda de cada página
+  // (`exigirAdminDaPlataformaNaPagina`), pelo banco.
+  const areaDaPlataforma = pathname === "/plataforma" || pathname.startsWith("/plataforma/");
+  const precisaLogin = (areaDoCorretor && pathname !== "/corretor/entrar") || areaDaPlataforma;
 
-  if (areaDoCorretor) {
+  if (areaDoCorretor || areaDaPlataforma) {
     const supabase = createServerClient(supabaseUrl(), supabasePublishableKey(), {
       cookies: {
         getAll: () => request.cookies.getAll(),
