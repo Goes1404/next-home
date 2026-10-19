@@ -17,3 +17,11 @@ export const GRUPO_NEXT_HOME_ID = "00000000-0000-0000-0000-000000000001";
 export function grupoDoSite(): string {
   return GRUPO_NEXT_HOME_ID;
 }
+
+/**
+ * O tipo do grupo (0181, `grupos.tipo`): imobiliária com equipe, ou corretor
+ * independente, que é um grupo de uma pessoa só. O painel usa para esconder
+ * do menu o que só faz sentido com equipe (ranking, repasse de leads, convite
+ * de contas). Esconder não é bloquear: as rotas continuam abrindo.
+ */
+export type TipoDoGrupo = "imobiliaria" | "independente";

@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { sair } from "@/app/corretor/actions";
 import {
   ITENS_DA_CONTA,
@@ -85,11 +86,11 @@ function Chevron({ aberto, className }: { aberto: boolean; className?: string })
   );
 }
 
-export function GavetaLateral({ ehGestor }: { ehGestor: boolean }) {
+export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; tipoDoGrupo: TipoDoGrupo }) {
   const atual = usePathname();
   const aberta = useGavetaAberta(atual);
   const montado = useMontado();
-  const grupos = gruposVisiveis(ehGestor);
+  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo);
   const dono = destinoAtivo(atual);
   const modulo = moduloAtivo(atual);
   const marcas = useContadoresDoMenu();

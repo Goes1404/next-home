@@ -35,7 +35,7 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
      * botões que o polegar já tinha embaixo — um toque para ver o que já
      * estava na tela. O comentário do componente prometia "o painel inteiro".
      */
-    const naGaveta = gruposVisiveis(false).flatMap((g) => g.itens.map((i) => i.href));
+    const naGaveta = gruposVisiveis(false, "imobiliaria").flatMap((g) => g.itens.map((i) => i.href));
     const naBarra = new Set(ATALHOS_MOBILE.map((i) => i.href));
     const exclusivos = naGaveta.filter((h) => !naBarra.has(h));
     expect(exclusivos.length).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
      * WhatsApp enquanto o menu acendia Pessoas, então o painel afirmava duas
      * seções ao mesmo tempo.
      */
-    const itens = gruposVisiveis(false).flatMap((g) => g.itens);
+    const itens = gruposVisiveis(false, "imobiliaria").flatMap((g) => g.itens);
     const pessoas = itens.find((i) => i.href === "/corretor/pessoas");
     expect(pessoas).toBeDefined();
 
@@ -82,7 +82,7 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
      *
      * O próximo destino que alguém quiser criar NÃO cabe: vira subtópico.
      */
-    const itens = gruposVisiveis(true).flatMap((g) => g.itens);
+    const itens = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/financeiro")).toBe(true);
     expect(itens.some((i) => i.href === "/corretor/consultor")).toBe(false);
     expect(subitensDe("/corretor/whatsapp").map((s) => s.href)).toContain("/corretor/consultor");
@@ -100,19 +100,19 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
   it("o menu inteiro cabe numa olhada", () => {
     // Sete é o teto: acima disso o menu deixa de ser lido e passa a ser
     // procurado, que é o começo do labirinto.
-    expect(gruposVisiveis(true).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
+    expect(gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
   });
 
   it("Conta e senha NÃO são itens de menu — moram no menu do avatar", () => {
-    const itens = gruposVisiveis(true).flatMap((g) => g.itens);
+    const itens = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
     expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
     expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha"]);
   });
 
   it("gestor vê exatamente um destino a mais, e é Administração", () => {
-    const doGestor = gruposVisiveis(true).flatMap((g) => g.itens);
-    const doCorretor = gruposVisiveis(false).flatMap((g) => g.itens);
+    const doGestor = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
+    const doCorretor = gruposVisiveis(false, "imobiliaria").flatMap((g) => g.itens);
 
     expect(doGestor.length).toBe(doCorretor.length + 1);
     expect(doGestor.some((i) => i.href === "/corretor/admin")).toBe(true);
@@ -237,7 +237,7 @@ describe("subtópicos: uma hierarquia só", () => {
     // Se `gruposVisiveis` achatasse os subitens, o menu voltaria a ser a
     // lista de treze que a reforma desfez — só que sem ninguém perceber,
     // porque o número continuaria "passando" em outro lugar.
-    const topicos = gruposVisiveis(true).flatMap((g) => g.itens);
+    const topicos = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(topicos.length).toBeLessThanOrEqual(7);
     expect(topicos.some((i) => i.subitens && i.subitens.length > 0)).toBe(true);
   });
@@ -484,6 +484,133 @@ describe("seções de subtópicos (Administração)", () => {
       const seq = (item.subitens ?? []).map((s) => s.secao).filter(Boolean);
       const blocos = seq.filter((s, i) => s !== seq[i - 1]);
       expect(new Set(blocos).size).toBe(blocos.length);
+    }
+  });
+});
+
+describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
+  /*
+   * No grupo de uma pessoa não há equipe: ranking, desempenho da equipe,
+   * repasse de leads e convite de contas não têm a quem se referir (§10 e
+   * L35 do desenho). ESCONDER não é bloquear: as rotas continuam existindo
+   * e abrem por endereço, só saem do menu.
+   */
+  const DE_EQUIPE = [
+    "/corretor/admin/leads",
+    "/corretor/financeiro/ranking",
+    "/corretor/financeiro/desempenho",
+    "/corretor/admin/contas",
+  ];
+
+  /** Tópicos com os subtópicos visíveis, só os endereços. */
+  const mapa = (ehGestor: boolean, tipo: "imobiliaria" | "independente") =>
+    gruposVisiveis(ehGestor, tipo).flatMap((g) =>
+      g.itens.map((i) => [i.href, (i.subitens ?? []).map((s) => s.href)] as const),
+    );
+
+  const todosOsEnderecos = (ehGestor: boolean, tipo: "imobiliaria" | "independente") =>
+    mapa(ehGestor, tipo).flatMap(([href, subs]) => [href, ...subs]);
+
+  it("independente não vê itens de equipe", () => {
+    for (const ehGestor of [true, false]) {
+      const visiveis = todosOsEnderecos(ehGestor, "independente");
+      for (const href of DE_EQUIPE) expect(visiveis).not.toContain(href);
+    }
+    // O resto da Administração continua: o independente é gestor do próprio grupo.
+    expect(todosOsEnderecos(true, "independente")).toContain("/corretor/admin/whatsapp");
+    expect(todosOsEnderecos(true, "independente")).toContain("/corretor/admin/marca");
+  });
+
+  it("independente perde só os itens de equipe, nada além", () => {
+    for (const ehGestor of [true, false]) {
+      const antes = todosOsEnderecos(ehGestor, "imobiliaria");
+      const depois = todosOsEnderecos(ehGestor, "independente");
+      expect(antes.filter((h) => !depois.includes(h)).sort()).toEqual(
+        DE_EQUIPE.filter((h) => antes.includes(h)).sort(),
+      );
+    }
+  });
+
+  it("esconder não é bloquear: as rotas de equipe continuam no mapa", () => {
+    const noMapa = GRUPOS_NAV.flatMap((g) => g.itens).flatMap((i) => [
+      i.href,
+      ...(i.subitens ?? []).map((s) => s.href),
+    ]);
+    for (const href of DE_EQUIPE) expect(noMapa).toContain(href);
+    // E continuam acendendo o tópico certo quando abertas por endereço.
+    expect(destinoAtivo("/corretor/financeiro/ranking")?.href).toBe("/corretor/financeiro");
+    expect(destinoAtivo("/corretor/admin/contas")?.href).toBe("/corretor/admin");
+  });
+
+  it("imobiliária vê tudo como antes", () => {
+    expect(mapa(true, "imobiliaria")).toEqual([
+      ["/corretor", []],
+      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/visitas", "/corretor/anotacoes"]],
+      ["/corretor/imoveis", ["/corretor/imoveis", "/corretor/links"]],
+      [
+        "/corretor/financeiro",
+        [
+          "/corretor/financeiro",
+          "/corretor/financeiro/extrato",
+          "/corretor/financeiro/caixa",
+          "/corretor/financeiro/resultado",
+          "/corretor/financeiro/fiscal",
+          "/corretor/financeiro/contador",
+          "/corretor/financeiro/assistente",
+          "/corretor/financeiro/ranking",
+          "/corretor/financeiro/desempenho",
+        ],
+      ],
+      ["/corretor/whatsapp", ["/corretor/whatsapp", "/corretor/conversas", "/corretor/consultor"]],
+      [
+        "/corretor/marketing",
+        [
+          "/corretor/marketing",
+          "/corretor/imoveis/criar-imagem",
+          "/corretor/marketing/video",
+          "/corretor/campanhas",
+          "/corretor/marketing/impulsionamentos",
+        ],
+      ],
+      [
+        "/corretor/admin",
+        [
+          "/corretor/admin",
+          "/corretor/admin/leads",
+          "/corretor/admin/contas",
+          "/corretor/admin/whatsapp",
+          "/corretor/admin/construtoras",
+          "/corretor/admin/parceiros",
+          "/corretor/admin/precos",
+          "/corretor/admin/credito",
+          "/corretor/admin/marca",
+        ],
+      ],
+    ]);
+    expect(mapa(false, "imobiliaria")).toEqual([
+      ["/corretor", []],
+      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/visitas", "/corretor/anotacoes"]],
+      ["/corretor/imoveis", ["/corretor/imoveis", "/corretor/links"]],
+      ["/corretor/financeiro", ["/corretor/financeiro", "/corretor/financeiro/extrato", "/corretor/financeiro/ranking"]],
+      ["/corretor/whatsapp", ["/corretor/whatsapp", "/corretor/conversas", "/corretor/consultor"]],
+      [
+        "/corretor/marketing",
+        [
+          "/corretor/marketing",
+          "/corretor/imoveis/criar-imagem",
+          "/corretor/marketing/video",
+          "/corretor/campanhas",
+          "/corretor/marketing/impulsionamentos",
+        ],
+      ],
+    ]);
+  });
+
+  it("o teto de sete destinos vale para os dois tipos de grupo", () => {
+    for (const ehGestor of [true, false]) {
+      for (const tipo of ["imobiliaria", "independente"] as const) {
+        expect(gruposVisiveis(ehGestor, tipo).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
+      }
     }
   });
 });

@@ -3,6 +3,7 @@ import { cache } from "react";
 
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { PADROES_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
 import {
   ETAPAS_FUNIL,
@@ -42,6 +43,12 @@ export type CorretorSessao = CorretorPerfil & {
    * taxas de crédito.
    */
   grupoId: string;
+  /**
+   * Imobiliária (com equipe) ou corretor independente (grupo de uma pessoa).
+   * Só governa o menu: no independente, as ferramentas de equipe saem da
+   * navegação, mas as rotas continuam abrindo (§10 do desenho).
+   */
+  tipoDoGrupo: TipoDoGrupo;
 };
 
 /**
@@ -67,11 +74,21 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
   const user = sessao?.claims.sub ? { id: sessao.claims.sub } : null;
   if (!user) return null;
 
+  // O tipo do grupo vem no mesmo pedido, pela chave `grupo_id` (0181). A
+  // linha do grupo só é lida pelo próprio grupo ("grupos: cada um le o
+  // proprio"); se ela não vier, o menu fica como sempre foi (imobiliária).
   const { data } = await supabase
     .from("corretores")
-    .select(`${SELECT_CORRETOR}, papel, ativo, grupo_id`)
+    .select(`${SELECT_CORRETOR}, papel, ativo, grupo_id, grupo:grupos(tipo)`)
     .eq("user_id", user.id)
-    .maybeSingle<LinhaCorretor & { papel: PapelCorretor; ativo: boolean; grupo_id: string }>();
+    .maybeSingle<
+      LinhaCorretor & {
+        papel: PapelCorretor;
+        ativo: boolean;
+        grupo_id: string;
+        grupo: { tipo: TipoDoGrupo } | null;
+      }
+    >();
 
   // Sem `slug` a conta existe mas ainda não foi vinculada a um cadastro
   // publicável — o painel trata esse caso à parte.
@@ -83,7 +100,13 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
   // sem dizer por quê.
   if (!data.ativo) return null;
 
-  return { ...mapCorretor(data), papel: data.papel, ativo: data.ativo, grupoId: data.grupo_id };
+  return {
+    ...mapCorretor(data),
+    papel: data.papel,
+    ativo: data.ativo,
+    grupoId: data.grupo_id,
+    tipoDoGrupo: data.grupo?.tipo === "independente" ? "independente" : "imobiliaria",
+  };
 });
 
 /**

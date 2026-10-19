@@ -51,6 +51,19 @@ describe("getCorretorLogado", () => {
     expect(eu?.papel).toBe("corretor");
   });
 
+  it("traz o tipo do grupo, para o menu esconder o que é de equipe", async () => {
+    linha = corretor({ grupo: { tipo: "independente" } });
+    expect((await getCorretorLogado())?.tipoDoGrupo).toBe("independente");
+
+    linha = corretor({ grupo: { tipo: "imobiliaria" } });
+    expect((await getCorretorLogado())?.tipoDoGrupo).toBe("imobiliaria");
+  });
+
+  it("sem a linha do grupo, o menu fica como antes (imobiliária)", async () => {
+    linha = corretor({ grupo: null });
+    expect((await getCorretorLogado())?.tipoDoGrupo).toBe("imobiliaria");
+  });
+
   it("corretor desativado não tem sessão no painel", async () => {
     linha = corretor({ ativo: false, papel: "gestor" });
     expect(await getCorretorLogado()).toBeNull();
