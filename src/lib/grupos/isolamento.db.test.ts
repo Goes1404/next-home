@@ -5,8 +5,37 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Sql, TransactionSql } from "postgres";
-import { comoUsuario, conectar, criarGrupo, emTransacaoDesfeita } from "./apoioDoBanco";
+import { comoUsuario, conectar, criarGrupo, emTransacaoDesfeita, type Conexao } from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
+import { TABELAS_GLOBAIS } from "./tabelasDoGrupo";
+
+/** Um lead do corretor, gravado como `postgres` (a chave de serviço). */
+async function criarLead(sql: Conexao, corretorId: string, nome = "Lead de teste"): Promise<string> {
+  const [{ id }] = await sql<{ id: string }[]>`
+    insert into public.leads (nome, corretor_id) values (${nome}, ${corretorId}) returning id
+  `;
+  return id;
+}
+
+/** Uma conversa de WhatsApp do lead, no corretor dono dele. */
+async function criarConversa(sql: Conexao, corretorId: string, leadId: string): Promise<string> {
+  const [{ id }] = await sql<{ id: string }[]>`
+    insert into public.whatsapp_conversas (corretor_id, lead_id, telefone_cliente)
+    values (${corretorId}, ${leadId}, '5511988887777')
+    returning id
+  `;
+  return id;
+}
+
+/** Uma venda do corretor, ligada ao lead quando ele vem. */
+async function criarVenda(sql: Conexao, corretorId: string, leadId: string | null): Promise<string> {
+  const [{ id }] = await sql<{ id: string }[]>`
+    insert into public.vendas (corretor_id, lead_id, valor_venda, data_venda, comissao_valor, imovel_descricao)
+    values (${corretorId}, ${leadId}, 500000, date '2026-10-19', 25000, 'Apartamento de teste')
+    returning id
+  `;
+  return id;
+}
 
 describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   let sql: Sql;
@@ -255,6 +284,403 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await comAvisos.end();
     }
     expect(avisos).toContain("grupo_id inferido pelo grupo único em corretores");
+  });
+
+  // -------------------------------------------------------------------------
+  // grupo_id em toda tabela (0182)
+  // -------------------------------------------------------------------------
+
+  it("toda tabela do public tem grupo_id ou está em TABELAS_GLOBAIS", async () => {
+    const linhas = await sql<{ tabela: string; tem: boolean }[]>`
+      select c.relname as tabela,
+             exists (
+               select 1 from pg_attribute a
+                where a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
+             ) as tem
+        from pg_class c
+       where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+       order by 1
+    `;
+    const globais = new Set<string>(TABELAS_GLOBAIS);
+    const faltam = linhas.filter((l) => !l.tem && !globais.has(l.tabela)).map((l) => l.tabela);
+    expect(faltam, `sem grupo_id e fora de TABELAS_GLOBAIS: ${faltam.join(", ")}`).toEqual([]);
+    // E o contrário: tabela declarada global não pode ter ganhado grupo, nem
+    // ter deixado de existir (lista que cita tabela morta é comentário velho).
+    const existentes = new Map(linhas.map((l) => [l.tabela, l.tem]));
+    for (const global of TABELAS_GLOBAIS) {
+      expect(existentes.get(global), `TABELAS_GLOBAIS cita ${global}`).toBe(false);
+    }
+  });
+
+  it("toda tabela com grupo_id tem o gatilho <tabela>_00_grupo", async () => {
+    const sem = await sql<{ tabela: string }[]>`
+      select c.relname as tabela
+        from pg_class c
+        join pg_attribute a on a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
+       where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+         and not exists (
+           select 1 from pg_trigger t
+             join pg_proc p on p.oid = t.tgfoid
+            where t.tgrelid = c.oid and t.tgname = c.relname || '_00_grupo'
+              and p.proname = 'carimbar_grupo'
+         )
+       order by 1
+    `;
+    expect(sem.map((l) => l.tabela)).toEqual([]);
+  });
+
+  it("lead criado pelo corretor do grupo B nasce no grupo B", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [{ grupo_id }] = await comoUsuario(tx, b.corretorUserId, (eu) =>
+        eu<{ grupo_id: string }[]>`
+          insert into public.leads (nome, corretor_id) values ('Lead de B', ${b.corretorId})
+          returning grupo_id
+        `,
+      );
+      expect(grupo_id).toBe(b.grupoId);
+    });
+  });
+
+  it("mensagem herda o grupo da conversa", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      const conversa = await criarConversa(tx, b.corretorId, await criarLead(tx, b.corretorId));
+      const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+        insert into public.whatsapp_mensagens (conversa_id, conteudo, remetente)
+        values (${conversa}, 'Oi', 'cliente')
+        returning grupo_id
+      `;
+      expect(grupo_id).toBe(b.grupoId);
+    });
+  });
+
+  it("recusa grupo divergente da linha-mãe", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeA = await criarLead(tx, a.corretorId);
+      await expect(
+        tx`
+          insert into public.inbound_logs (lead_id, status, grupo_id)
+          values (${leadDeA}, 'sucesso', ${b.grupoId})
+        `,
+      ).rejects.toThrow(/grupo da linha difere do grupo de leads/);
+    });
+  });
+
+  // Review Focus 2.
+  it("mudar o dono para alguém de outro grupo é recusado", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeB = await criarLead(tx, b.corretorId);
+      await expect(
+        tx`update public.leads set corretor_id = ${a.corretorId} where id = ${leadDeB}`,
+      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+    });
+  });
+
+  // Review Focus 1.
+  it("sem linha-mãe e com dois grupos, o insert falha", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      await criarGrupo(tx, { slug: "b" });
+      await expect(
+        tx`insert into public.inbound_logs (assunto, status) values ('Lead do portal', 'sucesso')`,
+      ).rejects.toThrow(/grupo_id obrigatório em inbound_logs/);
+    });
+  });
+
+  it("com um grupo só, o insert sem grupo cai nele", async () => {
+    const avisos: string[] = [];
+    const comAvisos = conectar({ avisos });
+    try {
+      await emTransacaoDesfeita(comAvisos, async (tx) => {
+        const [{ todos }] = await tx<{ todos: number }[]>`select count(*)::int as todos from grupos`;
+        expect(todos).toBe(1);
+        const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+          insert into public.inbound_logs (assunto, status) values ('Lead do portal', 'sucesso')
+          returning grupo_id
+        `;
+        expect(grupo_id).toBe(GRUPO_NEXT_HOME_ID);
+      });
+    } finally {
+      await comAvisos.end();
+    }
+    expect(avisos).toContain("grupo_id inferido pelo grupo único em inbound_logs");
+  });
+
+  // Review Focus 6.
+  it("lead inserido pela chave de serviço com dois grupos gera evento no grupo dele", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const lead = await criarLead(tx, b.corretorId);
+      const [{ grupo_id: doLead }] = await tx<{ grupo_id: string }[]>`
+        select grupo_id from public.leads where id = ${lead}
+      `;
+      expect(doLead).toBe(b.grupoId);
+      const eventos = await tx<{ grupo_id: string }[]>`
+        select grupo_id from public.marketing_eventos where lead_id = ${lead}
+      `;
+      expect(eventos).toEqual([{ grupo_id: b.grupoId }]);
+      const saidas = await tx<{ grupo_id: string }[]>`
+        select o.grupo_id from public.event_outbox o
+          join public.marketing_eventos e on e.id = o.marketing_evento_id
+         where e.lead_id = ${lead}
+      `;
+      expect(saidas.length).toBeGreaterThan(0);
+      expect(new Set(saidas.map((s) => s.grupo_id))).toEqual(new Set([b.grupoId]));
+    });
+  });
+
+  it("métrica da Meta com grupo explícito cria campanha canônica no mesmo grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [{ marketing_campanha_id, grupo_id }] = await tx<
+        { marketing_campanha_id: string; grupo_id: string }[]
+      >`
+        insert into public.meta_ads_metricas (dia, campanha_id, campanha_nome, grupo_id)
+        values (date '2026-10-19', 'teste-0182-campanha', 'Campanha de teste', ${b.grupoId})
+        returning marketing_campanha_id, grupo_id
+      `;
+      expect(grupo_id).toBe(b.grupoId);
+      const [campanha] = await tx<{ grupo_id: string }[]>`
+        select grupo_id from public.marketing_campanhas where id = ${marketing_campanha_id}
+      `;
+      expect(campanha).toEqual({ grupo_id: b.grupoId });
+    });
+  });
+
+  it("mensagem do estúdio herda o grupo da conversa do estúdio", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [{ id: conversa }] = await tx<{ id: string }[]>`
+        insert into public.estudio_conversas (corretor_id, tipo) values (${b.corretorId}, 'arte')
+        returning id
+      `;
+      const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+        insert into public.estudio_mensagens (conversa_id, papel, conteudo)
+        values (${conversa}, 'corretor', 'Uma arte do decorado')
+        returning grupo_id
+      `;
+      expect(grupo_id).toBe(b.grupoId);
+    });
+  });
+
+  // Review Focus 7: todas as mães são conferidas, não só a primeira.
+  it("FK secundária de outro grupo é recusada", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+
+      // Cada recusa num savepoint: erro aborta a transação, e a próxima
+      // conferência rodaria numa transação morta.
+      await expect(
+        tx.savepoint((sp) => sp`
+          insert into public.anotacoes (corretor_id, destinatario_id, texto)
+          values (${b.corretorId}, ${a.corretorId}, 'Liga para o cliente')
+        `),
+      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+
+      const vendaDeB = await criarVenda(tx, b.corretorId, null);
+      await expect(
+        tx.savepoint((sp) => sp`
+          insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_valor)
+          values (${vendaDeB}, ${a.corretorId}, 50, 0)
+        `),
+      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+
+      const [{ id: imovelDeA }] = await tx<{ id: string }[]>`
+        insert into public.empreendimentos (nome, slug, bairro, cidade, grupo_id)
+        values ('Imóvel de A', 'teste-0182-imovel-a', 'Centro', 'Barueri', ${a.grupoId})
+        returning id
+      `;
+      const leadDeB = await criarLead(tx, b.corretorId);
+      await expect(
+        tx`update public.leads set empreendimento_id = ${imovelDeA} where id = ${leadDeB}`,
+      ).rejects.toThrow(/grupo da linha difere do grupo de empreendimentos/);
+    });
+  });
+
+  it("UPDATE que não mexe na mãe não reconfere", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeB = await criarLead(tx, b.corretorId);
+      const vendaDeB = await criarVenda(tx, b.corretorId, leadDeB);
+
+      // A fase 5 dá à role a função de saída do corretor; aqui ela ganha, só
+      // dentro desta transação, o mínimo para mudar o grupo de um lead.
+      await tx`grant transferidor_de_grupo to postgres with set true`;
+      await tx`grant select, update on public.leads to transferidor_de_grupo`;
+      await tx`
+        create policy "teste 0182: transferidor" on public.leads
+          for all to transferidor_de_grupo using (true) with check (true)
+      `;
+      await tx`set local role transferidor_de_grupo`;
+      await tx`update public.leads set grupo_id = ${a.grupoId} where id = ${leadDeB}`;
+      await tx`reset role`;
+
+      const [{ grupo_id }] = await tx<{ grupo_id: string }[]>`
+        select grupo_id from public.leads where id = ${leadDeB}
+      `;
+      expect(grupo_id).toBe(a.grupoId);
+
+      // A venda segue no grupo B com o lead já no A: só a coluna que muda é
+      // conferida, e o status não é coluna-mãe.
+      const [venda] = await tx<{ status: string; grupo_id: string }[]>`
+        update public.vendas set status = 'distratada', distratada_em = now()
+         where id = ${vendaDeB}
+        returning status, grupo_id
+      `;
+      expect(venda).toEqual({ status: "distratada", grupo_id: b.grupoId });
+    });
+  });
+
+  it("ninguém troca grupo por variável de sessão", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeB = await criarLead(tx, b.corretorId);
+      await tx`select set_config('nexthome.transferindo_grupo', 'on', true)`;
+      await expect(
+        tx`update public.leads set grupo_id = ${a.grupoId} where id = ${leadDeB}`,
+      ).rejects.toThrow(/grupo_id de leads não muda/);
+    });
+  });
+
+  it("trava de disparo funciona com dois grupos", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      await criarGrupo(tx, { slug: "b" });
+      const [{ travou }] = await tx<{ travou: boolean }[]>`
+        select public.travar_disparo('teste-0182', 'dono-de-teste', 60) as travou
+      `;
+      expect(travou).toBe(true);
+    });
+  });
+
+  it("linha-mãe inexistente é recusada", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await expect(
+        tx`
+          insert into public.whatsapp_mensagens (conversa_id, conteudo, remetente)
+          values (gen_random_uuid(), 'Oi', 'cliente')
+        `,
+      ).rejects.toThrow(/linha-mãe inexistente em whatsapp_mensagens\.conversa_id/);
+    });
+  });
+
+  it("evento da plataforma fica sem grupo só com a marca, e o de um corretor herda o dele", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+
+      const [{ grupo_id: daPlataforma }] = await tx<{ grupo_id: string | null }[]>`
+        insert into public.admin_eventos (acao, detalhes)
+        values ('conta_criada', '{"origem":"plataforma"}'::jsonb)
+        returning grupo_id
+      `;
+      expect(daPlataforma).toBeNull();
+
+      const [{ grupo_id: doCorretor }] = await tx<{ grupo_id: string | null }[]>`
+        insert into public.admin_eventos (acao, alvo_corretor_id, detalhes)
+        values ('corretor_desativado', ${b.corretorId}, '{}'::jsonb)
+        returning grupo_id
+      `;
+      expect(doCorretor).toBe(b.grupoId);
+
+      await expect(
+        tx.savepoint(
+          (sp) => sp`insert into public.admin_eventos (acao, detalhes) values ('conta_criada', '{}'::jsonb)`,
+        ),
+      ).rejects.toThrow(/grupo_id obrigatório em admin_eventos/);
+
+      // Pela chave de serviço (papel `service_role`, como o PostgREST a
+      // roda), a marca vale do mesmo jeito.
+      await expect(
+        comoUsuario(tx, b.gestorUserId, async (eu) => {
+          await eu`reset role`;
+          await eu`set local role service_role`;
+          await eu`select set_config('request.jwt.claims', '{"role":"service_role"}', true)`;
+          return eu`
+            insert into public.admin_eventos (acao, detalhes)
+            values ('conta_criada', '{"origem":"plataforma"}'::jsonb)
+            returning grupo_id
+          `;
+        }),
+      ).resolves.toEqual([{ grupo_id: null }]);
+    });
+  });
+
+  it("a role que troca grupo não tem login nem quem a use", async () => {
+    const [role] = await sql<{ login: boolean }[]>`
+      select rolcanlogin as login from pg_roles where rolname = 'transferidor_de_grupo'
+    `;
+    expect(role).toEqual({ login: false });
+    // O Postgres 16+ dá ADMIN da role a quem a cria (postgres), mas sem SET
+    // nem INHERIT: ninguém age como ela sem um grant explícito.
+    const usam = await sql<{ membro: string }[]>`
+      select m.member::regrole::text as membro
+        from pg_auth_members m
+       where m.roleid = 'transferidor_de_grupo'::regrole
+         and (m.set_option or m.inherit_option)
+    `;
+    expect(usam).toEqual([]);
+  });
+
+  it("tabelas da plataforma não são lidas pela API", async () => {
+    // `grupos` é a exceção: cada logado lê a linha do próprio grupo (0181).
+    const daPlataforma = TABELAS_GLOBAIS.filter((t) => t !== "grupos");
+    const privilegios = await sql<{ tabela: string; papel: string; le: boolean }[]>`
+      select t as tabela, r as papel, has_table_privilege(r, 'public.' || t, 'select') as le
+        from unnest(${daPlataforma}::text[]) t,
+             unnest(array['anon', 'authenticated']) r
+    `;
+    expect(privilegios.filter((p) => p.le)).toEqual([]);
+  });
+
+  it("o carimbo do grupo não responde a chamada direta", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      const lead = await criarLead(tx, b.corretorId);
+      // Fora de um gatilho, a função seria um oráculo: diria a qualquer
+      // logado se um id existe e de que grupo ele é.
+      await expect(
+        comoUsuario(
+          tx,
+          b.corretorUserId,
+          (eu) => eu`
+            select public.derivar_grupo_da_linha(
+              'public.inbound_logs'::regclass, 'INSERT',
+              jsonb_build_object('lead_id', ${lead}::text), null,
+              array['lead_id', 'leads', 'id'], 'authenticated'
+            )
+          `,
+        ),
+      ).rejects.toThrow(/só roda dentro do gatilho/);
+    });
+  });
+
+  it("o mesmo candidato de catálogo pode entrar em dois grupos", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      for (const grupo of [a.grupoId, b.grupoId]) {
+        await tx`
+          insert into public.catalogo_candidatos (fonte, ref_externa, nome, grupo_id)
+          values ('teste', 'ref-0182', 'Lançamento de teste', ${grupo})
+        `;
+      }
+      const [{ n }] = await tx<{ n: number }[]>`
+        select count(*)::int as n from public.catalogo_candidatos where ref_externa = 'ref-0182'
+      `;
+      expect(n).toBe(2);
+    });
   });
 
   it("o apoio desfaz tudo: papel volta a postgres e o grupo de teste some", async () => {
