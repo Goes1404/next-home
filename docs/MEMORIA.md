@@ -10895,3 +10895,23 @@ Nota: [[plataforma-multi-grupo]].
   Python virou quebra de linha real numa regex de teste. Bloco com barra
   invertida vai por arquivo escrito com a ferramenta de escrita, não por
   heredoc.
+
+## Push na branch de produção dispara workflows de catálogo (19/10/2026)
+
+Nota: [[push-na-branch-de-producao-dispara-workflows-de-catalogo]].
+
+- **Cinco workflows do GitHub Actions rodam CONTRA PRODUÇÃO quando um push na
+  branch de produção muda o script que eles observam** (gatilho `push` com
+  filtro `paths`, chave de serviço nos secrets): `fotos-0137.yml`,
+  `fotos-da-fila.yml`, `publicar-fila.yml`, `variantes-de-imagem.yml` e
+  `videos-da-fila.yml`. A fase 1 mudou os cinco scripts (`--grupo`), então o
+  merge rodaria as cinco levas antigas de uma vez. Achado na Task 9.
+- **`publicar-fila` (`operacao0129.ts`) republica rascunho**: publica todo
+  slug da lista que estiver despublicado, inclusive imóvel tirado do ar de
+  propósito depois da leva de 28/09.
+- **Régua:** antes de mergear numa branch de produção um diff que toque
+  `scripts/catalogo/`, `scripts/ops/`, `scripts/video/` ou
+  `src/lib/imagens/variantes.ts`, cruzar `grep -l "paths:" .github/workflows/*.yml`
+  com o diff e desabilitar no GitHub (Actions → o workflow → ⋯ → Disable
+  workflow) cada um que casar, até conferir. `conferir-lista` e
+  `retomar-lista` também têm `paths` e mexem em lista de transmissão.

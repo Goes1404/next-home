@@ -4,7 +4,7 @@ tags: [moc, infra]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-12
+updated: 2026-10-19
 summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 ---
 # Infraestrutura — Map of Content
@@ -16,6 +16,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[producao-pode-servir-commit-de-outra-branch]] — o que está NO AR pode não estar em branch nenhuma; a prova é funcional (16/09)
 - [[branch-de-producao-nao-e-main]] ⚠️ ler primeiro
 - [[ci-vermelho-quinze-dias-pela-catraca-de-bundle]] — o deploy não espera o CI; vermelho vira paisagem (28/09)
+- [[push-na-branch-de-producao-dispara-workflows-de-catalogo]] ⚠️ workflows do Actions com `paths` rodam contra PRODUÇÃO quando o merge muda o script; `publicar-fila` republica rascunho. Desabilitar antes (19/10)
 
 - [[o-hobby-aceita-quatro-crons]] ⚠️ medido em 11/09: quatro crons passam
 - [[deploy-recusado-nao-aparece-no-historico]]

@@ -58,7 +58,8 @@ leva uns 15 minutos, em outro dia.
 
 1. **Horário de pouco tráfego.** Cedo, antes das 8h, ou à noite depois das
    22h. Avise a equipe (principalmente quem tem o número conectado) de que
-   pode haver um ou dois minutos de lentidão e de que vão chegar leads com o
+   pode haver um ou dois minutos em que mensagens do WhatsApp ficam sem
+   resposta (ver passo 2) e de que vão chegar leads com o
    nome `TESTE ROTEIRO`.
 2. **Uma migration por vez.** Abra o arquivo em
    `supabase/migrations/`, copie **o arquivo inteiro** (de `-- 0181:` até o
@@ -139,10 +140,48 @@ select
   now()                                            as medido_em;
 ```
 
-**Esperado depois de cada passo:** `leads`, `imoveis`, `corretores` e `midias`
-iguais à fotografia do passo 0, ou maiores só pelo que entrou de verdade
-nesse meio-tempo (os leads de teste contam). `mensagens` e `conversas` só
-crescem. Nenhum número pode **diminuir**.
+**Esperado depois de cada passo:** cada número igual ao da medição anterior
+(a última C2 anotada na planilha), mais o que entrou de verdade nesse
+meio-tempo (os leads de teste contam), menos o que alguém da equipe
+**excluiu** de verdade no mesmo período. Nenhuma migration deste roteiro
+apaga linha dessas tabelas; uma queda só pode vir de exclusão feita no
+painel.
+
+Arquivar **não** diminui nada (o lead continua na tabela, só ganha
+`arquivado_em`). O que diminui: excluir lead (ADM ou o próprio corretor;
+leva junto, em cascata, as conversas e as mensagens dele), excluir imóvel
+despublicado (leva as mídias dele) e remover foto da galeria. A foto de teste
+do 4c entra e sai, e não muda `midias` no fim.
+
+**Se algum número diminuiu, não pare logo: veja se a queda se explica.**
+Troque `MEDIDO_EM_ANTERIOR` pelo `medido_em` da última C2 anotada e rode:
+
+```sql
+select
+  (select count(*) from public.leads              where created_at > timestamptz 'MEDIDO_EM_ANTERIOR') as leads_novos,
+  (select count(*) from public.leads              where arquivado_em > timestamptz 'MEDIDO_EM_ANTERIOR') as leads_arquivados,
+  (select count(*) from public.whatsapp_conversas where created_at > timestamptz 'MEDIDO_EM_ANTERIOR') as conversas_novas,
+  (select count(*) from public.whatsapp_mensagens where created_at > timestamptz 'MEDIDO_EM_ANTERIOR') as mensagens_novas,
+  (select count(*) from public.empreendimentos    where created_at > timestamptz 'MEDIDO_EM_ANTERIOR') as imoveis_novos,
+  (select count(*) from public.corretores         where created_at > timestamptz 'MEDIDO_EM_ANTERIOR') as corretores_novos;
+```
+
+Para cada tabela, `excluidos = anterior + novos − atual`. `leads_arquivados`
+fica de fora da conta (arquivar não muda o total); serve só para você não
+confundir arquivamento com exclusão. `midias` não tem `created_at`: a queda
+dela só se explica por foto removida ou imóvel excluído na janela.
+
+- Se alguém da equipe confirmar que excluiu essa quantidade (`excluidos`)
+  nesse período (pergunte no grupo de quem
+  estava trabalhando; os leads `TESTE ROTEIRO` só são excluídos no passo 8),
+  a queda está explicada: anote na planilha e siga. Uma queda em
+  `conversas`/`mensagens` explicada por lead excluído também vale.
+- Se ninguém excluiu, ou a quantidade não bate com o que foi excluído, **pare**:
+  alguma coisa apagou linha que ninguém pediu. Não aplique a próxima
+  migration e chame o Claude com as duas C2 e o resultado acima.
+
+Para não precisar fazer essa conta, peça à equipe, no aviso do passo 0.3, que
+não exclua nada (leads, imóveis, fotos) durante a janela; arquivar pode.
 
 ### C3. O que uma pessoa enxerga (com RLS)
 
@@ -372,7 +411,10 @@ Administração → Visão geral e tire um print dos números.
 ### 0.3 Avisar a equipe
 
 Combine a janela com quem tem o número conectado. Diga que chegarão leads com
-o nome `TESTE ROTEIRO` e que eles serão excluídos no fim.
+o nome `TESTE ROTEIRO` e que eles serão excluídos no fim. Peça também que
+ninguém **exclua** lead, imóvel ou foto durante a janela (arquivar pode): a C2
+confere que nenhum total caiu, e uma exclusão legítima obriga a fazer a conta
+descrita lá.
 
 ### 0.4 Corretores desativados que ainda têm login
 
@@ -428,8 +470,8 @@ select policyname, roles, cmd, qual
 - `o site publico le os parametros de credito` (`{anon}`, `SELECT`).
 
 > **Pare aqui se** houver outra policy de `SELECT` para `authenticated` com
-> `qual = true`. Anote o nome exato. Depois do passo 1 você vai apagá-la (o
-> comando está no passo 1).
+> `qual = true`. Anote o nome exato. Você vai apagá-la no passo 1, logo
+> depois de aplicar a 0181 e **antes** da conferência 1a (o comando está lá).
 
 ### 0.7 Colunas de id sem chave estrangeira (a seção 8a da 0182)
 
@@ -632,6 +674,27 @@ select l.created_at, l.nome, c.nome as corretor, l.origem_atribuicao
  order by l.created_at desc;
 ```
 
+### 0.14 Um imóvel em rascunho para o teste de upload
+
+Os passos 4c e 6.5 sobem uma foto de teste. Ela tem de ir para um imóvel em
+**rascunho** (despublicado), nunca para um publicado: a galeria do publicado
+é a vitrine do site, e a foto de teste apareceria para visitante (e para a
+assistente, que manda foto do catálogo para cliente) até alguém removê-la.
+
+```sql
+select slug, nome, created_at
+  from public.empreendimentos
+ where publicado = false
+ order by created_at desc;
+```
+
+**Esperado:** pelo menos uma linha. Anote o `slug` de um deles e use esse
+imóvel nos dois testes de upload.
+
+Se não houver nenhum, crie um no painel: Imóveis → **Criar imóvel**, com o
+nome `TESTE ROTEIRO IMOVEL`. Imóvel novo nasce despublicado; **não** clique
+em publicar. Ele é excluído no passo 8.
+
 ---
 
 ## Passo 1. Migration 0181 (`grupos`)
@@ -640,6 +703,16 @@ select l.created_at, l.nome, c.nome as corretor, l.origem_atribuicao
 2. Cole `supabase/migrations/0181_grupos.sql` inteiro e rode.
 
 **Esperado:** "Success. No rows returned" (avisos são normais).
+
+3. **Só se no passo 0.6 havia uma policy extra** de `SELECT` para
+   `authenticated` com `true`: apague-a agora, **antes** da conferência 1a,
+   trocando o nome pelo anotado. A 0181 só apaga a policy pelo nome que ela
+   tem nas migrations; a extra seguiria deixando todo logado ler as taxas de
+   todos os grupos, e a 1a abaixo não bateria.
+   ```sql
+   drop policy "NOME_ANOTADO_NO_PASSO_0_6" on public.parametros_credito;
+   ```
+   Se no 0.6 havia só as duas policies esperadas, pule este item.
 
 **Conferência 1a:**
 
@@ -663,12 +736,8 @@ select
 `gatilho = true`, `taxas_do_grupo_1 = 1` e
 `policies_das_taxas = logado le os parametros de credito do proprio grupo | o site publico le os parametros de credito`.
 
-Se no passo 0.6 havia uma policy extra de `SELECT` para `authenticated` com
-`true`, apague-a agora, trocando o nome:
-
-```sql
-drop policy "NOME_ANOTADO_NO_PASSO_0_6" on public.parametros_credito;
-```
+Se `policies_das_taxas` trouxer um terceiro nome, é a policy extra do 0.6 que
+ficou: volte ao item 3 acima, apague-a e rode a 1a de novo.
 
 **Conferência 1b:** rode a **C3b** para o gestor e para o corretor comum.
 
@@ -685,12 +754,22 @@ a **C8**.
 
 ## Passo 2. Migration 0182 (`grupo_id` em toda tabela)
 
-Esta é a mais pesada: trava umas 70 tabelas por alguns segundos. Faça logo
-depois de rodar a C1 sem nada aberto.
+Esta é a mais pesada. Ela põe trava exclusiva (`ACCESS EXCLUSIVE`) em umas
+70 tabelas e só solta no `commit;` final, ou seja, segura tudo durante a
+migration inteira, que pode levar até um minuto. Nesse intervalo nenhuma
+leitura nem escrita passa nessas tabelas, inclusive `whatsapp_mensagens` e
+`whatsapp_conversas`. O webhook do WhatsApp tem teto de 60 segundos
+(`maxDuration`): uma mensagem que chegar no meio da migration fica esperando
+a trava e pode morrer por tempo **antes de ser gravada**. Isso não é
+lentidão: é mensagem de cliente que pode se perder sem resposta. Por isso a
+conferência 2e abaixo é obrigatória.
 
 1. Rode a **C1**.
-2. Cole `supabase/migrations/0182_grupo_em_todas_as_tabelas.sql` inteiro e rode.
+2. **Anote a hora exata** (com segundos) em que clicar em Run.
+3. Cole `supabase/migrations/0182_grupo_em_todas_as_tabelas.sql` inteiro e rode.
    Pode levar de alguns segundos a um minuto.
+4. **Anote a hora exata** em que o resultado aparecer. As duas horas são a
+   janela da trava.
 
 **Esperado:** sucesso. Se falhar por `lock timeout` ou `deadlock`, siga a
 regra 4 (repetir). Se falhar com `coluna de id sem FK e sem decisão`,
@@ -731,6 +810,52 @@ formulário gera evento e outbox no grupo 1), a **C6** (os cliques ganham
 **Conferência 2d:** espere uns cinco minutos de tráfego e rode a **C4**.
 **Esperado:** só `grupo_id inferido pelo grupo único`.
 
+**Conferência 2e, mensagens que chegaram durante a trava.** Faça logo
+depois da 2c (a C8 da 2c prova que o webhook voltou a funcionar; esta
+procura quem escreveu enquanto ele estava parado).
+
+1. **O que foi gravado e ficou sem resposta.** Troque as duas horas pelas
+   anotadas nos itens 2 e 4 (formato `2026-10-20 06:15:30-03`):
+   ```sql
+   select c.id as conversa, c.telefone_cliente, c.nome_cliente,
+          m.created_at, left(m.conteudo, 60) as mensagem
+     from public.whatsapp_mensagens m
+     join public.whatsapp_conversas c on c.id = m.conversa_id
+    where m.remetente = 'cliente'
+      and m.created_at between timestamptz 'HORA_DO_RUN' - interval '1 minute'
+                           and timestamptz 'HORA_DO_RESULTADO' + interval '5 minutes'
+      and not exists (select 1 from public.whatsapp_mensagens r
+                       where r.conversa_id = m.conversa_id
+                         and r.remetente in ('bot', 'corretor')
+                         and r.created_at > m.created_at)
+    order by m.created_at;
+   ```
+   **Esperado:** nenhuma linha. Cada linha é um cliente que escreveu na
+   janela e ainda não ouviu nada (nem da IA, nem do corretor). A mensagem de
+   teste da C8 não aparece aqui, porque a IA respondeu a ela.
+2. **O que nem chegou a ser gravado.** Isso o banco não mostra: a mensagem
+   morreu antes do insert. Vercel → projeto → **Logs**, filtre a rota
+   `/api/webhooks/whatsapp` entre as duas horas anotadas (com um minuto de
+   folga de cada lado) e procure requisição com status 5xx, `504` ou
+   `FUNCTION_INVOCATION_TIMEOUT`. Ou peça a uma sessão do Claude com o
+   conector da Vercel que rode `get_runtime_logs` nessa janela, nessa rota.
+   **Esperado:** nenhuma.
+
+**Se houver mensagem sem resposta:** não é motivo para desfazer a 0182 (o
+webhook já voltou, a 2c provou). É atendimento atrasado, e quem resolve é o
+corretor dono do número:
+
+- Para as linhas da consulta do item 1: o corretor abre a conversa no Live
+  Chat (painel → Conversas) ou no próprio celular e responde. Não conte com a
+  IA retomando sozinha: ela só responde mensagem nova.
+- Para as requisições perdidas do item 2: a mensagem existe só no WhatsApp
+  do corretor. Passe a ele a hora de cada uma; ele procura no celular quem
+  escreveu naquele minuto e responde de lá. Para essas pessoas a conversa no
+  painel fica sem aquela fala, e isso é esperado.
+- Anote na planilha quantas foram em cada item. Se passar de duas ou três,
+  avise o Claude: é o sinal de que a 0183 (que também trava
+  `whatsapp_mensagens`) precisa de horário ainda mais vazio.
+
 O preview da branch `fase-1-multi-grupo` na Vercel, que estava vermelho, passa
 a conseguir fazer build a partir daqui (é a 0182 que ele esperava).
 
@@ -749,6 +874,9 @@ continuarem iguais.
 
 1. Rode a **C1**.
 2. Cole `supabase/migrations/0183_funcoes_respeitam_grupo.sql` inteiro e rode.
+   Anote a hora do Run e a do resultado, como no passo 2: ela também trava
+   `whatsapp_mensagens` até o fim, e depois da 3e você repete a conferência
+   2e com essas duas horas.
 
 **Conferência 3a:**
 
@@ -877,8 +1005,11 @@ e compare com o print do passo 0.2e.
 **Conferência 4c, no painel, como corretor comum:**
 
 - Pessoas e Funil mostram a mesma carteira de antes.
-- **Upload de foto:** Imóveis → abra um imóvel → envie uma foto pequena
-  qualquer. Ela tem de aparecer na galeria. Depois remova a foto.
+- **Upload de foto:** Imóveis → abra o imóvel **em rascunho** anotado no
+  passo 0.14 (confira que a tela mostra o selo "Rascunho"; **nunca** use um
+  imóvel publicado, senão a foto de teste vai para a vitrine do site) →
+  envie uma foto pequena qualquer. Ela tem de aparecer na galeria. Depois
+  remova a foto.
 - **Live Chat em tempo real:** deixe Conversas aberto e rode a **C8**. A
   mensagem do celular tem de aparecer **sem recarregar a página**.
 
@@ -1025,7 +1156,9 @@ Faça logo depois do 5.5.
 3. **C8**, com o Live Chat aberto: a mensagem chega sozinha, a IA responde.
 4. **C3b** para o gestor e o corretor comum: os mesmos números.
    Administração → Visão geral igual ao print do passo 0.2e.
-5. **Upload de foto** de novo (como no 4c), agora com o código novo.
+5. **Upload de foto** de novo (como no 4c), agora com o código novo, no
+   **mesmo imóvel em rascunho** do passo 0.14, nunca num publicado. Depois
+   remova a foto.
 6. **Repasse de lead (opcional):** como gestor, repasse o lead `TESTE ROTEIRO 6`
    para outro corretor pela ficha. **Esperado:** "atribuído" sem erro, e:
    ```sql
@@ -1153,7 +1286,9 @@ passo 4d.
 1. **Excluir os leads de teste:** no painel, como ADM, Pessoas (ou Leads) →
    busque `TESTE ROTEIRO` → selecione → **Excluir**. Os cliques de teste ficam
    (estão marcados com `user_agent = roteiro-fase-1` e `de=site`, e não entram
-   em conta de anúncio).
+   em conta de anúncio). Se você criou `TESTE ROTEIRO IMOVEL` no passo 0.14,
+   exclua-o também (Imóveis → o imóvel → **Excluir**; só funciona porque ele
+   está em rascunho). Confira que a galeria dele estava vazia antes.
 2. **Fotografia depois:** rode de novo o `scripts/banco/inventario.sql` e
    guarde como `inventario-producao-depois.csv`.
 3. **Avise o Claude** com a planilha preenchida. Ficam com ele: atualizar
@@ -1199,8 +1334,20 @@ definição dela da fotografia.
 
 ### Passo 2 (0182)
 
-Só antes da 0183. Tira os gatilhos e põe um default no grupo 1, para o código
-antigo continuar gravando nas colunas `not null`:
+**Só antes da 0183.** O motivo: a 0183 e a 0184 foram escritas contando com
+estes gatilhos. A roleta (`distribuir_lead`) roda depois de `leads_00_grupo`
+e escolhe o corretor pelo `new.grupo_id` que ele preencheu e conferiu;
+`salvar_venda` conta com o carimbo para recusar participante de outro grupo;
+os gatilhos de evento do lead e da campanha da Meta, reescritos na 0183,
+gravam com `on conflict` nas chaves novas que incluem `grupo_id`; e a 0184 usa
+o passo "logado só grava no próprio grupo" do gatilho como segunda defesa
+atrás da policy restritiva. Tirar **todos** os gatilhos depois disso não volta
+ao estado de antes da 0182: deixa as funções novas apoiadas num default fixo,
+sem ninguém conferindo grupo em escrita nenhuma. Depois da 0183, use o
+"gatilho de uma tabela só", logo abaixo.
+
+Tira os gatilhos e põe um default no grupo 1, para o código antigo continuar
+gravando nas colunas `not null`:
 
 ```sql
 begin;
@@ -1227,6 +1374,85 @@ commit;
 
 Os gatilhos internos que a 0182 reescreveu (evento do lead, campanha da Meta)
 passam o grupo da linha e funcionam com o default. Se `lock timeout`, repita.
+
+#### Depois da 0183/0184: o gatilho de uma tabela só
+
+O sintoma: uma escrita legítima (salvar algo no painel, o webhook gravar
+mensagem, o formulário criar lead) passa a falhar, e o erro (na tela, na C4
+ou no log da Vercel) é um destes, todos do gatilho de grupo:
+`grupo da linha difere do grupo de ...`, `grupo_id obrigatório em ...`,
+`linha-mãe inexistente em ...`, `grupo_id de ... não muda` ou
+`grupo_id de ... foi alterado depois do carimbo`. A mensagem traz o nome da
+tabela.
+
+1. Anote a mensagem inteira e a tabela, e avise o Claude **antes** de mexer:
+   quase sempre o certo é corrigir a função ou o código que grava, não o
+   gatilho.
+2. Se a escrita quebrada é atendimento de cliente (mensagem, lead) e não dá
+   para esperar, desligue o gatilho **só daquela tabela**. Troque `TABELA`
+   pelo nome que a mensagem trouxe (sem `public.`):
+   ```sql
+   begin;
+   set local lock_timeout = '5s';
+   do $$
+   declare
+     v_tabela text := 'TABELA';
+     v_gatilho text;
+   begin
+     execute format('alter table public.%I alter column grupo_id set default %L',
+                    v_tabela, '00000000-0000-0000-0000-000000000001');
+     for v_gatilho in
+       select tgname from pg_trigger
+        where tgrelid = format('public.%I', v_tabela)::regclass
+          and tgname in (v_tabela || '_00_grupo',
+                         v_tabela || '_zz_grupo_insert',
+                         v_tabela || '_zz_grupo_update')
+     loop
+       execute format('alter table public.%I disable trigger %I', v_tabela, v_gatilho);
+     end loop;
+   end
+   $$;
+   commit;
+   ```
+   O default no grupo 1 é o que deixa o insert sem `grupo_id` passar pelo
+   `not null` com o gatilho desligado. Os gatilhos ficam no banco, só
+   desligados (não use `drop`).
+3. **O que isso reabre, só nessa tabela:** ninguém mais confere que a linha
+   está no mesmo grupo da linha-mãe (o lead e a conversa dele, a mensagem e
+   a conversa), ninguém recusa troca de `grupo_id` fora da transferência de
+   grupo, e o passo "logado só grava no próprio grupo" deixa de existir ali.
+   A policy restritiva da 0184 continua valendo para quem usa a sessão, mas a
+   chave de serviço e as funções `security definer` (o webhook, os crons)
+   escrevem sem conferência nenhuma. Com um grupo só, toda linha vai para o
+   grupo 1 e o estrago imediato é zero. **Com um segundo grupo, é vazamento**:
+   religar antes de qualquer grupo além da Next Home existir é obrigatório
+   (junto com o item 4 do passo 8).
+4. **Religar**, depois de o Claude corrigir a causa:
+   ```sql
+   begin;
+   set local lock_timeout = '5s';
+   do $$
+   declare
+     v_tabela text := 'TABELA';
+     v_gatilho text;
+   begin
+     for v_gatilho in
+       select tgname from pg_trigger
+        where tgrelid = format('public.%I', v_tabela)::regclass
+          and tgname in (v_tabela || '_00_grupo',
+                         v_tabela || '_zz_grupo_insert',
+                         v_tabela || '_zz_grupo_update')
+     loop
+       execute format('alter table public.%I enable trigger %I', v_tabela, v_gatilho);
+     end loop;
+     execute format('alter table public.%I alter column grupo_id drop default', v_tabela);
+   end
+   $$;
+   commit;
+   ```
+   e rode a **C5**. Com um grupo só, o default pôs no grupo 1 tudo o que
+   foi gravado enquanto o gatilho esteve desligado, então a C5 tem de dar
+   `sem_grupo = 0`; anote na planilha por quanto tempo ele ficou desligado.
 
 ### Passo 3 (0183)
 
@@ -1317,6 +1543,8 @@ default null, preferido uuid default null)` e os quatro `revoke`/`grant` dela).
 | C2 conversas | | | | | | | |
 | C2 imóveis | | | | | | | |
 | C2 corretores | | | | | | | |
+| C2 mensagens / mídias / `medido_em` | | | | | | | |
+| C2 queda explicada por exclusão (quanto, quem) | | | | | | | |
 | C3 gestor: leads / conversas / imóveis | | | | | | | |
 | C3 corretor: leads / conversas / imóveis | | | | | | | |
 | C6 `/wa/<slug>` | | | | | | | |
@@ -1325,8 +1553,12 @@ default null, preferido uuid default null)` e os quatro `revoke`/`grant` dela).
 | C8 IA respondeu | | | | | | | |
 | C4 só "inferido" | | | | | | | |
 | Advisors sem novidade | | | | | | | |
+| Janela da trava (Run → resultado) | | | | | | | |
+| 2e mensagens sem resposta / perdidas no log | | | | | | | |
 | Hora | | | | | | | |
 
 Anote também, do passo 0: corretores desativados com login (0.4), policy
-extra das taxas (0.6), policies extras do Storage (0.10) e quais das quatro
-policies antigas existem (0.12).
+extra das taxas (0.6), policies extras do Storage (0.10), quais das quatro
+policies antigas existem (0.12) e o slug do imóvel em rascunho do teste de
+upload (0.14). Se algum gatilho de grupo for desligado (Desfazer, passo 2),
+anote a tabela e a hora em que desligou e religou.
