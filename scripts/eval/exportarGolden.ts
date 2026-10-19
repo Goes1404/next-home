@@ -63,13 +63,14 @@ type MensagemGolden = {
 };
 
 async function mensagensDa(conversaId: string): Promise<MensagemGolden[] | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("whatsapp_mensagens")
     .select("remetente, conteudo, created_at, interacao_id")
     .eq("conversa_id", conversaId)
     .eq("grupo_id", grupo)
     .order("created_at", { ascending: true })
     .limit(40);
+  if (error) throw new Error(`whatsapp_mensagens: ${error.message}`);
   return data && data.length >= 2 ? (data as MensagemGolden[]) : null;
 }
 
@@ -99,7 +100,7 @@ async function main() {
   // última fala do cliente da conversa inteira, então um `ruim` na 3ª
   // resposta de 5 exportava a conversa cortada no fim — e o eval testava
   // a pergunta errada.
-  const { data: ruins } = await supabase
+  const { data: ruins, error: erroRuins } = await supabase
     .from("ia_interacoes")
     .select("id, conversa_id, created_at")
     .eq("avaliacao", "ruim")
@@ -109,6 +110,9 @@ async function main() {
     .eq("e_teste", false)
     .order("created_at", { ascending: false })
     .limit(100);
+  // Erro de consulta não pode virar "nenhum caso novo": sem a 0182 aplicada
+  // (coluna `grupo_id`), o export sairia vazio e calado.
+  if (erroRuins) throw new Error(`ia_interacoes: ${erroRuins.message}`);
 
   for (const ruim of ruins ?? []) {
     const id = `ruim-${(ruim.id as string).slice(0, 8)}`;
@@ -142,13 +146,14 @@ async function main() {
   // 2. Conversas com participação do bot (amostra geral) — aqui o corte na
   // última fala do cliente da conversa é o comportamento CERTO: não há
   // ponto de falha marcado, o caso é a conversa como um todo.
-  const { data: conversas } = await supabase
+  const { data: conversas, error: erroConversas } = await supabase
     .from("whatsapp_conversas")
     .select("id")
     .eq("grupo_id", grupo)
     .eq("e_teste", false)
     .order("ultima_interacao_em", { ascending: false })
     .limit(100);
+  if (erroConversas) throw new Error(`whatsapp_conversas: ${erroConversas.message}`);
 
   for (const c of conversas ?? []) {
     const id = `amostra-${c.id.slice(0, 8)}`;
@@ -176,4 +181,7 @@ async function main() {
   );
 }
 
-main();
+main().catch((e) => {
+  console.error((e as Error).message);
+  process.exit(1);
+});
