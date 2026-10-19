@@ -65,7 +65,8 @@ export async function testarAgenteIA(
 
   let catalogo: Awaited<ReturnType<typeof getEmpreendimentos>> = [];
   try {
-    catalogo = await getEmpreendimentos();
+    // O catálogo do grupo do corretor, como no atendimento de verdade (L15).
+    catalogo = await getEmpreendimentos(corretor.grupoId);
   } catch {
     // Catálogo indisponível não impede testar o tom de voz.
   }

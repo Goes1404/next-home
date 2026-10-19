@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { createClient } from "@/lib/supabase/public";
+import { grupoDoSite } from "@/lib/grupos/grupo";
+import { createServiceClient } from "@/lib/supabase/service";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const runtime = "nodejs";
 
@@ -20,11 +23,31 @@ export async function POST(req: Request) {
   }
 
   const userAgent = req.headers.get("user-agent") ?? null;
-  const supabase = createClient();
+  /*
+   * Pela chave de serviço, com o grupo do site (L14). Pela chave pública o
+   * clique não carrega o grupo (o `anon` só tem insert nas colunas da 0143)
+   * e conceder a coluna deixaria qualquer um gravar em qualquer grupo. Aqui
+   * o corpo vem do navegador: corretor e imóvel só valem se forem do grupo do
+   * site; se não, o clique é gravado sem eles. As colunas são só estas:
+   * `pelo_porteiro` continua fora, como na 0143.
+   */
+  const grupo = grupoDoSite();
+  const supabase = createServiceClient();
 
-  // Se veio corretorId explícito, usa ele. Se não, tenta pegar o corretor ativo do cookie.
-  let corretorId = corpo.corretorId ?? null;
-  if (!corretorId) {
+  // Se veio corretorId explícito, usa ele (se for do grupo). Se não, tenta
+  // pegar o corretor ativo do cookie, que já é do grupo do site.
+  let corretorId: string | null = null;
+  if (corpo.corretorId) {
+    const { data } = UUID.test(corpo.corretorId)
+      ? await supabase
+          .from("corretores")
+          .select("id")
+          .eq("grupo_id", grupo)
+          .eq("id", corpo.corretorId)
+          .maybeSingle()
+      : { data: null };
+    corretorId = data?.id ?? null;
+  } else {
     const corretorAtivo = await getCorretorAtivo();
     corretorId = corretorAtivo?.id ?? null;
   }
@@ -34,12 +57,14 @@ export async function POST(req: Request) {
     const { data } = await supabase
       .from("empreendimentos")
       .select("id")
+      .eq("grupo_id", grupo)
       .eq("slug", corpo.empreendimentoSlug)
       .maybeSingle();
     empreendimentoId = data?.id ?? null;
   }
 
   const { error } = await supabase.from("cliques_whatsapp").insert({
+    grupo_id: grupo,
     corretor_id: corretorId,
     empreendimento_id: empreendimentoId,
     origem: corpo.origem || "desconhecida",
@@ -48,7 +73,9 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    // Log silencioso sem interromper a navegação
+    // Sem interromper a navegação, mas com rastro: o `sendBeacon` não lê a
+    // resposta, e sem o log a falha seria invisível.
+    console.error("[clique-whatsapp] falha ao gravar clique:", error.message);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 

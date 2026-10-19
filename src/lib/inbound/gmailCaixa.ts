@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { buscaDesde, mensagemParaEmail, type MensagemGmail } from "./gmail";
 import { processarEmailDeLead } from "./processarEmail";
+import { gruposComIntegracao } from "@/lib/grupos/integracoes";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -40,6 +41,9 @@ export async function lerCaixasDoGmail(limiteCaixas = 1, limiteMensagens = 5): P
   const { data: contas } = await supabase
     .from("contas_email_google")
     .select("corretor_id, grupo_id, refresh_token, ultima_leitura_em, lidos_total")
+    // O app OAuth é da Next Home (L19): caixa de outro grupo não é lida
+    // pela credencial dela, nem que tenha sido ligada antes do portão.
+    .in("grupo_id", gruposComIntegracao("gmail"))
     // Caixa com erro (acesso revogado) vai para o fim: não pode tomar a vez
     // das que funcionam a cada tique.
     .order("ultimo_erro", { ascending: true, nullsFirst: true })

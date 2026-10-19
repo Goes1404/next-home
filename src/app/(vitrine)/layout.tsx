@@ -4,6 +4,8 @@ import { FundoDoLink, PersonalizacaoDoLink } from "@/components/motion/FundoDoLi
 import { Preloader } from "@/components/motion/Preloader";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { PixelMeta } from "@/components/analytics/PixelMeta";
+import { grupoDoSite } from "@/lib/grupos/grupo";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { BarraDeFavoritosSobDemanda } from "@/components/layout/SobDemanda";
 
 /**
@@ -69,7 +71,8 @@ export default function VitrineLayout({ children }: { children: React.ReactNode 
       </div>
 
       {children}
-      <PixelMeta />
+      {/* O Pixel é o da Next Home: só no site do grupo dela até a fase 7 (L19). */}
+      {integracaoLiberada(grupoDoSite(), "pixel") && <PixelMeta />}
       <VoltarAoTopo />
       <BarraDeFavoritosSobDemanda />
     </PersonalizacaoDoLink>

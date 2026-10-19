@@ -28,7 +28,7 @@ export async function indicarCliente(
   const supabase = createServiceClient();
   const { data: parceiro } = await supabase
     .from("parceiros")
-    .select("id, nome, imobiliaria, ativo")
+    .select("id, nome, imobiliaria, ativo, grupo_id")
     .eq("token", token)
     .maybeSingle();
   if (!parceiro || !parceiro.ativo) return { erro: "Este link não está mais ativo. Fale com a imobiliária." };
@@ -37,21 +37,31 @@ export async function indicarCliente(
   const { count } = await supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
+    .eq("grupo_id", parceiro.grupo_id)
     .eq("parceiro_id", parceiro.id)
     .gte("created_at", umaHora);
   if ((count ?? 0) >= TETO_INDICACOES_POR_HORA) return { erro: "Muitas indicações seguidas. Tente de novo mais tarde." };
 
+  /*
+   * O imóvel tem de ser do grupo do parceiro (L12): o id vem do navegador, e
+   * o lead nasceria no grupo de outro imóvel. Imóvel que não é do espelho
+   * dele é recusado com o motivo, em vez de virar indicação sem imóvel.
+   */
   let empreendimentoId: string | null = null;
   let nomeImovel: string | null = null;
-  if (entrada.empreendimentoId && UUID.test(entrada.empreendimentoId)) {
-    const { data: e } = await supabase
-      .from("empreendimentos")
-      .select("id, nome")
-      .eq("id", entrada.empreendimentoId)
-      .eq("publicado", true)
-      .maybeSingle();
-    empreendimentoId = e?.id ?? null;
-    nomeImovel = e?.nome ?? null;
+  if (entrada.empreendimentoId) {
+    const { data: e } = UUID.test(entrada.empreendimentoId)
+      ? await supabase
+          .from("empreendimentos")
+          .select("id, nome")
+          .eq("grupo_id", parceiro.grupo_id)
+          .eq("id", entrada.empreendimentoId)
+          .eq("publicado", true)
+          .maybeSingle()
+      : { data: null };
+    if (!e) return { erro: "Esse imóvel não está mais no espelho. Escolha outro ou deixe em branco." };
+    empreendimentoId = e.id;
+    nomeImovel = e.nome;
   }
 
   const quem = `${parceiro.nome}${parceiro.imobiliaria ? ` (${parceiro.imobiliaria})` : ""}`;
@@ -64,6 +74,8 @@ export async function indicarCliente(
       mensagem: [`Indicado pelo parceiro ${quem}.`, entrada.observacao.trim().slice(0, 1000)].filter(Boolean).join("\n"),
       origem: "parceiro",
       tipo: "comprador",
+      // O parceiro é a mãe do lead: é dele que o gatilho tira o grupo, e um
+      // imóvel de outro grupo é recusado no banco também.
       parceiro_id: parceiro.id,
       consentimento_lgpd: true,
     })

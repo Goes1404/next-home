@@ -47,6 +47,15 @@ async function criarVenda(sql: Conexao, corretorId: string, leadId: string | nul
   return id;
 }
 
+/** Uma instância de WhatsApp conectada do corretor, pronta para o porteiro. */
+async function conectarNumero(sql: Conexao, corretorId: string, telefone: string): Promise<void> {
+  await sql`
+    insert into public.corretor_whatsapp_instancias
+      (corretor_id, instance_name, status_conexao, conectado_em, telefone_conectado)
+    values (${corretorId}, ${`teste-${telefone}`}, 'conectado', now(), ${telefone})
+  `;
+}
+
 describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   let sql: Sql;
 
@@ -1089,6 +1098,102 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         `;
         expect(pode, funcao).toBe(false);
       }
+    });
+  });
+
+  // Portas de entrada (Task 12): o porteiro `/wa` sorteia dentro do grupo do
+  // site, e a indicação do parceiro não atravessa grupos.
+  it("o porteiro sem imóvel só sorteia no grupo pedido", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await conectarNumero(tx, a.corretorId, "5511911110001");
+      // Em B ninguém está conectado: o clique vai para o escape, nunca para A.
+      const deB = await tx`select * from public.sortear_corretor_whatsapp(p_grupo => ${b.grupoId})`;
+      expect(deB).toEqual([]);
+      const deA = await tx<{ corretor_id: string }[]>`
+        select corretor_id from public.sortear_corretor_whatsapp(p_grupo => ${a.grupoId})
+      `;
+      expect(deA.map((l) => l.corretor_id)).toEqual([a.corretorId]);
+    });
+  });
+
+  it("preferido de outro grupo não ganha a vez", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await conectarNumero(tx, a.corretorId, "5511911110001");
+      await conectarNumero(tx, b.corretorId, "5511911110002");
+      for (let i = 0; i < 5; i++) {
+        const linhas = await tx<{ corretor_id: string }[]>`
+          select corretor_id
+            from public.sortear_corretor_whatsapp(${b.grupoId}::uuid, null::uuid, ${a.corretorId}::uuid)
+        `;
+        expect(linhas.map((l) => l.corretor_id)).toEqual([b.corretorId]);
+      }
+    });
+  });
+
+  it("imóvel de outro grupo não entra no sorteio", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await conectarNumero(tx, a.corretorId, "5511911110001");
+      const imovelDeB = await criarImovel(tx, b.grupoId, "imovel-de-b");
+      const linhas = await tx`
+        select * from public.sortear_corretor_whatsapp(${a.grupoId}::uuid, ${imovelDeB}::uuid, null::uuid)
+      `;
+      expect(linhas).toEqual([]);
+    });
+  });
+
+  it("só a chave de serviço sorteia, e o sorteio sem grupo não existe para a API", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      // As duas assinaturas: a antiga fica até o deploy (roteiro da Task 9).
+      for (const assinatura of ["(uuid, uuid, uuid)", "(uuid, uuid)"]) {
+        for (const papel of ["anon", "authenticated"]) {
+          const [{ pode }] = await tx<{ pode: boolean }[]>`
+            select has_function_privilege(${papel}, ${`public.sortear_corretor_whatsapp${assinatura}`}, 'execute') as pode
+          `;
+          expect(pode, `${papel} ${assinatura}`).toBe(false);
+        }
+      }
+      const [{ pode }] = await tx<{ pode: boolean }[]>`
+        select has_function_privilege('service_role', 'public.sortear_corretor_whatsapp(uuid, uuid, uuid)', 'execute') as pode
+      `;
+      expect(pode).toBe(true);
+    });
+  });
+
+  it("a assinatura antiga do sorteio, que o código no ar chama, sorteia só no grupo 1", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "b" });
+      await conectarNumero(tx, b.corretorId, "5511911110002");
+      const linhas = await tx`select * from public.sortear_corretor_whatsapp()`;
+      expect(linhas).toEqual([]);
+    });
+  });
+
+  it("indicação do parceiro de A para imóvel de B é recusada", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const [{ id: parceiro }] = await tx<{ id: string }[]>`
+        insert into public.parceiros (nome, grupo_id) values ('Parceiro de A', ${a.grupoId}) returning id
+      `;
+      const imovelDeB = await criarImovel(tx, b.grupoId, "imovel-de-b");
+      // O parceiro é a mãe que manda: o imóvel é que diverge dele.
+      await expect(
+        tx.savepoint(
+          (s) => s`insert into public.leads (nome, parceiro_id, empreendimento_id) values ('Indicado', ${parceiro}, ${imovelDeB})`,
+        ),
+      ).rejects.toThrow(/grupo da linha difere do grupo de empreendimentos/);
+      // Sem imóvel, o lead nasce no grupo do parceiro.
+      const [lead] = await tx<{ grupo_id: string }[]>`
+        insert into public.leads (nome, parceiro_id, corretor_id) values ('Indicado', ${parceiro}, ${a.corretorId})
+        returning grupo_id
+      `;
+      expect(lead.grupo_id).toBe(a.grupoId);
     });
   });
 

@@ -37,7 +37,9 @@ export async function GET(req: Request) {
     ? { corretor_id: doLink!.id, telefone: numeroDoLink }
     : (
         await supabase
-          .rpc("sortear_corretor_whatsapp")
+          // Só corretor do grupo do site (L11): o botão da home de um grupo
+          // nunca cai no número de outro.
+          .rpc("sortear_corretor_whatsapp", { p_grupo: grupoDoSite() })
           .maybeSingle<{ corretor_id: string; telefone: string }>()
       ).data;
 

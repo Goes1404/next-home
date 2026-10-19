@@ -361,7 +361,10 @@ export type CadastroPelaPalavraChave =
  * a única saída era cadastrar à mão no painel. A palavra é um ato deliberado
  * dele, então vale como a autorização que o convite do cliente já é.
  *
- * O telefone é procurado em TODAS as carteiras, com e sem o nono dígito:
+ * O telefone é procurado em todas as carteiras DO GRUPO da instância, com e
+ * sem o nono dígito (L10). Fora do grupo o número é tratado como novo: o
+ * corretor não pode descobrir, pela palavra-chave, que alguém é cliente de
+ * outra empresa, e o registro do "lead alheio" não cai no outro grupo.
  *
  * - **na dele:** nada a cadastrar, a conversa segue como sempre;
  * - **em nenhuma:** nasce na carteira dele. O nome fica no placeholder
@@ -380,6 +383,8 @@ export type CadastroPelaPalavraChave =
  */
 export async function cadastrarPelaPalavraChave(params: {
   corretorId: string;
+  /** O grupo da instância que recebeu a palavra (o do corretor). */
+  grupoId: string;
   telefoneCliente: string;
   teste: boolean;
 }): Promise<CadastroPelaPalavraChave> {
@@ -391,6 +396,7 @@ export async function cadastrarPelaPalavraChave(params: {
   const { data: alheio, error: erroAlheio } = await supabase
     .from("leads")
     .select("id")
+    .eq("grupo_id", params.grupoId)
     .in("telefone_e164", candidatosTelefone(params.telefoneCliente))
     .neq("corretor_id", params.corretorId)
     .order("created_at", { ascending: false })
@@ -432,6 +438,8 @@ export async function cadastrarPelaPalavraChave(params: {
  */
 export async function registrarAtivacaoEmLeadAlheio(params: {
   corretorId: string;
+  /** O grupo da instância: o lead "alheio" é sempre do mesmo grupo (L10). */
+  grupoId: string;
   leadId: string;
   telefone: string;
 }): Promise<void> {
@@ -441,12 +449,17 @@ export async function registrarAtivacaoEmLeadAlheio(params: {
   const { count } = await supabase
     .from("ativacoes_em_lead_alheio")
     .select("id", { count: "exact", head: true })
+    .eq("grupo_id", params.grupoId)
     .eq("corretor_id", params.corretorId)
     .eq("lead_id", params.leadId)
     .gte("created_at", inicioDoDia);
   if ((count ?? 0) > 0) return;
 
+  // O grupo vai explícito: se o lead for de outro grupo (o que a busca de
+  // `cadastrarPelaPalavraChave` já impede), o gatilho recusa em vez de
+  // gravar o registro lá.
   const { error } = await supabase.from("ativacoes_em_lead_alheio").insert({
+    grupo_id: params.grupoId,
     corretor_id: params.corretorId,
     lead_id: params.leadId,
     telefone: params.telefone,
@@ -874,19 +887,30 @@ export async function gravarMensagem(params: {
 }): Promise<{ inedita: boolean; id: string | null; erro?: string }> {
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase
-    .from("whatsapp_mensagens")
-    .insert({
-      conversa_id: params.conversaId,
-      remetente: params.remetente,
-      tipo: params.tipo ?? "texto",
-      conteudo: conteudoParaGravar(params.conteudo, params.conversaLiberada),
-      midia_url: params.conversaLiberada ? (params.midiaUrl ?? null) : null,
-      provider_message_id: params.providerMessageId ?? null,
-      status_entrega: params.statusEntrega ?? null,
-    })
-    .select("id")
-    .maybeSingle();
+  /*
+   * Com retentativa (19/10/2026): o webhook para com `mensagem_nao_gravada`
+   * quando isto falha, e numa piscada do banco (o "Gateway Timeout" já visto
+   * em produção) isso descartava a mensagem E a resposta ao cliente. Erro
+   * passageiro (sem `code`) ganha nova chance; erro de consulta, recusa do
+   * gatilho de grupo e a reentrega (23505) não são repetidos.
+   */
+  let tentativas = 0;
+  const { data, error } = await comRetentativa("mensagem do WhatsApp", () => {
+    tentativas++;
+    return supabase
+      .from("whatsapp_mensagens")
+      .insert({
+        conversa_id: params.conversaId,
+        remetente: params.remetente,
+        tipo: params.tipo ?? "texto",
+        conteudo: conteudoParaGravar(params.conteudo, params.conversaLiberada),
+        midia_url: params.conversaLiberada ? (params.midiaUrl ?? null) : null,
+        provider_message_id: params.providerMessageId ?? null,
+        status_entrega: params.statusEntrega ?? null,
+      })
+      .select("id")
+      .maybeSingle();
+  });
 
   // 23505 = violação de unicidade: é a reentrega. Qualquer outro erro é
   // problema real e volta como falha (L26): antes ele virava `inedita: true`
@@ -894,11 +918,36 @@ export async function gravarMensagem(params: {
   // banco — com dois grupos, a recusa do gatilho de grupo sumiria aqui.
   // Quem chama decide o que fazer; o webhook para sem responder.
   if (error) {
+    // 23505 DEPOIS de uma tentativa que falhou por tempo: a primeira gravou
+    // e só a resposta se perdeu. A mensagem é nossa, não reentrega; tratar
+    // como reentrega deixaria o cliente sem resposta.
+    if (error.code === "23505" && tentativas > 1 && params.providerMessageId) {
+      const { data: gravada } = await supabase
+        .from("whatsapp_mensagens")
+        .select("id")
+        .eq("conversa_id", params.conversaId)
+        .eq("provider_message_id", params.providerMessageId)
+        .maybeSingle();
+      if (gravada) {
+        await tocarConversa(supabase, params);
+        return { inedita: true, id: gravada.id };
+      }
+    }
     if (error.code === "23505") return { inedita: false, id: null };
     console.error("Falha ao gravar mensagem de WhatsApp:", error.message);
     return { inedita: false, id: null, erro: error.message };
   }
 
+  await tocarConversa(supabase, params);
+
+  return { inedita: true, id: data?.id ?? null };
+}
+
+/** A conversa ganha a última mensagem gravada. */
+async function tocarConversa(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { conversaId: string; conteudo: string; conversaLiberada: boolean },
+): Promise<void> {
   await supabase
     .from("whatsapp_conversas")
     .update({
@@ -906,8 +955,6 @@ export async function gravarMensagem(params: {
       ultima_interacao_em: new Date().toISOString(),
     })
     .eq("id", params.conversaId);
-
-  return { inedita: true, id: data?.id ?? null };
 }
 
 const ORDEM_ENTREGA = { enviada: 1, entregue: 2, lida: 3 } as const;

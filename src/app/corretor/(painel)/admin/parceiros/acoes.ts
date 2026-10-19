@@ -19,6 +19,9 @@ export async function cadastrarParceiro(form: FormData): Promise<Resultado> {
   const nome = limpo(form.get("nome"), 120);
   if (!nome || nome.length < 2) return { erro: "Informe o nome do parceiro." };
   const supabase = await createClient();
+  // O parceiro nasce no grupo de quem o cadastra (L12), e é por ele que o
+  // espelho e a indicação se limitam. Quem põe o grupo é o gatilho, pelo
+  // `grupo_atual()` da sessão: o painel não tem grant na coluna.
   const { error } = await supabase.from("parceiros").insert({
     nome,
     imobiliaria: limpo(form.get("imobiliaria"), 120),
@@ -35,7 +38,12 @@ export async function alternarParceiro(id: string, ativo: boolean): Promise<Resu
   const guarda = await exigirGestorNaAcao();
   if ("erro" in guarda) return { erro: guarda.erro };
   const supabase = await createClient();
-  const { data, error } = await supabase.from("parceiros").update({ ativo }).eq("id", id).select("id");
+  const { data, error } = await supabase
+    .from("parceiros")
+    .update({ ativo })
+    .eq("id", id)
+    .eq("grupo_id", guarda.corretor.grupoId)
+    .select("id");
   if (error || !data?.length) return { erro: "Não consegui atualizar." };
   revalidatePath("/corretor/admin/parceiros");
   return { ok: ativo ? "Acesso reativado." : "Acesso suspenso: o link para de abrir na hora." };
@@ -52,6 +60,9 @@ export async function trocarLinkDoParceiro(id: string): Promise<Resultado> {
     .from("parceiros")
     .update({ token: crypto.randomUUID() })
     .eq("id", id)
+    // Pela chave de serviço, o id do navegador não basta: só o parceiro do
+    // grupo do gestor (L16).
+    .eq("grupo_id", guarda.corretor.grupoId)
     .select("id");
   if (error || !data?.length) return { erro: "Não consegui trocar o link." };
   revalidatePath("/corretor/admin/parceiros");

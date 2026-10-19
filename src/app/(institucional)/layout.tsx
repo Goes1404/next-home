@@ -2,6 +2,8 @@ import { GlassBackgroundProvider } from "@/components/glass/GlassBackground";
 import { HeaderInstitucional } from "@/components/layout/HeaderInstitucional";
 import { VoltarAoTopo } from "@/components/layout/VoltarAoTopo";
 import { PixelMeta } from "@/components/analytics/PixelMeta";
+import { grupoDoSite } from "@/lib/grupos/grupo";
+import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { FundoVideoIntro } from "@/components/motion/FundoVideoIntro";
 import { FundoDaCasaDesktop } from "@/components/motion/FundoDaCasaDesktop";
 import { Preloader } from "@/components/motion/Preloader";
@@ -177,7 +179,8 @@ export default function InstitucionalLayout({
       </SoComFundoDaCasa>
 
       {children}
-      <PixelMeta />
+      {/* O Pixel é o da Next Home: só no site do grupo dela até a fase 7 (L19). */}
+      {integracaoLiberada(grupoDoSite(), "pixel") && <PixelMeta />}
       <VoltarAoTopo />
     </PersonalizacaoDoLink>
     </GlassBackgroundProvider>

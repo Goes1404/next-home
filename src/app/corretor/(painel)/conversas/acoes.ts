@@ -659,7 +659,8 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
   }
 
   const [catalogo, dossie] = await Promise.all([
-    getEmpreendimentos(),
+    // O catálogo do grupo da instância, como no webhook (L15).
+    getEmpreendimentos(identidade.grupoId),
     conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
   ]);
 
