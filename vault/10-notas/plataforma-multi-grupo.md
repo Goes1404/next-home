@@ -80,4 +80,7 @@ viraria N migrations.
   (com aviso) ou erro. Trocar o grupo de uma linha só pela role
   `transferidor_de_grupo` (sem login, sem membros). Os gatilhos internos que
   gravam em outra tabela (evento do lead, campanha da Meta) repassam
-  `new.grupo_id`. O webhook e a seleção leem as taxas pelo grupo do dono.
+  `new.grupo_id`. A linha FINAL também é conferida (`<tabela>_zz_grupo_insert`
+  e `_zz_grupo_update`, `after`): gatilho `before` que roda depois do carimbo
+  (a roleta `leads_distribuir`) não consegue pôr mãe de outro grupo nem
+  trocar o grupo. O webhook e a seleção leem as taxas pelo grupo do dono.

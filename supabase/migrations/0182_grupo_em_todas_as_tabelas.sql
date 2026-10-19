@@ -18,7 +18,9 @@
 --   5. cria o carimbo (`carimbar_grupo` + `derivar_grupo_da_linha`);
 --   6. faz os gatilhos internos que gravam em outra tabela repassarem o grupo;
 --   7. põe o gatilho `<tabela>_00_grupo` em toda tabela com grupo, com as
---      colunas-mãe tiradas das FKs reais;
+--      colunas-mãe tiradas das FKs reais, e a conferência da linha final
+--      (`<tabela>_zz_grupo_insert`/`_update`), que pega o que um gatilho
+--      `before` posterior ao carimbo escreveu;
 --   8. confere duas regras que, quebradas, falhariam caladas.
 --
 -- ---------------------------------------------------------------------------
@@ -516,17 +518,81 @@ create trigger meta_ads_metricas_10_campanha
   for each row execute function public.vincular_campanha_meta_canonica();
 
 -- ---------------------------------------------------------------------------
--- 7. O gatilho de grupo em toda tabela
+-- 7. Os gatilhos de grupo em toda tabela
 -- ---------------------------------------------------------------------------
 --
--- No UPDATE ele só dispara quando o SET cita uma coluna-mãe ou o próprio
--- grupo (`update of`): o contador de não lidas da conversa, o status de uma
--- venda e as outras atualizações de rotina não pagam o carimbo. A
--- desvinculação por `on delete set null` cita a coluna e passa por ele, e
--- nulo não é conferido.
+-- Cada tabela com grupo ganha três gatilhos, com as mesmas colunas-mãe
+-- (tiradas das FKs reais) nos argumentos:
+--
+--   <tabela>_00_grupo         `before insert or update`: preenche e confere o
+--                             grupo (`carimbar_grupo`). No UPDATE só dispara
+--                             quando o SET cita uma coluna-mãe ou o próprio
+--                             grupo (`update of`): o contador de não lidas da
+--                             conversa, o status de uma venda e as outras
+--                             atualizações de rotina não pagam o carimbo. A
+--                             desvinculação por `on delete set null` cita a
+--                             coluna e passa por ele, e nulo não é conferido.
+--   <tabela>_zz_grupo_insert  `after insert` (só em tabela com mãe) e
+--   <tabela>_zz_grupo_update  `after update`: conferem a linha FINAL
+--                             (`conferir_grupo_final`).
+--
+-- Por que a conferência final existe. O carimbo vê a linha como ela chega ao
+-- `_00_grupo`. Um gatilho `before` que roda DEPOIS dele (ordem alfabética) e
+-- escreve uma coluna-mãe ou o próprio grupo escaparia: `leads_distribuir`
+-- (0180) põe `new.corretor_id := alvo` escolhido por uma roleta que ainda
+-- não conhece grupo, e um lead do grupo B sem dono nasceria, calado, com um
+-- corretor do grupo A. Em vez de caçar essa classe de gatilho pelo texto da
+-- função (`new.x :=` tem outras formas, e o gatilho de amanhã ninguém leu
+-- ainda), o gatilho `after` enxerga o que TODOS os `before` deixaram e
+-- recusa:
+--   * troca de grupo fora de `transferidor_de_grupo`, mesmo feita por outro
+--     gatilho;
+--   * coluna-mãe com valor (no UPDATE, só a que mudou de fato na linha final)
+--     que não existe ou é de outro grupo.
+-- O erro desfaz a instrução inteira: o lead com dono de outro grupo não nasce,
+-- em vez de nascer errado. Deixar o lead sem dono dentro do grupo (a roleta
+-- por grupo) é da Task 5.
+--
+-- Custo: no INSERT, só em tabela com mãe e só quando alguma mãe vem
+-- preenchida; no UPDATE, o `when` olha a linha final e só enfileira o evento
+-- quando o grupo ou uma mãe mudou. As atualizações de rotina não pagam nada.
 --
 -- `corretores_00_grupo` (0181) troca de função pelo mesmo nome; a função
 -- dela sai.
+
+create or replace function public.conferir_grupo_final()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if tg_op = 'UPDATE'
+     and new.grupo_id is distinct from old.grupo_id
+     and current_user <> 'transferidor_de_grupo' then
+    raise exception 'grupo_id de % não muda: só a transferência de grupo o troca', tg_table_name
+      using errcode = 'insufficient_privilege';
+  end if;
+
+  -- Com o grupo já na linha, `derivar_grupo_da_linha` o devolve igual ou
+  -- falha ("linha-mãe inexistente", "grupo da linha difere"). Outro valor só
+  -- volta se um gatilho posterior apagou o grupo.
+  if public.derivar_grupo_da_linha(
+       tg_relid,
+       tg_op,
+       to_jsonb(new),
+       case when tg_op = 'UPDATE' then to_jsonb(old) end,
+       tg_argv,
+       current_user::text
+     ) is distinct from new.grupo_id then
+    raise exception 'grupo_id de % foi alterado depois do carimbo', tg_table_name
+      using errcode = 'check_violation';
+  end if;
+  return null;
+end
+$$;
+
+comment on function public.conferir_grupo_final() is
+  'Gatilhos <tabela>_zz_grupo_insert/_update (0182): confere a linha final, depois de todos os gatilhos before, com as mesmas mães do <tabela>_00_grupo.';
 
 do $$
 declare
@@ -534,6 +600,7 @@ declare
   v_mae      record;
   v_args     text[];
   v_colunas  text[];
+  v_lista    text;
   v_ordem constant text[] := array[
     'lead_id', 'conversa_id', 'venda_id', 'campanha_id', 'instancia_id', 'corretor_id', 'empreendimento_id'
   ];
@@ -546,7 +613,7 @@ begin
      order by c.relname
   loop
     v_args := array[]::text[];
-    v_colunas := array['grupo_id'];
+    v_colunas := array[]::text[];
 
     for v_mae in
       select fa.attname as coluna, mc.relname as mae, ra.attname as referenciada,
@@ -572,15 +639,42 @@ begin
       v_colunas := v_colunas || v_mae.coluna::text;
     end loop;
 
+    v_lista := coalesce((select string_agg(format('%L', a), ', ') from unnest(v_args) a), '');
+
     execute format('drop trigger if exists %I on public.%I', v_tabela.relname || '_00_grupo', v_tabela.relname);
     execute format(
       'create trigger %I before insert or update of %s on public.%I
          for each row execute function public.carimbar_grupo(%s)',
       v_tabela.relname || '_00_grupo',
-      (select string_agg(format('%I', c), ', ') from unnest(v_colunas) c),
+      (select string_agg(format('%I', c), ', ') from unnest('{grupo_id}'::text[] || v_colunas) c),
       v_tabela.relname,
-      coalesce((select string_agg(format('%L', a), ', ') from unnest(v_args) a), '')
+      v_lista
     );
+
+    execute format('drop trigger if exists %I on public.%I', v_tabela.relname || '_zz_grupo_update', v_tabela.relname);
+    execute format(
+      'create trigger %I after update on public.%I for each row
+         when (%s)
+         execute function public.conferir_grupo_final(%s)',
+      v_tabela.relname || '_zz_grupo_update',
+      v_tabela.relname,
+      (select string_agg(format('new.%1$I is distinct from old.%1$I', c), ' or ')
+         from unnest('{grupo_id}'::text[] || v_colunas) c),
+      v_lista
+    );
+
+    execute format('drop trigger if exists %I on public.%I', v_tabela.relname || '_zz_grupo_insert', v_tabela.relname);
+    if cardinality(v_colunas) > 0 then
+      execute format(
+        'create trigger %I after insert on public.%I for each row
+           when (%s)
+           execute function public.conferir_grupo_final(%s)',
+        v_tabela.relname || '_zz_grupo_insert',
+        v_tabela.relname,
+        (select string_agg(format('new.%I is not null', c), ' or ') from unnest(v_colunas) c),
+        v_lista
+      );
+    end if;
   end loop;
 end
 $$;
@@ -588,6 +682,7 @@ $$;
 drop function if exists public.carimbar_grupo_do_corretor();
 
 revoke execute on function public.carimbar_grupo() from public, anon, authenticated;
+revoke execute on function public.conferir_grupo_final() from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 8. Duas conferências que falhariam caladas
@@ -625,7 +720,10 @@ begin
   end if;
 
   -- b. Gatilho `before` de linha que dispara ANTES do carimbo (ordem
-  --    alfabética, em bytes) e lê grupo_id: leria o grupo ainda vazio.
+  --    alfabética, em bytes) e lê grupo_id: leria o grupo ainda vazio. (O
+  --    caso inverso, gatilho que dispara DEPOIS e ESCREVE uma mãe ou o
+  --    grupo, não precisa de conferência por texto: a seção 7 recusa a linha
+  --    final em `<tabela>_zz_grupo_*`.)
   select string_agg(t.tgrelid::regclass::text || '.' || t.tgname, ', ') into v_sobra
     from pg_trigger t
     join pg_class c on c.oid = t.tgrelid

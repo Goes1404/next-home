@@ -10524,6 +10524,19 @@ Nota: [[plataforma-multi-grupo]].
 - **No UPDATE o gatilho só dispara com `update of` das mães e do grupo**:
   contador de não lidas e status de venda não pagam o carimbo, e mãe que não
   mudou não é reconferida.
+- **Gatilho `before` que roda DEPOIS do carimbo escapa dele.** O
+  `_00_grupo` vê a linha como ela chega; `leads_distribuir` põe o dono
+  depois, pela roleta que ainda não conhece grupo, e o lead de B nasceria
+  calado com dono de A. A conferência por texto (`new.x :=`) não fecha a
+  classe; o que fecha é olhar a linha FINAL: `<tabela>_zz_grupo_insert` e
+  `_zz_grupo_update` (`after`, mesmas mães nos argumentos, `when` na linha
+  final) recusam mãe de outro grupo e troca de grupo feita por qualquer
+  gatilho. O lead sem dono dentro do grupo é da Task 5; até lá, ele é
+  recusado em voz alta.
+- **Guarda provocada na migration não é guarda de teste.** As conferências
+  da seção 8 só existem no `npm run db:teste`: a mordida é tirar um item da
+  lista declarada (8a) ou devolver o nome antigo ao gatilho da Meta (8b) e
+  ver a migration falhar ao subir o banco.
 - **Coluna nova com default constante não reescreve a tabela nem dispara
   gatilho de UPDATE.** A 0182 põe `grupo_id not null default <grupo 1>` e
   derruba o default na mesma transação: backfill de graça, e nenhum default

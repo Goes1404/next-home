@@ -312,21 +312,46 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     }
   });
 
-  it("toda tabela com grupo_id tem o gatilho <tabela>_00_grupo", async () => {
-    const sem = await sql<{ tabela: string }[]>`
-      select c.relname as tabela
-        from pg_class c
-        join pg_attribute a on a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
-       where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
-         and not exists (
-           select 1 from pg_trigger t
-             join pg_proc p on p.oid = t.tgfoid
-            where t.tgrelid = c.oid and t.tgname = c.relname || '_00_grupo'
-              and p.proname = 'carimbar_grupo'
-         )
-       order by 1
+  it("toda tabela com grupo_id tem o gatilho <tabela>_00_grupo e a conferência final", async () => {
+    // O carimbo antes, e a conferência da linha final depois de todos os
+    // gatilhos `before`, com os MESMOS argumentos (as mães): conferências
+    // com listas diferentes divergiriam calado. A de INSERT só existe em
+    // tabela com mãe (sem mãe não há o que conferir na linha final).
+    const faltas = await sql<{ tabela: string; falta: string }[]>`
+      with tabelas as (
+        select c.oid, c.relname
+          from pg_class c
+          join pg_attribute a on a.attrelid = c.oid and a.attname = 'grupo_id' and not a.attisdropped
+         where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+      ), gatilhos as (
+        select tb.relname, t.tgname, p.proname, t.tgnargs, t.tgargs
+          from tabelas tb
+          join pg_trigger t on t.tgrelid = tb.oid and not t.tgisinternal
+          join pg_proc p on p.oid = t.tgfoid
+      ), carimbo as (
+        select * from gatilhos where tgname = relname || '_00_grupo' and proname = 'carimbar_grupo'
+      )
+      select tb.relname as tabela, f.falta
+        from tabelas tb
+        left join carimbo k on k.relname = tb.relname
+        cross join lateral (
+          select '_00_grupo' as falta where k.relname is null
+          union all
+          select '_zz_grupo_update' where not exists (
+            select 1 from gatilhos g
+             where g.relname = tb.relname and g.tgname = tb.relname || '_zz_grupo_update'
+               and g.proname = 'conferir_grupo_final' and g.tgargs = k.tgargs
+          )
+          union all
+          select '_zz_grupo_insert' where k.tgnargs > 0 and not exists (
+            select 1 from gatilhos g
+             where g.relname = tb.relname and g.tgname = tb.relname || '_zz_grupo_insert'
+               and g.proname = 'conferir_grupo_final' and g.tgargs = k.tgargs
+          )
+        ) f
+       order by 1, 2
     `;
-    expect(sem.map((l) => l.tabela)).toEqual([]);
+    expect(faltas.map((l) => `${l.tabela}${l.falta}`)).toEqual([]);
   });
 
   it("lead criado pelo corretor do grupo B nasce no grupo B", async () => {
@@ -378,6 +403,98 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await expect(
         tx`update public.leads set corretor_id = ${a.corretorId} where id = ${leadDeB}`,
       ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+    });
+  });
+
+  // Review Focus 2, pela roleta. `leads_distribuir` roda DEPOIS do carimbo e
+  // escolhe o dono entre todos os corretores: sem a conferência da linha
+  // final, o lead de B nasceria com o dono de A. A Task 5 faz a roleta olhar
+  // o grupo (o lead fica sem dono dentro dele); até lá, a linha é recusada.
+  it("a roleta não dá a um lead o dono de outro grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      // Ninguém de B pode receber: a roleta só acha gente de fora.
+      await tx`update public.corretores set em_pausa = true where grupo_id = ${b.grupoId}`;
+      await expect(
+        tx`insert into public.leads (nome, grupo_id) values ('Lead de B sem dono', ${b.grupoId})`,
+      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+    });
+  });
+
+  it("com um grupo só, a roleta segue distribuindo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const [{ id: corretor }] = await tx<{ id: string }[]>`
+        insert into public.corretores (nome, creci, whatsapp, slug, ativo)
+        values ('Corretor da roleta', 'TESTE-roleta', '5511900000003', 'corretor-roleta', true)
+        returning id
+      `;
+      const [lead] = await tx<{ corretor_id: string; origem_atribuicao: string; grupo_id: string }[]>`
+        insert into public.leads (nome) values ('Lead da roleta')
+        returning corretor_id, origem_atribuicao, grupo_id
+      `;
+      expect(lead).toEqual({ corretor_id: corretor, origem_atribuicao: "roleta", grupo_id: GRUPO_NEXT_HOME_ID });
+    });
+  });
+
+  // A mesma brecha da roleta, para qualquer gatilho `before` que venha
+  // depois do carimbo: escrever o grupo ou uma mãe não passa.
+  it("gatilho posterior ao carimbo não troca o grupo nem a mãe", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeB = await criarLead(tx, b.corretorId);
+      const conversa = await criarConversa(tx, b.corretorId, leadDeB);
+
+      await tx.unsafe(`
+        create function pg_temp.teste_0182_troca_grupo() returns trigger language plpgsql as $$
+        begin
+          new.grupo_id := '${a.grupoId}';
+          return new;
+        end $$
+      `);
+      await tx`
+        create trigger whatsapp_mensagens_zz_teste before insert on public.whatsapp_mensagens
+          for each row execute function pg_temp.teste_0182_troca_grupo()
+      `;
+      await expect(
+        tx.savepoint((s) => s`
+          insert into public.whatsapp_mensagens (conversa_id, conteudo, remetente)
+          values (${conversa}, 'Oi', 'cliente')
+        `),
+      ).rejects.toThrow(/grupo da linha difere do grupo de whatsapp_conversas/);
+
+      // No UPDATE, o SET nem cita a mãe: quem a muda é o gatilho.
+      await tx.unsafe(`
+        create function pg_temp.teste_0182_troca_dono() returns trigger language plpgsql as $$
+        begin
+          new.corretor_id := '${a.corretorId}';
+          return new;
+        end $$
+      `);
+      await tx`
+        create trigger leads_zz_teste before update on public.leads
+          for each row execute function pg_temp.teste_0182_troca_dono()
+      `;
+      await expect(
+        tx.savepoint((s) => s`update public.leads set nome = 'Outro nome' where id = ${leadDeB}`),
+      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+
+      await tx`drop trigger leads_zz_teste on public.leads`;
+      await tx.unsafe(`
+        create function pg_temp.teste_0182_troca_grupo_upd() returns trigger language plpgsql as $$
+        begin
+          new.grupo_id := '${a.grupoId}';
+          return new;
+        end $$
+      `);
+      await tx`
+        create trigger leads_zz_teste before update on public.leads
+          for each row execute function pg_temp.teste_0182_troca_grupo_upd()
+      `;
+      await expect(
+        tx.savepoint((s) => s`update public.leads set nome = 'Outro nome' where id = ${leadDeB}`),
+      ).rejects.toThrow(/grupo_id de leads não muda/);
     });
   });
 
