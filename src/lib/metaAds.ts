@@ -1,5 +1,6 @@
 import "server-only";
 
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -136,6 +137,10 @@ export async function sincronizarMetaAds(): Promise<ResultadoSync> {
   const supabase = createServiceClient();
   const { error } = await supabase.from("meta_ads_metricas").upsert(
     linhas.map((l) => ({
+      // A conta da Meta configurada é a do grupo 1 até a fase 7. A métrica
+      // não tem linha-mãe (a campanha canônica nasce do gatilho, a partir
+      // dela): o grupo vai explícito (0183).
+      grupo_id: GRUPO_NEXT_HOME_ID,
       dia: l.dia,
       campanha_id: l.campanhaId,
       campanha_nome: l.campanhaNome,

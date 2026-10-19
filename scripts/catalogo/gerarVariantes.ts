@@ -23,6 +23,7 @@
  * ficar eternamente com essas linhas.
  */
 import { createServiceClient } from "@/lib/supabase/service";
+import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 import { gerarVariantes, medirImagem } from "@/lib/imoveis/imagemDerivada";
 import { caminhoDaVariante, largurasParaGerar } from "@/lib/imagens/variantes";
 
@@ -49,6 +50,8 @@ function caminhoNoBucket(url: string, base: string): string | null {
 }
 
 async function main() {
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  const { grupoId } = grupoDoScript(process.argv.slice(2));
   const { limite, soPublicados } = lerArgs();
   const supabase = createServiceClient();
   const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
@@ -58,6 +61,7 @@ async function main() {
     .from("midias")
     .select("id, url, largura, empreendimento_id, empreendimentos!inner(publicado)")
     .is("variantes", null)
+    .eq("grupo_id", grupoId)
     .order("ordem", { ascending: true })
     .limit(limite);
   if (soPublicados) consulta = consulta.eq("empreendimentos.publicado", true);

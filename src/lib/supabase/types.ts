@@ -53,6 +53,9 @@
  * obrigatório no Row e opcional no Insert/Update, porque o gatilho
  * `<tabela>_00_grupo` o deriva da linha-mãe. `admin_eventos.grupo_id` é
  * anulável (nulo = evento da plataforma).
+ *
+ * E, da 0183, o valor `repasse` em `lead_interacoes.tipo` e as funções
+ * `slug_de_corretor_livre` e `email_de_acesso_livre`.
  */
 
 export type Json =
@@ -2360,7 +2363,7 @@ export type Database = {
           detalhes: Json
           id: string
           lead_id: string
-          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
+          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema" | "repasse"
         }
         Insert: {
           grupo_id?: string
@@ -2370,7 +2373,7 @@ export type Database = {
           detalhes?: Json
           id?: string
           lead_id: string
-          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema"
+          tipo: "nota" | "mensagem" | "ligacao" | "etapa" | "visita" | "sistema" | "repasse"
         }
         Update: {
           grupo_id?: string
@@ -3757,6 +3760,8 @@ export type Database = {
         Returns: number
       }
       eh_gestor: { Args: never; Returns: boolean }
+      slug_de_corretor_livre: { Args: { p_slug: string }; Returns: boolean }
+      email_de_acesso_livre: { Args: { p_email: string }; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
       eh_admin_da_plataforma: { Args: never; Returns: boolean }
       normalizar_telefone_br: { Args: { bruto: string }; Returns: string }

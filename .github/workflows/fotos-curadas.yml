@@ -52,5 +52,5 @@ jobs:
           for l in $listas; do
             [ -f "$l" ] || continue
             echo "== $l"
-            npx tsx --conditions=react-server scripts/catalogo/trazerFotosCuradas.ts "$l"
+            npx tsx --conditions=react-server scripts/catalogo/trazerFotosCuradas.ts "$l" --grupo=00000000-0000-0000-0000-000000000001
           done

@@ -256,6 +256,9 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
       .from("lead_interacoes")
       .select("id, tipo, conteudo, created_at, corretor:corretores(nome)")
       .eq("lead_id", leadId)
+      // `repasse` (0183) guarda a origem anterior para a fase 5; a
+      // transferência já aparece na linha `sistema` que a acompanha.
+      .neq("tipo", "repasse")
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId),

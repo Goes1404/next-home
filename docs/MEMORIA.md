@@ -10550,6 +10550,66 @@ Nota: [[plataforma-multi-grupo]].
   transação desfeita.
 - **O webhook e a seleção leem as taxas pelo grupo do dono** (instância e
   link), não pelo `grupoDoSite()` — guarda em `taxasDoDono.test.ts`.
+- **As duas migrations de grupo têm `set local lock_timeout = '5s'`**: elas
+  põem ACCESS EXCLUSIVE em dezenas de tabelas com o webhook escrevendo. Sem
+  teto, a migration esperaria o lock e o tráfego enfileiraria atrás dela;
+  com ele, ela falha e se repete.
+
+## Chaves únicas por grupo e as portas de entrada (0183 parte A, 19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **Chave única de negócio global recusa o grupo B como "duplicado" de uma
+  linha do grupo A** que ele nem enxerga. Nove chaves passaram a incluir
+  `grupo_id`: `corretores (creci)`, `lazer_itens (nome)`,
+  `marketing_campanhas` (as duas), `marketing_eventos (event_id)`,
+  `meses_fechados` (PK `mes` → `(grupo_id, mes)`), `fiscal_config` (PK
+  `id = 1` → `grupo_id`; a coluna `id` fica porque o código lê
+  `.eq("id", 1)`), `empreendimentos (codigo_legado)` e
+  `whatsapp_mensagens (provider_message_id)`. A dedup de mídia já era por
+  imóvel desde a 0042: o teste "o mesmo arquivo pode existir em dois
+  grupos" passou de primeira.
+- **O id da mensagem do WhatsApp é o mesmo nos dois aparelhos.** Mensagem de
+  um corretor para outro, cada um no seu grupo: com a chave global, a cópia
+  do segundo era tomada por reentrega e sumia. Já valia dentro do mesmo
+  grupo (dois corretores da Next Home), e continua valendo ali.
+- **Trocar a chave que um `on conflict` usa quebra quem o usa.** Os dois
+  gatilhos que gravam com `on conflict` (evento do lead, campanha da Meta)
+  foram reescritos na mesma migration. O upsert do webhook da Meta usa
+  `onConflict: "meta_lead_id"`: por isso essa chave ficou global (a
+  integração é do grupo 1 até a fase 7), senão o código no ar quebraria
+  entre a migration e o deploy.
+- **A guarda das chaves lê o banco**: toda chave única de tabela com grupo
+  inclui `grupo_id` ou uma coluna com FK para tabela com grupo, ou está em
+  `CHAVES_UNICAS_GLOBAIS` com o motivo. Ela confere as duas direções.
+- **Pela chave de serviço não há sessão**: lead de portal, de Lead Ads, o
+  clique do `/wa` e a métrica da Meta nascem sem linha-mãe, e com dois
+  grupos falhariam. Cada porta passa o grupo: `/wa` o do site, Meta e
+  e-mail de portal o grupo 1, o Gmail o do dono da caixa
+  (`processarEmailDeLead` exige `grupoId`), o cadastro de corretor o do
+  gestor. `/api/leads` e `/api/clique-whatsapp` gravam pela chave PÚBLICA:
+  mandar `grupo_id` dali deixaria qualquer um escolher o grupo do lead. Elas
+  passam à chave de serviço na Task 12.
+- **Unicidade global com a sessão por grupo**: `slug_de_corretor_livre` e
+  `email_de_acesso_livre` (`security definer`, só gestor) olham todos os
+  grupos e o Auth e devolvem só sim/não. Pela sessão, com a policy
+  restritiva, um slug do grupo A pareceria livre, o update bateria na chave
+  e o login recém-criado seria desfeito.
+- **Gravar mensagem e telemetria não engolem mais o erro.** `gravarMensagem`
+  devolvia `inedita: true` em qualquer erro que não fosse 23505, e a IA
+  respondia por cima de uma fala que não estava no banco. Agora devolve
+  `{ inedita: false, erro }` e o webhook para (`mensagem_nao_gravada`);
+  `registrarInteracao` devolve `{ ok, erro }` e loga.
+- **Repasse de lead guarda a origem antes de sobrescrever** (`tipo =
+  'repasse'`, `detalhes.origem_anterior`), para a etiqueta da fase 5. A
+  linha do tempo esconde `repasse`: a linha `sistema` já conta a
+  transferência, e `LinhaDoTempo` só conhece os tipos antigos.
+- **Mês fechado e arquivo do contador por grupo**: o arquivo vai para
+  `<grupo>/<mês>.xlsx` (no mesmo caminho, o `upsert: true` de um grupo
+  sobrescreveria o do outro), e reabrir, baixar e listar filtram o grupo.
+- **Scripts de catálogo exigem `--grupo`** (`grupoDoScript`, só o grupo 1 na
+  fase 1) e filtram o imóvel por ele; os workflows passam a opção, e a
+  guarda confere os dois lados.
 
 ## Revisão de lacunas e respostas do dono (19/10/2026)
 

@@ -744,6 +744,13 @@ export async function POST(req: NextRequest) {
       providerMessageId,
     });
 
+    // A mensagem não entrou no banco (L26). Responder seria a IA falar por
+    // cima de uma fala que nem o histórico nem o corretor vão ver: para aqui,
+    // e o erro já foi para o log em `gravarMensagem`.
+    if (gravacao.erro) {
+      return NextResponse.json({ ok: false, action: "mensagem_nao_gravada", sender });
+    }
+
     // Reentrega do provedor: a mensagem já foi processada; responder de
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {

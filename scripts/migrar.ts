@@ -19,6 +19,13 @@ import * as cheerio from "cheerio";
 import type { AnyNode } from "domhandler";
 import iconv from "iconv-lite";
 
+/**
+ * O site legado é da Next Home: tudo o que ele traz nasce no grupo 1. CRECI e
+ * código legado são únicos por grupo desde a 0183, e é por essa chave que o
+ * script continua idempotente.
+ */
+const GRUPO_LEGADO = "00000000-0000-0000-0000-000000000001";
+
 const BASE = "https://www.nexthomeimobiliaria.com.br";
 const SUPABASE_URL = "https://prhhrqyubjcafvucirri.supabase.co";
 const SUPABASE_REF = "prhhrqyubjcafvucirri";
@@ -492,9 +499,9 @@ async function main() {
           if (r) fotoUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/corretores/${nomeArquivo}`;
         }
         const res = await executarSql(`
-          insert into corretores (nome, creci, whatsapp, foto_url)
-          values (${sqlString(imv.corretorNome)}, ${sqlString(imv.corretorCreci)}, ${sqlString(imv.corretorWhatsapp ?? "5511972207204")}, ${sqlString(fotoUrl)})
-          on conflict (creci) do update set nome = excluded.nome
+          insert into corretores (nome, creci, whatsapp, foto_url, grupo_id)
+          values (${sqlString(imv.corretorNome)}, ${sqlString(imv.corretorCreci)}, ${sqlString(imv.corretorWhatsapp ?? "5511972207204")}, ${sqlString(fotoUrl)}, ${sqlString(GRUPO_LEGADO)})
+          on conflict (grupo_id, creci) do update set nome = excluded.nome
           returning id;
         `);
         corretorId = res[0].id as string;
@@ -508,7 +515,7 @@ async function main() {
           slug, nome, tagline, descricao, status, tipo, finalidade,
           cidade, bairro, endereco, lat, lng, preco_a_partir, iptu, condominio_valor,
           construtora, total_unidades, total_andares, entrega_prevista,
-          destaque, ordem, corretor_id, codigo_legado, publicado
+          destaque, ordem, corretor_id, codigo_legado, publicado, grupo_id
         ) values (
           ${sqlString(slug)}, ${sqlString(imv.nome)}, ${sqlString(imv.tagline)}, ${sqlString(imv.descricao)},
           ${sqlString(imv.status)}::status_obra, ${sqlString(imv.tipo)}::tipo_imovel, ${sqlString(imv.finalidade)}::finalidade_imovel,
@@ -516,9 +523,9 @@ async function main() {
           ${sqlNum(coords?.[0] ?? null)}, ${sqlNum(coords?.[1] ?? null)},
           ${sqlNum(imv.precoAPartir)}, ${sqlNum(imv.iptu)}, ${sqlNum(imv.condominioValor)},
           ${sqlString(imv.construtora)}, ${sqlNum(imv.totalUnidades)}, ${sqlNum(imv.totalAndares)},
-          ${sqlString(imv.entregaPrevista)}, false, 100, ${sqlString(corretorId)}, ${sqlString(imv.codigoLegado)}, true
+          ${sqlString(imv.entregaPrevista)}, false, 100, ${sqlString(corretorId)}, ${sqlString(imv.codigoLegado)}, true, ${sqlString(GRUPO_LEGADO)}
         )
-        on conflict (codigo_legado) do update set
+        on conflict (grupo_id, codigo_legado) do update set
           nome = excluded.nome, tagline = excluded.tagline, descricao = excluded.descricao,
           status = excluded.status, preco_a_partir = excluded.preco_a_partir,
           iptu = excluded.iptu, condominio_valor = excluded.condominio_valor,

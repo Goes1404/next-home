@@ -496,12 +496,44 @@ export async function atribuirLead(
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
 
-  // O dono ANTERIOR, para a linha do tempo dizer de quem para quem.
+  // O dono ANTERIOR, para a linha do tempo dizer de quem para quem, e a
+  // origem, que o update abaixo sobrescreve com `manual`.
   const { data: antes } = await supabase
     .from("leads")
-    .select("corretor_id, corretor:corretores!leads_corretor_id_fkey(nome)")
+    .select("corretor_id, origem_atribuicao, grupo_id, corretor:corretores!leads_corretor_id_fkey(nome)")
     .eq("id", leadId)
     .maybeSingle();
+  if (!antes || antes.grupo_id !== guarda.corretor.grupoId) {
+    return { erro: "Sem permissão para atribuir este lead." };
+  }
+
+  // O novo dono é conferido ANTES da linha de repasse: `corretores` é legível
+  // por todos, então um id de outro grupo passaria por esta leitura, o
+  // gatilho da 0182 recusaria o update, e a linha `repasse` (que não se
+  // apaga) ficaria dizendo à fase 5 que o lead foi repassado sem ter sido.
+  const { data: novoDono } = await supabase
+    .from("corretores")
+    .select("nome, grupo_id")
+    .eq("id", corretorId)
+    .maybeSingle();
+  if (!novoDono || novoDono.grupo_id !== guarda.corretor.grupoId) {
+    return { erro: "Corretor de destino não encontrado." };
+  }
+
+  // A origem anterior fica guardada ANTES de ser sobrescrita (L30): é dela
+  // que a fase 5 tira a etiqueta de quem já foi repassado. Sem ela gravada,
+  // o repasse não acontece.
+  const { error: erroRepasse } = await supabase.from("lead_interacoes").insert({
+    lead_id: leadId,
+    corretor_id: guarda.corretor.id,
+    tipo: "repasse",
+    conteudo: "Repasse pela gestão",
+    detalhes: { origem_anterior: antes.origem_atribuicao, de: antes.corretor_id, para: corretorId },
+  });
+  if (erroRepasse) {
+    console.error("[atribuir] origem anterior não gravada:", erroRepasse.message);
+    return { erro: "Não foi possível atribuir agora. Tente novamente." };
+  }
 
   const { data, error } = await supabase
     .from("leads")
@@ -515,12 +547,6 @@ export async function atribuirLead(
   if (!data || data.length === 0) {
     return { erro: "Sem permissão para atribuir este lead." };
   }
-
-  const { data: novoDono } = await supabase
-    .from("corretores")
-    .select("nome")
-    .eq("id", corretorId)
-    .maybeSingle();
 
   /*
    * Transferência na linha do tempo (plano de ativação, 3.3): de quem, para

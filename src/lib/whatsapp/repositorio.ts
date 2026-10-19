@@ -871,7 +871,7 @@ export async function gravarMensagem(params: {
   providerMessageId?: string | null;
   /** Só para mensagem ENVIADA por nós: nasce 'enviada' e o ack promove. */
   statusEntrega?: "enviada" | null;
-}): Promise<{ inedita: boolean; id: string | null }> {
+}): Promise<{ inedita: boolean; id: string | null; erro?: string }> {
   const supabase = createServiceClient();
 
   const { data, error } = await supabase
@@ -889,11 +889,14 @@ export async function gravarMensagem(params: {
     .maybeSingle();
 
   // 23505 = violação de unicidade: é a reentrega. Qualquer outro erro é
-  // problema real, mas nunca pode derrubar o fluxo de resposta — loga e segue.
+  // problema real e volta como falha (L26): antes ele virava `inedita: true`
+  // e a IA respondia ao cliente por cima de uma mensagem que não estava no
+  // banco — com dois grupos, a recusa do gatilho de grupo sumiria aqui.
+  // Quem chama decide o que fazer; o webhook para sem responder.
   if (error) {
     if (error.code === "23505") return { inedita: false, id: null };
     console.error("Falha ao gravar mensagem de WhatsApp:", error.message);
-    return { inedita: true, id: null };
+    return { inedita: false, id: null, erro: error.message };
   }
 
   await supabase

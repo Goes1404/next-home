@@ -26,3 +26,31 @@ export const TABELAS_GLOBAIS = [
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
+
+// Chaves únicas que continuam GLOBAIS (valem entre todos os grupos), com o
+// motivo. Regra da 0183: toda chave única de uma tabela com grupo inclui
+// `grupo_id` ou uma coluna-mãe (FK para tabela com grupo), porque chave de
+// negócio global faz o grupo B ser recusado como "duplicado" de uma linha do
+// grupo A (Review Focus 5). Ficam de fora a chave primária `id` (uuid
+// sorteado) e as desta lista. `isolamento.db.test.ts` confere as duas
+// direções: chave global fora daqui reprova, e entrada daqui que deixou de
+// existir ou passou a ser escopada também. A mesma lista está no cabeçalho
+// da 0183.
+export const CHAVES_UNICAS_GLOBAIS = {
+  // O site resolve imóvel e corretor pelo slug, sem grupo, até a fase 3.
+  empreendimentos_slug_key: "slug do imóvel na URL pública (fase 3 escopa)",
+  corretores_slug_key: "slug do corretor na URL pública (fase 3 escopa)",
+  // Um login, um grupo.
+  corretores_user_id_key: "um login pertence a um corretor só",
+  // Nome da instância no provedor de WhatsApp, que é um servidor só.
+  corretor_whatsapp_instancias_instance_name_key: "identidade da instância no provedor",
+  // Tokens sorteados: são a credencial do link, não um dado de negócio.
+  acessos_contador_pkey: "token sorteado do link do contador",
+  links_do_cliente_pkey: "token sorteado do link do cliente",
+  corretor_agenda_token_key: "token sorteado da agenda .ics",
+  parceiros_token_key: "token sorteado da página do parceiro",
+  // Ids que a Meta emite: únicos na Meta inteira, e a integração é só do
+  // grupo 1 até a fase 7, que escopa a métrica por grupo.
+  leads_meta_lead_id_key: "id do lead na Meta; upsert do webhook (fase 7)",
+  meta_ads_metricas_pkey: "dia + id da campanha na Meta (fase 7)",
+} as const;
