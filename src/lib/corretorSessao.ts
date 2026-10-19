@@ -31,8 +31,9 @@ export type PapelCorretor = "corretor" | "gestor";
 
 /**
  * O corretor logado. Carrega `papel` e `ativo`, que o `CorretorPerfil`
- * público não tem: a vitrine da equipe não precisa saber quem é gestor, e
- * `SELECT_CORRETOR` alimenta as duas telas públicas de `/corretores`.
+ * público não tem: a vitrine da equipe não precisa saber quem é gestor. As
+ * telas públicas de `/corretores` leem `COLUNAS_PUBLICAS_DE_CORRETOR` (0187),
+ * que contém as colunas de `SELECT_CORRETOR`.
  */
 export type CorretorSessao = CorretorPerfil & {
   papel: PapelCorretor;
