@@ -547,6 +547,13 @@ function problemasDePlataformaAdmin(codigoSemComentarios: string): { erros: stri
       erros.push("consulta leads: a área da plataforma só conta leads (select com head: true), nunca lê nem escreve");
     }
   }
+  // Tabela em variável escaparia das duas regras acima, que só leem o nome
+  // literal. A única exceção é o desfazer do grupo, que percorre
+  // `ORDEM_DO_DESFAZER` (lista fechada, conferida no teste abaixo).
+  for (const m of codigo.matchAll(/(?<!storage\s*)\.from\(\s*(?!["'])([^)]*)\)/g)) {
+    const percorreAOrdem = m[1].trim() === "tabela" && /for\s*\(\s*const\s*\{\s*tabela\b[^}]*\}\s*of\s+ORDEM_DO_DESFAZER\s*\)/.test(codigo);
+    if (!percorreAOrdem) erros.push(`consulta .from(${m[1].trim()}): a tabela precisa ser escrita, para a guarda ler o nome`);
+  }
   return { erros, exigemProva };
 }
 
@@ -584,6 +591,31 @@ function soContaLeads(resto: string): boolean {
 }
 
 describe("guarda: a regra de plataforma-admin morde", () => {
+  it("reprova tabela em variável", () => {
+    const codigo = `export async function ler(t: string) {
+      await exigirAdminDaPlataformaNaAcao();
+      return createServiceClient().from(t).select("id");
+    }`;
+    expect(problemasDePlataformaAdmin(codigo).erros).toHaveLength(1);
+  });
+
+  it("aceita a tabela que vem de ORDEM_DO_DESFAZER, e só ela", () => {
+    const percorre = `export async function desfazer() {
+      await exigirAdminDaPlataformaNaAcao();
+      const s = createServiceClient();
+      for (const { tabela, coluna } of ORDEM_DO_DESFAZER) await s.from(tabela).delete().eq(coluna, "g");
+    }`;
+    expect(problemasDePlataformaAdmin(percorre).erros).toEqual([]);
+    const outraLista = percorre.replace("ORDEM_DO_DESFAZER", "OUTRA_LISTA");
+    expect(problemasDePlataformaAdmin(outraLista).erros).toHaveLength(1);
+  });
+
+  it("ORDEM_DO_DESFAZER não passa por conversa nem por ficha", async () => {
+    const { ORDEM_DO_DESFAZER } = await import("@/lib/plataforma/desfazerGrupo");
+    const proibidas = [...FORA_DA_PLATAFORMA, "leads"];
+    expect(ORDEM_DO_DESFAZER.filter(({ tabela }) => proibidas.includes(tabela))).toEqual([]);
+  });
+
   it("reprova a chave antes da guarda", () => {
     const codigo = `export async function ler() {
       const s = createServiceClient();

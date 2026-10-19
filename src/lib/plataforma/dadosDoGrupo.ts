@@ -14,6 +14,24 @@ import { ehPlano, ehTipoDeGrupo, type Plano, type TipoDeGrupo } from "./rotulosD
  * que corrigir. Aqui cada recusa tem uma frase.
  */
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Id de grupo vindo da tela: fora do formato, nem vai ao banco. */
+export function ehUuid(valor: unknown): valor is string {
+  return typeof valor === "string" && UUID.test(valor);
+}
+
+/**
+ * O e-mail como padrão de `ilike` que só casa com ele mesmo. `%`, `_` e a
+ * barra invertida são escapados. O `*` não tem escape: o PostgREST troca
+ * todo `*` por `%` antes do Postgres, inclusive o escapado. Ele vira `_`
+ * (um caractere qualquer): casa com o próprio `*`, e o pior caso é acusar
+ * "em uso" um endereço que difere só nessa letra.
+ */
+export function padraoDoEmail(email: string): string {
+  return email.replace(/[\\%_]/g, (c) => "\\" + c).replaceAll("*", "_");
+}
+
 export type DadosNovoGrupo = {
   nome: string;
   slug: string;

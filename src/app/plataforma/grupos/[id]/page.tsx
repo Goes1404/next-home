@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
@@ -19,7 +20,7 @@ const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", d
 export default async function GrupoPage({ params }: { params: Promise<{ id: string }> }) {
   const prova = await exigirAdminDaPlataformaNaPagina();
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!ehUuid(id)) notFound();
   const grupo = await lerGrupoDaPlataforma(prova, id);
   if (!grupo) notFound();
 

@@ -6,11 +6,14 @@ import { convidarCorretorDoGrupo } from "@/lib/corretores/convite";
 import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import {
+  ehUuid,
+  padraoDoEmail,
   validarDadosDoGrupo,
   validarNovoGrupo,
   type DadosDoGrupo,
   type DadosNovoGrupo,
 } from "@/lib/plataforma/dadosDoGrupo";
+import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -37,12 +40,15 @@ export type ResultadoNovoGrupo =
  * `email_de_acesso_livre` (0183), que é do gestor: a mesma pergunta vai pela
  * chave de serviço, e só a contagem volta. Conferir antes de criar o grupo
  * poupa criar e desfazer; o Auth ainda recusa e-mail com login no convite.
+ *
+ * Sem diferença de maiúsculas: fichas gravadas antes da normalização têm
+ * "Beto@Gmail.com", e o digitado chega em minúsculas.
  */
 async function emailEmFicha(servico: Servico, email: string): Promise<boolean> {
   const { count, error } = await servico
     .from("corretores")
     .select("id", { count: "exact", head: true })
-    .eq("email", email);
+    .ilike("email", padraoDoEmail(email));
   if (error) {
     // "Não sei" não vira "em uso": o Auth decide no convite.
     console.error("[plataforma] falha ao conferir o e-mail nas fichas:", error.message);
@@ -77,45 +83,91 @@ async function slugDeCorretorLivre(servico: Servico, nome: string): Promise<stri
 
 /**
  * Desfaz um grupo recém-criado que não chegou ao fim (ficha ou convite
- * falharam). Nenhuma chave estrangeira para `grupos` apaga em cascata, então
- * a ordem é a das chaves: as linhas que `criar_grupo` gravou (evento, taxas,
- * fiscal) e a ficha, e só então o grupo — é isso que devolve o endereço.
+ * falharam), na ordem de `ORDEM_DO_DESFAZER`, e deixa UM evento da
+ * plataforma dizendo que a tentativa existiu.
  *
  * O login: o convite já apaga o usuário que criou quando o vínculo falha;
- * aqui só se apaga o que ficou VINCULADO a esta ficha. Um login de outra
- * ficha (o Auth reaproveita convite pendente) nunca é vinculado aqui, então
- * nunca é apagado.
+ * aqui só se apaga o que ficou VINCULADO a esta ficha, ou o login que o
+ * convite não conseguiu conferir (`loginNaoConferido`) — e este só depois de
+ * conferir de novo que ele não é de ficha nenhuma. Um login de outra ficha
+ * (o Auth reaproveita convite pendente) nunca é apagado.
  */
-async function desfazerGrupo(servico: Servico, grupoId: string, corretorId: string | null): Promise<void> {
-  if (corretorId) {
+async function desfazerGrupo(
+  servico: Servico,
+  tentativa: {
+    grupoId: string;
+    slug: string;
+    passo: PassoQueFalhou;
+    operador: string;
+    corretorId?: string;
+    loginNaoConferido?: string;
+  },
+): Promise<void> {
+  const { grupoId } = tentativa;
+  if (tentativa.corretorId) {
     const { data: ficha } = await servico
       .from("corretores")
       .select("user_id")
-      .eq("id", corretorId)
+      .eq("id", tentativa.corretorId)
       .eq("grupo_id", grupoId)
       .maybeSingle();
-    if (ficha?.user_id) {
-      const { error } = await servico.auth.admin.deleteUser(ficha.user_id);
-      if (error) console.error(`[plataforma] login do grupo desfeito não apagado: ${error.message}`);
-    }
+    if (ficha?.user_id) await apagarLogin(servico, ficha.user_id);
   }
+  if (tentativa.loginNaoConferido) await apagarLoginSemFicha(servico, tentativa.loginNaoConferido);
 
-  const passos = [
-    () => servico.from("admin_eventos").delete().eq("grupo_id", grupoId),
-    () => servico.from("parametros_credito").delete().eq("grupo_id", grupoId),
-    () => servico.from("fiscal_config").delete().eq("grupo_id", grupoId),
-    () => servico.from("corretores").delete().eq("grupo_id", grupoId),
-    () => servico.from("grupos").delete().eq("id", grupoId),
-  ];
-  for (const passo of passos) {
-    const { error } = await passo();
+  let desfeito = true;
+  for (const { tabela, coluna } of ORDEM_DO_DESFAZER) {
+    // Com a tabela numa união, o supabase-js não acha coluna em comum para o
+    // `eq`; o par tabela/coluna de cada linha é conferido no banco
+    // (`plataforma.db.test.ts` apaga pela mesma constante).
+    const apagar = servico.from(tabela).delete() as unknown as {
+      eq: (coluna: string, valor: string) => PromiseLike<{ error: { message: string } | null }>;
+    };
+    const { error } = await apagar.eq(coluna, grupoId);
     if (error) {
       // Parar aqui: apagar o grupo com linhas dele ainda vivas bateria na
       // chave estrangeira do mesmo jeito. O endereço fica preso, e o log diz qual.
-      console.error(`[plataforma] grupo ${grupoId} não foi desfeito por inteiro: ${error.message}`);
-      return;
+      console.error(`[plataforma] grupo ${grupoId} não foi desfeito por inteiro (${tabela}): ${error.message}`);
+      desfeito = false;
+      break;
     }
   }
+
+  // Depois dos deletes: o evento é da plataforma (sem grupo), então não sai
+  // junto com os do grupo. Sem e-mail e sem nome — o endereço e o passo bastam.
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: null,
+    acao: ACAO_GRUPO_DESFEITO,
+    ator_id: null,
+    ator_plataforma_user_id: tentativa.operador,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", slug: tentativa.slug, passo: tentativa.passo, desfeito },
+  });
+  if (erroDoEvento) {
+    console.error(`[plataforma] evento do grupo desfeito (${tentativa.slug}) não gravado: ${erroDoEvento.message}`);
+  }
+}
+
+async function apagarLogin(servico: Servico, userId: string): Promise<void> {
+  const { error } = await servico.auth.admin.deleteUser(userId);
+  if (error) console.error(`[plataforma] login do grupo desfeito não apagado: ${error.message}`);
+}
+
+/**
+ * Apaga o login que o convite devolveu e não conseguiu conferir — só se,
+ * agora, ele não for de ficha nenhuma. Se a conferência falhar de novo, fica:
+ * apagar o login de outra pessoa é pior que deixar um órfão.
+ */
+async function apagarLoginSemFicha(servico: Servico, userId: string): Promise<void> {
+  const { count, error } = await servico
+    .from("corretores")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (error) {
+    console.error(`[plataforma] login do convite não conferido de novo; mantido: ${error.message}`);
+    return;
+  }
+  if ((count ?? 0) === 0) await apagarLogin(servico, userId);
 }
 
 function erroDoCriarGrupo(error: { message: string; code?: string }): string {
@@ -173,7 +225,7 @@ export async function criarGrupoComPrimeiroAcesso(dados: DadosNovoGrupo): Promis
     .single();
   if (erroFicha || !ficha) {
     console.error("[plataforma] falha ao criar a ficha do primeiro acesso:", erroFicha?.message);
-    await desfazerGrupo(servico, grupoId, null);
+    await desfazerGrupo(servico, { grupoId, slug: d.slug, passo: "ficha", operador: guarda.userId });
     return { ok: false, erro: "Não foi possível criar o primeiro acesso agora; o grupo foi desfeito. Tente de novo." };
   }
 
@@ -185,7 +237,14 @@ export async function criarGrupoComPrimeiroAcesso(dados: DadosNovoGrupo): Promis
     slug,
   });
   if (!convite.ok) {
-    await desfazerGrupo(servico, grupoId, ficha.id);
+    await desfazerGrupo(servico, {
+      grupoId,
+      slug: d.slug,
+      passo: "convite",
+      operador: guarda.userId,
+      corretorId: ficha.id,
+      loginNaoConferido: convite.loginNaoConferido,
+    });
     return { ok: false, erro: convite.erro };
   }
 
@@ -209,6 +268,9 @@ export type ResultadoDadosDoGrupo = { ok: true } | { ok: false; erro: string };
 export async function editarDadosDoGrupo(grupoId: string, dados: DadosDoGrupo): Promise<ResultadoDadosDoGrupo> {
   const guarda = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  // Id torto não vai ao banco: o Postgres recusaria com "invalid input
+  // syntax for type uuid", e a tela mostraria o erro genérico.
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
 
   const validacao = validarDadosDoGrupo(dados);
   if (!validacao.ok) return { ok: false, erro: validacao.erro };

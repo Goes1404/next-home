@@ -21,6 +21,7 @@ import {
 } from "./apoioDoBanco";
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
 import { COLUNAS_PUBLICAS_DE_CORRETOR } from "@/lib/corretores/colunasPublicas";
+import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER } from "@/lib/plataforma/desfazerGrupo";
 
 /** Roda `fn` pela chave de serviço (papel `service_role`, como o PostgREST). */
 function comoServico<T>(
@@ -186,13 +187,24 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
           /foreign key/,
         );
 
-        // A ordem de `desfazerGrupo` (src/app/plataforma/acoes.ts).
-        await s`delete from public.admin_eventos where grupo_id = ${id}`;
-        await s`delete from public.parametros_credito where grupo_id = ${id}`;
-        await s`delete from public.fiscal_config where grupo_id = ${id}`;
-        await s`delete from public.corretores where grupo_id = ${id}`;
-        const apagados = await s`delete from public.grupos where id = ${id} returning id`;
+        // A MESMA constante que `desfazerGrupo` (src/app/plataforma/acoes.ts)
+        // percorre: se `criar_grupo` passar a gravar outra tabela, este
+        // teste quebra no delete do grupo, e a action junto com ele.
+        let apagados: unknown[] = [];
+        for (const { tabela, coluna } of ORDEM_DO_DESFAZER) {
+          apagados = await s.unsafe(`delete from public.${tabela} where ${coluna} = $1 returning 1`, [id]);
+        }
+        expect(ORDEM_DO_DESFAZER.at(-1)).toEqual({ tabela: "grupos", coluna: "id" });
         expect(apagados).toHaveLength(1);
+
+        // O evento que fica: da plataforma, sem grupo, pela chave de serviço.
+        const [evento] = await s`
+          insert into public.admin_eventos (grupo_id, acao, ator_plataforma_user_id, detalhes)
+          values (null, ${ACAO_GRUPO_DESFEITO}, ${operador},
+                  ${s.json({ origem: "plataforma", slug: "imobiliaria-silva", passo: "convite", desfeito: true })})
+          returning grupo_id, acao
+        `;
+        expect(evento).toEqual({ grupo_id: null, acao: "grupo_desfeito" });
 
         const [{ id: deNovo }] = await criar();
         expect(deNovo).not.toBe(id);
@@ -268,6 +280,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
       const b = await criarGrupo(tx, { slug: "grupo-b" });
       for (const acao of [
         "grupo_criado",
+        "grupo_desfeito",
         "convite_enviado",
         "convite_reenviado",
         "email_alterado",

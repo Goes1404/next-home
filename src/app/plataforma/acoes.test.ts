@@ -15,6 +15,8 @@ import { bancoFalso, type BancoFalso } from "../../../test/bancoFalso";
  */
 
 const OPERADOR = "operador-1";
+/** Id de grupo com cara de uuid: `editarDadosDoGrupo` recusa o resto antes do banco. */
+const G_NH = "00000000-0000-4000-8000-0000000000aa";
 const URL_CONVITE = "https://site/auth/confirmar?token_hash=h1&type=invite&next=%2Fcorretor%2Fdefinir-senha";
 
 let banco: BancoFalso;
@@ -85,12 +87,12 @@ beforeEach(() => {
   respostaDoLink = { invite: { ok: true, url: URL_CONVITE, userId: "usuario-novo" } };
   respostaDoEnvio = { enviado: false, motivo: "sem_chave" };
   banco = bancoFalso({
-    grupos: [{ id: "grupo-nh", nome: "Next Home", slug: "casa-nh", tipo: "imobiliaria", plano: "custo" }],
+    grupos: [{ id: G_NH, nome: "Next Home", slug: "casa-nh", tipo: "imobiliaria", plano: "custo" }],
     corretores: [
-      { id: "c-outro", nome: "Beto", slug: "ana-silva", user_id: "usuario-beto", email: "beto@gmail.com", grupo_id: "grupo-nh" },
+      { id: "c-outro", nome: "Beto", slug: "ana-silva", user_id: "usuario-beto", email: "Beto@Gmail.com", grupo_id: G_NH },
     ],
-    parametros_credito: [{ grupo_id: "grupo-nh" }],
-    fiscal_config: [{ grupo_id: "grupo-nh" }],
+    parametros_credito: [{ grupo_id: G_NH }],
+    fiscal_config: [{ grupo_id: G_NH }],
     admin_eventos: [],
   });
   banco.cliente.rpc = async (nome: string, args: Record<string, unknown>) => {
@@ -108,7 +110,9 @@ beforeEach(() => {
   };
 });
 
-const doGrupo = (tabela: string, grupoId: string) => banco.tabelas[tabela].filter((l) => l.grupo_id === grupoId);
+/** As linhas do grupo; em `grupos` a chave é `id` (sem isso, "o grupo sumiu" passaria sempre). */
+const doGrupo = (tabela: string, grupoId: string) =>
+  banco.tabelas[tabela].filter((l) => (tabela === "grupos" ? l.id : l.grupo_id) === grupoId);
 
 describe("criar grupo com o primeiro acesso", () => {
   it("cria grupo, gestor e convite numa operação", async () => {
@@ -185,9 +189,9 @@ describe("criar grupo com o primeiro acesso", () => {
     for (const tabela of ["grupos", "corretores", "parametros_credito", "fiscal_config", "admin_eventos"]) {
       expect(doGrupo(tabela, "grupo-2"), tabela).toEqual([]);
     }
-    expect(banco.tabelas.grupos.map((g) => g.id)).toEqual(["grupo-nh"]);
+    expect(banco.tabelas.grupos.map((g) => g.id)).toEqual([G_NH]);
     // A Next Home não perdeu nada no desfazer.
-    expect(doGrupo("parametros_credito", "grupo-nh")).toHaveLength(1);
+    expect(doGrupo("parametros_credito", G_NH)).toHaveLength(1);
     expect(banco.tabelas.corretores.map((c) => c.id)).toEqual(["c-outro"]);
 
     // O endereço fica livre: a segunda tentativa, com o convite de volta, passa.
@@ -281,6 +285,132 @@ describe("criar grupo com o primeiro acesso", () => {
     expect(chamadasDoRpc).toEqual([]);
   });
 
+  it("curinga do like no e-mail digitado não casa com a ficha de outra pessoa", async () => {
+    banco.tabelas.corretores.push(
+      { id: "c-x", nome: "X", slug: "x", user_id: null, email: "ana1silva@silva.com.br", grupo_id: G_NH },
+      { id: "c-y", nome: "Y", slug: "y", user_id: null, email: "anaxyz@silva.com.br", grupo_id: G_NH },
+    );
+    for (const [i, email] of ["ana_silva@silva.com.br", "ana%@silva.com.br", "ana*@silva.com.br"].entries()) {
+      chamadasDoRpc = [];
+      const r = await criarGrupoComPrimeiroAcesso({ ...DADOS, slug: `grupo-curinga-${i}`, primeiroEmail: email });
+      expect(chamadasDoRpc.map((c) => c.nome), email).toEqual(["criar_grupo"]);
+      expect(r.ok, email).toBe(true);
+      // O próximo e-mail precisa de grupo e ficha novos.
+      banco.tabelas.corretores = banco.tabelas.corretores.filter((c) => c.grupo_id === G_NH);
+      banco.tabelas.grupos = banco.tabelas.grupos.filter((g) => g.id === G_NH);
+    }
+  });
+
+  it("o desfazer deixa um evento da plataforma, sem e-mail nem nome", async () => {
+    respostaDoLink.invite = { ok: false, motivo: "falha" };
+
+    await criarGrupoComPrimeiroAcesso(DADOS);
+
+    const daPlataforma = banco.tabelas.admin_eventos.filter((e) => e.grupo_id === null);
+    expect(daPlataforma).toEqual([
+      {
+        id: expect.any(String),
+        grupo_id: null,
+        acao: "grupo_desfeito",
+        ator_id: null,
+        ator_plataforma_user_id: OPERADOR,
+        alvo_corretor_id: null,
+        detalhes: { origem: "plataforma", slug: "imobiliaria-silva", passo: "convite", desfeito: true },
+      },
+    ]);
+    const texto = JSON.stringify(daPlataforma);
+    expect(texto).not.toMatch(/@/);
+    expect(texto).not.toMatch(/Ana|Silva/);
+  });
+
+  it("ficha que falha também deixa o evento, com o passo", async () => {
+    const original = banco.cliente.from;
+    banco.cliente.from = (tabela: string) => {
+      const q = original(tabela);
+      if (tabela !== "corretores") return q;
+      q.insert = () =>
+        ({ select: () => ({ single: async () => ({ data: null, error: { message: "creci repetido" } }) }) }) as never;
+      return q;
+    };
+
+    await criarGrupoComPrimeiroAcesso(DADOS);
+
+    expect(banco.tabelas.admin_eventos.filter((e) => e.grupo_id === null)).toEqual([
+      expect.objectContaining({ acao: "grupo_desfeito", detalhes: expect.objectContaining({ passo: "ficha", desfeito: true }) }),
+    ]);
+  });
+
+  it("desfazer que para no meio diz no evento que o grupo ficou", async () => {
+    respostaDoLink.invite = { ok: false, motivo: "falha" };
+    const original = banco.cliente.from;
+    banco.cliente.from = (tabela: string) => {
+      const q = original(tabela);
+      if (tabela !== "fiscal_config") return q;
+      q.delete = () => ({ eq: async () => ({ data: null, error: { message: "travado" } }) }) as never;
+      return q;
+    };
+
+    await criarGrupoComPrimeiroAcesso(DADOS);
+
+    expect(doGrupo("grupos", "grupo-2")).toHaveLength(1);
+    expect(banco.tabelas.admin_eventos.filter((e) => e.grupo_id === null)).toEqual([
+      expect.objectContaining({ detalhes: expect.objectContaining({ passo: "convite", desfeito: false }) }),
+    ]);
+  });
+
+  it("a ordem do desfazer é a constante que o teste de banco usa", async () => {
+    const { ORDEM_DO_DESFAZER } = await import("@/lib/plataforma/desfazerGrupo");
+    respostaDoLink.invite = { ok: false, motivo: "falha" };
+
+    await criarGrupoComPrimeiroAcesso(DADOS);
+
+    const apagados = banco.consultas.filter((c) => c.operacao === "delete").map((c) => [c.tabela, c.filtros[0]]);
+    expect(apagados).toEqual(ORDEM_DO_DESFAZER.map(({ tabela, coluna }) => [tabela, `eq:${coluna}`]));
+  });
+
+  describe("login criado pelo convite e não conferido", () => {
+    /** As `n` primeiras leituras de `corretores` por `user_id` falham (erro transitório). */
+    function falharLeiturasPorUserId(n: number) {
+      let restantes = n;
+      const original = banco.cliente.from;
+      banco.cliente.from = (tabela: string) => {
+        const q = original(tabela);
+        if (tabela !== "corretores") return q;
+        const eq = q.eq;
+        q.eq = ((col: string, v: unknown) => {
+          if (col === "user_id" && restantes > 0) {
+            restantes--;
+            const erro = { data: null, count: null, error: { message: "timeout" } };
+            return { maybeSingle: async () => erro, then: (r: (x: typeof erro) => unknown) => Promise.resolve(erro).then(r) };
+          }
+          return eq(col, v);
+        }) as never;
+        return q;
+      };
+    }
+
+    it("é apagado no desfazer se não tem outra ficha", async () => {
+      falharLeiturasPorUserId(1);
+      const r = await criarGrupoComPrimeiroAcesso(DADOS);
+      expect(r.ok).toBe(false);
+      expect(usuariosApagados).toEqual(["usuario-novo"]);
+      expect(doGrupo("grupos", "grupo-2")).toEqual([]);
+    });
+
+    it("não é apagado se é de outra ficha", async () => {
+      respostaDoLink.invite = { ok: true, url: URL_CONVITE, userId: "usuario-beto" };
+      falharLeiturasPorUserId(1);
+      await criarGrupoComPrimeiroAcesso(DADOS);
+      expect(usuariosApagados).toEqual([]);
+    });
+
+    it("não é apagado se a segunda conferência também falha", async () => {
+      falharLeiturasPorUserId(2);
+      await criarGrupoComPrimeiroAcesso(DADOS);
+      expect(usuariosApagados).toEqual([]);
+    });
+  });
+
   it("endereço já usado por outro grupo volta como frase, não como erro do banco", async () => {
     const r = await criarGrupoComPrimeiroAcesso({ ...DADOS, slug: "casa-nh" });
     expect(r).toEqual({ ok: false, erro: "Esse endereço já é de outro grupo. Escolha outro." });
@@ -315,7 +445,7 @@ describe("editar os dados do grupo", () => {
   };
 
   it("grava contato e institucionais, e o plano não muda", async () => {
-    const r = await editarDadosDoGrupo("grupo-nh", { ...INSTITUCIONAL, plano: "essencial" } as never);
+    const r = await editarDadosDoGrupo(G_NH, { ...INSTITUCIONAL, plano: "essencial" } as never);
 
     expect(r).toEqual({ ok: true });
     expect(banco.tabelas.grupos[0]).toMatchObject({
@@ -333,7 +463,7 @@ describe("editar os dados do grupo", () => {
   });
 
   it("campo em branco vira vazio, não texto em branco", async () => {
-    await editarDadosDoGrupo("grupo-nh", {
+    await editarDadosDoGrupo(G_NH, {
       ...INSTITUCIONAL,
       razaoSocial: "  ",
       documento: "",
@@ -357,20 +487,28 @@ describe("editar os dados do grupo", () => {
       [{ encarregadoEmail: "y" }, /encarregado/i],
       [{ creciTipo: "Z" }, /CRECI/],
     ] as const) {
-      const r = await editarDadosDoGrupo("grupo-nh", { ...INSTITUCIONAL, ...mudanca });
+      const r = await editarDadosDoGrupo(G_NH, { ...INSTITUCIONAL, ...mudanca });
       expect(r, JSON.stringify(mudanca)).toEqual({ ok: false, erro: expect.stringMatching(frase) });
     }
     expect(banco.consultas).toEqual([]);
   });
 
   it("grupo que não existe não finge que salvou", async () => {
-    const r = await editarDadosDoGrupo("grupo-inexistente", INSTITUCIONAL);
+    const r = await editarDadosDoGrupo("00000000-0000-4000-8000-0000000000ff", INSTITUCIONAL);
     expect(r).toEqual({ ok: false, erro: "Grupo não encontrado." });
+  });
+
+  it("id fora do formato de uuid não chega ao banco", async () => {
+    for (const id of ["grupo-nh", "", "1; drop table grupos", "00000000-0000-4000-8000-0000000000aaX"]) {
+      const r = await editarDadosDoGrupo(id, INSTITUCIONAL);
+      expect(r, id).toEqual({ ok: false, erro: "Grupo não encontrado." });
+    }
+    expect(banco.consultas).toEqual([]);
   });
 
   it("quem não é administrador não edita", async () => {
     guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
-    const r = await editarDadosDoGrupo("grupo-nh", INSTITUCIONAL);
+    const r = await editarDadosDoGrupo(G_NH, INSTITUCIONAL);
     expect(r.ok).toBe(false);
     expect(banco.consultas).toEqual([]);
   });

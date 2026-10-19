@@ -25,6 +25,23 @@ function valorDe(linha: Linha, coluna: string): unknown {
   return v === undefined || v === null ? null : String(v);
 }
 
+const literalNaRegex = (c: string) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function padraoDoLike(padrao: string): RegExp {
+  // O PostgREST troca TODO `*` por `%` antes de chegar ao Postgres, inclusive
+  // um `*` escapado (`\*` vira `\%`, um `%` literal).
+  const p = padrao.replaceAll("*", "%");
+  let fonte = "";
+  for (let i = 0; i < p.length; i++) {
+    const c = p[i];
+    if (c === "\\" && i + 1 < p.length) fonte += literalNaRegex(p[++i]);
+    else if (c === "%") fonte += ".*";
+    else if (c === "_") fonte += ".";
+    else fonte += literalNaRegex(c);
+  }
+  return new RegExp(`^${fonte}$`, "is");
+}
+
 function construtor(banco: { tabelas: Record<string, Linha[]>; consultas: Consulta[] }, tabela: string) {
   const registro: Consulta = { tabela, operacao: "select", filtros: [] };
   const predicados: ((l: Linha) => boolean)[] = [];
@@ -88,6 +105,12 @@ function construtor(banco: { tabelas: Record<string, Linha[]>; consultas: Consul
     in: (col: string, vs: unknown[]) => filtro("in", col, (x) => vs.includes(x)),
     is: (col: string, v: unknown) => filtro("is", col, (x) => (x ?? null) === v),
     not: (col: string, _op: string, v: unknown) => filtro("not", col, (x) => (x ?? null) !== v),
+    // Como o PostgREST + Postgres: `*` vira `%`; `%` e `_` são curingas; a
+    // barra invertida escapa o caractere seguinte; sem diferença de maiúsculas.
+    ilike: (col: string, padrao: string) => {
+      const regex = padraoDoLike(padrao);
+      return filtro("ilike", col, (x) => typeof x === "string" && regex.test(x));
+    },
     gte: (col: string, v: string) => filtro("gte", col, (x) => String(x ?? "") >= v),
     gt: (col: string, v: string) => filtro("gt", col, (x) => String(x ?? "") > v),
     lte: (col: string, v: string) => filtro("lte", col, (x) => String(x ?? "") <= v),

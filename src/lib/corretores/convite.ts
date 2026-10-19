@@ -41,6 +41,15 @@ export type AtorDoAcesso = { corretorId: string } | { plataformaUserId: string }
 
 export type ResultadoDoLink = { ok: true; enviado: boolean; url?: string } | { ok: false; erro: string };
 
+/**
+ * Convite que falhou depois de o Auth devolver um login que não deu para
+ * conferir (erro transitório ao perguntar se ele já é de outra ficha). O
+ * login pode ser novo — criado agora por este convite — e ficaria órfão;
+ * quem chama decide se o apaga, conferindo de novo (o desfazer da
+ * plataforma faz isso).
+ */
+export type FalhaDoConvite = { ok: false; erro: string; loginNaoConferido?: string };
+
 const FORMATO_DE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** `"  Ana@Gmail.com "` → `"ana@gmail.com"`, ou `null` se não parece e-mail. */
@@ -146,7 +155,7 @@ export async function convidarCorretorDoGrupo({
   email: string;
   ator: AtorDoAcesso;
   slug?: string;
-}): Promise<ResultadoDoLink> {
+}): Promise<{ ok: true; enviado: boolean; url?: string } | FalhaDoConvite> {
   const emailLimpo = limparEmail(email);
   if (!emailLimpo) return { ok: false, erro: "E-mail inválido." };
   // `gerarLinkDeAcesso` também recusa; aqui a recusa vem antes de tocar no banco.
@@ -186,7 +195,10 @@ export async function convidarCorretorDoGrupo({
         (erroDono ? ` (não conferido: ${erroDono.message})` : "") +
         "; não vinculado",
     );
-    return { ok: false, erro: erroDono ? "Não foi possível gerar o link agora. Tente de novo." : MENSAGEM_EMAIL_EM_USO };
+    if (erroDono) {
+      return { ok: false, erro: "Não foi possível gerar o link agora. Tente de novo.", loginNaoConferido: link.userId };
+    }
+    return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
   }
 
   // O grupo vai no filtro: a chave de serviço ignora a RLS.

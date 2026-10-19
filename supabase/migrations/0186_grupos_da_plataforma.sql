@@ -116,6 +116,9 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
     'leads_redistribuidos',
     'numero_desconectado',
     'grupo_criado',
+    -- A plataforma desfez um grupo que não chegou ao fim (ficha ou convite
+    -- falharam). Evento da plataforma, sem grupo: os do grupo saem com ele.
+    'grupo_desfeito',
     'convite_enviado',
     'convite_reenviado',
     'email_alterado',
