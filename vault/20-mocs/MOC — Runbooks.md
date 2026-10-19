@@ -4,7 +4,7 @@ tags: [moc, runbook]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-10
+updated: 2026-10-19
 summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem certa.
 ---
 # Runbooks — Map of Content
@@ -25,6 +25,7 @@ summary: Procedimentos de diagnóstico — sintoma → onde olhar, na ordem cert
 | `TypeError: fetch failed` no agente | rede local — sondar `curl api.openai.com` ([[eval-de-conversa]]) |
 | migration nova | [[list-migrations-esta-dessincronizado]] antes de aplicar |
 | ligar e-mail dos portais ou Meta Ads | [[ligar-entradas-de-leads]] |
+| ligar o e-mail do convite e da recuperação de senha; virar administrador da plataforma | [[convite-por-link-no-nosso-dominio]] (`docs/CONVITE-E-EMAIL.md`) |
 | retomar a lista de outro corretor (sem o login dele) | [[retomar-lista-sem-o-login-do-dono]] |
 | a lista está saindo? com que intervalo? (sem acesso ao banco) | [[retomar-lista-sem-o-login-do-dono]] (conferirLista) |
 - [[rodada-de-26-09-parte-3]] — instalar para outro cliente (`docs/INSTALAR-NOVO-CLIENTE.md`) e conectar o Gmail do corretor (26/09)

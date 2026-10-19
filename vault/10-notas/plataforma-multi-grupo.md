@@ -164,3 +164,8 @@ viraria N migrations.
   em `leads`/`cliques_whatsapp`); `gravarMensagem` não duplica fala na
   retentativa; e o job `site-publico` do `e2e.yml` voltou a vigiar produção
   todo dia, só com os specs públicos e sem segredo.
+- **Fase 2A: convite por link (19/10).** Sem senha provisória: o acesso é
+  por link de convite/recuperação no nosso domínio, e a plataforma cria o
+  grupo com o primeiro acesso. Armadilhas e o que é configuração de
+  produção em [[convite-por-link-no-nosso-dominio]]; passo a passo em
+  `docs/CONVITE-E-EMAIL.md`.

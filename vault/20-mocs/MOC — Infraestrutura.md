@@ -38,6 +38,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
 - [[plataforma-multi-grupo]] — decisão (18/10): uma plataforma só, vários grupos (imobiliárias e corretores independentes); Next Home vira o grupo 1
 - [[chave-de-servico-classificada-por-grupo]] — todo uso da chave de serviço num mapa por categoria (por-id, equipe, agrega-por-grupo, cruza-conjuntos, plataforma), cobrado por guarda que lê o código (19/10)
+- [[convite-por-link-no-nosso-dominio]] ⚠️ fase 2A: convite e recuperação por `token_hash` no nosso domínio, gasto só num botão (scanner de e-mail); criar senha sem a atual só na sessão do link (amr `otp`, 15 min); `*` do ilike sem escape no PostgREST; OTP de 24 h é configuração de produção (19/10)
 - [[a-casca-estatica-sem-perder-o-tema]] — F2b: 11 das 14 páginas públicas servidas do cache (ISR 1 h); tema por script antes da pintura e cookie gravado no navegador; fundo do corretor como ilha; sem `cacheComponents` (12/10)
 - [[next-home-e-o-espelho-da-versao-geral]] — SUBSTITUÍDA em 18/10: era uma instalação por cliente (26/09)
 - [[o-orcamento-do-dossie-era-menor-que-o-escrito]] — E2E diário contra o site no ar (`e2e.yml`); senhas vazadas só no Supabase Pro (02/10)

@@ -24,7 +24,9 @@
 --
 -- Escrita em `grupos` continua só pela chave de serviço (0181 §6): nenhuma
 -- coluna nova ganha grant para `anon` nem `authenticated`; o logado segue com
--- o SELECT da 0181, recortado à linha do próprio grupo pela policy.
+-- o SELECT da 0181, recortado à linha do próprio grupo pela policy — até a
+-- 0187, que troca esse SELECT de tabela por SELECT só das colunas básicas
+-- (documento, cobrança e LGPD ficam para a chave de serviço).
 
 begin;
 

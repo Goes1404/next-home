@@ -10939,3 +10939,44 @@ Nota: [[erro-de-leitura-nao-e-numero-sem-lead]].
   de erro na janela da trava.
 - **Régua:** leitura cujo resultado vazio tem significado ("não existe", "não
   é lead") nunca descarta o `error`. Vazio por erro tem de falhar alto.
+
+## Fase 2A: convite por link e o painel da plataforma (19/10/2026)
+
+Nota: [[convite-por-link-no-nosso-dominio]]. Passo a passo para ligar o
+e-mail e virar administrador da plataforma: `docs/CONVITE-E-EMAIL.md`.
+
+- **Acabou a senha provisória.** O acesso é por link de convite ou de
+  recuperação. O link é do NOSSO domínio (`/auth/confirmar?token_hash=…`),
+  não o `action_link` do Supabase: este devolve o token no `#` (que não chega
+  ao servidor), e o PKCE guarda o verificador no navegador de quem PEDIU o
+  link — o gestor no computador, o corretor no celular.
+- **O link só é gasto num botão** (`/auth/continuar`, POST). Scanner de
+  e-mail (Safe Links do Microsoft 365) abre o link antes da pessoa; se o GET
+  gastasse o token, o convite nunca funcionaria para quem usa Outlook.
+- **Redirect com `new URL(x, request.url)` troca o host**: no `next dev -H
+  127.0.0.1` o `request.url` traz `localhost`, e o cookie do link se perde.
+  Responder com `Location` relativo.
+- **Criar senha sem a atual só vale para a sessão do link**: `amr` com
+  `otp` (ou `recovery`/`invite`/`magiclink`) há menos de 15 minutos, lido
+  por `getClaims`. Medido no Auth local: convite e recuperação gravam
+  `otp`, não o nome do tipo. Fora disso, `/corretor/senha?link=vencido`.
+- **`generateLink('invite')` reaproveita usuário não confirmado** (convite
+  pendente de outra ficha volta com o id dela). Conferir o `user_id` antes de
+  vincular; se a conferência falha, o desfazer confere de novo e só apaga o
+  login sem ficha.
+- **O `*` do `ilike` não tem escape pelo PostgREST**: ele troca todo `*` por
+  `%`, inclusive o escapado. Na comparação de e-mail, o `*` vira `_`.
+- **A chave pública lia o e-mail real de `corretores`** (a policy é
+  pública). A 0187 troca o grant de tabela por grant de colunas; em `grupos`,
+  o logado lê só as colunas básicas.
+- **Desfazer grupo apaga os eventos do grupo**, então deixa um evento da
+  plataforma (`grupo_desfeito`, `grupo_id` nulo, endereço e passo, sem e-mail).
+  A ordem dos deletes é uma constante (`ORDEM_DO_DESFAZER`) que a action e o
+  teste de banco percorrem.
+- **Três coisas são configuração de produção, não código**: OTP expiry de
+  86400 no painel do Supabase (o `config.toml` só vale local), Site URL e
+  Redirect URLs com `/auth/confirmar`, e `RESEND_API_KEY` + `EMAIL_REMETENTE`
+  na Vercel com redeploy.
+- **Para rodar o app contra o Supabase local**, exporte TODAS as chaves que
+  `.env`/`.env.local` definem (inclusive `SUPABASE_JWKS_URL`): o `@next/env`
+  só não sobrescreve o que já está definido.
