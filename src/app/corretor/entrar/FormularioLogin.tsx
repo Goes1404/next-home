@@ -24,7 +24,12 @@ const CAMPO_BASE =
  */
 const CHAVE_EMAIL = "nh-corretor-email";
 
-export function FormularioLogin() {
+/**
+ * `next` é para onde voltar depois de entrar (o proxy o manda quando alguém
+ * abre `/plataforma` sem sessão). Vai num campo oculto e a action confere
+ * com `destinoSeguro`: aqui ele é só repassado, nunca confiado.
+ */
+export function FormularioLogin({ next }: { next?: string }) {
   const [estado, action, pendente] = useActionState(entrar, undefined);
   const email = useRef<HTMLInputElement>(null);
   const lembrar = useRef<HTMLInputElement>(null);
@@ -77,6 +82,7 @@ export function FormularioLogin() {
 
   return (
     <form action={action} onSubmit={aoEnviar} className="space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-corpo">
           E-mail

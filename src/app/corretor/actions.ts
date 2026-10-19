@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { revalidarCatalogo, revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
+import { destinoSeguro } from "@/lib/auth/links";
 import { redirect } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from "@/lib/midiaCorretor";
@@ -35,6 +36,9 @@ async function exigirSessao() {
 export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<EstadoLogin> {
   const email = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
+  // Vem do proxy (`/plataforma` sem sessão) por um campo oculto; passa pela
+  // mesma régua do link do e-mail, porque qualquer um edita a URL.
+  const next = formData.get("next");
 
   if (!email || !senha) {
     return { erro: "Informe e-mail e senha." };
@@ -68,7 +72,7 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
     if (corretor?.deve_trocar_senha) redirect("/corretor/senha");
   }
 
-  redirect("/corretor");
+  redirect(destinoSeguro(typeof next === "string" ? next : null));
 }
 
 export async function sair(): Promise<void> {

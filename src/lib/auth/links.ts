@@ -43,23 +43,32 @@ const DESTINO_PADRAO = "/corretor";
 /** Base fictícia só para o `URL` resolver o caminho; nunca vira resposta. */
 const BASE_DE_CONFERENCIA = "http://conferencia.invalid";
 
+/** As duas áreas para onde um `next` pode levar, com fronteira explícita. */
+function dentroDasAreas(caminho: string): boolean {
+  return caminho.startsWith("/corretor/") || caminho === "/plataforma" || caminho.startsWith("/plataforma/");
+}
+
 /**
- * O `next` do link vem da URL, que qualquer um edita. Só passa caminho
- * relativo que, DEPOIS de resolvido (`..`, barras invertidas, `//host`),
- * continua no mesmo host e dentro de `/corretor/`. Todo o resto vira
- * `/corretor`: link para fora do site seria um redirecionamento aberto com a
- * nossa marca em cima, e `/plataforma` não é destino de quem acabou de
- * definir a senha de corretor.
+ * O `next` vem da URL, que qualquer um edita (o link do e-mail e o login,
+ * que recebe o `next` do proxy). Só passa caminho relativo que, DEPOIS de
+ * resolvido (`..`, barras invertidas, `//host`), continua no mesmo host e
+ * dentro de `/corretor/` ou de `/plataforma`. Todo o resto vira `/corretor`:
+ * link para fora do site seria um redirecionamento aberto com a nossa marca
+ * em cima.
+ *
+ * `/plataforma` entrou na junção das frentes (Task 9): o administrador da
+ * plataforma que cai no login volta para a área dele. Quem decide se ele PODE
+ * abrir a área é a guarda da página, não este filtro.
  */
 export function destinoSeguro(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/corretor/")) return DESTINO_PADRAO;
+  if (!next || !(next.startsWith("/corretor/") || next.startsWith("/plataforma"))) return DESTINO_PADRAO;
   let url: URL;
   try {
     url = new URL(next, BASE_DE_CONFERENCIA);
   } catch {
     return DESTINO_PADRAO;
   }
-  if (url.origin !== BASE_DE_CONFERENCIA || !url.pathname.startsWith("/corretor/")) return DESTINO_PADRAO;
+  if (url.origin !== BASE_DE_CONFERENCIA || !dentroDasAreas(url.pathname)) return DESTINO_PADRAO;
   return url.pathname + url.search;
 }
 

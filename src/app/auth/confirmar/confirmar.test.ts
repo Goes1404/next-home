@@ -13,7 +13,8 @@ import { GET } from "./route";
  *   abrem o link antes da pessoa; quem gasta é o botão de `/auth/continuar`.
  * - Review Focus 1: link incompleto cai na tela de entrar com explicação.
  * - Review Focus 2: o `next` vem da URL, que qualquer um edita. Só caminho
- *   relativo dentro de `/corretor/` passa; o resto vira `/corretor`.
+ *   relativo dentro de `/corretor/` ou de `/plataforma` passa; o resto vira
+ *   `/corretor`.
  */
 
 const BASE = "https://painel.exemplo.com.br";
@@ -70,13 +71,34 @@ describe("GET /auth/confirmar", () => {
   });
 
   it("next externo vira /corretor", async () => {
-    for (const next of ["https://x.com", "//x.com", "/plataforma", "javascript:alert(1)", "/corretor/../plataforma", "/\\x.com"]) {
+    for (const next of [
+      "https://x.com",
+      "//x.com",
+      "javascript:alert(1)",
+      "/\\x.com",
+      "/plataformas",
+      "/plataforma/../vitrine",
+      "/corretores",
+    ]) {
       const r = await GET(pedir({ token_hash: "h1", type: "recovery", next }));
       expect(linkGuardado(r)?.next, next).toBe("/corretor");
     }
 
     const dentro = await GET(pedir({ token_hash: "h1", type: "recovery", next: "/corretor/leads" }));
     expect(linkGuardado(dentro)?.next).toBe("/corretor/leads");
+  });
+
+  // Decisão da junção das frentes (Task 9): o administrador da plataforma que
+  // cai no login volta para a área dele, então `/plataforma` também é destino.
+  it("next da plataforma é aceito, com fronteira explícita", async () => {
+    for (const [next, esperado] of [
+      ["/plataforma", "/plataforma"],
+      ["/plataforma/grupos?x=1", "/plataforma/grupos?x=1"],
+      ["/corretor/../plataforma", "/plataforma"],
+    ]) {
+      const r = await GET(pedir({ token_hash: "h1", type: "recovery", next }));
+      expect(linkGuardado(r)?.next, next).toBe(esperado);
+    }
   });
 
   it("sem next guarda /corretor", async () => {

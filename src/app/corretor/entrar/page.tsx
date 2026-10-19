@@ -35,12 +35,16 @@ export const metadata: Metadata = {
 export default async function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ link?: string }>;
+  searchParams: Promise<{ link?: string; next?: string | string[] }>;
 }) {
+  const parametros = await searchParams;
   // Link do convite ou da recuperação que já foi usado, venceu ou chegou
   // adulterado (`/auth/confirmar`). Explica e aponta a saída, em vez de um
   // erro genérico que faria a pessoa achar que a conta não existe.
-  const linkExpirado = (await searchParams).link === "expirado";
+  const linkExpirado = parametros.link === "expirado";
+  // Para onde voltar depois de entrar (o proxy manda quando `/plataforma`
+  // abre sem sessão). Só repassado: a action confere com `destinoSeguro`.
+  const next = typeof parametros.next === "string" ? parametros.next : undefined;
 
   return (
     <main className="bg-fundo relative isolate min-h-svh lg:grid lg:grid-cols-[1.15fr_1fr]">
@@ -89,7 +93,7 @@ export default async function EntrarPage({
             </p>
           )}
 
-          <FormularioLogin />
+          <FormularioLogin next={next} />
 
           <hr className="border-linha my-6" />
 

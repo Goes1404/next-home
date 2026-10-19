@@ -80,7 +80,12 @@ export async function proxy(request: NextRequest) {
     const { data } = await supabase.auth.getClaims();
     const logado = Boolean(data?.claims?.sub);
     if (precisaLogin && !logado) {
-      return NextResponse.redirect(new URL("/corretor/entrar", request.url));
+      const entrar = new URL("/corretor/entrar", request.url);
+      // O administrador da plataforma volta para a área dele depois de
+      // entrar (o login confere o `next` com `destinoSeguro`). No painel do
+      // corretor o destino padrão já é `/corretor`.
+      if (areaDaPlataforma) entrar.searchParams.set("next", pathname + request.nextUrl.search);
+      return NextResponse.redirect(entrar);
     }
   }
 
