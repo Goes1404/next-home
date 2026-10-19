@@ -305,7 +305,9 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
       continue;
     }
     if (!transcricaoAceitavel(r.texto, segundos)) {
-      console.warn(`[audio] ${motor.nome} devolveu texto recusado pelas travas:`, r.texto.slice(0, 120));
+      // Só o tamanho: o texto é fala do cliente, e log de runtime não é lugar
+      // de conversa (L22).
+      console.warn(`[audio] ${motor.nome} devolveu texto recusado pelas travas (${r.texto.length} caracteres).`);
       continue;
     }
     return {

@@ -37,8 +37,15 @@ concurrency:
 
 jobs:
   verificar:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Versão fixa pelo mesmo motivo do job isolamento: o build sobe o banco
+    # de teste no Docker do runner (ver o passo "Subir o banco para o build").
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    # `bash` explícito liga o pipefail no `| tee` do banco de teste.
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@v4
@@ -64,11 +71,32 @@ jobs:
       # importando uma CONSTANTE de um módulo com dependência nativa
       # arrastava o binário para o grafo do cliente. Tipos passavam.
       #
-      # Roda sem segredo nenhum de propósito: todas as rotas do projeto são
-      # dinâmicas, então nada consulta o Supabase em tempo de build. Se um
-      # dia alguma virar estática, é aqui que isso aparece.
+      # Desde a F2b (13/09/2026) o build CONSULTA o Supabase: o
+      # `generateStaticParams` de /empreendimentos/[slug] lê o catálogo para
+      # pré-gerar as páginas. Sem variável, src/lib/supabase/env.ts cai no
+      # fallback, que é o banco de PRODUÇÃO — e o verde desta esteira passava
+      # a depender de produção já ter as migrations da branch (foi o que
+      # derrubou o build da fase 1 multi-grupo: o código filtra
+      # `empreendimentos.grupo_id`, que produção ainda não tem). O build lê o
+      # mesmo banco do job isolamento, montado só de supabase/migrations: a
+      # branch é verificada contra o esquema que ela mesma declara, e nunca
+      # fala com produção. Segredo continua não existindo aqui: as chaves são
+      # as de demonstração do stack local, impressas pelo próprio CLI.
+      - name: Subir o banco para o build
+        run: |
+          npm run db:teste | tee db-teste.log
+          grep -E '^NEXT_PUBLIC_SUPABASE_(URL|PUBLISHABLE_KEY)=' db-teste.log >> "$GITHUB_ENV"
+
+      # A trava é dita em voz alta: URL vazia ou fora do runner é o fallback
+      # de produção voltando calado, e o build não pode rodar assim.
       - name: Build
-        run: npm run build
+        run: |
+          case "${NEXT_PUBLIC_SUPABASE_URL:-}" in
+            http://127.0.0.1:*) ;;
+            *) echo "O build do CI só lê o banco de teste local (veio: '${NEXT_PUBLIC_SUPABASE_URL:-}')."; exit 1 ;;
+          esac
+          : "${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?o db:teste não imprimiu a chave publicável}"
+          npm run build
 
       # Catraca, não porta: 14 erros herdados não podem deixar a esteira
       # vermelha no primeiro dia (ver scripts/lintTeto.mjs).
@@ -83,13 +111,85 @@ jobs:
       - name: Bundle (catraca)
         run: node scripts/bundleTeto.mjs
 
+      - name: Derrubar o banco do build
+        if: always()
+        run: npm run db:teste:parar
+
+  # ## Por que este job nasceu em 19/10/2026
+  #
+  # A plataforma passou a ter mais de um grupo (imobiliária) no MESMO banco,
+  # e a promessa é que nenhum dado de um grupo aparece para outro. Quem
+  # cumpre essa promessa é o banco: RLS, gatilhos `<tabela>_00_grupo` e as
+  # funções que filtram por `grupo_atual()`. Nada disso existe em TypeScript,
+  # então tipo, teste comum e build passam verdes com o isolamento quebrado.
+  #
+  # A suíte que mede isso (`*.db.test.ts`) PULA sem DB_TESTE_URL, para
+  # `npm test` continuar rodando sem Docker. Ou seja: no job de cima ela
+  # sempre aparece como "skipped", e só rodaria se alguém lembrasse de subir
+  # o banco local. Vazamento entre grupos é o defeito que não pode falhar
+  # calado — por isso ele ganhou esteira própria.
+  #
+  # O banco é montado do zero a cada execução, só com supabase/migrations
+  # (o mesmo `npm run db:teste` da máquina de quem desenvolve). Nunca fala
+  # com produção: o CLI só enxerga o Docker do runner.
+  isolamento:
+    # Versão fixa: o `ubuntu-latest` passa a ser o Ubuntu 26 em 19/10/2026, e
+    # este job depende do Docker do runner para subir o banco.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    # `bash` explícito liga o pipefail: sem ele, o `| tee` abaixo devolveria
+    # o status do tee e um banco que não subiu passaria por banco de pé.
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # A URL sai da própria saída do script, não de uma cópia aqui: se a
+      # porta mudar em config.toml, os dois não divergem. Sem a linha, o
+      # grep falha e o job para aqui.
+      - name: Subir o banco de teste
+        run: |
+          npm run db:teste | tee db-teste.log
+          grep '^DB_TESTE_URL=' db-teste.log >> "$GITHUB_ENV"
+
+      # Suíte que pula inteira devolve sucesso (o vitest sai com 0 quando
+      # tudo é "skipped"). O relatório JSON é conferido para o verde
+      # significar testes rodados: nenhum pulado e pelo menos um passando.
+      # Pulo INTENCIONAL (`it.skip`) também reprova, de propósito: nesta suíte
+      # um teste pulado é um vazamento que deixou de ser medido.
+      - name: Suíte de isolamento
+        run: |
+          : "${DB_TESTE_URL:?o db:teste não imprimiu DB_TESTE_URL}"
+          npm run test:isolamento -- --reporter=default --reporter=json --outputFile=isolamento.json
+          node -e '
+            const r = require("./isolamento.json");
+            console.log(`passaram: ${r.numPassedTests}, pulados: ${r.numPendingTests}, falharam: ${r.numFailedTests}`);
+            if (r.numPassedTests === 0 || r.numPendingTests > 0) {
+              console.error("A suíte de isolamento não rodou de verdade (testes pulados).");
+              process.exit(1);
+            }
+          '
+
+      - name: Derrubar o banco de teste
+        if: always()
+        run: npm run db:teste:parar
+
 # O que esta esteira NÃO roda, e por quê:
 #
-# - `npm run test:e2e` — os specs do painel exigem credencial REAL
-#   (E2E_CORRETOR_EMAIL/SENHA) e o banco por trás é o de PRODUÇÃO, não há
-#   ambiente de teste. Rodar a cada push seria bater no banco de clientes
-#   de verdade a cada commit. Desde 02/10/2026 ele roda à parte, uma vez por
-#   dia e sob demanda, contra o site no ar (ver e2e.yml).
+# - `npm run test:e2e` — precisa de um site no ar com banco e login. Desde
+#   19/10/2026 ele roda à parte, contra o ambiente de testes e nunca contra
+#   produção (ver e2e.yml e docs/AMBIENTE-DE-TESTES.md).
 #
 # - `npm run eval` e `eval:conversa` — custam chamada de LLM paga a cada
 #   rodada e consomem a MESMA cota do atendimento real. Eval é decisão de

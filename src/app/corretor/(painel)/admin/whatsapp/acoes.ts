@@ -16,6 +16,10 @@ import { desconectarInstancia } from "@/lib/whatsapp/provider";
  * Desde a 0134 a RLS não dá ao gestor a instância alheia, então a escrita
  * vai pela chave de serviço, DEPOIS da guarda de papel. Fica registrada em
  * `admin_eventos`, com quem fez, para o corretor saber por que caiu.
+ *
+ * O `corretorId` vem do navegador, e a chave de serviço enxerga todos os
+ * grupos: a instância só é lida se for do grupo do gestor (L16). Sem isso o
+ * gestor de outra empresa derrubaria o número de um corretor daqui.
  */
 export async function desconectarNumeroDoCorretor(
   corretorId: string,
@@ -28,6 +32,7 @@ export async function desconectarNumeroDoCorretor(
     .from("corretor_whatsapp_instancias")
     .select("id, instance_name")
     .eq("corretor_id", corretorId)
+    .eq("grupo_id", guarda.corretor.grupoId)
     .maybeSingle();
   if (!instancia?.instance_name) return { erro: "Este corretor não tem número conectado." };
 
@@ -47,7 +52,8 @@ export async function desconectarNumeroDoCorretor(
       qrcode_base64: null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", instancia.id);
+    .eq("id", instancia.id)
+    .eq("grupo_id", guarda.corretor.grupoId);
 
   await servico.from("admin_eventos").insert({
     ator_id: guarda.corretor.id,

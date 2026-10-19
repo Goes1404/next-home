@@ -2,7 +2,6 @@ import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { vgvCreditado, type StatusVenda } from "./venda";
 
 /**
@@ -351,30 +350,5 @@ export async function getLeadsLeves(desde: string): Promise<LeadLeve[]> {
     criadoEm: String(l.created_at).slice(0, 10),
     visitou: Boolean(l.visita_agendada_em) || ETAPAS_DE_VISITA.has(l.etapa),
     etapa: l.etapa,
-  }));
-}
-
-export type PrimeiraRespostaLida = {
-  corretorId: string;
-  primeiraFalaCliente: string;
-  primeiraRespostaCorretor: string | null;
-  primeiraRespostaIa: string | null;
-};
-
-export async function getPrimeirasRespostas(desde: string): Promise<PrimeiraRespostaLida[]> {
-  // Só horários, e só para o ADM (a tela de Desempenho é dele). A RLS da
-  // 0134 recortaria a view para as conversas do próprio ADM.
-  const supabase = await clienteParaNumerosDaEquipe();
-  const { data, error } = await supabase
-    .from("whatsapp_primeira_resposta")
-    .select("corretor_id, primeira_fala_cliente, primeira_resposta_corretor, primeira_resposta_ia")
-    .gte("primeira_fala_cliente", desde)
-    .limit(TETO_DE_LEADS);
-  if (error) return [];
-  return (data ?? []).map((r) => ({
-    corretorId: r.corretor_id,
-    primeiraFalaCliente: r.primeira_fala_cliente,
-    primeiraRespostaCorretor: r.primeira_resposta_corretor,
-    primeiraRespostaIa: r.primeira_resposta_ia,
   }));
 }

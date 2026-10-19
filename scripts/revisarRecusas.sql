@@ -2,11 +2,24 @@
 -- Rodar toda segunda. O que sair daqui vira frase em
 -- src/lib/whatsapp/frasesDeRecusa.ts, com o desfecho certo.
 
+-- GRUPO (plataforma multi-grupo, L22): este SQL roda com um papel que
+-- enxerga TODOS os grupos. Todo bloco abaixo filtra pelo grupo deste
+-- `set_config`, e na fase 1 só o grupo da Next Home é aceito: o `do` recusa
+-- qualquer outro. Rode o arquivo inteiro na mesma sessão.
+select set_config('diagnostico.grupo', '00000000-0000-0000-0000-000000000001', false);
+do $$
+begin
+  if current_setting('diagnostico.grupo', true) is distinct from '00000000-0000-0000-0000-000000000001' then
+    raise exception 'Na fase 1 o diagnóstico só roda no grupo da Next Home.';
+  end if;
+end $$;
+
 -- 1. Quem decidiu, e o que aconteceu, nos últimos 7 dias.
 select decidido_por, caminho, acao, familia, count(*) as decisoes,
        count(*) filter (where desfeito_em is not null) as desfeitas_pelo_corretor
 from public.recusas_detectadas
-where created_at > now() - interval '7 days'
+where grupo_id = current_setting('diagnostico.grupo')::uuid
+  and created_at > now() - interval '7 days'
 group by 1, 2, 3, 4
 order by 1, 2, 3, 4;
 
@@ -14,14 +27,16 @@ order by 1, 2, 3, 4;
 --    Cada linha é uma frase que a regex ou a IA marcou e não devia.
 select created_at, decidido_por, familia, confianca, trecho
 from public.recusas_detectadas
-where desfeito_em > now() - interval '7 days'
+where grupo_id = current_setting('diagnostico.grupo')::uuid
+  and desfeito_em > now() - interval '7 days'
 order by created_at desc;
 
 -- 3. A IA VIU E NÃO AGIU: confiança baixa, ou desinteresse com a IA calada.
 --    É aqui que mora o falso negativo. Conferir uma a uma.
 select created_at, caminho, familia, confianca, trecho
 from public.recusas_detectadas
-where acao = 'registrou'
+where grupo_id = current_setting('diagnostico.grupo')::uuid
+  and acao = 'registrou'
   and created_at > now() - interval '7 days'
 order by confianca desc nulls last;
 
@@ -29,7 +44,8 @@ order by confianca desc nulls last;
 --    e ninguém desfez. Frase repetida aqui vale um padrão na regex.
 select lower(trecho) as trecho, familia, count(*) as vezes, round(avg(confianca), 2) as confianca_media
 from public.recusas_detectadas
-where decidido_por = 'ia'
+where grupo_id = current_setting('diagnostico.grupo')::uuid
+  and decidido_por = 'ia'
   and acao in ('acolheu', 'encerrou', 'marcou')
   and desfeito_em is null
   and created_at > now() - interval '30 days'

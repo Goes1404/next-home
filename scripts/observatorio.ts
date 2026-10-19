@@ -24,10 +24,11 @@
  * rubrica, é o comportamento do cliente: se ele REFEZ a pergunta, ela não
  * respondeu.
  *
- * Uso:
- *   SUPABASE_SECRET_KEY=... npm run observatorio
- *   SUPABASE_SECRET_KEY=... npm run observatorio -- --desde=2026-09-02T14:54
- *   SUPABASE_SECRET_KEY=... npm run observatorio -- --antes-e-depois=2026-09-02T14:54
+ * Uso (o grupo é obrigatório: a chave de serviço enxerga todos os grupos, e
+ * na fase 1 só o grupo da Next Home é aceito — `grupoDoScript`):
+ *   SUPABASE_SECRET_KEY=... npm run observatorio -- --grupo=00000000-0000-0000-0000-000000000001
+ *   ... -- --grupo=<id> --desde=2026-09-02T14:54
+ *   ... -- --grupo=<id> --antes-e-depois=2026-09-02T14:54
  *
  * O corte `--antes-e-depois` existe para responder "a mudança que subiu
  * naquele instante melhorou?" com conversa real dos dois lados. Foi assim
@@ -36,6 +37,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { medirConversa, type TurnoRegistrado } from "../src/lib/whatsapp/metricasConversa";
+import { grupoDoScript } from "../src/lib/grupos/grupoDoScript";
 
 const arg = (nome: string) =>
   process.argv.find((a) => a.startsWith(`--${nome}=`))?.split("=").slice(1).join("=");
@@ -165,6 +167,14 @@ function imprimir(rotulo: string, a: Agregado): void {
 }
 
 async function principal() {
+  // Antes de qualquer leitura: sem --grupo (ou com outro grupo), recusa.
+  let grupoId: string;
+  try {
+    ({ grupoId } = grupoDoScript(process.argv.slice(2)));
+  } catch (e) {
+    console.error((e as Error).message);
+    process.exit(1);
+  }
   const desde = arg("desde");
   const corte = arg("antes-e-depois");
 
@@ -193,6 +203,7 @@ async function principal() {
     const { data, error } = await supabase
       .from("whatsapp_mensagens")
       .select("conversa_id, remetente, conteudo, midia_url, created_at")
+      .eq("grupo_id", grupoId)
       .order("created_at", { ascending: true })
       .limit(20000);
     if (error) throw new Error(error.message);

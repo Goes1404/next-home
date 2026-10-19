@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { enviarEmail } from "@/lib/email";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
+import { leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import {
   assuntoDoAviso,
   corpoDoAviso,
@@ -28,6 +29,10 @@ export const maxDuration = 60;
  * "isso é meu?".
  *
  * Falha FECHADA como os outros crons: sem `CRON_SECRET` em produção, recusa.
+ *
+ * Roda POR GRUPO (L18): um laço de grupos, cada um lendo só as próprias
+ * conversas e avisando só os próprios corretores. A chave de serviço
+ * enxerga todos os grupos.
  */
 
 function segredoConfere(a: string, b: string): boolean {
@@ -59,12 +64,14 @@ function requisicaoAutenticada(req: NextRequest): boolean {
  */
 async function emailDoCorretor(
   supabase: ReturnType<typeof createServiceClient>,
+  grupoId: string,
   corretorId: string,
 ): Promise<string | null> {
   const { data } = await supabase
     .from("corretores")
     .select("email, user_id")
     .eq("id", corretorId)
+    .eq("grupo_id", grupoId)
     .eq("ativo", true)
     .maybeSingle();
   if (!data) return null;
@@ -85,52 +92,83 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = createServiceClient();
-
-    // A mesma view que alimenta o topo da fila do Início (0087). Usar a
-    // mesma fonte é o que garante que o e-mail e a tela nunca discordem.
-    const { data: esperando, error } = await supabase
-      .from("whatsapp_esperando_resposta")
-      .select("conversa_id, corretor_id, nome_cliente, telefone_cliente, esperando_desde");
-    if (error) throw error;
-
-    const porCorretor = new Map<string, PessoaEsperando[]>();
-    for (const linha of esperando ?? []) {
-      if (!linha.corretor_id || !linha.conversa_id || !linha.esperando_desde) continue;
-      const lista = porCorretor.get(linha.corretor_id) ?? [];
-      lista.push({
-        nome: nomeParaExibir({ nome: linha.nome_cliente, telefone: linha.telefone_cliente }),
-        esperandoDesde: linha.esperando_desde,
-        conversaId: linha.conversa_id,
-      });
-      porCorretor.set(linha.corretor_id, lista);
-    }
+    const { data: grupos, error: erroGrupos } = await supabase.from("grupos").select("id");
+    if (erroGrupos) throw erroGrupos;
 
     const agora = new Date();
     let enviados = 0;
     let silenciosos = 0;
+    let corretores = 0;
 
-    for (const [corretorId, pessoas] of porCorretor) {
-      const esperas = medirEspera(pessoas, agora);
-      // Silêncio quando não há notícia: não existe "resumo de hoje: tudo em
-      // dia". Aviso que chega todo dia deixa de ser lido.
-      if (esperas.length === 0) {
-        silenciosos++;
-        continue;
-      }
-
-      const para = await emailDoCorretor(supabase, corretorId);
-      if (!para) continue;
-
-      const { texto, html } = corpoDoAviso({ esperas, urlPainel: site.url });
-      const r = await enviarEmail({ para, assunto: assuntoDoAviso(esperas), texto, html });
-      if (r.enviado) enviados++;
+    for (const { id: grupoId } of grupos ?? []) {
+      const grupo = await leituraDoGrupo(supabase, grupoId);
+      // A mesma view que alimenta o topo da fila do Início (0087). Usar a
+      // mesma fonte é o que garante que o e-mail e a tela nunca discordem.
+      const { data: esperando, error } = await grupo.lerView((c) =>
+        c.from("whatsapp_esperando_resposta").select("conversa_id, corretor_id, nome_cliente, telefone_cliente, esperando_desde"),
+      );
+      if (error) throw error;
+      const r = await avisarOGrupo(supabase, grupoId, esperando ?? [], agora);
+      enviados += r.enviados;
+      silenciosos += r.silenciosos;
+      corretores += r.corretores;
     }
 
-    return NextResponse.json({ ok: true, enviados, silenciosos, corretores: porCorretor.size });
+    return NextResponse.json({ ok: true, enviados, silenciosos, corretores });
   } catch (e) {
     console.error("[espera] falhou:", e);
     return NextResponse.json({ erro: "falha ao montar o aviso" }, { status: 500 });
   }
+}
+
+type Esperando = {
+  conversa_id: string | null;
+  corretor_id: string | null;
+  nome_cliente: string | null;
+  telefone_cliente: string | null;
+  esperando_desde: string | null;
+};
+
+/** Avisa cada corretor de UM grupo de quem está esperando por ele. */
+async function avisarOGrupo(
+  supabase: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+  esperando: Esperando[],
+  agora: Date,
+): Promise<{ enviados: number; silenciosos: number; corretores: number }> {
+  const porCorretor = new Map<string, PessoaEsperando[]>();
+  for (const linha of esperando) {
+    if (!linha.corretor_id || !linha.conversa_id || !linha.esperando_desde) continue;
+    const lista = porCorretor.get(linha.corretor_id) ?? [];
+    lista.push({
+      nome: nomeParaExibir({ nome: linha.nome_cliente, telefone: linha.telefone_cliente }),
+      esperandoDesde: linha.esperando_desde,
+      conversaId: linha.conversa_id,
+    });
+    porCorretor.set(linha.corretor_id, lista);
+  }
+
+  let enviados = 0;
+  let silenciosos = 0;
+
+  for (const [corretorId, pessoas] of porCorretor) {
+    const esperas = medirEspera(pessoas, agora);
+    // Silêncio quando não há notícia: não existe "resumo de hoje: tudo em
+    // dia". Aviso que chega todo dia deixa de ser lido.
+    if (esperas.length === 0) {
+      silenciosos++;
+      continue;
+    }
+
+    const para = await emailDoCorretor(supabase, grupoId, corretorId);
+    if (!para) continue;
+
+    const { texto, html } = corpoDoAviso({ esperas, urlPainel: site.url });
+    const r = await enviarEmail({ para, assunto: assuntoDoAviso(esperas), texto, html });
+    if (r.enviado) enviados++;
+  }
+
+  return { enviados, silenciosos, corretores: porCorretor.size };
 }
 
 /**

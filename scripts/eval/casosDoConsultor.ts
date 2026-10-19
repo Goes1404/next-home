@@ -28,8 +28,8 @@
  * demanda real. **Não substitui a análise de erro sobre transcrição de uso
  * verdadeiro**, que continua dependendo de a corretora usar a tela.
  *
- * Gerar (grátis):  npx tsx scripts/eval/casosDoConsultor.ts
- * Rodar (custa):   npx tsx --conditions=react-server scripts/eval/casosDoConsultor.ts --rodar
+ * Gerar (grátis):  npx tsx scripts/eval/casosDoConsultor.ts --grupo=00000000-0000-0000-0000-000000000001
+ * Rodar (custa):   npx tsx --conditions=react-server scripts/eval/casosDoConsultor.ts --grupo=<id> --rodar
  */
 
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -38,7 +38,7 @@ import { SELECT_EMPREENDIMENTO } from "@/lib/queries";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import { STATUS_LABEL, type Empreendimento } from "@/lib/types";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
-import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 // Estáticos de propósito: `await import()` com alias do tsconfig não resolve
 // no tsx — só os imports de topo passam pelo resolvedor de paths.
 import { turnoDoConsultor } from "@/lib/consultor/turno";
@@ -238,6 +238,15 @@ export function montarCasos(
 }
 
 async function main() {
+  // Antes de qualquer leitura: sem --grupo (ou com outro grupo), recusa. A
+  // chave de serviço enxerga todos os grupos; os casos são do catálogo de um.
+  let grupoId: string;
+  try {
+    ({ grupoId } = grupoDoScript(process.argv.slice(2)));
+  } catch (e) {
+    console.error((e as Error).message);
+    process.exit(1);
+  }
   const rodar = process.argv.includes("--rodar");
   const chave = rodar ? SECRETA : PUBLICA;
   if (!URL_BASE || !chave) {
@@ -250,7 +259,7 @@ async function main() {
   }
 
   const linhas = await rest<LinhaEmpreendimento>(
-    `empreendimentos?select=${encodeURIComponent(SELECT_EMPREENDIMENTO.replace(/\s+/g, ""))}&publicado=eq.true`,
+    `empreendimentos?select=${encodeURIComponent(SELECT_EMPREENDIMENTO.replace(/\s+/g, ""))}&publicado=eq.true&grupo_id=eq.${grupoId}`,
     chave,
   );
   const catalogo = linhas.map(mapEmpreendimento);
@@ -276,9 +285,9 @@ async function main() {
     conferidoEm: "2026-09-09",
   };
   if (SECRETA) {
-    // Uma linha por grupo desde a 0181; o eval mede a Next Home.
+    // Uma linha por grupo desde a 0181.
     const [p] = await rest<Record<string, unknown>>(
-      `parametros_credito?select=*&grupo_id=eq.${GRUPO_NEXT_HOME_ID}`,
+      `parametros_credito?select=*&grupo_id=eq.${grupoId}`,
       SECRETA,
     );
     if (p) {

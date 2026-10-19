@@ -18,6 +18,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServiceClient } from "@/lib/supabase/service";
+import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 import { INTERVALO_MINIMO_SEGUNDOS } from "@/lib/whatsapp/antiBan";
 
 type Pedido = { campanhaId: string; pedido: string };
@@ -34,6 +35,9 @@ function aviso(texto: string) {
 }
 
 async function main() {
+  // A chave de serviço enxerga todos os grupos: a lista só é lida no grupo
+  // pedido em `--grupo` (na fase 1, só o da Next Home).
+  const { grupoId } = grupoDoScript(process.argv.slice(2));
   const pedido: Pedido = JSON.parse(readFileSync(join(process.cwd(), "scripts/ops/conferir-lista.json"), "utf8"));
   const supabase = createServiceClient();
   const agora = new Date();
@@ -43,6 +47,7 @@ async function main() {
     .from("whatsapp_campanhas")
     .select("id, titulo, status, corretor_id, pausa_automatica, total_enviados, total_leads, total_respondidos")
     .eq("id", pedido.campanhaId)
+    .eq("grupo_id", grupoId)
     .maybeSingle();
   if (error || !lista) throw new Error(`lista ${pedido.campanhaId} não encontrada: ${error?.message ?? "sem linha"}`);
 

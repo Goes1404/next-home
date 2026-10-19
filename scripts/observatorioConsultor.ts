@@ -13,9 +13,13 @@
  * importa é a CONVERSA, não a mensagem — oito ocorrências numa conversa é um
  * caso; quatro em quatro conversas é padrão.
  *
- * Roda com: npx tsx scripts/observatorioConsultor.ts
- * Precisa de SUPABASE_SECRET_KEY no ambiente (as tabelas são fechadas).
+ * Roda com: npx tsx scripts/observatorioConsultor.ts --grupo=00000000-0000-0000-0000-000000000001
+ * Precisa de SUPABASE_SECRET_KEY no ambiente (as tabelas são fechadas). O
+ * grupo é obrigatório: a chave enxerga todos os grupos, e na fase 1 só o da
+ * Next Home é aceito (`grupoDoScript`).
  */
+
+import { grupoDoScript } from "../src/lib/grupos/grupoDoScript";
 
 const URL_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const CHAVE = process.env.SUPABASE_SECRET_KEY;
@@ -65,6 +69,14 @@ const reais = (n: number) =>
 const pct = (parte: number, todo: number) => (todo === 0 ? "—" : `${((parte / todo) * 100).toFixed(0)}%`);
 
 async function main() {
+  // Antes de qualquer leitura: sem --grupo (ou com outro grupo), recusa.
+  let grupoId: string;
+  try {
+    ({ grupoId } = grupoDoScript(process.argv.slice(2)));
+  } catch (e) {
+    console.error((e as Error).message);
+    process.exit(1);
+  }
   if (!URL_BASE || !CHAVE) {
     console.error("Faltam NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SECRET_KEY no ambiente.");
     console.error("As tabelas do consultor são fechadas: a chave publicável leva 401.");
@@ -72,10 +84,10 @@ async function main() {
   }
 
   const interacoes = await ler<Interacao>(
-    "ia_interacoes?select=created_at,corretor_id,acao,latencia_ms,tokens_entrada,tokens_saida,modelo,prompt_versao&origem=eq.consultor&order=created_at.desc&limit=2000",
+    `ia_interacoes?select=created_at,corretor_id,acao,latencia_ms,tokens_entrada,tokens_saida,modelo,prompt_versao&origem=eq.consultor&grupo_id=eq.${grupoId}&order=created_at.desc&limit=2000`,
   );
   const mensagens = await ler<Mensagem>(
-    "consultor_mensagens?select=conversa_id,papel,conteudo,dados,created_at&order=created_at.asc&limit=5000",
+    `consultor_mensagens?select=conversa_id,papel,conteudo,dados,created_at&grupo_id=eq.${grupoId}&order=created_at.asc&limit=5000`,
   );
 
   console.log("\n═══ OBSERVATÓRIO DO CONSULTOR ═══\n");

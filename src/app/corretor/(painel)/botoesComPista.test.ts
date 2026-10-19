@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
@@ -80,7 +80,7 @@ function semPista(caminho: string): number {
 describe("botões e links do painel mostram que são clicáveis", () => {
   const contagem = Object.fromEntries(
     arquivos(PAINEL)
-      .map((p) => [relative(PAINEL, p), semPista(p)] as const)
+      .map((p) => [relative(PAINEL, p).split(sep).join("/"), semPista(p)] as const)
       .filter(([, n]) => n > 0),
   );
 

@@ -84,6 +84,13 @@ viraria N migrations.
   e `_zz_grupo_update`, `after`): gatilho `before` que roda depois do carimbo
   (a roleta `leads_distribuir`) não consegue pôr mãe de outro grupo nem
   trocar o grupo. O webhook e a seleção leem as taxas pelo grupo do dono.
+- **O E2E saiu de produção (19/10):** `e2e.yml` só sob demanda, contra o
+  ambiente de testes (`docs/AMBIENTE-DE-TESTES.md`, depende do Matheus),
+  com conta sintética e sem artefato. Playwright recusa URL de produção,
+  `conectar()` recusa o banco de produção e o export do golden exige
+  `--grupo` do grupo 1 e grava fora do repositório
+  (`test/ambienteDeTestes.test.ts`). As migrations do projeto de testes
+  entram por `npm run db:teste:remoto`, que recusa produção antes do push.
 - **A 0183 (parte A) escopa as chaves únicas de negócio por grupo**: CRECI,
   item de lazer (lazer é catálogo, cada grupo tem o seu), campanha canônica
   e evento de marketing, mês fechado do contador, configuração fiscal (uma
@@ -111,6 +118,11 @@ viraria N migrations.
   O catálogo (`getEmpreendimentos`) não tem mais grupo padrão: o painel lê o
   do corretor logado e as páginas de seleção, proposta e portal o de quem
   mandou o link (com o padrão, elas saíam vazias para o grupo B).
+  No painel o grupo é sempre o de quem está logado:
+  `semGrupoDoSiteNoPainel.test.ts` reprova `grupoDoSite(` em
+  `src/app/corretor` e `src/app/api/painel`, e também as funções do site
+  que o usam por dentro (`getCorretores`, `getEmpreendimentoBySlug`, ...),
+  com a lista tirada do código delas.
 - **A 0183 (parte B) escopa as funções `security definer`** (Task 5), onde a
   RLS não vale: a roleta escolhe só no grupo do lead (sem ninguém elegível,
   o lead fica sem dono dentro dele), o último gestor é contado por grupo,
@@ -126,3 +138,20 @@ viraria N migrations.
   profundidade, passo e da 0182). O Realtime entrou na suíte
   (`realtime.db.test.ts`, que grava de verdade e por isso divide uma trava
   de sessão com `isolamento.db.test.ts`).
+- **A chave de serviço está classificada por grupo (Task 7).** Todo arquivo
+  que a usa está num mapa com a categoria (`por-id`, `equipe`,
+  `agrega-por-grupo`, `cruza-conjuntos`, `plataforma`) e
+  `servicoComGrupo.test.ts` cobra o que cada uma promete. As telas do gestor
+  leem pela leitura recortada (`leituraDoGrupo`), o relatório semanal e o
+  aviso de espera rodam grupo a grupo, os scripts com chave secreta exigem
+  `--grupo` e o SQL de diagnóstico fixa o grupo. Ver
+  [[chave-de-servico-classificada-por-grupo]].
+- **O build do CI lê o banco de teste, nunca produção (19/10).** Desde a F2b o
+  `generateStaticParams` de `/empreendimentos/[slug]` consulta o catálogo em
+  build, e sem variável `src/lib/supabase/env.ts` cai no fallback de produção:
+  o filtro por `grupo_id` derrubou o `verificar` porque produção ainda não tem
+  a coluna. O job `verificar` agora sobe o mesmo banco do `isolamento`
+  (`npm run db:teste`, que imprime `NEXT_PUBLIC_SUPABASE_URL` e a chave
+  publicável do stack local) e o passo do build recusa URL fora do runner.
+  Guarda: `src/lib/supabase/buildDoCiSemProducao.test.ts`. O build da Vercel
+  continua lendo produção, e por isso a migration sobe antes do deploy.

@@ -56,7 +56,10 @@ export async function processarEmailDeLead(
       de: emailInput.from || null,
       para: emailInput.to || null,
       assunto: emailInput.subject || null,
-      payload_raw: bodyRaw as never,
+      // Só os NOMES dos campos que o provedor mandou (é o que diagnostica um
+      // formato novo de e-mail), nunca o conteúdo: o e-mail inteiro do
+      // portal, com nome e telefone de cliente, não mora num log (L22).
+      payload_raw: { campos: Object.keys(bodyRaw) },
       status,
       erro_mensagem: extra.erroMensagem ?? null,
       lead_id: extra.leadId ?? null,
@@ -211,7 +214,7 @@ export async function processarEmailDeLead(
      */
     if (erroInsert || !novo) {
       const motivo = erroInsert?.message ?? "insert não retornou linha";
-      console.error(`[inbound] falha ao inserir lead ${lead.telefone}: ${motivo}`);
+      console.error(`[inbound] falha ao inserir lead: ${motivo}`);
       falhas.push({ telefone: lead.telefone, motivo });
       continue;
     }

@@ -2,21 +2,40 @@
  * Exporta conversas REAIS de produção para o golden dataset do eval.
  *
  * Uso (manual, nunca no CI — toca o banco de produção em leitura):
- *   SUPABASE_SECRET_KEY=... npx tsx scripts/eval/exportarGolden.ts
+ *   SUPABASE_SECRET_KEY=... npx tsx scripts/eval/exportarGolden.ts \
+ *     --grupo=00000000-0000-0000-0000-000000000001 [--saida=<arquivo fora do repositório>]
  *
  * O que sai: para cada conversa com participação do bot — e para TODA
- * interação marcada `avaliacao='ruim'` no painel — um caso em
- * eval/golden/casos.json com o histórico anonimizado e a última mensagem
- * do cliente. Casos de falha real são o coração do golden: a regra do
- * motor de melhoria é que NENHUMA falha marcada se repita sem ser pega
- * pelo eval seguinte.
+ * interação marcada `avaliacao='ruim'` no painel — um caso com o histórico
+ * anonimizado e a última mensagem do cliente. Casos de falha real são o
+ * coração do golden: a regra do motor de melhoria é que NENHUMA falha
+ * marcada se repita sem ser pega pelo eval seguinte.
  *
- * Os casos novos entram com `expectativas: {}` — anotar à mão o que se
- * espera de cada um (e mover 1 a cada ~10 para calibracao.json com nota
- * humana) é parte do trabalho, não um passo automatizável.
+ * Desde 19/10/2026 (plataforma multi-grupo) o script só lê o grupo 1 e grava
+ * FORA do repositório (padrão: a pasta temporária do sistema; ver
+ * opcoesDoGolden.ts). Antes ele escrevia direto em eval/golden/casos.json, e
+ * trecho de conversa de cliente entrava no git. Agora quem cura copia à mão
+ * para eval/golden/casos.json só o caso revisado: anonimização conferida,
+ * `expectativas` anotadas (e 1 a cada ~10 movido para calibracao.json com
+ * nota humana). Isso é parte do trabalho, não um passo automatizável.
  */
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { lerOpcoesDoGolden, type OpcoesDoGolden } from "./opcoesDoGolden";
+
+// Raiz do repositório pelo lugar do script, não pelo diretório de onde ele foi
+// chamado: é ela que diz o que é "dentro do repositório".
+const RAIZ = resolve(__dirname, "..", "..");
+
+let opcoes: OpcoesDoGolden;
+try {
+  opcoes = lerOpcoesDoGolden(process.argv, RAIZ);
+} catch (e) {
+  console.error((e as Error).message);
+  process.exit(1);
+}
+const { grupo, saida } = opcoes;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://prhhrqyubjcafvucirri.supabase.co";
 const chave = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE;
@@ -26,7 +45,8 @@ if (!chave) {
 }
 
 const supabase = createClient(url, chave);
-const ARQUIVO = "eval/golden/casos.json";
+/** O golden curado, só LIDO: caso que já está lá não é exportado de novo. */
+const GOLDEN = resolve(RAIZ, "eval/golden/casos.json");
 
 /** Nome/telefone nunca entram no dataset — o eval roda fora de produção. */
 function anonimizar(texto: string): string {
@@ -43,12 +63,14 @@ type MensagemGolden = {
 };
 
 async function mensagensDa(conversaId: string): Promise<MensagemGolden[] | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("whatsapp_mensagens")
     .select("remetente, conteudo, created_at, interacao_id")
     .eq("conversa_id", conversaId)
+    .eq("grupo_id", grupo)
     .order("created_at", { ascending: true })
     .limit(40);
+  if (error) throw new Error(`whatsapp_mensagens: ${error.message}`);
   return data && data.length >= 2 ? (data as MensagemGolden[]) : null;
 }
 
@@ -66,8 +88,11 @@ function montarCaso(id: string, origem: "ruim" | "amostra", msgs: MensagemGolden
 }
 
 async function main() {
-  const casosAtuais = JSON.parse(readFileSync(ARQUIVO, "utf8")) as { id: string }[];
-  const idsExistentes = new Set(casosAtuais.map((c) => c.id));
+  const curados = JSON.parse(readFileSync(GOLDEN, "utf8")) as { id: string }[];
+  const jaExportados = existsSync(saida)
+    ? (JSON.parse(readFileSync(saida, "utf8")) as { id: string }[])
+    : [];
+  const idsExistentes = new Set([...curados, ...jaExportados].map((c) => c.id));
   const novos: unknown[] = [];
 
   // 1. Interações marcadas como ruins — prioridade máxima. Um caso POR
@@ -75,15 +100,19 @@ async function main() {
   // última fala do cliente da conversa inteira, então um `ruim` na 3ª
   // resposta de 5 exportava a conversa cortada no fim — e o eval testava
   // a pergunta errada.
-  const { data: ruins } = await supabase
+  const { data: ruins, error: erroRuins } = await supabase
     .from("ia_interacoes")
     .select("id, conversa_id, created_at")
     .eq("avaliacao", "ruim")
+    .eq("grupo_id", grupo)
     .not("conversa_id", "is", null)
     // Teste da equipe não entra no golden — ver migration 0038.
     .eq("e_teste", false)
     .order("created_at", { ascending: false })
     .limit(100);
+  // Erro de consulta não pode virar "nenhum caso novo": sem a 0182 aplicada
+  // (coluna `grupo_id`), o export sairia vazio e calado.
+  if (erroRuins) throw new Error(`ia_interacoes: ${erroRuins.message}`);
 
   for (const ruim of ruins ?? []) {
     const id = `ruim-${(ruim.id as string).slice(0, 8)}`;
@@ -117,12 +146,14 @@ async function main() {
   // 2. Conversas com participação do bot (amostra geral) — aqui o corte na
   // última fala do cliente da conversa é o comportamento CERTO: não há
   // ponto de falha marcado, o caso é a conversa como um todo.
-  const { data: conversas } = await supabase
+  const { data: conversas, error: erroConversas } = await supabase
     .from("whatsapp_conversas")
     .select("id")
+    .eq("grupo_id", grupo)
     .eq("e_teste", false)
     .order("ultima_interacao_em", { ascending: false })
     .limit(100);
+  if (erroConversas) throw new Error(`whatsapp_conversas: ${erroConversas.message}`);
 
   for (const c of conversas ?? []) {
     const id = `amostra-${c.id.slice(0, 8)}`;
@@ -143,8 +174,14 @@ async function main() {
     return;
   }
 
-  writeFileSync(ARQUIVO, JSON.stringify([...casosAtuais, ...novos], null, 2));
-  console.log(`${novos.length} caso(s) novo(s) adicionados a ${ARQUIVO}. Anote as expectativas à mão.`);
+  mkdirSync(dirname(saida), { recursive: true });
+  writeFileSync(saida, JSON.stringify([...jaExportados, ...novos], null, 2));
+  console.log(
+    `${novos.length} caso(s) novo(s) em ${saida}. Revise e copie à mão para eval/golden/casos.json só o que for curado.`,
+  );
 }
 
-main();
+main().catch((e) => {
+  console.error((e as Error).message);
+  process.exit(1);
+});

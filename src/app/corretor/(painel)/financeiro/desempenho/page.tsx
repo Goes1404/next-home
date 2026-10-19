@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getEmpreendimentosParaFiltro, getEquipeAtiva } from "@/lib/corretorSessao";
-import { getLeadsLeves, getPrimeirasRespostas, getVendas } from "@/lib/financeiro/dados";
+import { getLeadsLeves, getVendas } from "@/lib/financeiro/dados";
+import { getPrimeirasRespostas } from "@/lib/financeiro/primeirasRespostas";
 import {
   desempenhoPorCorretor,
   formatarMinutos,

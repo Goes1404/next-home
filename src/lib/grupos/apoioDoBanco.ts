@@ -1,8 +1,10 @@
 // Apoio dos testes de banco (`*.db.test.ts`).
 //
-// Só roda contra o banco LOCAL de `npm run db:teste` (DB_TESTE_URL). Nunca
-// aponte DB_TESTE_URL para produção: `criarUsuario` e `criarGrupo` escrevem
-// em `auth.users` e em `corretores` como `postgres`, que ignora RLS.
+// Roda contra o banco LOCAL de `npm run db:teste` (DB_TESTE_URL) ou contra o
+// projeto Supabase de testes (semeadura, docs/AMBIENTE-DE-TESTES.md). Nunca
+// contra produção: `criarUsuario` e `criarGrupo` escrevem em `auth.users` e em
+// `corretores` como `postgres`, que ignora RLS — e `conectar` recusa a URL de
+// produção em vez de confiar em quem a digitou.
 //
 // Regra da suíte: cada teste roda dentro de uma transação desfeita no fim
 // (`emTransacaoDesfeita`), e os ajudantes recebem essa transação. Nada vaza
@@ -13,6 +15,9 @@ import postgres, { type Sql, type TransactionSql } from "postgres";
 
 /** A conexão crua ou uma transação aberta nela. */
 export type Conexao = Sql | TransactionSql;
+
+/** O projeto de produção: aparece no host direto e no usuário do pooler. */
+const PRODUCAO = "prhhrqyubjcafvucirri";
 
 /**
  * Conexão com o banco de teste.
@@ -27,6 +32,9 @@ export function conectar({ avisos }: { avisos?: string[] } = {}): Sql {
   const url = process.env.DB_TESTE_URL;
   if (!url) {
     throw new Error("DB_TESTE_URL ausente. Suba o banco local com `npm run db:teste`.");
+  }
+  if (url.includes(PRODUCAO)) {
+    throw new Error("DB_TESTE_URL aponta para o banco de produção. Use o banco local ou o de testes.");
   }
   return postgres(url, {
     max: 1,

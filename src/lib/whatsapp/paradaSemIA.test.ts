@@ -9,7 +9,9 @@ import { describe, expect, it } from "vitest";
  * era gravado e o lead voltava a receber a próxima lista de transmissão. A
  * regressão é calada: tudo funciona, só a marca não é gravada.
  */
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+// O `\r\n` vira `\n` antes: o corte do corpo procura "\n}\n", e checkout com
+// CRLF (Windows) faria o corte passar do fim da função.
+const semComentarios = (s: string) => s.replace(/\r\n/g, "\n").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 describe("o pedido de parada é lido com a IA calada", () => {
   const webhook = semComentarios(readFileSync("src/app/api/webhooks/whatsapp/route.ts", "utf8"));

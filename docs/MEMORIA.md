@@ -10773,3 +10773,85 @@ Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:
   lixeira de 30 dias; co-corretagem entre empresas por convite; Gmail só
   Next Home; a IA não se anuncia e não nega.
 
+
+## O E2E saiu de produção (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]]. Passo a passo: `docs/AMBIENTE-DE-TESTES.md`.
+
+- **O E2E diário rodava contra o site de produção, com a senha de um
+  corretor de verdade, e subia o rastro das falhas (telas do painel) como
+  artefato.** Agora `e2e.yml` lê a URL da variável `E2E_BASE_URL_TESTE` e a
+  conta sintética de `E2E_TESTE_EMAIL`/`SENHA`, não sobe artefato, e só roda
+  sob demanda até o ambiente de testes existir (depende do Matheus: projeto
+  Supabase de testes + ambiente `teste` da Vercel). Sem a variável, o job
+  para no primeiro passo dizendo o que falta.
+- **Três travas no código, além da guarda de texto:** `playwright.config.ts`
+  recusa `E2E_BASE_URL` de produção (`e2e/baseDoE2E.ts`), `conectar()`
+  recusa `DB_TESTE_URL` com `prhhrqyubjcafvucirri`, e `exportarGolden.ts`
+  exige `--grupo` do grupo 1 e grava fora do repositório.
+- **As migrations do projeto de testes entram por `npm run
+  db:teste:remoto`** (o mesmo `dbTeste.mjs` e o mesmo CLI fixo do banco
+  local), com `DB_TESTE_URL` no ambiente. A conferência
+  (`scripts/banco/bancoRemoto.mjs`) recusa produção e o banco local antes do
+  `db push`; chamar o CLI direto pularia essa trava.
+- **Preview do projeto de produção não serve de ambiente de testes no
+  Hobby**: herda as variáveis gerais de Preview (hoje as de produção), e
+  `VERCEL_PROJECT_PRODUCTION_URL` aponta para produção (o `autoDisparo` usa).
+  Sem Custom Environment (Pro), o caminho é um projeto da Vercel separado.
+- **`vitrine.spec.ts` procura imóveis reais do catálogo**; contra um banco
+  montado do zero ele vai falhar. Decidir entre spec com imóvel sintético e
+  catálogo de teste inventado — nunca copiar o de produção.
+- **Guarda de texto que lê o YAML no Windows precisa de `split(/\r?\n/)`**:
+  com CRLF, `.` não casa o `\r` e o `#.*$` nunca tirava comentário.
+- **Guarda que conta ocorrências não morde quando há sobra**: com três
+  `.eq("grupo_id", grupo)` e mínimo de dois, tirar um passava. A guarda
+  confere cada consulta do `.from()` até o `;`.
+
+## A chave de serviço classificada por grupo (Task 7, 19/10/2026)
+
+Nota: [[chave-de-servico-classificada-por-grupo]].
+
+- **Todo arquivo que usa a chave de serviço está num mapa**
+  (`src/lib/grupos/servicoComGrupo.test.ts`), com a categoria que explica por
+  que não atravessa grupos: `por-id` (nomeia quem validou o id), `equipe`
+  (cada leitura com `grupo_id`), `agrega-por-grupo` (laço de grupos),
+  `cruza-conjuntos` (casamento pelo grupo) e `plataforma` (linha a linha).
+  Arquivo novo fora do mapa reprova pedindo a categoria.
+- **`clienteParaNumerosDaEquipe()` não devolve mais o cliente cru**: devolve a
+  leitura recortada (`leituraDoGrupo`), com `ler((c) => c.from(...))` e
+  `lerView(...)`. Views ainda não têm `grupo_id` (0184): o recorte delas é por
+  `corretor_id` entre os corretores do grupo. O tipo de `ler` recusa view e
+  tabela global.
+- **Genérico mapeado sobre todas as tabelas do Supabase deixa o `tsc` 5x mais
+  lento** (65 s → 5 min, e estoura a memória padrão). Por isso a leitura
+  recortada recebe um callback que monta a consulta normal, em vez de tipar a
+  tabela por um tipo genérico.
+- **O resumo do dia oferecia imóvel de outro grupo**: o `grupoId` chegava a
+  `imoveisNovosQueCombinam` e só servia para as taxas. Achado ao classificar o
+  arquivo, com teste (`enviarResumoDoDia.test.ts`).
+- **`import` não é validação.** A regra `por-id` aceitava o nome da guarda no
+  import, e tirar a chamada passava. Hoje os imports são ignorados.
+- **O relatório semanal e o aviso de espera rodam grupo a grupo**, cada um com
+  os próprios números e destinatários. Desagendados, mas religar era uma linha.
+- **Scripts com chave secreta exigem `--grupo`** (só o 1): observatórios,
+  casos do consultor, `migrar.ts` e os scripts de `ops/` (os workflows passam
+  o grupo). O worker de vídeo é exceção declarada: processa job a job, como um
+  cron. O SQL de diagnóstico fixa o grupo num `set_config` e recusa outro.
+- **Log sem conversa**: o áudio recusado loga só o tamanho; o e-mail de portal
+  não loga telefone, e `inbound_logs.payload_raw` guarda só os nomes dos
+  campos que o provedor mandou.
+- **Testes de rota sem banco**: `test/bancoFalso.ts` aplica os filtros do
+  PostgREST em memória. A linha de outro grupo só some se o código filtrar.
+
+## O build do CI lia o banco de produção (19/10/2026)
+
+Nota: [[plataforma-multi-grupo]].
+
+- **O comentário do `ci.yml` ("nada consulta o Supabase em tempo de build")
+  era falso desde a F2b.** O `generateStaticParams` de `/empreendimentos/[slug]`
+  lê o catálogo, e o build sem segredo caía no fallback de `env.ts`: produção.
+  O verde da esteira dependia de produção já ter as migrations da branch; o
+  filtro por `grupo_id` da fase 1 o derrubou.
+- **Hoje o `verificar` sobe o banco de teste das migrations** antes do build
+  e exporta a API dele; o passo do build recusa URL que não seja 127.0.0.1.
+  Guarda: `buildDoCiSemProducao.test.ts`.

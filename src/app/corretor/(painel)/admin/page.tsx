@@ -99,23 +99,25 @@ export default async function AdminVisaoGeralPage() {
   await exigirGestorNaPagina();
 
   // As duas views só trazem contagens; a RLS da 0134 recortaria para as
-  // conversas do próprio ADM.
+  // conversas do próprio ADM. A leitura sai recortada pelo grupo do gestor.
   const supabase = await clienteParaNumerosDaEquipe();
   const equipe = await getEquipeAtiva();
 
   const [agregado, { data: funilWhats }, { data: respostaWhats }] = await Promise.all([
     getAgregadoDaEquipe(equipe),
-    supabase
-      .from("whatsapp_funil_metricas")
-      .select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao"),
+    supabase.lerView((c) =>
+      c.from("whatsapp_funil_metricas").select("conversas, conversas_com_lead, leads_quentes, visitas_agendadas, em_negociacao"),
+    ),
     /*
      * As métricas-norte 1 e 3 do roadmap (cobertura e tempo até a primeira
      * resposta), que nunca tinham tela — embora o dado estivesse no banco
      * desde sempre. Ver 0075.
      */
-    supabase
-      .from("whatsapp_resposta_metricas")
-      .select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
+    supabase.lerView((c) =>
+      c
+        .from("whatsapp_resposta_metricas")
+        .select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
+    ),
   ]);
 
   const whats = (funilWhats ?? []).reduce(

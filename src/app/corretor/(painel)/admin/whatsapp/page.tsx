@@ -17,7 +17,8 @@ export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
  * de outro corretor. O que esta tela mostra é status e contagem: quem está
  * conectado, em que modo a IA está, e como ela vem respondendo. Status e
  * contagem saem pela chave de serviço (`clienteParaNumerosDaEquipe`), só
- * com colunas que não carregam texto de ninguém.
+ * com colunas que não carregam texto de ninguém, e só do grupo do gestor:
+ * toda leitura desta tela, pela chave ou pela sessão, filtra o grupo.
  *
  * O único poder do ADM sobre o número de outro é desconectar
  * (`BotaoDesconectar`), registrado em `admin_eventos`.
@@ -70,29 +71,30 @@ export default async function AdminWhatsappPage() {
   const desdeListas = janelaDeDias(30).corte.toISOString();
   const [{ data: instancias }, { data: interacoes }, { data: eventos }, { data: pessoas }, { data: listas }] =
     await Promise.all([
+    equipe.ler((c) =>
+      c
+        .from("corretor_whatsapp_instancias")
+        .select(
+          "id, corretor_id, instance_name, status_conexao, telefone_conectado, conectado_em, modo_bot, bloqueado_ate, desconectado_em, motivo_queda_codigo, sessao_caida_em",
+        ),
+    ),
     equipe
-      .from("corretor_whatsapp_instancias")
-      .select(
-        "id, corretor_id, instance_name, status_conexao, telefone_conectado, conectado_em, modo_bot, bloqueado_ate, desconectado_em, motivo_queda_codigo, sessao_caida_em",
-      ),
-    equipe
-      .from("ia_interacoes")
-      .select("fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at")
+      .ler((c) => c.from("ia_interacoes").select("fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at"))
       .order("created_at", { ascending: false })
       .limit(500),
     supabase
       .from("admin_eventos")
       .select("acao, detalhes, created_at, ator_id, alvo_corretor_id")
+      .eq("grupo_id", equipe.grupoId)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("corretores").select("id, nome"),
+    supabase.from("corretores").select("id, nome").eq("grupo_id", equipe.grupoId),
     /*
      * As listas de transmissão da equipe nos últimos 30 dias (roadmap das
      * listas, Fase 3): só contagens, nunca o texto que foi mandado (0134).
      */
     equipe
-      .from("whatsapp_campanhas")
-      .select("corretor_id, total_leads, total_enviados, total_respondidos, status")
+      .ler((c) => c.from("whatsapp_campanhas").select("corretor_id, total_leads, total_enviados, total_respondidos, status"))
       .neq("status", "rascunho")
       .gte("created_at", desdeListas),
   ]);

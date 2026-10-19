@@ -23,6 +23,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServiceClient } from "@/lib/supabase/service";
+import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
 import { dentroDaJanela } from "@/lib/whatsapp/antiBan";
 import { MOTIVO_TEXTO_PARECIDO, MOTIVO_TEXTO_SEM_IA } from "@/lib/whatsapp/variacaoDeTexto";
@@ -33,6 +34,9 @@ const emSP = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—";
 
 async function main() {
+  // A chave de serviço enxerga todos os grupos: a lista só é lida no grupo
+  // pedido em `--grupo` (na fase 1, só o da Next Home).
+  const { grupoId } = grupoDoScript(process.argv.slice(2));
   const pedido: Pedido = JSON.parse(readFileSync(join(process.cwd(), "scripts/ops/retomar-lista.json"), "utf8"));
   const supabase = createServiceClient();
   const agora = new Date();
@@ -41,6 +45,7 @@ async function main() {
     .from("whatsapp_campanhas")
     .select("id, titulo, status, corretor_id, ignorar_janela, janela_liberada_ate, pausa_automatica")
     .eq("id", pedido.campanhaId)
+    .eq("grupo_id", grupoId)
     .maybeSingle();
   if (error || !lista) throw new Error(`lista ${pedido.campanhaId} não encontrada: ${error?.message ?? "sem linha"}`);
 

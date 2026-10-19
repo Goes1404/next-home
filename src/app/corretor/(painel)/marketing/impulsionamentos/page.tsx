@@ -3,7 +3,7 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { createClient } from "@/lib/supabase/server";
-import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
+import { clienteParaNumerosDaEquipe, leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import {
@@ -55,6 +55,7 @@ export default async function PaginaImpulsionamentos() {
         .select(
           "id, corretor_id, chave, titulo, url, empreendimento_id, valor_gasto, primeiro_lead_em, ultimo_lead_em, criada_pelo_corretor, canal, inicio, fim, agrupado_em",
         )
+        .eq("grupo_id", corretor.grupoId)
         .order("ultimo_lead_em", { ascending: false })
         .limit(200),
       supabase
@@ -62,16 +63,18 @@ export default async function PaginaImpulsionamentos() {
         .select(
           "id, nome, telefone, corretor_id, meta_ad_id, anuncio_origem, etapa, visita_agendada_em, impulsionamento_id, created_at, renda_mensal, orcamento_min, orcamento_max, nao_contatar_em",
         )
+        .eq("grupo_id", corretor.grupoId)
         .or("origem.eq.meta/ctwa,impulsionamento_id.not.is.null")
         .is("arquivado_em", null)
         .limit(5000),
       getEmpreendimentosDoPainel(),
-      supabase.from("corretores").select("id, nome"),
+      supabase.from("corretores").select("id, nome").eq("grupo_id", corretor.grupoId),
       // Quem o corretor pode ligar a uma campanha: os dele, que não vieram
       // pela etiqueta da Meta e ainda não estão em campanha nenhuma.
       supabase
         .from("leads")
         .select("id, nome, telefone, created_at")
+        .eq("grupo_id", corretor.grupoId)
         .eq("corretor_id", corretor.id)
         .is("arquivado_em", null)
         .is("meta_ad_id", null)
@@ -79,7 +82,11 @@ export default async function PaginaImpulsionamentos() {
         .order("created_at", { ascending: false })
         .limit(150),
       // A linha do tempo do gasto (0133): "até este dia, tinha gastado X".
-      supabase.from("impulsionamento_gastos").select("impulsionamento_id, dia, valor_acumulado").limit(5000),
+      supabase
+        .from("impulsionamento_gastos")
+        .select("impulsionamento_id, dia, valor_acumulado")
+        .eq("grupo_id", corretor.grupoId)
+        .limit(5000),
     ]);
 
   const ids = (leads ?? []).map((l) => l.id);
@@ -88,6 +95,7 @@ export default async function PaginaImpulsionamentos() {
     const { data } = await supabase
       .from("lead_observacoes_ia")
       .select("lead_id, temperatura_label")
+      .eq("grupo_id", corretor.grupoId)
       .in("lead_id", ids.slice(i, i + 300));
     for (const o of data ?? []) temperaturas.set(o.lead_id, o.temperatura_label);
   }
@@ -99,12 +107,13 @@ export default async function PaginaImpulsionamentos() {
   // O ADM vê as campanhas da equipe, mas desde a 0134 não lê conversa de
   // outro corretor: a contagem dele vem só com id e remetente, pela chave
   // de serviço. `ids` já saiu recortado pela RLS de `leads`.
-  const contador = corretor.papel === "gestor" ? await clienteParaNumerosDaEquipe() : supabase;
+  // As duas leituras saem recortadas pelo grupo do usuário.
+  const contador =
+    corretor.papel === "gestor" ? await clienteParaNumerosDaEquipe() : await leituraDoGrupo(supabase, corretor.grupoId);
   const conversaDoLead = new Map<string, string>();
   for (let i = 0; i < ids.length; i += 300) {
     const { data } = await contador
-      .from("whatsapp_conversas")
-      .select("id, lead_id")
+      .ler((c) => c.from("whatsapp_conversas").select("id, lead_id"))
       .in("lead_id", ids.slice(i, i + 300));
     for (const c of data ?? []) if (c.lead_id) conversaDoLead.set(c.id, c.lead_id);
   }
@@ -114,8 +123,7 @@ export default async function PaginaImpulsionamentos() {
     const lote = conversas.slice(i, i + 200);
     for (let pagina = 0; pagina < 20; pagina += 1) {
       const { data } = await contador
-        .from("whatsapp_mensagens")
-        .select("conversa_id")
+        .ler((c) => c.from("whatsapp_mensagens").select("conversa_id"))
         .in("conversa_id", lote)
         .eq("remetente", "cliente")
         .order("id")
@@ -194,6 +202,7 @@ export default async function PaginaImpulsionamentos() {
     const { data: itensDeLista } = await supabase
       .from("whatsapp_campanhas_fila")
       .select("lead_id, status")
+      .eq("grupo_id", corretor.grupoId)
       .in("lead_id", todosDosCartoes)
       .in("status", ["enviado", "respondido"]);
     for (const i of itensDeLista ?? []) {

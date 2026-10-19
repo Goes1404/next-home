@@ -3,6 +3,7 @@ import { enviarEmail } from "@/lib/email";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
 import { coletarNumerosDaSemana } from "@/lib/admin/numerosDaSemana";
+import { leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import {
   acharNoticias,
   assuntoDoRelatorio,
@@ -22,6 +23,11 @@ export const maxDuration = 60;
  * o "alguém foi procurar", toda segunda de manhã.
  *
  * Falha FECHADA como os outros: sem `CRON_SECRET` em produção, recusa.
+ *
+ * Roda POR GRUPO (L18): um laço de grupos, cada um com os próprios números e
+ * os próprios gestores. A chave de serviço enxerga todos; somar o banco
+ * inteiro e mandar a todo gestor entregaria os números de uma empresa à
+ * outra.
  */
 
 function segredoConfere(a: string, b: string): boolean {
@@ -45,19 +51,21 @@ function requisicaoAutenticada(req: NextRequest): boolean {
 }
 
 /**
- * Para quem vai o relatório: os GESTORES.
+ * Para quem vai o relatório de um grupo: os GESTORES dele.
  *
  * Preferência pelo e-mail do cadastro; reserva no e-mail do login, pela
  * mesma razão do aviso de queda — medido em 31/08, **0 de 8 corretores**
  * têm `corretores.email` preenchido, e sem a reserva o recurso nasceria
  * sem destinatário.
  */
-async function destinatarios(): Promise<{ nome: string; email: string }[]> {
-  const supabase = createServiceClient();
-
+async function destinatarios(
+  supabase: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+): Promise<{ nome: string; email: string }[]> {
   const { data: gestores } = await supabase
     .from("corretores")
     .select("nome, email, user_id")
+    .eq("grupo_id", grupoId)
     .eq("papel", "gestor")
     .eq("ativo", true);
 
@@ -85,24 +93,35 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const numeros = await coletarNumerosDaSemana();
-    const achados = acharNoticias(numeros);
-    const { texto, html } = corpoDoRelatorio({ achados, numeros, urlPainel: site.url });
-    const assunto = assuntoDoRelatorio(achados);
-
-    const para = await destinatarios();
-    if (para.length === 0) {
-      console.warn("[relatorio] nenhum gestor com e-mail — relatório não enviado.");
-      return NextResponse.json({ ok: true, enviados: 0, motivo: "sem_destinatario", achados });
-    }
+    const supabase = createServiceClient();
+    const { data: grupos, error } = await supabase.from("grupos").select("id");
+    if (error) throw error;
 
     let enviados = 0;
-    for (const destino of para) {
-      const r = await enviarEmail({ para: destino.email, assunto, html, texto });
-      if (r.enviado) enviados++;
+    let destinatariosTotal = 0;
+    const semDestinatario: string[] = [];
+    for (const { id: grupoId } of grupos ?? []) {
+      const numeros = await coletarNumerosDaSemana(await leituraDoGrupo(supabase, grupoId));
+      const achados = acharNoticias(numeros);
+      const { texto, html } = corpoDoRelatorio({ achados, numeros, urlPainel: site.url });
+      const assunto = assuntoDoRelatorio(achados);
+
+      const para = await destinatarios(supabase, grupoId);
+      if (para.length === 0) {
+        semDestinatario.push(grupoId);
+        continue;
+      }
+      destinatariosTotal += para.length;
+      for (const destino of para) {
+        const r = await enviarEmail({ para: destino.email, assunto, html, texto });
+        if (r.enviado) enviados++;
+      }
+    }
+    if (semDestinatario.length > 0) {
+      console.warn("[relatorio] grupo sem gestor com e-mail — relatório não enviado:", semDestinatario.join(", "));
     }
 
-    return NextResponse.json({ ok: true, enviados, destinatarios: para.length, achados });
+    return NextResponse.json({ ok: true, enviados, destinatarios: destinatariosTotal, semDestinatario });
   } catch (e) {
     // O relatório não pode derrubar nada — mas também não pode falhar em
     // silêncio, ou volta a ser "ninguém olha".

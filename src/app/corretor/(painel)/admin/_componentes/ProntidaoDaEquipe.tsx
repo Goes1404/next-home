@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getCorretorLogado } from "@/lib/corretorSessao";
 import { carregarConfiguracao } from "@/lib/crm/configuracaoDoCorretor";
 import { passosDoCorretor, progressoDaConfiguracao } from "@/lib/crm/primeirosPassos";
 import { acessoParado, ultimoAcessoLegivel } from "@/lib/admin/prontidao";
@@ -14,10 +15,15 @@ import { acessoParado, ultimoAcessoLegivel } from "@/lib/admin/prontidao";
  * que ninguém atende. Esta lista mostra exatamente onde cada um parou.
  */
 export async function ProntidaoDaEquipe() {
+  // Só a equipe do grupo do gestor: a chave de serviço enxerga todos os
+  // grupos, e o último login de quem é de outra empresa não é dele (L17).
+  const gestor = await getCorretorLogado();
+  if (gestor?.papel !== "gestor") return null;
   const supabase = createServiceClient();
   const { data: equipe } = await supabase
     .from("corretores")
     .select("id, nome, user_id")
+    .eq("grupo_id", gestor.grupoId)
     .eq("ativo", true)
     .order("nome", { ascending: true });
   if (!equipe || equipe.length === 0) return null;
