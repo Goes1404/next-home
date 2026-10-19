@@ -152,6 +152,7 @@ describe("traduzirErroDoBanco", () => {
   it("cada raise da migration tem frase de tela", () => {
     expect(traduzirErroDoBanco("partes_nao_somam_100")).toMatch(/100%/);
     expect(traduzirErroDoBanco("venda_nao_editavel")).toMatch(/comissão já entrou/);
+    expect(traduzirErroDoBanco("participante_de_outro_grupo")).toMatch(/não é da sua imobiliária/);
     expect(traduzirErroDoBanco("qualquer coisa")).toMatch(/Tente de novo/);
   });
 });

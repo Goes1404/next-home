@@ -163,9 +163,9 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   it("corretor desativado perde o grupo", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const b = await criarGrupo(tx, { slug: "b" });
-      // `garantir_gestor_remanescente` (0030) ainda conta gestores do banco
-      // inteiro, e no banco de teste o gestor de B é o único: sem outro
-      // gestor ativo, desativá-lo seria recusado antes de medir alguma coisa.
+      // `garantir_gestor_remanescente` conta os gestores do grupo (0183), e o
+      // gestor de B é o único de B: sem outro gestor ativo no grupo,
+      // desativá-lo seria recusado antes de medir alguma coisa.
       // O corretor de B vira gestor e serve também de contraste: ativo, ele
       // continua com grupo e com papel.
       await tx`update corretores set papel = 'gestor' where id = ${b.corretorId}`;
@@ -425,19 +425,50 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  // Review Focus 2, pela roleta. `leads_distribuir` roda DEPOIS do carimbo e
-  // escolhe o dono entre todos os corretores: sem a conferência da linha
-  // final, o lead de B nasceria com o dono de A. A Task 5 faz a roleta olhar
-  // o grupo (o lead fica sem dono dentro dele); até lá, a linha é recusada.
-  it("a roleta não dá a um lead o dono de outro grupo", async () => {
+  // Review Focus 3, pela roleta. `leads_distribuir` roda DEPOIS do carimbo:
+  // a 0182 recusava o lead quando a roleta global escolhia gente de outro
+  // grupo. Desde a 0183 ela só escolhe no grupo do lead e, sem ninguém
+  // elegível nele, deixa o lead sem dono DENTRO do grupo — nunca falha,
+  // nunca atravessa.
+  it("a roleta só escolhe corretor do grupo do lead", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
-      await criarGrupo(tx, { slug: "a" });
+      const a = await criarGrupo(tx, { slug: "a" });
       const b = await criarGrupo(tx, { slug: "b" });
-      // Ninguém de B pode receber: a roleta só acha gente de fora.
+      // O corretor de A tem o número no ar: na roleta global ele ganharia
+      // de qualquer um de B, que não tem.
+      await conectarNumero(tx, a.corretorId, "5511911110001");
+      const deB = [b.gestorId, b.corretorId];
+
+      for (let i = 0; i < 3; i++) {
+        const [lead] = await tx<{ corretor_id: string | null; grupo_id: string }[]>`
+          insert into public.leads (nome, grupo_id) values ('Lead de B', ${b.grupoId})
+          returning corretor_id, grupo_id
+        `;
+        expect(lead.grupo_id).toBe(b.grupoId);
+        expect(deB).toContain(lead.corretor_id);
+      }
+
+      // O outro sentido: lead de A fica em A, com quem tem o número no ar.
+      const [deA] = await tx<{ corretor_id: string | null; origem_atribuicao: string }[]>`
+        insert into public.leads (nome, grupo_id) values ('Lead de A', ${a.grupoId})
+        returning corretor_id, origem_atribuicao
+      `;
+      expect(deA).toEqual({ corretor_id: a.corretorId, origem_atribuicao: "roleta" });
+    });
+  });
+
+  it("sem ninguém elegível no grupo, o lead fica sem dono dentro dele", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await conectarNumero(tx, a.corretorId, "5511911110001");
+      // Ninguém de B pode receber: a roleta global só acharia gente de A.
       await tx`update public.corretores set em_pausa = true where grupo_id = ${b.grupoId}`;
-      await expect(
-        tx`insert into public.leads (nome, grupo_id) values ('Lead de B sem dono', ${b.grupoId})`,
-      ).rejects.toThrow(/grupo da linha difere do grupo de corretores/);
+      const [lead] = await tx<{ corretor_id: string | null; grupo_id: string; origem_atribuicao: string | null }[]>`
+        insert into public.leads (nome, grupo_id) values ('Lead de B sem dono', ${b.grupoId})
+        returning corretor_id, grupo_id, origem_atribuicao
+      `;
+      expect(lead).toEqual({ corretor_id: null, grupo_id: b.grupoId, origem_atribuicao: null });
     });
   });
 
@@ -716,13 +747,6 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await criarGrupo(tx, { slug: "a" });
       const b = await criarGrupo(tx, { slug: "b" });
 
-      const [{ grupo_id: daPlataforma }] = await tx<{ grupo_id: string | null }[]>`
-        insert into public.admin_eventos (acao, detalhes)
-        values ('conta_criada', '{"origem":"plataforma"}'::jsonb)
-        returning grupo_id
-      `;
-      expect(daPlataforma).toBeNull();
-
       const [{ grupo_id: doCorretor }] = await tx<{ grupo_id: string | null }[]>`
         insert into public.admin_eventos (acao, alvo_corretor_id, detalhes)
         values ('corretor_desativado', ${b.corretorId}, '{}'::jsonb)
@@ -750,6 +774,53 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
           `;
         }),
       ).resolves.toEqual([{ grupo_id: null }]);
+    });
+  });
+
+  // A marca não vale para `postgres` (0183): dentro de qualquer função
+  // security definer chamada por um logado o papel é `postgres`, e a marca
+  // viraria um jeito de gravar evento sem grupo, invisível ao gestor.
+  it("a marca da plataforma só vale sem mãe e para a chave de serviço ou o administrador", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const comoServico = <T,>(fn: (s: TransactionSql) => Promise<T>) =>
+        comoUsuario(tx, b.gestorUserId, async (eu) => {
+          await eu`reset role`;
+          await eu`set local role service_role`;
+          await eu`select set_config('request.jwt.claims', '{"role":"service_role"}', true)`;
+          return fn(eu);
+        });
+
+      // Com mãe, o evento é do grupo dela, mesmo com a marca.
+      await expect(
+        comoServico((s) => s`
+          insert into public.admin_eventos (acao, alvo_corretor_id, detalhes)
+          values ('papel_alterado', ${b.corretorId}, '{"origem":"plataforma"}'::jsonb)
+          returning grupo_id
+        `),
+      ).resolves.toEqual([{ grupo_id: b.grupoId }]);
+
+      // `postgres` direto, com dois grupos: não decide sozinho.
+      await expect(
+        tx.savepoint(
+          (s) => s`insert into public.admin_eventos (acao, detalhes) values ('conta_criada', '{"origem":"plataforma"}'::jsonb)`,
+        ),
+      ).rejects.toThrow(/grupo_id obrigatório em admin_eventos/);
+
+      // Função security definer chamada por um logado: o evento fica no
+      // grupo de quem chamou, nunca sem grupo.
+      await tx.unsafe(`
+        create function pg_temp.teste_0183_evento() returns uuid
+        language sql security definer as $$
+          insert into public.admin_eventos (acao, detalhes)
+          values ('conta_criada', '{"origem":"plataforma"}'::jsonb)
+          returning grupo_id
+        $$
+      `);
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) => eu`select pg_temp.teste_0183_evento() as grupo_id`),
+      ).resolves.toEqual([{ grupo_id: b.grupoId }]);
     });
   });
 
@@ -1194,6 +1265,210 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         returning grupo_id
       `;
       expect(lead.grupo_id).toBe(a.grupoId);
+    });
+  });
+
+  // Funções security definer (Task 5): a RLS não vale dentro delas, então
+  // cada uma confere o grupo explicitamente.
+  it("o porteiro só sorteia corretor do grupo do imóvel", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      // A é a Next Home: a assinatura antiga, que o código no ar chama sem
+      // grupo, sorteia nele.
+      const [{ id: deA }] = await tx<{ id: string }[]>`
+        insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
+        values ('Corretor da Next Home', 'TESTE-nh', '5511900000009', 'corretor-nh', ${GRUPO_NEXT_HOME_ID})
+        returning id
+      `;
+      await conectarNumero(tx, deA, "5511911110001");
+      const b = await criarGrupo(tx, { slug: "b" });
+      const imovelDeB = await criarImovel(tx, b.grupoId, "imovel-de-b");
+
+      // Ninguém de B conectado: nem o grupo de B nem a assinatura antiga
+      // mandam o clique do imóvel de B para A.
+      expect(await tx`select * from public.sortear_corretor_whatsapp(${b.grupoId}::uuid, ${imovelDeB}::uuid, null::uuid)`).toEqual([]);
+      // Por nome, como o código no ar chama (só posicional seria ambíguo
+      // com a assinatura nova).
+      expect(await tx`select * from public.sortear_corretor_whatsapp(p_empreendimento => ${imovelDeB}::uuid)`).toEqual([]);
+      expect(
+        (await tx<{ corretor_id: string }[]>`select corretor_id from public.sortear_corretor_whatsapp()`).map(
+          (l) => l.corretor_id,
+        ),
+      ).toEqual([deA]);
+
+      await conectarNumero(tx, b.corretorId, "5511911110002");
+      for (let i = 0; i < 3; i++) {
+        const linhas = await tx<{ corretor_id: string }[]>`
+          select corretor_id from public.sortear_corretor_whatsapp(${b.grupoId}::uuid, ${imovelDeB}::uuid, null::uuid)
+        `;
+        expect(linhas.map((l) => l.corretor_id)).toEqual([b.corretorId]);
+      }
+    });
+  });
+
+  // Review Focus 4.
+  it("gestor de B não muda o papel de corretor de A", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await expect(
+        comoUsuario(tx, b.gestorUserId, (eu) =>
+          eu`select public.definir_papel_corretor(${a.corretorId}::uuid, 'gestor')`,
+        ),
+      ).rejects.toThrow(/não é da sua imobiliária/);
+      const [{ papel }] = await tx<{ papel: string }[]>`select papel from corretores where id = ${a.corretorId}`;
+      expect(papel).toBe("corretor");
+
+      // No próprio grupo, continua valendo. (`comoUsuario` desfaz tudo no
+      // fim, então a leitura é lá dentro.)
+      const deB = await comoUsuario(tx, b.gestorUserId, async (eu) => {
+        await eu`select public.definir_papel_corretor(${b.corretorId}::uuid, 'gestor')`;
+        return eu<{ papel: string }[]>`select papel from public.corretores where id = ${b.corretorId}`;
+      });
+      expect(deB).toEqual([{ papel: "gestor" }]);
+    });
+  });
+
+  it("o último gestor é contado por grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await tx`update corretores set papel = 'gestor' where id = ${b.corretorId}`;
+      // B tem dois gestores; A, um só. Os de B não seguram A.
+      await expect(
+        tx.savepoint((s) => s`update corretores set ativo = false where id = ${a.gestorId}`),
+      ).rejects.toThrow(/sem nenhum gestor ativo/);
+      await expect(
+        tx.savepoint((s) => s`update corretores set papel = 'corretor' where id = ${a.gestorId}`),
+      ).rejects.toThrow(/sem nenhum gestor ativo/);
+      // B, com outro gestor ativo no próprio grupo, pode.
+      await tx`update corretores set ativo = false where id = ${b.gestorId}`;
+    });
+  });
+
+  it("ranking só mostra o próprio grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const venda = await criarVenda(tx, a.corretorId, null);
+      await tx`
+        insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_valor)
+        values (${venda}, ${a.corretorId}, 100, 10000)
+      `;
+      const ranking = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ corretor_id: string }[]>`select corretor_id from public.ranking_vgv(date '2026-10-01', date '2026-10-31')`,
+      );
+      expect(ranking.map((l) => l.corretor_id).sort()).toEqual([b.gestorId, b.corretorId].sort());
+    });
+  });
+
+  it("as taxas da equipe só contam o próprio grupo", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeA = await criarLead(tx, a.corretorId);
+      await criarVenda(tx, a.corretorId, leadDeA);
+      const [taxas] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ leads: number; vendas: number }[]>`
+          select leads::int, vendas::int from public.taxas_da_equipe(date '2026-01-01')
+        `,
+      );
+      expect(taxas).toEqual({ leads: 0, vendas: 0 });
+    });
+  });
+
+  it("gestor de B não marca pagamento de venda de A", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const venda = await criarVenda(tx, a.corretorId, null);
+      await tx`
+        insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_valor)
+        values (${venda}, ${a.corretorId}, 100, 10000)
+      `;
+      const [r] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ comissao: boolean; repasse: boolean }[]>`
+          select public.marcar_comissao_recebida(${venda}::uuid, date '2026-10-19') as comissao,
+                 public.marcar_repasse_pago(${venda}::uuid, ${a.corretorId}::uuid, date '2026-10-19') as repasse
+        `,
+      );
+      expect(r).toEqual({ comissao: false, repasse: false });
+      const [linha] = await tx<{ recebida: string | null; pago: string | null }[]>`
+        select v.comissao_recebida_em as recebida, p.repasse_pago_em as pago
+          from vendas v join venda_participantes p on p.venda_id = v.id
+         where v.id = ${venda}
+      `;
+      expect(linha).toEqual({ recebida: null, pago: null });
+    });
+  });
+
+  it("gestor de B não muda a preferência de contato de lead de A", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const leadDeA = await criarLead(tx, a.corretorId);
+      const [{ ok }] = await comoUsuario(tx, b.gestorUserId, (eu) =>
+        eu<{ ok: boolean }[]>`select public.definir_preferencia_contato(${leadDeA}::uuid, 'whatsapp', false) as ok`,
+      );
+      expect(ok).toBe(false);
+      const [{ ok: doDono }] = await comoUsuario(tx, a.gestorUserId, (eu) =>
+        eu<{ ok: boolean }[]>`select public.definir_preferencia_contato(${leadDeA}::uuid, 'whatsapp', false) as ok`,
+      );
+      expect(doDono).toBe(true);
+    });
+  });
+
+  // Review Focus 9 (L20): id de outra pessoa no parâmetro.
+  it("usuário logado não reserva crédito de vídeo de outro", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) => eu`select public.reservar_credito_video(${a.corretorId}::uuid)`),
+      ).rejects.toThrow(/permission denied/);
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) =>
+          eu`select public.devolver_credito_video(${a.corretorId}::uuid, 'cota')`,
+        ),
+      ).rejects.toThrow(/permission denied/);
+      const leadDeA = await criarLead(tx, a.corretorId);
+      await expect(
+        comoUsuario(tx, b.corretorUserId, (eu) =>
+          eu`select public.reservar_horario_visita(${leadDeA}::uuid, now() + interval '1 day')`,
+        ),
+      ).rejects.toThrow(/permission denied/);
+      // A chave de serviço (a fila de vídeo e a IA) continua executando.
+      for (const assinatura of [
+        "public.reservar_credito_video(uuid)",
+        "public.devolver_credito_video(uuid, text)",
+        "public.reservar_horario_visita(uuid, timestamptz)",
+      ]) {
+        const [{ pode }] = await tx<{ pode: boolean }[]>`
+          select has_function_privilege('service_role', ${assinatura}, 'execute') as pode
+        `;
+        expect(pode, assinatura).toBe(true);
+      }
+    });
+  });
+
+  it("venda com participante de outro grupo é recusada com mensagem legível", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "a" });
+      const b = await criarGrupo(tx, { slug: "b" });
+      const dados = {
+        data_venda: "2026-10-19",
+        valor_venda: "500000",
+        comissao_valor: "25000",
+        imovel_descricao: "Apartamento de teste",
+      };
+      const participantes = [
+        { corretor_id: a.corretorId, parte_percentual: 50, repasse_valor: 5000 },
+        { corretor_id: b.corretorId, parte_percentual: 50, repasse_valor: 5000 },
+      ];
+      await expect(
+        comoUsuario(tx, a.corretorUserId, (eu) =>
+          eu`select public.salvar_venda(null, ${eu.json(dados)}, ${eu.json(participantes)})`,
+        ),
+      ).rejects.toThrow(/participante_de_outro_grupo/);
     });
   });
 

@@ -111,6 +111,26 @@ describe("a roleta distribui para quem consegue atender", () => {
 });
 
 /*
+ * O grupo do lead é a ÚNICA preferência que vira filtro (0183, Review Focus
+ * 3): corretor de outro grupo nunca recebe. Sem ninguém elegível no grupo, o
+ * lead fica sem dono dentro dele — melhor que o dono errado, porque o dono
+ * errado nem enxerga o lead.
+ */
+describe("a roleta escolhe só no grupo do lead", () => {
+  const corpo = ultimaDefinicaoDe("distribuir_lead").replace(/--.*$/gm, "");
+
+  it("filtra os corretores pelo grupo do lead", () => {
+    const minusculo = corpo.toLowerCase();
+    const daRoleta = minusculo.indexOf("from corretores c");
+    const where = minusculo.slice(minusculo.indexOf(" where ", daRoleta), minusculo.indexOf("order by", daRoleta));
+    expect(
+      /c\.grupo_id\s*=\s*new\.grupo_id/.test(where),
+      "A roleta deixou de filtrar pelo grupo do lead: o lead de um grupo iria para corretor de outro.",
+    ).toBe(true);
+  });
+});
+
+/*
  * Sem "especialista do imóvel" (0117, decisão de produto): quem já vendeu o
  * imóvel não ganha preferência nenhuma. A 0115 descontava 5 leads de carga
  * por venda; se voltar, todo corretor deixa de concorrer igual.

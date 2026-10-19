@@ -683,6 +683,9 @@ function traduzirErroBanco(mensagem: string): string {
   if (mensagem.includes("outro gestor para remover")) {
     return "Você não pode remover o próprio acesso administrativo — peça a outro gestor.";
   }
+  if (mensagem.includes("não é da sua imobiliária")) {
+    return "Este corretor não é da sua imobiliária.";
+  }
   if (mensagem.includes("Só quem administra")) {
     return "Esta ação é restrita a quem administra a imobiliária.";
   }
