@@ -88,6 +88,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[cliente-sem-resposta-avisa-o-corretor]] — 30 min sem resposta vira aviso no WhatsApp do corretor, uma vez por espera (0161, 06/10)
 - [[pedir-um-tempo-nao-e-aceitar-a-visita]] — "vou confirmar depois, pode ser?" gravou visita; "corretor Carlos" inventado; último domingo do mês; lista duplicada por telefone (v50, 16/10)
 - [[agenda-padrao-aberta]] — sem agenda preenchida, vale todos os dias das 9h às 20h (16/10)
+- [[erro-de-leitura-nao-e-numero-sem-lead]] — erro na leitura da conversa virava 200 "sem lead" e a mensagem sumia; hoje 503 (19/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]

@@ -9,7 +9,7 @@ codigo: [.github/workflows/fotos-0137.yml, .github/workflows/fotos-da-fila.yml, 
 created: 2026-10-19
 updated: 2026-10-19
 fonte: revisão do roteiro de produção da fase 1 multi-grupo (Task 9), 19/10/2026
-summary: Cinco workflows do GitHub Actions rodam com a chave de serviço de PRODUÇÃO quando um push na branch de produção muda os scripts do filtro `paths`. A fase 1 mudou os cinco scripts (ganharam --grupo), então o merge os dispararia; publicar-fila republica rascunho. Desabilitar no GitHub antes do merge.
+summary: Cinco workflows do GitHub Actions rodam com a chave de serviço de PRODUÇÃO quando um push na branch de produção muda os scripts do filtro `paths`. A fase 1 mudou os cinco scripts (ganharam --grupo), então o merge os dispararia; publicar-fila republica rascunho e apaga o slug da lista 'apagar' (1) com os arquivos no Storage. Desabilitar no GitHub antes do merge.
 ---
 # Push na branch de produção dispara workflows de catálogo contra produção
 
@@ -38,8 +38,10 @@ A fase 1 acrescentou `--grupo` aos cinco scripts, então o merge rodaria os
 cinco de uma vez.
 
 **O perigoso é o `publicar-fila`.** `operacao0129.ts` publica todos os slugs da
-lista `publicar` que estiverem em rascunho, e apaga os da lista `apagar` que
-estiverem despublicados. Um imóvel que alguém despublicou de propósito depois
+lista `publicar` que estiverem em rascunho (15 em `operacao-0129.json`), e
+**apaga** cada slug da lista `apagar` que estiver despublicado, junto com os
+arquivos dele no Storage (a lista tem 1 slug, `serenne-barueri-2`). Apagar não
+se desfaz. Um imóvel que alguém despublicou de propósito depois
 de 28/09 volta para a vitrine sem ninguém pedir. Os outros quatro são
 idempotentes (dedup por hash), mas ainda gastam banda e escrevem em produção
 fora de hora.

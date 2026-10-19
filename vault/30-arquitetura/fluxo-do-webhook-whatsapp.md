@@ -20,6 +20,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).
+   Leitura que FALHA não é "sem lead": o porteiro repete o passageiro e
+   lança, e o webhook responde 503 para o provedor reentregar
+   ([[erro-de-leitura-nao-e-numero-sem-lead]], 19/10).
    Exceção: convite de entrada, que inclui o anúncio da Meta reconhecido pela
    etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
    e o anúncio vai para `impulsionamentos`

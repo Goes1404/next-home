@@ -10906,12 +10906,36 @@ Nota: [[push-na-branch-de-producao-dispara-workflows-de-catalogo]].
   `fotos-da-fila.yml`, `publicar-fila.yml`, `variantes-de-imagem.yml` e
   `videos-da-fila.yml`. A fase 1 mudou os cinco scripts (`--grupo`), então o
   merge rodaria as cinco levas antigas de uma vez. Achado na Task 9.
-- **`publicar-fila` (`operacao0129.ts`) republica rascunho**: publica todo
-  slug da lista que estiver despublicado, inclusive imóvel tirado do ar de
-  propósito depois da leva de 28/09.
+- **`publicar-fila` (`operacao0129.ts`) republica rascunho E apaga**: publica
+  todo slug da lista `publicar` (15 em `operacao-0129.json`) que estiver
+  despublicado, inclusive imóvel tirado do ar de propósito depois da leva de
+  28/09; e APAGA cada slug da lista `apagar` (1: `serenne-barueri-2`) que
+  estiver despublicado, junto com os arquivos dele no Storage. Apagar não se
+  desfaz.
 - **Régua:** antes de mergear numa branch de produção um diff que toque
   `scripts/catalogo/`, `scripts/ops/`, `scripts/video/` ou
   `src/lib/imagens/variantes.ts`, cruzar `grep -l "paths:" .github/workflows/*.yml`
   com o diff e desabilitar no GitHub (Actions → o workflow → ⋯ → Disable
   workflow) cada um que casar, até conferir. `conferir-lista` e
   `retomar-lista` também têm `paths` e mexem em lista de transmissão.
+
+## Erro de leitura virava "número sem lead" e o webhook descartava com 200 (19/10/2026)
+
+Nota: [[erro-de-leitura-nao-e-numero-sem-lead]].
+
+- **`obterOuCriarConversa` descartava o `error` do select de
+  `whatsapp_conversas`.** Numa piscada do banco, ou na trava das 0182/0184
+  (policy e coluna em toda tabela, até o `commit`), a conversa existente virava
+  `null` e o webhook respondia **200** `ignored: "numero_sem_lead_cadastrado"`.
+  O provedor não reentrega 200: a mensagem sumia sem log nem linha, e o 200
+  não se distingue de uma entrega normal nos logs.
+- **Hoje:** a leitura passa por `comRetentativa` e, persistindo, lança; o
+  webhook loga (`[porteiro]`, corretor e 4 últimos dígitos, sem texto) e
+  responde **503**, e o provedor reentrega (a deduplicação por
+  `provider_message_id` já existe). `encontrarLeadCadastrado` já lançava desde
+  12/09. Guarda: `leituraQueFalha.test.ts`.
+- **O código antigo, no ar durante as migrations da fase 1, ainda tem o
+  defeito**: a conferência 2e do roteiro procura `porteiro_barrados` e linhas
+  de erro na janela da trava.
+- **Régua:** leitura cujo resultado vazio tem significado ("não existe", "não
+  é lead") nunca descarta o `error`. Vazio por erro tem de falhar alto.
