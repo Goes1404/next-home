@@ -26,7 +26,7 @@ type Item = { url: string; legenda: string; tipo: "foto" | "planta"; ordem: numb
 const TETO_IMAGEM = 15 * 1024 * 1024;
 
 async function main() {
-  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0192).
   const { grupoId, resto } = grupoDoScript(process.argv.slice(2));
   const lista = resto[0];
   if (!lista) throw new Error("informe o JSON da lista: trazerFotosCuradas.ts scripts/catalogo/fotos-curadas/<lista>.json");

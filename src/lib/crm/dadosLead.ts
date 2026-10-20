@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { recorteDaVisao } from "@/lib/corretorSessao";
+import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import type { EtapaFunil, Lead, OrigemAtribuicao } from "@/lib/types";
 import type { Interacao, Tarefa, TipoInteracao } from "./timeline";
 import { textoDaEntradaNaLista } from "./desfechoDaLista";
@@ -209,12 +211,19 @@ export async function getTouchpointsDoLead(leadId: string): Promise<TouchpointMa
   }));
 }
 
-/** As tarefas em aberto do corretor logado — o bloco "Para hoje" do painel. */
+/**
+ * As tarefas em aberto do corretor logado — o bloco "Para hoje" do painel.
+ *
+ * Recorta pelo corretor da sessão, inclusive para o gestor: a RLS dele
+ * devolveria as tarefas da equipe inteira (hotfix de 19/10/2026).
+ */
 export async function getMinhasTarefas(): Promise<Tarefa[]> {
   const supabase = await createClient();
+  const dono = (await recorteDaVisao()) ?? CORRETOR_NENHUM;
   const { data } = await supabase
     .from("lead_tarefas")
     .select("id, titulo, prazo, concluida_em, lead:leads(id, nome)")
+    .eq("corretor_id", dono)
     .is("concluida_em", null)
     .order("prazo", { ascending: true })
     .limit(50);
@@ -256,7 +265,7 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
       .from("lead_interacoes")
       .select("id, tipo, conteudo, created_at, corretor:corretores(nome)")
       .eq("lead_id", leadId)
-      // `repasse` (0183) guarda a origem anterior para a fase 5; a
+      // `repasse` (0192) guarda a origem anterior para a fase 5; a
       // transferência já aparece na linha `sistema` que a acompanha.
       .neq("tipo", "repasse")
       .order("created_at", { ascending: false })

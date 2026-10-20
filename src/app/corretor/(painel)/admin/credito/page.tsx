@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * re-executam ao navegar entre rotas irmãs.
  */
 export default async function CreditoPage() {
-  // As taxas do grupo de quem edita: cada imobiliária ajusta as dela (0181),
+  // As taxas do grupo de quem edita: cada imobiliária ajusta as dela (0190),
   // e a função do banco só grava a linha desse grupo.
   const gestor = await exigirGestorNaPagina();
   const parametros = await getParametrosCredito(gestor.grupoId);

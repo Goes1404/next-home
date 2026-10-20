@@ -8,7 +8,7 @@ const DIAS = 30;
 /**
  * O que está sendo usado das ferramentas novas, nos últimos 30 dias (0121).
  * Lido com a sessão do gestor: a RLS dele alcança a equipe inteira, e cada
- * leitura filtra o grupo dele (a chave de serviço e a RLS anterior à 0184
+ * leitura filtra o grupo dele (a chave de serviço e a RLS anterior à 0193
  * enxergam todos os grupos).
  */
 export async function UsoDasNovidades() {

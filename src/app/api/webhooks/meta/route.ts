@@ -216,7 +216,7 @@ export async function POST(req: Request) {
           /*
            * A integração com a Meta é do grupo 1 até a fase 7. O lead nasce
            * sem dono (a roleta escolhe), então não há linha-mãe de onde o
-           * gatilho tire o grupo: ele vai explícito (0183).
+           * gatilho tire o grupo: ele vai explícito (0192).
            */
           grupo_id: GRUPO_NEXT_HOME_ID,
           meta_lead_id: leadgenId,

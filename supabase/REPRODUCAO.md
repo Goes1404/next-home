@@ -129,6 +129,29 @@ Aplicar sem erro não bastou: a busca por objetos que só existem em produção
 achou uma migration cujo efeito dependia de um deles (a 0043, abaixo), sem
 dar erro. `update` sem linha é sucesso para o Postgres.
 
+## Numeração da fase 1 multi-grupo (20/10/2026)
+
+As migrations da fase 1 nasceram como 0181–0185 e foram renumeradas para
+**0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194): a
+0188 (prévia do link) e a 0189 (conta oculta) subiram direto de produção e já
+estão aplicadas lá, e a fase 1 tem de rodar depois delas também num banco
+montado do zero. 0181–0187 ficam vazias de propósito (`RESERVADOS` em
+`src/lib/migrations.test.ts`). Conferido em 20/10 num banco vazio: todas as
+migrations aplicam em ordem, da 0001 à 0194, e a suíte inteira com
+`DB_TESTE_URL` passa.
+
+**Dois `db:teste` ao mesmo tempo se derrubam.** O `project_id` e as portas são
+fixos em `config.toml`, então uma segunda sessão que rode `npm run db:teste`
+enquanto outra testa recria o MESMO container no meio da suíte (aparece como
+`terminating connection due to administrator command` e depois `relation
+"grupos" does not exist`, se a outra sessão estiver numa branch sem a fase 1).
+Para uma pilha só sua, copie `supabase/config.toml` e `supabase/migrations`
+para uma pasta fora do repositório, troque `project_id` e as portas (por
+exemplo 54321→56321, 54322→56322) e rode lá
+`npx --yes supabase@2.121.0 start -x imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor`;
+depois `DB_TESTE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres`
+e `DB_TESTE_API_URL=http://127.0.0.1:56321` para o realtime.
+
 ## Edições em migrations antigas
 
 Regra: a menor edição que deixa o banco local igual ao de produção, sem

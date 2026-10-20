@@ -1,4 +1,4 @@
-// Funções `security definer` e o grupo (0183, spec §14).
+// Funções `security definer` e o grupo (0192, spec §14).
 //
 // Dentro de uma função `security definer` a RLS não vale: ela roda como o
 // dono (`postgres`) e enxerga todos os grupos. A regra da fase 1: toda função
@@ -38,7 +38,7 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "email_de_acesso_livre(text)": "unicidade global do e-mail de acesso (e do Auth); devolve só sim/não; só gestor",
 
   // A assinatura antiga do porteiro, `sortear_corretor_whatsapp(uuid, uuid)`,
-  // ficou aqui da 0183 até a 0185, que a apaga depois do deploy. Se ela
+  // ficou aqui da 0192 até a 0194, que a apaga depois do deploy. Se ela
   // voltar a existir sem grupo no corpo, a guarda reprova.
 
   // Cotas e créditos por id que o servidor já resolveu. Só a chave de
@@ -47,20 +47,20 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "consumir_cota_campanha_espacada(uuid, integer, integer, integer)":
     "cota da instância já resolvida pelo disparador; só service_role",
   "devolver_cota_campanha(uuid)": "cota da instância já resolvida pelo disparador; só service_role",
-  "reservar_credito_video(uuid)": "crédito do corretor resolvido pelo servidor (fila de vídeo); só service_role desde a 0183",
-  "devolver_credito_video(uuid, text)": "crédito do corretor resolvido pelo servidor (fila de vídeo); só service_role desde a 0183",
+  "reservar_credito_video(uuid)": "crédito do corretor resolvido pelo servidor (fila de vídeo); só service_role desde a 0192",
+  "devolver_credito_video(uuid, text)": "crédito do corretor resolvido pelo servidor (fila de vídeo); só service_role desde a 0192",
   "registrar_resposta_do_lead(uuid)": "lead já resolvido pelo webhook; só service_role",
   "registrar_tentativa_contato(uuid)": "lead já resolvido pelo disparador; só service_role",
   "reservar_horario_visita(uuid, timestamp with time zone)":
-    "lead já resolvido pela conversa; só service_role desde a 0183",
+    "lead já resolvido pela conversa; só service_role desde a 0192",
 
   // Gatilhos que tocam só a linha-mãe ou filhas da própria linha: o grupo
-  // de todas elas é o mesmo, conferido pelo carimbo da 0182.
-  "contar_mensagem_nao_lida()": "gatilho: soma na conversa da própria mensagem (mesmo grupo pela 0182)",
+  // de todas elas é o mesmo, conferido pelo carimbo da 0191.
+  "contar_mensagem_nao_lida()": "gatilho: soma na conversa da própria mensagem (mesmo grupo pela 0191)",
   "conversa_sem_lead_so_em_conta_so_whatsapp()": "gatilho: lê o corretor da própria conversa",
-  "iniciar_sla_lead()": "gatilho: cria o SLA do próprio lead (o grupo vem da mãe, 0182)",
-  "registrar_consentimento_inicial_lead()": "gatilho: grava filhas do próprio lead (o grupo vem da mãe, 0182)",
-  "registrar_touchpoint_inicial_lead()": "gatilho: grava o touchpoint do próprio lead (o grupo vem da mãe, 0182)",
+  "iniciar_sla_lead()": "gatilho: cria o SLA do próprio lead (o grupo vem da mãe, 0191)",
+  "registrar_consentimento_inicial_lead()": "gatilho: grava filhas do próprio lead (o grupo vem da mãe, 0191)",
+  "registrar_touchpoint_inicial_lead()": "gatilho: grava o touchpoint do próprio lead (o grupo vem da mãe, 0191)",
   "registrar_sla_interacao_humana()": "gatilho: atualiza o SLA do lead da própria interação",
   "registrar_sla_mensagem_whatsapp()": "gatilho: atualiza o SLA do lead da própria conversa",
 

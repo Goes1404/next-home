@@ -37,10 +37,10 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    contra fala inventada; o turno recebe `instrucaoDoAudio`
    ([[audio-do-cliente-era-arquivo-cifrado]], [[whisper-nao-recusa-como-o-gemini]]).
 5. **Gravação + dedup** — a conversa já nasce com `lead_id` obrigatório;
-   `provider_message_id` único por grupo (0027, 0183) mata reentrega. Insert
+   `provider_message_id` único por grupo (0027, 0192) mata reentrega. Insert
    que falha por outro motivo NÃO vira "inédita": o webhook para com
    `mensagem_nao_gravada` e a IA não responde por cima de uma fala que o
-   banco não tem (0183). Antes de desistir, erro passageiro (sem `code`,
+   banco não tem (0192). Antes de desistir, erro passageiro (sem `code`,
    o Gateway Timeout) é repetido por `comRetentativa`. O `id` da linha
    nasce antes da primeira tentativa e é o mesmo em todas: a repetição bate
    na chave primária em vez de gravar a mesma fala de novo (mensagem sem
@@ -99,7 +99,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 
 Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
 
-Grupo (0182): a instância resolvida traz o `grupo_id` do número, e as taxas
+Grupo (0191): a instância resolvida traz o `grupo_id` do número, e as taxas
 do simulador que o turno usa são as desse grupo, não as do site. Toda linha
 que o webhook grava herda o grupo da linha-mãe pelo gatilho
 `<tabela>_00_grupo` ([[plataforma-multi-grupo]]). A palavra-chave procura o

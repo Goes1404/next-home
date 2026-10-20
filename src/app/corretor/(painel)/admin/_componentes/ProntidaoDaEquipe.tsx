@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { filtrarContasOcultas } from "@/lib/corretores/contaOculta";
 import { carregarConfiguracao } from "@/lib/crm/configuracaoDoCorretor";
 import { passosDoCorretor, progressoDaConfiguracao } from "@/lib/crm/primeirosPassos";
 import { acessoParado, ultimoAcessoLegivel } from "@/lib/admin/prontidao";
@@ -20,13 +21,15 @@ export async function ProntidaoDaEquipe() {
   const gestor = await getCorretorLogado();
   if (gestor?.papel !== "gestor") return null;
   const supabase = createServiceClient();
-  const { data: equipe } = await supabase
+  const { data: todos } = await supabase
     .from("corretores")
     .select("id, nome, user_id")
     .eq("grupo_id", gestor.grupoId)
     .eq("ativo", true)
     .order("nome", { ascending: true });
-  if (!equipe || equipe.length === 0) return null;
+  // Chave de serviço ignora a RLS: a conta oculta (0189) sai aqui, no código.
+  const equipe = await filtrarContasOcultas(supabase, todos ?? [], gestor.grupoId);
+  if (equipe.length === 0) return null;
 
   const estados = await carregarConfiguracao(
     supabase,

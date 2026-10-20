@@ -1,8 +1,8 @@
--- 0182: grupo_id em toda tabela de dados, derivado da linha-mãe (19/10/2026).
+-- 0191: grupo_id em toda tabela de dados, derivado da linha-mãe (19/10/2026).
 --
 -- Segunda migration da plataforma multi-grupo (spec
 -- docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md, §18).
--- A 0181 criou `grupos` e deu grupo aos corretores; aqui TODA tabela do
+-- A 0190 criou `grupos` e deu grupo aos corretores; aqui TODA tabela do
 -- `public` ganha `grupo_id`, menos as da plataforma (lista abaixo, a mesma de
 -- `src/lib/grupos/tabelasDoGrupo.ts`, e a suíte de isolamento confere as
 -- duas contra o banco).
@@ -27,7 +27,7 @@
 -- Tabelas da PLATAFORMA (sem grupo_id)
 -- ---------------------------------------------------------------------------
 --   grupos                         a linha É o grupo.
---   administradores_da_plataforma  quem administra todos os grupos (0181).
+--   administradores_da_plataforma  quem administra todos os grupos (0190).
 --   whatsapp_disparo_lock          trava de infraestrutura do disparador
 --                                  (escopo + dono + prazo), não dado de grupo.
 --   whatsapp_diagnosticos          diagnóstico do provedor, por instance_name.
@@ -49,7 +49,7 @@
 -- parceiro vem antes do imóvel porque a indicação dele é do grupo DELE: um
 -- imóvel de outro grupo é o que diverge, e é ele que a mensagem acusa.
 --
--- O mapa que a seção 7 gerou no banco local em 19/10 (as 0001-0182 aplicadas
+-- O mapa que a seção 7 gerou no banco local em 19/10 (as 0001-0191 aplicadas
 -- do zero), tabela: colunas-mãe → tabela-mãe:
 --   acessos_contador:          criado_por → corretores
 --   admin_eventos:             alvo_corretor_id, ator_id → corretores
@@ -212,7 +212,7 @@ end
 $$;
 
 comment on role transferidor_de_grupo is
-  'Única role que muda o grupo_id de uma linha (0182). Sem login e sem membros; a função de saída do corretor (fase 5) pertence a ela.';
+  'Única role que muda o grupo_id de uma linha (0191). Sem login e sem membros; a função de saída do corretor (fase 5) pertence a ela.';
 
 -- ---------------------------------------------------------------------------
 -- 2. Tabelas da plataforma fechadas para a API
@@ -269,7 +269,7 @@ end
 $$;
 
 comment on column public.admin_eventos.grupo_id is
-  'Grupo do evento; nulo = evento da plataforma (só com detalhes.origem = ''plataforma'', gravado pela chave de serviço ou por administrador da plataforma) (0182).';
+  'Grupo do evento; nulo = evento da plataforma (só com detalhes.origem = ''plataforma'', gravado pela chave de serviço ou por administrador da plataforma) (0191).';
 
 -- ---------------------------------------------------------------------------
 -- 4. catalogo_candidatos: a chave única passa a ser por grupo
@@ -308,7 +308,7 @@ alter table public.catalogo_candidatos
 --      `grupo_atual()` dele, venha de uma mãe ou de `grupo_id` informado
 --      (inclusive em tabela sem mãe: empreendimentos, lazer_itens,
 --      parceiros, marketing_campanhas). Defesa em profundidade pedida pela
---      revisão de segurança: a policy restritiva da 0184 já recusa a linha,
+--      revisão de segurança: a policy restritiva da 0193 já recusa a linha,
 --      mas uma policy apagada por engano não pode bastar para um logado
 --      gravar no grupo de outro. A chave de serviço e as funções
 --      `security definer` (papel `postgres`) seguem informando o grupo.
@@ -386,7 +386,7 @@ begin
   -- serviço ou de administrador da plataforma. `postgres` não conta: dentro
   -- de qualquer função `security definer` chamada por um logado o papel é
   -- `postgres`, e a marca viraria um jeito de gravar evento fora do grupo
-  -- (0183). Fica depois das mães e antes de `grupo_atual()`, porque o
+  -- (0192). Fica depois das mães e antes de `grupo_atual()`, porque o
   -- administrador pode também ser corretor de um grupo.
   if v_grupo is null
      and not v_com_mae
@@ -413,7 +413,7 @@ begin
     end if;
   end if;
 
-  -- e. Logado só grava no próprio grupo (defesa em profundidade da 0184).
+  -- e. Logado só grava no próprio grupo (defesa em profundidade da 0193).
   if p_papel = 'authenticated' then
     if v_grupo is distinct from public.grupo_atual() and not public.eh_admin_da_plataforma() then
       raise exception 'grupo da linha difere do grupo de quem grava em %', v_nome
@@ -426,7 +426,7 @@ end
 $$;
 
 comment on function public.derivar_grupo_da_linha(regclass, text, jsonb, jsonb, text[], text) is
-  'Grupo que a linha tem de ter (0182). Só roda dentro do gatilho <tabela>_00_grupo; ver o cabeçalho da 0182.';
+  'Grupo que a linha tem de ter (0191). Só roda dentro do gatilho <tabela>_00_grupo; ver o cabeçalho da 0191.';
 
 -- O gatilho roda com os privilégios de quem escreve (anon no formulário,
 -- authenticated no painel, service_role, transferidor_de_grupo), e todos
@@ -464,7 +464,7 @@ end
 $$;
 
 comment on function public.carimbar_grupo() is
-  'Gatilho <tabela>_00_grupo (0182): recusa troca de grupo fora de transferidor_de_grupo e preenche/confere grupo_id pelas linhas-mãe. Argumentos: (coluna, tabela-mãe, coluna referenciada) repetidos.';
+  'Gatilho <tabela>_00_grupo (0191): recusa troca de grupo fora de transferidor_de_grupo e preenche/confere grupo_id pelas linhas-mãe. Argumentos: (coluna, tabela-mãe, coluna referenciada) repetidos.';
 
 -- ---------------------------------------------------------------------------
 -- 6. Gatilhos internos repassam o grupo
@@ -511,7 +511,7 @@ end;
 $function$;
 
 -- A chave única de `marketing_campanhas` ainda é global (escopar as chaves
--- únicas de negócio por grupo é da 0183). Até lá, o upsert pode devolver a campanha de OUTRO
+-- únicas de negócio por grupo é da 0192). Até lá, o upsert pode devolver a campanha de OUTRO
 -- grupo pelo caminho do conflito; e como `marketing_campanha_id` é escrito
 -- depois do carimbo, nada mais o conferiria. A conferência mora aqui.
 create or replace function public.vincular_campanha_meta_canonica()
@@ -593,7 +593,7 @@ create trigger meta_ads_metricas_10_campanha
 -- preenchida; no UPDATE, o `when` olha a linha final e só enfileira o evento
 -- quando o grupo ou uma mãe mudou. As atualizações de rotina não pagam nada.
 --
--- `corretores_00_grupo` (0181) troca de função pelo mesmo nome; a função
+-- `corretores_00_grupo` (0190) troca de função pelo mesmo nome; a função
 -- dela sai.
 
 create or replace function public.conferir_grupo_final()
@@ -628,7 +628,7 @@ end
 $$;
 
 comment on function public.conferir_grupo_final() is
-  'Gatilhos <tabela>_zz_grupo_insert/_update (0182): confere a linha final, depois de todos os gatilhos before, com as mesmas mães do <tabela>_00_grupo.';
+  'Gatilhos <tabela>_zz_grupo_insert/_update (0191): confere a linha final, depois de todos os gatilhos before, com as mesmas mães do <tabela>_00_grupo.';
 
 do $$
 declare
@@ -753,7 +753,7 @@ begin
      )
      and (c.relname || '.' || a.attname) <> all (v_declaradas);
   if v_sobra is not null then
-    raise exception 'coluna de id sem FK e sem decisão no cabeçalho da 0182: %', v_sobra;
+    raise exception 'coluna de id sem FK e sem decisão no cabeçalho da 0191: %', v_sobra;
   end if;
 
   -- b. Gatilho `before` de linha que dispara ANTES do carimbo (ordem

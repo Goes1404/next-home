@@ -1158,7 +1158,7 @@ export async function POST(req: NextRequest) {
       horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
       // A renda do cliente vira teto de compra pela mesma conta do site
       // (`capacidadeDeCompra.ts`); a leitura já cai no seed se o banco falhar.
-      // As taxas são as do grupo do NÚMERO que recebeu a mensagem (0182), e
+      // As taxas são as do grupo do NÚMERO que recebeu a mensagem (0191), e
       // não as do site: cada imobiliária ajusta as próprias.
       parametrosCredito: await getParametrosCredito(instancia.grupoId).catch(() => undefined),
     });

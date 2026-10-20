@@ -34,7 +34,7 @@
  *
  * COMO RODAR:  node scripts/lancamentosBarueri.mjs --grupo=<uuid> [--status="Em construção"] [--todos]
  *
- * `--grupo` é obrigatório (0183): a lista vira linhas de
+ * `--grupo` é obrigatório (0192): a lista vira linhas de
  * `catalogo_candidatos`, que é por grupo, e cada item já sai com o
  * `grupo_id` de quem vai carregá-la. Na fase 1 só o grupo da Next Home.
  */

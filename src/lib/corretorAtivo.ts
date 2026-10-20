@@ -7,7 +7,11 @@ import type { Corretor } from "@/lib/types";
 export { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
 import { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
 
-export type CorretorAtivo = Corretor & { id: string };
+export type CorretorAtivo = Corretor & {
+  id: string;
+  /** Texto da prévia do link do portfólio (0188). */
+  chamadaDoLink?: string | null;
+};
 
 /**
  * Corretor "dono" do link que o visitante usou pra chegar no site. Quando
@@ -52,5 +56,6 @@ export const getCorretorAtivo = cache(async (): Promise<CorretorAtivo | null> =>
     videoUrl: corretor.videoUrl,
     fundoTipo: corretor.fundoTipo,
     fundoFotoUrl: corretor.fundoFotoUrl,
+    chamadaDoLink: corretor.chamadaDoLink ?? null,
   };
 });

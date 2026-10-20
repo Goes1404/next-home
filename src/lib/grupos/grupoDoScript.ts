@@ -1,7 +1,7 @@
 import { GRUPO_NEXT_HOME_ID } from "./grupo";
 
 /**
- * O grupo de um script que roda com a chave secreta (0183).
+ * O grupo de um script que roda com a chave secreta (0192).
  *
  * A chave de serviço ignora a RLS: um script sem grupo lê e grava em todos.
  * Por isso todo script assim exige `--grupo=<uuid>` e, na fase 1, só aceita

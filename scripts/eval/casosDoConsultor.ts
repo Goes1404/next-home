@@ -285,7 +285,7 @@ async function main() {
     conferidoEm: "2026-09-09",
   };
   if (SECRETA) {
-    // Uma linha por grupo desde a 0181.
+    // Uma linha por grupo desde a 0190.
     const [p] = await rest<Record<string, unknown>>(
       `parametros_credito?select=*&grupo_id=eq.${grupoId}`,
       SECRETA,

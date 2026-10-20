@@ -302,7 +302,7 @@ export async function ContaDaMeta() {
           rotulo="Leads de anúncio no CRM"
           valor={String(leadsCrm ?? 0)}
           detalhe="o que chegou de verdade"
-          href="/corretor/leads"
+          href="/corretor/leads?corretor=equipe"
         />
         <Kpi
           rotulo="Custo por lead (CRM)"
@@ -440,7 +440,7 @@ export async function ContaDaMeta() {
                   <td className="py-2 text-right tabular-nums">
                     {c.leads > 0 ? (
                       <Link
-                        href={`/corretor/leads?campanha=${encodeURIComponent(c.campanhaId)}`}
+                        href={`/corretor/leads?corretor=equipe&campanha=${encodeURIComponent(c.campanhaId)}`}
                         className="hover:text-titulo underline underline-offset-2"
                       >
                         {c.leads}

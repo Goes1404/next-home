@@ -139,7 +139,7 @@ export async function sincronizarMetaAds(): Promise<ResultadoSync> {
     linhas.map((l) => ({
       // A conta da Meta configurada é a do grupo 1 até a fase 7. A métrica
       // não tem linha-mãe (a campanha canônica nasce do gatilho, a partir
-      // dela): o grupo vai explícito (0183).
+      // dela): o grupo vai explícito (0192).
       grupo_id: GRUPO_NEXT_HOME_ID,
       dia: l.dia,
       campanha_id: l.campanhaId,

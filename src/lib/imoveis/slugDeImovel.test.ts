@@ -48,7 +48,7 @@ describe("slugLivre", () => {
   });
 
   // A conferência é do banco, que olha todos os grupos (slug_de_imovel_livre,
-  // 0183). Falha dela não vira "livre": quem chama recusa e pede de novo.
+  // 0192). Falha dela não vira "livre": quem chama recusa e pede de novo.
   it("erro da conferência sobe, em vez de virar slug livre", async () => {
     await expect(
       slugLivre("Serenne", async () => {
@@ -59,7 +59,7 @@ describe("slugLivre", () => {
 });
 
 // Achado B da revisão final da fase 1: `empreendimentos.slug` é único na
-// plataforma inteira, e a sessão do corretor só lê o próprio grupo (0184). Ler
+// plataforma inteira, e a sessão do corretor só lê o próprio grupo (0193). Ler
 // os slugs ocupados pela sessão diria "livre" para um slug do grupo A, e o
 // insert bateria na chave global com "já existe" para um nome que ninguém do
 // grupo usa.

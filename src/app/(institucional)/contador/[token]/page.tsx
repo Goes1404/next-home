@@ -30,7 +30,7 @@ export default async function ContadorPublicoPage({ params }: { params: Promise<
   const { data } = await createServiceClient()
     .from("meses_fechados")
     .select("mes, fechado_em, totais")
-    // Chave de serviço: só os meses do grupo do link (0183).
+    // Chave de serviço: só os meses do grupo do link (0192).
     .eq("grupo_id", acesso.grupoId)
     .order("mes", { ascending: false })
     .limit(60);

@@ -12,7 +12,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 const TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * `grupoId`: o grupo do link (0183). A leitura é pela chave de serviço, que
+ * `grupoId`: o grupo do link (0192). A leitura é pela chave de serviço, que
  * ignora a RLS, e cada grupo fecha os próprios meses: quem lê os meses
  * filtra por ele, senão o contador de um grupo baixaria os de outro.
  */

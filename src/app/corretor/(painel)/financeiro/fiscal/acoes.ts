@@ -48,7 +48,7 @@ export async function salvarConfigFiscal(c: {
       conferido_em: hojeEmSaoPaulo(),
       atualizado_em: new Date().toISOString(),
     })
-    // Uma configuração por grupo desde a 0183 (`id` é sempre 1).
+    // Uma configuração por grupo desde a 0192 (`id` é sempre 1).
     .eq("grupo_id", guarda.corretor.grupoId);
   if (error) {
     console.error("[fiscal] falha ao salvar a configuração:", error.message);

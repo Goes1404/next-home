@@ -33,7 +33,7 @@ export async function salvarParametrosCredito(
 
   if (error) {
     console.error("[crédito] falha ao salvar:", error.message);
-    // Desde a 0181 o banco RECUSA quem não é gestor ativo do grupo (antes
+    // Desde a 0190 o banco RECUSA quem não é gestor ativo do grupo (antes
     // devolvia `false`, e a tela dizia "valor recusado" a quem não tinha
     // permissão). Tentar de novo não resolve esse caso.
     if (error.code === "42501") {

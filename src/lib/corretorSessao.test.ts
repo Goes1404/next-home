@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * A sessão do painel: quem é o corretor logado e de que grupo ele é.
  *
  * O banco já recusa corretor desativado (`grupo_atual()`, `corretor_atual()`
- * e `eh_gestor()` filtram `ativo`, 0181). Esta é a outra metade: sem ela, o
+ * e `eh_gestor()` filtram `ativo`, 0190). Esta é a outra metade: sem ela, o
  * painel abriria para o desativado e cada consulta voltaria vazia, sem
  * explicação. Desativado cai na tela de conta sem vínculo, como quem não tem
  * cadastro.

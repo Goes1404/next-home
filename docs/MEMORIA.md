@@ -10460,6 +10460,8 @@ Nota: [[banco-local-reproduzivel-das-migrations]]. Roteiro e edições:
 
 ## O grupo 1 e a numeração que já estava ocupada (0181, 19/10/2026)
 
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
 Nota: [[plataforma-multi-grupo]].
 
 - **O plano numerava a primeira migration multi-grupo como 0159, e a branch
@@ -10497,6 +10499,8 @@ Nota: [[plataforma-multi-grupo]].
   tirava da roleta e o login seguia lendo o que lia.
 
 ## `grupo_id` em toda tabela, pela linha-mãe (0182, 19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
 
 Nota: [[plataforma-multi-grupo]].
 
@@ -10556,6 +10560,8 @@ Nota: [[plataforma-multi-grupo]].
   com ele, ela falha e se repete.
 
 ## Chaves únicas por grupo e as portas de entrada (0183 parte A, 19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
 
 Nota: [[plataforma-multi-grupo]].
 
@@ -10665,6 +10671,8 @@ Nota: [[plataforma-multi-grupo]].
 
 ## As funções `security definer` respeitam o grupo (0183 parte B, 19/10/2026)
 
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
 Nota: [[plataforma-multi-grupo]].
 
 - **A RLS não vale dentro de `security definer`, e a regressão é calada.**
@@ -10706,6 +10714,8 @@ Nota: [[plataforma-multi-grupo]].
   grupos fica para fase posterior).
 
 ## O isolamento por grupo na RLS, nas views, no Storage e no Realtime (0184, 19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
 
 Nota: [[plataforma-multi-grupo]].
 
@@ -10754,6 +10764,8 @@ Nota: [[plataforma-multi-grupo]].
   a sessão do painel.
 
 ## Revisão de lacunas e respostas do dono (19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
 
 Nota: [[plataforma-multi-grupo]]. Lacunas com evidência:
 `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
@@ -10809,6 +10821,8 @@ Nota: [[plataforma-multi-grupo]]. Passo a passo: `docs/AMBIENTE-DE-TESTES.md`.
 
 ## A chave de serviço classificada por grupo (Task 7, 19/10/2026)
 
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
 Nota: [[chave-de-servico-classificada-por-grupo]].
 
 - **Todo arquivo que usa a chave de serviço está num mapa**
@@ -10857,6 +10871,8 @@ Nota: [[plataforma-multi-grupo]].
   Guarda: `buildDoCiSemProducao.test.ts`.
 
 ## O lote de correções da revisão final da fase 1 (19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
 
 Nota: [[plataforma-multi-grupo]].
 
@@ -10921,6 +10937,8 @@ Nota: [[push-na-branch-de-producao-dispara-workflows-de-catalogo]].
 
 ## Erro de leitura virava "número sem lead" e o webhook descartava com 200 (19/10/2026)
 
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
 Nota: [[erro-de-leitura-nao-e-numero-sem-lead]].
 
 - **`obterOuCriarConversa` descartava o `error` do select de
@@ -10939,3 +10957,105 @@ Nota: [[erro-de-leitura-nao-e-numero-sem-lead]].
   de erro na janela da trava.
 - **Régua:** leitura cujo resultado vazio tem significado ("não existe", "não
   é lead") nunca descarta o `error`. Vazio por erro tem de falhar alto.
+
+## A prévia do link do corretor (0188, 19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
+Nota: [[previa-do-link-do-corretor]].
+
+- **O redirect de `/?corretor=<slug>` para `/portfolio` soltava a query**, e o
+  robô do WhatsApp não guarda o cookie do redirect: a prévia nunca podia saber
+  de quem era o link. O proxy leva a query agora, e `generateMetadata` lê o
+  slug da URL (sem ele, o cookie).
+- **A prévia era fixa** ("Portfólio de Imóveis de Alto Padrão em Alphaville").
+  Hoje: "Portfólio de <nome>" + "Portfólio de produtos", ou o texto que o
+  corretor escreve em Meu perfil (`corretores.chamada_do_link`, até 160).
+- **Ordem: migration 0188, depois deploy.** O código tolera a coluna ausente
+  (lê à parte), mas o campo só salva depois dela.
+- **A `OG_IMAGEM` do site inteiro responde 404** (`marca/og-image.jpg` não
+  existe no Storage). Toda prévia sai sem imagem. Não corrigido.
+- 0181–0187 estão reservadas para a branch da fase 2 (`RESERVADOS` em
+  `migrations.test.ts`); ao juntar, a 0187 precisa incluir `chamada_do_link`
+  entre as colunas públicas para o `anon`.
+
+## O ADM via a carteira da equipe nas telas de trabalho (19/10/2026)
+
+Nota: [[tela-de-trabalho-mostra-a-carteira-de-quem-abriu]].
+
+- **"A RLS recorta" vale para segurança, não para a tela.** As consultas de
+  Início, Lista, Funil, Visitas, tarefas e anotações não tinham
+  `.eq("corretor_id", …)`; para o gestor a policy abre a equipe inteira, e
+  o ADM não conseguia trabalhar como corretor. Hoje toda leitura de lista ou
+  contagem exige `recorteDaVisao()` (`corretorSessao.ts`).
+- **Só o gestor troca de carteira, e só pela URL**: `?corretor=<id>` ou
+  `?corretor=equipe` (`?dono=sem` implica equipe). Link da Administração
+  para a lista leva `corretor=equipe`, senão o número da equipe abre só os
+  leads do gestor.
+- **Guarda que lê o código**: `carteiraNaTelaDeTrabalho.test.ts`, com
+  exceções escritas (Contas, placar da equipe, busca de lead na venda,
+  Anúncios pagos).
+- **Na branch de produção, 3 testes falham no Windows também sem mudança
+  nenhuma** (`botoesComPista`, `paradaSemIA`), e `next build` local para no
+  type-check pelo par `PixelMeta.tsx`/`pixelMeta.ts`. Não é o seu código.
+
+
+## Conta oculta (0189, 19/10/2026)
+
+> As migrations 0181–0185 desta seção foram renumeradas para 0190–0194 em 20/10 (ver o fim deste arquivo).
+
+Nota: [[conta-oculta]]. Pedido: a conta só WhatsApp de uma pessoa "não pode
+aparecer para ninguém"; só o gestor a vê, em Contas → "Contas ocultas".
+
+- **A RLS não protege as telas da equipe.** Elas são do gestor, a quem a
+  policy de `corretores` mostra tudo, e várias leem pela chave de serviço. Por
+  isso a 0189 tem duas camadas: policy (anon e corretor comum não leem a linha
+  oculta) e recorte no código, num ponto só (`src/lib/corretores/contaOculta.ts`),
+  com guarda que lê as telas (`contaOculta.test.ts`).
+- **Visão "equipe" em leads:** `corretor_id not in (...)` sozinho tira também
+  o lead SEM dono (nulo nunca está "fora" de nada). O filtro é
+  `corretor_id.is.null,corretor_id.not.in.(...)`.
+- **Na roleta a conta oculta é filtro**, exceção declarada à régua "ordem,
+  nunca filtro" da 0093.
+- **A 0189 depende da 0180** e redefine `distribuir_lead`, `ranking_vgv` e o
+  sorteio. A fase multi-grupo (0183) redefine as três de novo e ordena ANTES
+  da 0189, mas em produção roda DEPOIS dela. **Ler "a última definição pela
+  ordem dos arquivos" não pega isso**: ela seria a da 0189, e o banco ficaria
+  com a da 0183, sem o recorte. A guarda cobra TODA definição em migration
+  posterior à 0180 que leia `corretores` (provada com a 0183 real: reprova
+  roleta, ranking e o sorteio de três argumentos). Na fusão, a 0183 leva o
+  `not c.oculta` e cria a coluna antes (`add column if not exists oculta`,
+  idempotente com a 0189), senão uma instalação nova quebra no sorteio, que é
+  `language sql` e tem o corpo conferido na criação. **Régua: número de
+  migration é ordem de arquivo, não de aplicação, sempre que uma correção sobe
+  com número maior que uma branch ainda não publicada.**
+
+## A fase 1 renumerada para 0190–0194 (20/10/2026)
+
+Notas: [[plataforma-multi-grupo]], [[conta-oculta]].
+
+- **A produção subiu a 0188 e a 0189 enquanto a fase 1 (0181–0185) esperava**,
+  e as duas já estão aplicadas no banco de produção. Com os números antigos,
+  a fase 1 ordenaria ANTES delas no arquivo e rodaria DEPOIS em produção: a
+  roleta, o ranking e o sorteio voltariam sem o recorte da conta oculta, e um
+  banco do zero quebraria no sorteio (`c.oculta` antes de a coluna existir).
+  Em vez de remendar a ordem (criar a coluna antes na 0183), a fase 1 foi
+  **renumerada**: 0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194.
+  0181–0187 viraram buraco declarado em `RESERVADOS` (`migrations.test.ts`).
+- **A 0192 (ex-0183) parte das definições da 0189**: `and not c.oculta` na
+  roleta e no sorteio de três argumentos, `(not c.oculta or c.id = v_eu)` no
+  ranking; o invólucro de dois argumentos só repassa e a 0194 o apaga depois
+  do deploy. As policies de leitura de `corretores` são as da 0189 ("visiveis
+  ao publico" para `anon`, só não ocultos; "visiveis ao logado"); nenhuma
+  migration da fase 1 as recria, e a restritiva da 0193 é só do
+  `authenticated`. O roteiro ganhou o passo 0.15 (0188/0189 no banco) e
+  conferências na 3a e na 4a.
+- **Código da conta oculta com grupo:** `idsDeContasOcultas` aceita a leitura
+  recortada (`LeituraDoGrupo`) e um `grupoId` para a chave de serviço;
+  `alternarContaOculta` passou a filtrar o grupo do gestor (era id do
+  navegador pela chave de serviço sem grupo); `/portfolio` lê a equipe do
+  grupo do site.
+- **A 0186/0187 da branch `fase-2-plataforma` nasceu sobre a numeração
+  antiga** e tem de ir para depois da 0194 ao ser juntada.
+- **Dois `db:teste` em sessões paralelas se derrubam** (mesmo `project_id` e
+  portas): ver `supabase/REPRODUCAO.md` para subir uma pilha só sua.

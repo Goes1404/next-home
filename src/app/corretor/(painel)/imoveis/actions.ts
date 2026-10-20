@@ -488,7 +488,7 @@ export async function salvarLazerEmpreendimento(
 
   // Para cada item de lazer marcado, garante que existe na tabela lazer_itens e vincula
   for (const nome of lazerNomes) {
-    // Cada grupo tem os próprios itens (0183): o item de mesmo nome de outro
+    // Cada grupo tem os próprios itens (0192): o item de mesmo nome de outro
     // grupo não serve, e o vínculo com ele seria recusado pelo gatilho.
     const { data: itemExistente } = await supabase
       .from("lazer_itens")

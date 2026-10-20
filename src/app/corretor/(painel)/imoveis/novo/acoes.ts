@@ -60,8 +60,8 @@ export async function criarImovel(entrada: NovoImovelInput): Promise<ResultadoNo
 
   /*
    * O slug é único na plataforma inteira, e a sessão só enxerga os imóveis
-   * do próprio grupo (0184): ler os ocupados por ela diria "livre" para um
-   * slug de outro grupo. Quem confere é `slug_de_imovel_livre` (0183), que
+   * do próprio grupo (0193): ler os ocupados por ela diria "livre" para um
+   * slug de outro grupo. Quem confere é `slug_de_imovel_livre` (0192), que
    * olha todos os grupos e só diz sim/não. A unicidade de verdade continua
    * sendo do índice do banco — se duas abas criarem o mesmo nome no mesmo
    * instante, a segunda leva erro em vez de sobrescrever a primeira.

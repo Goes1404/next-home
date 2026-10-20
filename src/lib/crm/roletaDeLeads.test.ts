@@ -111,7 +111,7 @@ describe("a roleta distribui para quem consegue atender", () => {
 });
 
 /*
- * O grupo do lead é a ÚNICA preferência que vira filtro (0183, Review Focus
+ * O grupo do lead é a ÚNICA preferência que vira filtro (0192, Review Focus
  * 3): corretor de outro grupo nunca recebe. Sem ninguém elegível no grupo, o
  * lead fica sem dono dentro dele — melhor que o dono errado, porque o dono
  * errado nem enxerga o lead.

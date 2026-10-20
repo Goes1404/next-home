@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { Quadro } from "./Quadro";
 import { COOKIE_MODO_DO_FUNIL, lerModoDoFunil } from "./modoDoFunil";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
-import { getContagemPorEtapa, getLeadsDoFunil, souGestor } from "@/lib/corretorSessao";
+import { getContagemPorEtapa, getLeadsDoFunil } from "@/lib/corretorSessao";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { BotaoVoltarAoTopo } from "@/app/corretor/(painel)/_componentes/BotaoVoltarAoTopo";
 import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
@@ -19,14 +19,14 @@ export default async function FunilPage({
   const buscaParam = params.busca;
   const busca = (Array.isArray(buscaParam) ? buscaParam[0] : buscaParam) ?? "";
 
-  // Uma consulta só serve os dois papéis: a policy da 0007 decide se "os
-  // meus leads" são os do corretor ou os da imobiliária inteira. A contagem
-  // vem à parte porque o quadro tem teto (`TETO_DO_QUADRO`): o cabeçalho da
-  // coluna mostra o total real mesmo quando nem todo cartão coube.
-  const [leads, contagens, gestor, jarra] = await Promise.all([
+  // O funil é o trabalho de quem abriu o painel, também do gestor (hotfix de
+  // 19/10/2026): a RLS dele abre a equipe inteira, e o quadro virava a
+  // carteira de todo mundo. A visão da equipe mora na Administração. A
+  // contagem vem à parte porque o quadro tem teto (`TETO_DO_QUADRO`): o
+  // cabeçalho da coluna mostra o total real mesmo quando nem todo cartão coube.
+  const [leads, contagens, jarra] = await Promise.all([
     getLeadsDoFunil(busca),
     getContagemPorEtapa(),
-    souGestor(),
     cookies(),
   ]);
   const modo = lerModoDoFunil(jarra.get(COOKIE_MODO_DO_FUNIL)?.value);
@@ -35,11 +35,7 @@ export default async function FunilPage({
     <div>
       <CabecalhoDeTela
         titulo="Funil"
-        descricao={
-          gestor
-            ? "Todos os contatos da equipe, da chegada ao fechamento."
-            : "Seus contatos, da chegada ao fechamento."
-        }
+        descricao="Seus contatos, da chegada ao fechamento."
       />
 
       <BuscaLeads className="mt-5" />
@@ -58,7 +54,7 @@ export default async function FunilPage({
       <Quadro
         leads={leads}
         contagens={busca ? undefined : contagens}
-        mostrarDono={gestor}
+        mostrarDono={false}
         modoInicial={modo}
       />
 

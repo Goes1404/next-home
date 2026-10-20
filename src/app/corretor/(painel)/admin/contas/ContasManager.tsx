@@ -3,11 +3,12 @@
 import { site } from "@/lib/site";
 import { useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
-import { Check, Copy, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
+import { Check, Copy, EyeOff, KeyRound, ShieldCheck, TriangleAlert, UserPlus, Users } from "lucide-react";
 import {
   alterarPapelCorretor,
   cadastrarCorretor,
   alternarAtivoCorretor,
+  alternarContaOculta,
   alternarSoWhatsapp,
   criarAcessoCorretor,
   criarAcessosQueFaltam,
@@ -132,6 +133,22 @@ function LinhaCorretor({
     });
   };
 
+  const trocarOculta = () => {
+    const ocultar = !corretor.oculta;
+    const aviso = ocultar
+      ? `Ocultar ${corretor.nome}?\n\nA conta continua funcionando, mas some para todo mundo: do site, da roleta de leads, do sorteio do anúncio e das telas da equipe (ranking, desempenho, leads, WhatsApp da equipe, seletores). Só administradores a veem, aqui em "Contas ocultas".`
+      : `Mostrar ${corretor.nome} de novo?\n\nA conta volta ao site, à roleta e às telas da equipe.`;
+    if (!confirm(aviso)) return;
+    iniciar(async () => {
+      try {
+        const r = await alternarContaOculta(corretor.id, ocultar);
+        aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
+      } catch {
+        aoAvisar("Não consegui salvar. Confira a conexão e tente de novo.", true);
+      }
+    });
+  };
+
   const trocarAtivo = () => {
     /*
      * Desativar é a ação mais séria da tela e era a única SEM confirmação.
@@ -167,6 +184,11 @@ function LinhaCorretor({
             {corretor.soWhatsapp && (
               <span className="text-fluid-xs border-ok-linha bg-ok-lavado text-ok inline-flex items-center rounded-full border px-2 py-0.5 font-medium">
                 Só WhatsApp
+              </span>
+            )}
+            {corretor.oculta && (
+              <span className="text-fluid-xs border-linha-forte text-apoio inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium">
+                <EyeOff className="h-3 w-3" /> Oculta
               </span>
             )}
             {souEu && <span className="text-fluid-xs text-tenue">(você)</span>}
@@ -265,6 +287,33 @@ function LinhaCorretor({
           </button>
         </div>
       )}
+
+      {/*
+        Ocultar não depende de login: a conta pode ser escondida antes mesmo
+        de ganhar acesso. E a conta oculta precisa do "Desativar/Reativar"
+        mesmo sem login — é para isso que a seção existe.
+      */}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={trocarOculta}
+          disabled={pendente || souEu}
+          title={souEu ? "Peça a outro administrador para ocultar a sua conta." : undefined}
+          className="text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 disabled:opacity-40"
+        >
+          <EyeOff className="h-3.5 w-3.5" /> {corretor.oculta ? "Mostrar de novo" : "Ocultar conta"}
+        </button>
+        {!corretor.temLogin && corretor.oculta && (
+          <button
+            type="button"
+            onClick={trocarAtivo}
+            disabled={pendente}
+            className="text-fluid-xs border-linha-forte text-apoio hover:text-perigo hover:border-perigo-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 disabled:opacity-60"
+          >
+            {corretor.ativo ? "Desativar" : "Reativar"}
+          </button>
+        )}
+      </div>
     </li>
   );
 }
@@ -454,6 +503,8 @@ export function ContasManager({
    * acesso ao painel porque não deve ter, e isso não é uma pendência.
    */
   const semAcesso = corretores.filter((c) => c.ativo && !c.temLogin).length;
+  const visiveis = corretores.filter((c) => !c.oculta);
+  const ocultas = corretores.filter((c) => c.oculta);
 
   return (
     <div>
@@ -520,7 +571,7 @@ export function ContasManager({
       )}
 
       <ul className="cartao px-5">
-        {corretores.map((c) => (
+        {visiveis.map((c) => (
           <LinhaCorretor
             key={c.id}
             corretor={c}
@@ -533,6 +584,38 @@ export function ContasManager({
           />
         ))}
       </ul>
+
+      {/*
+        Contas ocultas (0189): fora de toda tela da equipe, e é AQUI — só
+        aqui, e só para quem administra — que elas aparecem, recolhidas,
+        para alguém conseguir desativar, reativar ou mostrar de novo. A
+        seção só existe quando há alguma: porta para sala vazia é ruído.
+      */}
+      {ocultas.length > 0 && (
+        <details className="cartao mt-5 px-5 py-1">
+          <summary className="text-fluid-sm text-titulo flex min-h-11 cursor-pointer items-center gap-2 font-semibold">
+            <EyeOff className="h-4 w-4" /> Contas ocultas ({ocultas.length})
+          </summary>
+          <p className="text-fluid-xs text-apoio pb-2">
+            Não aparecem no site, na roleta, no sorteio do anúncio nem nas telas da equipe. Só administradores
+            as veem, aqui.
+          </p>
+          <ul>
+            {ocultas.map((c) => (
+              <LinhaCorretor
+                key={c.id}
+                corretor={c}
+                souEu={c.id === meuId}
+                aoCriar={(cred) => {
+                  setCredencial(cred);
+                  setAviso(null);
+                }}
+                aoAvisar={(msg, erro) => setAviso({ msg, erro })}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

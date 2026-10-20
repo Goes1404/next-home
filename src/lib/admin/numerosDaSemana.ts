@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { LeituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
+import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { pendenciasDoCatalogo } from "@/lib/imoveis/pendenciasDoCatalogo";
 import type { NumerosDaSemana } from "./relatorioSemanal";
 
@@ -26,10 +27,12 @@ export async function coletarNumerosDaSemana(
   const umaSemanaAtras = new Date(agora.getTime() - 7 * 86_400_000).toISOString();
 
   const [instancias, funil, resposta, campanha, leadsNovos, imoveis] = await Promise.all([
-    grupo.ler((c) => c.from("corretor_whatsapp_instancias").select("status_conexao, desconectado_em")),
-    grupo.lerView((c) => c.from("whatsapp_funil_metricas").select("visitas_propostas, visitas_agendadas")),
+    grupo.ler((c) => c.from("corretor_whatsapp_instancias").select("corretor_id, status_conexao, desconectado_em")),
+    grupo.lerView((c) => c.from("whatsapp_funil_metricas").select("corretor_id, visitas_propostas, visitas_agendadas")),
     grupo.lerView((c) =>
-      c.from("whatsapp_resposta_metricas").select("conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos"),
+      c
+        .from("whatsapp_resposta_metricas")
+        .select("corretor_id, conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos"),
     ),
     grupo.ler((c) => c.from("whatsapp_campanhas_fila").select("status")),
     grupo
@@ -46,7 +49,12 @@ export async function coletarNumerosDaSemana(
       .eq("publicado", true),
   ]);
 
-  const linhas = instancias.data ?? [];
+  // Conta oculta (0189) fora do relatório da equipe: a chave de serviço não
+  // passa pela RLS, então o recorte é aqui (lido no grupo do relatório).
+  const ocultas = await idsDeContasOcultas(grupo);
+  const linhas = semContasOcultas(instancias.data ?? [], ocultas, (i) => i.corretor_id);
+  const respostaVisivel = semContasOcultas(resposta.data ?? [], ocultas, (l) => l.corretor_id);
+  const funilVisivel = semContasOcultas(funil.data ?? [], ocultas, (l) => l.corretor_id);
   /*
    * "No ar" é: existe instância E nenhuma delas está desconectada. Com um
    * corretor pareado, isso é a linha dele. `null` quando não há instância
@@ -81,17 +89,17 @@ export async function coletarNumerosDaSemana(
   return {
     numeroNoAr,
     diasForaDoAr,
-    conversasComFalaDoCliente: somar(resposta.data, (l) => l.conversas_com_fala_do_cliente),
-    conversasAtendidasPelaIa: somar(resposta.data, (l) => l.conversas_atendidas),
+    conversasComFalaDoCliente: somar(respostaVisivel, (l) => l.conversas_com_fala_do_cliente),
+    conversasAtendidasPelaIa: somar(respostaVisivel, (l) => l.conversas_atendidas),
     // A MAIOR das medianas: mediana de medianas não é mediana, e a leitura
     // conservadora é "o pior tempo da equipe".
     medianaSegundos:
-      (resposta.data ?? []).reduce<number | null>(
+      respostaVisivel.reduce<number | null>(
         (pior, l) => Math.max(pior ?? 0, l.mediana_segundos ?? 0) || null,
         null,
       ) ?? null,
-    visitasPropostas: somar(funil.data, (l) => l.visitas_propostas),
-    visitasMarcadas: somar(funil.data, (l) => l.visitas_agendadas),
+    visitasPropostas: somar(funilVisivel, (l) => l.visitas_propostas),
+    visitasMarcadas: somar(funilVisivel, (l) => l.visitas_agendadas),
     campanhaEntregues: fila.filter((f) => f.status === "enviado" || f.status === "respondido")
       .length,
     campanhaRespostas: fila.filter((f) => f.status === "respondido").length,

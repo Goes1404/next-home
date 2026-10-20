@@ -71,11 +71,11 @@ async function criarPessoaDoGrupo1(
   sql: Conexao,
   papel: "gestor" | "corretor",
 ): Promise<{ userId: string; id: string }> {
-  const userId = await criarUsuario(sql, `${papel}-nh-0184@next-home.teste`);
+  const userId = await criarUsuario(sql, `${papel}-nh-0193@next-home.teste`);
   const [{ id }] = await sql<{ id: string }[]>`
     insert into public.corretores (nome, creci, whatsapp, slug, papel, user_id, grupo_id)
-    values (${`${papel} nh 0184`}, ${`TESTE-nh-0184-${papel}`}, '5511900000000',
-            ${`nh-0184-${papel}`}, ${papel}, ${userId}, ${GRUPO_NEXT_HOME_ID})
+    values (${`${papel} nh 0193`}, ${`TESTE-nh-0193-${papel}`}, '5511900000000',
+            ${`nh-0193-${papel}`}, ${papel}, ${userId}, ${GRUPO_NEXT_HOME_ID})
     returning id
   `;
   return { userId, id };
@@ -86,7 +86,7 @@ class DesfazerSavepoint extends Error {}
 
 /**
  * Roda `fn` num savepoint em que a policy `isolamento_por_grupo` das tabelas
- * pedidas não existe, e desfaz no fim: é o "antes da 0184" medido no mesmo
+ * pedidas não existe, e desfaz no fim: é o "antes da 0193" medido no mesmo
  * banco. Sem `if exists` de propósito: sem a policy, este teste não mede nada.
  */
 async function semAPolicy<T>(
@@ -132,7 +132,7 @@ async function semearGrupo(sql: Conexao, g: GrupoDeTeste, sufixo: string): Promi
     insert into public.whatsapp_mensagens (conversa_id, conteudo, remetente)
     values (${conversa}, 'oi', 'cliente') returning id
   `;
-  const imovelSlug = `imovel-0184-${sufixo}`;
+  const imovelSlug = `imovel-0193-${sufixo}`;
   const imovel = await criarImovel(sql, g.grupoId, imovelSlug);
   const [{ id: midia }] = await sql<{ id: string }[]>`
     insert into public.midias (empreendimento_id, url) values (${imovel}, ${`https://exemplo/${sufixo}.jpg`})
@@ -149,7 +149,7 @@ async function semearGrupo(sql: Conexao, g: GrupoDeTeste, sufixo: string): Promi
   `;
   const [{ id: interacao }] = await sql<{ id: string }[]>`
     insert into public.ia_interacoes (conversa_id, origem, prompt_versao)
-    values (${conversa}, 'webhook', 'teste-0184') returning id
+    values (${conversa}, 'webhook', 'teste-0193') returning id
   `;
   await sql`
     insert into public.metas_corretor (corretor_id, mes, meta_comissao)
@@ -268,7 +268,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   });
 
   // O código no ar insere corretor sem grupo_id (cadastrar corretor pelo
-  // painel, admin/acoes.ts, pela chave de serviço). A 0181 tem de deixá-lo
+  // painel, admin/acoes.ts, pela chave de serviço). A 0190 tem de deixá-lo
   // funcionando sozinha, sem esperar a migration seguinte.
   it("cadastro de corretor sem grupo, com um grupo só, cai nele", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
@@ -314,7 +314,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   it("corretor desativado perde o grupo", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const b = await criarGrupo(tx, { slug: "b" });
-      // `garantir_gestor_remanescente` conta os gestores do grupo (0183), e o
+      // `garantir_gestor_remanescente` conta os gestores do grupo (0192), e o
       // gestor de B é o único de B: sem outro gestor ativo no grupo,
       // desativá-lo seria recusado antes de medir alguma coisa.
       // O corretor de B vira gestor e serve também de contraste: ativo, ele
@@ -457,7 +457,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   });
 
   // -------------------------------------------------------------------------
-  // grupo_id em toda tabela (0182)
+  // grupo_id em toda tabela (0191)
   // -------------------------------------------------------------------------
 
   it("toda tabela do public tem grupo_id ou está em TABELAS_GLOBAIS", async () => {
@@ -577,8 +577,8 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   });
 
   // Review Focus 3, pela roleta. `leads_distribuir` roda DEPOIS do carimbo:
-  // a 0182 recusava o lead quando a roleta global escolhia gente de outro
-  // grupo. Desde a 0183 ela só escolhe no grupo do lead e, sem ninguém
+  // a 0191 recusava o lead quando a roleta global escolhia gente de outro
+  // grupo. Desde a 0192 ela só escolhe no grupo do lead e, sem ninguém
   // elegível nele, deixa o lead sem dono DENTRO do grupo — nunca falha,
   // nunca atravessa.
   it("a roleta só escolhe corretor do grupo do lead", async () => {
@@ -648,7 +648,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       const conversa = await criarConversa(tx, b.corretorId, leadDeB);
 
       await tx.unsafe(`
-        create function pg_temp.teste_0182_troca_grupo() returns trigger language plpgsql as $$
+        create function pg_temp.teste_0191_troca_grupo() returns trigger language plpgsql as $$
         begin
           new.grupo_id := '${a.grupoId}';
           return new;
@@ -656,7 +656,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       `);
       await tx`
         create trigger whatsapp_mensagens_zz_teste before insert on public.whatsapp_mensagens
-          for each row execute function pg_temp.teste_0182_troca_grupo()
+          for each row execute function pg_temp.teste_0191_troca_grupo()
       `;
       await expect(
         tx.savepoint((s) => s`
@@ -667,7 +667,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
 
       // No UPDATE, o SET nem cita a mãe: quem a muda é o gatilho.
       await tx.unsafe(`
-        create function pg_temp.teste_0182_troca_dono() returns trigger language plpgsql as $$
+        create function pg_temp.teste_0191_troca_dono() returns trigger language plpgsql as $$
         begin
           new.corretor_id := '${a.corretorId}';
           return new;
@@ -675,7 +675,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       `);
       await tx`
         create trigger leads_zz_teste before update on public.leads
-          for each row execute function pg_temp.teste_0182_troca_dono()
+          for each row execute function pg_temp.teste_0191_troca_dono()
       `;
       await expect(
         tx.savepoint((s) => s`update public.leads set nome = 'Outro nome' where id = ${leadDeB}`),
@@ -683,7 +683,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
 
       await tx`drop trigger leads_zz_teste on public.leads`;
       await tx.unsafe(`
-        create function pg_temp.teste_0182_troca_grupo_upd() returns trigger language plpgsql as $$
+        create function pg_temp.teste_0191_troca_grupo_upd() returns trigger language plpgsql as $$
         begin
           new.grupo_id := '${a.grupoId}';
           return new;
@@ -691,7 +691,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       `);
       await tx`
         create trigger leads_zz_teste before update on public.leads
-          for each row execute function pg_temp.teste_0182_troca_grupo_upd()
+          for each row execute function pg_temp.teste_0191_troca_grupo_upd()
       `;
       await expect(
         tx.savepoint((s) => s`update public.leads set nome = 'Outro nome' where id = ${leadDeB}`),
@@ -761,7 +761,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         { marketing_campanha_id: string; grupo_id: string }[]
       >`
         insert into public.meta_ads_metricas (dia, campanha_id, campanha_nome, grupo_id)
-        values (date '2026-10-19', 'teste-0182-campanha', 'Campanha de teste', ${b.grupoId})
+        values (date '2026-10-19', 'teste-0191-campanha', 'Campanha de teste', ${b.grupoId})
         returning marketing_campanha_id, grupo_id
       `;
       expect(grupo_id).toBe(b.grupoId);
@@ -814,7 +814,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
 
       const [{ id: imovelDeA }] = await tx<{ id: string }[]>`
         insert into public.empreendimentos (nome, slug, bairro, cidade, grupo_id)
-        values ('Imóvel de A', 'teste-0182-imovel-a', 'Centro', 'Barueri', ${a.grupoId})
+        values ('Imóvel de A', 'teste-0191-imovel-a', 'Centro', 'Barueri', ${a.grupoId})
         returning id
       `;
       const leadDeB = await criarLead(tx, b.corretorId);
@@ -836,7 +836,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await tx`grant transferidor_de_grupo to postgres with set true`;
       await tx`grant select, update on public.leads to transferidor_de_grupo`;
       await tx`
-        create policy "teste 0182: transferidor" on public.leads
+        create policy "teste 0191: transferidor" on public.leads
           for all to transferidor_de_grupo using (true) with check (true)
       `;
       await tx`set local role transferidor_de_grupo`;
@@ -876,7 +876,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await criarGrupo(tx, { slug: "a" });
       await criarGrupo(tx, { slug: "b" });
       const [{ travou }] = await tx<{ travou: boolean }[]>`
-        select public.travar_disparo('teste-0182', 'dono-de-teste', 60) as travou
+        select public.travar_disparo('teste-0191', 'dono-de-teste', 60) as travou
       `;
       expect(travou).toBe(true);
     });
@@ -928,7 +928,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  // A marca não vale para `postgres` (0183): dentro de qualquer função
+  // A marca não vale para `postgres` (0192): dentro de qualquer função
   // security definer chamada por um logado o papel é `postgres`, e a marca
   // viraria um jeito de gravar evento sem grupo, invisível ao gestor.
   it("a marca da plataforma só vale sem mãe e para a chave de serviço ou o administrador", async () => {
@@ -962,7 +962,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       // Função security definer chamada por um logado: o evento fica no
       // grupo de quem chamou, nunca sem grupo.
       await tx.unsafe(`
-        create function pg_temp.teste_0183_evento() returns uuid
+        create function pg_temp.teste_0192_evento() returns uuid
         language sql security definer as $$
           insert into public.admin_eventos (acao, detalhes)
           values ('conta_criada', '{"origem":"plataforma"}'::jsonb)
@@ -970,7 +970,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         $$
       `);
       await expect(
-        comoUsuario(tx, b.gestorUserId, (eu) => eu`select pg_temp.teste_0183_evento() as grupo_id`),
+        comoUsuario(tx, b.gestorUserId, (eu) => eu`select pg_temp.teste_0192_evento() as grupo_id`),
       ).resolves.toEqual([{ grupo_id: b.grupoId }]);
     });
   });
@@ -992,7 +992,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   });
 
   it("tabelas da plataforma não são lidas pela API", async () => {
-    // `grupos` é a exceção: cada logado lê a linha do próprio grupo (0181).
+    // `grupos` é a exceção: cada logado lê a linha do próprio grupo (0190).
     const daPlataforma = TABELAS_GLOBAIS.filter((t) => t !== "grupos");
     const privilegios = await sql<{ tabela: string; papel: string; le: boolean }[]>`
       select t as tabela, r as papel, has_table_privilege(r, 'public.' || t, 'select') as le
@@ -1031,18 +1031,18 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       for (const grupo of [a.grupoId, b.grupoId]) {
         await tx`
           insert into public.catalogo_candidatos (fonte, ref_externa, nome, grupo_id)
-          values ('teste', 'ref-0182', 'Lançamento de teste', ${grupo})
+          values ('teste', 'ref-0191', 'Lançamento de teste', ${grupo})
         `;
       }
       const [{ n }] = await tx<{ n: number }[]>`
-        select count(*)::int as n from public.catalogo_candidatos where ref_externa = 'ref-0182'
+        select count(*)::int as n from public.catalogo_candidatos where ref_externa = 'ref-0191'
       `;
       expect(n).toBe(2);
     });
   });
 
   // -------------------------------------------------------------------------
-  // Chaves únicas por grupo (0183)
+  // Chaves únicas por grupo (0192)
   // -------------------------------------------------------------------------
 
   it("toda chave única de tabela com grupo inclui o grupo ou uma linha-mãe", async () => {
@@ -1099,11 +1099,11 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         const imovel = await criarImovel(tx, grupo.grupoId, `imovel-${grupo.grupoId}`);
         await tx`
           insert into public.midias (empreendimento_id, url, hash_conteudo)
-          values (${imovel}, ${`https://exemplo/${grupo.grupoId}.jpg`}, 'hash-0183')
+          values (${imovel}, ${`https://exemplo/${grupo.grupoId}.jpg`}, 'hash-0192')
         `;
       }
       const [{ n }] = await tx<{ n: number }[]>`
-        select count(*)::int as n from public.midias where hash_conteudo = 'hash-0183'
+        select count(*)::int as n from public.midias where hash_conteudo = 'hash-0192'
       `;
       expect(n).toBe(2);
     });
@@ -1116,13 +1116,13 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       for (const grupo of [a, b]) {
         await tx`
           insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
-          values ('Mesmo CRECI', 'CRECI-0183', '5511900000003', ${`creci-${grupo.grupoId}`}, ${grupo.grupoId})
+          values ('Mesmo CRECI', 'CRECI-0192', '5511900000003', ${`creci-${grupo.grupoId}`}, ${grupo.grupoId})
         `;
       }
       await expect(
         tx`
           insert into public.corretores (nome, creci, whatsapp, slug, grupo_id)
-          values ('Repetido', 'CRECI-0183', '5511900000004', 'creci-repetido', ${a.grupoId})
+          values ('Repetido', 'CRECI-0192', '5511900000004', 'creci-repetido', ${a.grupoId})
         `,
       ).rejects.toThrow(/duplicate key/);
     });
@@ -1133,10 +1133,10 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       const a = await criarGrupo(tx, { slug: "a" });
       const b = await criarGrupo(tx, { slug: "b" });
       for (const grupo of [a.grupoId, b.grupoId]) {
-        await tx`insert into public.lazer_itens (nome, grupo_id) values ('Piscina 0183', ${grupo})`;
+        await tx`insert into public.lazer_itens (nome, grupo_id) values ('Piscina 0192', ${grupo})`;
       }
       const [{ n }] = await tx<{ n: number }[]>`
-        select count(*)::int as n from public.lazer_itens where nome = 'Piscina 0183'
+        select count(*)::int as n from public.lazer_itens where nome = 'Piscina 0192'
       `;
       expect(n).toBe(2);
     });
@@ -1151,18 +1151,18 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       for (const grupo of [a.grupoId, b.grupoId]) {
         await tx`
           insert into public.meta_ads_metricas (dia, campanha_id, campanha_nome, grupo_id)
-          values (${dias[grupo]}::date, 'campanha-0183', 'Campanha de teste', ${grupo})
+          values (${dias[grupo]}::date, 'campanha-0192', 'Campanha de teste', ${grupo})
         `;
       }
       const campanhas = await tx<{ grupo_id: string }[]>`
-        select grupo_id from public.marketing_campanhas where external_id = 'campanha-0183'
+        select grupo_id from public.marketing_campanhas where external_id = 'campanha-0192'
       `;
       expect(new Set(campanhas.map((c) => c.grupo_id))).toEqual(new Set([a.grupoId, b.grupoId]));
       const [{ ligadas }] = await tx<{ ligadas: number }[]>`
         select count(*)::int as ligadas
           from public.meta_ads_metricas m
           join public.marketing_campanhas c on c.id = m.marketing_campanha_id
-         where m.campanha_id = 'campanha-0183' and c.grupo_id = m.grupo_id
+         where m.campanha_id = 'campanha-0192' and c.grupo_id = m.grupo_id
       `;
       expect(ligadas).toBe(2);
     });
@@ -1175,11 +1175,11 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       for (const grupo of [a.grupoId, b.grupoId]) {
         await tx`
           insert into public.marketing_eventos (event_id, tipo, entidade_tipo, entidade_id, ocorrido_em, grupo_id)
-          values ('evento-0183', 'lead.criado', 'lead', gen_random_uuid(), now(), ${grupo})
+          values ('evento-0192', 'lead.criado', 'lead', gen_random_uuid(), now(), ${grupo})
         `;
       }
       const [{ n }] = await tx<{ n: number }[]>`
-        select count(*)::int as n from public.marketing_eventos where event_id = 'evento-0183'
+        select count(*)::int as n from public.marketing_eventos where event_id = 'evento-0192'
       `;
       expect(n).toBe(2);
     });
@@ -1223,11 +1223,11 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       for (const grupo of [a.grupoId, b.grupoId]) {
         await tx`
           insert into public.empreendimentos (slug, nome, cidade, bairro, codigo_legado, grupo_id)
-          values (${`legado-${grupo}`}, 'Legado', 'Barueri', 'Centro', 'LEG-0183', ${grupo})
+          values (${`legado-${grupo}`}, 'Legado', 'Barueri', 'Centro', 'LEG-0192', ${grupo})
         `;
       }
       const [{ n }] = await tx<{ n: number }[]>`
-        select count(*)::int as n from public.empreendimentos where codigo_legado = 'LEG-0183'
+        select count(*)::int as n from public.empreendimentos where codigo_legado = 'LEG-0192'
       `;
       expect(n).toBe(2);
     });
@@ -1247,13 +1247,13 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         conversas.push(conversa);
         await tx`
           insert into public.whatsapp_mensagens (conversa_id, remetente, conteudo, provider_message_id)
-          values (${conversa}, 'cliente', 'Oi', 'WAID-0183')
+          values (${conversa}, 'cliente', 'Oi', 'WAID-0192')
         `;
       }
       await expect(
         tx`
           insert into public.whatsapp_mensagens (conversa_id, remetente, conteudo, provider_message_id)
-          values (${conversas[0]}, 'cliente', 'Oi', 'WAID-0183')
+          values (${conversas[0]}, 'cliente', 'Oi', 'WAID-0192')
         `,
       ).rejects.toThrow(/duplicate key/);
     });
@@ -1342,7 +1342,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
                    public.slug_de_imovel_livre('ninguem-tem-este-imovel') as livre
           `,
         );
-        // Pela sessão o imóvel de A não aparece (0184); pela função, aparece.
+        // Pela sessão o imóvel de A não aparece (0193); pela função, aparece.
         expect(r).toEqual({ visto: 0, ocupado: true, livre: true });
       }
     });
@@ -1424,13 +1424,13 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  // 0185, pós-deploy: a assinatura antiga (sorteio fixo no grupo 1, que a 0183
+  // 0194, pós-deploy: a assinatura antiga (sorteio fixo no grupo 1, que a 0192
   // manteve para o código anterior ao deploy) deixa de existir, e chamada
   // sem grupo não casa com mais nada.
-  // 0185, pós-deploy: o formulário e o clique do site gravam pelo servidor,
+  // 0194, pós-deploy: o formulário e o clique do site gravam pelo servidor,
   // com o grupo do site. A chave pública, que vai no bundle, não escolhe
   // mais em que grupo o lead cai.
-  it("depois da 0185 a chave pública não grava lead nem clique, e a chave de serviço grava", async () => {
+  it("depois da 0194 a chave pública não grava lead nem clique, e a chave de serviço grava", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const a = await criarGrupo(tx, { slug: "a" });
       const [privilegios] = await tx<{ lead: boolean; clique: boolean }[]>`
@@ -1476,7 +1476,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  it("depois da 0185 a assinatura antiga do sorteio não existe", async () => {
+  it("depois da 0194 a assinatura antiga do sorteio não existe", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const assinaturas = await tx<{ args: string }[]>`
         select pg_get_function_identity_arguments(p.oid) as args
@@ -1722,7 +1722,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
   });
 
   // ---------------------------------------------------------------------
-  // 0184: a policy restritiva por grupo, as views, o Storage e a defesa
+  // 0193: a policy restritiva por grupo, as views, o Storage e a defesa
   // em profundidade no carimbo.
   // ---------------------------------------------------------------------
 
@@ -1733,7 +1733,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       await semearGrupo(tx, a, "a");
       await semearGrupo(tx, b, "b");
       // Evento da plataforma, sem grupo, pela chave de serviço (fora de
-      // `comoUsuario`, que desfaria o insert): nenhum logado o vê (0184).
+      // `comoUsuario`, que desfaria o insert): nenhum logado o vê (0193).
       await tx`set local role service_role`;
       await tx`select set_config('request.jwt.claims', '{"role":"service_role"}', true)`;
       await tx`insert into public.admin_eventos (acao, detalhes) values ('conta_criada', '{"origem":"plataforma"}'::jsonb)`;
@@ -1814,7 +1814,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
     });
   });
 
-  // Defesa em profundidade (revisão de segurança da 0182): mesmo que a policy
+  // Defesa em profundidade (revisão de segurança da 0191): mesmo que a policy
   // restritiva suma, o carimbo recusa logado gravando no grupo de outro.
   it("o carimbo recusa logado gravando em outro grupo, mesmo sem a policy", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
@@ -1961,7 +1961,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         const lead = await criarLead(tx, dono);
         await criarConversa(tx, dono, lead);
       }
-      await criarImovel(tx, GRUPO_NEXT_HOME_ID, "imovel-nh-0184");
+      await criarImovel(tx, GRUPO_NEXT_HOME_ID, "imovel-nh-0193");
 
       const contar = (c: Conexao) =>
         comoUsuario(c, gestor.userId, (eu) =>
@@ -1975,13 +1975,13 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       expect(depois.leads).toBeGreaterThanOrEqual(2);
       expect(depois.imoveis).toBeGreaterThanOrEqual(1);
 
-      // "Antes da 0184" = as mesmas permissivas sem a restritiva.
+      // "Antes da 0193" = as mesmas permissivas sem a restritiva.
       const [antes] = await semAPolicy(tx, ["leads", "whatsapp_conversas", "empreendimentos"], contar);
       expect(depois).toEqual(antes);
     });
   });
 
-  // Leituras feitas pela sessão do gestor que a Task 7 deixou para a 0184
+  // Leituras feitas pela sessão do gestor que a Task 7 deixou para a 0193
   // (getEquipeAtiva, getAgregadoDaEquipe, financeiro/dados.ts,
   // getEmpreendimentoDoPainel): as mesmas tabelas e colunas, como gestor de B.
   it("as leituras do gestor pela sessão não trazem o outro grupo", async () => {

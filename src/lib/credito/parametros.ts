@@ -20,7 +20,7 @@ import { PARAMETROS_PADRAO } from "./parametrosPadrao";
 export { PARAMETROS_PADRAO };
 
 /**
- * As taxas de UM grupo (0181: cada imobiliária ajusta as dela).
+ * As taxas de UM grupo (0190: cada imobiliária ajusta as dela).
  *
  * O grupo é obrigatório de propósito: com padrão, uma tela do painel que
  * esquecesse de passá-lo simularia com as taxas do site sem erro nenhum. O

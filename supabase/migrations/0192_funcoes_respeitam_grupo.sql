@@ -1,4 +1,4 @@
--- 0183: chaves únicas por grupo e unicidade global por função (19/10/2026).
+-- 0192: chaves únicas por grupo e unicidade global por função (19/10/2026).
 --
 -- Terceira migration da plataforma multi-grupo (spec
 -- docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md, §18).
@@ -109,7 +109,7 @@ alter table public.meses_fechados add primary key (grupo_id, mes);
 alter table public.fiscal_config drop constraint fiscal_config_pkey;
 alter table public.fiscal_config add primary key (grupo_id);
 comment on column public.fiscal_config.id is
-  'Resto da linha única da 0167 (sempre 1). A chave é grupo_id desde a 0183: uma configuração por grupo.';
+  'Resto da linha única da 0167 (sempre 1). A chave é grupo_id desde a 0192: uma configuração por grupo.';
 
 alter table public.empreendimentos drop constraint empreendimentos_codigo_legado_key;
 alter table public.empreendimentos
@@ -123,7 +123,7 @@ create unique index whatsapp_mensagens_provider_id_uidx
 -- Os dois gatilhos que gravam com `on conflict` passam a usar a chave nova
 -- (o `on conflict` precisa casar com uma chave que exista). Com o grupo na
 -- chave, o conflito só acontece dentro do grupo da linha, e a conferência de
--- grupo que a 0182 fazia depois do upsert de campanha deixa de ter o que
+-- grupo que a 0191 fazia depois do upsert de campanha deixa de ter o que
 -- pegar: sai.
 
 create or replace function public.registrar_evento_lead_criado()
@@ -207,7 +207,7 @@ alter table public.lead_interacoes
 --
 -- `slug` de corretor e de imóvel são globais (o site os resolve sem grupo
 -- até a fase 3) e o e-mail de acesso é único no Supabase Auth. Com a policy
--- restritiva da 0184 a sessão só lê `corretores` e `empreendimentos` do
+-- restritiva da 0193 a sessão só lê `corretores` e `empreendimentos` do
 -- próprio grupo: a conferência pela sessão diria "livre" para um slug do
 -- grupo A, o insert/update bateria na chave global e quem estava criando
 -- levaria um erro sem entender (o login recém-criado seria apagado, "não
@@ -283,11 +283,11 @@ revoke all on function public.slug_de_imovel_livre(text) from public, anon;
 grant execute on function public.slug_de_imovel_livre(text) to authenticated;
 
 comment on function public.slug_de_corretor_livre(text) is
-  'Sim/não: o slug de corretor está livre em TODOS os grupos (0183). Só gestor.';
+  'Sim/não: o slug de corretor está livre em TODOS os grupos (0192). Só gestor.';
 comment on function public.slug_de_imovel_livre(text) is
-  'Sim/não: o slug de imóvel está livre em TODOS os grupos (0183). Só corretor ativo.';
+  'Sim/não: o slug de imóvel está livre em TODOS os grupos (0192). Só corretor ativo.';
 comment on function public.email_de_acesso_livre(text) is
-  'Sim/não: o e-mail de acesso está livre em todos os grupos e no Auth (0183). Só gestor.';
+  'Sim/não: o e-mail de acesso está livre em todos os grupos e no Auth (0192). Só gestor.';
 
 -- ===========================================================================
 -- B. As funções `security definer` respeitam o grupo (Task 5)
@@ -319,12 +319,15 @@ comment on function public.email_de_acesso_livre(text) is
 -- ---------------------------------------------------------------------------
 -- `leads_distribuir` roda depois de `leads_00_grupo`, então `new.grupo_id`
 -- já é o grupo do lead. A roleta global escolhia o dono entre todos os
--- corretores, e a conferência final da 0182 recusava o lead de B que caía em
+-- corretores, e a conferência final da 0191 recusava o lead de B que caía em
 -- alguém de A. Agora o grupo é FILTRO (não preferência): sem ninguém
 -- elegível no grupo, o lead fica sem dono dentro dele — nunca falha, nunca
 -- atravessa. As preferências da 0093 e da 0180 seguem como ordem, não
 -- filtro (roletaDeLeads.test.ts). A trava continua global; por grupo é da
 -- fase de operação (spec, "justiça entre grupos nos crons").
+--
+-- Parte da definição da 0189 (conta oculta), que já está em produção: a
+-- conta oculta continua FORA da roleta, como filtro.
 
 create or replace function public.distribuir_lead()
 returns trigger
@@ -359,6 +362,8 @@ begin
      -- O grupo do lead é filtro: corretor de outro grupo nunca recebe.
      and c.grupo_id = new.grupo_id
      and not c.em_pausa
+     -- Conta oculta (0189): FORA, não por último. Exceção declarada à 0093.
+     and not c.oculta
      and (c.regioes is null or cidade_lead is null or cidade_lead = any (c.regioes))
    order by
      -- 0. Conta só WhatsApp (0180) por último: ela não atende pelo CRM.
@@ -558,7 +563,8 @@ $function$;
 -- As duas eram chamadas por todo corretor e somavam o banco inteiro: o
 -- ranking listava os corretores de todos os grupos, e as taxas contavam os
 -- leads e as vendas de todos. Corpo com `$$` (vendasSeguras.test.ts recorta
--- o ranking até o primeiro `$$;`).
+-- o ranking até o primeiro `$$;`). O ranking parte da definição da 0189:
+-- conta oculta fora, menos para a própria pessoa.
 
 create or replace function public.ranking_vgv(p_inicio date, p_fim date)
 returns table (
@@ -575,13 +581,15 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_eu uuid;
   v_eu_ativo boolean;
 begin
   if public.corretor_atual() is null then
     raise exception 'sem_sessao';
   end if;
+  v_eu := public.corretor_atual();
 
-  select c.ativo into v_eu_ativo from public.corretores c where c.id = public.corretor_atual();
+  select c.ativo into v_eu_ativo from public.corretores c where c.id = v_eu;
 
   return query
   select
@@ -598,6 +606,8 @@ begin
   where c.grupo_id = public.grupo_atual()
     and ((coalesce(v_eu_ativo, true) and c.ativo)
       or (not coalesce(v_eu_ativo, true) and not c.ativo and c.slug is not null))
+    -- Conta oculta (0189): ninguém a vê no ranking, só ela mesma.
+    and (not c.oculta or c.id = v_eu)
   group by c.id, c.nome, c.foto_url
   order by 4 desc, 5 desc, c.nome;
 end;
@@ -652,7 +662,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 8. O clique do link é reivindicado no grupo do corretor
 -- ---------------------------------------------------------------------------
--- O clique carimbado com `corretor_id` já é do grupo dele (0182), então o
+-- O clique carimbado com `corretor_id` já é do grupo dele (0191), então o
 -- filtro não muda o resultado hoje; ele deixa a regra escrita onde a RLS não
 -- alcança, para a função não depender de um gatilho de outra migration.
 
@@ -730,7 +740,7 @@ grant execute on function public.reservar_horario_visita(uuid, timestamptz) to s
 -- 10. Venda com participante de outro grupo: mensagem legível (L03)
 -- ---------------------------------------------------------------------------
 -- `salvar_venda` é `security invoker` (a RLS vale dentro dela). O carimbo da
--- 0182 já recusa o participante de outro grupo, mas com "grupo da linha
+-- 0191 já recusa o participante de outro grupo, mas com "grupo da linha
 -- difere do grupo de corretores", que a tela traduziria por "tente de
 -- novo". Co-corretagem entre grupos fica recusada na fase 1 (decisão de
 -- 19/10): a conferência vem antes de gravar a venda, com um código que
@@ -918,6 +928,8 @@ as $function$
      and not c.em_pausa
      -- Conta só WhatsApp (0180): não cadastra quem escreve nem tem IA.
      and not c.so_whatsapp
+     -- Conta oculta (0189): não aparece para ninguém, nem como destino.
+     and not c.oculta
      and i.status_conexao = 'conectado'
      and i.conectado_em is not null
      and i.telefone_conectado is not null
@@ -952,8 +964,8 @@ revoke execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) fr
 grant execute on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) to service_role;
 
 comment on function public.sortear_corretor_whatsapp(uuid, uuid, uuid) is
-  'Porteiro /wa (0183): sorteia, entre os conectados DO GRUPO, para onde vai o clique; preferido e imóvel de outro grupo não valem.';
+  'Porteiro /wa (0192): sorteia, entre os conectados DO GRUPO, para onde vai o clique; preferido e imóvel de outro grupo não valem.';
 comment on function public.sortear_corretor_whatsapp(uuid, uuid) is
-  'Assinatura antiga, só para o código anterior ao deploy da 0183: sorteia no grupo 1. Sai depois do deploy.';
+  'Assinatura antiga, só para o código anterior ao deploy da 0192: sorteia no grupo 1. Sai depois do deploy.';
 
 commit;

@@ -13,7 +13,7 @@
  *   - catalogo_candidatos.decisao (0078)
  *   - corretor_whatsapp_instancias.modo_bot
  *   - corretor_whatsapp_instancias.status_conexao
- *   - grupos.tipo (0181)
+ *   - grupos.tipo (0190)
  *   - ia_interacoes.avaliacao
  *   - ia_interacoes.motivo_avaliacao (0131)
  *   - ia_interacoes.origem
@@ -40,21 +40,21 @@
  * `.select()`, não no banco.
  *
  * Também escritos à mão: a tabela `grupos`, a coluna `corretores.grupo_id`
- * (opcional no Insert: o gatilho `corretores_00_grupo`, da própria 0181,
+ * (opcional no Insert: o gatilho `corretores_00_grupo`, da própria 0190,
  * preenche o grupo de quem insere; com dois grupos e sem login, o insert sem
  * grupo falha no banco), a função `grupo_atual()`, a tabela
  * `administradores_da_plataforma`, a função `eh_admin_da_plataforma()` e
  * `parametros_credito.grupo_id` (que substituiu a coluna `id` da linha
- * única), todos da 0181.
+ * única), todos da 0190.
  *
- * E, da 0182, `grupo_id` em TODA tabela de `Tables` menos `grupos`,
+ * E, da 0191, `grupo_id` em TODA tabela de `Tables` menos `grupos`,
  * `administradores_da_plataforma`, `whatsapp_disparo_lock` e
  * `whatsapp_diagnosticos` (ver `src/lib/grupos/tabelasDoGrupo.ts`):
  * obrigatório no Row e opcional no Insert/Update, porque o gatilho
  * `<tabela>_00_grupo` o deriva da linha-mãe. `admin_eventos.grupo_id` é
  * anulável (nulo = evento da plataforma).
  *
- * E, da 0183, o valor `repasse` em `lead_interacoes.tipo` e as funções
+ * E, da 0192, o valor `repasse` em `lead_interacoes.tipo` e as funções
  * `slug_de_corretor_livre`, `slug_de_imovel_livre` e `email_de_acesso_livre`.
  */
 
@@ -1310,6 +1310,7 @@ export type Database = {
         Row: {
           ativo: boolean
           bio: string | null
+          chamada_do_link: string | null
           created_at: string
           creci: string
           deve_trocar_senha: boolean
@@ -1325,6 +1326,7 @@ export type Database = {
           grupo_id: string
           id: string
           nome: string
+          oculta: boolean
           papel: string
           regioes: string[] | null
           slug: string | null
@@ -1336,6 +1338,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           bio?: string | null
+          chamada_do_link?: string | null
           created_at?: string
           creci: string
           deve_trocar_senha?: boolean
@@ -1351,6 +1354,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           nome: string
+          oculta?: boolean
           papel?: string
           regioes?: string[] | null
           slug?: string | null
@@ -1362,6 +1366,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           bio?: string | null
+          chamada_do_link?: string | null
           created_at?: string
           creci?: string
           deve_trocar_senha?: boolean
@@ -1377,6 +1382,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           nome?: string
+          oculta?: boolean
           papel?: string
           regioes?: string[] | null
           slug?: string | null
@@ -3529,7 +3535,7 @@ export type Database = {
       }
     }
     Views: {
-      // 0184: toda view do public tem `grupo_id` (no fim da lista de colunas no
+      // 0193: toda view do public tem `grupo_id` (no fim da lista de colunas no
       // banco). Nulo só no tipo: o gerador marca coluna de view como anulável.
       /** 0115 — tempo de primeira resposta por conversa (security_invoker). */
       whatsapp_primeira_resposta: {
@@ -3756,7 +3762,7 @@ export type Database = {
       }
       sortear_corretor_whatsapp: {
         // A assinatura antiga (sem grupo) fica no banco só até o deploy da
-        // 0183 e não é declarada aqui: código novo sorteia sempre no grupo.
+        // 0192 e não é declarada aqui: código novo sorteia sempre no grupo.
         Args: { p_grupo: string; p_empreendimento?: string; preferido?: string }
         Returns: { corretor_id: string; telefone: string }[]
       }

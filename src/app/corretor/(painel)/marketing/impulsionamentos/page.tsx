@@ -4,6 +4,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { createClient } from "@/lib/supabase/server";
 import { clienteParaNumerosDaEquipe, leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
+import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import {
@@ -136,7 +137,12 @@ export default async function PaginaImpulsionamentos() {
     }
   }
 
-  const doBanco: LinhaImpulsionamento[] = (linhas ?? []).map((l) => ({
+  // Conta oculta (0189): as campanhas e os clientes dela ficam fora da visão
+  // da equipe. A própria conta continua vendo os seus.
+  const ocultas = await idsDeContasOcultas(supabase);
+  ocultas.delete(corretor.id);
+
+  const doBanco: LinhaImpulsionamento[] = semContasOcultas(linhas ?? [], ocultas, (l) => l.corretor_id).map((l) => ({
     id: l.id,
     corretorId: l.corretor_id,
     chave: l.chave,
@@ -153,7 +159,7 @@ export default async function PaginaImpulsionamentos() {
     agrupadoEm: l.agrupado_em,
   }));
 
-  const leadsDeAnuncio: LeadDeAnuncio[] = (leads ?? []).map((l) => ({
+  const leadsDeAnuncio: LeadDeAnuncio[] = semContasOcultas(leads ?? [], ocultas, (l) => l.corretor_id).map((l) => ({
     id: l.id,
     corretorId: l.corretor_id,
     metaAdId: l.meta_ad_id,

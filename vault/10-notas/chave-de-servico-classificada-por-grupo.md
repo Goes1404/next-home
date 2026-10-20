@@ -47,7 +47,7 @@ parâmetro e o motivo diz quem validou. Isso é declaração, não prova.
 `clienteParaNumerosDaEquipe()` não devolve mais o cliente cru: devolve
 `leituraDoGrupo`, que só tem `ler((c) => c.from("t").select(...))` (aplica
 `grupo_id`) e `lerView(...)` (aplica `corretor_id` entre os do grupo, porque as
-views só ganham `grupo_id` na 0184). O tipo de `ler` recusa view e tabela global.
+views só ganham `grupo_id` na 0193). O tipo de `ler` recusa view e tabela global.
 
 **Por que callback e não `tabela("t", "colunas")`:** a primeira versão tipava a
 tabela por um mapeamento genérico sobre todas as tabelas e o `tsc` foi de 65 s a

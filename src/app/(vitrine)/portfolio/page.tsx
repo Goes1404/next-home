@@ -14,6 +14,10 @@ import { TituloEditorial } from "@/components/motion/TituloEditorial";
 import { VoltarLink } from "@/components/ui/VoltarLink";
 import { precoAPartirDe } from "@/lib/format";
 import { getEmpreendimentosDoLink } from "@/lib/queries";
+import { corretoresPublicos } from "@/lib/catalogo/cache";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { grupoDoSite } from "@/lib/grupos/grupo";
+import { metadataDoPortfolio } from "@/lib/previaDoLink";
 
 import { srcDaMidia } from "@/lib/imagens/variantes";
 /**
@@ -24,39 +28,30 @@ import { srcDaMidia } from "@/lib/imagens/variantes";
 export const revalidate = 300;
 
 /**
- * `noindex` de propósito: esta é a peça que o corretor compartilha no
- * WhatsApp, não uma porta de entrada de busca. A home institucional (`/`)
- * cobre a mesma intenção de quem procura a imobiliária no Google, e deixar as
- * duas indexadas só faria uma diluir a outra.
+ * A prévia do link que o corretor manda no WhatsApp (19/10/2026). Era fixa,
+ * "Portfólio de Imóveis de Alto Padrão em Alphaville", igual para todo
+ * corretor; agora é "Portfólio de <nome>" com o texto que ele escreveu em
+ * "Meu perfil", ou "Portfólio de produtos".
+ *
+ * O corretor vem da URL: o `proxy.ts` leva `?corretor=<slug>` ao redirecionar
+ * `/?corretor=<slug>` para cá, e o robô do WhatsApp não guarda cookie. Quem
+ * navega já com o cookie e sem o parâmetro cai no corretor do cookie. A página
+ * já é dinâmica (lê a ordem do corretor do link), então ler os dois não muda
+ * nada no cache. `noindex` continua: é a peça que o corretor compartilha, não
+ * uma porta de entrada de busca. Ver `previaDoLink.ts`.
  */
-export const metadata: Metadata = {
-  title: "Portfólio Exclusivo de Imóveis em Alphaville | Next Home",
-  description:
-    "Lançamentos imobiliários de alto padrão, plantas sofisticadas e lazer completo em Alphaville, Barueri e região.",
-  robots: { index: false, follow: true },
-  openGraph: {
-    title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
-    description:
-      "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville, Barueri e Santana de Parnaíba.",
-    images: [
-      {
-        url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Next Home Negócios Imobiliários",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Portfólio de Imóveis de Alto Padrão em Alphaville | Next Home",
-    description:
-      "Confira a seleção exclusiva de lançamentos e oportunidades em Alphaville e região.",
-    images: [
-      "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
-    ],
-  },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const { corretor: doParametro } = await searchParams;
+  const slug = typeof doParametro === "string" ? doParametro : null;
+  const corretor = slug
+    ? ((await corretoresPublicos(grupoDoSite())).find((c) => c.slug === slug) ?? null)
+    : await getCorretorAtivo();
+  return metadataDoPortfolio(corretor);
+}
 
 /**
  * Home imersiva (Fase 7): hero cinematográfico com fundo fixo (vivendo no

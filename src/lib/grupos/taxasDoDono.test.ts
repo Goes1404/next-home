@@ -1,5 +1,5 @@
 // Guarda: quem atende em nome de um corretor lê as taxas do simulador pelo
-// grupo DELE, não pelo grupo do site (0182).
+// grupo DELE, não pelo grupo do site (0191).
 //
 // O webhook do WhatsApp responde pelo número de um corretor, e a seleção
 // (`/selecao/<token>`) é o link que um corretor mandou. Com `grupoDoSite()`,

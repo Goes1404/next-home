@@ -3,6 +3,7 @@ import { janelaDeDias } from "@/lib/admin/janelaDeDias";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
+import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { BotaoDesconectar } from "./BotaoDesconectar";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { motivoDaQueda } from "@/lib/whatsapp/motivoDaQueda";
@@ -69,8 +70,14 @@ export default async function AdminWhatsappPage() {
   // entre `admin_eventos`/instâncias e `corretores` não estão declaradas nos
   // tipos gerados, e um embed pelo nome da FK quebraria no primeiro rename.
   const desdeListas = janelaDeDias(30).corte.toISOString();
-  const [{ data: instancias }, { data: interacoes }, { data: eventos }, { data: pessoas }, { data: listas }] =
-    await Promise.all([
+  const [
+    { data: todasInstancias },
+    { data: todasInteracoes },
+    { data: todosEventos },
+    { data: pessoas },
+    { data: todasListas },
+    ocultas,
+  ] = await Promise.all([
     equipe.ler((c) =>
       c
         .from("corretor_whatsapp_instancias")
@@ -79,7 +86,7 @@ export default async function AdminWhatsappPage() {
         ),
     ),
     equipe
-      .ler((c) => c.from("ia_interacoes").select("fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at"))
+      .ler((c) => c.from("ia_interacoes").select("corretor_id, fallback, latencia_ms, anexos_bloqueados, avaliacao, created_at"))
       .order("created_at", { ascending: false })
       .limit(500),
     supabase
@@ -97,7 +104,19 @@ export default async function AdminWhatsappPage() {
       .ler((c) => c.from("whatsapp_campanhas").select("corretor_id, total_leads, total_enviados, total_respondidos, status"))
       .neq("status", "rascunho")
       .gte("created_at", desdeListas),
+    // Conta oculta (0189): o número, a IA, as listas e os eventos dela ficam
+    // fora da tela da equipe. A sessão do gestor lê a marca; a chave de
+    // serviço acima não recorta nada sozinha.
+    idsDeContasOcultas(supabase),
   ]);
+  const instancias = semContasOcultas(todasInstancias ?? [], ocultas, (i) => i.corretor_id);
+  const interacoes = semContasOcultas(todasInteracoes ?? [], ocultas, (i) => i.corretor_id);
+  const listas = semContasOcultas(todasListas ?? [], ocultas, (l) => l.corretor_id);
+  const eventos = semContasOcultas(
+    semContasOcultas(todosEventos ?? [], ocultas, (e) => e.ator_id),
+    ocultas,
+    (e) => e.alvo_corretor_id,
+  );
 
   const listasPorCorretor = new Map<string, { listas: number; enviadas: number; responderam: number; enviando: number }>();
   for (const l of listas ?? []) {

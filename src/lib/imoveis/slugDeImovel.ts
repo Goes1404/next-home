@@ -32,9 +32,9 @@ export function slugificarImovel(nome: string): string {
 /**
  * O primeiro slug livre a partir da base.
  *
- * `estaLivre` é a conferência do banco (`slug_de_imovel_livre`, 0183), que
+ * `estaLivre` é a conferência do banco (`slug_de_imovel_livre`, 0192), que
  * olha TODOS os grupos: o slug é único na plataforma inteira, e a sessão do
- * corretor só enxerga o próprio grupo (0184). Erro dela sobe: "não sei se
+ * corretor só enxerga o próprio grupo (0193). Erro dela sobe: "não sei se
  * está livre" não pode virar "livre", senão o insert bate na chave global
  * com "já existe" para um nome que ninguém do grupo usa.
  *

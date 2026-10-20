@@ -26,7 +26,7 @@ import { grupoDoScript } from "../src/lib/grupos/grupoDoScript";
 /**
  * O site legado é da Next Home: tudo o que ele traz nasce no grupo pedido em
  * `--grupo` (só o 1 é aceito). CRECI e código legado são únicos por grupo
- * desde a 0183, e é por essa chave que o script continua idempotente. O
+ * desde a 0192, e é por essa chave que o script continua idempotente. O
  * grupo é lido ANTES de qualquer credencial, para o esquecimento virar erro.
  */
 let GRUPO_LEGADO: string;

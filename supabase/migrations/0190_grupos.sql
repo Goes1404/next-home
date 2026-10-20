@@ -1,4 +1,4 @@
--- 0181: a tabela `grupos` e o grupo da Next Home (18/10/2026).
+-- 0190: a tabela `grupos` e o grupo da Next Home (18/10/2026).
 --
 -- Primeira migration da plataforma multi-grupo (spec
 -- docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md). Um
@@ -7,8 +7,12 @@
 --
 -- Número: o plano previa 0159, mas a branch de produção
 -- (claude/modernizar-plataforma-imobiliaria-2tm13q) já ocupava 0159 a 0180
--- com conteúdo próprio. Esta é a primeira livre, e a branch multi-grupo
--- trouxe a produção por merge antes das migrations seguintes.
+-- com conteúdo próprio. A fase 1 nasceu como 0181–0185 e foi RENUMERADA para
+-- 0190–0194 em 20/10/2026: a 0188 (prévia do link) e a 0189 (conta oculta)
+-- subiram direto da produção e já estão aplicadas lá, então a fase 1 tem de
+-- ordenar DEPOIS delas — no banco de produção e num banco montado do zero. A
+-- branch multi-grupo trouxe a produção por merge antes das migrations
+-- seguintes.
 --
 -- O que esta migration faz:
 --   1. cria `grupos`;
@@ -35,7 +39,7 @@
 -- função deste gatilho pela genérica (`carimbar_grupo`) com o mesmo nome
 -- de gatilho.
 --
--- Transação única, como a 0182 e a 0183: aplica inteira ou nada. Sem ela,
+-- Transação única, como a 0191 e a 0192: aplica inteira ou nada. Sem ela,
 -- uma falha no meio (o `lock_timeout` abaixo, por exemplo) deixaria a
 -- coluna criada e o gatilho de fora — exatamente o intervalo em que o código
 -- no ar quebraria ao cadastrar corretor. Os `drop ... if exists` antes de
@@ -61,7 +65,7 @@ create table if not exists public.grupos (
 );
 
 comment on table public.grupos is
-  'Imobiliária ou corretor independente. Todo dado da plataforma pertence a um grupo; o grupo 1 é a Next Home (0181).';
+  'Imobiliária ou corretor independente. Todo dado da plataforma pertence a um grupo; o grupo 1 é a Next Home (0190).';
 
 -- ---------------------------------------------------------------------------
 -- 2. O grupo da Next Home
@@ -89,9 +93,12 @@ alter table public.corretores alter column grupo_id set not null;
 
 create index if not exists corretores_grupo_idx on public.corretores (grupo_id);
 
--- `corretores` continua com a policy "corretores sao publicos" (a página da
--- equipe lê pela chave anon). Recortar a leitura pública por grupo é da
--- fase 3 (spec §15), e nenhum grupo externo entra antes dela.
+-- `corretores` continua com as policies de leitura da 0189 ("corretores
+-- visiveis ao publico" para `anon`, só quem não é conta oculta; "corretores
+-- visiveis ao logado" para `authenticated`), que substituíram a "corretores
+-- sao publicos" da 0001: a página da equipe lê pela chave anon. Recortar a
+-- leitura pública por grupo é da fase 3 (spec §15), e nenhum grupo externo
+-- entra antes dela. A 0193 soma a restritiva por grupo (só `authenticated`).
 
 -- ---------------------------------------------------------------------------
 -- 4. grupo_atual(), e o corretor desativado perde a sessão
@@ -242,7 +249,7 @@ create table if not exists public.administradores_da_plataforma (
 );
 
 comment on table public.administradores_da_plataforma is
-  'Logins que administram a plataforma multi-grupo (não um grupo). Sem acesso pela API; consulta via eh_admin_da_plataforma() (0181).';
+  'Logins que administram a plataforma multi-grupo (não um grupo). Sem acesso pela API; consulta via eh_admin_da_plataforma() (0190).';
 
 alter table public.administradores_da_plataforma enable row level security;
 
@@ -373,6 +380,6 @@ revoke all on function public.atualizar_parametros_credito(jsonb, numeric, numer
 grant execute on function public.atualizar_parametros_credito(jsonb, numeric, numeric, integer, numeric, jsonb, date) to authenticated, service_role;
 
 comment on table public.parametros_credito is
-  'Uma linha por grupo: faixas do MCMV, teto do FGTS, taxa SBPE e ITBI. Editada só pelo gestor ativo do grupo, via atualizar_parametros_credito (0103; por grupo desde a 0181).';
+  'Uma linha por grupo: faixas do MCMV, teto do FGTS, taxa SBPE e ITBI. Editada só pelo gestor ativo do grupo, via atualizar_parametros_credito (0103; por grupo desde a 0190).';
 
 commit;

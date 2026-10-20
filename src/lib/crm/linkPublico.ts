@@ -10,7 +10,7 @@ export type LinkPublico = {
   token: string;
   leadId: string;
   corretorId: string;
-  /** Grupo do link, o mesmo do corretor que o mandou (o gatilho da 0182 garante). */
+  /** Grupo do link, o mesmo do corretor que o mandou (o gatilho da 0191 garante). */
   grupoId: string;
   dados: Record<string, unknown>;
   primeiroNome: string | null;
