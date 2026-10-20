@@ -37,6 +37,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[o-site-e-lento-por-desenho-nao-por-peso]] — `proxy.ts` chama `getUser()` em toda requisição; `cookies()` no layout raiz torna tudo dinâmico; função em iad1, banco em ca-central-1 (13/09)
 - [[o-site-publico-nao-vai-mais-ao-banco-por-requisicao]] — F2: cache de dados por etiqueta, proxy sem Auth no público, poster no SSR; TTFB da home 0,9–2,9 s → 0,37–0,54 s (13/09)
 - [[plataforma-multi-grupo]] — decisão (18/10): uma plataforma só, vários grupos (imobiliárias e corretores independentes); Next Home vira o grupo 1
+- [[encerramento-do-grupo-e-pedido-do-titular]] — planilha do grupo (gestor e plataforma), pedido do titular (LGPD) e cancelamento com 90 dias; rotina desligada até `APAGAR_GRUPOS_CANCELADOS=1` (0202)
 - [[site-de-cada-grupo-pelo-endereco]] — sites por endereço (fase 3 enxuta, 20/10): `enderecos_do_site` (0201), proxy sem banco, passo a passo em docs/SITES-POR-ENDERECO.md
 - [[chave-de-servico-classificada-por-grupo]] — todo uso da chave de serviço num mapa por categoria (por-id, equipe, agrega-por-grupo, cruza-conjuntos, plataforma), cobrado por guarda que lê o código (19/10)
 - [[convite-por-link-no-nosso-dominio]] ⚠️ fase 2A: convite e recuperação por `token_hash` no nosso domínio, gasto só num botão (scanner de e-mail); criar senha sem a atual só na sessão do link (amr `otp`, 15 min); `*` do ilike sem escape no PostgREST; OTP de 24 h é configuração de produção (19/10)

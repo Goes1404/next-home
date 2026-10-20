@@ -11360,3 +11360,25 @@ Nota: [[site-de-cada-grupo-pelo-endereco]].
   local no shell (elas ganham do `.env.local`), `next start` e
   `curl -H "Host: <endereço>"`.
 
+
+## Dados do grupo, pedido do titular e cancelamento (0202, 20/10/2026)
+
+Nota: [[encerramento-do-grupo-e-pedido-do-titular]].
+
+- **A planilha do grupo sai pelo gestor a qualquer hora e pela plataforma só
+  com cancelamento registrado** (exceção declarada ao §4). Sem conversa, sem
+  contato dos corretores, sem CPF do comprador; todo download vai para
+  `admin_eventos`.
+- **Pedido do titular apaga as sobras das FKs `set null`** (envios, e-mail de
+  portal, fila de lista, marketing, ativações, anotações, telemetria da IA) e
+  a pasta `documentos-clientes/<lead>/`. A venda fica, sem o lead.
+- **Cancelar só tira o SITE do ar** (0201 lê `encerrado`); painel, IA e
+  listas do grupo seguem. Bloquear o resto é pendência.
+- **A rotina dos 90 dias está DESLIGADA**: liga com
+  `APAGAR_GRUPOS_CANCELADOS=1` exato na Vercel. Mora no tique de
+  `/api/cron/limpar-artes-ia` (agora `maxDuration` 60), um grupo por vez, e
+  não apaga sem a cópia gravada no bucket privado `exportacoes-de-grupos`.
+- **`apagar_dados_do_grupo` varre toda tabela com `grupo_id`** em passadas até
+  as FKs deixarem; não há ordem escrita à mão para envelhecer.
+- **Teste de banco: o efeito de `comoUsuario` se lê dentro do callback**,
+  depois de `reset role`; fora dele o savepoint já desfez.
