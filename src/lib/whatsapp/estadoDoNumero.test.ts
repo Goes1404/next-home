@@ -54,6 +54,7 @@ const ESTADO = [
   "sessao_caida_em",
   "queda_tratada_em",
   "aquecimento_desde",
+  "numero_recusado_em",
 ];
 
 const TABELA = "corretor_whatsapp_instancias";
