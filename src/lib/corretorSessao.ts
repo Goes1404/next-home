@@ -4,7 +4,18 @@ import { cache } from "react";
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+import {
+  filtrarContasOcultas,
+  filtroForaDasContasOcultas,
+  idsDeContasOcultas,
+} from "@/lib/corretores/contaOculta";
 import { PADROES_DO_CANAL, type Canal } from "@/lib/graficos/calculos";
+import {
+  CARTEIRA_EQUIPE,
+  corretorDoRecorte,
+  decidirCarteira,
+  type Carteira,
+} from "@/lib/carteiraDaVisao";
 import {
   ETAPAS_FUNIL,
   type CorretorPerfil,
@@ -39,7 +50,7 @@ export type CorretorSessao = CorretorPerfil & {
   papel: PapelCorretor;
   ativo: boolean;
   /**
-   * O grupo (imobiliária ou corretor independente) do login (0181). É por
+   * O grupo (imobiliária ou corretor independente) do login (0190). É por
    * ele que o painel escolhe o que é do grupo e não da plataforma, como as
    * taxas de crédito.
    */
@@ -102,7 +113,7 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
 
   // Desativado é o mesmo que sem vínculo: o banco já não o reconhece
   // (`corretor_atual()`, `eh_gestor()` e `grupo_atual()` filtram `ativo`,
-  // 0181), e abrir o painel para ele seria mostrar telas que voltam vazias
+  // 0190), e abrir o painel para ele seria mostrar telas que voltam vazias
   // sem dizer por quê.
   if (!data.ativo) return null;
 
@@ -152,6 +163,39 @@ export async function souGestor(): Promise<boolean> {
   const corretor = await getCorretorLogado();
   return corretor?.papel === "gestor";
 }
+
+/**
+ * De quem é a carteira que a tela de trabalho mostra — o PONTO ÚNICO dessa
+ * decisão (hotfix de 19/10/2026, ver `carteiraDaVisao.ts`).
+ *
+ * Sem `pedido`, é a do usuário logado, inclusive para o gestor: a RLS abre a
+ * equipe inteira para ele, e era isso que misturava a carteira de todo mundo
+ * nas telas em que ele trabalha como corretor. `pedido` é o `?corretor=` da
+ * URL e só tem efeito para o gestor.
+ *
+ * `cache()` pelo argumento: o Início pergunta isto em vários blocos da mesma
+ * requisição, e a resposta depende só da sessão.
+ */
+export const getCarteiraDaVisao = cache(async function getCarteiraDaVisao(
+  pedido?: string | null,
+): Promise<Carteira> {
+  return decidirCarteira(await getCorretorLogado(), pedido ?? null);
+});
+
+/** O `corretor_id` a exigir na consulta (`null` = equipe pedida pelo gestor). */
+export async function recorteDaVisao(pedido?: string | null): Promise<string | null> {
+  return corretorDoRecorte(await getCarteiraDaVisao(pedido));
+}
+
+/**
+ * O filtro que tira da visão da EQUIPE os leads de conta oculta (0189). Só
+ * entra quando não há `dono` — a carteira de uma pessoa não precisa dele, e
+ * a da própria conta oculta continua sendo dela. `cache()`: o Início e a
+ * lista perguntam isto várias vezes na mesma requisição.
+ */
+const filtroForaDasOcultas = cache(async function filtroForaDasOcultas(): Promise<string | null> {
+  return filtroForaDasContasOcultas(await idsDeContasOcultas(await createClient()));
+});
 
 /** E-mail da conta autenticada — usado para revalidar a senha atual. */
 export async function getEmailLogado(): Promise<string | null> {
@@ -225,11 +269,12 @@ export function mapLead(row: LinhaLead): Lead {
 /**
  * Leads visíveis para a sessão atual, mais recentes primeiro.
  *
- * Note a ausência de um `.eq("corretor_id", ...)` aqui: o filtro vive na
- * policy de RLS (0007), no banco. É de propósito — assim nenhum erro de
- * query nesta camada consegue vazar o lead de um corretor para outro. É
- * também o que faz a mesma função servir corretor e gestor sem um `if`: a
- * policy é que decide se "os meus" significa sete leads ou setecentos.
+ * A SEGURANÇA continua na policy de RLS (0007): nenhum erro de query nesta
+ * camada consegue vazar o lead de um corretor para outro. O que mudou em
+ * 19/10/2026 é a VISÃO: a policy abre a equipe inteira ao gestor, e "os
+ * meus" virava setecentos na tela em que ele trabalha como corretor. Por
+ * isso toda consulta de tela de trabalho também exige o `corretor_id` de
+ * `recorteDaVisao()` — o do usuário logado, salvo pedido explícito do gestor.
  *
  * ATENÇÃO: sem paginação — puxa a carteira inteira. Serve apenas os lugares
  * que precisam de TODOS os leads de uma vez e sabem que o volume é pequeno.
@@ -237,11 +282,13 @@ export function mapLead(row: LinhaLead): Lead {
  */
 export async function getMeusLeads(): Promise<Lead[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("leads")
-    .select(SELECT_LEAD)
-    .is("arquivado_em", null)
-    .order("created_at", { ascending: false });
+  const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
+  let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
 
@@ -281,7 +328,11 @@ export type FiltroLeads = {
    * Vem de `?empreendimento=` na lista e na página de anotações.
    */
   empreendimentoId?: string;
-  /** Só faz sentido para o gestor; corretor comum já é recortado pela RLS. */
+  /**
+   * O `?corretor=` da URL: o id de um corretor ou `"equipe"`. Só tem efeito
+   * para o GESTOR (ver `getCarteiraDaVisao`); sem ele, a lista é sempre a do
+   * usuário logado — inclusive para o gestor, cuja RLS abre a equipe inteira.
+   */
   corretorId?: string;
   /**
    * Leads de UMA campanha do Meta, por ID (roadmap Meta Ads, F2).
@@ -355,15 +406,21 @@ function diaEmSaoPaulo(): string {
  * botão de arquivados mostrar a contagem sem custo, e sem contagem o botão
  * não resolve o problema que ele existe para resolver: saber que há algo lá.
  *
- * A RLS recorta como no resto do arquivo: corretor conta os seus, gestor
- * conta todos.
+ * Recorta pela mesma carteira da lista (`pedido` = o `?corretor=` da URL):
+ * o número do botão tem de bater com a lista que ele abre.
  */
-export async function contarLeadsArquivados(): Promise<number> {
+export async function contarLeadsArquivados(pedido?: string | null): Promise<number> {
   const supabase = await createClient();
-  const { count } = await supabase
+  const dono = await recorteDaVisao(pedido);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
+  let query = supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
     .not("arquivado_em", "is", null);
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
+  const { count } = await query;
   return count ?? 0;
 }
 
@@ -373,11 +430,17 @@ export async function getPaginaDeLeads(
 ): Promise<PaginaDeLeads> {
   const supabase = await createClient();
   const de = Math.max(0, pagina) * LEADS_POR_PAGINA;
+  // "Sem dono" só existe na equipe: lead sem corretor nunca é "meu".
+  const dono = await recorteDaVisao(filtro.semDono ? CARTEIRA_EQUIPE : filtro.corretorId);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase.from("leads").select(SELECT_LEAD, { count: "exact" });
   query = filtro.arquivados
     ? query.not("arquivado_em", "is", null)
     : query.is("arquivado_em", null);
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
   if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
@@ -391,7 +454,6 @@ export async function getPaginaDeLeads(
     );
   }
   if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
-  if (filtro.corretorId) query = query.eq("corretor_id", filtro.corretorId);
   if (filtro.empreendimentoId) {
     // "Chegou por" OU "conversando sobre" — as duas colunas que o lead já
     // tem. Grupo `.or()` próprio: combina por AND com o da busca acima.
@@ -447,15 +509,21 @@ export async function getEmpreendimentosParaFiltro(): Promise<{ id: string; nome
  * mesma requisição — o hero e o funil — e cada chamada são seis contagens
  * `head: true`. Deduplicado, 12 consultas viram 6.
  */
-export const getContagemPorEtapa = cache(async (): Promise<Record<EtapaFunil, number>> => {
+export const getContagemPorEtapa = cache(async (pedido?: string | null): Promise<Record<EtapaFunil, number>> => {
   const supabase = await createClient();
+  const dono = await recorteDaVisao(pedido);
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
   const pares = await Promise.all(
     ETAPAS_FUNIL.map(async (etapa) => {
-      const { count, error } = await supabase
+      let query = supabase
         .from("leads")
         .select("id", { count: "exact", head: true })
         .is("arquivado_em", null)
         .eq("etapa", etapa);
+      if (dono) query = query.eq("corretor_id", dono);
+      else if (foraDasOcultas) query = query.or(foraDasOcultas);
+      const { count, error } = await query;
       if (error) throw new Error(`Falha ao contar o funil: ${error.message}`);
       return [etapa, count ?? 0] as const;
     }),
@@ -470,8 +538,13 @@ export const getContagemPorEtapa = cache(async (): Promise<Record<EtapaFunil, nu
  */
 export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
+  const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   // A busca é a MESMA das outras abas — mesmo saneamento, mesmas colunas.
   // Duas buscas com regras diferentes na mesma tela seria pior que nenhuma.
@@ -493,12 +566,17 @@ export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
  */
 export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
   const supabase = await createClient();
+  const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
   let query = supabase
     .from("leads")
     .select(SELECT_LEAD)
     .is("arquivado_em", null)
     .eq("etapa", "visita_agendada");
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
   const termo = busca ? sanearBusca(busca) : "";
   if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
@@ -519,14 +597,20 @@ export async function getLeadsDeVisita(busca?: string): Promise<Lead[]> {
 export async function getVisitasDeHoje(): Promise<number> {
   const supabase = await createClient();
   const dia = diaEmSaoPaulo();
+  const dono = await recorteDaVisao();
+  // Visão da equipe: conta oculta (0189) fica de fora.
+  const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
-  const { count, error } = await supabase
+  let query = supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
     .is("arquivado_em", null)
     .eq("etapa", "visita_agendada")
     .gte("visita_agendada_em", `${dia}T00:00:00-03:00`)
     .lte("visita_agendada_em", `${dia}T23:59:59-03:00`);
+  if (dono) query = query.eq("corretor_id", dono);
+  else if (foraDasOcultas) query = query.or(foraDasOcultas);
+  const { count, error } = await query;
 
   if (error) throw new Error(`Falha ao contar as visitas: ${error.message}`);
   return count ?? 0;
@@ -552,7 +636,10 @@ export async function getEquipeAtiva(): Promise<
     .order("nome");
 
   if (error) throw new Error(`Falha ao listar a equipe: ${error.message}`);
-  return (data ?? []).map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
+  // Conta oculta (0189) não é equipe para ninguém: nem na reatribuição, nem
+  // nos seletores, nem nos placares que partem desta lista.
+  const visiveis = await filtrarContasOcultas(supabase, data ?? []);
+  return visiveis.map((c) => ({ id: c.id, nome: c.nome, emPausa: c.em_pausa }));
 }
 
 /**
@@ -653,6 +740,11 @@ export type CorretorAdmin = {
   leads: number;
   /** Conta só WhatsApp (0180): todas as conversas, sem lead, sem IA. */
   soWhatsapp: boolean;
+  /**
+   * Conta oculta (0189): fora do site, da roleta e das telas da equipe. A
+   * tela de Contas a mostra só na seção recolhida "Contas ocultas".
+   */
+  oculta: boolean;
 };
 
 /**
@@ -687,6 +779,8 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
   // não pode cair por isso.
   const { data: marcas } = await supabase.from("corretores").select("id, so_whatsapp");
   const soWhatsapp = new Set((marcas ?? []).filter((m) => m.so_whatsapp).map((m) => m.id));
+  // Idem para a 0189: sem ela, ninguém é oculto.
+  const ocultas = await idsDeContasOcultas(supabase);
 
   const porCorretor = new Map<string, number>();
   for (const lead of leads ?? []) {
@@ -705,6 +799,7 @@ export async function getCorretoresParaAdmin(): Promise<CorretorAdmin[]> {
     convitePendente: c.user_id !== null && c.deve_trocar_senha,
     leads: porCorretor.get(c.id) ?? 0,
     soWhatsapp: soWhatsapp.has(c.id),
+    oculta: ocultas.has(c.id),
   }));
 }
 

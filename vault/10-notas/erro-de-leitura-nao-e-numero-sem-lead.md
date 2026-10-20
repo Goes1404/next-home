@@ -9,13 +9,13 @@ codigo: [src/lib/whatsapp/repositorio.ts, src/app/api/webhooks/whatsapp/route.ts
 created: 2026-10-19
 updated: 2026-10-19
 fonte: revisão do roteiro de produção da fase 1 multi-grupo, 19/10/2026
-summary: obterOuCriarConversa descartava o error do select de whatsapp_conversas; numa piscada do banco ou na trava da 0182/0184 a conversa virava null e o webhook respondia 200 ignored numero_sem_lead_cadastrado — o provedor não reentrega 200 e a mensagem sumia. Hoje a leitura repete o passageiro (comRetentativa) e lança; o webhook responde 503.
+summary: obterOuCriarConversa descartava o error do select de whatsapp_conversas; numa piscada do banco ou na trava da 0191/0193 a conversa virava null e o webhook respondia 200 ignored numero_sem_lead_cadastrado — o provedor não reentrega 200 e a mensagem sumia. Hoje a leitura repete o passageiro (comRetentativa) e lança; o webhook responde 503.
 ---
 # Erro de leitura não é "número sem lead"
 
 `obterOuCriarConversa` fazia `const { data: encontradas } = await …select(…)` e
 jogava o `error` fora. Com o banco piscando (Gateway Timeout) ou com a trava
-exclusiva das migrations 0182 e 0184 em `whatsapp_conversas`, a leitura voltava
+exclusiva das migrations 0191 e 0193 em `whatsapp_conversas`, a leitura voltava
 com erro, `existente` ficava `null`, e o porteiro do webhook seguia como se o
 número não existisse: `200 { ignored: "numero_sem_lead_cadastrado" }`.
 

@@ -131,7 +131,10 @@ export async function salvarPerfil(
     };
   }
 
-  // A página pública do corretor e a vitrine da equipe leem esses campos.
+  // A página pública do corretor, a vitrine da equipe e a prévia do link do
+  // portfólio ("Portfólio de <nome>") leem esses campos — pelo cache de
+  // corretores, que só a etiqueta derruba.
+  revalidarCorretores();
   revalidatePath("/corretor/perfil");
   revalidatePath("/corretores");
   return { ok: "Perfil atualizado." };
@@ -514,7 +517,7 @@ export async function atribuirLead(
 
   // O novo dono é conferido ANTES da linha de repasse: `corretores` é legível
   // por todos, então um id de outro grupo passaria por esta leitura, o
-  // gatilho da 0182 recusaria o update, e a linha `repasse` (que não se
+  // gatilho da 0191 recusaria o update, e a linha `repasse` (que não se
   // apaga) ficaria dizendo à fase 5 que o lead foi repassado sem ter sido.
   const { data: novoDono } = await supabase
     .from("corretores")

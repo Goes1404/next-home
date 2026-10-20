@@ -89,7 +89,7 @@ export async function lerCaixasDoGmail(limiteCaixas = 1, limiteMensagens = 5): P
         break;
       }
       const mensagem = (await r.json()) as MensagemGmail & { internalDate?: string };
-      // O lead nasce no grupo do dono da caixa, nunca no de outro (0183).
+      // O lead nasce no grupo do dono da caixa, nunca no de outro (0192).
       const resultado = await processarEmailDeLead(mensagemParaEmail(mensagem), {
         corretorDono: conta.corretor_id,
         grupoId: conta.grupo_id,

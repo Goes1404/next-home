@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Taxas de crédito por grupo (0181, decisão de 19/10/2026).
+ * Taxas de crédito por grupo (0190, decisão de 19/10/2026).
  *
  * Duas coisas podem dar errado caladas: ler a linha sem dizer de que grupo
  * (com dois grupos, `maybeSingle` erra ou devolve a de outro grupo) e a

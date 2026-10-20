@@ -37,10 +37,21 @@ const DIR_MIGRATIONS = join(process.cwd(), "supabase", "migrations");
  *
  * 19/10/2026: a branch `fase-1-multi-grupo` nasceu em 0158, e a branch de
  * produção (`claude/modernizar-plataforma-imobiliaria-2tm13q`) já tinha
- * 0159 a 0180. As migrations multi-grupo começam em 0181. A branch trouxe a
- * produção por merge no mesmo dia, e a lista voltou a ficar vazia.
+ * 0159 a 0180. As migrations multi-grupo começaram em 0181. A branch trouxe a
+ * produção por merge no mesmo dia, e a lista voltou a ficar vazia. Em
+ * 20/10/2026 elas foram renumeradas para 0190–0194 (ver RESERVADOS).
  */
-const RESERVADOS = new Set<number>([]);
+const RESERVADOS = new Set<number>([
+  // 20/10/2026: buraco DEFINITIVO, não reserva para outra branch. A fase 1
+  // multi-grupo nasceu como 0181–0185 e, enquanto não estava publicada, a
+  // produção subiu a 0188 (texto da prévia do link) e a 0189 (conta oculta),
+  // já aplicadas no banco. Para a fase 1 rodar DEPOIS delas — em produção e
+  // num banco do zero —, ela foi renumerada para 0190–0194, e 0181–0187
+  // ficaram vazias de propósito. A 0186/0187 da branch `fase-2-plataforma`
+  // nasceu sobre a numeração antiga e precisa ir para depois da 0194 ao ser
+  // juntada: num número antigo ela ordenaria antes de `grupos` existir.
+  181, 182, 183, 184, 185, 186, 187,
+]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
   return readdirSync(DIR_MIGRATIONS)

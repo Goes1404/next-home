@@ -16,7 +16,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { grupoDoScript } from "@/lib/grupos/grupoDoScript";
 
 async function main() {
-  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0192).
   const { grupoId } = grupoDoScript(process.argv.slice(2));
   const op: { apagar: string[]; publicar: string[] } = JSON.parse(
     readFileSync(join(process.cwd(), "scripts/catalogo/operacao-0129.json"), "utf8"),

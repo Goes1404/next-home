@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { montarResumo, type LinhaResumo } from "@/lib/admin/resumos";
 import type { EtapaFunil, Lead } from "@/lib/types";
 
@@ -57,16 +58,20 @@ export async function getAgregadoDaEquipe(
 
   if (error) throw new Error(`Falha ao carregar os números da equipe: ${error.message}`);
 
-  const linhas = (data ?? []) as LinhaMagra[];
+  // Conta oculta (0189) não é equipe: os leads dela ficam fora de toda conta
+  // do gestor, como ela fica fora da lista que ele vê.
+  const ocultas = await idsDeContasOcultas(supabase);
+  const todas = (data ?? []) as LinhaMagra[];
 
   // Defesa contra a falha calada que este arquivo existe para evitar: se o
   // PostgREST truncar a resposta (max-rows), as contas sairiam MENORES sem
   // erro nenhum — um total plausível que ninguém questiona. Melhor quebrar.
-  if (count !== null && count !== linhas.length) {
+  if (count !== null && count !== todas.length) {
     throw new Error(
-      `Os números da equipe seriam parciais (${linhas.length} de ${count} leads) — o servidor truncou a consulta.`,
+      `Os números da equipe seriam parciais (${todas.length} de ${count} leads) — o servidor truncou a consulta.`,
     );
   }
+  const linhas = semContasOcultas(todas, ocultas, (l) => l.corretor_id);
 
   const porEtapa = {} as Record<EtapaFunil, number>;
   let semDono = 0;

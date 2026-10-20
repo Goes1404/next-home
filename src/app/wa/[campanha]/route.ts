@@ -81,7 +81,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   const registrarClique = async (corretorId: string | null) => {
     await supabase.from("cliques_whatsapp").insert({
       // Link com typo não tem imóvel nem corretor: o grupo vai explícito, o
-      // do site (0183).
+      // do site (0192).
       grupo_id: grupo,
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
@@ -116,7 +116,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
   let sorteio: Sorteio | null = numeroDoLink ? { corretor_id: doLink!.id, telefone: numeroDoLink } : null;
   if (!sorteio) {
-    // Sem a versão de reserva sem argumento (0183): ela sorteava fora do
+    // Sem a versão de reserva sem argumento (0192): ela sorteava fora do
     // grupo. Se o sorteio falhar, o clique vai para o escape (`/contato`),
     // que tem formulário.
     const { data, error } = await supabase

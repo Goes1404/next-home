@@ -49,7 +49,7 @@ import {
 export type InstanciaResolvida = {
   id: string;
   corretorId: string;
-  /** Grupo do número (0182): é por ele que se leem as taxas e o resto do que é do grupo. */
+  /** Grupo do número (0191): é por ele que se leem as taxas e o resto do que é do grupo. */
   grupoId: string;
   instanceName: string;
   nomeCorretor: string;
@@ -533,7 +533,7 @@ export async function obterOuCriarConversa(params: {
   /*
    * Erro de leitura NUNCA vira "não existe" (19/10/2026). O `error` era
    * descartado: numa piscada do banco, ou na trava de uma migration que cria
-   * policy nesta tabela (0182/0184), a conversa existente virava `null` e o
+   * policy nesta tabela (0191/0193), a conversa existente virava `null` e o
    * webhook respondia 200 com `numero_sem_lead_cadastrado` — o provedor não
    * reentrega 200, e a mensagem do cliente sumia sem rastro. Repete o que é
    * passageiro; persistindo, LANÇA para o webhook responder 5xx. A mensagem

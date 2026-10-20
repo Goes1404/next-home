@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/public";
+import { semContasOcultas } from "@/lib/corretores/contaOculta";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { mapEmpreendimento, type LinhaEmpreendimento } from "@/lib/supabase/mappers";
 import type { CorretorPerfil, Empreendimento } from "@/lib/types";
@@ -87,18 +88,33 @@ export const corretoresPublicos = unstable_cache(
         .order("nome"),
     );
     if (error) throw new Error(`Falha ao listar corretores: ${error.message}`);
-    // Conta só WhatsApp (0180) não é corretor do site.
-    return (data as unknown as (LinhaCorretor & { so_whatsapp: boolean | null })[])
-      .filter((c) => !c.so_whatsapp)
-      .map(mapCorretor);
+    type Linha = LinhaCorretor & {
+      so_whatsapp: boolean | null;
+      chamada_do_link: string | null;
+      oculta: boolean | null;
+    };
+    const linhas = data as unknown as Linha[];
+    // Conta oculta (0189): a RLS já a esconde da chave pública ("corretores
+    // visiveis ao publico", `not oculta`); o recorte do código é a segunda
+    // trava, a mesma das telas da equipe. A marca vem na própria leitura
+    // (`oculta` está entre as colunas públicas, 0196), sem consulta à parte.
+    const ocultas = new Set(linhas.filter((c) => c.oculta).map((c) => c.id));
+    return (
+      semContasOcultas(linhas, ocultas)
+        // Conta só WhatsApp (0180) não é corretor do site.
+        .filter((c) => !c.so_whatsapp)
+        // Texto da prévia do link (0188); nulo = o padrão.
+        .map((c) => ({ ...mapCorretor(c), chamadaDoLink: c.chamada_do_link ?? null }))
+    );
   },
   // A chave muda quando um dado de corretor é corrigido por MIGRATION: o cache
   // de dados da Vercel sobrevive ao deploy, e a etiqueta só é limpa por ação
   // do painel. "-v2" (03/10/2026): a 0151 tirou o vídeo de fundo da Bruna e o
   // site seguiu mostrando o vídeo pela entrada antiga. "-v3" (07/10/2026): o
   // filtro de `ativo`. "-v4" (19/10/2026): por grupo (o grupo também entra na
-  // chave, como argumento).
-  ["corretores-publicos-v4"],
+  // chave, como argumento) e a entrada passou a levar `chamadaDoLink` (0188).
+  // "-v5" (19/10/2026): a conta oculta (0189).
+  ["corretores-publicos-v5"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 

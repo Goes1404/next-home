@@ -59,7 +59,7 @@ function slugificar(nome: string): string {
  * 3), mas a sessão do gestor só enxerga o próprio grupo: lendo `corretores`
  * por ela, um slug do grupo A pareceria livre, o update bateria na chave
  * única e o login recém-criado seria desfeito. Quem confere é
- * `slug_de_corretor_livre` (0183), que olha todos os grupos e só diz sim/não.
+ * `slug_de_corretor_livre` (0192), que olha todos os grupos e só diz sim/não.
  * Erro da função não vira "livre": o slug sai com o sufixo de tempo.
  */
 async function slugDisponivel(
@@ -193,7 +193,7 @@ export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<Resul
   const slug = await slugDisponivel(supabase, slugificar(nome));
   const servico = createServiceClient();
   // Pela chave de serviço não há sessão para o gatilho tirar o grupo: ele
-  // vai explícito, o de quem cadastra (0183).
+  // vai explícito, o de quem cadastra (0192).
   const { data: ficha, error } = await servico
     .from("corretores")
     .insert({ nome, creci, whatsapp, slug, ativo: true, grupo_id: guarda.corretor.grupoId })
@@ -559,6 +559,59 @@ export async function alternarSoWhatsapp(
 }
 
 /**
+ * Marca ou desmarca a conta como OCULTA (0189): ela sai do site, da roleta,
+ * do sorteio do anúncio e de todas as telas da equipe. Só o gestor a vê, na
+ * seção recolhida "Contas ocultas" da tela de Contas — é por ela que se volta.
+ *
+ * Mesmo caminho do `alternarSoWhatsapp`: a coluna não tem grant de UPDATE para
+ * `authenticated`, então quem grava é a chave de serviço, depois da guarda. O
+ * CHECK de `admin_eventos.acao` não tem valor para isto: o registro é o log.
+ */
+export async function alternarContaOculta(
+  corretorId: string,
+  ocultar: boolean,
+): Promise<ResultadoAdmin> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const servico = createServiceClient();
+  const { data, error } = await servico
+    .from("corretores")
+    .update({ oculta: ocultar })
+    .eq("id", corretorId)
+    // Chave de serviço sobre id vindo do navegador: só dentro do grupo.
+    .eq("grupo_id", guarda.corretor.grupoId)
+    .select("id");
+  if (error) {
+    console.error("[admin] falha ao marcar conta oculta:", error.message);
+    return {
+      erro: /oculta/.test(error.message)
+        ? "O banco ainda não tem a conta oculta (migration 0189)."
+        : traduzirErroBanco(error.message),
+    };
+  }
+  if (!data || data.length === 0) return { erro: "Corretor não encontrado." };
+
+  console.info(`[admin] conta ${ocultar ? "ocultada" : "mostrada de novo"}`, {
+    ator: guarda.corretor.id,
+    alvo: corretorId,
+  });
+
+  // O site e o link pessoal leem a equipe de um cache de dados: sem limpar a
+  // etiqueta, a conta seguiria na página da equipe até o cache vencer.
+  revalidarCorretores();
+  revalidatePath("/corretor/admin", "layout");
+  revalidatePath("/corretor/financeiro", "layout");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/anotacoes");
+  return {
+    ok: ocultar
+      ? "Conta oculta: ela sai do site, da roleta e das telas da equipe. Para voltar, abra \"Contas ocultas\"."
+      : "A conta voltou a aparecer para a equipe.",
+  };
+}
+
+/**
  * Passa a carteira INTEIRA de um corretor (ou todos os leads sem dono) para
  * outro corretor, de uma vez.
  *
@@ -591,7 +644,7 @@ export async function redistribuirCarteira(
   // mandar uma carteira para um corretor desativado só trocaria um limbo por
   // outro. O grupo é conferido AQUI, antes da linha de repasse: `corretores`
   // é legível por todos, então um id de outro grupo passaria pela leitura, o
-  // gatilho da 0182 recusaria o update, e as linhas `repasse` (que não se
+  // gatilho da 0191 recusaria o update, e as linhas `repasse` (que não se
   // apagam) ficariam dizendo à fase 5 que o lead foi repassado sem ter sido.
   const { data: destino } = await supabase
     .from("corretores")
@@ -608,7 +661,7 @@ export async function redistribuirCarteira(
   // Primeiro a carteira e a origem de cada lead: o update abaixo sobrescreve
   // `origem_atribuicao` com `manual`, e a fase 5 precisa saber de onde cada
   // um veio (L30).
-  // Só a carteira do grupo de quem repassa: até a 0184 a sessão do gestor
+  // Só a carteira do grupo de quem repassa: até a 0193 a sessão do gestor
   // ainda enxerga outros grupos, e um lead alheio (ou sem dono, de outro
   // grupo) ganharia linha de repasse antes de o gatilho recusar o update.
   let leitura = supabase

@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { filtrarContasOcultas } from "@/lib/corretores/contaOculta";
 import { extrairVariosLeadsComIA } from "@/lib/inbound/aiParser";
 import { normalizarTelefoneBrasileiro } from "@/lib/inbound/phoneUtils";
 import type { EmailInboundInput } from "@/lib/inbound/types";
@@ -22,7 +23,7 @@ export type ResultadoDoEmail = {
  * `corretorDono`: quando o e-mail veio da caixa DE um corretor, o lead é
  * dele se nada mais específico (imóvel com dono, corretor citado) decidir.
  *
- * `grupoId`: o grupo em que o lead e o log nascem, obrigatório (0183). Pela
+ * `grupoId`: o grupo em que o lead e o log nascem, obrigatório (0192). Pela
  * chave de serviço não há sessão, e o lead de portal nasce sem dono nem
  * imóvel: sem o grupo explícito, com dois grupos o insert falharia (e com um
  * só cairia nele por inferência). O webhook dos portais é do grupo 1; a
@@ -85,10 +86,13 @@ export async function processarEmailDeLead(
    * reescrever a ficha dele. O corretor citado é sempre do grupo, então ele
    * nunca vence o dono da caixa de outro grupo.
    */
-  const [{ data: empreendimentos }, { data: corretores }] = await Promise.all([
+  const [{ data: empreendimentos }, { data: todosCorretores }] = await Promise.all([
     supabase.from("empreendimentos").select("id, nome, slug").eq("grupo_id", opcoes.grupoId).limit(50),
     supabase.from("corretores").select("id, nome, slug").eq("grupo_id", opcoes.grupoId).eq("ativo", true),
   ]);
+  // Conta oculta (0189) não recebe lead nem por nome citado no e-mail: a
+  // chave de serviço não passa pela RLS, então o recorte é aqui.
+  const corretores = await filtrarContasOcultas(supabase, todosCorretores ?? [], opcoes.grupoId);
 
   const processados: { id: string; deduplicado: boolean; nome: string; telefone: string }[] = [];
   const falhas: { telefone: string; motivo: string }[] = [];

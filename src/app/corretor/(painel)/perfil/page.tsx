@@ -5,6 +5,7 @@ import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { AjustesDoResumo } from "./AjustesDoResumo";
+import { TextoDaPrevia } from "./TextoDaPrevia";
 import { CaixaDoGmail } from "./CaixaDoGmail";
 import { createServiceClient } from "@/lib/supabase/service";
 import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
@@ -29,6 +30,13 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
   const { data: prefs } = await supabase
     .from("corretores")
     .select("resumo_hora, resumo_fim_de_semana")
+    .eq("id", corretor.id)
+    .maybeSingle();
+  // Texto da prévia do link (0188). À parte: antes da migration a coluna não
+  // existe, a consulta falha e o campo aparece travado em vez de quebrar a tela.
+  const { data: previa, error: erroPrevia } = await supabase
+    .from("corretores")
+    .select("chamada_do_link")
     .eq("id", corretor.id)
     .maybeSingle();
 
@@ -77,6 +85,14 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
 
       <div className="cartao mt-6 p-6 sm:p-7">
         <FormularioPerfil corretor={corretor} />
+      </div>
+
+      <div className="cartao mt-6 p-6 sm:p-7">
+        <TextoDaPrevia
+          nome={corretor.nome}
+          inicial={previa?.chamada_do_link ?? null}
+          disponivel={!erroPrevia}
+        />
       </div>
 
       <div className="cartao mt-6 p-6 sm:p-7">

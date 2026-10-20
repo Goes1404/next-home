@@ -110,7 +110,7 @@ async function main() {
     .eq("e_teste", false)
     .order("created_at", { ascending: false })
     .limit(100);
-  // Erro de consulta não pode virar "nenhum caso novo": sem a 0182 aplicada
+  // Erro de consulta não pode virar "nenhum caso novo": sem a 0191 aplicada
   // (coluna `grupo_id`), o export sairia vazio e calado.
   if (erroRuins) throw new Error(`ia_interacoes: ${erroRuins.message}`);
 

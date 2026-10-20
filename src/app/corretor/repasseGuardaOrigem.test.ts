@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * O repasse de lead guarda a origem ANTES de sobrescrevê-la (L30, 0183).
+ * O repasse de lead guarda a origem ANTES de sobrescrevê-la (L30, 0192).
  *
  * `atribuirLead` e `redistribuirCarteira` gravam `origem_atribuicao =
  * "manual"`. A fase 5 tira a etiqueta de origem de quem já foi repassado da
@@ -42,7 +42,7 @@ describe("repasse de lead", () => {
     });
 
     // A linha de repasse não se apaga (lead_interacoes não tem DELETE). Se o
-    // destino for de outro grupo, o gatilho da 0182 recusa o update DEPOIS
+    // destino for de outro grupo, o gatilho da 0191 recusa o update DEPOIS
     // dela, e sobra um repasse que não houve. O grupo do destino tem de ser
     // conferido antes da linha.
     it(`${funcao} confere o grupo do destino antes de gravar o repasse`, () => {

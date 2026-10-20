@@ -24,7 +24,7 @@ type Item = { url: string; legenda: string; tipo: "foto" | "planta"; ordem: numb
 const TETO_IMAGEM = 15 * 1024 * 1024;
 
 async function main() {
-  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0192).
   const { grupoId } = grupoDoScript(process.argv.slice(2));
   const selecao: Record<string, Item[]> = JSON.parse(
     readFileSync(join(process.cwd(), "scripts/catalogo/fotos-0137.json"), "utf8"),

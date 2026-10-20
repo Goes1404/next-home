@@ -3,12 +3,14 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Guarda: as migrations da plataforma multi-grupo (0181 em diante) aplicam
- * inteiras ou nada, com teto de espera por trava, e podem ser repetidas.
+ * Guarda: as migrations da plataforma multi-grupo (0190 em diante; nasceram
+ * como 0181–0185 e foram renumeradas em 20/10/2026) aplicam inteiras ou nada,
+ * com teto de espera por trava, e podem ser repetidas. A 0188 e a 0189, que
+ * subiram de produção logo antes, já seguem a mesma regra e entram na conta.
  *
  * Elas rodam em produção com o webhook do WhatsApp escrevendo, e põem ACCESS
  * EXCLUSIVE em dezenas de tabelas. A revisão final da fase 1 achou a 0181 e a
- * 0184 sem transação (achados D e G): na 0184, o `set local lock_timeout`
+ * 0184 (hoje 0190 e 0193) sem transação (achados D e G): na 0184, o `set local lock_timeout`
  * virava só um aviso fora de transação, e uma falha no meio deixava as
  * policies novas criadas com o Storage ainda nas antigas; a 0181 esperaria
  * sem teto por `corretores`, que quase toda policy lê, e não podia ser
@@ -21,7 +23,7 @@ import { describe, expect, it } from "vitest";
  *     nome e a mesma tabela.
  */
 const DIR = join(process.cwd(), "supabase", "migrations");
-const PRIMEIRA = 181;
+const PRIMEIRA = 188;
 
 function semComentarios(sql: string): string {
   return sql.replace(/--[^\n]*/g, "");

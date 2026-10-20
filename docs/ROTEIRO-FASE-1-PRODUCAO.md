@@ -10,31 +10,39 @@ O que sobe, na ordem:
 | Passo | O quê | Código no ar durante o passo |
 |---|---|---|
 | 0 | Fotografia e conferências antes de tudo | antigo |
-| 1 | Migration **0181** (tabela `grupos`, grupo dos corretores) | antigo |
-| 2 | Migration **0182** (`grupo_id` em toda tabela) | antigo |
-| 3 | Migration **0183** (chaves únicas e funções por grupo) | antigo |
-| 4 | Migration **0184** (isolamento por policy, views, Storage) | antigo |
+| 1 | Migration **0190** (tabela `grupos`, grupo dos corretores) | antigo |
+| 2 | Migration **0191** (`grupo_id` em toda tabela) | antigo |
+| 3 | Migration **0192** (chaves únicas e funções por grupo) | antigo |
+| 4 | Migration **0193** (isolamento por policy, views, Storage) | antigo |
 | 5 | **Deploy** do código da branch `fase-1-multi-grupo` | antigo → novo |
 | 6 | Conferências com o código novo | novo |
-| 7 | Migration **0185**, de 24 a 48 horas depois | novo |
+| 7 | Migration **0194**, de 24 a 48 horas depois | novo |
 | 8 | Fechamento | novo |
 
 Por que nesta ordem:
 
-- O código **antigo** funciona com 0181, 0182, 0183 e 0184 aplicadas. A 0183
+- O código **antigo** funciona com 0190, 0191, 0192 e 0193 aplicadas. A 0192
   mantém a assinatura antiga do sorteio do `/wa`, e a chave pública continua
-  gravando lead até a 0185.
-- O código **novo** precisa da 0183 (sorteio com grupo, conferência de slug e
+  gravando lead até a 0194.
+- O código **novo** precisa da 0192 (sorteio com grupo, conferência de slug e
   e-mail livres, tipo `repasse`). E o build da Vercel lê produção pela chave
-  publicável: **sem a 0182, o build quebra** (`generateStaticParams` de
+  publicável: **sem a 0191, o build quebra** (`generateStaticParams` de
   `/empreendimentos/[slug]` lê `grupo_id`). Por isso as migrations vêm antes
   do deploy.
-- A 0185 apaga o que só o código antigo usa. Depois dela, voltar o código para
+- A 0194 apaga o que só o código antigo usa. Depois dela, voltar o código para
   a versão anterior pelo rollback da Vercel derruba o clique pago e o
   formulário. Por isso ela é a última e espera um ou dois dias.
 
 Tempo estimado do passo 0 ao 6: de uma hora e meia a duas horas. O passo 7
 leva uns 15 minutos, em outro dia.
+
+**Numeração (20/10/2026).** A fase 1 nasceu como 0181–0185 e foi renumerada
+para **0190–0194**: a 0188 (prévia do link) e a 0189 (conta oculta) subiram
+direto da branch de produção e **já estão aplicadas**. Com os números novos,
+as migrations da fase 1 rodam depois delas em produção e num banco montado do
+zero, e a 0192 redefine a roleta, o ranking e o sorteio **mantendo** o recorte
+da conta oculta. O passo 0.15 confere que a 0188 e a 0189 estão no banco
+antes de começar.
 
 ---
 
@@ -62,7 +70,7 @@ leva uns 15 minutos, em outro dia.
    resposta (ver passo 2) e de que vão chegar leads com o
    nome `TESTE ROTEIRO`.
 2. **Uma migration por vez.** Abra o arquivo em
-   `supabase/migrations/`, copie **o arquivo inteiro** (de `-- 0181:` até o
+   `supabase/migrations/`, copie **o arquivo inteiro** (de `-- 0190:` até o
    `commit;` final), cole numa aba nova do SQL Editor e clique em **Run**. Não
    edite nada no texto. Se o editor pedir confirmação de "destructive
    operation", confirme.
@@ -81,10 +89,10 @@ leva uns 15 minutos, em outro dia.
 5. **Antes de cada migration, rode a C1** (transações abertas).
 6. **O SQL Editor mostra só o resultado da última consulta.** Por isso cada
    conferência deste roteiro é **um** `select` só. Rode uma por vez. A
-   exceção são as consultas "como uma pessoa" (C3, C3b e a 3d): as três
+   exceção são as consultas "como uma pessoa" (C3, C3b, a 3d e a do `anon` na 4a): as
    linhas vão juntas, e o resultado que aparece é o do `select` do fim.
 7. **SQL manual que grava evento da plataforma** em `admin_eventos` (sem
-   grupo) precisa trocar de papel, porque a 0182 deixou de aceitar o
+   grupo) precisa trocar de papel, porque a 0191 deixou de aceitar o
    `postgres` para isso. O molde é:
    ```sql
    begin;
@@ -212,7 +220,7 @@ Nada nessa consulta grava. O `set local` vale só para ela.
 
 ### C3b. A mesma consulta, a partir do passo 1
 
-Depois da 0181 existe `grupo_atual()`. Acrescente uma coluna:
+Depois da 0190 existe `grupo_atual()`. Acrescente uma coluna:
 
 ```sql
 set local role authenticated;
@@ -418,7 +426,7 @@ descrita lá.
 
 ### 0.4 Corretores desativados que ainda têm login
 
-A 0181 faz corretor desativado perder o painel **na hora** (antes, desativar
+A 0190 faz corretor desativado perder o painel **na hora** (antes, desativar
 só o tirava da roleta).
 
 ```sql
@@ -452,7 +460,7 @@ que tem de bater no fim.
 
 ### 0.6 Policies das taxas de crédito
 
-A 0181 apaga a policy de leitura das taxas pelo **nome** que ela tem nas
+A 0190 apaga a policy de leitura das taxas pelo **nome** que ela tem nas
 migrations. Se em produção o nome for outro, a policy antiga (que lê tudo)
 fica viva.
 
@@ -471,11 +479,11 @@ select policyname, roles, cmd, qual
 
 > **Pare aqui se** houver outra policy de `SELECT` para `authenticated` com
 > `qual = true`. Anote o nome exato. Você vai apagá-la no passo 1, logo
-> depois de aplicar a 0181 e **antes** da conferência 1a (o comando está lá).
+> depois de aplicar a 0190 e **antes** da conferência 1a (o comando está lá).
 
-### 0.7 Colunas de id sem chave estrangeira (a seção 8a da 0182)
+### 0.7 Colunas de id sem chave estrangeira (a seção 8a da 0191)
 
-A 0182 **falha de propósito** se encontrar uma coluna `uuid` terminada em
+A 0191 **falha de propósito** se encontrar uma coluna `uuid` terminada em
 `_id`, sem FK, que ninguém decidiu se é linha-mãe. Em produção pode existir
 coluna assim criada fora das migrations. Esta é a mesma conferência, rodada
 antes:
@@ -502,11 +510,11 @@ select c.relname || '.' || a.attname as coluna
 
 **Esperado:** nenhuma linha.
 
-> **Pare aqui se** vier alguma linha. Não aplique a 0182. Mande a lista para o
+> **Pare aqui se** vier alguma linha. Não aplique a 0191. Mande a lista para o
 > Claude: cada coluna precisa de uma decisão escrita (FK ou exceção declarada),
 > e isso é mudança de migration no repositório.
 
-### 0.8 O que mais faria a 0182 ou a 0184 falhar
+### 0.8 O que mais faria a 0191 ou a 0193 falhar
 
 Três consultas. Rode uma de cada vez.
 
@@ -518,7 +526,7 @@ select tablename, tableowner from pg_tables
  order by 1;
 ```
 
-Tabelas sem RLS (a 0184 recusa tabela com grupo e sem RLS):
+Tabelas sem RLS (a 0193 recusa tabela com grupo e sem RLS):
 
 ```sql
 select c.relname from pg_class c
@@ -529,7 +537,7 @@ select c.relname from pg_class c
  order by 1;
 ```
 
-Chaves estrangeiras de mais de uma coluna (a 0182 não as trata):
+Chaves estrangeiras de mais de uma coluna (a 0191 não as trata):
 
 ```sql
 select conrelid::regclass as tabela, conname, array_length(conkey, 1) as colunas
@@ -545,7 +553,7 @@ select conrelid::regclass as tabela, conname, array_length(conkey, 1) as colunas
 
 ### 0.9 Views do `public`
 
-A 0184 recria seis views com `grupo_id` e, no fim, **falha se sobrar alguma
+A 0193 recria seis views com `grupo_id` e, no fim, **falha se sobrar alguma
 view sem `grupo_id`**. Uma view criada só em produção derruba a migration
 inteira (sem estrago, porque desfaz tudo, mas é melhor saber antes).
 
@@ -563,7 +571,7 @@ select viewname from pg_views where schemaname = 'public' order by 1;
 
 ### 0.10 Storage: quem pode criar policy em `storage.objects`
 
-A 0184 troca as duas policies do Storage. A tabela `storage.objects` pertence
+A 0193 troca as duas policies do Storage. A tabela `storage.objects` pertence
 ao `supabase_storage_admin`, não ao `postgres`. As migrations 0015 e 0043 já
 criaram policies lá, mas é melhor provar antes. Este teste cria uma policy e
 desfaz na mesma hora:
@@ -576,7 +584,7 @@ rollback;
 
 **Esperado:** sucesso, sem linhas.
 
-> **Pare aqui se** aparecer `must be owner of table objects`. A 0184 falharia
+> **Pare aqui se** aparecer `must be owner of table objects`. A 0193 falharia
 > no meio da seção 4 e desfaria tudo. Chame o Claude: a parte do Storage
 > precisa ser aplicada de outro jeito.
 
@@ -595,9 +603,9 @@ Anote as **outras** que forem para `authenticated` ou `public`. Elas não
 bloqueiam a fase 1 (com um grupo só não vazam nada), mas entram na lista da
 fase 2.
 
-### 0.11 O que a 0183 apaga pelo nome
+### 0.11 O que a 0192 apaga pelo nome
 
-A 0183 derruba restrições e um índice pelo nome **sem** `if exists`. Se em
+A 0192 derruba restrições e um índice pelo nome **sem** `if exists`. Se em
 produção algum tiver outro nome, ela falha (e desfaz tudo).
 
 ```sql
@@ -642,7 +650,7 @@ select
 
 O `supabase/migrations_pendentes.sql` (colado no editor em 08/2026) pode ter
 criado quatro policies que as migrations não conhecem. Elas **não bloqueiam**:
-a policy restritiva da 0184 se soma a elas por AND, então não abrem acesso
+a policy restritiva da 0193 se soma a elas por AND, então não abrem acesso
 entre grupos. Mas é preciso saber se existem.
 
 ```sql
@@ -695,18 +703,46 @@ Se não houver nenhum, crie um no painel: Imóveis → **Criar imóvel**, com o
 nome `TESTE ROTEIRO IMOVEL`. Imóvel novo nasce despublicado; **não** clique
 em publicar. Ele é excluído no passo 8.
 
+### 0.15 A 0188 e a 0189 já estão aplicadas
+
+A fase 1 parte do banco **com** a prévia do link (0188) e a conta oculta
+(0189). A 0192 redefine a roleta, o ranking e o sorteio citando
+`c.oculta`: sem a 0189 aplicada, ela falha na criação do sorteio (`column
+c.oculta does not exist`) e nada é aplicado.
+
+```sql
+select
+  (select string_agg(column_name, ' | ' order by column_name)
+     from information_schema.columns
+    where table_schema = 'public' and table_name = 'corretores'
+      and column_name in ('oculta', 'chamada_do_link'))                      as colunas,
+  (select string_agg(policyname || ' (' || array_to_string(roles, ',') || ')', ' | ' order by policyname)
+     from pg_policies
+    where schemaname = 'public' and tablename = 'corretores' and cmd = 'SELECT') as leitura_de_corretores,
+  (select count(*) from public.corretores where oculta)                      as contas_ocultas;
+```
+
+**Esperado:** `colunas = chamada_do_link | oculta`,
+`leitura_de_corretores = corretores visiveis ao logado (authenticated) | corretores visiveis ao publico (anon)`
+(não pode aparecer `corretores sao publicos`), e `contas_ocultas` com o número
+que você espera (anote; ele tem de ser o mesmo no passo 4).
+
+> **Pare aqui se** faltar uma das duas colunas ou se `corretores sao publicos`
+> ainda existir: a 0188/0189 não estão aplicadas. Aplique-as antes (na ordem
+> 0188, 0189), com o deploy de produção que as acompanha já no ar.
+
 ---
 
-## Passo 1. Migration 0181 (`grupos`)
+## Passo 1. Migration 0190 (`grupos`)
 
 1. Rode a **C1**.
-2. Cole `supabase/migrations/0181_grupos.sql` inteiro e rode.
+2. Cole `supabase/migrations/0190_grupos.sql` inteiro e rode.
 
 **Esperado:** "Success. No rows returned" (avisos são normais).
 
 3. **Só se no passo 0.6 havia uma policy extra** de `SELECT` para
    `authenticated` com `true`: apague-a agora, **antes** da conferência 1a,
-   trocando o nome pelo anotado. A 0181 só apaga a policy pelo nome que ela
+   trocando o nome pelo anotado. A 0190 só apaga a policy pelo nome que ela
    tem nas migrations; a extra seguiria deixando todo logado ler as taxas de
    todos os grupos, e a 1a abaixo não bateria.
    ```sql
@@ -752,7 +788,7 @@ a **C8**.
 > existir, a C3b vier com `grupo` nulo para alguém ativo, ou o painel não
 > abrir. Vá ao "Desfazer" do passo 1.
 
-## Passo 2. Migration 0182 (`grupo_id` em toda tabela)
+## Passo 2. Migration 0191 (`grupo_id` em toda tabela)
 
 Esta é a mais pesada. Ela põe trava exclusiva (`ACCESS EXCLUSIVE`) em umas
 70 tabelas e só solta no `commit;` final, ou seja, segura tudo durante a
@@ -766,7 +802,7 @@ conferência 2e abaixo é obrigatória.
 
 1. Rode a **C1**.
 2. **Anote a hora exata** (com segundos) em que clicar em Run.
-3. Cole `supabase/migrations/0182_grupo_em_todas_as_tabelas.sql` inteiro e rode.
+3. Cole `supabase/migrations/0191_grupo_em_todas_as_tabelas.sql` inteiro e rode.
    Pode levar de alguns segundos a um minuto.
 4. **Anote a hora exata** em que o resultado aparecer. As duas horas são a
    janela da trava.
@@ -868,7 +904,7 @@ procura quem escreveu enquanto ele estava parado).
    **Esperado:** nenhuma requisição 5xx, nenhuma linha de erro, e nenhum
    barrado na janela (ou só o que o corretor reconhece como gente de fora).
 
-**Se houver mensagem sem resposta:** não é motivo para desfazer a 0182 (o
+**Se houver mensagem sem resposta:** não é motivo para desfazer a 0191 (o
 webhook já voltou, a 2c provou). É atendimento atrasado, e quem resolve é o
 corretor dono do número:
 
@@ -880,19 +916,19 @@ corretor dono do número:
   escreveu naquele minuto e responde de lá. Para essas pessoas a conversa no
   painel fica sem aquela fala, e isso é esperado.
 - Anote na planilha quantas foram em cada item. Se passar de duas ou três,
-  avise o Claude: é o sinal de que a 0183 e a 0184 (que também travam
+  avise o Claude: é o sinal de que a 0192 e a 0193 (que também travam
   `whatsapp_mensagens`) precisam de horário ainda mais vazio.
 
 O preview da branch `fase-1-multi-grupo` na Vercel, que estava vermelho, passa
-a conseguir fazer build a partir daqui (é a 0182 que ele esperava).
+a conseguir fazer build a partir daqui (é a 0191 que ele esperava).
 
 > **Pare aqui se** alguma tabela tiver `sem_grupo` maior que 0, a C4 mostrar
 > erro de grupo, o formulário falhar ou a IA não responder. Vá ao "Desfazer"
 > do passo 2.
 
-## Passo 3. Migration 0183 (chaves e funções por grupo)
+## Passo 3. Migration 0192 (chaves e funções por grupo)
 
-A 0183 recria um índice único em `whatsapp_mensagens`, a tabela que o webhook
+A 0192 recria um índice único em `whatsapp_mensagens`, a tabela que o webhook
 mais escreve. É a candidata número um a estourar o teto de 5 segundos. Se
 isso acontecer, é só repetir (regra 4). Se falhar três vezes seguidas, **não
 edite a migration**: chame o Claude para preparar uma variante em que o
@@ -900,7 +936,7 @@ edite a migration**: chame o Claude para preparar uma variante em que o
 continuarem iguais.
 
 1. Rode a **C1**.
-2. Cole `supabase/migrations/0183_funcoes_respeitam_grupo.sql` inteiro e rode.
+2. Cole `supabase/migrations/0192_funcoes_respeitam_grupo.sql` inteiro e rode.
    Anote a hora do Run e a do resultado, como no passo 2: ela também trava
    `whatsapp_mensagens` até o fim, e depois da 3e você repete a conferência
    2e com essas duas horas.
@@ -930,7 +966,13 @@ select
   has_function_privilege('service_role', 'public.reservar_credito_video(uuid)', 'execute')
                                                                               as servico_reserva_video,
   has_function_privilege('anon', 'public.sortear_corretor_whatsapp(uuid, uuid, uuid)', 'execute')
-                                                                              as anon_sorteia;
+                                                                              as anon_sorteia,
+  (select count(*) from pg_proc
+    where pronamespace = 'public'::regnamespace
+      and (oid::regprocedure::text in ('distribuir_lead()',
+                                       'sortear_corretor_whatsapp(uuid,uuid,uuid)')
+           or oid::regprocedure::text like 'ranking_vgv(%')
+      and pg_get_functiondef(oid) like '%not c.oculta%')                     as funcoes_com_conta_oculta;
 ```
 
 **Esperado:**
@@ -946,6 +988,7 @@ select
 | `logado_reserva_visita` | false |
 | `servico_reserva_video` | true |
 | `anon_sorteia` | false |
+| `funcoes_com_conta_oculta` | 3 (roleta, sorteio com grupo e ranking mantêm o recorte da 0189) |
 
 As três funções que perderam o `authenticated` só são chamadas pela chave de
 serviço (vídeo e agenda da IA), conferido no código. Se o Criar vídeo ou a
@@ -953,10 +996,10 @@ marcação de visita pela IA quebrarem depois disso, o "Desfazer" do passo 3
 devolve o grant.
 
 **Conferência 3b, a janela do clique pago.** Agora o código antigo chama a
-assinatura antiga do sorteio, que a 0183 fez delegar ao grupo 1. Rode a
+assinatura antiga do sorteio, que a 0192 fez delegar ao grupo 1. Rode a
 **C6**. **Esperado:** as duas linhas `302 https://wa.me/55...`, como no
 passo 0. Esta é a única hora em que a assinatura antiga é exercitada: ela some
-na 0185.
+na 0194.
 
 **Conferência 3c:** rode a **C7** com `TESTE ROTEIRO 3`. A roleta agora escolhe
 só no grupo do lead. **Esperado:** igual ao passo 2 (corretor preenchido,
@@ -985,17 +1028,17 @@ select current_user                                                         as p
 > **Pare aqui se** a C6 cair em `/contato`, a C7 falhar, a 3a não bater ou a
 > C4 mostrar erro de grupo. Vá ao "Desfazer" do passo 3.
 
-## Passo 4. Migration 0184 (isolamento)
+## Passo 4. Migration 0193 (isolamento)
 
-A 0184 também trava as tabelas do WhatsApp. Ela faz `CREATE POLICY` em
+A 0193 também trava as tabelas do WhatsApp. Ela faz `CREATE POLICY` em
 **toda** tabela com `grupo_id`, dentro do mesmo `begin; … commit;`, e criar
 policy pede trava exclusiva na tabela até o `commit`. Isso inclui
-`whatsapp_mensagens` e `whatsapp_conversas`: enquanto a 0184 roda, o webhook
+`whatsapp_mensagens` e `whatsapp_conversas`: enquanto a 0193 roda, o webhook
 espera, como no passo 2.
 
 1. Rode a **C1**.
 2. **Anote a hora exata** (com segundos) em que clicar em Run.
-3. Cole `supabase/migrations/0184_isolamento_por_grupo.sql` inteiro e rode.
+3. Cole `supabase/migrations/0193_isolamento_por_grupo.sql` inteiro e rode.
 4. **Anote a hora exata** em que o resultado aparecer. Depois da 4d, repita
    a **conferência 2e** inteira (os dois itens) com essas duas horas.
 
@@ -1027,11 +1070,30 @@ select
                          'corretor gerencia a propria pasta de midia')
       and qual like '%grupo_atual%')                                          as storage_com_grupo,
   has_function_privilege('anon', 'public.definir_preferencia_contato(uuid, text, boolean)', 'execute')
-                                                                              as anon_preferencia;
+                                                                              as anon_preferencia,
+  (select string_agg(policyname || ' (' || permissive || ', ' || array_to_string(roles, ',') || ')',
+                     ' | ' order by policyname)
+     from pg_policies
+    where schemaname = 'public' and tablename = 'corretores' and cmd in ('SELECT', 'ALL'))
+                                                                              as leitura_de_corretores;
 ```
 
 **Esperado:** `restritivas` igual a `tabelas_com_grupo`, `views_com_grupo = 6`,
-`views = 6`, `storage_com_grupo = 2`, `anon_preferencia = false`.
+`views = 6`, `storage_com_grupo = 2`, `anon_preferencia = false` e
+`leitura_de_corretores` com as duas da 0189 (`corretores visiveis ao logado
+(PERMISSIVE, authenticated)`, `corretores visiveis ao publico (PERMISSIVE,
+anon)`) mais `isolamento_por_grupo (RESTRICTIVE, authenticated)`. A
+restritiva é só do `authenticated`: o `anon` continua lendo só quem não é
+conta oculta, como no passo 0.15.
+
+Confira também que o site não passou a mostrar conta oculta (chave pública):
+
+```sql
+set local role anon;
+select count(*) as ocultas_visiveis_ao_publico from public.corretores where oculta;
+```
+
+**Esperado:** `ocultas_visiveis_ao_publico = 0`.
 
 **Conferência 4b, ninguém perdeu nada.** Rode a **C3b** para o gestor e para o
 corretor comum. **Esperado:** os mesmos números do passo 0.5 (a não ser pelos
@@ -1165,7 +1227,7 @@ curl.exe -s https://www.nexthomeimoveis.com/api/versao
 
 > **Pare aqui se** o deployment ficar em **Error**: a produção antiga continua
 > no ar, sem prejuízo. Abra o log do build e chame o Claude. **Não aplique a
-> 0185.**
+> 0194.**
 >
 > **Pare aqui se** depois de cinco minutos não houver deployment nenhum para o
 > commit: o push não chegou à Vercel. Confira em GitHub → commit → status
@@ -1223,15 +1285,15 @@ Faça logo depois do 5.5.
 > **Pare aqui se** qualquer item falhar. A saída rápida é o **rollback
 > instantâneo da Vercel** (Deployments → o deployment de produção anterior →
 > **Instant Rollback**): o código antigo funciona com as quatro migrations,
-> então voltar é seguro **até a 0185**. Depois do rollback, as branches
+> então voltar é seguro **até a 0194**. Depois do rollback, as branches
 > continuam apontando para o código novo, e o próximo push sobe ele de novo:
 > avise o Claude antes de qualquer push.
 
 ---
 
-## Passo 7. Migration 0185 (24 a 48 horas depois)
+## Passo 7. Migration 0194 (24 a 48 horas depois)
 
-A 0185 apaga a assinatura antiga do sorteio e tira da chave pública a escrita
+A 0194 apaga a assinatura antiga do sorteio e tira da chave pública a escrita
 direta em `leads` e `cliques_whatsapp`. Só aplique quando:
 
 - o código novo está no ar há pelo menos um dia, sem reclamação;
@@ -1247,12 +1309,12 @@ curl.exe -s https://www.nexthomeimoveis.com/api/versao
 **Esperado:** o commit do passo 5 (ou um posterior que contenha a fase 1).
 
 > **Pare aqui se** for o commit antigo (`c2b89f04b2b4`): houve rollback. Não
-> aplique a 0185, porque ela derrubaria o clique pago e o formulário do código
+> aplique a 0194, porque ela derrubaria o clique pago e o formulário do código
 > antigo.
 
 ### 7.2 Policies de escrita em `leads` e `cliques_whatsapp`
 
-A 0185 apaga as policies de insert pelo nome. Pode haver outra criada fora das
+A 0194 apaga as policies de insert pelo nome. Pode haver outra criada fora das
 migrations.
 
 ```sql
@@ -1267,9 +1329,9 @@ select tablename, policyname, roles, cmd, with_check
 **Esperado:** em `leads`, `qualquer um pode enviar um lead` (`{public}`,
 `INSERT`, `true`); em `cliques_whatsapp`,
 `Qualquer visitante pode registrar clique de WhatsApp`. Nas duas aparece
-também `isolamento_por_grupo` (`ALL`, a restritiva da 0184), e pode haver
+também `isolamento_por_grupo` (`ALL`, a restritiva da 0193), e pode haver
 policies de `ALL` do corretor: essas ficam. Anote qualquer **outra** de
-`INSERT` para `anon` ou `public`. Ela deixa de funcionar com a 0185 de qualquer
+`INSERT` para `anon` ou `public`. Ela deixa de funcionar com a 0194 de qualquer
 jeito (o grant some), mas apague-a depois com
 `drop policy "<nome>" on public.<tabela>;` para o banco não guardar uma porta
 que parece aberta.
@@ -1282,12 +1344,12 @@ select has_table_privilege('anon', 'public.leads', 'INSERT')                    
        has_column_privilege('anon', 'public.cliques_whatsapp', 'origem', 'INSERT')   as anon_grava_origem;
 ```
 
-**Esperado agora:** `true` nas três (é o que a 0185 vai tirar).
+**Esperado agora:** `true` nas três (é o que a 0194 vai tirar).
 
 ### 7.3 Aplicar
 
 1. Rode a **C1**.
-2. Cole `supabase/migrations/0185_pos_deploy_multi_grupo.sql` inteiro e rode.
+2. Cole `supabase/migrations/0194_pos_deploy_multi_grupo.sql` inteiro e rode.
 
 **Conferência 7a:**
 
@@ -1348,11 +1410,11 @@ definição da fotografia do passo 0.2b). **Colunas ficam**: `grupo_id`,
 `grupos` e as chaves novas não atrapalham o código antigo, e apagá-las perde
 dado. Desfaça na ordem inversa (7, 6, 4, 3, 2, 1) e só o passo que falhou.
 
-Na maioria dos problemas depois da 0183, o certo **não** é desfazer a migration
+Na maioria dos problemas depois da 0192, o certo **não** é desfazer a migration
 inteira: é devolver a função ou policy específica que quebrou, colando a
 definição dela da fotografia.
 
-### Passo 1 (0181)
+### Passo 1 (0190)
 
 - **Alguém perdeu o painel** (corretor desativado com login): reative pelo
   painel, em Contas, ou:
@@ -1369,21 +1431,21 @@ definição dela da fotografia.
     on public.parametros_credito for select to authenticated using (true);
   ```
 - Não apague `grupos` nem `corretores.grupo_id`. A coluna `id` antiga de
-  `parametros_credito` saiu na 0181 e não volta com um `drop`; o código antigo
+  `parametros_credito` saiu na 0190 e não volta com um `drop`; o código antigo
   não a lê.
 
-### Passo 2 (0182)
+### Passo 2 (0191)
 
-**Só antes da 0183.** O motivo: a 0183 e a 0184 foram escritas contando com
+**Só antes da 0192.** O motivo: a 0192 e a 0193 foram escritas contando com
 estes gatilhos. A roleta (`distribuir_lead`) roda depois de `leads_00_grupo`
 e escolhe o corretor pelo `new.grupo_id` que ele preencheu e conferiu;
 `salvar_venda` conta com o carimbo para recusar participante de outro grupo;
-os gatilhos de evento do lead e da campanha da Meta, reescritos na 0183,
-gravam com `on conflict` nas chaves novas que incluem `grupo_id`; e a 0184 usa
+os gatilhos de evento do lead e da campanha da Meta, reescritos na 0192,
+gravam com `on conflict` nas chaves novas que incluem `grupo_id`; e a 0193 usa
 o passo "logado só grava no próprio grupo" do gatilho como segunda defesa
 atrás da policy restritiva. Tirar **todos** os gatilhos depois disso não volta
-ao estado de antes da 0182: deixa as funções novas apoiadas num default fixo,
-sem ninguém conferindo grupo em escrita nenhuma. Depois da 0183, use o
+ao estado de antes da 0191: deixa as funções novas apoiadas num default fixo,
+sem ninguém conferindo grupo em escrita nenhuma. Depois da 0192, use o
 "gatilho de uma tabela só", logo abaixo.
 
 Tira os gatilhos e põe um default no grupo 1, para o código antigo continuar
@@ -1412,10 +1474,10 @@ $$;
 commit;
 ```
 
-Os gatilhos internos que a 0182 reescreveu (evento do lead, campanha da Meta)
+Os gatilhos internos que a 0191 reescreveu (evento do lead, campanha da Meta)
 passam o grupo da linha e funcionam com o default. Se `lock timeout`, repita.
 
-#### Depois da 0183/0184: o gatilho de uma tabela só
+#### Depois da 0192/0193: o gatilho de uma tabela só
 
 O sintoma: uma escrita legítima (salvar algo no painel, o webhook gravar
 mensagem, o formulário criar lead) passa a falhar, e o erro (na tela, na C4
@@ -1461,7 +1523,7 @@ tabela.
    está no mesmo grupo da linha-mãe (o lead e a conversa dele, a mensagem e
    a conversa), ninguém recusa troca de `grupo_id` fora da transferência de
    grupo, e o passo "logado só grava no próprio grupo" deixa de existir ali.
-   A policy restritiva da 0184 continua valendo para quem usa a sessão, mas a
+   A policy restritiva da 0193 continua valendo para quem usa a sessão, mas a
    chave de serviço e as funções `security definer` (o webhook, os crons)
    escrevem sem conferência nenhuma. Com um grupo só, toda linha vai para o
    grupo 1 e o estrago imediato é zero. **Com um segundo grupo, é vazamento**:
@@ -1494,10 +1556,10 @@ tabela.
    foi gravado enquanto o gatilho esteve desligado, então a C5 tem de dar
    `sem_grupo = 0`; anote na planilha por quanto tempo ele ficou desligado.
 
-### Passo 3 (0183)
+### Passo 3 (0192)
 
 - **O `/wa` caiu em `/contato` com o código antigo:** cole a definição de
-  `sortear_corretor_whatsapp(uuid,uuid)` da fotografia (a de antes da 0183) e
+  `sortear_corretor_whatsapp(uuid,uuid)` da fotografia (a de antes da 0192) e
   rode. Ela volta a sortear como antes, e os grants ficam.
 - **O Criar vídeo ou a marcação de visita pela IA quebraram:**
   ```sql
@@ -1510,7 +1572,7 @@ tabela.
 - **As chaves únicas ficam** como estão: valem para o código antigo e, depois
   da primeira linha `repasse`, o check antigo de `lead_interacoes` não volta.
 
-### Passo 4 (0184)
+### Passo 4 (0193)
 
 Tira a policy restritiva de todas as tabelas (só enquanto houver um grupo só):
 
@@ -1548,9 +1610,9 @@ a coluna `grupo_id` no fim não atrapalha ninguém.
 ### Passo 5 e 6 (deploy)
 
 **Instant Rollback** na Vercel para o deployment de produção anterior. Vale até
-a 0185. Depois, avise o Claude antes de qualquer push nas branches de produção.
+a 0194. Depois, avise o Claude antes de qualquer push nas branches de produção.
 
-### Passo 7 (0185)
+### Passo 7 (0194)
 
 Só enquanto houver um grupo só, e só se o código antigo tiver de voltar:
 
@@ -1568,7 +1630,7 @@ commit;
 ```
 
 E a assinatura antiga do sorteio: cole a função de dois argumentos da seção 11
-de `supabase/migrations/0183_funcoes_respeitam_grupo.sql` (o `create or
+de `supabase/migrations/0192_funcoes_respeitam_grupo.sql` (o `create or
 replace function public.sortear_corretor_whatsapp(p_empreendimento uuid
 default null, preferido uuid default null)` e os quatro `revoke`/`grant` dela).
 
@@ -1576,7 +1638,7 @@ default null, preferido uuid default null)` e os quatro `revoke`/`grant` dela).
 
 ## Planilha de anotações
 
-| Item | Passo 0 | Depois da 0181 | 0182 | 0183 | 0184 | Deploy | 0185 |
+| Item | Passo 0 | Depois da 0190 | 0191 | 0192 | 0193 | Deploy | 0194 |
 |---|---|---|---|---|---|---|---|
 | `/api/versao` | | | | | | | |
 | C2 leads | | | | | | | |

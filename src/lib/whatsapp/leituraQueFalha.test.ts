@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  *
  * `obterOuCriarConversa` lia `{ data }` e descartava o `error`: numa piscada
  * do banco (Gateway Timeout) ou na trava de uma migration que cria policy em
- * `whatsapp_conversas` (0182/0184), a conversa existente virava `null`, a
+ * `whatsapp_conversas` (0191/0193), a conversa existente virava `null`, a
  * busca do lead também ficava sem resposta, e o webhook devolvia 200 com
  * `numero_sem_lead_cadastrado`. O provedor não reentrega 200: a mensagem do
  * cliente sumia sem rastro. Agora a leitura repete o que é passageiro e, se

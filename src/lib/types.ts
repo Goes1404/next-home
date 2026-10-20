@@ -90,6 +90,11 @@ export type CorretorPerfil = Corretor & {
   slug: string;
   /** Apresentação curta, escrita pelo próprio corretor no painel. */
   bio: string | null;
+  /**
+   * Texto da prévia do link do portfólio no WhatsApp (0188). Ausente quando a
+   * coluna ainda não existe no banco ou o corretor não escreveu: vale o padrão.
+   */
+  chamadaDoLink?: string | null;
 };
 
 /**

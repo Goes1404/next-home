@@ -133,7 +133,7 @@ export default async function RelatorioConstrutoraPage({
               {linhas.map((l) => (
                 <li key={l.empreendimentoId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
                   <Link
-                    href={`/corretor/leads?empreendimento=${l.empreendimentoId}`}
+                    href={`/corretor/leads?corretor=equipe&empreendimento=${l.empreendimentoId}`}
                     className="text-fluid-sm font-semibold text-titulo min-w-0 break-words underline decoration-transparent underline-offset-2 hover:decoration-current"
                   >
                     {l.nome}

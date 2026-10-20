@@ -44,7 +44,7 @@ type FiltraPorGrupo<B> = { eq(coluna: "grupo_id", valor: string): B };
 
 /**
  * Uma consulta que aceita o recorte pelos corretores do grupo. As views
- * ainda NÃO têm `grupo_id` (é a 0184 que o acrescenta): até lá o recorte
+ * ainda NÃO têm `grupo_id` (é a 0193 que o acrescenta): até lá o recorte
  * delas é por `corretor_id` entre os corretores do grupo.
  */
 type FiltraPorCorretor<B> = { in(coluna: "corretor_id", valores: string[]): B };

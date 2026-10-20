@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   // for congelada logo após o redirect.
   await supabase.from("cliques_whatsapp").insert({
     // Pela chave de serviço não há sessão, e o clique pode não ter corretor
-    // nem imóvel: o grupo vai explícito, o do site (0183).
+    // nem imóvel: o grupo vai explícito, o do site (0192).
     grupo_id: grupo,
     corretor_id: destino.tipo === "whatsapp" ? (sorteio?.corretor_id ?? null) : null,
     empreendimento_id: null,

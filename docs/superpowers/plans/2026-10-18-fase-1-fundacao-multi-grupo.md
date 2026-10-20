@@ -1,5 +1,7 @@
 # Fase 1 — Fundação multi-grupo: plano de implementação
 
+> **Numeração (20/10/2026):** os números de migration deste plano são históricos. A fase 1 foi escrita como 0181–0185 e renumerada para **0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194), para rodar depois da 0188 e da 0189, que subiram de produção antes. Ver `docs/MEMORIA.md` (fim) e `docs/ROTEIRO-FASE-1-PRODUCAO.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Todo dado do banco passa a pertencer a um grupo, a Next Home vira o

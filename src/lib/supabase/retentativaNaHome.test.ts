@@ -27,7 +27,8 @@ vi.mock("@/lib/supabase/public", () => ({
       const resultado = () => {
         // A consulta das contas só WhatsApp (0180), que o site tira da equipe:
         // não é a leitura da equipe, e não entra na contagem do incidente.
-        if (colunas === "id") return { data: [], error: null };
+        // Idem para o texto da prévia do link (0188), lido à parte e tolerante.
+        if (colunas === "id" || colunas === "id, chamada_do_link") return { data: [], error: null };
         chamadas.corretores += 1;
         // Só a primeira falha, como no incidente: as requisições seguintes
         // passaram normalmente.

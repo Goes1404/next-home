@@ -6,14 +6,14 @@ status: seedling
 custou: alto
 codigo: docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-10-20
 summary: Decisão de 18/10/2026 — o CRM vira produto vendido para imobiliárias e corretores independentes numa plataforma só, com vários grupos no mesmo banco. Substitui "uma instalação por cliente". A Next Home vira o grupo 1, a preço de custo.
 ---
 
 # Plataforma multi-grupo
 
 Substitui [[next-home-e-o-espelho-da-versao-geral]] (26/09). A decisão de 06/10 ("banco compartilhado com `empresa_id`")
-é a mesma, só registrada; a implementação usa `grupos`/`grupo_id` (0181). Desenho completo
+é a mesma, só registrada; a implementação usa `grupos`/`grupo_id` (0190). Desenho completo
 em `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`.
 
 **Por que mudou:** para corretor independente pagando por mês, um banco e um
@@ -59,12 +59,18 @@ viraria N migrations.
   feita no servidor, escopada pelo grupo.
 - As 158 migrations nunca rodaram num banco vazio; o ambiente de testes é
   onde isso se prova.
-- **As migrations multi-grupo começam em 0181**, não em 0159: a branch de
-  produção já ocupava 0159–0180, e a branch a trouxe por merge. A 0181
+- **As migrations multi-grupo começam em 0190**, não em 0159: a branch de
+  produção já ocupava 0159–0180, e a branch a trouxe por merge. Elas nasceram
+  como 0181–0185 e foram **renumeradas para 0190–0194 em 20/10/2026**: a 0188
+  (prévia do link) e a 0189 (conta oculta) subiram de produção antes e já
+  estão aplicadas, e a fase 1 tem de rodar depois delas — em produção e num
+  banco do zero. 0181–0187 ficam como buraco declarado (`RESERVADOS` em
+  `migrations.test.ts`); a 0192 mantém o recorte da [[conta-oculta]] na
+  roleta, no ranking e no sorteio. A 0190
   cria `grupos`, o grupo 1 (`00000000-…-0001`), `corretores.grupo_id`,
-  `grupo_atual()` e o gatilho `corretores_00_grupo`, que deixa a 0181
+  `grupo_atual()` e o gatilho `corretores_00_grupo`, que deixa a 0190
   aplicável sozinha em produção (o código no ar insere corretor sem grupo).
-- **A 0181 também faz corretor desativado perder a sessão**: `grupo_atual()`,
+- **A 0190 também faz corretor desativado perder a sessão**: `grupo_atual()`,
   `corretor_atual()` e `eh_gestor()` filtram `ativo`, e `getCorretorLogado()`
   devolve nulo para ele. Antes, desativar só tirava o corretor da roleta; o
   login seguia lendo o que lia. Cria ainda `administradores_da_plataforma` +
@@ -73,7 +79,7 @@ viraria N migrations.
   `atualizar_parametros_credito` grava só a linha do grupo do gestor ativo
   (quem não é gestor recebe erro, não `false`) e `getParametrosCredito(grupoId)`
   leva o grupo na chave do cache. O site lê as do `grupoDoSite()`.
-- **A 0182 põe `grupo_id` em toda tabela** (menos as quatro de
+- **A 0191 põe `grupo_id` em toda tabela** (menos as quatro de
   `TABELAS_GLOBAIS`), com o gatilho `<tabela>_00_grupo`: o grupo vem das
   linhas-mãe tiradas das FKs reais, TODAS conferidas (mãe de outro grupo ou
   inexistente é erro); sem mãe, o informado, o de quem está logado, o único
@@ -91,7 +97,7 @@ viraria N migrations.
   `--grupo` do grupo 1 e grava fora do repositório
   (`test/ambienteDeTestes.test.ts`). As migrations do projeto de testes
   entram por `npm run db:teste:remoto`, que recusa produção antes do push.
-- **A 0183 (parte A) escopa as chaves únicas de negócio por grupo**: CRECI,
+- **A 0192 (parte A) escopa as chaves únicas de negócio por grupo**: CRECI,
   item de lazer (lazer é catálogo, cada grupo tem o seu), campanha canônica
   e evento de marketing, mês fechado do contador, configuração fiscal (uma
   por grupo), código legado do imóvel e o id da mensagem do WhatsApp. Ficam
@@ -123,19 +129,19 @@ viraria N migrations.
   `src/app/corretor` e `src/app/api/painel`, e também as funções do site
   que o usam por dentro (`getCorretores`, `getEmpreendimentoBySlug`, ...),
   com a lista tirada do código delas.
-- **A 0183 (parte B) escopa as funções `security definer`** (Task 5), onde a
+- **A 0192 (parte B) escopa as funções `security definer`** (Task 5), onde a
   RLS não vale: a roleta escolhe só no grupo do lead (sem ninguém elegível,
   o lead fica sem dono dentro dele), o último gestor é contado por grupo,
   funções de gestor (papel, pagamento de venda, preferência de contato)
   agem só no grupo dele, ranking e taxas da equipe contam só o grupo. Crédito
   de vídeo e reserva de visita saíram do `authenticated`. As exceções ficam
   em `src/lib/grupos/funcoesSeguras.ts`, conferidas no texto e no `pg_proc`.
-- **A 0184 fecha a RLS por grupo** (Task 6): policy restritiva
+- **A 0193 fecha a RLS por grupo** (Task 6): policy restritiva
   `isolamento_por_grupo` em toda tabela com `grupo_id` (soma por AND a toda
   permissiva), as seis views com `grupo_id` no fim da lista, as duas
   policies de `storage.objects` conferindo o grupo do imóvel/corretor do
   caminho, e o carimbo recusando logado que grava em outro grupo (defesa em
-  profundidade, passo e da 0182). O Realtime entrou na suíte
+  profundidade, passo e da 0191). O Realtime entrou na suíte
   (`realtime.db.test.ts`, que grava de verdade e por isso divide uma trava
   de sessão com `isolamento.db.test.ts`).
 - **A chave de serviço está classificada por grupo (Task 7).** Todo arquivo
@@ -155,11 +161,11 @@ viraria N migrations.
   publicável do stack local) e o passo do build recusa URL fora do runner.
   Guarda: `src/lib/supabase/buildDoCiSemProducao.test.ts`. O build da Vercel
   continua lendo produção, e por isso a migration sobe antes do deploy.
-- **Lote de correções da revisão final da fase 1 (19/10).** 0181 e 0184
+- **Lote de correções da revisão final da fase 1 (19/10).** 0190 e 0193
   ganharam `begin`/`commit` e `lock_timeout` (guarda
   `src/lib/migracoesAtomicas.test.ts`, que cobra também `drop policy if
-  exists` antes de cada `create policy`); `slug_de_imovel_livre` (0183) confere
-  o slug de imóvel em todos os grupos para `criarImovel`; a **0185 é
+  exists` antes de cada `create policy`); `slug_de_imovel_livre` (0192) confere
+  o slug de imóvel em todos os grupos para `criarImovel`; a **0194 é
   pós-deploy** (apaga a assinatura antiga do sorteio e tira do `anon` o insert
   em `leads`/`cliques_whatsapp`); `gravarMensagem` não duplica fala na
   retentativa; e o job `site-publico` do `e2e.yml` voltou a vigiar produção

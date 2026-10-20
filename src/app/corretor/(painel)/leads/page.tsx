@@ -8,9 +8,12 @@ import {
   getPaginaDeLeads,
   getEmpreendimentosParaFiltro,
   contarLeadsArquivados,
+  getCarteiraDaVisao,
   souGestor,
   type FiltroLeads,
 } from "@/lib/corretorSessao";
+import { CARTEIRA_EQUIPE } from "@/lib/carteiraDaVisao";
+import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, GRUPOS_FUNIL, etapasDoGrupo, type EtapaFunil, type GrupoFunil } from "@/lib/types";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { BotaoVoltarAoTopo } from "../_componentes/BotaoVoltarAoTopo";
@@ -97,24 +100,59 @@ export default async function LeadsPage({
     arquivados: verArquivados || undefined,
   };
 
-  const [pagina, gestor, arquivados, empreendimentos] = await Promise.all([
+  /*
+   * De quem é a carteira (hotfix de 19/10/2026): sem `?corretor=`, a do
+   * usuário logado — também para o gestor. Com ele, só o gestor muda de
+   * carteira; é por aí que os números da Administração caem aqui já
+   * recortados. "Sem dono" só existe na equipe.
+   */
+  const pedidoDeCarteira = semDono ? CARTEIRA_EQUIPE : filtro.corretorId;
+  const [pagina, gestor, arquivados, empreendimentos, carteira] = await Promise.all([
     getPaginaDeLeads(filtro),
     souGestor(),
-    contarLeadsArquivados(),
+    contarLeadsArquivados(pedidoDeCarteira),
     getEmpreendimentosParaFiltro(),
+    getCarteiraDaVisao(pedidoDeCarteira),
   ]);
   const equipe = gestor ? await getEquipeAtiva() : [];
+
+  // O nome de quem é a carteira alheia, para a faixa dizer em voz alta.
+  let nomeDaCarteira: string | null = null;
+  if (carteira.tipo === "de_outro") {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("corretores")
+      .select("nome")
+      .eq("id", carteira.corretorId)
+      .maybeSingle();
+    nomeDaCarteira = data?.nome ?? "outro corretor";
+  }
+  // Os links desta tela mantêm a carteira escolhida: sair dos arquivados não
+  // pode devolver o gestor, calado, aos leads dele.
+  const daCarteira =
+    carteira.tipo === "equipe"
+      ? `corretor=${CARTEIRA_EQUIPE}`
+      : carteira.tipo === "de_outro"
+        ? `corretor=${carteira.corretorId}`
+        : "";
+  const comCarteira = (base: string, extra?: string) => {
+    const qs = [daCarteira, extra].filter(Boolean).join("&");
+    return qs ? `${base}?${qs}` : base;
+  };
+  const alheia = carteira.tipo === "de_outro" || carteira.tipo === "equipe";
 
   return (
     <div>
       <CabecalhoDeTela
-        titulo={verArquivados ? "Arquivados" : gestor ? "Contatos" : "Meus leads"}
+        titulo={verArquivados ? "Arquivados" : alheia ? "Contatos" : "Meus leads"}
         descricao={
           verArquivados
             ? "Leads fora das listas e do funil. Abra um deles para restaurar ou excluir de vez."
-            : gestor
-              ? "Todos os contatos recebidos pelos formulários do site e portais parceiros."
-              : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."
+            : carteira.tipo === "equipe"
+              ? "Todos os contatos da equipe, recebidos pelos formulários do site e portais parceiros."
+              : carteira.tipo === "de_outro"
+                ? `Os contatos de ${nomeDaCarteira}.`
+                : "Contatos que chegaram atribuídos a você — pelo seu link pessoal, portais ou distribuição automática."
         }
         abaixo={
           <>
@@ -127,7 +165,9 @@ export default async function LeadsPage({
             {(verArquivados || arquivados > 0) && (
               <Link
                 href={
-                  verArquivados ? "/corretor/leads" : "/corretor/leads?arquivados=1"
+                  verArquivados
+                    ? comCarteira("/corretor/leads")
+                    : comCarteira("/corretor/leads", "arquivados=1")
                 }
                 className="text-fluid-xs border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 transition-colors"
               >
@@ -162,6 +202,20 @@ export default async function LeadsPage({
         }
       />
 
+      {/* Carteira de outra pessoa (ou da equipe) aberta pelo gestor. Precisa
+          estar escrito: sem a faixa, a lista dele "encheria" de leads alheios
+          sem explicação — o defeito que este hotfix veio desfazer. */}
+      {alheia && (
+        <p className="text-fluid-sm border-acento-linha bg-acento-lavado text-acento-suave mt-4 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5">
+          {carteira.tipo === "equipe"
+            ? "Você está vendo a carteira da equipe inteira."
+            : `Você está vendo a carteira de ${nomeDaCarteira}.`}
+          <Link href="/corretor/leads" className="font-medium underline underline-offset-2">
+            Voltar aos seus leads
+          </Link>
+        </p>
+      )}
+
       {/* Recorte vindo de um KPI da administração. Precisa estar ESCRITO na
           tela: filtro invisível filtrando é a pior surpresa de uma lista —
           o gestor esqueceria por que "sumiram" leads. */}
@@ -173,7 +227,7 @@ export default async function LeadsPage({
             : `leads parados há ${paradoDias}+ dias`}
           .
           <Link
-            href="/corretor/leads"
+            href={semDono ? "/corretor/leads?corretor=equipe" : comCarteira("/corretor/leads")}
             className="font-medium underline underline-offset-2"
           >
             Ver todos

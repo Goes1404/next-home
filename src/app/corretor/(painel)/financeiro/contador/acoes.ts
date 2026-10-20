@@ -30,7 +30,7 @@ export async function fecharMes(mes: string): Promise<ResultadoContador> {
   const pacote = await montarPacoteDoMes(mes);
   if (!pacote.ok) return { erro: pacote.motivo };
 
-  // Uma pasta por grupo (0183): cada grupo fecha o próprio mês, e o arquivo
+  // Uma pasta por grupo (0192): cada grupo fecha o próprio mês, e o arquivo
   // de um sobrescreveria o do outro no mesmo caminho (`upsert: true`).
   const caminho = `${guarda.corretor.grupoId}/${mes}.xlsx`;
   const { error: erroUpload } = await createServiceClient()
@@ -66,7 +66,7 @@ export async function reabrirMes(mes: string): Promise<ResultadoContador> {
   if (!MES.test(mes)) return { erro: "Mês inválido." };
 
   const supabase = await createClient();
-  // O mês é por grupo desde a 0183: sem o filtro, reabrir apagaria também o
+  // O mês é por grupo desde a 0192: sem o filtro, reabrir apagaria também o
   // fechamento de outro grupo que a sessão enxergasse.
   const { data, error } = await supabase
     .from("meses_fechados")

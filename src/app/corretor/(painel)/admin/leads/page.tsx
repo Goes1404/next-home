@@ -5,6 +5,7 @@ import { SeletorDono } from "./SeletorDono";
 import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { getEquipeAtiva, getPaginaDeLeads } from "@/lib/corretorSessao";
+import { CARTEIRA_EQUIPE } from "@/lib/carteiraDaVisao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { createClient } from "@/lib/supabase/server";
@@ -31,7 +32,10 @@ export default async function EquipePage() {
 
   const [agregado, primeiraPagina, { data: orfaos }] = await Promise.all([
     getAgregadoDaEquipe(equipe),
-    getPaginaDeLeads(),
+    // Visão da EQUIPE: sem o pedido explícito, getPaginaDeLeads devolve só
+    // a carteira de quem abriu o painel (hotfix de 19/10), e esta seção — a
+    // que alimenta o SeletorDono da redistribuição — mostraria só os do ADM.
+    getPaginaDeLeads({ corretorId: CARTEIRA_EQUIPE }),
     // Sem dono é uma lista curta por natureza (a roleta atribui na chegada);
     // quando não é, o teto evita despejar mil linhas numa seção secundária.
     supabase
@@ -68,7 +72,7 @@ export default async function EquipePage() {
           {ETAPAS_FUNIL.map((etapa) => (
             <Link
               key={etapa}
-              href={`/corretor/leads?etapa=${etapa}`}
+              href={`/corretor/leads?corretor=equipe&etapa=${etapa}`}
               className="border-linha bg-superficie hover:border-acento-linha rounded-xl border px-4 py-3 transition-colors"
             >
               <p className="font-display text-titulo text-lg tabular-nums">
@@ -185,7 +189,7 @@ export default async function EquipePage() {
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-fluid-sm text-titulo font-medium">Contatos recentes</h2>
           <Link
-            href="/corretor/leads"
+            href="/corretor/leads?corretor=equipe"
             className="text-fluid-xs text-acento-suave font-medium link-acao"
           >
             Ver todos, com busca e filtro →

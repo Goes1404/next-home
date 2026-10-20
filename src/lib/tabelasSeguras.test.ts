@@ -37,7 +37,7 @@ const VARREDURA = 82;
  * de lead e o registro de clique em "falar no WhatsApp". Exceção declarada,
  * pela mesma razão da lista RESERVADOS de `migrations.test.ts`.
  *
- * Desde a 0185 (pós-deploy da fase 1 multi-grupo) as duas gravam pelo
+ * Desde a 0194 (pós-deploy da fase 1 multi-grupo) as duas gravam pelo
  * servidor, com o grupo do site, e o `anon` perdeu o INSERT nelas
  * (isolamento.db.test.ts confere no banco). A exceção fica só porque as duas
  * nasceram antes da varredura.

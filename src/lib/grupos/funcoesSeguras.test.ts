@@ -7,7 +7,7 @@ import {
 } from "./funcoesSeguras";
 
 /*
- * Toda função `security definer` respeita o grupo (0183, Task 5).
+ * Toda função `security definer` respeita o grupo (0192, Task 5).
  *
  * Dentro dela a RLS não vale, e a regressão é calada: a função "funciona",
  * só que enxerga e mexe nos outros grupos. Esta guarda lê a ÚLTIMA definição

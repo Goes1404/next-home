@@ -1,9 +1,9 @@
--- 0184: isolamento por grupo em policy restritiva, views, Storage (19/10/2026).
+-- 0193: isolamento por grupo em policy restritiva, views, Storage (19/10/2026).
 --
 -- Quarta migration da plataforma multi-grupo (spec
 -- docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md, §2 e
--- §18). A 0181 criou os grupos, a 0182 pôs `grupo_id` em toda tabela de dados
--- e a 0183 fez as funções `security definer` respeitarem o grupo. Faltava a
+-- §18). A 0190 criou os grupos, a 0191 pôs `grupo_id` em toda tabela de dados
+-- e a 0192 fez as funções `security definer` respeitarem o grupo. Faltava a
 -- RLS: até aqui o gestor (`eh_gestor()`) e o "corretor lê todo
 -- empreendimento" enxergavam as linhas de TODOS os grupos.
 --
@@ -31,9 +31,9 @@
 --     sai da chave `anon` na fase 3 (spec §15), e nenhum grupo externo entra
 --     antes dela;
 --   - `service_role` e `postgres` ignoram RLS. Quem os usa confere o grupo no
---     código (Tasks 4, 7 e 12) ou em função `security definer` (0183).
+--     código (Tasks 4, 7 e 12) ou em função `security definer` (0192).
 --
--- Junto com esta migration, a 0182 (`derivar_grupo_da_linha`, passo e)
+-- Junto com esta migration, a 0191 (`derivar_grupo_da_linha`, passo e)
 -- passou a recusar, no gatilho, linha gravada por logado fora do grupo dele,
 -- mesmo em tabela sem mãe: defesa em profundidade para o dia em que alguém
 -- apagar a policy restritiva por engano.
@@ -42,7 +42,7 @@
 -- todos os grupos pelo painel da plataforma (fase 2), pela chave de serviço;
 -- pela sessão, vê o grupo de que for corretor, como qualquer um.
 --
--- Teste: src/lib/grupos/isolamento.db.test.ts (seção 0184) e
+-- Teste: src/lib/grupos/isolamento.db.test.ts (seção 0193) e
 -- src/lib/grupos/realtime.db.test.ts.
 --
 -- Volta (só antes de existir um segundo grupo):
@@ -53,7 +53,7 @@
 --   end $$;
 --   e as views e as duas policies do Storage pelas definições da 0043/0015.
 --
--- Transação única, como a 0182 e a 0183: aplica inteira ou nada. Sem ela, o
+-- Transação única, como a 0191 e a 0192: aplica inteira ou nada. Sem ela, o
 -- `set local` abaixo vira só um aviso (fora de transação não vale nada), e
 -- uma falha na §3 deixaria as policies restritivas criadas com o Storage
 -- ainda nas policies antigas.

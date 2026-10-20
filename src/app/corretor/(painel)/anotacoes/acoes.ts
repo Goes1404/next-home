@@ -116,6 +116,9 @@ export async function buscarLeadsParaVincular(termo: string): Promise<LeadParaVi
     .from("leads")
     .select("id, nome, telefone")
     .is("arquivado_em", null)
+    // Os leads de quem está anotando, também para o gestor (hotfix de
+    // 19/10/2026): a RLS dele traria a equipe inteira na sugestão.
+    .eq("corretor_id", corretor.id)
     .ilike("nome", `%${t}%`)
     .order("created_at", { ascending: false })
     .limit(8);

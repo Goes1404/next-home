@@ -50,7 +50,7 @@ function caminhoNoBucket(url: string, base: string): string | null {
 }
 
 async function main() {
-  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0183).
+  // Chave de serviço: o script exige o grupo e só toca imóvel dele (0192).
   const { grupoId } = grupoDoScript(process.argv.slice(2));
   const { limite, soPublicados } = lerArgs();
   const supabase = createServiceClient();

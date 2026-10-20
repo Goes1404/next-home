@@ -66,7 +66,7 @@ describe("o sorteio do porteiro", () => {
     expect(defMin).toMatch(/telefone_conectado\s+is\s+not\s+null/);
   });
 
-  it("sorteia só no grupo pedido, e o grupo é obrigatório (0183)", () => {
+  it("sorteia só no grupo pedido, e o grupo é obrigatório (0192)", () => {
     // Sem o grupo, o botão do site da Next Home podia cair no número de um
     // corretor de outro grupo. Sem default: chamada sem grupo não casa com
     // a assinatura nova.

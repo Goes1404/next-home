@@ -39,7 +39,7 @@ const URL_DO_BANCO = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 // testes de isolamento entram pelo mesmo caminho que o app. O realtime fica
 // também: o painel assina mudanças de whatsapp_mensagens/whatsapp_conversas
 // por ele, e realtime.db.test.ts confere que ele não entrega linha de outro
-// grupo (0184).
+// grupo (0193).
 const FORA = [
   "imgproxy",
   "mailpit",

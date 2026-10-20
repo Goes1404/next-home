@@ -298,7 +298,7 @@ async function imoveisNovosQueCombinam(
       .eq("grupo_id", grupoId)
       .not("orcamento_max", "is", null)
       .limit(2000),
-    // As taxas do grupo do corretor (0181): cada imobiliária ajusta as dela.
+    // As taxas do grupo do corretor (0190): cada imobiliária ajusta as dela.
     getParametrosCredito(grupoId),
   ]);
   const dossie = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
