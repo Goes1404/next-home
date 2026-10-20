@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { UsoDaIa } from "../../UsoDaIa";
+import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 
@@ -86,6 +88,15 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           encarregadoEmail: grupo.encarregadoEmail ?? "",
         }}
       />
+
+      {podeCancelar(grupo.id) && (
+        <CancelamentoDoGrupo
+          grupoId={grupo.id}
+          canceladoEm={grupo.canceladoEm}
+          dadosApagadosEm={grupo.dadosApagadosEm}
+          rotinaLigada={rotinaDeApagarLigada(process.env)}
+        />
+      )}
     </section>
   );
 }

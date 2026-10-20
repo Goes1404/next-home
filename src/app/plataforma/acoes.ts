@@ -5,6 +5,7 @@ import { MENSAGEM_EMAIL_EM_USO } from "@/lib/corretores/acessoDaConta";
 import { convidarCorretorDoGrupo } from "@/lib/corretores/convite";
 import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
+import { apagarEm, podeCancelar } from "@/lib/grupos/encerramentoRegras";
 import {
   ehUuid,
   padraoDoEmail,
@@ -341,6 +342,102 @@ export async function ajustarTetoDaIa(grupoId: string, texto: string): Promise<R
     detalhes: { origem: "plataforma", antes: tetoAntes, depois: lido.teto },
   });
   if (erroDoEvento) console.error(`[plataforma] evento do teto da IA (${grupoId}) não gravado: ${erroDoEvento.message}`);
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoCancelamento = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Registra que o grupo cancelou (resposta 7 do dono, 0202): `cancelado_em`
+ * agora e o grupo sai do ar (`encerrado`: o site para pela 0201). Os dados
+ * ficam bloqueados por 90 dias; a rotina diária, quando ligada, apaga depois
+ * (com a cópia gravada antes). Só cancela quem ainda não estava cancelado: a
+ * data dos 90 dias não se mexe com um segundo clique.
+ *
+ * A Next Home não cancela (o banco também recusa, por CHECK).
+ */
+export async function registrarCancelamento(grupoId: string): Promise<ResultadoCancelamento> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+  if (!podeCancelar(grupoId)) return { ok: false, erro: "A Next Home não pode ser cancelada por aqui." };
+
+  const agora = new Date().toISOString();
+  const servico = createServiceClient();
+  const { data, error } = await servico
+    .from("grupos")
+    .update({ cancelado_em: agora, situacao: "encerrado" })
+    .eq("id", grupoId)
+    .is("cancelado_em", null)
+    .is("dados_apagados_em", null)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] cancelamento do grupo ${grupoId} não gravado: ${error.message}`);
+    return { ok: false, erro: "Não foi possível registrar o cancelamento agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado ou já cancelado." };
+
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "grupo_cancelado",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", apagar_em: apagarEm(agora).toISOString() },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento do cancelamento (${grupoId}) não gravado: ${erroDoEvento.message}`);
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+/**
+ * Desfaz o cancelamento dentro dos 90 dias: o grupo volta a `ativo` e a data
+ * some. Depois que a rotina apagou, não há o que desfazer.
+ */
+export async function desfazerCancelamento(grupoId: string): Promise<ResultadoCancelamento> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+
+  const servico = createServiceClient();
+  const { data: grupo, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("cancelado_em, dados_apagados_em")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] grupo ${grupoId} não lido para desfazer: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível desfazer agora. Tente de novo." };
+  }
+  if (!grupo) return { ok: false, erro: "Grupo não encontrado." };
+  if (grupo.dados_apagados_em) return { ok: false, erro: "Os dados deste grupo já foram apagados; não dá para desfazer." };
+  if (!grupo.cancelado_em) return { ok: false, erro: "Este grupo não está cancelado." };
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({ cancelado_em: null, situacao: "ativo" })
+    .eq("id", grupoId)
+    .is("dados_apagados_em", null)
+    .select("id");
+  if (error || !data || data.length === 0) {
+    console.error(`[plataforma] desfazer cancelamento de ${grupoId} falhou: ${error?.message ?? "0 linhas"}`);
+    return { ok: false, erro: "Não foi possível desfazer agora. Tente de novo." };
+  }
+
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "cancelamento_desfeito",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", cancelado_em: grupo.cancelado_em },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento do desfazer (${grupoId}) não gravado: ${erroDoEvento.message}`);
 
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);

@@ -131,6 +131,9 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   creciTipo: "J" | "F" | null;
   encarregadoNome: string | null;
   encarregadoEmail: string | null;
+  /** Cancelamento registrado (0202): os dados ficam 90 dias e depois são apagados. */
+  canceladoEm: string | null;
+  dadosApagadosEm: string | null;
 };
 
 /**
@@ -142,7 +145,7 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
   const { data: g, error } = await servico
     .from("grupos")
     .select(
-      "id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email",
+      "id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em",
     )
     .eq("id", grupoId)
     .maybeSingle();
@@ -165,6 +168,8 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     creciTipo: g.creci_tipo,
     encarregadoNome: g.encarregado_lgpd_nome,
     encarregadoEmail: g.encarregado_lgpd_email,
+    canceladoEm: g.cancelado_em,
+    dadosApagadosEm: g.dados_apagados_em,
     ...(await contarDoGrupo(servico, g)),
   };
 }
