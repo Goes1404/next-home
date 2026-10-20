@@ -106,6 +106,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/api/gmail/retorno/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/api/imagens/gerar/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "a mídia do catálogo só é lida no grupo do corretor da sessão (L16)" },
   "src/app/api/painel/contador-excel/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o mês é lido no grupo do gestor da sessão" },
+  "src/app/api/painel/dados-do-grupo/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "a chave só grava o registro da exportação; os dados são lidos pela sessão no grupo do gestor (0202)" },
+  "src/app/plataforma/grupos/[id]/exportar/route.ts": { categoria: "por-id", validadoPor: "exigirAdminDaPlataformaNaAcao", motivo: "EXCEÇÃO declarada ao §4: só grupo com cancelamento registrado (resposta 7 do dono); lê os dados de UM grupo, o do id da rota, sem conversa (exportacaoDoGrupo.test.ts), e registra o download no grupo (0202)" },
   "src/app/api/painel/fichas-do-corretor/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "a chave só grava o registro da exportação; o corretor e as fichas são lidos pela sessão no grupo do gestor" },
   "src/app/corretor/(painel)/_componentes/acoesMensagemPelaIA.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/_componentes/acoesSugestao.ts": { categoria: "por-id", validadoPor: "sugestaoDoCorretor", motivo: "a sugestão é lida pela sessão (RLS) antes de a chave mudar o status" },
@@ -172,6 +174,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/crm/alertaSemResposta.ts": { categoria: "plataforma", motivo: "alerta por conversa, ao corretor dono dela" },
   "src/lib/crm/enviarRelatorioDasAvaliacoes.ts": { categoria: "plataforma", motivo: "por instância: cada corretor recebe só as avaliações dele" },
   "src/lib/crm/lembretesDeTarefa.ts": { categoria: "plataforma", motivo: "lembrete por tarefa, ao corretor dono dela" },
+  "src/lib/grupos/encerramento.ts": { categoria: "plataforma", motivo: "rotina dos 90 dias: um grupo cancelado por vez; cópia, apagar e logins só desse grupo (0202)" },
   "src/lib/imagens/limpeza.ts": { categoria: "plataforma", motivo: "apaga arte vencida linha a linha (arquivo e linha da própria arte)" },
   "src/lib/imoveis/reservasVencidas.ts": { categoria: "plataforma", motivo: "libera reserva vencida unidade a unidade" },
   "src/lib/inbound/gmailCaixa.ts": { categoria: "plataforma", motivo: "conta a conta; o lead nasce no grupo da conta (grupo_id dela)" },
@@ -287,7 +290,7 @@ type Importador =
   | { naoPassa: string; motivo: string };
 
 const IMPORTADORES: Record<string, Importador> = {
-  "src/app/api/cron/limpar-artes-ia/route.ts": { validadoPor: "requisicaoAutenticada", motivo: "cron com segredo; apaga mensagens barradas antigas linha a linha" },
+  "src/app/api/cron/limpar-artes-ia/route.ts": { validadoPor: "requisicaoAutenticada", motivo: "cron com segredo; apaga mensagens barradas antigas linha a linha e roda a rotina dos grupos cancelados (0202)" },
   "src/app/api/webhooks/email-lead/route.ts": { validadoPor: "token !== segredo", motivo: "segredo do webhook dos portais; o grupo é o fixo da Next Home" },
   "src/app/corretor/(painel)/campanhas/acoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; agenda e conversas dele" },
   "src/app/corretor/(painel)/_componentes/FaixaCotaDaIa.tsx": { validadoPor: "getCorretorLogado", motivo: "faixa da cota da IA do grupo do corretor da sessão" },
