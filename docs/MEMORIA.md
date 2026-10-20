@@ -11168,3 +11168,24 @@ Nota: [[cota-de-respostas-da-ia-por-grupo]].
   número) ganha. Ler a cota que falha não cala ninguém.
 - **Fake de banco devolve a mesma referência que o update muda**: guardar o
   "antes" num `const` antes do update, senão o evento sai com antes = depois.
+
+## Número em um grupo só e aceite dos termos (0198, 20/10/2026)
+
+Nota: [[numero-em-um-grupo-e-aceite-dos-termos]].
+
+- **A trava do número é por GRUPO, num gatilho, não índice único.**
+  `telefone_conectado` só é apagado no "Desconectar"; um índice único
+  travaria o número para o colega do MESMO grupo quando alguém sai sem
+  desconectar. Liberar para outro grupo = desconectar no grupo antigo.
+- **Compare número de WhatsApp sem o nono dígito** (`chave_do_numero_whatsapp`,
+  55 + DDD + 8 últimos): o WhatsApp devolve sem o 9 em vários DDDs, e o
+  corretor digita com o 9.
+- **Gatilho que recusa a gravação de estado da conexão deixa a instância
+  conectada na Evolution e "conectando" no banco.** Por isso os três
+  caminhos que conectam (pareamento, sincronização, `connection.update`)
+  perguntam antes e, na recusa, derrubam a sessão (`recusarNumeroDeOutroGrupo`).
+- **Página de aceite obrigatório mora FORA do grupo `(painel)`**, senão o
+  layout a redireciona para si mesma. Erro ao ler o aceite não tranca o
+  painel (a migration pode vir depois do deploy).
+- **O setup do E2E aceita os termos** na conta sintética; sem isso todo spec
+  do painel cai em `/corretor/termos`.
