@@ -93,8 +93,10 @@ describe("o site público não vai ao banco por requisição", () => {
     const auth = fonte.indexOf("auth.getClaims(");
     expect(guarda).toBeGreaterThan(-1);
     expect(auth).toBeGreaterThan(guarda);
-    // O matcher deixa fora `_next/`, `api/` e qualquer caminho com ponto.
-    expect(fonte).toMatch(/matcher:\s*\["\/\(\(\?!_next\/\|api\/\|\.\*\\\\\.\.\*\)\.\*\)"\]/);
+    // O matcher deixa fora `_next/`, `api/` e qualquer caminho com ponto —
+    // menos `/s/...` (fase 3), que entra à parte para nunca chegar direto ao
+    // segmento do site de outro grupo (ver proxyDoSite.test.ts).
+    expect(fonte).toMatch(/matcher:\s*\["\/\(\(\?!_next\/\|api\/\|\.\*\\\\\.\.\*\)\.\*\)", "\/s\/:path\*"\]/);
   });
 
   it("getCorretorAtivo é deduplicado por cache()", () => {

@@ -3,7 +3,8 @@ import { Footer } from "@/components/layout/Footer";
 import { site as siteDaCasa } from "@/lib/site";
 import { normalizarHost } from "@/lib/sites/endereco";
 import { metadadosDoSite } from "@/lib/sites/metadados";
-import { siteDaPagina, type ParamsDoSite } from "@/lib/sites/pagina";
+import { type ParamsDoSite } from "@/lib/sites/pagina";
+import { resolverSite } from "@/lib/sites/resolver";
 
 /**
  * O site público de cada grupo, pelo endereço (fase 3, 20/10/2026).
@@ -36,8 +37,8 @@ function urlHost(url: string): string | null {
 }
 
 export async function generateMetadata({ params }: { params: Promise<ParamsDoSite> }): Promise<Metadata> {
-  const site = await siteDaPagina(params);
-  return metadadosDoSite(site.marca);
+  const site = await resolverSite(decodeURIComponent((await params).site));
+  return site ? metadadosDoSite(site.marca) : { robots: { index: false, follow: false } };
 }
 
 export default async function SiteLayout({
@@ -47,11 +48,16 @@ export default async function SiteLayout({
   children: React.ReactNode;
   params: Promise<ParamsDoSite>;
 }) {
-  const site = await siteDaPagina(params);
+  // Endereço de nenhum grupo NÃO lança aqui: um `notFound()` de layout só
+  // é pego pela fronteira do segmento PAI, e o 404 saía com o HTML vazio
+  // (medido em `next start`, 20/10/2026). Quem lança é o layout do grupo de
+  // rotas e a página, logo abaixo (`siteDaPagina`), e o 404 cai em
+  // `./not-found.tsx`, inteiro no HTML do servidor. Sem site, sem rodapé.
+  const site = await resolverSite(decodeURIComponent((await params).site));
   return (
     <>
       {children}
-      <Footer marca={site.marca} />
+      {site && <Footer marca={site.marca} />}
     </>
   );
 }
