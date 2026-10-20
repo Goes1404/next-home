@@ -106,6 +106,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/api/gmail/retorno/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/api/imagens/gerar/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "a mídia do catálogo só é lida no grupo do corretor da sessão (L16)" },
   "src/app/api/painel/contador-excel/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o mês é lido no grupo do gestor da sessão" },
+  "src/app/api/painel/fichas-do-corretor/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "a chave só grava o registro da exportação; o corretor e as fichas são lidos pela sessão no grupo do gestor" },
   "src/app/corretor/(painel)/_componentes/acoesMensagemPelaIA.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/_componentes/acoesSugestao.ts": { categoria: "por-id", validadoPor: "sugestaoDoCorretor", motivo: "a sugestão é lida pela sessão (RLS) antes de a chave mudar o status" },
   "src/app/corretor/(painel)/_componentes/acoesVisitaCombinada.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
