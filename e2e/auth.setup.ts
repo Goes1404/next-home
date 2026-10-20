@@ -51,5 +51,14 @@ setup("login do corretor", async ({ page }) => {
 
   // O destino pós-login é o painel; qualquer rota /corretor/* logada serve.
   await expect(page).toHaveURL(/\/corretor(?!\/entrar)/, { timeout: 15_000 });
+
+  // Termos de uso no primeiro acesso (fase 2D, 0198): a conta sintética do
+  // ambiente de testes aceita a versão vigente uma vez, senão todo spec do
+  // painel cai na página dos termos. É a única escrita deste setup.
+  await page.waitForLoadState("domcontentloaded");
+  if (/\/corretor\/termos/.test(page.url())) {
+    await page.getByRole("button", { name: "Li e aceito os termos" }).click();
+    await expect(page).toHaveURL(/\/corretor(?!\/termos|\/entrar)/, { timeout: 15_000 });
+  }
   await page.context().storageState({ path: ARQUIVO_SESSAO });
 });
