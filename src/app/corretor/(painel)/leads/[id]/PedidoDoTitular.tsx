@@ -11,9 +11,10 @@ import { apagarDadosDoTitular } from "./titularAcoes";
  * "A pessoa pediu para apagar os dados dela" (LGPD art. 18, 0202). Só o
  * gestor vê. Diferente de "Excluir definitivamente": além do lead e da
  * conversa, apaga o que ficaria espalhado (envios antigos, listas de
- * transmissão, anotações, e-mails de portal, documentos e fotos recebidas) e
- * deixa o pedido registrado sem o nome da pessoa. A venda, se houver, fica
- * (obrigação fiscal), sem o nome do cliente.
+ * transmissão, anotações, e-mails de portal, documentos e fotos recebidas),
+ * leva as outras fichas da mesma pessoa (mesmo telefone ou e-mail) e deixa o
+ * pedido registrado sem o nome dela. A venda, se houver, fica (obrigação
+ * fiscal), com o nome e o CPF do comprador.
  */
 export function PedidoDoTitular({ leadId, nome }: { leadId: string; nome: string }) {
   const router = useRouter();
@@ -60,8 +61,9 @@ export function PedidoDoTitular({ leadId, nome }: { leadId: string; nome: string
       ) : (
         <div className="border-perigo-linha bg-perigo-lavado mt-3 rounded-xl border p-3">
           <p className="text-fluid-sm text-titulo">
-            Apagar todos os dados de {nome}? Vão junto a conversa, os documentos e fotos recebidos, as anotações, os
-            envios de listas e o que a IA anotou. Uma venda registrada fica, sem o nome da pessoa.
+            Apagar todos os dados de {nome}? Vão junto as outras fichas com o mesmo telefone ou e-mail, as conversas, os
+            documentos e fotos recebidos, as anotações, os envios de listas e o que a IA anotou. Uma venda registrada
+            fica guardada, com o nome e o CPF do comprador, porque a lei fiscal obriga.
           </p>
           <label className="text-fluid-sm text-corpo mt-3 flex min-h-11 cursor-pointer items-center gap-3">
             <input

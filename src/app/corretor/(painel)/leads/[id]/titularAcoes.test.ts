@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const LEAD = "4f6c2b1e-1111-4222-8333-944455556666";
+const OUTRA_FICHA = "4f6c2b1e-2222-4222-8333-944455556666";
 
 let guarda: { corretor?: { id: string; grupoId: string }; erro?: string };
 let respostaDoRpc: { data: unknown; error: { message: string } | null };
@@ -30,7 +31,11 @@ vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     storage: {
       from: (bucket: string) => ({
-        list: async (pasta: string) => ({ data: pastas[`${bucket}/${pasta}`] ?? [], error: null }),
+        list: async (pasta: string, opcoes?: { limit?: number; offset?: number }) => {
+          const tudo = pastas[`${bucket}/${pasta}`] ?? [];
+          const de = opcoes?.offset ?? 0;
+          return { data: tudo.slice(de, de + (opcoes?.limit ?? 100)), error: null };
+        },
         remove: async (caminhos: string[]) => {
           if (falhaAoRemover) return { data: null, error: { message: "fora do ar" } };
           removidos.push(...caminhos.map((c) => `${bucket}/${c}`));
@@ -68,6 +73,28 @@ describe("apagar os dados do titular", () => {
       `documentos-clientes/${LEAD}/rg.jpg`,
       `documentos-clientes/${LEAD}/whatsapp/m1-foto.jpg`,
     ]);
+  });
+
+  it("apaga também a pasta das outras fichas da mesma pessoa que o banco apagou", async () => {
+    respostaDoRpc = { data: { apagados: { fichas: 2 }, leads: [LEAD, OUTRA_FICHA] }, error: null };
+    pastas[`documentos-clientes/${OUTRA_FICHA}`] = [{ name: "cpf.pdf", id: "b1" }];
+    const r = await apagarDadosDoTitular(LEAD);
+    expect(r.ok).toMatch(/2 fichas/);
+    expect(removidos).toContain(`documentos-clientes/${OUTRA_FICHA}/cpf.pdf`);
+    expect(removidos).toContain(`documentos-clientes/${LEAD}/rg.jpg`);
+  });
+
+  it("id que não é de lead na resposta do banco não vira pasta", async () => {
+    respostaDoRpc = { data: { apagados: { fichas: 1 }, leads: ["../outro", LEAD] }, error: null };
+    pastas["documentos-clientes/../outro"] = [{ name: "x.pdf", id: "z" }];
+    await apagarDadosDoTitular(LEAD);
+    expect(removidos.some((c) => c.includes("outro"))).toBe(false);
+  });
+
+  it("pasta com mais de 1000 arquivos sai inteira (a listagem pagina)", async () => {
+    pastas[`documentos-clientes/${LEAD}/whatsapp`] = Array.from({ length: 1500 }, (_, i) => ({ name: `m${i}.jpg`, id: `w${i}` }));
+    await apagarDadosDoTitular(LEAD);
+    expect(removidos.filter((c) => c.includes("/whatsapp/"))).toHaveLength(1500);
   });
 
   it("só o gestor: o corretor não chega ao banco", async () => {
