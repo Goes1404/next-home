@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { createClient } from "@/lib/supabase/public";
+import { createServiceClient } from "@/lib/supabase/service";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { site as siteDaCasa } from "@/lib/site";
@@ -55,14 +55,18 @@ type LinhaDoSite = { grupoId: string; nome: string; hostPrincipal: string };
 
 /**
  * Pergunta ao banco de que grupo é o host, com cache de dados por host (o
- * `unstable_cache` põe os argumentos na chave). Erro do banco LANÇA: um erro
+ * `unstable_cache` põe os argumentos na chave). Pela chave de SERVIÇO: a
+ * função recebe o domínio da plataforma como parâmetro, e com a chave
+ * publicável qualquer um inventaria um domínio e descobriria os grupos pelo
+ * slug (revisão da fase 3) — por isso só a chave de serviço a executa, e o
+ * domínio vem da variável de servidor, nunca da requisição. Erro do banco LANÇA: um erro
  * de leitura não pode virar "endereço desconhecido" e servir a página neutra
  * no lugar do site de um cliente (a lição do porteiro, 19/10) — a página sai
  * 500 e o cache de rota segue servindo a versão anterior.
  */
 const consultarEndereco = unstable_cache(
   async (host: string, dominio: string | null): Promise<LinhaDoSite | null> => {
-    const supabase = createClient();
+    const supabase = createServiceClient();
     const { data, error } = await comRetentativa("site do endereço", () =>
       supabase.rpc("site_do_endereco", { p_host: host, p_dominio_da_plataforma: dominio }),
     );

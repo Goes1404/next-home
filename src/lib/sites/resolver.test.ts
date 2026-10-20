@@ -10,7 +10,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 
 const rpc = vi.fn();
-vi.mock("@/lib/supabase/public", () => ({ createClient: () => ({ rpc }) }));
+vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => ({ rpc }) }));
 
 const { resolverSite, ehEnderecoDaNextHome } = await import("./resolver");
 const { GRUPO_NEXT_HOME_ID } = await import("@/lib/grupos/grupo");

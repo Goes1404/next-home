@@ -185,6 +185,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/auth/pedidoDeLinkDeSenha.ts": { categoria: "plataforma", motivo: "a própria pessoa pede o link: acha UMA ficha (pelo e-mail ou pelo login da sessão) e registra o pedido e lê o nome no grupo dela" },
   "src/lib/auth/links.ts": { categoria: "plataforma", motivo: "o Auth é global (um e-mail, um login na plataforma): gera o link de UM usuário pelo e-mail, sem ler tabela de grupo" },
   "src/lib/whatsapp/vencedoraAB.ts": { categoria: "plataforma", motivo: "decide o A/B lista a lista, nos itens da própria lista" },
+  "src/lib/sites/resolver.ts": { categoria: "plataforma", motivo: "resolve UM host no grupo dele por site_do_endereco, que devolve uma linha só, do host pedido; a chave é para o domínio da plataforma não vir de quem chama" },
 
   // ── Área da plataforma: lê vários grupos, só depois da guarda dela ────────
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },

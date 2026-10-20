@@ -10,8 +10,10 @@ código nem por agente — são todos seus.
 1. O visitante abre `https://imobiliariasol.com.br/sobre`.
 2. O `proxy.ts` leva a página para `/s/imobiliariasol.com.br/sobre`, sem
    consultar o banco.
-3. O layout do site pergunta ao banco (`site_do_endereco`) de que grupo é o
-   endereço, e guarda a resposta por 5 minutos.
+3. O layout do site pergunta ao banco (`site_do_endereco`, só pela chave de
+   serviço — a chave publicável não executa a função) de que grupo é o
+   endereço, e guarda a resposta por 5 minutos. Sem `SUPABASE_SECRET_KEY` no
+   ambiente, só os endereços da Next Home abrem.
 4. Endereço de nenhum grupo (ou de grupo **encerrado**) mostra uma página
    neutra de 404, sem marca de ninguém. Grupo **suspenso** continua com o
    site no ar.
