@@ -285,6 +285,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
         "convite_reenviado",
         "email_alterado",
         "link_de_senha_enviado",
+        "link_de_senha_pedido",
         "conta_criada",
         "numero_desconectado",
       ]) {

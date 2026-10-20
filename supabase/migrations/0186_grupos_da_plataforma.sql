@@ -124,7 +124,11 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
     'convite_enviado',
     'convite_reenviado',
     'email_alterado',
-    'link_de_senha_enviado'
+    'link_de_senha_enviado',
+    -- A própria pessoa pediu o link de senha ("Esqueci a senha" ou "Sair e
+    -- receber novo link"). É o registro do limite de pedidos por e-mail
+    -- (src/lib/auth/pedidoDeLinkDeSenha.ts), no grupo da ficha.
+    'link_de_senha_pedido'
   ])
 );
 

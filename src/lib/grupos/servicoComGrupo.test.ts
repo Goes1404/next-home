@@ -110,7 +110,6 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/_componentes/acoesSugestao.ts": { categoria: "por-id", validadoPor: "sugestaoDoCorretor", motivo: "a sugestão é lida pela sessão (RLS) antes de a chave mudar o status" },
   "src/app/corretor/(painel)/_componentes/acoesVisitaCombinada.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/admin/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "toda escrita pela chave filtra o grupo do gestor" },
-  "src/app/corretor/esqueci-a-senha/acoes.ts": { categoria: "por-id", validadoPor: "gerarLinkDeAcesso", motivo: "o user_id vem do Auth (dono do e-mail digitado); só lê o nome do grupo dele para o e-mail" },
   "src/app/corretor/(painel)/admin/anuncios/ContaDaMeta.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "a única leitura pela chave (cliques) filtra o grupo do gestor; Meta só no grupo 1" },
   "src/app/corretor/(painel)/admin/parceiros/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "trocar o link confere o grupo do gestor (L16)" },
   "src/app/corretor/(painel)/admin/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "derrubar o número confere o grupo do gestor (L16)" },
@@ -179,6 +178,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/listasVivas.ts": { categoria: "plataforma", motivo: "por lista: só leads do corretor dono dela" },
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },
   "src/lib/whatsapp/sonda.ts": { categoria: "plataforma", motivo: "diagnóstico do provedor por instância, em tabela global" },
+  "src/lib/auth/pedidoDeLinkDeSenha.ts": { categoria: "plataforma", motivo: "a própria pessoa pede o link: acha UMA ficha (pelo e-mail ou pelo login da sessão) e registra o pedido e lê o nome no grupo dela" },
   "src/lib/auth/links.ts": { categoria: "plataforma", motivo: "o Auth é global (um e-mail, um login na plataforma): gera o link de UM usuário pelo e-mail, sem ler tabela de grupo" },
   "src/lib/whatsapp/vencedoraAB.ts": { categoria: "plataforma", motivo: "decide o A/B lista a lista, nos itens da própria lista" },
 

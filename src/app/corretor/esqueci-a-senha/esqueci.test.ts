@@ -69,6 +69,8 @@ async function rodarDepois() {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-20T12:00:00Z"));
   // Sem RESEND_API_KEY o envio não sai e a action avisa no log: esperado aqui.
   vi.spyOn(console, "warn").mockImplementation(() => {});
   pedidosDeLink.length = 0;
@@ -76,10 +78,13 @@ beforeEach(() => {
   depois.length = 0;
   respostaDoLink = { ok: true, url: "https://site/auth/confirmar?token_hash=h&type=recovery", userId: "usuario-1" };
   banco = bancoFalso({
-    corretores: [{ id: "c1", user_id: "usuario-1", grupo_id: GRUPO }],
+    corretores: [{ id: "c1", user_id: "usuario-1", email: "Ana@Exemplo.com.br", grupo_id: GRUPO }],
     grupos: [{ id: GRUPO, nome: "Imobiliária Sol" }],
+    admin_eventos: [],
   });
 });
+
+const pedidos = () => banco.tabelas.admin_eventos.filter((e) => e.acao === "link_de_senha_pedido");
 
 describe("pedirLinkDeSenha", () => {
   it("esqueci a senha responde igual exista ou não a conta", async () => {
@@ -117,12 +122,79 @@ describe("pedirLinkDeSenha", () => {
     expect(pedidosDeLink).toHaveLength(1);
   });
 
-  it("conta sem ficha de corretor recebe o e-mail com o nome da plataforma", async () => {
-    banco = bancoFalso({ corretores: [], grupos: [] });
+  it("e-mail sem ficha não gera link nem registro", async () => {
+    banco = bancoFalso({ corretores: [], grupos: [], admin_eventos: [] });
+    expect(await pedir("ana@exemplo.com.br")).toBe("/corretor/esqueci-a-senha?enviado=1");
+    await rodarDepois();
+    expect(pedidosDeLink).toEqual([]);
+    expect(enviados).toEqual([]);
+    expect(banco.tabelas.admin_eventos).toEqual([]);
+  });
+
+  it("o link sai só se o Auth devolver o login da ficha", async () => {
+    respostaDoLink = { ok: true, url: "https://site/x", userId: "usuario-de-outro" };
     await pedir("ana@exemplo.com.br");
     await rodarDepois();
-    expect(enviados).toHaveLength(1);
-    expect(enviados[0][2]).toBe("Next Home");
+    expect(enviados).toEqual([]);
+  });
+});
+
+/*
+ * O link sai por generateLink com a chave de serviço, que passa por cima do
+ * limite do próprio Supabase: sem um limite nosso, qualquer um mandaria
+ * centenas de e-mails para a caixa de alguém (revisão da fase 2A).
+ */
+describe("limite de pedidos por e-mail", () => {
+  it("no máximo 1 pedido a cada 60 s; a resposta é a mesma", async () => {
+    const primeiro = await pedir("ana@exemplo.com.br");
+    await rodarDepois();
+    vi.setSystemTime(new Date("2026-10-20T12:00:30Z"));
+    const segundo = await pedir("ANA@exemplo.com.br");
+    await rodarDepois();
+    expect(segundo).toBe(primeiro);
+    expect(pedidosDeLink).toHaveLength(1);
+    // O pedido recusado não grava linha: quem insiste não enche a tabela.
+    expect(pedidos()).toHaveLength(1);
+
+    vi.setSystemTime(new Date("2026-10-20T12:01:01Z"));
+    await pedir("ana@exemplo.com.br");
+    await rodarDepois();
+    expect(pedidosDeLink).toHaveLength(2);
+  });
+
+  it("no máximo 5 por hora", async () => {
+    for (let i = 0; i < 7; i++) {
+      vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 12, i * 2)));
+      await pedir("ana@exemplo.com.br");
+      await rodarDepois();
+    }
+    expect(pedidosDeLink).toHaveLength(5);
+
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 20, 13, 1)));
+    await pedir("ana@exemplo.com.br");
+    await rodarDepois();
+    expect(pedidosDeLink).toHaveLength(6);
+  });
+
+  it("o registro fica no grupo da ficha e não leva o e-mail", async () => {
+    await pedir("ana@exemplo.com.br");
+    await rodarDepois();
+    expect(pedidos()).toHaveLength(1);
+    expect(pedidos()[0]).toMatchObject({ grupo_id: GRUPO, alvo_corretor_id: "c1", ator_id: null });
+    expect(JSON.stringify(pedidos()[0])).not.toContain("exemplo.com.br");
+  });
+
+  it("sem conseguir ler os pedidos anteriores, não manda (fechado)", async () => {
+    const original = banco.cliente.from;
+    banco.cliente.from = (tabela: string) => {
+      const q = original(tabela);
+      if (tabela !== "admin_eventos") return q;
+      return { ...q, select: () => ({ eq: () => ({ eq: () => ({ eq: () => ({ gte: async () => ({ data: null, error: { message: "timeout" } }) }) }) }) }) } as never;
+    };
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await pedir("ana@exemplo.com.br");
+    await rodarDepois();
+    expect(pedidosDeLink).toEqual([]);
   });
 });
 

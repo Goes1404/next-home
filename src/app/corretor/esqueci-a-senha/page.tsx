@@ -29,10 +29,15 @@ export default async function EsqueciASenhaPage({
       <div className="border-linha bg-superficie shadow-painel-alto w-full max-w-sm rounded-2xl border p-6 sm:p-7">
         <h1 className="text-fluid-xl text-titulo font-medium">Esqueci a senha</h1>
 
-        {enviado ? (
+        {enviado === "conta" ? (
+          <p role="status" className="text-fluid-base text-corpo mt-4">
+            Saímos do painel e mandamos um link novo para o e-mail da sua conta. Abra o e-mail e siga o link para
+            criar a sua senha; ele só funciona uma vez.
+          </p>
+        ) : enviado ? (
           <p role="status" className="text-fluid-base text-corpo mt-4">
             Se houver uma conta com este e-mail, enviamos um link. Abra o e-mail e siga o link para criar uma senha
-            nova; ele só funciona uma vez.
+            nova; ele só funciona uma vez. Se você pediu há menos de um minuto, espere antes de pedir de novo.
           </p>
         ) : (
           <>
