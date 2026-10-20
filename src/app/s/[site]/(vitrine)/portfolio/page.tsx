@@ -1,0 +1,179 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { ViewTransition } from "react";
+import { GlassSurface } from "@/components/glass/GlassSurface";
+import { CtaFinal } from "@/components/home/CtaFinal";
+import { Regioes } from "@/components/home/Regioes";
+import { ScrollCue } from "@/components/home/ScrollCue";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { WhatsappCta } from "@/components/layout/WhatsappCta";
+import { Camada } from "@/components/motion/Camada";
+import { Reveal } from "@/components/motion/Reveal";
+import { TituloEditorial } from "@/components/motion/TituloEditorial";
+import { VoltarLink } from "@/components/ui/VoltarLink";
+import { precoAPartirDe } from "@/lib/format";
+import { getEmpreendimentosDoLink } from "@/lib/queries";
+import { corretoresPublicos } from "@/lib/catalogo/cache";
+import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { siteDaPagina, type ParamsDoSite } from "@/lib/sites/pagina";
+import { metadataDoPortfolio } from "@/lib/previaDoLink";
+
+import { srcDaMidia } from "@/lib/imagens/variantes";
+/**
+ * Revalida em segundo plano a cada 5 min: sem isso, a página fica estática
+ * desde o build e uma curadoria feita direto no banco (trocar destaque,
+ * trocar capa etc.) só apareceria no próximo deploy de código.
+ */
+export const revalidate = 300;
+
+/**
+ * A prévia do link que o corretor manda no WhatsApp (19/10/2026). Era fixa,
+ * "Portfólio de Imóveis de Alto Padrão em Alphaville", igual para todo
+ * corretor; agora é "Portfólio de <nome>" com o texto que ele escreveu em
+ * "Meu perfil", ou "Portfólio de produtos".
+ *
+ * O corretor vem da URL: o `proxy.ts` leva `?corretor=<slug>` ao redirecionar
+ * `/?corretor=<slug>` para cá, e o robô do WhatsApp não guarda cookie. Quem
+ * navega já com o cookie e sem o parâmetro cai no corretor do cookie. A página
+ * já é dinâmica (lê a ordem do corretor do link), então ler os dois não muda
+ * nada no cache. `noindex` continua: é a peça que o corretor compartilha, não
+ * uma porta de entrada de busca. Ver `previaDoLink.ts`.
+ */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<ParamsDoSite>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const { grupoId, marca } = await siteDaPagina(params);
+  const { corretor: doParametro } = await searchParams;
+  const slug = typeof doParametro === "string" ? doParametro : null;
+  const corretor = slug
+    ? ((await corretoresPublicos(grupoId)).find((c) => c.slug === slug) ?? null)
+    : await getCorretorAtivo(grupoId);
+  return metadataDoPortfolio(corretor, marca);
+}
+
+/**
+ * Home imersiva (Fase 7): hero cinematográfico com fundo fixo (vivendo no
+ * layout do grupo `(vitrine)`, compartilhado com a listagem) + seções de
+ * scroll-telling reveladas via GSAP (`Reveal`). O fundo é `position: fixed`
+ * lá no layout, o que casa com a suposição do shader de GlassSurface de que
+ * o vidro refrata o viewport, não o documento — por isso nenhuma seção
+ * abaixo pode envolver o header/CTA num ancestral com `transform`.
+ */
+export default async function Home({ params }: { params: Promise<ParamsDoSite> }) {
+  const { grupoId, marca } = await siteDaPagina(params);
+  const todos = await getEmpreendimentosDoLink(grupoId);
+  const destaques = todos.filter((e) => e.destaque);
+
+  return (
+    // "Ver todos" (mais abaixo) navega para /empreendimentos marcado como
+    // "nav-forward" — o par de animações em globals.css faz o conteúdo
+    // desta página deslizar para fora enquanto o da listagem desliza para
+    // dentro. O vídeo de fundo não participa: mora no layout do grupo, fora
+    // desta árvore, e por isso não desmonta nem reinicia na troca.
+    <ViewTransition
+      enter={{ "nav-forward": "nav-forward", default: "none" }}
+      exit={{ "nav-forward": "nav-forward", default: "none" }}
+      default="none"
+    >
+      <SiteHeader marca={marca} />
+      <WhatsappCta />
+
+      <main className="flex flex-1 flex-col">
+        <section className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-32">
+          {/* Camada por FORA do Reveal: os dois escrevem transform, e no
+              mesmo nó um atropelaria o outro. */}
+          <Camada velocidade={-0.16} className="w-full max-w-xl">
+            <Reveal from="nenhuma" className="mb-4">
+              <VoltarLink href="/" variante="pilula">
+                Voltar ao site
+              </VoltarLink>
+            </Reveal>
+            <Reveal>
+              <GlassSurface
+                preset="painel"
+                className="px-7 py-9 text-center sm:px-10 sm:py-12"
+              >
+                <p className="text-fluid-xs text-acento-suave mb-3 font-medium tracking-[0.2em] uppercase">
+                  Alphaville · Barueri · Santana de Parnaíba
+                </p>
+                <h1 className="text-fluid-3xl text-titulo">
+                  Experiências únicas em cada detalhe. O melhor de Alphaville para você.
+                </h1>
+                <p className="text-fluid-base text-corpo-suave mt-4">
+                  Projetos de arquitetura sofisticada, lazer completo de resort e
+                  localizações privilegiadas para elevar seu padrão de vida.
+                </p>
+              </GlassSurface>
+            </Reveal>
+          </Camada>
+
+          <ScrollCue alvo="destaques" label="Role para ver mais" />
+        </section>
+
+        <section id="destaques" className="scroll-mt-20 px-4 pt-4 pb-28">
+          <Reveal className="mx-auto max-w-lg text-center">
+            <TituloEditorial className="text-fluid-2xl text-titulo">
+              Lançamentos Selecionados
+            </TituloEditorial>
+            <p className="text-fluid-base text-apoio mt-3">
+              Uma curadoria refinada dos projetos mais desejados da região.
+            </p>
+          </Reveal>
+
+          <div className="mx-auto mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
+            {destaques.map((e, i) => (
+              <Reveal key={e.slug} delay={(i % 2) * 0.1} from="baixo">
+                <Link href={`/empreendimentos/${e.slug}`}>
+                  <GlassSurface preset="card" className="group overflow-hidden">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-[calc(var(--radius-glass)-1px)]">
+                      <Camada
+                        velocidade={0.08 + (i % 2) * 0.06}
+                        className="absolute inset-0 scale-110"
+                      >
+                        <Image
+                          src={srcDaMidia(e.capa)}
+                          alt={e.capa.alt}
+                          fill
+                          sizes="(min-width: 640px) 380px, 100vw"
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        />
+                      </Camada>
+                    </div>
+                    <div className="px-5 py-4">
+                      <h3 className="font-display text-titulo text-lg">{e.nome}</h3>
+                      <p className="text-fluid-sm text-legenda mt-0.5">
+                        {e.bairro}, {e.cidade}
+                      </p>
+                      <p className="text-fluid-sm text-acento-suave mt-2 font-medium">
+                        {precoAPartirDe(e.precoAPartir)}
+                      </p>
+                    </div>
+                  </GlassSurface>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal className="mt-10 text-center">
+            <Link
+              href="/empreendimentos"
+              transitionTypes={["nav-forward"]}
+              className="text-fluid-sm text-acento-suave font-medium underline-offset-4 hover:underline"
+            >
+              Ver todos os {todos.length} empreendimentos →
+            </Link>
+          </Reveal>
+        </section>
+
+        <Regioes catalogo={todos} />
+
+        <CtaFinal />
+      </main>
+    </ViewTransition>
+  );
+}

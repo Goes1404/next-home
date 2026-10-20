@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { grupoDoSite } from "@/lib/grupos/grupo";
+import { siteDaRequisicao } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,7 +31,10 @@ export async function POST(req: Request) {
    * site; se não, o clique é gravado sem eles. As colunas são só estas:
    * `pelo_porteiro` continua fora, como na 0143.
    */
-  const grupo = grupoDoSite();
+  // O grupo vem do ENDEREÇO do site (fase 3); endereço de nenhum grupo não grava nada.
+  const site = await siteDaRequisicao(req);
+  if (!site) return NextResponse.json({ erro: "Endereço sem site." }, { status: 404 });
+  const grupo = site.grupoId;
   const supabase = createServiceClient();
 
   // Se veio corretorId explícito, usa ele (se for do grupo). Se não, tenta
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
       : { data: null };
     corretorId = data?.id ?? null;
   } else {
-    const corretorAtivo = await getCorretorAtivo();
+    const corretorAtivo = await getCorretorAtivo(grupo);
     corretorId = corretorAtivo?.id ?? null;
   }
 

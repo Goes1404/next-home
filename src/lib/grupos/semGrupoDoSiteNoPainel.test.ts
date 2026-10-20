@@ -6,24 +6,24 @@ import { semComentarios } from "./codigoFonte";
 /**
  * No painel, o grupo é sempre o de quem está logado (Task 13).
  *
- * `grupoDoSite()` responde "de quem é o site público que está sendo
- * servido". Nesta fase a resposta é fixa (o grupo 1), então um painel que o
- * use funciona para a Next Home e mostra calado o catálogo, a equipe ou os
- * parâmetros da Next Home a um corretor do grupo B — foi o defeito da
- * rodada 1 da Task 12, quando `getEmpreendimentos` tinha o grupo do site
- * como padrão. No painel, o grupo sai de `getCorretorLogado().grupoId` (ou
- * da sessão do gestor).
+ * Até a fase 3 o site público tinha `grupoDoSite()`, fixo no grupo 1, e um
+ * painel que o usasse mostrava calado o catálogo da Next Home a um corretor
+ * do grupo B (rodada 1 da Task 12). Desde a fase 3 (20/10/2026) o grupo do
+ * site sai do ENDEREÇO da requisição (`src/lib/sites/`), e o perigo mudou de
+ * forma: um painel aberto no domínio de um cliente resolveria o grupo do
+ * DOMÍNIO, não o de quem entrou. A guarda é a mesma ideia com a fonte nova:
  *
- * A guarda cobre os dois jeitos de o grupo do site entrar: a chamada direta
- * e as funções de `queries.ts`/`corretorAtivo.ts` que o usam por dentro
- * (`getCorretores`, `getEmpreendimentoBySlug`, ...). A lista dessas funções
- * sai do código delas, não de uma lista escrita à mão: função nova do site
- * que passe a usar o grupo do site entra sozinha.
+ * 1. nenhum arquivo do painel resolve site pelo endereço;
+ * 2. as funções do site (`queries.ts`, `corretorAtivo.ts`) recebem o grupo
+ *    de quem chama — nenhuma o descobre por dentro;
+ * 3. `grupoDoSite()` não volta a existir.
  */
 
-const PASTAS_DO_PAINEL = ["src/app/corretor", "src/app/api/painel"];
+const PASTAS_DO_PAINEL = ["src/app/corretor", "src/app/api/painel", "src/app/plataforma"];
 
 const MODULOS_DO_SITE = ["src/lib/queries.ts", "src/lib/corretorAtivo.ts"];
+
+const RESOLUCAO_PELO_ENDERECO = /\b(siteDaPagina|siteDaRequisicao|siteDoCabecalho|resolverSite)\b|@\/lib\/sites\/(pagina|resolver)/;
 
 function arquivosDoPainel(): string[] {
   return PASTAS_DO_PAINEL.flatMap((pasta) =>
@@ -33,51 +33,43 @@ function arquivosDoPainel(): string[] {
   );
 }
 
-/**
- * As funções exportadas cujo corpo chama `grupoDoSite(`. O corpo vai do
- * `export` dela até o próximo `export` do arquivo.
- */
-function funcoesComGrupoDoSite(): string[] {
-  const nomes: string[] = [];
-  for (const modulo of MODULOS_DO_SITE) {
-    const codigo = semComentarios(readFileSync(modulo, "utf8"));
-    const exportacoes = [...codigo.matchAll(/^export\s+(?:async\s+function\s+|const\s+)(\w+)/gm)];
-    exportacoes.forEach((m, i) => {
-      const fim = i + 1 < exportacoes.length ? exportacoes[i + 1].index! : codigo.length;
-      if (codigo.slice(m.index!, fim).includes("grupoDoSite(")) nomes.push(m[1]);
-    });
-  }
-  return nomes;
-}
-
-describe("guarda: o painel não usa o grupo do site", () => {
-  it("nenhum arquivo do painel chama grupoDoSite()", () => {
+describe("guarda: o painel não usa o grupo do endereço", () => {
+  it("nenhum arquivo do painel resolve o site pelo endereço", () => {
     const arquivos = arquivosDoPainel();
     // Piso: a varredura acha o painel (sem isto, uma pasta renomeada
     // aprovaria tudo em silêncio).
     expect(arquivos.length).toBeGreaterThan(100);
-    const fora = arquivos.filter((arquivo) => semComentarios(readFileSync(arquivo, "utf8")).includes("grupoDoSite("));
+    const fora = arquivos.filter((arquivo) => RESOLUCAO_PELO_ENDERECO.test(semComentarios(readFileSync(arquivo, "utf8"))));
     expect(fora).toEqual([]);
   });
 
-  it("nenhum arquivo do painel chama função do site que usa o grupo do site por dentro", () => {
-    const funcoes = funcoesComGrupoDoSite();
-    // Piso: getCorretores, getCorretorPorSlug, getEmpreendimentoBySlug,
-    // getSimilares, getEmpreendimentosDestaque, getSlugsEmpreendimentos,
-    // getRegioesDisponiveis, getEmpreendimentosDoLink e getCorretorAtivo.
-    expect(funcoes).toContain("getCorretores");
-    expect(funcoes).toContain("getCorretorAtivo");
-    expect(funcoes.length).toBeGreaterThanOrEqual(9);
-    // getEmpreendimentos recebe o grupo de quem chama: não pode entrar.
-    expect(funcoes).not.toContain("getEmpreendimentos");
-
-    const fora: string[] = [];
-    for (const arquivo of arquivosDoPainel()) {
-      const codigo = semComentarios(readFileSync(arquivo, "utf8"));
-      for (const nome of funcoes) {
-        if (new RegExp(`(?<![\\w.$])${nome}\\s*\\(`).test(codigo)) fora.push(`${arquivo}: ${nome}(`);
-      }
+  it("as funções do site recebem o grupo de quem chama", () => {
+    for (const modulo of MODULOS_DO_SITE) {
+      const codigo = semComentarios(readFileSync(modulo, "utf8"));
+      expect(codigo, modulo).not.toMatch(RESOLUCAO_PELO_ENDERECO);
+      expect(codigo, modulo).not.toMatch(/grupoDoSite\s*\(/);
     }
-    expect(fora).toEqual([]);
+    // As funções que o site usa levam o grupo como parâmetro.
+    const queries = semComentarios(readFileSync("src/lib/queries.ts", "utf8"));
+    for (const nome of [
+      "getEmpreendimentos",
+      "getEmpreendimentosDoLink",
+      "getSimilares",
+      "getEmpreendimentosDestaque",
+      "getEmpreendimentoBySlug",
+      "getSlugsEmpreendimentos",
+      "getCorretores",
+      "getCorretorPorSlug",
+      "getRegioesDisponiveis",
+    ]) {
+      expect(queries, nome).toMatch(new RegExp(`export async function ${nome}\\(\\s*(?:/\\*\\*[\\s\\S]*?\\*/\\s*)?grupoId: string`));
+    }
+    const ativo = semComentarios(readFileSync("src/lib/corretorAtivo.ts", "utf8"));
+    expect(ativo).toMatch(/getCorretorAtivo = cache\(async \(grupoId: string\)/);
+  });
+
+  it("grupoDoSite() não volta a existir", () => {
+    const grupo = semComentarios(readFileSync("src/lib/grupos/grupo.ts", "utf8"));
+    expect(grupo).not.toMatch(/function grupoDoSite/);
   });
 });

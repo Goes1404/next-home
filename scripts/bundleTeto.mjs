@@ -28,7 +28,7 @@ const APP = join(NEXT, "server", "app");
 
 /**
  * Tetos em KB (JavaScript DECODIFICADO, o que o navegador executa). Chave =
- * rota como o manifesto a nomeia (`/(institucional)/page`), ou `*` para o
+ * rota como o manifesto a nomeia (`/s/[site]/(institucional)/page`), ou `*` para o
  * padrão. A régua: número que só desce. Baixar o teto quando uma fase do
  * roadmap de performance emagrecer a rota é obrigação, não capricho — teto
  * folgado é catraca que não catraca.
@@ -111,11 +111,11 @@ const TETOS_KB = {
   // dois layouts públicos), pedido para medir os anúncios.
   // 03/10: +2 KB na home, do fundo da casa no computador e do parallax pelo
   // ponteiro (0151). A esteira estava vermelha desde 04/10.
-  "/(institucional)/page": 739,
-  "/(institucional)/financiamento/page": 733, // 09/10: +1 KB, a página atual marcada no cabeçalho (LinksDoCabecalho)
-  "/(institucional)/regioes/[slug]/page": 721,
-  "/(vitrine)/empreendimentos/page": 728, // 09/10: +6 KB, o menu do celular no cabeçalho da vitrine (antes só havia uma seta)
-  "/(vitrine)/empreendimentos/[slug]/page": 747,
+  "/s/[site]/(institucional)/page": 739,
+  "/s/[site]/(institucional)/financiamento/page": 733, // 09/10: +1 KB, a página atual marcada no cabeçalho (LinksDoCabecalho)
+  "/s/[site]/(institucional)/regioes/[slug]/page": 721,
+  "/s/[site]/(vitrine)/empreendimentos/page": 728, // 09/10: +6 KB, o menu do celular no cabeçalho da vitrine (antes só havia uma seta)
+  "/s/[site]/(vitrine)/empreendimentos/[slug]/page": 747,
 };
 
 function tamanho(caminhoRelativo) {

@@ -1,13 +1,15 @@
 import type { MetadataRoute } from "next";
 import { getCorretores, getEmpreendimentos, getSlugsEmpreendimentos } from "@/lib/queries";
-import { grupoDoSite } from "@/lib/grupos/grupo";
+import { siteDoCabecalho } from "@/lib/sites/pagina";
 import { regioesComEstoque } from "@/lib/regioes";
-import { site } from "@/lib/site";
 
-/** Revalida junto com o conteúdo: um lançamento novo entra no sitemap em 5 min. */
-export const revalidate = 300;
-
-const url = (caminho: string) => `${site.url}${caminho}`;
+/*
+ * Por SITE desde a fase 3 (20/10/2026): o endereço da requisição diz de que
+ * grupo é o sitemap, e toda URL sai no endereço PRINCIPAL dele — o sitemap
+ * de um site nunca lista página de outro. Ler o cabeçalho torna o arquivo
+ * dinâmico; os dados (catálogo, equipe) continuam no cache por grupo, então
+ * cada pedido custa só a montagem. Endereço de nenhum grupo: sitemap vazio.
+ */
 
 /**
  * Fora do sitemap de propósito: `/corretor*` (área logada, sem valor de busca
@@ -16,10 +18,14 @@ const url = (caminho: string) => `${site.url}${caminho}`;
  * institucional, e as duas competiriam pela mesma intenção de busca.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const site = await siteDoCabecalho();
+  if (!site) return [];
+  const { grupoId, marca } = site;
+  const url = (caminho: string) => `${marca.url}${caminho}`;
   const [slugs, corretores, catalogo] = await Promise.all([
-    getSlugsEmpreendimentos(),
-    getCorretores(),
-    getEmpreendimentos(grupoDoSite()),
+    getSlugsEmpreendimentos(grupoId),
+    getCorretores(grupoId),
+    getEmpreendimentos(grupoId),
   ]);
 
   /*

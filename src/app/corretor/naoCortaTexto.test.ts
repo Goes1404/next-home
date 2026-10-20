@@ -44,8 +44,8 @@ import path from "node:path";
 const RAIZES = [
   path.join(process.cwd(), "src/app/corretor"),
   path.join(process.cwd(), "src/components"),
-  path.join(process.cwd(), "src/app/(institucional)"),
-  path.join(process.cwd(), "src/app/(vitrine)"),
+  path.join(process.cwd(), "src/app/s/[site]/(institucional)"),
+  path.join(process.cwd(), "src/app/s/[site]/(vitrine)"),
 ];
 
 /** Para o rótulo do erro sair curto: a raiz de quem o arquivo pertence. */

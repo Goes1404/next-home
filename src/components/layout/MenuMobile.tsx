@@ -56,7 +56,7 @@ function useMontado(): boolean {
   return useSyncExternalStore(semInscricao, () => true, () => false);
 }
 
-export function MenuMobile({ links }: { links: LinkMenu[] }) {
+export function MenuMobile({ links, wordmark }: { links: LinkMenu[]; wordmark?: readonly [string, string] }) {
   const montado = useMontado();
   const [aberto, setAberto] = useState(false);
   const [fechando, setFechando] = useState(false);
@@ -177,7 +177,7 @@ export function MenuMobile({ links }: { links: LinkMenu[] }) {
                   onClick={fechar}
                   className="font-display text-titulo text-lg leading-none font-medium tracking-tight"
                 >
-                  <Wordmark destaque="text-acento-forte" />
+                  <Wordmark destaque="text-acento-forte" nomes={wordmark} />
                 </Link>
                 <button
                   type="button"

@@ -3,7 +3,6 @@ import { catalogoPublicado, corretoresPublicos } from "@/lib/catalogo/cache";
 import { mapCorretor, SELECT_CORRETOR, SELECT_EMPREENDIMENTO, type LinhaCorretor } from "@/lib/catalogo/selects";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { estagioDe } from "@/lib/estagioDeCompra";
-import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createClient } from "@/lib/supabase/public";
 import type {
   CorretorPerfil,
@@ -138,8 +137,8 @@ export function ordenar(
 }
 
 /** Destaques do corretor ativo (link pessoal), já ordenados — ou `undefined` sem link ou sem nenhum configurado. */
-async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | undefined> {
-  const corretorAtivo = await getCorretorAtivo();
+async function buscarDestaquesCorretorAtivo(grupoId: string): Promise<Map<string, number> | undefined> {
+  const corretorAtivo = await getCorretorAtivo(grupoId);
   if (!corretorAtivo) return undefined;
 
   /*
@@ -169,7 +168,7 @@ async function buscarDestaquesCorretorAtivo(): Promise<Map<string, number> | und
 export async function getEmpreendimentos(
   /**
    * O grupo dono do catálogo (L15). Obrigatório, sem padrão: o site passa
-   * `grupoDoSite()`, o painel o grupo do corretor logado, as páginas de link
+   * o grupo do endereço (`siteDaPagina`), o painel o grupo do corretor logado, as páginas de link
    * (seleção, proposta, portal) o grupo de quem mandou o link, e o webhook e
    * os crons o grupo da instância. Com um padrão, todo chamador que
    * esquecesse leria calado o catálogo do grupo 1 (rodada 1 da Task 12).
@@ -195,12 +194,13 @@ export async function getEmpreendimentos(
  * outras páginas a ordem é a curada do cadastro, para todo mundo.
  */
 export async function getEmpreendimentosDoLink(
+  grupoId: string,
   filtros?: FiltrosEmpreendimento,
   ordenacao: Ordenacao = "destaque",
 ): Promise<Empreendimento[]> {
   const [todos, destaquesCorretor] = await Promise.all([
-    buscarPublicados(grupoDoSite()),
-    buscarDestaquesCorretorAtivo(),
+    buscarPublicados(grupoId),
+    buscarDestaquesCorretorAtivo(grupoId),
   ]);
   const filtrados = filtros ? todos.filter((e) => bate(e, filtros)) : todos;
   return ordenar(filtrados, ordenacao, destaquesCorretor);
@@ -212,10 +212,11 @@ export async function getEmpreendimentosDoLink(
  * a régua nunca volta vazia mesmo num portfólio pequeno.
  */
 export async function getSimilares(
+  grupoId: string,
   slug: string,
   limite = 3,
 ): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados(grupoDoSite());
+  const todos = await buscarPublicados(grupoId);
   const atual = todos.find((e) => e.slug === slug);
   if (!atual) return [];
 
@@ -226,24 +227,25 @@ export async function getSimilares(
   return outros.sort((a, b) => pontos(b) - pontos(a)).slice(0, limite);
 }
 
-export async function getEmpreendimentosDestaque(): Promise<Empreendimento[]> {
-  const todos = await buscarPublicados(grupoDoSite());
+export async function getEmpreendimentosDestaque(grupoId: string): Promise<Empreendimento[]> {
+  const todos = await buscarPublicados(grupoId);
   return todos.filter((e) => e.destaque);
 }
 
 export async function getEmpreendimentoBySlug(
+  grupoId: string,
   slug: string,
 ): Promise<Empreendimento | null> {
   // O catálogo cacheado já tem todos os publicados — e `generateMetadata` e
   // a página pedem o MESMO slug na mesma requisição: com o `cache()` de
   // `buscarPublicados`, a segunda leitura é de graça (era uma ida ao banco a
   // mais, e depois outra inteira para os similares).
-  const todos = await buscarPublicados(grupoDoSite());
+  const todos = await buscarPublicados(grupoId);
   return todos.find((e) => e.slug === slug) ?? null;
 }
 
-export async function getSlugsEmpreendimentos(): Promise<string[]> {
-  return (await catalogoPublicado(grupoDoSite())).map((e) => e.slug);
+export async function getSlugsEmpreendimentos(grupoId: string): Promise<string[]> {
+  return (await catalogoPublicado(grupoId)).map((e) => e.slug);
 }
 
 /* ---------------------------------------------------------------------------
@@ -259,12 +261,12 @@ export async function getSlugsEmpreendimentos(): Promise<string[]> {
  * "Equipe Next Home" (usado como fallback de empreendimento sem responsável),
  * que não é uma pessoa e não deve aparecer na vitrine da equipe.
  */
-export async function getCorretores(): Promise<CorretorPerfil[]> {
-  return corretoresPublicos(grupoDoSite());
+export async function getCorretores(grupoId: string): Promise<CorretorPerfil[]> {
+  return corretoresPublicos(grupoId);
 }
 
-export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil | null> {
-  return (await corretoresPublicos(grupoDoSite())).find((c) => c.slug === slug) ?? null;
+export async function getCorretorPorSlug(grupoId: string, slug: string): Promise<CorretorPerfil | null> {
+  return (await corretoresPublicos(grupoId)).find((c) => c.slug === slug) ?? null;
 }
 
 
@@ -276,12 +278,12 @@ export async function getCorretorPorSlug(slug: string): Promise<CorretorPerfil |
  * interação do site — medido em produção: casa e terreno tinham 0 resultados
  * enquanto o select os oferecia.
  */
-export async function getRegioesDisponiveis(): Promise<{
+export async function getRegioesDisponiveis(grupoId: string): Promise<{
   cidades: string[];
   bairros: string[];
   tipos: TipoImovel[];
 }> {
-  const todos = await buscarPublicados(grupoDoSite());
+  const todos = await buscarPublicados(grupoId);
   const cidades = [...new Set(todos.map((e) => e.cidade))].sort();
   const bairros = [...new Set(todos.map((e) => e.bairro))].sort();
   const tipos = [...new Set(todos.map((e) => e.tipo))].sort();

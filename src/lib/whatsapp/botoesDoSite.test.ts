@@ -12,7 +12,7 @@ import { mensagemDeAnuncio, mensagemDoSite, reconhecerConviteDeEntrada } from ".
  * A guarda lê o código: nenhum arquivo do site público pode voltar a montar
  * a mensagem à mão. Ela tem de sair de `mensagemDoSite`/`mensagemDeAnuncio`.
  */
-const RAIZES = ["src/app/(institucional)", "src/app/(vitrine)", "src/components", "src/lib/site.ts"];
+const RAIZES = ["src/app/s/[site]/(institucional)", "src/app/s/[site]/(vitrine)", "src/components", "src/lib/site.ts"];
 
 function arquivos(caminho: string): string[] {
   if (statSync(caminho).isFile()) return [caminho];

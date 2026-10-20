@@ -89,7 +89,7 @@ describe("guardas do componente", () => {
     const raiz = readFileSync(join(__dirname, "../../app/layout.tsx"), "utf8");
     expect(raiz).not.toMatch(/PixelMeta/);
     for (const g of ["(institucional)", "(vitrine)"]) {
-      const layout = readFileSync(join(__dirname, `../../app/${g}/layout.tsx`), "utf8");
+      const layout = readFileSync(join(__dirname, `../../app/s/[site]/${g}/layout.tsx`), "utf8");
       expect(layout, g).toMatch(/<PixelMeta \/>/);
     }
   });

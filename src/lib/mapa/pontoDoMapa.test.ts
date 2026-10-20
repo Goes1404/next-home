@@ -58,7 +58,7 @@ describe("o globo e o mapa recebem pontos, não o catálogo", () => {
   });
 
   it("as páginas passam pontosDoMapa(), nunca o catálogo", () => {
-    for (const rel of ["app/(institucional)/page.tsx", "app/(vitrine)/mapa/page.tsx"]) {
+    for (const rel of ["app/s/[site]/(institucional)/page.tsx", "app/s/[site]/(vitrine)/mapa/page.tsx"]) {
       const fonte = ler(rel);
       expect(fonte, rel).toContain("pontosDoMapa(");
       expect(fonte, rel).not.toMatch(/empreendimentos=\{(todos|todosEmpreendimentos)\}/);

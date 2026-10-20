@@ -1,5 +1,5 @@
 import { getEmpreendimentos, getEmpreendimentoBySlug } from "../src/lib/queries";
-import { grupoDoSite } from "../src/lib/grupos/grupo";
+import { GRUPO_NEXT_HOME_ID } from "../src/lib/grupos/grupo";
 import { mapEmpreendimento } from "../src/lib/supabase/mappers";
 import type { Empreendimento } from "../src/lib/types";
 
@@ -10,7 +10,8 @@ async function main() {
 
   // 1. Validar Catálogo Geral de Imóveis
   console.log("1️⃣ Testando carregamento do catálogo...");
-  const imoveis = await getEmpreendimentos(grupoDoSite());
+  // O site da Next Home (grupo 1); o grupoDoSite() fixo saiu na fase 3.
+  const imoveis = await getEmpreendimentos(GRUPO_NEXT_HOME_ID);
   console.log(`✓ Catálogo carregado com ${imoveis.length} empreendimento(s).`);
   
   if (imoveis.length === 0) {
@@ -22,7 +23,7 @@ async function main() {
 
   // 2. Validar Detalhes do Imóvel para o Editor
   console.log("\n2️⃣ Testando integridade dos dados para o Editor Mobile...");
-  const detalhe = await getEmpreendimentoBySlug(canvas.slug);
+  const detalhe = await getEmpreendimentoBySlug(GRUPO_NEXT_HOME_ID, canvas.slug);
   if (!detalhe) throw new Error("Falha ao carregar detalhe do imóvel!");
 
   console.log(`  - Nome: ${detalhe.nome}`);

@@ -1,7 +1,6 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { corretoresPublicos } from "@/lib/catalogo/cache";
-import { grupoDoSite } from "@/lib/grupos/grupo";
 import type { Corretor } from "@/lib/types";
 
 export { COOKIE_CORRETOR_ATIVO } from "./corretorAtivoCookie";
@@ -37,14 +36,14 @@ export type CorretorAtivo = Corretor & {
  * `getEmpreendimentosDoLink`, usada só pelas duas listagens dinâmicas.
  * `cascaEstatica.test.ts` reprova um chamador novo em página pública.
  */
-export const getCorretorAtivo = cache(async (): Promise<CorretorAtivo | null> => {
+export const getCorretorAtivo = cache(async (grupoId: string): Promise<CorretorAtivo | null> => {
   const cookieStore = await cookies();
   const slug = cookieStore.get(COOKIE_CORRETOR_ATIVO)?.value;
   if (!slug) return null;
 
-  // Só corretor do grupo do site: cookie com o slug de alguém de outro grupo
-  // não vira "corretor do link" aqui.
-  const corretor = (await corretoresPublicos(grupoDoSite())).find((c) => c.slug === slug);
+  // Só corretor do grupo do site (o do endereço, passado por quem chama):
+  // cookie com o slug de alguém de outro grupo não vira "corretor do link".
+  const corretor = (await corretoresPublicos(grupoId)).find((c) => c.slug === slug);
   if (!corretor) return null;
 
   return {

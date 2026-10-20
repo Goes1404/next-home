@@ -1,0 +1,268 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CardEmpreendimento } from "@/components/empreendimento/CardEmpreendimento";
+import { GlassSurface } from "@/components/glass/GlassSurface";
+import { Reveal } from "@/components/motion/Reveal";
+import { VoltarLink } from "@/components/ui/VoltarLink";
+import { iniciais, telefoneBR } from "@/lib/format";
+import { getCorretorPorSlug, getCorretores, getEmpreendimentos } from "@/lib/queries";
+import { linkWhatsappPara } from "@/lib/site";
+import { siteDaPagina, type ParamsDoSite } from "@/lib/sites/pagina";
+import type { MarcaDoSite } from "@/lib/sites/marca";
+import type { CorretorPerfil } from "@/lib/types";
+import { descricaoDePagina } from "@/lib/seo";
+import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+
+type Params = { slug: string };
+type ParamsDaPagina = Params & ParamsDoSite;
+
+/**
+ * Prerenderiza a página de cada corretor com slug (F2b, 12/10/2026). Sem
+ * isto a rota saía "dinâmica sob demanda" no build; com a lista, vira SSG
+ * com a mesma revalidação de uma hora do layout. Corretor cadastrado depois
+ * do build continua funcionando: `dynamicParams` é o padrão, e a página
+ * dele é renderizada na primeira visita e cacheada.
+ */
+export async function generateStaticParams({ params }: { params: ParamsDoSite }): Promise<Params[]> {
+  const { grupoId } = await siteDaPagina(params);
+  const corretores = await getCorretores(grupoId);
+  return corretores.flatMap((c) => (c.slug ? [{ slug: c.slug }] : []));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<ParamsDaPagina>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { grupoId, marca } = await siteDaPagina(params);
+  const corretor = await getCorretorPorSlug(grupoId, slug);
+  if (!corretor) return { title: "Corretor não encontrado" };
+
+  // Sem pronome nem "corretor/corretora": o cadastro não guarda gênero e
+  // metade da equipe é de mulheres.
+  // `site.regioes` cresce quando a imobiliária abre região nova, e a
+  // descrição estourava os 155 do Google por causa disso. A régua corta no
+  // fim, que é onde a lista de regiões está — o nome e o CRECI, que são o
+  // que identifica, ficam sempre visíveis.
+  const description = descricaoDePagina(
+    `${corretor.nome} atende pela ${marca.nomeCompleto} — CRECI ${corretor.creci}.${atuacao(marca, marca.regioes.length)}`,
+  );
+
+  return {
+    title: corretor.nome,
+    description,
+    alternates: { canonical: `/corretores/${corretor.slug}` },
+    // Sem foto cadastrada não há o que compartilhar: omitir `images` deixa o
+    // Open Graph cair na imagem padrão do site, melhor que um card vazio.
+    openGraph: {
+      type: "profile",
+      title: `${corretor.nome} — ${marca.nome}`,
+      description,
+      url: `${marca.url}/corretores/${corretor.slug}`,
+      ...(corretor.fotoUrl ? { images: [{ url: corretor.fotoUrl }] } : {}),
+    },
+  };
+}
+
+/**
+ * Texto de apresentação.
+ *
+ * A `bio` é preenchida pelo próprio corretor no painel. Sem ela, o texto é
+ * genérico de propósito: desde 28/09 o imóvel não tem corretor dono, então
+ * não existe mais "quantos empreendimentos ele acompanha" para contar.
+ */
+function apresentacao(corretor: CorretorPerfil, marca: MarcaDoSite) {
+  if (corretor.bio) return corretor.bio;
+  const primeiroNome = corretor.nome.split(" ")[0];
+  const regioes = marca.regioes.length ? ` e atuação em ${marca.regioes.slice(0, 3).join(", ")} e região` : "";
+  return `${primeiroNome} atende pela ${marca.nomeCompleto}, com CRECI ${corretor.creci}${regioes}. Chame no WhatsApp e conte o que você procura.`;
+}
+
+/** " Atuação em A, B." — vazio quando o site não declara regiões. */
+function atuacao(marca: MarcaDoSite, quantas: number): string {
+  return quantas ? ` Atuação em ${marca.regioes.slice(0, quantas).join(", ")}.` : "";
+}
+
+/** Quantos imóveis do catálogo a página mostra antes de mandar para a lista. */
+const VITRINE = 6;
+
+/**
+ * Página do corretor — o "microsite de agente" que a RE/MAX usa, adaptado ao
+ * porte da Next Home: quem é, o que ele acompanha hoje, e dois caminhos para
+ * falar com ele.
+ *
+ * O cabeçalho é de duas colunas a partir de `sm`: centralizado, o bloco
+ * inteiro (avatar + nome + texto + botões) empurra a lista de empreendimentos
+ * para baixo da dobra em desktop, e a lista é justamente a prova de que ele
+ * trabalha — o que mais convence alguém a chamar.
+ *
+ * O botão "Falar com" desta página é o ÚNICO do site que vai direto para o
+ * número de uma pessoa: aqui o visitante escolheu aquele corretor. Todo o
+ * resto passa pelo porteiro (`/wa`), porque o imóvel não tem dono (28/09).
+ *
+ * A lista mostra o catálogo, não "os imóveis dele": todo corretor da equipe
+ * apresenta o catálogo inteiro.
+ */
+export default async function CorretorPage({ params }: { params: Promise<ParamsDaPagina> }) {
+  const { slug } = await params;
+  const { grupoId, marca } = await siteDaPagina(params);
+  const corretor = await getCorretorPorSlug(grupoId, slug);
+  if (!corretor) notFound();
+
+  const catalogo = await getEmpreendimentos(grupoId);
+  const empreendimentos = catalogo.slice(0, VITRINE);
+  const primeiroNome = corretor.nome.split(" ")[0];
+  const whatsapp = linkWhatsappPara(
+    corretor.whatsapp,
+    mensagemDoSite(),
+  );
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: corretor.nome,
+    jobTitle: "Corretor de imóveis",
+    identifier: `CRECI ${corretor.creci}`,
+    telephone: `+${corretor.whatsapp}`,
+    url: `${marca.url}/corretores/${corretor.slug}`,
+    ...(corretor.fotoUrl ? { image: corretor.fotoUrl } : {}),
+    worksFor: {
+      "@type": "RealEstateAgent",
+      name: marca.nomeCompleto,
+      url: marca.url,
+    },
+    areaServed: [...marca.regioes].map((nome) => ({
+      "@type": "Place",
+      name: nome,
+    })),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        // Nome e bio vêm do cadastro que o próprio corretor edita no painel,
+        // então o `<` é escapado antes de entrar no HTML — a recomendação da
+        // documentação do Next para JSON-LD com conteúdo de terceiros.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+
+      <main className="flex flex-1 flex-col px-4 pt-28 pb-24">
+        {/* No topo, não só no rodapé: quem entra pela busca do Google cai
+            direto aqui e precisa de um caminho para o resto da equipe sem ter
+            de rolar a página inteira. */}
+        <nav aria-label="Trilha" className="mx-auto w-full max-w-5xl">
+          <VoltarLink href="/corretores" variante="pilula">
+            Voltar para a equipe
+          </VoltarLink>
+        </nav>
+
+        <Reveal className="mx-auto mt-4 w-full max-w-5xl">
+          <GlassSurface preset="painel" className="px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
+              {corretor.fotoUrl ? (
+                <Image
+                  src={corretor.fotoUrl}
+                  unoptimized
+                  // Decorativa: o nome vem em seguida, no h1.
+                  alt=""
+                  width={128}
+                  height={128}
+                  priority
+                  className="h-28 w-28 shrink-0 rounded-full object-cover ring-1 ring-linha/15 sm:h-32 sm:w-32"
+                />
+              ) : (
+                // `text-mist-50` literal, como o texto branco sobre botão da marca: as
+                // iniciais vivem sobre um círculo de teal sólido, igual nos dois temas.
+                <span
+                  aria-hidden
+                  className="font-display from-brand-500 to-brand-700 flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-3xl text-mist-50 ring-1 ring-linha/15 sm:h-32 sm:w-32"
+                >
+                  {iniciais(corretor.nome)}
+                </span>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <h1 className="text-fluid-2xl text-titulo">{corretor.nome}</h1>
+                <p className="text-fluid-sm mt-1.5 text-legenda">
+                  Equipe {marca.nome} · CRECI {corretor.creci}
+                </p>
+
+                <p className="text-fluid-base text-apoio mt-5 break-words whitespace-pre-line">
+                  {apresentacao(corretor, marca)}
+                </p>
+
+                <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                  <a
+                    href={whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-brand-500 hover:bg-brand-400 inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-sm font-medium text-white transition-colors botao-vivo"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden
+                      className="h-4 w-4"
+                    >
+                      <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm5.85 14.1c-.25.7-1.45 1.34-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.9-4.27-5.05-4.47-.15-.2-1.21-1.6-1.21-3.06s.77-2.17 1.04-2.47c.27-.3.6-.37.8-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.14 1.02 2.1 1.33 2.4 1.48.3.15.47.13.65-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.73.82 2.02.97.3.15.5.22.57.35.07.13.07.75-.18 1.45Z" />
+                    </svg>
+                    Falar com {primeiroNome}
+                  </a>
+
+                  <Link
+                    href={`/portfolio?corretor=${corretor.slug}`}
+                    className="hover:border-brand-300/50 hover:text-acento-suave inline-flex h-12 items-center justify-center rounded-full border border-linha/20 px-7 text-sm font-medium text-corpo transition-colors"
+                  >
+                    Ver portfólio completo
+                  </Link>
+                </div>
+
+                {/* Para quem prefere salvar o contato a abrir a conversa agora. */}
+                <p className="text-fluid-sm mt-4 text-legenda">
+                  WhatsApp {telefoneBR(corretor.whatsapp)}
+                </p>
+              </div>
+            </div>
+          </GlassSurface>
+        </Reveal>
+
+        {empreendimentos.length > 0 && (
+          <section className="mx-auto mt-20 w-full max-w-5xl">
+            <Reveal>
+              <h2 className="text-fluid-2xl text-titulo">
+                O que {primeiroNome} pode te apresentar
+              </h2>
+              <p className="text-fluid-base mt-3 text-apoio">
+                Todo corretor da {marca.nome} apresenta o catálogo inteiro: {catalogo.length}{" "}
+                empreendimento{catalogo.length === 1 ? "" : "s"}.
+              </p>
+            </Reveal>
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {empreendimentos.map((e, i) => (
+                <Reveal key={e.slug} delay={i * 0.06} from="baixo">
+                  <CardEmpreendimento empreendimento={e} prioridade={i < 3} />
+                </Reveal>
+              ))}
+            </div>
+
+            {catalogo.length > VITRINE && (
+              <Link
+                href="/empreendimentos"
+                className="hover:text-acento-suave mt-8 inline-flex min-h-11 items-center text-sm font-medium text-corpo underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
+              >
+                Ver os {catalogo.length} imóveis →
+              </Link>
+            )}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}

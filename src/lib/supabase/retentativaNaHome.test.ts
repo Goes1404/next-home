@@ -57,7 +57,8 @@ beforeEach(() => {
 describe("a piscada do banco não derruba a home", () => {
   it("getCorretores sobrevive a UM Gateway Timeout", async () => {
     const { getCorretores } = await import("@/lib/queries");
-    const equipe = await getCorretores();
+    const { GRUPO_NEXT_HOME_ID } = await import("@/lib/grupos/grupo");
+    const equipe = await getCorretores(GRUPO_NEXT_HOME_ID);
 
     expect(chamadas.corretores).toBe(2);
     expect(equipe).toHaveLength(1);

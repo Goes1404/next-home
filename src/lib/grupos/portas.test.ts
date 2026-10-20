@@ -344,8 +344,8 @@ const PORTAS: { arquivo: string; funcoes?: string[] }[] = [
   },
   { arquivo: "src/app/wa/route.ts" },
   { arquivo: "src/app/wa/[campanha]/route.ts" },
-  { arquivo: "src/app/(institucional)/parceiro/[token]/page.tsx" },
-  { arquivo: "src/app/(institucional)/parceiro/[token]/acoes.ts" },
+  { arquivo: "src/app/s/[site]/(institucional)/parceiro/[token]/page.tsx" },
+  { arquivo: "src/app/s/[site]/(institucional)/parceiro/[token]/acoes.ts" },
   { arquivo: "src/app/corretor/(painel)/admin/parceiros/acoes.ts" },
   { arquivo: "src/lib/crm/avisoDeNovidade.ts" },
   { arquivo: "src/app/api/leads/route.ts" },
@@ -432,9 +432,9 @@ describe("guarda: portas de entrada leem dentro do grupo", () => {
  */
 describe("guarda: o catálogo é lido no grupo de quem pede", () => {
   const PAGINAS_DE_LINK = [
-    "src/app/(institucional)/selecao/[token]/page.tsx",
-    "src/app/(institucional)/proposta/[token]/page.tsx",
-    "src/app/(institucional)/portal/[token]/page.tsx",
+    "src/app/s/[site]/(institucional)/selecao/[token]/page.tsx",
+    "src/app/s/[site]/(institucional)/proposta/[token]/page.tsx",
+    "src/app/s/[site]/(institucional)/portal/[token]/page.tsx",
   ];
 
   it("getEmpreendimentos e buscarPublicados não têm grupo padrão", () => {

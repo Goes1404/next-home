@@ -29,7 +29,7 @@ describe("taxas do simulador pelo grupo do dono", () => {
   });
 
   it("a seleção lê as taxas pelo grupo do link", () => {
-    const pagina = ler("src/app/(institucional)/selecao/[token]/page.tsx");
+    const pagina = ler("src/app/s/[site]/(institucional)/selecao/[token]/page.tsx");
     expect(pagina).toContain("getParametrosCredito(link.grupoId)");
     expect(pagina).not.toMatch(/getParametrosCredito\(\s*grupoDoSite\(\)/);
 

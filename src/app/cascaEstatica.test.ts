@@ -38,7 +38,7 @@ import { describe, expect, it } from "vitest";
 
 const RAIZ = join(__dirname, "..", "..");
 const APP = join(RAIZ, "src", "app");
-const GRUPOS = [join(APP, "(institucional)"), join(APP, "(vitrine)")];
+const GRUPOS = [join(APP, "s", "[site]", "(institucional)"), join(APP, "s", "[site]", "(vitrine)")];
 
 function ler(caminho: string): string {
   return readFileSync(join(RAIZ, caminho), "utf8");
@@ -73,6 +73,11 @@ const LEITURAS_DE_REQUISICAO = [
   /\bsearchParams\b/,
   /force-dynamic/,
   /\bconnection\s*\(/,
+  // Fase 3 (20/10/2026): o site vem do PARÂMETRO do segmento (`siteDaPagina`).
+  // Estas duas leem o cabeçalho da requisição por dentro e tornariam a
+  // página dinâmica — são das rotas, sitemap e robots, nunca de página.
+  /\bsiteDoCabecalho\b/,
+  /\bsiteDaRequisicao\b/,
 ];
 
 /**
@@ -82,9 +87,9 @@ const LEITURAS_DE_REQUISICAO = [
  * produto; a guarda reclama se a exceção deixar de ser usada.
  */
 const EXCECOES: Record<string, string> = {
-  "src/app/(vitrine)/comparar/page.tsx": "a comparação é a lista de slugs da URL",
-  "src/app/(vitrine)/empreendimentos/page.tsx": "filtros em searchParams + ordem do corretor do link",
-  "src/app/(vitrine)/portfolio/page.tsx": "ordem dos destaques do corretor do link",
+  "src/app/s/[site]/(vitrine)/comparar/page.tsx": "a comparação é a lista de slugs da URL",
+  "src/app/s/[site]/(vitrine)/empreendimentos/page.tsx": "filtros em searchParams + ordem do corretor do link",
+  "src/app/s/[site]/(vitrine)/portfolio/page.tsx": "ordem dos destaques do corretor do link",
 };
 
 function ehPaginaDeToken(rel: string): boolean {
@@ -111,7 +116,7 @@ describe("a casca estática do site público (F2b)", () => {
 
   it("os layouts de grupo não leem requisição e declaram revalidate", () => {
     for (const grupo of ["(institucional)", "(vitrine)"]) {
-      const codigo = semComentarios(ler(`src/app/${grupo}/layout.tsx`));
+      const codigo = semComentarios(ler(`src/app/s/[site]/${grupo}/layout.tsx`));
       for (const padrao of LEITURAS_DE_REQUISICAO) {
         expect(codigo, `${grupo}/layout.tsx casa ${padrao}`).not.toMatch(padrao);
       }
@@ -176,10 +181,10 @@ describe("a casca estática do site público (F2b)", () => {
   });
 
   it("/contato e /mapa leem o parâmetro no navegador, com o próprio componente como fallback", () => {
-    const contato = semComentarios(ler("src/app/(institucional)/contato/page.tsx"));
+    const contato = semComentarios(ler("src/app/s/[site]/(institucional)/contato/page.tsx"));
     expect(contato).toMatch(/<Suspense fallback=\{<FormularioContato /);
     expect(contato).toMatch(/<FormularioContatoDaUrl /);
-    const mapa = semComentarios(ler("src/app/(vitrine)/mapa/page.tsx"));
+    const mapa = semComentarios(ler("src/app/s/[site]/(vitrine)/mapa/page.tsx"));
     expect(mapa).toMatch(/<Suspense fallback=\{<MapaEmpreendimentos /);
     expect(mapa).toMatch(/<MapaEmpreendimentosDaUrl /);
 
@@ -194,9 +199,9 @@ describe("a casca estática do site público (F2b)", () => {
   });
 
   it("/corretores/[slug] prerenderiza pela lista de corretores", () => {
-    const codigo = semComentarios(ler("src/app/(institucional)/corretores/[slug]/page.tsx"));
+    const codigo = semComentarios(ler("src/app/s/[site]/(institucional)/corretores/[slug]/page.tsx"));
     expect(codigo).toMatch(/export async function generateStaticParams\(/);
-    expect(codigo).toMatch(/getCorretores\(\)/);
+    expect(codigo).toMatch(/getCorretores\(grupoId\)/);
   });
 
   it("a personalização do link e o seletor de tema são ilhas de cliente que leem o DOM, não o servidor", () => {
@@ -214,7 +219,7 @@ describe("a casca estática do site público (F2b)", () => {
     expect(seletor).not.toMatch(/temaActions|useTransition|"use server"/);
     // A rota que a ilha consulta não vai ao banco: lê a lista já cacheada.
     const rota = semComentarios(ler("src/app/api/corretor-ativo/route.ts"));
-    expect(rota).toMatch(/getCorretorAtivo\(\)/);
+    expect(rota).toMatch(/getCorretorAtivo\(site\.grupoId\)/);
     expect(rota).not.toMatch(/createClient|from\(["']/);
   });
 });

@@ -1,4 +1,5 @@
 import { site } from "@/lib/site";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 
 /**
  * Dados estruturados (schema.org) do site público (07/10/2026). Funções puras,
@@ -14,15 +15,21 @@ import { site } from "@/lib/site";
  * - `WebSite.name` é o nome curto, igual ao sufixo do título de toda página
  *   (" · Next Home"): o Google escolhe o "nome do site" nos resultados a
  *   partir dos dois concordarem.
+ *
+ * Por SITE desde a fase 3 (20/10/2026): tudo recebe a marca do site servido.
+ * No site de outro grupo, a organização é a dele, no endereço dele, sem o
+ * telefone, o endereço nem as redes da Next Home.
  */
 
-export const ID_ORGANIZACAO = `${site.url}/#organizacao`;
-export const ID_SITE = `${site.url}/#site`;
+export function idOrganizacao(marca: MarcaDoSite): string {
+  return `${marca.url}/#organizacao`;
+}
 
-/** Logotipo público para a ficha da organização (o Google pede ≥ 112px). */
-export const LOGO_URL = `${site.url}/marca/logo-original.png`;
+export function idSite(marca: MarcaDoSite): string {
+  return `${marca.url}/#site`;
+}
 
-/** Imagem de compartilhamento (Open Graph / Twitter), a mesma em todo o site. */
+/** Imagem de compartilhamento (Open Graph / Twitter) da Next Home. */
 export const OG_IMAGEM = {
   url: "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/marca/og-image.jpg",
   width: 1200,
@@ -30,40 +37,51 @@ export const OG_IMAGEM = {
   alt: `${site.nomeCompleto} — Imóveis em Alphaville e Barueri`,
 };
 
-export function nomesAlternativos(): string[] {
-  const base = site.nome;
-  return [...new Set([base, `${base} Imóveis`, `${base} Imobiliária`, site.nomeCompleto])].filter(
-    (n) => n !== site.nomeCompleto,
+/** A imagem de compartilhamento do site; os outros grupos ainda não têm. */
+export function imagemDeCompartilhamento(marca: MarcaDoSite): typeof OG_IMAGEM | null {
+  return marca.ehNextHome ? OG_IMAGEM : null;
+}
+
+export function nomesAlternativos(marca: MarcaDoSite): string[] {
+  const base = marca.nome;
+  return [...new Set([base, `${base} Imóveis`, `${base} Imobiliária`, marca.nomeCompleto])].filter(
+    (n) => n !== marca.nomeCompleto,
   );
 }
 
 /** A imobiliária: o nó que as outras páginas referenciam por `@id`. */
-export function organizacaoJsonLd() {
+export function organizacaoJsonLd(marca: MarcaDoSite) {
+  const e = marca.endereco;
+  const imagem = imagemDeCompartilhamento(marca);
   return {
     "@type": "RealEstateAgent",
-    "@id": ID_ORGANIZACAO,
-    name: site.nomeCompleto,
-    alternateName: nomesAlternativos(),
-    description: site.descricao,
-    url: site.url,
-    logo: LOGO_URL,
-    image: OG_IMAGEM.url,
-    telephone: site.whatsapp.map((w) => `+${w.numero}`),
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: `${site.endereco.logradouro} — ${site.endereco.bairro}`,
-      addressLocality: site.endereco.cidade,
-      addressRegion: site.endereco.uf,
-      postalCode: site.endereco.cep,
-      addressCountry: "BR",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: site.endereco.lat,
-      longitude: site.endereco.lng,
-    },
-    areaServed: site.regioes.map((r) => ({ "@type": "Place", name: r })),
-    sameAs: Object.values(site.social).filter(Boolean),
+    "@id": idOrganizacao(marca),
+    name: marca.nomeCompleto,
+    alternateName: nomesAlternativos(marca),
+    description: marca.descricao,
+    url: marca.url,
+    ...(marca.ehNextHome ? { logo: `${marca.url}/marca/logo-original.png` } : {}),
+    ...(imagem ? { image: imagem.url } : {}),
+    ...(marca.whatsapp.length ? { telephone: marca.whatsapp.map((w) => `+${w.numero}`) } : {}),
+    ...(e
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: `${e.logradouro} — ${e.bairro}`,
+            addressLocality: e.cidade,
+            addressRegion: e.uf,
+            postalCode: e.cep,
+            addressCountry: "BR",
+          },
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: e.lat,
+            longitude: e.lng,
+          },
+        }
+      : {}),
+    ...(marca.regioes.length ? { areaServed: marca.regioes.map((r) => ({ "@type": "Place", name: r })) } : {}),
+    ...(marca.social ? { sameAs: Object.values(marca.social).filter(Boolean) } : {}),
   };
 }
 
@@ -72,26 +90,26 @@ export function organizacaoJsonLd() {
  * tira o nome curto nos resultados e a caixa de busca nos sitelinks. O alvo
  * da busca é o parâmetro que a listagem LÊ (`?busca=`), não um inventado.
  */
-export function websiteJsonLd() {
+export function websiteJsonLd(marca: MarcaDoSite) {
   return {
     "@type": "WebSite",
-    "@id": ID_SITE,
-    name: site.nome,
-    alternateName: site.nomeCompleto,
-    url: site.url,
+    "@id": idSite(marca),
+    name: marca.nome,
+    alternateName: marca.nomeCompleto,
+    url: marca.url,
     inLanguage: "pt-BR",
-    publisher: { "@id": ID_ORGANIZACAO },
+    publisher: { "@id": idOrganizacao(marca) },
     potentialAction: {
       "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${site.url}/empreendimentos?busca={termo}` },
+      target: { "@type": "EntryPoint", urlTemplate: `${marca.url}/empreendimentos?busca={termo}` },
       "query-input": "required name=termo",
     },
   };
 }
 
 /** Os dois nós da home num `@graph` só. */
-export function homeJsonLd() {
-  return { "@context": "https://schema.org", "@graph": [organizacaoJsonLd(), websiteJsonLd()] };
+export function homeJsonLd(marca: MarcaDoSite) {
+  return { "@context": "https://schema.org", "@graph": [organizacaoJsonLd(marca), websiteJsonLd(marca)] };
 }
 
 export type Trilha = { nome: string; url: string }[];
@@ -102,7 +120,7 @@ export type Trilha = { nome: string; url: string }[];
  * As URLs são absolutas, montadas por código a partir do slug — nunca
  * escritas à mão.
  */
-export function trilhaJsonLd(itens: Trilha) {
+export function trilhaJsonLd(marca: MarcaDoSite, itens: Trilha) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -110,7 +128,7 @@ export function trilhaJsonLd(itens: Trilha) {
       "@type": "ListItem",
       position: i + 1,
       name: item.nome,
-      item: item.url.startsWith("http") ? item.url : `${site.url}${item.url}`,
+      item: item.url.startsWith("http") ? item.url : `${marca.url}${item.url}`,
     })),
   };
 }

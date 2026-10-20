@@ -6,17 +6,12 @@
 
 export const GRUPO_NEXT_HOME_ID = "00000000-0000-0000-0000-000000000001";
 
-/**
- * O grupo dono do site público que está sendo servido.
- *
- * Nesta fase só existe o site da Next Home, então a resposta é fixa. A
- * fase 3 troca isto pela resolução pelo `Host` da requisição (cada grupo
- * com o seu domínio), e é por isso que os chamadores já passam por aqui em
- * vez de usar a constante.
+/*
+ * `grupoDoSite()` (fixo no grupo 1) saiu na fase 3 (20/10/2026): o grupo do
+ * site público vem do endereço da requisição — `siteDaPagina(params)` nas
+ * páginas sob `src/app/s/[site]`, `siteDaRequisicao(request)` nas rotas.
+ * Ver `src/lib/sites/`.
  */
-export function grupoDoSite(): string {
-  return GRUPO_NEXT_HOME_ID;
-}
 
 /**
  * O tipo do grupo (0190, `grupos.tipo`): imobiliária com equipe, ou corretor

@@ -1,4 +1,5 @@
 import { Wordmark } from "@/components/ui/Wordmark";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
@@ -26,7 +27,7 @@ const LINKS = [
  * captar proprietário é o outro lado do negócio e, sem destaque, some no meio
  * dos links de quem quer comprar.
  */
-export function HeaderInstitucional() {
+export function HeaderInstitucional({ marca }: { marca: MarcaDoSite }) {
   return (
     <HeaderCondensado className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
       <GlassSurface
@@ -38,7 +39,7 @@ export function HeaderInstitucional() {
           href="/"
           className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
-          <Wordmark destaque="text-acento-forte" />
+          <Wordmark destaque="text-acento-forte" nomes={marca.wordmark} />
         </Link>
 
         <LinksDoCabecalho links={LINKS} />
@@ -53,7 +54,7 @@ export function HeaderInstitucional() {
           {/* "Anunciar meu imóvel" saiu do menu em 13/09/2026 (pedido do
               usuário). A página /anunciar-imovel continua existindo — chega
               por link direto e pelo cartão do vendedor na home. */}
-          <MenuMobile links={LINKS} />
+          <MenuMobile links={LINKS} wordmark={marca.wordmark} />
         </div>
       </GlassSurface>
     </HeaderCondensado>

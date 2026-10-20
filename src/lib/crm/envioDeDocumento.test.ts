@@ -76,7 +76,7 @@ describe("o arquivo não passa pela Server Action", () => {
   // celular e PDF escaneado morriam ali, com a tela dizendo "sem conexão".
   // A guarda lê o código: nenhuma das duas ações volta a receber o arquivo.
   const acoes = [
-    "src/app/(institucional)/documentos/[token]/acoes.ts",
+    "src/app/s/[site]/(institucional)/documentos/[token]/acoes.ts",
     "src/app/corretor/(painel)/leads/[id]/documentacaoAcoes.ts",
   ];
   it.each(acoes)("%s não recebe File", (arquivo) => {

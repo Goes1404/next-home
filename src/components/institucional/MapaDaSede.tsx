@@ -1,4 +1,4 @@
-import { enderecoLinha, site } from "@/lib/site";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 
 /** Mesma janela de ~800 m usada nas páginas de empreendimento, centrada no escritório. */
 const RAIO_GRAUS = 0.008;
@@ -20,9 +20,19 @@ function urlDoMapa(lat: number, lng: number): string {
  * A coordenada é estimada pelo número na avenida (ver `site.endereco`), não
  * a porta do prédio; a legenda diz "aproximado" por isso, e o link abre o
  * mapa completo para quem vai de fato até lá.
+ *
+ * Recebe o endereço do SITE servido (fase 3): só existe onde o site tem
+ * escritório — a página o esconde quando a marca não tem endereço.
  */
-export function MapaDaSede({ className }: { className?: string }) {
-  const { lat, lng } = site.endereco;
+export function MapaDaSede({
+  className,
+  endereco,
+}: {
+  className?: string;
+  endereco: NonNullable<MarcaDoSite["endereco"]>;
+}) {
+  const { lat, lng } = endereco;
+  const enderecoLinha = `${endereco.logradouro} — ${endereco.bairro}, ${endereco.cidade}/${endereco.uf}`;
 
   return (
     <figure

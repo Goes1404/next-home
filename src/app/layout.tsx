@@ -4,7 +4,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { AvisoDeVersaoNovaSobDemanda } from "@/components/layout/SobDemanda";
-import { Footer } from "@/components/layout/Footer";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { MovimentoDoSite } from "@/components/motion/MovimentoDoSite";
 import { site } from "@/lib/site";
@@ -103,12 +102,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  other: {
-    "geo.region": "BR-SP",
-    "geo.placename": `${site.endereco.bairro}, ${site.endereco.cidade}`,
-    "geo.position": `${site.endereco.lat};${site.endereco.lng}`,
-    "ICBM": `${site.endereco.lat}, ${site.endereco.lng}`,
-  },
+  // As etiquetas `geo.*` do escritório moram nos metadados do SITE da Next
+  // Home (`lib/sites/metadados.ts`), não aqui: o `other` é mesclado entre
+  // layouts, e no raiz ele levaria o endereço dela ao site de outro grupo.
 };
 
 /**
@@ -206,7 +202,10 @@ export default function RootLayout({
             vale para a vitrine e para o painel, servidos pelo mesmo deploy. */}
         <AvisoDeVersaoNovaSobDemanda />
         {children}
-        <Footer />
+        {/* O rodapé saiu daqui na fase 3 (20/10/2026): ele é do SITE, com a
+            marca do endereço servido, e mora em src/app/s/[site]/layout.tsx.
+            No raiz, ele levaria o CRECI e o endereço da Next Home ao site de
+            qualquer grupo e à página neutra. */}
         {/* Dado de CAMPO (F0 do roadmap de performance, 13/09/2026). Até
             aqui todo número de velocidade deste site era de laboratório: sem
             Speed Insights não há LCP/INP p75 de gente de verdade, e sem Web

@@ -2,11 +2,11 @@ import Link from "next/link";
 import { WhatsappLink } from "@/components/analytics/WhatsappLink";
 import { Compartilhar } from "@/components/empreendimento/Compartilhar";
 import { Reveal } from "@/components/motion/Reveal";
-import { site } from "@/lib/site";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 import type { Empreendimento } from "@/lib/types";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
-export function Contato({ empreendimento: e }: { empreendimento: Empreendimento }) {
+export function Contato({ empreendimento: e, marca }: { empreendimento: Empreendimento; marca: MarcaDoSite }) {
   const link = linkDoPorteiro({ imovelSlug: e.slug, intencao: "tabela" });
 
   return (
@@ -22,9 +22,9 @@ export function Contato({ empreendimento: e }: { empreendimento: Empreendimento 
               quem tem WhatsApp conectado. Mostrar um rosto aqui seria prometer
               uma pessoa que o porteiro pode não escolher. */}
           <div className="sm:text-left">
-            <p className="font-display text-lg text-titulo">Equipe {site.nome}</p>
+            <p className="font-display text-lg text-titulo">Equipe {marca.nome}</p>
             <p className="text-fluid-sm text-legenda">
-              Um corretor da equipe responde no WhatsApp · CRECI {site.creci}
+              Um corretor da equipe responde no WhatsApp{marca.creci ? ` · CRECI ${marca.creci}` : ""}
             </p>
           </div>
 

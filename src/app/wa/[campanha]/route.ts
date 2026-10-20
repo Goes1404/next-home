@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { grupoDoSite } from "@/lib/grupos/grupo";
+import { siteDaRequisicao } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { gravarClique } from "@/lib/whatsapp/gravarClique";
@@ -41,7 +41,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   // Só os imóveis do grupo do site (L11): o clique pago de um grupo não
   // vira lead no outro por ter o mesmo apelido. O grupo vem antes da chave
   // de serviço, que enxerga todos.
-  const grupo = grupoDoSite();
+  // O grupo do site vem do ENDEREÇO (fase 3): endereço de nenhum grupo não
+  // sorteia ninguém — vai para a página neutra, nunca para o WhatsApp da
+  // Next Home.
+  const site = await siteDaRequisicao(req);
+  if (!site) return NextResponse.redirect(new URL("/", url.origin), 302);
+  const grupo = site.grupoId;
   const supabase = createServiceClient();
 
   const bruto = url.searchParams.get("i");
@@ -116,7 +121,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
   // Link pessoal (cookie de 30 dias): vai SEMPRE para o corretor do link,
   // nunca para o sorteio — antes, desconectado, ele perdia o cliente para
   // outro corretor (07/10/2026). Anúncio pago sem cookie segue no rodízio.
-  const doLink = await getCorretorAtivo();
+  const doLink = await getCorretorAtivo(grupo);
   const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
   let sorteio: Sorteio | null = numeroDoLink ? { corretor_id: doLink!.id, telefone: numeroDoLink } : null;
   if (!sorteio) {

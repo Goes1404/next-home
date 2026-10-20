@@ -20,7 +20,7 @@ import path from "node:path";
  */
 
 const css = fs.readFileSync(path.join(__dirname, "globals.css"), "utf8");
-const pagina = fs.readFileSync(path.join(__dirname, "(institucional)", "page.tsx"), "utf8");
+const pagina = fs.readFileSync(path.join(__dirname, "s", "[site]", "(institucional)", "page.tsx"), "utf8");
 
 function blocoDoPercurso(): string {
   const ini = css.indexOf(".home-percurso {");

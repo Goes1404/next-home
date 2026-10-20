@@ -1,6 +1,5 @@
 "use client";
 
-import { site } from "@/lib/site";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { lerAtribuicao, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
@@ -21,7 +20,7 @@ const INTENCOES = ["Vender", "Alugar", "Ainda estou avaliando"];
  * preenchimento) e o mesmo consentimento LGPD explícito; muda o conjunto de
  * campos e o `tipo` enviado à API, que separa os dois funis no banco.
  */
-export function FormularioProprietario({ regioes }: { regioes: string[] }) {
+export function FormularioProprietario({ regioes, nomeDaCasa }: { regioes: string[]; nomeDaCasa: string }) {
   const [status, setStatus] = useState<Status>("ideal");
   const [erro, setErro] = useState<string | null>(null);
   // `Date.now()` é impuro: só pode rodar num efeito, nunca na renderização.
@@ -83,7 +82,7 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
       <div className="rounded-2xl border border-brand-400/30 bg-marca-fundo/30 px-6 py-8 text-center">
         <p className="font-display text-lg text-titulo">Recebemos seu imóvel!</p>
         <p className="text-fluid-sm mt-2 text-apoio">
-          Um corretor da {site.nome} vai entrar em contato para entender o imóvel e conversar
+          Um corretor da {nomeDaCasa} vai entrar em contato para entender o imóvel e conversar
           sobre avaliação e condições.
         </p>
       </div>
@@ -155,15 +154,20 @@ export function FormularioProprietario({ regioes }: { regioes: string[] }) {
           <label htmlFor="imovelCidade" className="text-fluid-sm mb-1.5 block text-apoio">
             Cidade
           </label>
-          <select id="imovelCidade" name="imovelCidade" defaultValue="" className={CAMPO_BASE}>
-            <option value="">Selecione</option>
-            {regioes.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-            <option value="Outra">Outra</option>
-          </select>
+          {/* Site sem regiões declaradas (outro grupo, fase 3): a cidade é digitada. */}
+          {regioes.length > 0 ? (
+            <select id="imovelCidade" name="imovelCidade" defaultValue="" className={CAMPO_BASE}>
+              <option value="">Selecione</option>
+              {regioes.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+              <option value="Outra">Outra</option>
+            </select>
+          ) : (
+            <input id="imovelCidade" name="imovelCidade" type="text" maxLength={120} className={CAMPO_BASE} />
+          )}
         </div>
         <div>
           <label htmlFor="imovelBairro" className="text-fluid-sm mb-1.5 block text-apoio">

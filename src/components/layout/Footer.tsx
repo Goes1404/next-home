@@ -2,7 +2,7 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import Link from "next/link";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
-import { enderecoLinha, site } from "@/lib/site";
+import { linhaDoEndereco, redesDaMarca, type MarcaDoSite } from "@/lib/sites/marca";
 import { linkDoPorteiro } from "@/lib/whatsapp/linkDoPorteiro";
 
 const LINKS_RAPIDOS = [
@@ -13,30 +13,31 @@ const LINKS_RAPIDOS = [
   { href: "/privacidade", label: "Privacidade" },
 ];
 
-const REDES = [
-  { href: site.social.instagram, label: "Instagram" },
-  { href: site.social.facebook, label: "Facebook" },
-  { href: site.social.youtube, label: "YouTube" },
-  { href: site.social.linkedin, label: "LinkedIn" },
-];
-
 /**
  * Rodapé institucional — único lugar que precisa existir só uma vez, por
- * isso vive no layout raiz em vez de repetido em cada página (diferente de
+ * isso vive num layout em vez de repetido em cada página (diferente de
  * SiteHeader/WhatsappCta, que dependem do GlassBackgroundProvider local a
  * cada rota).
+ *
+ * Desde a fase 3 (20/10/2026) mora no layout do SITE (`src/app/s/[site]`),
+ * não no raiz, e recebe a marca do site servido: no site de outro grupo,
+ * CRECI, endereço e redes da Next Home nunca aparecem — o que ele não tem,
+ * some. O "Falar no WhatsApp" é o porteiro relativo (`/wa`), que sorteia
+ * entre os corretores do grupo do endereço.
  */
-export function Footer() {
+export function Footer({ marca }: { marca: MarcaDoSite }) {
+  const endereco = linhaDoEndereco(marca);
+  const redes = redesDaMarca(marca);
   return (
     <footer className="relative overflow-hidden border-t border-linha/10 bg-superficie px-4 py-14 sm:px-8">
       <FundoEmCamadas intensidade={0.5} />
       <div className="mx-auto grid w-full max-w-6xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">
-            <Wordmark destaque="text-acento-forte" />
+            <Wordmark destaque="text-acento-forte" nomes={marca.wordmark} />
           </p>
-          <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{site.descricao}</p>
-          <p className="text-fluid-xs mt-4 text-tenue">CRECI {site.creci}</p>
+          <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{marca.descricao}</p>
+          {marca.creci && <p className="text-fluid-xs mt-4 text-tenue">CRECI {marca.creci}</p>}
         </div>
 
         <div>
@@ -58,7 +59,7 @@ export function Footer() {
         <div>
           <p className="text-fluid-sm font-medium text-corpo">Contato</p>
           <ul className="mt-3 space-y-2">
-            <li className="text-fluid-sm text-legenda">{enderecoLinha}</li>
+            {endereco && <li className="text-fluid-sm text-legenda">{endereco}</li>}
             <li>
               <a
                 href={linkDoPorteiro({ intencao: "saber" })}
@@ -72,7 +73,7 @@ export function Footer() {
           </ul>
 
           <div className="mt-5 flex gap-4">
-            {REDES.map((rede) => (
+            {redes.map((rede) => (
               <a
                 key={rede.label}
                 href={rede.href}
@@ -90,7 +91,7 @@ export function Footer() {
 
       <div className="text-fluid-xs mx-auto mt-12 flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-linha/5 pt-6 text-tenue">
         <p>
-          © {new Date().getFullYear()} {site.nomeCompleto}. CRECI {site.creci}.
+          © {new Date().getFullYear()} {marca.nomeCompleto}.{marca.creci ? ` CRECI ${marca.creci}.` : ""}
         </p>
 
         {/*

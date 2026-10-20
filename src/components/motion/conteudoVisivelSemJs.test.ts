@@ -30,8 +30,8 @@ const RAIZ = join(__dirname, "..", "..", "..");
 const CSS = join(RAIZ, "src", "app", "globals.css");
 
 const PASTAS_PUBLICAS = [
-  join(RAIZ, "src", "app", "(institucional)"),
-  join(RAIZ, "src", "app", "(vitrine)"),
+  join(RAIZ, "src", "app", "s", "[site]", "(institucional)"),
+  join(RAIZ, "src", "app", "s", "[site]", "(vitrine)"),
   join(RAIZ, "src", "components"),
 ];
 

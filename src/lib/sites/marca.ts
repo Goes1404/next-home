@@ -25,6 +25,8 @@ export type MarcaDoSite = {
   /** `https://<endereço principal>`, sem barra no fim. */
   url: string;
   creci: string | null;
+  /** Os WhatsApps da casa (só a Next Home tem; os outros sites usam o `/wa`). */
+  whatsapp: { numero: string; label: string }[];
   endereco: Endereco | null;
   social: Social | null;
   regioes: string[];
@@ -72,6 +74,7 @@ export function marcaDoGrupo({
       // mandaram apontam para ele.
       url: site.url.replace(/\/+$/, ""),
       creci: site.creci,
+      whatsapp: site.whatsapp.map((w) => ({ ...w })),
       endereco: site.endereco,
       social: site.social,
       regioes: [...site.regioes],
@@ -88,6 +91,7 @@ export function marcaDoGrupo({
     keywords: [],
     url: semBarra,
     creci: null,
+    whatsapp: [],
     endereco: null,
     social: null,
     regioes: [],

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { OG_IMAGEM } from "@/lib/dadosEstruturados";
+import { imagemDeCompartilhamento, OG_IMAGEM } from "@/lib/dadosEstruturados";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 import { site } from "@/lib/site";
 
 /**
@@ -46,9 +47,9 @@ export function validarChamadaDoLink(
 }
 
 /** "Portfólio de Bruna Souza", ou "Portfólio da Next Home" sem corretor. */
-export function tituloDaPrevia(corretor: CorretorDaPrevia | null): string {
+export function tituloDaPrevia(corretor: CorretorDaPrevia | null, nomeDaCasa: string = site.nome): string {
   const nome = corretor?.nome.trim();
-  return nome ? `Portfólio de ${nome}` : `Portfólio da ${site.nome}`;
+  return nome ? `Portfólio de ${nome}` : `Portfólio da ${nomeDaCasa}`;
 }
 
 /** O texto próprio do corretor, se houver; senão "Portfólio de produtos". */
@@ -60,9 +61,13 @@ export function descricaoDaPrevia(corretor: CorretorDaPrevia | null): string {
  * Metadata de `/portfolio`. `noindex` continua: a página é a peça que o
  * corretor compartilha, não uma porta de entrada de busca.
  */
-export function metadataDoPortfolio(corretor: CorretorDaPrevia | null): Metadata {
-  const titulo = tituloDaPrevia(corretor);
+export function metadataDoPortfolio(corretor: CorretorDaPrevia | null, marca?: MarcaDoSite): Metadata {
+  // A marca do SITE servido (fase 3); sem ela, a da Next Home. Outro grupo
+  // ainda não tem imagem de compartilhamento: sai sem figura, nunca com a
+  // da Next Home.
+  const titulo = tituloDaPrevia(corretor, marca?.nome);
   const descricao = descricaoDaPrevia(corretor);
+  const imagem = marca ? imagemDeCompartilhamento(marca) : OG_IMAGEM;
   return {
     // `absolute`: o template do layout raiz acrescentaria " · Next Home".
     title: { absolute: titulo },
@@ -71,14 +76,14 @@ export function metadataDoPortfolio(corretor: CorretorDaPrevia | null): Metadata
     openGraph: {
       title: titulo,
       description: descricao,
-      siteName: site.nomeCompleto,
-      images: [OG_IMAGEM],
+      siteName: marca?.nomeCompleto ?? site.nomeCompleto,
+      ...(imagem ? { images: [imagem] } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: imagem ? "summary_large_image" : "summary",
       title: titulo,
       description: descricao,
-      images: [OG_IMAGEM.url],
+      ...(imagem ? { images: [imagem.url] } : {}),
     },
   };
 }

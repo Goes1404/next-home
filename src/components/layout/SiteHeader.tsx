@@ -1,4 +1,5 @@
 import { Wordmark } from "@/components/ui/Wordmark";
+import type { MarcaDoSite } from "@/lib/sites/marca";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
 import { HeaderCondensado } from "@/components/motion/HeaderCondensado";
@@ -37,7 +38,7 @@ const LINKS_DO_CELULAR = [
  * listagem a seta apontava para a página em que a pessoa já estava. Ganhou o
  * mesmo menu lateral do resto do site.
  */
-export function SiteHeader() {
+export function SiteHeader({ marca }: { marca: MarcaDoSite }) {
   return (
     <HeaderCondensado className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4">
       <GlassSurface
@@ -49,12 +50,12 @@ export function SiteHeader() {
           href="/"
           className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
-          <Wordmark destaque="text-acento-forte" />
+          <Wordmark destaque="text-acento-forte" nomes={marca.wordmark} />
         </Link>
 
         <LinksDoCabecalho links={LINKS} />
 
-        <MenuMobile links={LINKS_DO_CELULAR} />
+        <MenuMobile links={LINKS_DO_CELULAR} wordmark={marca.wordmark} />
       </GlassSurface>
     </HeaderCondensado>
   );

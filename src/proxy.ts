@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
+import { normalizarHost } from "@/lib/sites/endereco";
+import { SEGMENTO_SEM_ENDERECO } from "@/lib/sites/segmento";
 
 const TRINTA_DIAS_EM_SEGUNDOS = 60 * 60 * 24 * 30;
 
@@ -118,7 +120,36 @@ export async function proxy(request: NextRequest) {
     response.cookies.set(COOKIE_CORRETOR_ATIVO, slugCompartilhado, OPCOES_COOKIE_CORRETOR);
   }
 
+  if (ehPaginaDoSite(pathname)) {
+    const site = normalizarHost(request.headers.get("host") ?? request.nextUrl.host) ?? SEGMENTO_SEM_ENDERECO;
+    const destino = request.nextUrl.clone();
+    destino.pathname = `/s/${site}${pathname === "/" ? "" : pathname}`;
+    const reescrita = NextResponse.rewrite(destino);
+    for (const c of response.cookies.getAll()) reescrita.cookies.set(c);
+    return reescrita;
+  }
+
   return response;
+}
+
+/**
+ * Fase 3 (20/10/2026): o site público de cada grupo pelo endereço.
+ *
+ * Toda página pública é levada para `/s/<host>/<caminho>`, onde moram as
+ * páginas (`src/app/s/[site]/…`). O proxy NÃO consulta o banco — a
+ * documentação do Next desaconselha, e a F2 mediu o custo de rede aqui. Quem
+ * diz de que grupo é o host é o layout do segmento (`siteDaPagina`), com
+ * cache por host. Por o host estar no CAMINHO, o cache de rota (ISR) já sai
+ * separado por site, e as páginas continuam estáticas (a F2b não regride).
+ *
+ * Um `/s/...` que chega de fora também é reescrito (`/s/<host>/s/...`, que
+ * não existe): sem isso, `nexthomeimoveis.com/s/outro.com.br/` mostraria o
+ * site de outro grupo debaixo do domínio da Next Home.
+ */
+const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa"];
+
+function ehPaginaDoSite(pathname: string): boolean {
+  return !FORA_DO_SITE.some((raiz) => pathname === raiz || pathname.startsWith(`${raiz}/`));
 }
 
 export const config = {

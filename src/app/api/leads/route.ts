@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { grupoDoSite } from "@/lib/grupos/grupo";
+import { siteDaRequisicao } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 import { parseFavoritos, parseInteresse } from "@/lib/crm/pedidoDoSite";
 import { CHAVES_ATRIBUICAO, type AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
@@ -140,7 +140,10 @@ export async function POST(req: Request) {
    * corretor) só vale dentro do grupo do site; fora dele o lead é gravado
    * sem esse vínculo e a roleta decide o dono.
    */
-  const grupo = grupoDoSite();
+  // O grupo vem do ENDEREÇO do site (fase 3); endereço de nenhum grupo não grava nada.
+  const site = await siteDaRequisicao(req);
+  if (!site) return NextResponse.json({ erro: "Endereço sem site." }, { status: 404 });
+  const grupo = site.grupoId;
   const supabase = createServiceClient();
 
   let empreendimentoId: string | null = null;
@@ -165,7 +168,7 @@ export async function POST(req: Request) {
   // `distribuir_lead` (migration 0007) escolhe um corretor da equipe no
   // momento do insert. A distribuição vive no banco justamente para que
   // nenhuma porta de entrada futura precise lembrar de fazê-la.
-  const corretorAtivo = await getCorretorAtivo();
+  const corretorAtivo = await getCorretorAtivo(grupo);
 
   const tipo = parseTipo(corpo.tipo);
   const favoritos = parseFavoritos(corpo.favoritos);

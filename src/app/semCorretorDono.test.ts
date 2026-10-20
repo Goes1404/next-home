@@ -17,17 +17,17 @@ import { describe, expect, it } from "vitest";
  * - páginas por token (portal, proposta, seleção, documentos): quem abre já
  *   é lead, e fala com o corretor que o atende.
  */
-const RAIZES = ["src/components", "src/app/(vitrine)", "src/app/(institucional)"].map((r) =>
+const RAIZES = ["src/components", "src/app/s/[site]/(vitrine)", "src/app/s/[site]/(institucional)"].map((r) =>
   path.join(process.cwd(), r),
 );
 
 const EXCECOES = [
   "src/components/corretores/CardCorretor.tsx",
-  "src/app/(institucional)/corretores/[slug]/page.tsx",
-  "src/app/(institucional)/portal/[token]/page.tsx",
-  "src/app/(institucional)/proposta/[token]/page.tsx",
-  "src/app/(institucional)/selecao/[token]/page.tsx",
-  "src/app/(institucional)/documentos/[token]/page.tsx",
+  "src/app/s/[site]/(institucional)/corretores/[slug]/page.tsx",
+  "src/app/s/[site]/(institucional)/portal/[token]/page.tsx",
+  "src/app/s/[site]/(institucional)/proposta/[token]/page.tsx",
+  "src/app/s/[site]/(institucional)/selecao/[token]/page.tsx",
+  "src/app/s/[site]/(institucional)/documentos/[token]/page.tsx",
   // O pixel só RECONHECE o clique num link wa.me (para o evento Lead); não monta link.
   "src/components/analytics/pixelMeta.ts",
 ];

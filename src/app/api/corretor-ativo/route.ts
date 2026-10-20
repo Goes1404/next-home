@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
+import { siteDaRequisicao } from "@/lib/sites/pagina";
 
 /**
  * O corretor do link pessoal, para o NAVEGADOR (F2b, 12/10/2026).
@@ -14,8 +15,11 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
  * cacheada por etiqueta. Devolve só o que o fundo precisa — nada de id,
  * telefone ou nome — e `no-store`, porque a resposta é por cookie.
  */
-export async function GET() {
-  const corretor = await getCorretorAtivo();
+export async function GET(req: Request) {
+  // Só o corretor do grupo do ENDEREÇO (fase 3): o cookie de um link de
+  // outro grupo não troca o fundo deste site.
+  const site = await siteDaRequisicao(req);
+  const corretor = site ? await getCorretorAtivo(site.grupoId) : null;
   return NextResponse.json(
     {
       corretor: corretor

@@ -45,8 +45,8 @@ function arquivosDe(dir: string): string[] {
 function arquivosDoSitePublico(): string[] {
   const pastas = [
     join(RAIZ, "src", "lib", "catalogo"),
-    join(RAIZ, "src", "app", "(institucional)"),
-    join(RAIZ, "src", "app", "(vitrine)"),
+    join(RAIZ, "src", "app", "s", "[site]", "(institucional)"),
+    join(RAIZ, "src", "app", "s", "[site]", "(vitrine)"),
   ];
   const conjunto = new Set<string>([join(RAIZ, "src", "lib", "queries.ts")]);
   for (const p of pastas) for (const a of arquivosDe(p)) conjunto.add(a);

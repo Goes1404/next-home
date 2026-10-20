@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCorretorAtivo } from "@/lib/corretorAtivo";
-import { grupoDoSite } from "@/lib/grupos/grupo";
+import { siteDaRequisicao } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
 import { gravarClique } from "@/lib/whatsapp/gravarClique";
@@ -26,7 +26,12 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   // O grupo do site vem antes da chave de serviço, que enxerga todos.
-  const grupo = grupoDoSite();
+  // O grupo do site vem do ENDEREÇO (fase 3): endereço de nenhum grupo não
+  // sorteia ninguém — vai para a página neutra, nunca para o WhatsApp da
+  // Next Home.
+  const site = await siteDaRequisicao(req);
+  if (!site) return NextResponse.redirect(new URL("/", url.origin), 302);
+  const grupo = site.grupoId;
   const supabase = createServiceClient();
 
   const bruto = url.searchParams.get("i");
@@ -34,7 +39,7 @@ export async function GET(req: Request) {
 
   // Link pessoal (cookie de 30 dias): vai SEMPRE para o corretor do link,
   // nunca para o sorteio (07/10/2026).
-  const doLink = await getCorretorAtivo();
+  const doLink = await getCorretorAtivo(grupo);
   const numeroDoLink = doLink ? await numeroDoLinkPessoal(supabase, doLink) : null;
   const sorteio = numeroDoLink
     ? { corretor_id: doLink!.id, telefone: numeroDoLink }
