@@ -117,6 +117,23 @@ describe("definirSenha", () => {
     expect(senhasGravadas).toEqual([]);
   });
 
+  it("senha fraca e senha igual à atual têm frase própria, sem mandar pedir outro link", async () => {
+    erroDoUpdateUser = { code: "weak_password", message: "Password is known to be weak and easy to guess" };
+    const fraca = (await enviar("senha-boa-1", "senha-boa-1")) as { erro: string };
+    expect(fraca.erro).toMatch(/fácil de adivinhar/);
+    expect(fraca.erro).not.toMatch(/Esqueci a senha/);
+
+    erroDoUpdateUser = { code: "same_password", message: "New password should be different from the old password." };
+    const igual = (await enviar("senha-boa-1", "senha-boa-1")) as { erro: string };
+    expect(igual.erro).toMatch(/já é a sua senha atual/);
+    expect(igual.erro).not.toMatch(/Esqueci a senha/);
+
+    erroDoUpdateUser = { code: "session_not_found", message: "Session not found" };
+    const outro = (await enviar("senha-boa-1", "senha-boa-1")) as { erro: string };
+    expect(outro.erro).toMatch(/Esqueci a senha/);
+    expect(updatesDeCorretores).toEqual([]);
+  });
+
   it("o Auth recusou a senha: explica e não zera nada", async () => {
     erroDoUpdateUser = { message: "Password should be at least 6 characters" };
     const r = await enviar("senha-boa-1", "senha-boa-1");

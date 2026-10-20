@@ -47,9 +47,7 @@ export async function definirSenha(
   }
 
   const { error } = await supabase.auth.updateUser({ password: nova });
-  if (error) {
-    return { erro: "Não foi possível salvar a senha agora. Tente de novo; se o link tiver vencido, peça outro em \"Esqueci a senha\"." };
-  }
+  if (error) return { erro: fraseDoErroDaSenha((error as { code?: string }).code) };
 
   const { error: erroDaFicha } = await supabase
     .from("corretores")
@@ -62,4 +60,20 @@ export async function definirSenha(
   }
 
   redirect("/corretor");
+}
+
+/**
+ * O Auth recusa a senha por dois motivos que a pessoa resolve na hora, sem
+ * link novo: senha fraca demais e senha igual à atual. Mandar pedir outro
+ * link nesses casos gastaria um link (e a paciência) à toa. Só o resto —
+ * sessão que venceu no meio, falha do Auth — leva ao "Esqueci a senha".
+ */
+function fraseDoErroDaSenha(codigo: string | undefined): string {
+  if (codigo === "weak_password") {
+    return "Essa senha é fácil de adivinhar. Escolha outra, mais longa, misturando letras e números.";
+  }
+  if (codigo === "same_password") {
+    return "Essa já é a sua senha atual. Escolha uma diferente.";
+  }
+  return "Não foi possível salvar a senha agora. Tente de novo; se o link tiver vencido, peça outro em \"Esqueci a senha\".";
 }
