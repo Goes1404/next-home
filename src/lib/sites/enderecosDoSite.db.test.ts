@@ -23,12 +23,13 @@ import { ENDERECOS_DA_NEXT_HOME } from "./endereco";
 type Site = { grupo_id: string; nome: string; host_principal: string };
 
 async function comoAnon<T>(tx: TransactionSql, fn: (tx: TransactionSql) => Promise<T>): Promise<T> {
-  return tx.savepoint(async (sp) => {
+  const r = await tx.savepoint(async (sp) => {
     await sp`set local role anon`;
-    const r = await fn(sp as unknown as TransactionSql);
+    const dentro = await fn(sp as unknown as TransactionSql);
     await sp`reset role`;
-    return r;
+    return dentro;
   });
+  return r as T;
 }
 
 async function site(tx: TransactionSql, host: string, dominio: string | null = null): Promise<Site[]> {
