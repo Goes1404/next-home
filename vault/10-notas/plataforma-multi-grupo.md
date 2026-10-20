@@ -179,3 +179,9 @@ viraria N migrations.
   (`leads.trazido_por`, 0200); desativar quem tem leads divide a carteira, e o
   gestor baixa a planilha das fichas que o corretor leva (ele perde a sessão
   ao ser desativado, 0190). Ver [[saida-do-corretor-e-etiqueta-de-origem]].
+- **Fase 3 enxuta: site de cada grupo pelo endereço (20/10).** O proxy leva
+  a página pública para `/s/<host>` sem consultar o banco; o host vira o grupo
+  (`enderecos_do_site`, 0201) e o cache de rota sai separado por site, com as
+  páginas ainda estáticas. `grupoDoSite()` saiu. Ver
+  [[site-de-cada-grupo-pelo-endereco]]; passo a passo do dono em
+  `docs/SITES-POR-ENDERECO.md`.

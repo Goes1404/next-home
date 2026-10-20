@@ -4,7 +4,7 @@ tags: [moc, front, gsap]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-12
+updated: 2026-10-20
 summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 ---
 # Front Público — Map of Content
@@ -17,6 +17,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[home-mora-no-institucional]]
 
 ## Casca e cache
+- [[site-de-cada-grupo-pelo-endereco]] — fase 3: o proxy leva a página para `/s/<host>`, o host vira o grupo, cache de rota por site; 404 neutro e marca neutra (20/10)
 - [[a-casca-estatica-sem-perder-o-tema]] — o HTML não sabe o tema nem o corretor do link: script antes da pintura + ilha; `/contato` e `/mapa` leem o parâmetro no navegador (12/10)
 
 ## Vídeo e peso

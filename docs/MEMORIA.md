@@ -11308,3 +11308,28 @@ Nota: [[saida-do-corretor-e-etiqueta-de-origem]].
 - **`classificar_trazido_por` tem uma sobra que esconde regra faltando**:
   atribuição `link`/`manual` cai em `corretor`. Teste de origem nova chama a
   função com atribuição nula, senão passa pela sobra.
+
+## O site de cada grupo pelo endereço (0201, 20/10/2026)
+
+Nota: [[site-de-cada-grupo-pelo-endereco]]. Passo a passo do dono:
+`docs/SITES-POR-ENDERECO.md`.
+
+- **O host vira segmento do caminho, não `headers()`**: o proxy reescreve
+  `/x` para `/s/<host>/x` sem banco, e as páginas em `src/app/s/[site]`
+  continuam estáticas, com cache de rota por site. `headers()` em cada página
+  desfaria a F2b. `grupoDoSite()` saiu; `queries.ts` recebe o grupo.
+- **O matcher do proxy exclui caminho com ponto, e o host tem ponto**:
+  `/s/imobsol.com.br/sobre` abria o site de outro grupo em qualquer domínio.
+  O matcher tem a entrada `"/s/:path*"` à parte; teste com
+  `unstable_doesMiddlewareMatch`.
+- **`other` dos metadados é mesclado entre layouts**: as etiquetas `geo.*`
+  saíram do layout raiz. O rodapé (CRECI, endereço) também saiu do raiz.
+- **`notFound()` de layout é pego pela fronteira do segmento pai**: o layout
+  de `[site]` não lança; lançam os layouts de grupo e as páginas.
+- **404 de página estática sai com `<body>` vazio** (o texto vem no payload
+  do React). Já era assim em produção; não é regressão.
+- **Outros grupos têm marca neutra** (só o nome): sem CRECI, endereço, redes,
+  vinheta, Pixel ou Search Console da Next Home. `marcaNoSite.test.ts` trava.
+- **Para medir sem tipos no Windows**: build com `typescript.ignoreBuildErrors`
+  temporário (o `PixelMeta`/`pixelMeta` reprova o tsc) e `next start` com
+  `curl -H "Host: …"`; o navegador usa `--host-resolver-rules`.
