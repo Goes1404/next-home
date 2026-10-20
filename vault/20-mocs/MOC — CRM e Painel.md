@@ -114,3 +114,4 @@ F0–F6.
 - [[visita-remarcada-e-desmarcada-pela-conversa]] — visita combinada pelo corretor no chat vira sugestão de registro na fila do Início (0163, 06/10)
 - [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)
 - [[aviso-ao-corretor-diz-o-que-fazer]] — alertas do atendimento e resumo do dia: o que fazer primeiro, ficha numa linha, carência por motivo (20/10)
+- [[metragem-da-planta-nao-tinha-campo]] — editor do imóvel sem campo de metragem; planta nova nascia com 80 m² inventados (20/10)

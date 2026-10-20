@@ -449,7 +449,7 @@ export async function salvarTipologias(
   for (const [ordem, t] of validas.entries()) {
     const linha = {
       empreendimento_id: empreendimentoId,
-      nome: t.nome.trim() || `${t.dormitorios} dormitórios`,
+      nome: t.nome.trim() || (t.dormitorios > 0 ? `${t.dormitorios} dormitórios` : `${t.areaPrivativa} m²`),
       area_privativa: t.areaPrivativa,
       dormitorios: Math.max(0, Math.round(t.dormitorios || 0)),
       suites: Math.max(0, Math.round(t.suites || 0)),

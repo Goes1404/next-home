@@ -11121,3 +11121,13 @@ Nota: [[roleta-dos-anuncios]].
   Ninguém conseguiu, o lead fica com o dono.
 - `obterOuCriarConversa` devolve `leadCriadoAgora`: é ele que separa lead
   novo de cliente antigo clicando no anúncio.
+
+## A metragem da planta não tinha campo (20/10/2026)
+
+Nota: [[metragem-da-planta-nao-tinha-campo]].
+
+- O editor salvava `area_privativa`, mas não tinha campo para ela (nem para
+  dormitórios e banheiros). "Adicionar planta" nascia com 80 m², 2 dorm e 2
+  suítes de padrão, gravados sem ninguém ver. Hoje cada número tem campo e a
+  planta nova nasce em branco. Valor padrão em campo escondido vira dado
+  inventado.
