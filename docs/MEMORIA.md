@@ -11333,3 +11333,30 @@ Nota: [[site-de-cada-grupo-pelo-endereco]]. Passo a passo do dono:
 - **Para medir sem tipos no Windows**: build com `typescript.ignoreBuildErrors`
   temporário (o `PixelMeta`/`pixelMeta` reprova o tsc) e `next start` com
   `curl -H "Host: …"`; o navegador usa `--host-resolver-rules`.
+
+## A revisão do site por endereço (0201, 20/10/2026)
+
+Nota: [[site-de-cada-grupo-pelo-endereco]].
+
+- **`revalidatePath` com rewrite precisa do caminho de DESTINO**:
+  `revalidatePath("/empreendimentos/x")` deixou de achar rota quando o proxy
+  passou a reescrever para `/s/<host>`. Hoje `revalidarSitePublico()`
+  derruba `/s/[site]` (`"layout"`); guarda em `revalidarSitePublico.test.ts`.
+- **`revalidateTag(tag, "max")` serve o velho na próxima visita** (é
+  stale-while-revalidate). Quem garante a página fresca é o `revalidatePath`
+  do destino: o `unstable_cache` lido dentro da rota obedece às etiquetas
+  implícitas dela (`softTags`).
+- **`security definer` com parâmetro vindo do chamador anônimo é oráculo**:
+  `site_do_endereco` aceitava o domínio da plataforma de quem chamasse e
+  listava grupo e nome de qualquer slug. Saiu do `anon`/`authenticated`; o
+  resolvedor usa a chave de serviço.
+- **`favicon.ico` em `src/app` entra no head de TODA página, mesmo com
+  `icons` declarado** (`icon.png` e `apple-icon.png` obedecem; o favicon
+  não). Mudou para `public/`. Os metadados do raiz ficaram neutros.
+- **A frase do botão de WhatsApp leva o nome do grupo do site**; o porteiro
+  reconhece `Vim pelo site da <nome>.` para qualquer nome.
+- **Para medir o head sem o tsc no Windows**: `typescript.ignoreBuildErrors`
+  temporário no `next.config.ts`, `next build` com as variáveis do Supabase
+  local no shell (elas ganham do `.env.local`), `next start` e
+  `curl -H "Host: <endereço>"`.
+
