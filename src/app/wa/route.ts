@@ -3,6 +3,7 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { gravarClique } from "@/lib/whatsapp/gravarClique";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao } from "@/lib/whatsapp/porteiro";
 import { diaEmSaoPauloISO, ehCliqueDePessoa, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
@@ -50,13 +51,16 @@ export async function GET(req: Request) {
   const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
   // Aguardado de propósito: fire-and-forget perderia o clique se a função
   // for congelada logo após o redirect.
-  await supabase.from("cliques_whatsapp").insert({
+  await gravarClique(supabase, {
     // Pela chave de serviço não há sessão, e o clique pode não ter corretor
     // nem imóvel: o grupo vai explícito, o do site (0192).
     grupo_id: grupo,
     corretor_id: destino.tipo === "whatsapp" ? (sorteio?.corretor_id ?? null) : null,
     empreendimento_id: null,
     origem: "site",
+    // Foi para o corretor do link pessoal, não para o sorteio: a ficha que
+    // nascer deste clique é trazida por ele (fase 5, 0200).
+    do_link_pessoal: destino.tipo === "whatsapp" && numeroDoLink !== null,
     // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
     pelo_porteiro: true,
     url_origem: url.pathname + url.search,

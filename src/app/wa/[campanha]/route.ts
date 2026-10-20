@@ -3,6 +3,7 @@ import { getCorretorAtivo } from "@/lib/corretorAtivo";
 import { grupoDoSite } from "@/lib/grupos/grupo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { destinoDoPorteiro } from "@/lib/whatsapp/destinoDoPorteiro";
+import { gravarClique } from "@/lib/whatsapp/gravarClique";
 import { numeroDoLinkPessoal } from "@/lib/whatsapp/numeroDoLinkPessoal";
 import { ehChaveIntencao, resolverCampanha } from "@/lib/whatsapp/porteiro";
 import { diaEmSaoPauloISO, ehCliqueDePessoa, ipDaRequisicao, segredoDaMedicao, visitanteDoClique } from "@/lib/whatsapp/medicaoDoLink";
@@ -78,14 +79,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     referer: req.headers.get("referer"),
     host: url.host,
   });
-  const registrarClique = async (corretorId: string | null) => {
-    await supabase.from("cliques_whatsapp").insert({
+  const registrarClique = async (corretorId: string | null, doLinkPessoal = false) => {
+    await gravarClique(supabase, {
       // Link com typo não tem imóvel nem corretor: o grupo vai explícito, o
       // do site (0192).
       grupo_id: grupo,
       corretor_id: corretorId,
       empreendimento_id: alvo?.id ?? null,
       origem: `${doSite ? "site" : "anuncio"}/${campanha.slice(0, 80)}`,
+      // Foi para o corretor do link pessoal, não para o sorteio: a ficha que
+      // nascer deste clique é trazida por ele (fase 5, 0200).
+      do_link_pessoal: doLinkPessoal,
       // Só clique gravado aqui pode cadastrar quem escreve sem a mensagem pronta (0143).
       pelo_porteiro: true,
       url_origem: url.pathname + url.search,
@@ -134,6 +138,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     return NextResponse.redirect(new URL(destino.caminho, url.origin), 302);
   }
 
-  await registrarClique(sorteio?.corretor_id ?? null);
+  await registrarClique(sorteio?.corretor_id ?? null, numeroDoLink !== null);
   return NextResponse.redirect(destino.url, 302);
 }

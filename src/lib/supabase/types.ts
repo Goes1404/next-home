@@ -65,7 +65,8 @@
  * E, da 0199, as colunas `ia_*` de `grupos` (tom com a união do CHECK) e a
  * função `atualizar_identidade_da_ia`.
  *
- * E, da 0200, `leads.trazido_por` (com a união do CHECK) e a função
+ * E, da 0200, `leads.trazido_por` (com a união do CHECK),
+ * `cliques_whatsapp.do_link_pessoal` e a função
  * `devolver_leads_da_imobiliaria`.
  */
 
@@ -1123,6 +1124,7 @@ export type Database = {
           consumido_em: string | null
           created_at: string
           de_pessoa: boolean | null
+          do_link_pessoal: boolean
           empreendimento_id: string | null
           id: string
           lead_id: string | null
@@ -1138,6 +1140,7 @@ export type Database = {
           consumido_em?: string | null
           created_at?: string
           de_pessoa?: boolean | null
+          do_link_pessoal?: boolean
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null
@@ -1153,6 +1156,7 @@ export type Database = {
           consumido_em?: string | null
           created_at?: string
           de_pessoa?: boolean | null
+          do_link_pessoal?: boolean
           empreendimento_id?: string | null
           id?: string
           lead_id?: string | null

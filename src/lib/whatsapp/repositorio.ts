@@ -696,6 +696,8 @@ export type CliqueDoLink = {
   nomeImovel: string | null;
   /** O clique veio do anúncio (não do site). */
   doAnuncio: boolean;
+  /** Foi para o corretor do link pessoal (cookie), não para o sorteio (0200). */
+  doLinkPessoal: boolean;
 };
 
 /**
@@ -731,6 +733,15 @@ export async function reivindicarCliqueDoLink(params: {
   }
   if (!data) return null;
 
+  // Lido à parte, e sem derrubar nada: antes da 0200 a coluna não existe, e
+  // o clique continua valendo para a atribuição do anúncio.
+  const { data: marca, error: erroMarca } = await supabase
+    .from("cliques_whatsapp")
+    .select("do_link_pessoal")
+    .eq("id", data.clique_id)
+    .maybeSingle();
+  if (erroMarca) console.error("[porteiro] falha ao ler o link pessoal do clique:", erroMarca.message);
+
   let nomeImovel: string | null = null;
   if (data.empreendimento_id) {
     const { data: imovel } = await supabase
@@ -744,6 +755,7 @@ export async function reivindicarCliqueDoLink(params: {
     cliqueId: data.clique_id,
     nomeImovel,
     doAnuncio: data.origem.startsWith("anuncio/"),
+    doLinkPessoal: marca?.do_link_pessoal === true,
   };
 }
 
@@ -824,6 +836,29 @@ export async function vincularCliqueAoLead(cliqueId: string, leadId: string): Pr
   const supabase = createServiceClient();
   const { error } = await supabase.from("cliques_whatsapp").update({ lead_id: leadId }).eq("id", cliqueId);
   if (error) console.error("[porteiro] falha ao ligar clique ao lead:", error.message);
+}
+
+/**
+ * O lead do convite chegou pelo link pessoal do corretor (fase 5, spec §9):
+ * a ficha que acabou de nascer `whatsapp/organico` passa a
+ * `whatsapp/link_pessoal`, e o gatilho `leads_trazido_por` (0200) a marca
+ * como trazida por ele. Na saída, ele leva a ficha.
+ *
+ * Só a ficha recém-nascida (os mesmos 15 minutos do clique, que o gatilho
+ * também confere): o cliente antigo da casa que voltar a clicar no link de
+ * um corretor não muda de lado. Vem ANTES de `marcarLeadVindoDeAnuncio`:
+ * o botão de imóvel do site manda a mesma mensagem pronta do anúncio, e
+ * quem tem o cookie do link pessoal não chegou pelo anúncio pago.
+ */
+export async function marcarLeadVindoDoLinkPessoal(leadId: string): Promise<void> {
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ origem: "whatsapp/link_pessoal" })
+    .eq("id", leadId)
+    .eq("origem", "whatsapp/organico")
+    .gte("created_at", new Date(Date.now() - JANELA_DO_CLIQUE_MIN * 60_000).toISOString());
+  if (error) console.error("[porteiro] falha ao marcar o lead do link pessoal:", error.message);
 }
 
 /**

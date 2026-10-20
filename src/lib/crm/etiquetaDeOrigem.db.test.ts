@@ -7,6 +7,8 @@
 // torna da imobiliária, e a devolução na saída só move o que é da
 // imobiliária, só dentro do grupo, só pela mão de um gestor.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Sql, TransactionSql } from "postgres";
 import {
@@ -68,6 +70,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("etiqueta de origem e saída do corre
         [{ origem: "whatsapp/ativado_pelo_corretor", atribuicao: "link" }, "corretor"],
         [{ origem: "indicacao", atribuicao: "manual" }, "corretor"],
         [{ origem: "site/contato", atribuicao: "link" }, "corretor"],
+        [{ origem: "whatsapp/link_pessoal", atribuicao: "link" }, "corretor"],
         [{ origem: "meta/ctwa", atribuicao: "link", metaAdId: "123" }, "corretor"],
         [{ origem: "painel/importacao", atribuicao: "manual" }, "corretor"],
         [{ origem: "whatsapp/organico", atribuicao: "link" }, "imobiliaria"],
@@ -82,6 +85,11 @@ describe.skipIf(!process.env.DB_TESTE_URL)("etiqueta de origem e saída do corre
         const id = await novoLead(tx, g.corretorId, g.grupoId, lead);
         expect(await etiqueta(tx, id), JSON.stringify(lead)).toBe(esperado);
       }
+      // O link pessoal é do corretor pela ORIGEM, não pela sobra da regra
+      // (atribuição desconhecida cairia na imobiliária).
+      const [{ c }] = await tx<{ c: string }[]>`
+        select public.classificar_trazido_por('whatsapp/link_pessoal', null, false, false) as c`;
+      expect(c).toBe("corretor");
     });
   });
 
@@ -156,6 +164,89 @@ describe.skipIf(!process.env.DB_TESTE_URL)("etiqueta de origem e saída do corre
       // Depois de promovida, outra troca de origem não mexe mais.
       await tx`update public.leads set origem = 'meta/leadads' where id = ${id}`;
       expect(await etiqueta(tx, id)).toBe("corretor");
+    });
+  });
+
+  it("lead antigo da casa tocado pelo impulsionamento continua da imobiliária", async () => {
+    // A etiqueta da Meta chega em TODA mensagem do cliente
+    // (`registrarLeadDeImpulsionamento`): sem o prazo, o lead do site de
+    // semanas atrás viraria do corretor no primeiro toque num anúncio dele.
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "et-g" });
+      const id = await novoLead(tx, g.corretorId, g.grupoId, { origem: "whatsapp/organico", atribuicao: "link" });
+      await tx`update public.leads set created_at = now() - interval '20 days' where id = ${id}`;
+      await tx`update public.leads set origem = 'meta/ctwa', meta_ad_id = '999' where id = ${id}`;
+      expect(await etiqueta(tx, id)).toBe("imobiliaria");
+    });
+  });
+
+  it("lead repassado pela gestão não vira do novo dono pelo impulsionamento", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "et-h" });
+      const id = await novoLead(tx, g.corretorId, g.grupoId, { origem: "whatsapp/organico", atribuicao: "link" });
+      await tx`
+        insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+        values (${id}, ${g.gestorId}, 'repasse', 'Repasse pela gestão',
+          ${tx.json({ origem_anterior: "link", de: g.corretorId, para: g.gestorId })})`;
+      await tx`update public.leads set corretor_id = ${g.gestorId}, origem_atribuicao = 'manual' where id = ${id}`;
+      await tx`update public.leads set origem = 'meta/ctwa', meta_ad_id = '999' where id = ${id}`;
+      expect(await etiqueta(tx, id)).toBe("imobiliaria");
+    });
+  });
+
+  it("a ficha do convite que chegou pelo link pessoal do corretor é dele", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "et-i" });
+      const id = await novoLead(tx, g.corretorId, g.grupoId, { origem: "whatsapp/organico", atribuicao: "link" });
+      expect(await etiqueta(tx, id)).toBe("imobiliaria");
+      await tx`update public.leads set origem = 'whatsapp/link_pessoal' where id = ${id}`;
+      expect(await etiqueta(tx, id)).toBe("corretor");
+    });
+  });
+
+  it("o passado: só conta como repasse a passagem para o dono de HOJE", async () => {
+    // O backfill da 0200, rodado de novo com o texto da própria migration
+    // sobre leads com a etiqueta apagada.
+    const migration = readFileSync(
+      join(process.cwd(), "supabase", "migrations", "0200_etiqueta_de_origem_e_saida.sql"),
+      "utf8",
+    );
+    const inicio = migration.indexOf("update public.leads l");
+    const fim = migration.indexOf("where l.trazido_por is null;", inicio);
+    expect(inicio).toBeGreaterThan(0);
+    expect(fim).toBeGreaterThan(inicio);
+    const backfill = migration.slice(inicio, fim + "where l.trazido_por is null;".length);
+
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "et-j" });
+      const linha = (lead: string, tipo: string, detalhes: Record<string, unknown>) => tx`
+        insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+        values (${lead}, ${g.gestorId}, ${tipo}, 'Transferência', ${tx.json(detalhes as never)})`;
+
+      // Repasse cujo update falhou: a linha aponta para outro dono.
+      const repasseQueFalhou = await novoLead(tx, g.corretorId, g.grupoId, { origem: "painel/manual", atribuicao: "manual" });
+      await linha(repasseQueFalhou, "repasse", { origem_anterior: "manual", de: g.corretorId, para: g.gestorId });
+      // Repasse que aconteceu: aponta para o dono de hoje.
+      const repassado = await novoLead(tx, g.corretorId, g.grupoId, { origem: "painel/manual", atribuicao: "manual" });
+      await linha(repassado, "repasse", { origem_anterior: "manual", de: g.gestorId, para: g.corretorId });
+      // Transferência de antes da linha `repasse` (0183): só a linha `sistema`.
+      const transferidoAntes = await novoLead(tx, g.corretorId, g.grupoId, { origem: "painel/manual", atribuicao: "manual" });
+      await linha(transferidoAntes, "sistema", { de: g.gestorId, para: g.corretorId, motivo: "transferencia_pela_gestao" });
+      // Linha `sistema` sem transferência não conta.
+      const comNota = await novoLead(tx, g.corretorId, g.grupoId, { origem: "painel/manual", atribuicao: "manual" });
+      await linha(comNota, "sistema", { familia: "parada" });
+
+      const ids = [repasseQueFalhou, repassado, transferidoAntes, comNota];
+      await tx`alter table public.leads disable trigger leads_trazido_por`;
+      await tx`alter table public.leads alter column trazido_por drop not null`;
+      await tx`update public.leads set trazido_por = null where id in ${tx(ids)}`;
+      await tx.unsafe(backfill);
+      await tx`alter table public.leads enable trigger leads_trazido_por`;
+
+      expect(await etiqueta(tx, repasseQueFalhou)).toBe("corretor");
+      expect(await etiqueta(tx, repassado)).toBe("imobiliaria");
+      expect(await etiqueta(tx, transferidoAntes)).toBe("imobiliaria");
+      expect(await etiqueta(tx, comNota)).toBe("corretor");
     });
   });
 

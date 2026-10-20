@@ -14,19 +14,31 @@
 --      tentativa de troca (inclusive da chave de serviço). Só duas coisas a
 --      mudam: o repasse da gestão (troca de `corretor_id` → imobiliária) e a
 --      promoção da ficha recém-nascida `whatsapp/organico` (é por ela que o
---      impulsionamento do próprio corretor vira dele, 0127).
+--      impulsionamento do próprio corretor e o link pessoal dele viram dele,
+--      0127). Recém-nascida = criada há até 15 minutos (a janela do clique
+--      do porteiro) e sem repasse: a etiqueta do impulsionamento chega em
+--      TODA mensagem do cliente, e sem o prazo um lead da casa viraria do
+--      corretor semanas depois.
 --   2. `classificar_trazido_por`: a regra, pura, num lugar só.
---   3. Backfill: lead com linha `repasse` (L30) é da imobiliária; o resto
---      pela regra. A importação de gestor do passado sai do papel ATUAL do
---      dono (não há outro registro de quem importou).
---   4. `devolver_leads_da_imobiliaria(corretor, destino)`: na saída, passa
+--   3. Backfill: lead que a gestão passou para o dono ATUAL é da
+--      imobiliária. Vale a linha `repasse` (L30, 0183) e, de antes dela, a
+--      linha `sistema` de transferência (`detalhes.para`, plano de ativação
+--      3.3); nas duas, só quando `detalhes.para` é o dono de hoje (o
+--      repasse do painel grava a linha antes do update, e um update que
+--      falhou deixa uma linha que não aconteceu). O resto pela regra. A
+--      importação de gestor do passado sai do papel ATUAL do dono (não há
+--      outro registro de quem importou).
+--   4. `cliques_whatsapp.do_link_pessoal`: o clique foi para o corretor do
+--      link pessoal (cookie), não para o sorteio. O webhook usa isso para
+--      promover a ficha do convite a `whatsapp/link_pessoal`, que é dele.
+--   5. `devolver_leads_da_imobiliaria(corretor, destino)`: na saída, passa
 --      os leads da imobiliária para o corretor escolhido ou, sem destino,
 --      pela ordem da roleta (as mesmas preferências da `distribuir_lead`,
 --      mais um contador desta divisão para espalhar: os leads antigos não
 --      contam na carga de 30 dias, e sem o contador todos iriam para uma
 --      pessoa só). Só gestor do grupo; grava `repasse` e `sistema` na linha
 --      do tempo e `leads_redistribuidos` em `admin_eventos`.
---   5. `admin_eventos.acao` ganha `fichas_exportadas` (a planilha das fichas
+--   6. `admin_eventos.acao` ganha `fichas_exportadas` (a planilha das fichas
 --      que o gestor entrega a quem sai; sem mensagem nenhuma).
 --
 -- Reversão:
@@ -35,6 +47,7 @@
 --   drop function if exists public.devolver_leads_da_imobiliaria(uuid, uuid);
 --   drop function if exists public.classificar_trazido_por(text, text, boolean, boolean);
 --   alter table public.leads drop column if exists trazido_por;
+--   alter table public.cliques_whatsapp drop column if exists do_link_pessoal;
 --   e o CHECK de admin_eventos pela lista da 0199.
 
 begin;
@@ -59,8 +72,10 @@ as $$
   select case
     -- A roleta escolheu o dono: quem deu foi a imobiliária.
     when p_atribuicao = 'roleta' then 'imobiliaria'
-    -- Cadastrado por ele: palavra-chave, à mão, indicação de cliente dele.
-    when p_origem in ('whatsapp/ativado_pelo_corretor', 'whatsapp/teste_do_corretor', 'painel/manual', 'indicacao')
+    -- Cadastrado por ele (palavra-chave, à mão, indicação de cliente dele) ou
+    -- chegado pelo link pessoal dele, inclusive pelo WhatsApp.
+    when p_origem in ('whatsapp/ativado_pelo_corretor', 'whatsapp/teste_do_corretor', 'painel/manual', 'indicacao',
+                      'whatsapp/link_pessoal')
       then 'corretor'
     -- Importado por ele é dele; importado pelo gestor é da imobiliária.
     when p_origem = 'painel/importacao'
@@ -96,7 +111,10 @@ comment on column public.leads.trazido_por is
 update public.leads l
    set trazido_por = case
      when exists (
-       select 1 from public.lead_interacoes i where i.lead_id = l.id and i.tipo = 'repasse'
+       select 1 from public.lead_interacoes i
+        where i.lead_id = l.id
+          and (i.tipo = 'repasse' or (i.tipo = 'sistema' and i.detalhes ? 'para'))
+          and i.detalhes->>'para' = l.corretor_id::text
      ) then 'imobiliaria'
      else public.classificar_trazido_por(
        l.origem,
@@ -139,8 +157,14 @@ begin
   if new.corretor_id is distinct from old.corretor_id then
     -- Repasse da gestão (ou dono dado a um lead sem dono): é da casa.
     new.trazido_por := 'imobiliaria';
-  elsif old.origem = 'whatsapp/organico' and new.origem is distinct from old.origem then
+  elsif old.origem = 'whatsapp/organico'
+    and new.origem is distinct from old.origem
+    and old.created_at > now() - interval '15 minutes'
+    and not exists (select 1 from public.lead_interacoes i where i.lead_id = old.id and i.tipo = 'repasse')
+  then
     -- A ficha que acabou de nascer pelo convite ganha a origem verdadeira.
+    -- Só a recém-nascida: a etiqueta da Meta chega em toda mensagem do
+    -- cliente, e um lead da casa (ou repassado) não vira do corretor depois.
     new.trazido_por := public.classificar_trazido_por(
       new.origem,
       new.origem_atribuicao,
@@ -160,7 +184,20 @@ create trigger leads_trazido_por
   for each row execute function public.definir_trazido_por();
 
 -- ---------------------------------------------------------------------------
--- 4. A devolução na saída
+-- 4. O clique do link pessoal
+-- ---------------------------------------------------------------------------
+-- Quem grava é o porteiro (`/wa`), pela chave de serviço. O anon não insere
+-- em cliques_whatsapp (0194) e a sessão não tem policy de INSERT nela:
+-- ninguém se declara vindo do link pessoal de alguém.
+
+alter table public.cliques_whatsapp
+  add column if not exists do_link_pessoal boolean not null default false;
+
+comment on column public.cliques_whatsapp.do_link_pessoal is
+  'O clique foi para o corretor do link pessoal (cookie), não para o sorteio. A ficha do convite vira whatsapp/link_pessoal, trazida por ele (0200).';
+
+-- ---------------------------------------------------------------------------
+-- 5. A devolução na saída
 -- ---------------------------------------------------------------------------
 
 create or replace function public.devolver_leads_da_imobiliaria(p_corretor uuid, p_destino uuid default null)
@@ -304,7 +341,7 @@ comment on function public.devolver_leads_da_imobiliaria(uuid, uuid) is
   'Na saída do corretor, passa os leads trazido_por = imobiliaria para o destino ou pela ordem da roleta. Só gestor do grupo de quem sai (0200).';
 
 -- ---------------------------------------------------------------------------
--- 5. O registro da planilha entregue
+-- 6. O registro da planilha entregue
 -- ---------------------------------------------------------------------------
 
 alter table public.admin_eventos drop constraint if exists admin_eventos_acao_check;

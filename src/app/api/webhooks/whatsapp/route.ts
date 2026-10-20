@@ -43,6 +43,7 @@ import {
   historicoRecente,
   ativarIaNaConversa,
   marcarLeadVindoDeAnuncio,
+  marcarLeadVindoDoLinkPessoal,
   reivindicarCliqueDoLink,
   vincularCliqueAoLead,
   type CliqueDoLink,
@@ -558,6 +559,11 @@ export async function POST(req: NextRequest) {
     }
     if (cliqueDoLink && conversa?.leadId) {
       await vincularCliqueAoLead(cliqueDoLink.cliqueId, conversa.leadId);
+      // O clique foi para o corretor do link pessoal (cookie), e não veio de
+      // anúncio pago: a ficha é trazida por ele (fase 5, spec §9).
+      if (cliqueDoLink.doLinkPessoal && !cliqueDoLink.doAnuncio) {
+        await marcarLeadVindoDoLinkPessoal(conversa.leadId);
+      }
     }
 
     /*
