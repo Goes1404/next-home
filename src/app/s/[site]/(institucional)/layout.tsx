@@ -108,7 +108,8 @@ export default async function InstitucionalLayout({
             junto com o vídeo de fundo, no mesmo dia: era o MESMO quadro do
             logotipo que o usuário pediu para tirar. O LCP passa a ser o
             conteúdo do herói, que já nasce visível (F1). */}
-        <FundoDoLink padrao={<FundoDaCasaDesktop />} />
+        {/* A foto da avenida é da Next Home (L53): fora dela fica só a aurora. */}
+        <FundoDoLink padrao={ehNextHome ? <FundoDaCasaDesktop /> : null} />
         {/* O fundo em VÍDEO (a vinheta congelada no último quadro) SAIU de
             todas as páginas em 13/09/2026, a pedido: o quadro parado do
             logotipo atrás do conteúdo lia como imagem de fundo aleatória, e

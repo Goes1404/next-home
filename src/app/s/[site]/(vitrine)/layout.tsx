@@ -74,7 +74,8 @@ export default async function VitrineLayout({
       <div className="fixed inset-x-0 top-0 -z-10 h-lvh fundo-aurora overflow-hidden bg-fundo">
         {/* Sem vinheta de fundo desde 13/09/2026 (ver o layout do
             institucional): a aurora em CSS cobre os dois tamanhos. */}
-        <FundoDoLink padrao={<FundoDaCasaDesktop />} />
+        {/* A foto da avenida é da Next Home (L53): fora dela fica só a aurora. */}
+        <FundoDoLink padrao={site.marca.ehNextHome ? <FundoDaCasaDesktop /> : null} />
         <div className="absolute inset-0 bg-gradient-to-b from-fundo/30 via-fundo/10 to-fundo/90" />
       </div>
 

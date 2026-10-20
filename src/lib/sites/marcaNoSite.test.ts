@@ -55,6 +55,9 @@ describe("guarda: o site público usa a marca do site servido", () => {
       expect(layout, g).toMatch(/siteDaPagina\(params\)/);
       expect(layout, g).toMatch(/integracaoLiberada\(site\.grupoId, "pixel"\) && <PixelMeta \/>/);
       expect(layout, g).toMatch(/(ehNextHome|site\.marca\.ehNextHome) && <Preloader \/>/);
+      // A foto da avenida (FUNDO_DESKTOP_URL) é da Next Home (L53).
+      expect(layout, g).toMatch(/padrao=\{(ehNextHome|site\.marca\.ehNextHome) \? <FundoDaCasaDesktop \/> : null\}/);
+      expect(layout, g).not.toMatch(/padrao=\{<FundoDaCasaDesktop \/>\}/);
     }
   });
 
