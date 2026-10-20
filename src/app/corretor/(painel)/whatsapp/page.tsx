@@ -44,6 +44,19 @@ export default async function WhatsappPainelPage() {
     .select("numero_recusado_em")
     .eq("corretor_id", corretor.id)
     .maybeSingle();
+  // Nome e tom fixados pelo gestor para a equipe (0199): o campo do corretor
+  // deixa de valer, e a tela diz isso. Consulta à parte pelo mesmo motivo da
+  // de cima: sem a migration, a tela segue sem o aviso.
+  const { data: doGrupo } = await supabase
+    .from("grupos")
+    .select("ia_nome_assistente, ia_tom")
+    .eq("id", corretor.grupoId)
+    .maybeSingle();
+  const fixadoPeloGrupo = {
+    nomeAssistente: doGrupo?.ia_nome_assistente ?? null,
+    tom: doGrupo?.ia_tom ?? null,
+  };
+
   const avisoDeRecusa =
     recusa?.numero_recusado_em && instancia?.status_conexao !== "conectado" ? FRASE_NUMERO_EM_OUTRO_GRUPO : null;
 
@@ -100,6 +113,7 @@ export default async function WhatsappPainelPage() {
         // campo pronto poupa digitação no celular, onde este fluxo mora.
         whatsappCadastro={corretor.whatsapp ?? ""}
         avisoDeRecusa={avisoDeRecusa}
+        fixadoPeloGrupo={fixadoPeloGrupo}
         configInicial={
           instancia
             ? {

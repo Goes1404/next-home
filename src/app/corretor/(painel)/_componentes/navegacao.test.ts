@@ -385,7 +385,7 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // entraram no mesmo dia, na segunda rodada.
     // 30/09/2026: 12 → 9, em três seções. SLA e Eventos viraram seções da
     // Visão geral; Anúncios foi para Anúncios pagos.
-    expect(subitensDe("/corretor/admin")).toHaveLength(9);
+    expect(subitensDe("/corretor/admin")).toHaveLength(10);
     expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
       "Equipe",
       "Negócio",
@@ -583,6 +583,7 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
           "/corretor/admin/parceiros",
           "/corretor/admin/precos",
           "/corretor/admin/credito",
+          "/corretor/admin/assistente",
           "/corretor/admin/marca",
         ],
       ],

@@ -306,6 +306,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio" },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio" },
           { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio" },
+          { href: "/corretor/admin/assistente", label: "Assistente", icone: IconeRobo, secao: "Sistema" },
           { href: "/corretor/admin/marca", label: "Marca", icone: IconeSelo, secao: "Sistema" },
         ],
       },

@@ -6,6 +6,7 @@ import { Bot, BellOff, Moon } from "lucide-react";
 import { EXPEDIENTE, listarPalavrasChave, somenteDiscretas } from "@/lib/whatsapp/modoBot";
 import { problemaDaPalavraChave } from "@/lib/whatsapp/palavraChaveDiscreta";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
+import { ROTULO_DO_TOM } from "@/lib/whatsapp/casa";
 import { salvarConfiguracaoWhatsapp } from "../acoes";
 
 /**
@@ -56,6 +57,9 @@ export type ConfigIA = {
   regrasDaIa: string | null;
 };
 
+/** Nome e tom que o gestor fixou para a equipe (0199). Nulo: vale o do número. */
+export type FixadoPeloGrupo = { nomeAssistente: string | null; tom: TomVozBot | null };
+
 /** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
 function listarEmTexto(chaves: string[]): string {
   const comAspas = chaves.map((c) => `"${c}"`);
@@ -66,10 +70,17 @@ function listarEmTexto(chaves: string[]): string {
 export function ConfiguracaoIA({
   inicial,
   aoMudarNome,
+  fixadoPeloGrupo,
 }: {
   inicial: ConfigIA | null;
   /** O playground mostra o nome no cabeçalho do chat — mantém os dois em sincronia. */
   aoMudarNome?: (nome: string) => void;
+  /**
+   * O que o gestor fixou para a equipe ganha deste campo (fase 4). Sem o
+   * aviso, o corretor mudaria o nome e nada aconteceria — a "config
+   * decorativa" que esta tela já foi uma vez.
+   */
+  fixadoPeloGrupo?: FixadoPeloGrupo;
 }) {
   const [modoBot, setModoBot] = useState<ModoBotWhatsapp>(inicial?.modoBot ?? "24_7");
   const [nomeAssistente, setNomeAssistente] = useState(inicial?.nomeAssistente ?? site.assistente);
@@ -241,6 +252,12 @@ export function ConfiguracaoIA({
                 }}
                 className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3.5 focus:outline-none"
               />
+              {fixadoPeloGrupo?.nomeAssistente && (
+                <p className="text-fluid-xs text-alerta break-words">
+                  O gestor definiu &quot;{fixadoPeloGrupo.nomeAssistente}&quot; para a equipe toda. Enquanto estiver assim, é
+                  esse o nome que a IA usa.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -257,6 +274,12 @@ export function ConfiguracaoIA({
                 <option value="formal_direto">Formal e direto</option>
                 <option value="descontraido_acolhedor">Descontraído e acolhedor</option>
               </select>
+              {fixadoPeloGrupo?.tom && (
+                <p className="text-fluid-xs text-alerta break-words">
+                  O gestor definiu o tom &quot;{ROTULO_DO_TOM[fixadoPeloGrupo.tom]}&quot; para a equipe toda. Enquanto estiver
+                  assim, é esse que a IA usa.
+                </p>
+              )}
             </div>
           </div>
 

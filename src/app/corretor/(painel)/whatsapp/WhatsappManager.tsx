@@ -3,7 +3,7 @@
 import { site } from "@/lib/site";
 import { useState } from "react";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
-import { ConfiguracaoIA } from "./_componentes/ConfiguracaoIA";
+import { ConfiguracaoIA, type FixadoPeloGrupo } from "./_componentes/ConfiguracaoIA";
 import { PainelConexao } from "./_componentes/PainelConexao";
 import { PlaygroundIA } from "./_componentes/PlaygroundIA";
 
@@ -31,6 +31,8 @@ interface Props {
    * o webhook e não esta tela.
    */
   avisoDeRecusa?: string | null;
+  /** Nome e tom que o gestor fixou para a equipe (0199): ganham dos do número. */
+  fixadoPeloGrupo?: FixadoPeloGrupo;
   /** Configuração já gravada, quando a instância existe. */
   configInicial?: {
     nomeAssistente: string;
@@ -56,7 +58,7 @@ const ABAS: { valor: Aba; label: string }[] = [
   { valor: "teste", label: "Testar" },
 ];
 
-export function WhatsappManager({ corretorNome, whatsappCadastro, avisoDeRecusa, configInicial }: Props) {
+export function WhatsappManager({ corretorNome, whatsappCadastro, avisoDeRecusa, fixadoPeloGrupo, configInicial }: Props) {
   const conectadoDeInicio = configInicial?.statusConexao === "conectado";
 
   // Quem nunca conectou cai na aba de conexão; quem já conectou provavelmente
@@ -136,6 +138,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, avisoDeRecusa,
               : null
           }
           aoMudarNome={setNomeAssistente}
+          fixadoPeloGrupo={fixadoPeloGrupo}
         />
       )}
 
