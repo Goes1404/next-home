@@ -29,7 +29,7 @@ prompt antes/depois). `PROMPT_VERSAO` não muda.
   gestor ativo, escreve só no grupo dele, grava `admin_eventos`
   `identidade_da_ia_alterada`); CHECK de `admin_eventos` com a ação nova.
 - `src/lib/whatsapp/casa.ts` (puro): `IdentidadeDaCasa`, `casaDoGrupo(linha)`,
-  `CASA_NEXT_HOME`, `nomeEToomDaAssistente` (precedência), frases da região.
+  `CASA_NEXT_HOME`, `assistenteDaConversa` (precedência), frases da região.
 - `src/lib/whatsapp/casaDoGrupo.ts` (server): `lerCasaDoGrupo(grupoId)` pela
   chave de serviço, com retentativa; falha cai no padrão do grupo SEM nome da
   Next Home para outros grupos. Entra no mapa de `servicoComGrupo.test.ts`.
