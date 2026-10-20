@@ -89,11 +89,13 @@ const daAba = [];
 for (const lado of [16, 32, 48]) {
   daAba.push({ lado, dados: await ladrilho(lado, { margem: 0.06, raio: 0.2 }) });
 }
-writeFileSync(join(app, "favicon.ico"), ico(daAba));
+// O favicon mora em public/ (revisão da fase 3): em src/app o Next o põe no
+// <head> de TODO endereço, inclusive o site de outro grupo, sem como tirar.
+writeFileSync(join(app, "..", "..", "public", "favicon.ico"), ico(daAba));
 writeFileSync(join(app, "icon.png"), await ladrilho(192, { margem: 0.12, raio: 0.22 }));
 const daApple = await ladrilho(180, { margem: 0.14, raio: 0, opaco: true });
 writeFileSync(join(app, "apple-icon.png"), daApple);
-console.log("Ícones gravados em src/app: favicon.ico (16/32/48), icon.png (192), apple-icon.png (180).");
+console.log("Ícones gravados: public/favicon.ico (16/32/48), src/app/icon.png (192), src/app/apple-icon.png (180).");
 
 mkdirSync(join(publico, "icones"), { recursive: true });
 writeFileSync(join(publico, "icones/icone-512.png"), await ladrilho(512, { margem: 0.12, raio: 0.22 }));

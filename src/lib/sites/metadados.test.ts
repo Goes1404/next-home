@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
@@ -6,7 +6,7 @@ import { site } from "@/lib/site";
 import { marcaDoGrupo } from "./marca";
 import { OG_IMAGEM } from "@/lib/dadosEstruturados";
 import { metadata as metadadosDo404 } from "@/app/not-found";
-import { ICONES_NEUTROS, METADADOS_DO_RAIZ, metadadosDoSite, metadadosSemSite } from "./metadados";
+import { ICONES_DA_NEXT_HOME, ICONES_NEUTROS, METADADOS_DO_RAIZ, metadadosDoSite, metadadosSemSite } from "./metadados";
 
 const casa = marcaDoGrupo({ grupoId: GRUPO_NEXT_HOME_ID, nome: "Next Home", url: site.url });
 const outro = marcaDoGrupo({ grupoId: "44444444-4444-4444-4444-444444444444", nome: "Casa Azul", url: "https://casaazul.com.br" });
@@ -40,10 +40,19 @@ describe("metadadosDoSite", () => {
     const m = metadadosDoSite(outro);
     expect(m.icons).toEqual(ICONES_NEUTROS);
     expect(m).toHaveProperty("manifest", null);
-    // A Next Home não declara: os arquivos do raiz (favicon, icon, manifest) valem.
+    // A Next Home declara os dela (o favicon saiu de src/app) e mantém o manifesto.
     const c = metadadosDoSite(casa);
-    expect(c).not.toHaveProperty("icons");
+    expect(c.icons).toEqual(ICONES_DA_NEXT_HOME);
     expect(c).not.toHaveProperty("manifest");
+  });
+
+  it("nenhum favicon de arquivo em src/app: o Next o poria no head de todo endereço", () => {
+    expect(existsSync(join(process.cwd(), "src", "app", "favicon.ico"))).toBe(false);
+    expect(existsSync(join(process.cwd(), "public", "favicon.ico"))).toBe(true);
+    for (const i of [...ICONES_DA_NEXT_HOME.icon, ...ICONES_DA_NEXT_HOME.apple]) {
+      const arquivo = i.url.replace(/^\//, "");
+      expect(existsSync(join(process.cwd(), "public", arquivo)) || existsSync(join(process.cwd(), "src", "app", arquivo)), i.url).toBe(true);
+    }
   });
 });
 

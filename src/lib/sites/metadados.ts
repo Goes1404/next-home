@@ -50,13 +50,30 @@ export const METADADOS_DO_RAIZ: Metadata = {
  * `apple-icon.png` e o manifesto em `src/app/` são ARQUIVOS do raiz: o Next
  * os põe no `<head>` de toda página, de todo endereço. Fora da Next Home a
  * página declara `icons` e `manifest: null`: com `icons` declarado, o Next
- * deixa de usar os ícones de arquivo (resolve-metadata, `leafSegmentStaticIcons`
- * só vale quando ninguém declarou), e o manifesto de arquivo é substituído
- * pelo nulo do segmento filho.
+ * deixa de usar `icon.png` e `apple-icon.png` (resolve-metadata,
+ * `leafSegmentStaticIcons` só vale quando ninguém declarou), e o manifesto de
+ * arquivo é substituído pelo nulo do segmento filho. O `favicon.ico` de
+ * arquivo NÃO obedece a isso — por isso ele mora em `public/`.
  */
-export const ICONES_NEUTROS: NonNullable<Metadata["icons"]> = {
+export const ICONES_NEUTROS = {
   icon: [{ url: "/icones/icone-neutro.svg", type: "image/svg+xml" }],
-};
+} satisfies NonNullable<Metadata["icons"]>;
+
+/**
+ * Os ícones da Next Home, declarados. O `favicon.ico` saiu de `src/app` para
+ * `public/` porque o Next o põe no `<head>` de TODA página, de todo endereço,
+ * mesmo quando a página declara `icons` (medido em `next start`, 20/10/2026:
+ * o site de outro grupo saía com o favicon da Next Home ao lado do neutro).
+ * Fora de `src/app` ele precisa ser declarado aqui; `icon.png` e
+ * `apple-icon.png` seguem sendo servidos de `src/app`.
+ */
+export const ICONES_DA_NEXT_HOME = {
+  icon: [
+    { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+    { url: "/icon.png", sizes: "192x192", type: "image/png" },
+  ],
+  apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+} satisfies NonNullable<Metadata["icons"]>;
 
 /**
  * Os metadados de um endereço que não é de nenhum grupo (ou de grupo
@@ -114,7 +131,7 @@ export function metadadosDoSite(marca: MarcaDoSite): Metadata {
           },
         }
       : {}),
-    ...(marca.ehNextHome ? {} : { icons: ICONES_NEUTROS, manifest: null }),
+    ...(marca.ehNextHome ? { icons: ICONES_DA_NEXT_HOME } : { icons: ICONES_NEUTROS, manifest: null }),
   };
 }
 
