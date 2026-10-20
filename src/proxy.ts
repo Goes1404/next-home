@@ -156,5 +156,11 @@ export const config = {
   // Só PÁGINAS: nada de `_next/`, nada de `api/`, nada com ponto no caminho
   // (`/video/intro.mp4`, `/robots.txt`, `/sitemap.xml`, fontes, ícones).
   // Arquivo não tem sessão para renovar nem link de corretor para gravar.
-  matcher: ["/((?!_next/|api/|.*\\..*).*)"],
+  //
+  // `/s/:path*` entra À PARTE, e é de segurança (fase 3): o host costuma ter
+  // ponto (`/s/imobsol.com.br/sobre`), e a regra de cima deixaria esse
+  // caminho chegar direto ao segmento do site — o site de outro grupo
+  // servido debaixo de qualquer domínio. Passando por aqui ele é reescrito
+  // para `/s/<host>/s/...`, que não existe.
+  matcher: ["/((?!_next/|api/|.*\\..*).*)", "/s/:path*"],
 };

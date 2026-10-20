@@ -77,3 +77,25 @@ describe("proxy e o site de cada endereço", () => {
     expect(r.cookies.get("corretor_ativo")?.value).toBe("bruna");
   });
 });
+
+describe("o matcher do proxy", async () => {
+  const { config } = await import("@/proxy");
+  const { unstable_doesMiddlewareMatch } = await import("next/experimental/testing/server");
+  const passa = (url: string) => unstable_doesMiddlewareMatch({ config, url });
+
+  it("um /s/<host com ponto>/... vindo de fora passa pelo proxy (e é reescrito)", () => {
+    // A regra geral exclui caminho com ponto; sem a entrada própria de `/s/`,
+    // `/s/imobsol.com.br/sobre` chegaria direto ao site de outro grupo
+    // debaixo de qualquer domínio — foi o que a medição local mostrou.
+    expect(passa("/s/imobsol.com.br/sobre")).toBe(true);
+    expect(passa("/s/www.nexthomeimoveis.com")).toBe(true);
+  });
+
+  it("páginas passam; arquivos e api não", () => {
+    expect(passa("/sobre")).toBe(true);
+    expect(passa("/")).toBe(true);
+    expect(passa("/sitemap.xml")).toBe(false);
+    expect(passa("/api/leads")).toBe(false);
+    expect(passa("/_next/static/x.js")).toBe(false);
+  });
+});
