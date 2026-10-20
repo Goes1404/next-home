@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
 import { Check, Copy, KeyRound, Mail, ShieldCheck, TriangleAlert, UserPlus } from "lucide-react";
 import {
@@ -19,6 +19,18 @@ import {
   reenviarConvite,
   trocarEmailDoCorretor,
 } from "../acoes";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import { copiarTexto } from "@/lib/ui/copiarTexto";
+
+/**
+ * Falha ao chamar a action. Aba aberta durante um deploy chama a action de
+ * outro build, e o erro não é de conexão: tentar de novo não resolve, só
+ * recarregar. A frase de conexão fica para o resto, sem afirmar a causa.
+ */
+function fraseDaFalha(e: unknown, oQueJaFoiFeito?: string): string {
+  if (ehActionDeOutroBuild(e)) return avisoDePaginaVelha(oQueJaFoiFeito);
+  return "Não deu para falar com o servidor. Atualize a página e confira a lista antes de tentar de novo.";
+}
 
 /**
  * Contas de acesso da equipe.
@@ -43,8 +55,29 @@ type Entrega = {
 };
 
 function CartaoDoLink({ entrega, aoFechar }: { entrega: Entrega; aoFechar: () => void }) {
-  const [copiado, setCopiado] = useState(false);
+  // "Copiado!" só quando o navegador aceitou; recusado, o link fica
+  // selecionado na tela para copiar à mão (Ctrl+C, ou segurar o dedo no
+  // celular). Mesmo comportamento do convite da plataforma.
+  const [copia, setCopia] = useState<"nada" | "copiado" | "falhou">("nada");
+  const linkRef = useRef<HTMLParagraphElement>(null);
   const oQue = entrega.tipo === "convite" ? "Convite" : "Link de senha";
+
+  const copiar = async () => {
+    if (await copiarTexto(entrega.url!)) {
+      setCopia("copiado");
+      setTimeout(() => setCopia("nada"), 2500);
+      return;
+    }
+    setCopia("falhou");
+    const no = linkRef.current;
+    const selecao = typeof window !== "undefined" ? window.getSelection() : null;
+    if (no && selecao) {
+      const faixa = document.createRange();
+      faixa.selectNodeContents(no);
+      selecao.removeAllRanges();
+      selecao.addRange(faixa);
+    }
+  };
 
   return (
     <div
@@ -64,9 +97,18 @@ function CartaoDoLink({ entrega, aoFechar }: { entrega: Entrega; aoFechar: () =>
             Para {entrega.email}: o e-mail não está configurado; mande este link ao corretor pelo
             WhatsApp. Ele vale por 24 horas.
           </p>
-          <p className="text-fluid-xs bg-superficie border-linha text-corpo mt-3 rounded-xl border p-3 break-all">
+          <p
+            ref={linkRef}
+            className="text-fluid-xs bg-superficie border-linha text-corpo mt-3 rounded-xl border p-3 break-all select-all"
+          >
             {entrega.url}
           </p>
+          {copia === "falhou" && (
+            <p role="alert" className="text-fluid-xs text-corpo mt-2">
+              Não deu para copiar sozinho: o link acima está selecionado. Copie com Ctrl+C, ou segure o dedo sobre ele
+              no celular.
+            </p>
+          )}
         </>
       )}
 
@@ -74,14 +116,10 @@ function CartaoDoLink({ entrega, aoFechar }: { entrega: Entrega; aoFechar: () =>
         {!entrega.enviado && entrega.url && (
           <button
             type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(entrega.url!);
-              setCopiado(true);
-              setTimeout(() => setCopiado(false), 2500);
-            }}
+            onClick={copiar}
             className="text-fluid-xs bg-acento hover:bg-acento-hover flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 font-medium text-sobre-cor"
           >
-            <Copy className="h-4 w-4" /> {copiado ? "Copiado!" : "Copiar link"}
+            <Copy className="h-4 w-4" /> {copia === "copiado" ? "Copiado!" : "Copiar link"}
           </button>
         )}
         <button
@@ -172,8 +210,8 @@ function LinhaCorretor({
         if (!r.ok) return aoAvisar(r.erro, true);
         setEditando(null);
         aoEntregar({ nome: corretor.nome, email: email.trim().toLowerCase(), tipo, enviado: r.enviado, url: r.url });
-      } catch {
-        aoAvisar("Não consegui falar com o servidor. Confira a conexão e tente de novo.", true);
+      } catch (e) {
+        aoAvisar(fraseDaFalha(e), true);
       }
     });
 
@@ -388,8 +426,9 @@ function NovoCorretor({ aoEntregar }: { aoEntregar: (e: Entrega) => void }) {
         });
         setDados({ nome: "", creci: "", whatsapp: "", email: "" });
         setAberto(false);
-      } catch {
-        setErro("Não consegui cadastrar. Confira a conexão e tente de novo.");
+      } catch (e) {
+        // O cadastro pode ter gravado antes da falha: a lista diz se ele entrou.
+        setErro(fraseDaFalha(e, "Confira na lista se o corretor já entrou antes de cadastrar de novo."));
       }
     });
 
