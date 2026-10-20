@@ -693,6 +693,27 @@ export type Database = {
         ]
       }
       /** 0114 — a venda (F1 do módulo financeiro). */
+      uso_da_ia: {
+        Row: {
+          atualizado_em: string
+          grupo_id: string
+          mes: string
+          respostas: number
+        }
+        Insert: {
+          atualizado_em?: string
+          grupo_id: string
+          mes: string
+          respostas?: number
+        }
+        Update: {
+          atualizado_em?: string
+          grupo_id?: string
+          mes?: string
+          respostas?: number
+        }
+        Relationships: []
+      }
       vendas: {
         Row: {
           grupo_id: string
@@ -1587,6 +1608,7 @@ export type Database = {
           razao_social: string | null
           situacao: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teto_respostas_ia: number | null
           tipo: "imobiliaria" | "independente"
         }
         Insert: {
@@ -1606,6 +1628,7 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teto_respostas_ia?: number | null
           tipo: "imobiliaria" | "independente"
         }
         Update: {
@@ -1625,6 +1648,7 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug?: string
+          teto_respostas_ia?: number | null
           tipo?: "imobiliaria" | "independente"
         }
         Relationships: []
