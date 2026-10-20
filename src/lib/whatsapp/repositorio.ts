@@ -133,6 +133,8 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 }
 
 export type ConversaPersistida = {
+  /** O lead nasceu nesta chamada (pelo convite). Só `obterOuCriarConversa` preenche. Roleta dos anúncios (0204). */
+  leadCriadoAgora?: boolean;
   id: string;
   /** Nulo apenas em objetos legados/testes; a 0111 torna impossível no banco. */
   leadId: string | null;
@@ -562,12 +564,11 @@ export async function obterOuCriarConversa(params: {
     // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
     // que permite ao dossiê desta mensagem ter um destino.
     if (!existente.lead_id) {
-      const leadId =
-        (await encontrarLeadCadastrado(supabase, params)) ??
-        (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+      const cadastrado = await encontrarLeadCadastrado(supabase, params);
+      const leadId = cadastrado ?? (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
       if (leadId) {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
-        return mapConversa({ ...existente, lead_id: leadId });
+        return { ...mapConversa({ ...existente, lead_id: leadId }), leadCriadoAgora: !cadastrado };
       }
       // Conta só WhatsApp: a conversa sem lead é o normal, não estoque velho.
       if (params.semLead) return mapConversa(existente);
@@ -579,9 +580,8 @@ export async function obterOuCriarConversa(params: {
     return mapConversa(existente);
   }
 
-  const leadId =
-    (await encontrarLeadCadastrado(supabase, params)) ??
-    (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+  const cadastrado = await encontrarLeadCadastrado(supabase, params);
+  const leadId = cadastrado ?? (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
   if (!leadId && params.semLead) return criarConversaSemLead(supabase, params);
   if (!leadId) return null;
 
@@ -618,7 +618,7 @@ export async function obterOuCriarConversa(params: {
 
   if (error || !criada) return null;
 
-  return mapConversa(criada);
+  return { ...mapConversa(criada), leadCriadoAgora: !cadastrado };
 }
 
 /** A conversa de quem não é lead, numa conta só WhatsApp (0180). */

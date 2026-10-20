@@ -1808,6 +1808,50 @@ export type Database = {
           },
         ]
       }
+      roleta_anuncios: {
+        Row: {
+          corretor_id: string
+          grupo_id: string
+          ligada: boolean
+          destinos: string[]
+          ultimo_indice: number
+          texto_passagem: string | null
+          texto_abertura: string | null
+          atualizado_em: string
+          atualizado_por: string | null
+        }
+        Insert: {
+          corretor_id: string
+          grupo_id?: string
+          ligada?: boolean
+          destinos?: string[]
+          ultimo_indice?: number
+          texto_passagem?: string | null
+          texto_abertura?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+        }
+        Update: {
+          corretor_id?: string
+          grupo_id?: string
+          ligada?: boolean
+          destinos?: string[]
+          ultimo_indice?: number
+          texto_passagem?: string | null
+          texto_abertura?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roleta_anuncios_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: true
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inscricoes_push: {
         Row: {
           aparelho: string | null
@@ -3843,6 +3887,10 @@ export type Database = {
       travar_disparo: {
         Args: { p_dono: string; p_escopo: string; p_segundos: number }
         Returns: boolean
+      }
+      proximo_da_roleta: {
+        Args: { p_corretor: string; p_excluir?: string[] }
+        Returns: string | null
       }
     }
     Enums: {

@@ -33,6 +33,8 @@ cliente do próprio número.
      (padrão: "Oi! Quem vai te atender é a {corretor}, ela já te chama pelo
      número dela."). Depois disso a IA de A fica calada nessa conversa (já é
      o comportamento para lead de outro corretor);
+   - a conversa nova de B nasce com a IA desligada (a IA não responde lead
+     de anúncio, decisão de 20/10);
    - o número de B manda a mensagem de abertura (padrão: "Oi, {cliente}!
      Aqui é a {corretor}, da {imobiliária}. Vi que você chamou sobre o
      {imóvel}. Posso te ajudar?"). A conversa nasce no painel de B, ligada ao
@@ -44,7 +46,8 @@ cliente do próprio número.
    minutos com o cliente acabado de chamar perde o lead. Continua respeitando
    o horário seguro (9h às 20h59, sem domingo)? **Não**: o cliente escreveu
    agora; responder agora é o certo. Se o envio de B falhar (número caiu no
-   meio), o lead volta para A e A é avisado.
+   meio), a roleta passa para o próximo da lista (correção do dono); se
+   ninguém conseguir, o lead fica com A.
 7. **Textos editáveis** na tela da roleta, com os marcadores `{corretor}`,
    `{cliente}`, `{imovel}` e `{imobiliaria}`. Marcador sem valor some com a
    pontuação, como nas listas.

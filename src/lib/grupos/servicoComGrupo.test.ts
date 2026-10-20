@@ -95,6 +95,8 @@ const MAPA: Record<string, Entrada> = {
 
   // ── Painel: o id vem do navegador e é conferido pela sessão ───────────────
   "src/app/api/notificacoes/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "inscreve o aparelho só para o corretor da sessão, no grupo dele" },
+  "src/app/corretor/(painel)/marketing/impulsionamentos/RoletaDosAnuncios.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "roleta do grupo da sessão; o corretor comum só lê a dele" },
+  "src/app/corretor/(painel)/marketing/impulsionamentos/roletaAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "grava a roleta do próprio número, ou de quem o gestor escolheu, no grupo da sessão" },
   "src/app/api/gmail/retorno/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/api/imagens/gerar/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "a mídia do catálogo só é lida no grupo do corretor da sessão (L16)" },
   "src/app/api/painel/contador-excel/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o mês é lido no grupo do gestor da sessão" },
@@ -158,6 +160,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/api/cron/event-outbox/route.ts": { categoria: "plataforma", motivo: "processa o outbox linha a linha; cada evento é do grupo da própria linha" },
   "src/app/api/cron/followups/route.ts": { categoria: "plataforma", motivo: "follow-ups e respostas atrasadas por conversa, cada uma com a instância do próprio corretor" },
   "src/lib/notificacoes/leadNovo.ts": { categoria: "plataforma", motivo: "aviso por lead, ao corretor dono dele" },
+  "src/lib/whatsapp/roletaDosAnuncios.ts": { categoria: "plataforma", motivo: "repasse de UM lead, para quem o banco escolhe dentro do grupo da roleta" },
   "src/lib/crm/alertaSemContato.ts": { categoria: "plataforma", motivo: "alerta por lead, ao corretor dono dele" },
   "src/lib/crm/alertaSemResposta.ts": { categoria: "plataforma", motivo: "alerta por conversa, ao corretor dono dela" },
   "src/lib/crm/enviarRelatorioDasAvaliacoes.ts": { categoria: "plataforma", motivo: "por instância: cada corretor recebe só as avaliações dele" },

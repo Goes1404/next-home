@@ -320,6 +320,8 @@ const LEITURA_DA_EQUIPE =
  * sobre o próprio número, não lista equipe nenhuma.
  */
 const EXCECOES: Record<string, string> = {
+  "src/app/corretor/(painel)/marketing/impulsionamentos/roletaAcoes.ts":
+    "confere se os ids escolhidos na tela são corretores ativos do grupo; a lista mostrada já veio sem conta oculta",
   "src/app/corretor/(painel)/admin/acoes.ts":
     "ações sobre UMA conta pelo id (criar acesso, papel, ativar, ocultar, passar carteira); o lote de acessos precisa incluir a conta oculta",
   "src/app/corretor/(painel)/admin/whatsapp/acoes.ts": "desconectar o número de um corretor já escolhido",

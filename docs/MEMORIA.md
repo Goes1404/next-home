@@ -11108,3 +11108,16 @@ Nota: [[aviso-ao-corretor-diz-o-que-fazer]].
 ` por quebra de linha real outra
   vez**, em dois arquivos. Trecho com barra invertida vai pela ferramenta de
   edição.
+
+## Roleta dos anúncios (0204, 20/10/2026)
+
+Nota: [[roleta-dos-anuncios]].
+
+- **Lead que nasce pela etiqueta da Meta vai para o próximo da lista do dono
+  do número**, se ele ligou a roleta (Anúncios pagos). O número de quem
+  recebe manda a abertura na hora, sem limite diário nem intervalo; o do dono
+  avisa quem vai atender; a IA fica calada nas duas conversas.
+- **A abertura sai antes de a ficha mudar de dono**: falhou, tenta o próximo.
+  Ninguém conseguiu, o lead fica com o dono.
+- `obterOuCriarConversa` devolve `leadCriadoAgora`: é ele que separa lead
+  novo de cliente antigo clicando no anúncio.

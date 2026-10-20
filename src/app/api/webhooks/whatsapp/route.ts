@@ -90,6 +90,7 @@ import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/w
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -881,9 +882,30 @@ export async function POST(req: NextRequest) {
      * para lead antigo é uma consulta que não devolve nada. Depois da
      * resposta, para não atrasar o atendimento.
      */
+    /*
+     * Roleta dos anúncios (0204): lead que NASCEU agora pela etiqueta da Meta
+     * vai para o próximo da lista do dono do número, se ele ligou a roleta.
+     * Quem recebe é avisado pela própria roleta; sem repasse, segue o aviso
+     * de lead novo ao dono. Os dois depois da resposta, para não segurar a
+     * entrega do provedor.
+     */
     if (conversa.leadId) {
       const leadParaAviso = conversa.leadId;
-      after(() => avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0));
+      const vaiParaARoleta = Boolean(anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora);
+      const conversaDoDono = conversa.id;
+      after(async () => {
+        const repassado = vaiParaARoleta
+          ? await repassarPelaRoleta({
+              leadId: leadParaAviso,
+              corretorId: instancia.corretorId,
+              instanceNameDoDono: instancia.instanceName,
+              conversaDoDonoId: conversaDoDono,
+              telefoneCliente: sender,
+              nomeCliente: payload.senderName || null,
+            })
+          : null;
+        if (!repassado) await avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0);
+      });
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de
