@@ -4,6 +4,7 @@ import {
   LIMIAR_DE_AVISO,
   RESPOSTAS_DA_IA_POR_MES,
   inicioDoProximoMesEmSaoPaulo,
+  lerTetoDigitado,
   mesEmSaoPaulo,
   situacaoDaCota,
   tetoDeRespostasDaIa,
@@ -74,5 +75,19 @@ describe("situação da cota", () => {
 
   it("teto zero esgota já na primeira", () => {
     expect(situacaoDaCota({ respostas: 0, teto: 0 }).nivel).toBe("esgotada");
+  });
+});
+
+describe("teto digitado pela plataforma", () => {
+  it("em branco volta ao plano; ponto de milhar vale", () => {
+    expect(lerTetoDigitado("  ")).toEqual({ ok: true, teto: null });
+    expect(lerTetoDigitado("1.500")).toEqual({ ok: true, teto: 1500 });
+    expect(lerTetoDigitado("0")).toEqual({ ok: true, teto: 0 });
+  });
+
+  it("recusa o que não é número inteiro positivo, e dígito a mais", () => {
+    for (const t of ["abc", "-1", "1,5", "1.50", "2000000"]) {
+      expect(lerTetoDigitado(t).ok, t).toBe(false);
+    }
   });
 });

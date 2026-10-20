@@ -14,6 +14,7 @@ import {
   type DadosNovoGrupo,
 } from "@/lib/plataforma/dadosDoGrupo";
 import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
+import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -288,6 +289,60 @@ export async function editarDadosDoGrupo(grupoId: string, dados: DadosDoGrupo): 
   }
   if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
 
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoTetoDaIa = { ok: true } | { ok: false; erro: string };
+
+/**
+ * O teto de respostas da IA do grupo por mês (fase 2B). Em branco volta ao
+ * padrão do plano. Fica registrado em `admin_eventos` com o antes e o depois
+ * (o gestor do grupo enxerga o evento no histórico dele).
+ */
+export async function ajustarTetoDaIa(grupoId: string, texto: string): Promise<ResultadoTetoDaIa> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+
+  const lido = lerTetoDigitado(texto);
+  if (!lido.ok) return { ok: false, erro: lido.erro };
+
+  const servico = createServiceClient();
+  const { data: antes, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("teto_respostas_ia")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] teto da IA do grupo ${grupoId} não lido: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível salvar agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+  const tetoAntes = antes.teto_respostas_ia ?? null;
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({ teto_respostas_ia: lido.teto })
+    .eq("id", grupoId)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] teto da IA do grupo ${grupoId} não gravado: ${error.message}`);
+    return { ok: false, erro: "Não foi possível salvar agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
+
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "cota_da_ia_ajustada",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", antes: tetoAntes, depois: lido.teto },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento do teto da IA (${grupoId}) não gravado: ${erroDoEvento.message}`);
+
+  revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);
   return { ok: true };
 }

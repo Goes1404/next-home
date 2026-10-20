@@ -22,6 +22,7 @@ const GRUPOS = [
     plano: "custo",
     situacao: "ativo",
     criado_em: "2026-10-01T00:00:00Z",
+    teto_respostas_ia: null,
   },
   {
     id: "g2",
@@ -31,6 +32,7 @@ const GRUPOS = [
     plano: "essencial",
     situacao: "suspenso",
     criado_em: "2026-10-10T00:00:00Z",
+    teto_respostas_ia: null,
   },
 ];
 
@@ -39,7 +41,10 @@ function contagem(c: Chamada): number {
   const grupo = c.filtros.find((f) => f.startsWith("eq:grupo_id="))?.split("=")[1];
   const base = grupo === "g1" ? 10 : 1;
   if (c.tabela === "corretores") return c.filtros.some((f) => f.startsWith("not:user_id")) ? base + 2 : base + 5;
-  if (c.tabela === "corretor_whatsapp_instancias") return base + 3;
+  if (c.tabela === "corretor_whatsapp_instancias") {
+    // Conectados (o número no ar) ou todos (os assentos da cota da IA).
+    return c.filtros.some((f) => f.startsWith("eq:status_conexao=")) ? base + 3 : base + 4;
+  }
   return -1;
 }
 
@@ -64,6 +69,10 @@ function consulta(tabela: string) {
       return q;
     },
     maybeSingle() {
+      if (tabela === "uso_da_ia") {
+        const grupo = c.filtros.find((f) => f.startsWith("eq:grupo_id="))?.split("=")[1];
+        return Promise.resolve({ data: grupo === "g2" ? { respostas: 850 } : { respostas: 4000 }, error: null });
+      }
       const id = c.filtros.find((f) => f.startsWith("eq:id="))?.split("=")[1];
       return Promise.resolve({ data: GRUPOS.find((g) => g.id === id) ?? null, error: null });
     },
@@ -97,12 +106,12 @@ describe("listarGruposDaPlataforma", () => {
   it("listar grupos não lê tabela de conversa nem de lead", async () => {
     await listarGruposDaPlataforma(PROVA);
     const tabelas = new Set(chamadas.map((c) => c.tabela));
-    expect([...tabelas].sort()).toEqual(["corretor_whatsapp_instancias", "corretores", "grupos"]);
+    expect([...tabelas].sort()).toEqual(["corretor_whatsapp_instancias", "corretores", "grupos", "uso_da_ia"]);
   });
 
   it("das pessoas e dos números só conta (head), nunca traz linha", async () => {
     await listarGruposDaPlataforma(PROVA);
-    const contagens = chamadas.filter((c) => c.tabela !== "grupos");
+    const contagens = chamadas.filter((c) => c.tabela !== "grupos" && c.tabela !== "uso_da_ia");
     expect(contagens.length).toBeGreaterThan(0);
     for (const c of contagens) {
       expect(c.opcoes).toEqual({ count: "exact", head: true });
@@ -115,7 +124,7 @@ describe("listarGruposDaPlataforma", () => {
     await listarGruposDaPlataforma(PROVA);
     const doGrupo = chamadas.find((c) => c.tabela === "grupos")!;
     const colunas = doGrupo.select!.split(",").map((s) => s.trim()).sort();
-    expect(colunas).toEqual(["criado_em", "id", "nome", "plano", "situacao", "slug", "tipo"]);
+    expect(colunas).toEqual(["criado_em", "id", "nome", "plano", "situacao", "slug", "teto_respostas_ia", "tipo"]);
   });
 
   it("monta o resumo de cada grupo com as contagens dele", async () => {
@@ -132,6 +141,10 @@ describe("listarGruposDaPlataforma", () => {
         corretoresAtivos: 15,
         comLogin: 12,
         numerosConectados: 13,
+        tetoAjustado: null,
+        tetoDoPlano: null,
+        // Preço de custo: sem teto, por mais que use.
+        usoDaIa: { respostas: 4000, teto: null, percentual: null, restantes: null, nivel: "sem_teto" },
       },
       {
         id: "g2",
@@ -144,13 +157,24 @@ describe("listarGruposDaPlataforma", () => {
         corretoresAtivos: 6,
         comLogin: 3,
         numerosConectados: 4,
+        tetoAjustado: null,
+        tetoDoPlano: 1000,
+        // Essencial: 1.000 no mês; 850 já é aviso.
+        usoDaIa: { respostas: 850, teto: 1000, percentual: 85, restantes: 150, nivel: "aviso" },
       },
     ]);
     // Corretor ativo e número conectado: o filtro que dá sentido ao número.
     const ativos = chamadas.filter((c) => c.tabela === "corretores");
     expect(ativos.every((c) => c.filtros.includes("eq:ativo=true"))).toBe(true);
     const numeros = chamadas.filter((c) => c.tabela === "corretor_whatsapp_instancias");
-    expect(numeros.every((c) => c.filtros.includes("eq:status_conexao=conectado"))).toBe(true);
+    expect(numeros.filter((c) => c.filtros.includes("eq:status_conexao=conectado"))).toHaveLength(2);
+    // O uso da IA é lido no grupo e no mês de São Paulo.
+    const uso = chamadas.filter((c) => c.tabela === "uso_da_ia");
+    expect(uso).toHaveLength(2);
+    for (const c of uso) {
+      expect(c.filtros.some((f) => f.startsWith("eq:grupo_id="))).toBe(true);
+      expect(c.filtros.some((f) => /^eq:mes=\d{4}-\d{2}-01$/.test(f))).toBe(true);
+    }
   });
 
   it("contagem que falha derruba a lista em vez de mostrar zero", async () => {
@@ -172,10 +196,11 @@ describe("lerGrupoDaPlataforma", () => {
       "corretor_whatsapp_instancias",
       "corretores",
       "grupos",
+      "uso_da_ia",
     ]);
     const colunas = chamadas.find((c) => c.tabela === "grupos")!.select!.split(",").map((s) => s.trim());
     expect(colunas).toEqual(expect.arrayContaining(["contato_cobranca_email", "documento", "encarregado_lgpd_email"]));
-    for (const c of chamadas.filter((c) => c.tabela !== "grupos")) {
+    for (const c of chamadas.filter((c) => c.tabela !== "grupos" && c.tabela !== "uso_da_ia")) {
       expect(c.opcoes).toEqual({ count: "exact", head: true });
     }
   });

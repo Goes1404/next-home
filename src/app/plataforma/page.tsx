@@ -3,6 +3,7 @@ import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import Link from "next/link";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
+import { UsoDaIa } from "./UsoDaIa";
 
 export const metadata: Metadata = { title: "Grupos" };
 
@@ -93,6 +94,10 @@ export default async function PlataformaPage() {
                     <dd className="text-titulo text-fluid-xl font-display">{g.numerosConectados}</dd>
                   </div>
                 </dl>
+
+                <div className="border-linha border-t pt-4">
+                  <UsoDaIa uso={g.usoDaIa} ajustado={g.tetoAjustado !== null} />
+                </div>
               </li>
             );
           })}

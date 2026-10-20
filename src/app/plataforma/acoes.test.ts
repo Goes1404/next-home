@@ -35,7 +35,7 @@ vi.mock("@/lib/auth/links", () => ({
 vi.mock("@/lib/auth/emailsDeAcesso", () => ({ enviarLinkDeAcesso: async () => respostaDoEnvio }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-const { criarGrupoComPrimeiroAcesso, editarDadosDoGrupo } = await import("./acoes");
+const { ajustarTetoDaIa, criarGrupoComPrimeiroAcesso, editarDadosDoGrupo } = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
 
 const DADOS = {
@@ -516,6 +516,49 @@ describe("editar os dados do grupo", () => {
   it("quem não é administrador não edita", async () => {
     guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
     const r = await editarDadosDoGrupo(G_NH, INSTITUCIONAL);
+    expect(r.ok).toBe(false);
+    expect(banco.consultas).toEqual([]);
+  });
+});
+
+describe("ajustar o teto de respostas da IA do grupo (fase 2B)", () => {
+  it("grava o teto e deixa o evento com o antes e o depois", async () => {
+    const r = await ajustarTetoDaIa(G_NH, " 1.500 ");
+    expect(r).toEqual({ ok: true });
+    expect(banco.tabelas.grupos[0].teto_respostas_ia).toBe(1500);
+    expect(banco.tabelas.admin_eventos).toContainEqual(
+      expect.objectContaining({
+        acao: "cota_da_ia_ajustada",
+        grupo_id: G_NH,
+        ator_plataforma_user_id: OPERADOR,
+        detalhes: { origem: "plataforma", antes: null, depois: 1500 },
+      }),
+    );
+  });
+
+  it("em branco volta ao padrão do plano", async () => {
+    banco.tabelas.grupos[0].teto_respostas_ia = 300;
+    const r = await ajustarTetoDaIa(G_NH, "");
+    expect(r).toEqual({ ok: true });
+    expect(banco.tabelas.grupos[0].teto_respostas_ia).toBeNull();
+  });
+
+  it("número inválido é recusado com frase, antes do banco", async () => {
+    for (const texto of ["abc", "-5", "1,5", "99999999"]) {
+      const r = await ajustarTetoDaIa(G_NH, texto);
+      expect(r, texto).toEqual({ ok: false, erro: expect.stringMatching(/número/i) });
+    }
+    expect(banco.consultas).toEqual([]);
+  });
+
+  it("grupo que não existe não finge que salvou", async () => {
+    const r = await ajustarTetoDaIa("00000000-0000-4000-8000-0000000000ff", "100");
+    expect(r).toEqual({ ok: false, erro: "Grupo não encontrado." });
+  });
+
+  it("quem não é administrador não ajusta", async () => {
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    const r = await ajustarTetoDaIa(G_NH, "100");
     expect(r.ok).toBe(false);
     expect(banco.consultas).toEqual([]);
   });

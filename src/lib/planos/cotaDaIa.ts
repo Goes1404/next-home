@@ -96,3 +96,24 @@ export function situacaoDaCota(p: { respostas: number; teto: number | null }): S
     respostas >= teto ? "esgotada" : respostas >= teto * LIMIAR_DE_AVISO ? "aviso" : "livre";
   return { respostas, teto, percentual, restantes, nivel };
 }
+
+/** O maior teto que a plataforma aceita digitar (um erro de dígito a mais não vira "sem limite"). */
+export const TETO_MAXIMO_DIGITAVEL = 1_000_000;
+
+/**
+ * O teto que o administrador da plataforma digitou. Em branco = volta ao
+ * padrão do plano (`null`). Aceita ponto de milhar ("1.500"); recusa vírgula,
+ * sinal e texto com frase, para a tela dizer o que fazer.
+ */
+export function lerTetoDigitado(texto: string): { ok: true; teto: number | null } | { ok: false; erro: string } {
+  const limpo = texto.trim();
+  if (limpo === "") return { ok: true, teto: null };
+  if (!/^\d{1,3}(\.\d{3})*$|^\d+$/.test(limpo)) {
+    return { ok: false, erro: "Digite só o número de respostas por mês (por exemplo, 1500), ou deixe em branco." };
+  }
+  const teto = Number(limpo.replace(/\./g, ""));
+  if (teto > TETO_MAXIMO_DIGITAVEL) {
+    return { ok: false, erro: `O número passa de ${TETO_MAXIMO_DIGITAVEL.toLocaleString("pt-BR")}. Confira os dígitos.` };
+  }
+  return { ok: true, teto };
+}
