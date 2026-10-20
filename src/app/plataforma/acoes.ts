@@ -352,7 +352,8 @@ export type ResultadoCancelamento = { ok: true } | { ok: false; erro: string };
 
 /**
  * Registra que o grupo cancelou (resposta 7 do dono, 0202): `cancelado_em`
- * agora e o grupo sai do ar (`encerrado`: o site para pela 0201). Os dados
+ * agora e o grupo vira `encerrado` (o SITE para pela 0201; o painel segue
+ * aberto, para a equipe baixar os dados nos 90 dias). Os dados
  * ficam bloqueados por 90 dias; a rotina diária, quando ligada, apaga depois
  * (com a cópia gravada antes). Só cancela quem ainda não estava cancelado: a
  * data dos 90 dias não se mexe com um segundo clique.

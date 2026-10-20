@@ -73,7 +73,7 @@ export function CancelamentoDoGrupo({
       ) : canceladoEm ? (
         <>
           <p className="text-fluid-sm text-apoio">
-            Cancelado em {DATA.format(new Date(canceladoEm))}. O grupo está fora do ar. Os dados serão apagados a partir
+            Cancelado em {DATA.format(new Date(canceladoEm))}. O site está fora do ar. Os dados serão apagados a partir
             de {DATA.format(apagarEm(canceladoEm))}
             {diasAteApagar(canceladoEm) > 0 ? ` (faltam ${diasAteApagar(canceladoEm)} dias)` : ""}.
           </p>
@@ -102,13 +102,13 @@ export function CancelamentoDoGrupo({
       ) : (
         <>
           <p className="text-fluid-sm text-apoio">
-            Se o cliente cancelar, registre aqui. O grupo sai do ar, os dados ficam guardados por {DIAS_DE_RETENCAO} dias
+            Se o cliente cancelar, registre aqui. O site do grupo sai do ar, os dados ficam guardados por {DIAS_DE_RETENCAO} dias
             (dá para desfazer nesse prazo) e depois são apagados, com uma cópia guardada antes.
           </p>
           {confirmando ? (
             <div className="border-perigo-linha bg-perigo-lavado flex flex-col gap-3 rounded-xl border p-4">
               <p className="text-fluid-sm text-perigo">
-                Confirmar o cancelamento? O site e o painel deste grupo param agora.
+                Confirmar o cancelamento? O site deste grupo sai do ar agora. O painel continua aberto para a equipe baixar os dados.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button
