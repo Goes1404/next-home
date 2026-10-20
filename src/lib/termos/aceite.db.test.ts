@@ -5,7 +5,7 @@
 // Pula sem DB_TESTE_URL. Cada teste roda numa transação desfeita no fim.
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { Sql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 import {
   comoUsuario,
   conectar,
@@ -16,7 +16,7 @@ import {
   type Conexao,
 } from "@/lib/grupos/apoioDoBanco";
 
-async function recusa(tx: Conexao, fn: (t: Conexao) => Promise<unknown>): Promise<string | null> {
+async function recusa(tx: TransactionSql, fn: (t: TransactionSql) => Promise<unknown>): Promise<string | null> {
   try {
     await tx.savepoint(async (sp) => {
       await fn(sp);

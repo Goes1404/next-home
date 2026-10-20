@@ -692,6 +692,31 @@ export type Database = {
           },
         ]
       }
+      /** 0198 — quem aceitou qual versão dos termos de uso do painel. */
+      aceites_de_termos: {
+        Row: {
+          id: string
+          grupo_id: string
+          corretor_id: string
+          versao: string
+          aceito_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          corretor_id: string
+          versao: string
+          aceito_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          corretor_id?: string
+          versao?: string
+          aceito_em?: string
+        }
+        Relationships: []
+      }
       /** 0114 — a venda (F1 do módulo financeiro). */
       uso_da_ia: {
         Row: {
@@ -1229,6 +1254,7 @@ export type Database = {
         Row: {
           grupo_id: string
           aquecimento_desde: string | null
+          numero_recusado_em: string | null
           aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
           conectado_em: string | null
@@ -1262,6 +1288,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           aquecimento_desde?: string | null
+          numero_recusado_em?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -1295,6 +1322,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           aquecimento_desde?: string | null
+          numero_recusado_em?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -3846,6 +3874,7 @@ export type Database = {
       eh_gestor: { Args: never; Returns: boolean }
       slug_de_corretor_livre: { Args: { p_slug: string }; Returns: boolean }
       slug_de_imovel_livre: { Args: { p_slug: string }; Returns: boolean }
+      numero_whatsapp_em_outro_grupo: { Args: { p_grupo: string; p_telefone: string }; Returns: boolean }
       email_de_acesso_livre: { Args: { p_email: string }; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
       eh_admin_da_plataforma: { Args: never; Returns: boolean }
