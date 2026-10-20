@@ -20,6 +20,7 @@ import { LinhaDoTempo } from "./LinhaDoTempo";
 import { ProximasAcoes } from "./ProximasAcoes";
 import { Qualificacao } from "./Qualificacao";
 import { ArquivarLead } from "./ArquivarLead";
+import { PedidoDoTitular } from "./PedidoDoTitular";
 import { SeletorEtapa } from "./SeletorEtapa";
 import { OrigemJornada } from "./OrigemJornada";
 import { PreferenciasContato } from "./PreferenciasContato";
@@ -316,6 +317,7 @@ export default async function FichaLeadPage({
         nome={lead.nome}
         podeExcluir
       />
+      {gestor && <PedidoDoTitular leadId={lead.id} nome={lead.nome} />}
 
       {/* Barra de ações no polegar (roadmap F2): no celular, as três ações
           que resolvem 90% das visitas à ficha ficam fixas no rodapé — chamar,

@@ -121,6 +121,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/financeiro/contador/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o arquivo do mês mora em <grupo>/<mês> do gestor" },
   "src/app/corretor/(painel)/leads/[id]/Documentacao.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/leads/[id]/PedidoDoSite.tsx": { categoria: "por-id", validadoPor: 'supabase.from("leads").select("detalhes, parceiro_id").eq("id", leadId)', motivo: "o parceiro é o do lead que a sessão acabou de ler (RLS de leads)" },
+  "src/app/corretor/(painel)/leads/[id]/titularAcoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o banco apaga o lead pela sessão do gestor (só o grupo dele); a chave só remove a pasta desse lead no Storage depois (0202)" },
   "src/app/corretor/(painel)/leads/[id]/documentacaoAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/gmailAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
