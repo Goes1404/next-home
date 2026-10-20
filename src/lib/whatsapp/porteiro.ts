@@ -13,12 +13,13 @@
  */
 import { clienteTrouxeFraseDeEntrada } from "./modoBot";
 import type { AnuncioMeta } from "./anuncioMeta";
-import { INTENCOES, MENSAGEM_DO_SITE } from "./mensagensDoSite";
+import { INTENCOES, MENSAGEM_DO_SITE, TETO_DO_NOME_DO_SITE } from "./mensagensDoSite";
 
 export {
   INTENCOES,
   MENSAGEM_DO_SITE,
   ehChaveIntencao,
+  fraseDoSite,
   mensagemDeAnuncio,
   mensagemDoSite,
   type ChaveIntencao,
@@ -42,6 +43,25 @@ function soLetrasEEspacos(texto: string): string {
 const PREFIXO_ANUNCIO = soLetrasEEspacos("Olá! Gostaria de mais informações do ");
 
 const PREFIXO_DO_SITE = soLetrasEEspacos(MENSAGEM_DO_SITE);
+
+/**
+ * A frase do site com o nome de QUALQUER grupo (`fraseDoSite`, revisão da
+ * fase 3): "Olá! Vim pelo site da <nome>." O nome vai até o primeiro ponto,
+ * exclamação ou interrogação (a frase os tira do nome), com o teto de
+ * `TETO_DO_NOME_DO_SITE`. Continua estrito: a frase é nossa, e ninguém abre
+ * conversa pessoal dizendo que veio pelo site de uma imobiliária.
+ */
+const FRASE_DO_SITE = new RegExp(
+  `^ola[\\s!,.]*vim pelo site da ([^.!?\\n]{2,${TETO_DO_NOME_DO_SITE}}?)\\s*(?:[.!?]|$)`,
+);
+
+/** A pessoa mandou a frase do site (da Next Home ou de outro grupo)? */
+export function ehFraseDoSite(texto: string | null | undefined): boolean {
+  if (!texto) return false;
+  if (soLetrasEEspacos(texto).startsWith(PREFIXO_DO_SITE)) return true;
+  const m = FRASE_DO_SITE.exec(normalizar(texto).trim());
+  return Boolean(m && /[a-z0-9]/.test(m[1]));
+}
 
 const SUFIXOS_DE_INTENCAO = Object.values(INTENCOES).map(soLetrasEEspacos);
 
@@ -133,7 +153,7 @@ export function reconhecerConviteDeEntrada(params: {
   const imovel = reconhecerMensagemDeAnuncio(params.texto);
   if (imovel) return { via: "mensagem_do_anuncio", imovel };
 
-  if (params.texto && soLetrasEEspacos(params.texto).startsWith(PREFIXO_DO_SITE)) {
+  if (ehFraseDoSite(params.texto)) {
     /*
      * `imovel: null` de propósito, como no ramo da frase de entrada: quem
      * resolve o imóvel a partir da conversa é o `focoDaConversa`, na

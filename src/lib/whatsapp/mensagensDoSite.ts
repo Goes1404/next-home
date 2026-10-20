@@ -61,6 +61,31 @@ export function mensagemDeAnuncio(
  */
 export const MENSAGEM_DO_SITE = "Olá! Vim pelo site da Next Home.";
 
-export function mensagemDoSite(intencao?: ChaveIntencao | null): string {
-  return intencao ? `${MENSAGEM_DO_SITE} ${INTENCOES[intencao]}` : MENSAGEM_DO_SITE;
+/** Teto do nome do site dentro da frase: o mesmo que o porteiro aceita. */
+export const TETO_DO_NOME_DO_SITE = 60;
+
+/**
+ * A frase do site com o nome DO GRUPO do endereço (revisão da fase 3,
+ * 20/10/2026). Antes ela dizia sempre "Next Home", e o visitante do site de
+ * outra imobiliária escrevia ao corretor dela citando a Next Home — a marca
+ * de outra empresa na primeira fala com o cliente. Sem nome (ou com o da
+ * Next Home), sai a frase de sempre, byte por byte.
+ *
+ * Ponto, exclamação, interrogação e quebra de linha saem do nome: é o ponto
+ * final que diz ao porteiro onde o nome termina.
+ */
+export function fraseDoSite(nomeDoSite?: string | null): string {
+  const nome = (nomeDoSite ?? "")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+/g, " ")
+    .replace(/ +/g, " ")
+    .trim()
+    .slice(0, TETO_DO_NOME_DO_SITE)
+    .trim();
+  return nome ? `Olá! Vim pelo site da ${nome}.` : MENSAGEM_DO_SITE;
+}
+
+export function mensagemDoSite(intencao?: ChaveIntencao | null, nomeDoSite?: string | null): string {
+  const frase = fraseDoSite(nomeDoSite);
+  return intencao ? `${frase} ${INTENCOES[intencao]}` : frase;
 }

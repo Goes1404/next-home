@@ -135,7 +135,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ campanha: strin
     sorteio = data;
   }
 
-  const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: alvo.nome, intencao, complemento: url.searchParams.get("m") });
+  const destino = destinoDoPorteiro({
+    telefone: sorteio?.telefone,
+    nomeImovel: alvo.nome,
+    intencao,
+    complemento: url.searchParams.get("m"),
+    nomeDoSite: site.marca.nome,
+  });
 
   if (destino.tipo === "escape") {
     // Nenhum corretor com WhatsApp conectado: o clique não pode morrer.

@@ -117,7 +117,7 @@ export default async function CorretorPage({ params }: { params: Promise<ParamsD
   const primeiroNome = corretor.nome.split(" ")[0];
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    mensagemDoSite(),
+    mensagemDoSite(null, marca.nome),
   );
 
   const jsonLd = {

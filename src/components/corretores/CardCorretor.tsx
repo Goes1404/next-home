@@ -9,6 +9,8 @@ import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
 type CardCorretorProps = {
   corretor: CorretorPerfil;
   compacto?: boolean;
+  /** O nome do grupo do site: vai na mensagem pronta do WhatsApp. */
+  nomeDoSite: string;
 };
 
 function Avatar({
@@ -66,7 +68,7 @@ const ICONE_WHATSAPP = (
  * bio em duas linhas quando existe. Duas saídas de tamanho de polegar:
  * WhatsApp (primária) e perfil. Sem foto, monograma no mesmo círculo.
  */
-export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
+export function CardCorretor({ corretor, compacto, nomeDoSite }: CardCorretorProps) {
   if (compacto) {
     return (
       <Link
@@ -103,7 +105,7 @@ export function CardCorretor({ corretor, compacto }: CardCorretorProps) {
 
   const whatsapp = linkWhatsappPara(
     corretor.whatsapp,
-    mensagemDoSite(),
+    mensagemDoSite(null, nomeDoSite),
   );
   const bio = corretor.bio?.trim();
 

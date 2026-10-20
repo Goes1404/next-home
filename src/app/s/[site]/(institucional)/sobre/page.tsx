@@ -200,7 +200,7 @@ export default async function SobrePage({ params }: { params: Promise<ParamsDoSi
                   e assume a opacidade — somar os dois é ter dois donos dela. */}
               {equipe.map((c, i) => (
                 <CartaoTilt key={c.slug} indice={i} className="rounded-glass">
-                  <CardCorretor corretor={c} compacto />
+                  <CardCorretor corretor={c} compacto nomeDoSite={marca.nome} />
                 </CartaoTilt>
               ))}
             </div>

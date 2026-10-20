@@ -121,7 +121,7 @@ export default async function CorretoresPage({ params }: { params: Promise<Param
                   // o GSAP deixa um `transform` inline no que anima, e ele
                   // venceria o `hover:-translate-y` do card.
                   <Reveal key={c.slug} as="li" delay={(i % 3) * 0.08} from="baixo" className="h-full">
-                    <CardCorretor corretor={c} />
+                    <CardCorretor corretor={c} nomeDoSite={marca.nome} />
                   </Reveal>
                 ))}
               </ul>

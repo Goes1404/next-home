@@ -389,7 +389,7 @@ export default async function HomeInstitucional({ params }: { params: Promise<Pa
                       propriedade — o caminho curto para o card sumir. */}
                   {equipe.map((c, i) => (
                     <CartaoTilt key={c.slug} indice={i} className="rounded-glass">
-                      <CardCorretor corretor={c} compacto />
+                      <CardCorretor corretor={c} compacto nomeDoSite={marca.nome} />
                     </CartaoTilt>
                   ))}
                 </div>

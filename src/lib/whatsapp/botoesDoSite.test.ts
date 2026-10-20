@@ -38,4 +38,20 @@ describe("botões de WhatsApp do site", () => {
       .filter((f) => /Vim pelo site/i.test(readFileSync(f, "utf8")));
     expect(culpados).toEqual([]);
   });
+
+  it("toda frase geral do site leva o nome do grupo do endereço (nunca a Next Home calada)", () => {
+    // `mensagemDoSite()` sem o nome manda "Vim pelo site da Next Home" ao
+    // corretor de outro grupo (revisão da fase 3).
+    const chamadas: string[] = [];
+    const culpados = RAIZES.flatMap(arquivos)
+      .filter((f) => /\.tsx?$/.test(f) && !f.endsWith(".test.ts"))
+      .filter((f) => {
+        const fonte = readFileSync(f, "utf8");
+        const usos = [...fonte.matchAll(/mensagemDoSite\(([^)]*)\)/g)].map((m) => m[1]);
+        chamadas.push(...usos);
+        return usos.some((args) => args.split(",").length < 2);
+      });
+    expect(chamadas.length).toBeGreaterThanOrEqual(2);
+    expect(culpados).toEqual([]);
+  });
 });

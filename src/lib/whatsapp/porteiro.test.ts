@@ -240,3 +240,34 @@ describe("a intenção emendada não atrapalha o reconhecimento", () => {
     expect(reconhecerMensagemDeAnuncio(texto)).toBeNull();
   });
 });
+
+describe("a frase do site de outro grupo (revisão da fase 3)", () => {
+  it("leva o nome do grupo e continua sendo reconhecida", () => {
+    for (const nome of ["Imobiliária Sol", "Casa Azul Imóveis", "JR"]) {
+      const frase = mensagemDoSite(null, nome);
+      expect(frase).toBe(`Olá! Vim pelo site da ${nome}.`);
+      expect(reconhecerConviteDeEntrada({ texto: frase, palavrasEntradaCliente: null })?.via).toBe("mensagem_do_site");
+      expect(
+        reconhecerConviteDeEntrada({ texto: `${mensagemDoSite("tabela", nome)} Renda R$ 8.000.`, palavrasEntradaCliente: null })
+          ?.via,
+      ).toBe("mensagem_do_site");
+    }
+  });
+
+  it("a Next Home (ou nome vazio) segue com a frase de sempre", () => {
+    expect(mensagemDoSite(null, "Next Home")).toBe("Olá! Vim pelo site da Next Home.");
+    expect(mensagemDoSite(null, "  ")).toBe("Olá! Vim pelo site da Next Home.");
+  });
+
+  it("pontuação no nome não quebra a frase nem o reconhecimento", () => {
+    const frase = mensagemDoSite(null, "Sol! Imóveis.");
+    expect(frase).toBe("Olá! Vim pelo site da Sol Imóveis.");
+    expect(reconhecerConviteDeEntrada({ texto: frase, palavrasEntradaCliente: null })).not.toBeNull();
+  });
+
+  it("parecido não basta: sem o nome, ou com outro começo, não é convite", () => {
+    for (const texto of ["Olá! Vim pelo site da", "Vim pelo site da Sol.", "oi, vi o site da sol", "Olá! Vim pelo site da !."]) {
+      expect(reconhecerConviteDeEntrada({ texto, palavrasEntradaCliente: null }), texto).toBeNull();
+    }
+  });
+});

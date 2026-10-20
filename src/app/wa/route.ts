@@ -51,7 +51,13 @@ export async function GET(req: Request) {
           .maybeSingle<{ corretor_id: string; telefone: string }>()
       ).data;
 
-  const destino = destinoDoPorteiro({ telefone: sorteio?.telefone, nomeImovel: null, intencao, complemento: url.searchParams.get("m") });
+  const destino = destinoDoPorteiro({
+    telefone: sorteio?.telefone,
+    nomeImovel: null,
+    intencao,
+    complemento: url.searchParams.get("m"),
+    nomeDoSite: site.marca.nome,
+  });
 
   const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
   // Aguardado de propósito: fire-and-forget perderia o clique se a função

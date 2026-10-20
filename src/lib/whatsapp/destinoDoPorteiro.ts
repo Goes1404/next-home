@@ -25,13 +25,19 @@ export function destinoDoPorteiro(params: {
    * casa pelo começo da mensagem.
    */
   complemento?: string | null;
+  /**
+   * O nome do grupo do SITE em que o botão foi tocado: entra na frase geral
+   * ("Vim pelo site da <nome>"). Obrigatório para nenhuma rota esquecer e
+   * mandar o nome da Next Home ao corretor de outro grupo.
+   */
+  nomeDoSite: string;
 }): DestinoDoPorteiro {
   const telefone = params.telefone?.replace(/\D/g, "") ?? "";
   if (telefone.length < 10) return { tipo: "escape", caminho: "/contato" };
 
   const base = params.nomeImovel
     ? mensagemDeAnuncio(params.nomeImovel, params.intencao)
-    : mensagemDoSite(params.intencao);
+    : mensagemDoSite(params.intencao, params.nomeDoSite);
   const complemento = params.complemento?.replace(/\s+/g, " ").trim().slice(0, TETO_COMPLEMENTO);
   const texto = complemento ? `${base} ${complemento}` : base;
 
