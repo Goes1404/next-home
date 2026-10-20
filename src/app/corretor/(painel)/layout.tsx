@@ -1,6 +1,7 @@
 import { Wordmark } from "@/components/ui/Wordmark";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
@@ -20,6 +21,8 @@ import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
+import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 
 export const metadata: Metadata = {
   title: { default: "Painel do corretor", template: "%s · Painel" },
@@ -50,6 +53,13 @@ export default async function PainelLayout({
   children: React.ReactNode;
 }) {
   const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
+  // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
+  // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
+  // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
+  // e entrar, recuperar e criar senha também: nada disso passa por aqui.
+  if (corretor && !(await aceitouTermosVigentes(await createClient(), corretor.id))) {
+    redirect("/corretor/termos");
+  }
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
   // padrão de antes (imobiliária), que só esconde o que já escondia.
