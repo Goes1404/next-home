@@ -2902,6 +2902,7 @@ export type Database = {
           tentativas_sem_resposta: number
           ultima_tentativa_em: string | null
           tipo: string
+          trazido_por: "corretor" | "imobiliaria"
           ttclid: string | null
           utm_campaign: string | null
           utm_content: string | null
@@ -2961,6 +2962,7 @@ export type Database = {
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
+          trazido_por?: "corretor" | "imobiliaria"
           ttclid?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -3020,6 +3022,7 @@ export type Database = {
           tentativas_sem_resposta?: number
           ultima_tentativa_em?: string | null
           tipo?: string
+          trazido_por?: "corretor" | "imobiliaria"
           ttclid?: string | null
           utm_campaign?: string | null
           utm_content?: string | null

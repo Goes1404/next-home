@@ -92,6 +92,8 @@ export const FUNCOES_QUE_CONFEREM_O_CHAMADOR: Record<string, string> = {
   "definir_preferencia_contato(uuid, text, boolean)":
     "o lead tem de ser do grupo de quem chama, e do próprio corretor ou de um gestor",
   "marcar_repasse_pago(uuid, uuid, date)": "só gestor, e a venda tem de ser do grupo dele",
+  "devolver_leads_da_imobiliaria(uuid, uuid)":
+    "só gestor (eh_gestor()); quem sai e o destino têm de ser do grupo dele (grupo_atual()), e o destino ativo",
 };
 
 /** Parâmetro com id de corretor, instância ou lead (L20). */
