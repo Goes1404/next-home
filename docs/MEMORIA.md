@@ -11148,3 +11148,23 @@ Nota: [[revoke-de-tabela-leva-os-grants-por-coluna]].
   `supabase/config.toml` e das migrations numa pasta temporária com outro
   `project_id` e portas 573xx (`supabase/REPRODUCAO.md`).
 
+
+## A cota de respostas da IA por grupo (0197, 20/10/2026)
+
+Nota: [[cota-de-respostas-da-ia-por-grupo]].
+
+- **O número do teto mora num lugar só** (`src/lib/planos/cotaDaIa.ts`),
+  provisório: Essencial 1.000, Profissional 2.000, Imobiliária 1.500 por
+  número cadastrado, Preço de custo (Next Home) sem teto. O ajuste da
+  plataforma (`grupos.teto_respostas_ia`) vence o plano.
+- **A contagem é um gatilho em `ia_interacoes`**, não código: conta
+  `respondida`/`visita_confirmada` de `webhook`/`followup`/`painel` em
+  `uso_da_ia`, no mês de São Paulo. Caminho novo que grave a telemetria já
+  conta sozinho.
+- **`ia_interacoes.corretor_id` não tem FK**: o grupo da linha vem da conversa
+  (`conversa_id`). Teste de banco que grava interação sem conversa precisa
+  mandar `grupo_id`, senão o carimbo recusa ("grupo_id obrigatório").
+- **A cota só cala quando a IA responderia**: o motivo de antes (conversa,
+  número) ganha. Ler a cota que falha não cala ninguém.
+- **Fake de banco devolve a mesma referência que o update muda**: guardar o
+  "antes" num `const` antes do update, senão o evento sai com antes = depois.

@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-19
+updated: 2026-10-20
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -50,7 +50,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
    corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois
-   o número (IA desligada, expediente, co-piloto). Calada, grava o motivo em
+   o número (IA desligada, expediente, co-piloto), e por fim a cota de
+   respostas da IA do grupo no mês ([[cota-de-respostas-da-ia-por-grupo]], 0197:
+   só cala quando ela responderia, motivo `cota_do_grupo`). Calada, grava o motivo em
    `ia_interacoes.acao` e o detalhe em `silencio` (0149), e ainda atualiza a
    ficha. O áudio não entendido também obedece a ela.
 7. **Rajada** — espera 6s + trava `resposta:<conversaId>`; balões pendentes

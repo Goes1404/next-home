@@ -68,6 +68,7 @@ F0–F6.
 ## Administração (gestor)
 
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
+- [[cota-de-respostas-da-ia-por-grupo]] — teto mensal de respostas da IA por grupo (plano ou ajuste da plataforma), contado por gatilho; no teto a IA cala com `cota_do_grupo` (0197, 20/10)
 - [[papel-nunca-ganha-grant-update]]
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 - [[cadastrar-corretor-pelo-painel]] — ficha e login de corretor novo pela tela de Contas (07/10)
