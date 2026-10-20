@@ -82,6 +82,7 @@ import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
+import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
@@ -894,13 +895,21 @@ export async function POST(req: NextRequest) {
      *
      * O co-piloto precisa saber quando o humano falou pela última vez, e
      * isso é uma consulta: só é feita no modo que usa.
+     *
+     * A cota de respostas da IA do grupo (fase 2B) é a terceira camada:
+     * esgotada, a IA cala com `cota_do_grupo` e o corretor atende pelo
+     * painel. A mensagem do cliente já foi gravada acima: nada se perde.
      */
     const numero = { modo: instancia.modoBot, expediente: instancia.expediente };
+    const [ultimaFalaCorretorEm, cotaDaIa] = await Promise.all([
+      instancia.modoBot === "co_piloto_3min" ? ultimaFalaDoCorretor(conversa.id) : Promise.resolve(null),
+      lerCotaDaIa(instancia.grupoId),
+    ]);
     const decisaoIA = decidirSeAIaResponde({
       conversa: situacaoDaConversa(conversa),
       numero,
-      ultimaFalaCorretorEm:
-        instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+      ultimaFalaCorretorEm,
+      cotaEsgotada: cotaDaIa.nivel === "esgotada",
     });
 
     /*

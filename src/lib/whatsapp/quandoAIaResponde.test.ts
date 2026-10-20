@@ -146,6 +146,7 @@ describe("fraseDaDecisao — a tela tira a frase da mesma decisão", () => {
       "ia_desligada_no_numero",
       "dentro_do_expediente",
       "corretor_respondendo",
+      "cota_do_grupo",
     ] as const;
     for (const motivo of motivos) {
       const frase = fraseDaDecisao({ responde: false, motivo, voltaEm: null }, noturno);
@@ -261,5 +262,46 @@ describe("uma resposta por vez em cada conversa", () => {
 
   it("o webhook, já com a trava, não fala se a vez passou", () => {
     expect(semComentarios("src/app/api/webhooks/whatsapp/route.ts")).toContain('action: "ja_respondida"');
+  });
+});
+
+describe("cota de respostas da IA do grupo (fase 2B)", () => {
+  it("cota esgotada cala com o motivo próprio e diz quando volta (dia 1º, em São Paulo)", () => {
+    const d = decidirSeAIaResponde({ conversa: livre, numero: sempre, agora: QUARTA_14H_BRT, cotaEsgotada: true });
+    expect(d).toEqual({ responde: false, motivo: "cota_do_grupo", voltaEm: new Date("2026-09-01T03:00:00.000Z") });
+  });
+
+  it("o que já calaria cala pelo motivo de antes: a cota só entra quando a IA responderia", () => {
+    expect(
+      decidirSeAIaResponde({ conversa: { ...livre, botAtivo: false }, numero: sempre, agora: QUARTA_14H_BRT, cotaEsgotada: true }).motivo,
+    ).toBe("ia_desligada_na_conversa");
+    expect(
+      decidirSeAIaResponde({ conversa: livre, numero: noturno, agora: QUARTA_14H_BRT, cotaEsgotada: true }).motivo,
+    ).toBe("dentro_do_expediente");
+  });
+
+  it("sem a informação da cota (ou com cota livre), nada muda", () => {
+    expect(decidirSeAIaResponde({ conversa: livre, numero: noturno, agora: QUARTA_22H_BRT }).responde).toBe(true);
+    expect(
+      decidirSeAIaResponde({ conversa: livre, numero: noturno, agora: QUARTA_22H_BRT, cotaEsgotada: false }).responde,
+    ).toBe(true);
+  });
+
+  it("a cota não é motivo da conversa (o selo da lista não a mostra)", () => {
+    expect(silencioDaConversa(livre)).toBeNull();
+  });
+
+  it("a frase diz que o corretor atende e que nada se perdeu", () => {
+    const frase = fraseDaDecisao({ responde: false, motivo: "cota_do_grupo", voltaEm: null }, sempre);
+    expect(frase).toMatch(/respostas da IA/);
+    expect(frase).toMatch(/você/i);
+  });
+
+  it.each([
+    "src/app/api/webhooks/whatsapp/route.ts",
+    "src/app/api/cron/followups/route.ts",
+    "src/lib/whatsapp/aberturaPelaIA.ts",
+  ])("%s consulta a cota antes de a IA falar", (arquivo) => {
+    expect(semComentarios(arquivo)).toContain("lerCotaDaIa(");
   });
 });

@@ -8,6 +8,7 @@ import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import { enviarMensagemWhatsapp, enviarMidiaWhatsapp } from "@/lib/whatsapp/provider";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import {
   avancarLeadParaPrimeiroContato,
   buscarDossieAtual,
@@ -101,6 +102,11 @@ export async function gerarEEnviarPelaIA(params: {
       erro: fraseDaDecisao({ responde: false, ...silencio }, null),
     };
   }
+
+  // A cota de respostas da IA do grupo (fase 2B), antes da cota anti-ban:
+  // sem IA, nada deve gastar a vez do número.
+  const semCota = await cotaDaIaEsgotada(instancia.corretor_id);
+  if (semCota) return { enviou: false, erro: semCota };
 
   /*
    * A MESMA trava de resposta do webhook (`resposta:<conversa>`). Sem ela, a
@@ -279,6 +285,8 @@ export async function rascunharPelaIA(params: {
   const { conversa, instancia } = params;
   const silencio = await silencioQueOGestoNaoFura(conversa.id);
   if (silencio) return { erro: fraseDaDecisao({ responde: false, ...silencio }, null) };
+  const semCota = await cotaDaIaEsgotada(instancia.corretor_id);
+  if (semCota) return { erro: semCota };
 
   const { data: corretor } = await createServiceClient()
     .from("corretores")
@@ -402,6 +410,19 @@ export async function enviarRascunhoDaIA(params: {
   } finally {
     await destravarDisparo(escopoResposta, donoResposta);
   }
+}
+
+/**
+ * A frase para o corretor quando a cota de respostas da IA do grupo acabou
+ * (fase 2B); `null` com cota. O grupo é o do corretor da instância, que quem
+ * chama já validou. Escrever à mão continua valendo: só a IA para.
+ */
+async function cotaDaIaEsgotada(corretorId: string): Promise<string | null> {
+  const { data } = await createServiceClient().from("corretores").select("grupo_id").eq("id", corretorId).maybeSingle();
+  if (!data) return null;
+  const cota = await lerCotaDaIa(data.grupo_id);
+  if (cota.nivel !== "esgotada") return null;
+  return "As respostas da IA deste mês acabaram. Escreva você mesmo pela conversa; a IA volta no dia 1º.";
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { ModoBotWhatsapp } from "./types";
 import { decidirPorModo, MINUTOS_COPILOTO, type Expediente } from "./modoBot";
+import { inicioDoProximoMesEmSaoPaulo } from "@/lib/planos/cotaDaIa";
 
 /**
  * QUANDO A IA RESPONDE: a decisão inteira, num lugar só.
@@ -30,6 +31,9 @@ import { decidirPorModo, MINUTOS_COPILOTO, type Expediente } from "./modoBot";
  *    - IA desligada no número;
  *    - modo "fora do expediente" e agora é expediente;
  *    - modo co-piloto e o corretor falou há menos de 3 min.
+ * 3. **O grupo** (fase 2B, 20/10/2026): a cota de respostas da IA do mês
+ *    acabou. Só entra quando a IA RESPONDERIA: se ela já calaria por outro
+ *    motivo, o motivo é aquele (é ele que explica o silêncio de verdade).
  *
  * O primeiro motivo que se aplica é O motivo. A ordem é a de quem tem a
  * palavra final: o que o cliente pediu ganha do que o corretor configurou.
@@ -82,7 +86,9 @@ export type MotivoDoSilencio =
   | "ia_desligada_na_conversa"
   | "ia_desligada_no_numero"
   | "dentro_do_expediente"
-  | "corretor_respondendo";
+  | "corretor_respondendo"
+  /** A cota de respostas da IA do grupo acabou neste mês (fase 2B). */
+  | "cota_do_grupo";
 
 export type MotivoDaResposta = "sempre_ativa" | "fora_do_expediente" | "corretor_ausente";
 
@@ -124,9 +130,25 @@ export function decidirSeAIaResponde(params: {
   numero: ConfigDoNumero | null;
   /** Só o co-piloto usa; quem não tem a informação manda `null`. */
   ultimaFalaCorretorEm?: string | null;
+  /**
+   * A cota de respostas da IA do grupo acabou (`lerCotaDaIa`). Ausente =
+   * desconhecida: quem não leu a cota (a tela sem ela) não cala por ela.
+   */
+  cotaEsgotada?: boolean;
   agora?: Date;
 }): DecisaoDaIA {
   const agora = params.agora ?? new Date();
+  const decisao = decidirSemACota(params, agora);
+  if (decisao.responde && params.cotaEsgotada) {
+    return { responde: false, motivo: "cota_do_grupo", voltaEm: inicioDoProximoMesEmSaoPaulo(agora) };
+  }
+  return decisao;
+}
+
+function decidirSemACota(
+  params: { conversa: SituacaoDaConversa; numero: ConfigDoNumero | null; ultimaFalaCorretorEm?: string | null },
+  agora: Date,
+): DecisaoDaIA {
 
   const daConversa = silencioDaConversa(params.conversa);
   if (daConversa) return { responde: false, ...daConversa };
@@ -212,6 +234,8 @@ export function fraseDaDecisao(decisao: DecisaoDaIA, numero: ConfigDoNumero | nu
         : "Você atende no expediente";
     case "corretor_respondendo":
       return `Você está respondendo; a IA entra depois de ${MINUTOS_COPILOTO} min sem você falar`;
+    case "cota_do_grupo":
+      return "As respostas da IA deste mês acabaram: você responde por aqui até o dia 1º";
   }
 }
 

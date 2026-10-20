@@ -29,6 +29,7 @@ import {
   situacaoDaConversa,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
@@ -422,7 +423,7 @@ async function responderAtrasada(
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
+    .select("id, corretor_id, grupo_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("corretor_id", params.corretorId)
     .maybeSingle();
   if (!instancia || !instancia.conectado_em) return "pulada";
@@ -443,6 +444,9 @@ async function responderAtrasada(
     },
     ultimaFalaCorretorEm:
       instancia.modo_bot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,
+    // A cota do grupo (fase 2B): esgotada, a varredura não responde — o
+    // cliente espera o corretor, como no webhook.
+    cotaEsgotada: (await lerCotaDaIa(instancia.grupo_id)).nivel === "esgotada",
   });
   if (!decisao.responde) return "pulada";
 
