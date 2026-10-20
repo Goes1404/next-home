@@ -52,6 +52,7 @@ import {
 import { removerAnuncioDeAnexo } from "./afirmacoesSemLastro";
 import { instrucaoContraRepeticao } from "./repeticao";
 import { ORCAMENTO_AGENTE_MS } from "./llm";
+import { assistenteDaConversa, type IdentidadeDaCasa } from "./casa";
 
 /** Abaixo disso, a segunda chamada não cabe no orçamento do agente. */
 const MINIMO_PARA_REFAZER_MS = 6_000;
@@ -94,6 +95,14 @@ export type IdentidadeDoAtendimento = {
   tomVoz: string;
   /** As regras que o corretor escreveu para a IA dele (0154). */
   regrasDaIa?: string | null;
+  /**
+   * A identidade da casa do grupo do NÚMERO (fase 4, `casa.ts`): nome da
+   * imobiliária, região, e nome/tom fixados pelo gestor. Obrigatória de
+   * propósito: com padrão, um chamador esquecido falaria como a Next Home no
+   * WhatsApp de outro grupo, calado. Quem não tem grupo (eval) passa
+   * `CASA_NEXT_HOME` por escrito.
+   */
+  casa: IdentidadeDaCasa;
 };
 
 export type PedidoDeTurno = {
@@ -212,6 +221,9 @@ export async function executarTurnoDeAtendimento(
   pedido: PedidoDeTurno,
 ): Promise<TurnoDeAtendimento> {
   const { historico: historicoAnterior, pendentes } = separarRajada(pedido.historico);
+  // Nome e tom: o que o gestor fixou para o grupo ganha do da instância.
+  const identidade = { ...pedido.identidade, ...assistenteDaConversa(pedido.identidade, pedido.identidade.casa) };
+  const casa = identidade.casa;
 
   /*
    * Três origens possíveis para "o que estamos respondendo", nesta ordem:
@@ -261,6 +273,7 @@ export async function executarTurnoDeAtendimento(
     historico: historicoAnterior,
     dossie: pedido.dossie,
     tetoPelaRenda: teto?.origem === "renda" ? teto.valor : null,
+    nomeDaCasa: casa.nomeDaCasa,
   });
 
   /*
@@ -328,7 +341,7 @@ export async function executarTurnoDeAtendimento(
   const falasDoCliente = historicoAnterior.filter((m) => m.remetente === "cliente").map((m) => m.texto);
   const imoveisDoCliente = new Set<string>([
     ...(foco ? [foco.slug] : []),
-    ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo)),
+    ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo, casa.nomeDaCasa)),
     ...(estagio?.alternativa ? [estagio.alternativa.slug] : []),
   ]);
   const primeiraDoCliente = historicoAnterior.findIndex((m) => m.remetente === "cliente");
@@ -336,7 +349,7 @@ export async function executarTurnoDeAtendimento(
     primeiraDoCliente >= 0 &&
     historicoAnterior
       .slice(primeiraDoCliente)
-      .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo).length > 0);
+      .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo, casa.nomeDaCasa).length > 0);
 
   const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
 
@@ -367,7 +380,7 @@ export async function executarTurnoDeAtendimento(
     horasDesdeAUltimaFala: pedido.horasDesdeAUltimaFala,
     jaIndicouImovel,
     focoDoCliente: foco
-      ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo).includes(foco.slug))
+      ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo, casa.nomeDaCasa).includes(foco.slug))
       : false,
     ...(classificacaoDeRecusa ? { recusa: classificacaoDeRecusa.recusa } : {}),
     recusasAnterioresExtra: recusasPelaIA,
@@ -397,13 +410,13 @@ export async function executarTurnoDeAtendimento(
    * Nome de imóvel escrito errado ("vrita" = Vitra): sem foco, pergunta se é
    * esse, em vez de dizer que não tem (ver `palpiteDeNome`).
    */
-  const palpite = foco ? null : palpiteDeNome(textoDaVez, pedido.catalogo);
+  const palpite = foco ? null : palpiteDeNome(textoDaVez, pedido.catalogo, casa.nomeDaCasa);
   const blocoPalpite = palpite
     ? `ATENÇÃO: ele escreveu "${palpite.escrito}", que parece ser o ${palpite.nome}, do nosso catálogo. Antes de qualquer outra coisa, pergunte se é o ${palpite.nome} que ele quer dizer. NUNCA diga que não tem, nem que vai confirmar com o corretor: o imóvel é nosso.`
     : "";
 
   const ctxAgente: Parameters<typeof gerarRespostaIA>[0] = {
-      ...pedido.identidade,
+      ...identidade,
       catalogo: catalogoDoPrompt,
       historicoMensagens: historicoAnterior,
       exemplosFewShot,
@@ -414,8 +427,9 @@ export async function executarTurnoDeAtendimento(
       blocoJogada: [
         blocoDaJogada(jogada, {
           nomeDoFoco: foco?.nome ?? null,
-          nomeAssistente: pedido.identidade.nomeAssistente,
-          nomeCorretor: pedido.identidade.nomeCorretor,
+          nomeAssistente: identidade.nomeAssistente,
+          nomeCorretor: identidade.nomeCorretor,
+          casa,
         }),
         /*
          * Quem perguntou quem escreve recebe SÓ a resposta: estágio, renda e
@@ -430,6 +444,7 @@ export async function executarTurnoDeAtendimento(
                 ? blocoDeQualificacao(pendenteDaTrava, {
                     nomeDoFoco: foco?.nome ?? null,
                     jogadaJaPergunta: jogada.tipo === "perguntar",
+                    casa,
                   })
                 : "",
               teto && escolha && !pendenteDaTrava ? blocoDeCapacidade(teto, escolha) : "",
@@ -480,7 +495,7 @@ export async function executarTurnoDeAtendimento(
      * do catálogo desses imóveis também.
      */
     const semIndicacao = pendenteDaTrava
-      ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente)
+      ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente, casa.nomeDaCasa)
       : null;
     if (semIndicacao?.cortou) console.warn(`[turno] indicação antes da qualificação cortada (falta ${pendenteDaTrava})`);
     const anexosNaHora = (brutaConferida.anexosMidia ?? []).filter((a) => imoveisDoCliente.has(a.slug));
@@ -502,8 +517,8 @@ export async function executarTurnoDeAtendimento(
     // Nome de corretor inventado ("o corretor Carlos") vira o do cadastro.
     const comNome = corrigirNomeDoCorretor(
       brutaNaHora.textoResposta ?? "",
-      pedido.identidade.nomeCorretor,
-      pedido.identidade.nomeAssistente,
+      identidade.nomeCorretor,
+      identidade.nomeAssistente,
     );
     if (comNome.corrigiu) console.warn("[turno] nome de corretor inventado trocado pelo do cadastro");
 
@@ -511,8 +526,8 @@ export async function executarTurnoDeAtendimento(
       comNome.corrigiu ? { ...brutaNaHora, textoResposta: comNome.texto } : brutaNaHora,
       pedido.catalogo,
       pedido.historico,
-      pedido.identidade.slugCorretor,
-      pedido.identidade.nomeAssistente,
+      identidade.slugCorretor,
+      identidade.nomeAssistente,
       textoDaVez,
       jogada.tipo === "responder_dado" ? marcaDoDado(jogada.dado.resposta) : null,
     );

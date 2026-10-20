@@ -59,6 +59,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
 import { chamarOpenaiJson } from "../../src/lib/whatsapp/openai";
 import { executarTurnoDeAtendimento } from "../../src/lib/whatsapp/turnoDeAtendimento";
+import { CASA_NEXT_HOME } from "../../src/lib/whatsapp/casa";
 import { medirConversa, type TurnoRegistrado } from "../../src/lib/whatsapp/metricasConversa";
 import { PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import type { Empreendimento } from "../../src/lib/types";
@@ -92,6 +93,9 @@ const IDENTIDADE = {
   telefoneCorretor: "5511999999999",
   nomeAssistente: "Sofia",
   tomVoz: "consultivo_alto_padrao",
+  // O eval mede o prompt da Next Home (grupo 1). Por escrito, de propósito:
+  // o turno exige a casa (fase 4); eval por grupo é pendência (L67).
+  casa: CASA_NEXT_HOME,
 };
 
 export type ConversaSimulada = {

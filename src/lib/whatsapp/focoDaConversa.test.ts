@@ -562,6 +562,44 @@ describe("o nome da imobiliária não vira foco", () => {
 });
 
 /*
+ * Fase 4 (20/10/2026): o nome da casa é o do GRUPO do número. "Aqui é a Ana,
+ * da Oásis Imóveis" num grupo que tem o "Oásis Home Resort" no catálogo
+ * travaria o foco nele, como a Next Home travou no Breeze.
+ */
+describe("o nome da casa de cada grupo não vira foco", () => {
+  const catalogo = [
+    imovel("Oásis Home Resort", "oasis-home-resort"),
+    imovel("Royal Barueri II", "royal-barueri-ii", { bairro: "Aldeia" }),
+  ];
+  const historico = [
+    { remetente: "bot" as const, texto: "Oi, tudo bem? Aqui é a Ana, da Oásis Imóveis." },
+    { remetente: "cliente" as const, texto: "Oi" },
+  ];
+
+  it("a abertura com o nome do grupo não é oferta de imóvel", () => {
+    const foco = detectarFoco({
+      catalogo: [catalogo[0]],
+      mensagemAtual: "tem apartamento de dois dormitórios?",
+      historico,
+      nomeDaCasa: "Oásis Imóveis",
+    });
+    expect(foco).toBeNull();
+    expect(imoveisCitados("aqui é a Ana, da Oásis Imóveis", catalogo, "Oásis Imóveis")).toEqual([]);
+  });
+
+  it("sem o nome da casa do grupo, a mesma abertura viraria foco (é o que a guarda evita)", () => {
+    expect(
+      detectarFoco({ catalogo: [catalogo[0]], mensagemAtual: "tem apartamento de dois dormitórios?", historico })
+        ?.imovel.slug,
+    ).toBe("oasis-home-resort");
+  });
+
+  it("no grupo da Oásis, 'Home' volta a identificar o imóvel", () => {
+    expect(imoveisCitados("me fala do home resort", catalogo, "Oásis Imóveis")).toEqual(["oasis-home-resort"]);
+  });
+});
+
+/*
  * Produção, 28/09/2026: com o Estação 267 em foco, "tem algo que entregue o
  * ano que vem?" virou pergunta de ENTREGA do Estação, e a resposta foi "o
  * Estação é pronto, não tem entrega para o ano que vem". Ele estava pedindo

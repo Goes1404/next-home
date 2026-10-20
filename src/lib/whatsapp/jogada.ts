@@ -1,4 +1,5 @@
 import type { DossieClienteIA } from "./types";
+import { CASA_NEXT_HOME, perguntaDeRegiao, type IdentidadeDaCasa } from "./casa";
 import type { Empreendimento } from "@/lib/types";
 import { assuntosDe, perguntasDe } from "./metricasConversa";
 import { dadoPedido, formatarReais, type DadoPedido } from "./dadoPedido";
@@ -1109,8 +1110,15 @@ export function planejarJogada(estado: EstadoDaConversa): Jogada {
   return { tipo: "devolver_escolha" };
 }
 
-const PERGUNTA_DO_ASSUNTO: Record<AssuntoDoFunil, string> = {
-  regiao: "em qual região de Barueri ele procura",
+/**
+ * O que perguntar em cada assunto do funil. A região vem do grupo do número
+ * (`casa.ts`, fase 4); sem casa, a Next Home de antes ("Barueri").
+ */
+function perguntaDoAssunto(assunto: AssuntoDoFunil, casa: IdentidadeDaCasa | undefined): string {
+  return assunto === "regiao" ? `${perguntaDeRegiao(casa ?? CASA_NEXT_HOME)} ele procura` : PERGUNTA_DO_ASSUNTO[assunto];
+}
+
+const PERGUNTA_DO_ASSUNTO: Record<Exclude<AssuntoDoFunil, "regiao">, string> = {
   estagio: "se ele quer pronto para morar ou na planta",
   tipologia: "quantos dormitórios ele precisa",
   capacidade:
@@ -1128,6 +1136,8 @@ export function blocoDaJogada(
     /** Para `esclarecer_contato` dizer quem escreve. Ausente, vale o genérico. */
     nomeAssistente?: string | null;
     nomeCorretor?: string | null;
+    /** A casa do grupo do número (fase 4). Ausente: a Next Home de antes. */
+    casa?: IdentidadeDaCasa;
   },
 ): string {
   const cabecalho = "SUA ÚNICA TAREFA NESTA MENSAGEM";
@@ -1151,8 +1161,8 @@ export function blocoDaJogada(
     case "perguntar":
       return [
         jogada.junto
-          ? `${cabecalho}: fazer DUAS perguntas curtas, ligadas, numa frase só — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}, e ${PERGUNTA_DO_ASSUNTO[jogada.junto]} (ex.: "prefere pronto para morar ou na planta, e de quantos dormitórios?").`
-          : `${cabecalho}: fazer UMA pergunta — ${PERGUNTA_DO_ASSUNTO[jogada.assunto]}.`,
+          ? `${cabecalho}: fazer DUAS perguntas curtas, ligadas, numa frase só — ${perguntaDoAssunto(jogada.assunto, contexto.casa)}, e ${perguntaDoAssunto(jogada.junto, contexto.casa)} (ex.: "prefere pronto para morar ou na planta, e de quantos dormitórios?").`
+          : `${cabecalho}: fazer UMA pergunta — ${perguntaDoAssunto(jogada.assunto, contexto.casa)}.`,
         "Antes dela, reaja ao que ele disse com algo útil, em termos gerais (o que existe naquela região, o que muda entre pronto e na planta), sem citar imóvel antes da hora. Pergunta seca atrás de pergunta seca soa formulário, e é isso que o cliente percebe.",
         jogada.junto
           ? "Só essas duas; nenhuma outra pergunta do funil nesta mensagem."
@@ -1521,7 +1531,7 @@ export function travaDeQualificacao(jogada: Jogada, estado: EstadoDaConversa): A
 /** O bloco que entra no prompt enquanto a qualificação não terminou. */
 export function blocoDeQualificacao(
   pendente: AssuntoDoFunil,
-  contexto: { nomeDoFoco: string | null; jogadaJaPergunta?: boolean },
+  contexto: { nomeDoFoco: string | null; jogadaJaPergunta?: boolean; casa?: IdentidadeDaCasa },
 ): string {
   return [
     "AINDA EM QUALIFICAÇÃO (decidido pelo código): as perguntas vêm ANTES de qualquer indicação, porque é com elas que se escolhe o imóvel certo para a situação dele.",
@@ -1532,6 +1542,6 @@ export function blocoDeQualificacao(
     // uma SEGUNDA pergunta de outro assunto (v44, 29/09/2026).
     contexto.jogadaJaPergunta
       ? 'Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") antes da pergunta da tarefa acima.'
-      : `Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") e termine com UMA pergunta: ${PERGUNTA_DO_ASSUNTO[pendente]}.`,
+      : `Se ele perguntou algo, responda em termos gerais ("tenho sim, algumas opções assim") e termine com UMA pergunta: ${perguntaDoAssunto(pendente, contexto.casa)}.`,
   ].join("\n");
 }

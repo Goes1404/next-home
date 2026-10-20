@@ -44,6 +44,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { PROMPT_VERSAO } from "../../src/lib/whatsapp/aiAgent";
 import { executarTurnoDeAtendimento } from "../../src/lib/whatsapp/turnoDeAtendimento";
+import { CASA_NEXT_HOME } from "../../src/lib/whatsapp/casa";
 import { catalogoParaAtendimento, imoveisCitados } from "../../src/lib/whatsapp/focoDaConversa";
 import { sanearRespostaIA } from "../../src/lib/whatsapp/guardrails";
 import { chamarGeminiJson } from "../../src/lib/whatsapp/gemini";
@@ -413,6 +414,8 @@ async function main() {
         telefoneCorretor: "5511999999999",
         nomeAssistente: "Sofia",
         tomVoz: "consultivo_alto_padrao",
+        // O eval mede o prompt da Next Home (grupo 1); eval por grupo é L67.
+        casa: CASA_NEXT_HOME,
       },
       catalogo,
       // O turno recebe a conversa INTEIRA e separa a vez do cliente

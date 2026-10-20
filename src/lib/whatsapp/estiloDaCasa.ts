@@ -149,3 +149,16 @@ RITMO (medido nas conversas reais, não estimado):
 - Só 23% das mensagens dela terminam em pergunta. As outras informam, acolhem ou confirmam. Perguntar sempre é ansiedade, não condução.
 - Vocabulário dela: "Bacana", "Tranquilo", "Combinado", "Que bom", "Fico à disposição". Nada de "prezado", "informamos" ou "estamos à disposição para maiores esclarecimentos".
 - Quando o cliente recusa, ela NUNCA insiste na mesma proposta: oferece outro horário, outro imóvel, outro caminho. Recusa é informação, não fim.`;
+
+/**
+ * O mesmo bloco para um grupo que não é a Next Home: o único trecho com
+ * lugar (o Centro de Barueri e o Parque Shopping) sai sem o lugar. O ritmo e
+ * as regras da visita ficam: são o que foi medido (fase 4, 20/10/2026).
+ */
+export function estiloDaCasaPara(exemplosDaNextHome: boolean): string {
+  if (exemplosDaNextHome) return ESTILO_DA_CASA;
+  return ESTILO_DA_CASA.replace("Cliente: Centro de Barueri", "Cliente: no centro").replace(
+    "Corretora: Ao lado do centro, próximo ao Parque Shopping, te atende?",
+    "Corretora: Ao lado do centro, perto do shopping, te atende?",
+  );
+}

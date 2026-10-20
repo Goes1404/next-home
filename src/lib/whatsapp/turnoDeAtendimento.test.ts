@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RespostaAgenteIA } from "./aiAgent";
+import { CASA_NEXT_HOME, casaDoGrupo } from "./casa";
 
 /*
  * A segunda tentativa quando a resposta era eco (29/09/2026).
@@ -36,6 +37,7 @@ const pedido = () => ({
     telefoneCorretor: "5511999999999",
     nomeAssistente: "Lia",
     tomVoz: "",
+    casa: CASA_NEXT_HOME,
   },
   catalogo: [],
   historico: [
@@ -73,5 +75,37 @@ describe("resposta repetida é refeita pelo modelo", () => {
     gerar.mockResolvedValueOnce(resposta("Oi! Me conta: em qual região de Barueri você procura?"));
     await executarTurnoDeAtendimento(pedido() as never);
     expect(gerar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("a identidade da casa do grupo chega ao modelo (fase 4)", () => {
+  beforeEach(() => gerar.mockReset());
+
+  it("o nome e o tom fixados pelo gestor ganham do número; a casa vai junto", async () => {
+    gerar.mockResolvedValueOnce(resposta("Oi! Em qual região de Campinas você procura?"));
+    const casa = casaDoGrupo(
+      { nome: "Horizonte", ia_nome_da_casa: null, ia_nome_assistente: "Ana", ia_regiao: "Campinas", ia_tom: "formal_direto" },
+      "00000000-0000-0000-0000-0000000000b2",
+    );
+    const base = pedido();
+    await executarTurnoDeAtendimento({
+      ...base,
+      historico: [{ remetente: "cliente", texto: "oi, quero um apartamento" }],
+      identidade: { ...base.identidade, casa },
+    } as never);
+
+    const ctx = gerar.mock.calls[0][0] as { nomeAssistente: string; tomVoz: string; casa: unknown; blocoJogada?: string };
+    expect(ctx.nomeAssistente).toBe("Ana");
+    expect(ctx.tomVoz).toBe("formal_direto");
+    expect(ctx.casa).toEqual(casa);
+    expect(ctx.blocoJogada ?? "").not.toContain("Barueri");
+  });
+
+  it("sem nada fixado no grupo, vale o nome e o tom do número", async () => {
+    gerar.mockResolvedValueOnce(resposta("Oi! Em qual região de Barueri você procura?"));
+    await executarTurnoDeAtendimento({ ...pedido(), historico: [{ remetente: "cliente", texto: "oi" }] } as never);
+    const ctx = gerar.mock.calls[0][0] as { nomeAssistente: string; tomVoz: string };
+    expect(ctx.nomeAssistente).toBe("Lia");
+    expect(ctx.tomVoz).toBe("");
   });
 });

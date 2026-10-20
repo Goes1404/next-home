@@ -127,11 +127,26 @@ const COMUNS = new Set([
  * Breeze três vezes. O nome da casa nunca identifica um imóvel. Sai da
  * marca configurada, então vale para qualquer instalação.
  */
-const PALAVRAS_DA_MARCA = new Set(
-  normalizar(site.nome)
-    .split(/[^a-z0-9]+/)
-    .filter((p) => p.length >= 4),
-);
+const PALAVRAS_DA_MARCA = palavrasDoNome(site.nome);
+
+/**
+ * Fase 4 (20/10/2026): a marca é a do GRUPO do número que atende — "da
+ * Oásis Imóveis" travaria o foco no "Oásis Home Resort" do catálogo desse
+ * grupo. `undefined` é quem não sabe o grupo (eval, traces): vale a marca do
+ * site, como antes. `null` é grupo sem nome: nada sai do índice.
+ */
+function palavrasDaCasa(nomeDaCasa: string | null | undefined): ReadonlySet<string> {
+  if (nomeDaCasa === undefined) return PALAVRAS_DA_MARCA;
+  return nomeDaCasa ? palavrasDoNome(nomeDaCasa) : new Set();
+}
+
+function palavrasDoNome(nome: string): Set<string> {
+  return new Set(
+    normalizar(nome)
+      .split(/[^a-z0-9]+/)
+      .filter((p) => p.length >= 4),
+  );
+}
 
 /**
  * Recusa dita na mesma frase do nome.
@@ -257,7 +272,8 @@ function representante(imoveis: Empreendimento[]): Empreendimento {
  * O token existe porque ninguém digita o nome de cadastro: quem viu o
  * "Eternity Alphaville Tamboré" escreve "o Eternity".
  */
-function construirIndice(catalogo: Empreendimento[]): Indice {
+function construirIndice(catalogo: Empreendimento[], nomeDaCasa?: string | null): Indice {
+  const daCasa = palavrasDaCasa(nomeDaCasa);
   const termos = new Map<string, string | null>();
   const porSlug = new Map(catalogo.map((e) => [e.slug, e]));
 
@@ -293,7 +309,7 @@ function construirIndice(catalogo: Empreendimento[]): Indice {
           !palavra ||
           GENERICAS.has(palavra) ||
           COMUNS.has(palavra) ||
-          PALAVRAS_DA_MARCA.has(palavra) ||
+          daCasa.has(palavra) ||
           /^\d+$/.test(palavra)
         ) {
           continue;
@@ -502,9 +518,14 @@ function citadosNoTexto(
  * Alta" continua sendo uma citação do Terra Alta, e é a citação que se quer
  * contar.
  */
-export function imoveisCitados(texto: string, catalogo: Empreendimento[]): string[] {
+export function imoveisCitados(
+  texto: string,
+  catalogo: Empreendimento[],
+  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null,
+): string[] {
   if (!texto?.trim() || catalogo.length === 0) return [];
-  return citadosNoTexto(texto, construirIndice(catalogo), { ignorarRecusa: true });
+  return citadosNoTexto(texto, construirIndice(catalogo, nomeDaCasa), { ignorarRecusa: true });
 }
 
 export type FocoDaConversa = {
@@ -565,11 +586,13 @@ export function detectarFoco(params: {
   catalogo: Empreendimento[];
   mensagemAtual: string;
   historico?: { remetente: string; texto: string }[];
+  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null;
 }): FocoDaConversa | null {
   const { catalogo, mensagemAtual } = params;
   if (catalogo.length === 0) return null;
 
-  const indice = construirIndice(catalogo);
+  const indice = construirIndice(catalogo, params.nomeDaCasa);
   const acharImovel = (slug: string) => catalogo.find((e) => e.slug === slug) ?? null;
   const primeiroCitado = (texto: string) => citadosNoTexto(texto, indice)[0] ?? null;
 
@@ -672,11 +695,14 @@ export function catalogoParaAtendimento(params: {
   dossie?: DossieClienteIA | null;
   /** O teto calculado pela renda (`tetoDeCompra`), quando não há orçamento dito. */
   tetoPelaRenda?: number | null;
+  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null;
 }): { catalogo: Empreendimento[]; foco: { slug: string; nome: string } | null } {
   const foco = detectarFoco({
     catalogo: params.catalogo,
     mensagemAtual: params.mensagemAtual,
     historico: params.historico,
+    ...(params.nomeDaCasa !== undefined ? { nomeDaCasa: params.nomeDaCasa } : {}),
   });
 
   const ranqueado = ranquearCatalogo({
@@ -712,9 +738,11 @@ export function catalogoParaAtendimento(params: {
 export function palpiteDeNome(
   mensagem: string,
   catalogo: Empreendimento[],
+  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null,
 ): { nome: string; slug: string; escrito: string } | null {
   if (catalogo.length === 0) return null;
-  const indice = construirIndice(catalogo);
+  const indice = construirIndice(catalogo, nomeDaCasa);
   const ordenada = (p: string) => [...p].sort().join("");
 
   const palpites = new Map<string, string>();
@@ -748,10 +776,12 @@ export function removerIndicacaoPrematura(
   texto: string,
   catalogo: Empreendimento[],
   permitidos: ReadonlySet<string>,
+  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null,
 ): { texto: string; cortou: boolean } {
   const frasesDoTexto = texto.split(/(?<=[.!?])\s+|\n+|\s*---\s*/).filter((f) => f.trim().length > 0);
   const ficam = frasesDoTexto.filter((f) =>
-    imoveisCitados(f, catalogo).every((slug) => permitidos.has(slug)),
+    imoveisCitados(f, catalogo, nomeDaCasa).every((slug) => permitidos.has(slug)),
   );
   if (ficam.length === frasesDoTexto.length || ficam.length === 0) return { texto, cortou: false };
   return { texto: ficam.join("\n\n"), cortou: true };
