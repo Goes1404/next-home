@@ -4,6 +4,22 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Memória do projeto: buscar, não carregar
+
+`docs/MEMORIA.md` tem mais de 700 KB e NÃO é carregada automaticamente (cada
+conversa e cada agente pagaria ~180 mil tokens para começar). Antes de mexer
+em banco/migration, deploy, WhatsApp, IA de atendimento, campanhas, Storage,
+RLS ou cron, busque o assunto nela e no vault:
+
+- `grep -n -i "<assunto>" docs/MEMORIA.md` e leia só as seções que casarem;
+- `vault/Home.md` e `vault/20-mocs/` como índice das notas atômicas.
+
+Ao delegar a um agente, diga quais seções ele precisa ler, em vez de mandá-lo
+ler a MEMORIA inteira.
+
+Processos que se repetem têm skill local (fora do git) em `.claude/skills/`:
+`aplicar-migration-producao`, `publicar-em-producao`, `fechar-tarefa`.
+
 # Vault Obsidian (`vault/`) — atualização OBRIGATÓRIA
 
 O conhecimento do projeto vive em dois lugares que andam juntos:
