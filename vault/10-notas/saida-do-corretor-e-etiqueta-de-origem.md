@@ -4,7 +4,7 @@ tags: [crm, banco, decisao]
 type: nota
 status: seedling
 custou: medio
-codigo: [supabase/migrations/0200_etiqueta_de_origem_e_saida.sql, src/app/corretor/(painel)/admin/contas/SaidaDoCorretor.tsx, src/app/corretor/(painel)/admin/acoes.ts, src/app/api/painel/fichas-do-corretor/route.ts, src/lib/corretores/fichasDoCorretor.ts, src/lib/corretores/saidaDoCorretor.ts]
+codigo: [supabase/migrations/0200_etiqueta_de_origem_e_saida.sql, src/lib/whatsapp/gravarClique.ts, src/app/corretor/(painel)/admin/contas/SaidaDoCorretor.tsx, src/app/corretor/(painel)/admin/acoes.ts, src/app/api/painel/fichas-do-corretor/route.ts, src/lib/corretores/fichasDoCorretor.ts, src/lib/corretores/saidaDoCorretor.ts]
 created: 2026-10-20
 updated: 2026-10-20
 fonte: fase 5 enxuta da plataforma multi-grupo (20/10/2026)
@@ -31,26 +31,48 @@ cada leitura e mudaria de resposta junto com a regra. O gatilho
 
 - troca de `corretor_id` (repasse da gestão, ou dono para lead sem dono) →
   `imobiliaria`;
-- a ficha `whatsapp/organico` ganhando a origem verdadeira → reclassifica.
-  É por aí que o impulsionamento do próprio corretor (etiqueta da Meta, 0127,
-  `meta/ctwa` com `meta_ad_id`) vira dele.
+- a ficha `whatsapp/organico` RECÉM-NASCIDA (até 15 minutos, sem linha
+  `repasse`) ganhando a origem verdadeira → reclassifica. É por aí que o
+  impulsionamento do próprio corretor (etiqueta da Meta, 0127, `meta/ctwa`
+  com `meta_ad_id`) e o link pessoal dele (`whatsapp/link_pessoal`) viram
+  dele. O prazo existe porque `registrarLeadDeImpulsionamento` roda em TODA
+  mensagem do cliente com etiqueta: sem ele, lead da casa (ou repassado)
+  viraria do corretor semanas depois, no primeiro toque num anúncio dele.
 
 A regra mora em `classificar_trazido_por` (pura). Decisões nos casos que o
 dado não separa:
 
-- `whatsapp/organico` e `meta/ctwa` sem `meta_ad_id` são da imobiliária
-  mesmo quando o clique veio do link pessoal (o porteiro não grava qual foi).
+- Link pessoal pelo WhatsApp (revisão de 20/10): o porteiro grava
+  `cliques_whatsapp.do_link_pessoal` quando o clique foi para o corretor do
+  cookie, e o webhook passa a ficha do convite a `whatsapp/link_pessoal`
+  (dele). Clique de anúncio pago (`origem = anuncio/…`) fica com a casa
+  mesmo com o cookie. `whatsapp/organico` sem essa marca e `meta/ctwa` sem
+  `meta_ad_id` são da imobiliária.
+- Ligar um lead à campanha paga do corretor à mão (`impulsionamento_id`,
+  0132) NÃO muda a etiqueta: seria um jeito de o corretor tomar para si
+  qualquer lead da casa. Desvio declarado da spec §9 ("campanha paga por
+  ele"); só a etiqueta da Meta conta.
 - `inbound/…` (portal) é da imobiliária mesmo vindo do Gmail do corretor.
 - Importação por gestor (`eh_gestor()` no insert) é da imobiliária. No
   backfill, o "gestor" é o papel ATUAL do dono.
-- Lead com linha `repasse` em `lead_interacoes` (L30) é da imobiliária.
+- Backfill: é da imobiliária o lead que a gestão passou para o dono de HOJE
+  — linha `repasse` (L30) ou, de antes dela, linha `sistema` de
+  transferência, nas duas com `detalhes.para` = dono atual. Linha
+  `repasse` cujo update falhou aponta para outro dono e não conta.
 
 ## A saída na tela
 
-Contas → "Desativar" em quem tem leads abre `SaidaDoCorretor`: as duas
+Contas → "Desativar" abre `SaidaDoCorretor` quando a contagem da saída
+(que INCLUI arquivados; a da lista de Contas não) tem algum lead: as duas
 contagens, a escolha para os leads da imobiliária (roleta ou um corretor) e o
 botão "Baixar as fichas dele". Os que ele trouxe ficam na carteira dele,
 parados, até existir a conta de independente.
+
+- Quem já saiu (inclusive antes da 0200) tem o botão "Fichas e leads de quem
+  saiu" na linha dele: o mesmo painel, sem desativar de novo.
+- Lead da imobiliária que a roleta não passa (ninguém ativo atende a região)
+  SEGURA a desativação: o painel pede um corretor para o restante
+  (`passoDepoisDaDivisao`).
 
 - `devolver_leads_da_imobiliaria` repete a ordem da roleta e acrescenta um
   contador da própria divisão antes da carga: os leads antigos não contam na

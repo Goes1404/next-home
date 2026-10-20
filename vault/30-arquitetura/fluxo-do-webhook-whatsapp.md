@@ -27,6 +27,11 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
    e o anúncio vai para `impulsionamentos`
    ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
+   O clique da mensagem pronta é gasto e ligado ao lead; se ele foi para o
+   corretor do link pessoal (cookie, `cliques_whatsapp.do_link_pessoal`) e
+   não veio de anúncio pago, a ficha recém-nascida vira
+   `whatsapp/link_pessoal`, que a etiqueta de origem marca como trazida
+   por ele ([[saida-do-corretor-e-etiqueta-de-origem]], 0200).
    Antes dele, a mensagem do corretor com a palavra-chave cadastra o
    número na carteira dele; se o número já é lead de outro corretor, nada é
    criado e quem digitou recebe aviso no Início

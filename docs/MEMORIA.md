@@ -11284,3 +11284,27 @@ Nota: [[saida-do-corretor-e-etiqueta-de-origem]].
 - **Heredoc de Python com acento no Windows** pode não casar o texto do
   arquivo (a codificação do stdin troca "→" e "ã"). Para editar trecho com
   acento, use a ferramenta de edição ou `node -e`.
+
+## Revisão da saída do corretor (0200, 20/10/2026)
+
+Nota: [[saida-do-corretor-e-etiqueta-de-origem]].
+
+- **A etiqueta da Meta chega em TODA mensagem do cliente**, não só na
+  primeira: promover `whatsapp/organico` sem prazo fazia lead da casa (ou
+  repassado) virar do corretor semanas depois. A promoção vale para a ficha
+  de até 15 minutos e sem linha `repasse`.
+- **Linha `repasse` não prova repasse**: o painel a grava ANTES do update.
+  Backfill e diagnóstico conferem `detalhes.para` contra o dono atual; antes
+  da 0183 a transferência só existe como linha `sistema` com `para`.
+- **O link pessoal chega pelo WhatsApp, não pelo formulário**: o porteiro
+  passou a gravar `cliques_whatsapp.do_link_pessoal`, e a ficha do convite
+  vira `whatsapp/link_pessoal`. Insert de clique com coluna nova repete sem
+  ela (`gravarClique`): antes da migration, o clique pago sumiria calado.
+- **A contagem de leads da lista de Contas não vê arquivados**: decisão de
+  abrir a saída é pela `resumoDaSaida`, que vê.
+- **Teste de backfill**: o db.test roda o texto da própria migration sobre
+  leads com a etiqueta apagada (gatilho desligado e `not null` solto dentro
+  da transação desfeita).
+- **`classificar_trazido_por` tem uma sobra que esconde regra faltando**:
+  atribuição `link`/`manual` cai em `corretor`. Teste de origem nova chama a
+  função com atribuição nula, senão passa pela sobra.
