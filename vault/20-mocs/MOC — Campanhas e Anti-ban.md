@@ -47,6 +47,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[aprimoramentos-das-oito-funcionalidades]] — A/B que decide sozinho e reescreve a fila, vencedoras como exemplo, pós-visita que puxa o próximo passo, lead pago sem contato em 30 min (26/09)
 - [[fechar-o-ciclo-e-ligar-a-plataforma]] — público compradores, reengajamento descartado para quem fechou, pedido de indicação no tique (26/09)
 - [[impulsionamento-do-corretor-pela-etiqueta-da-meta]] — lead do impulsionamento do corretor era descartado pela 0111; etiqueta da Meta abre a porta, gasto digitado em Marketing → Impulsionamentos (27/09)
+- [[lead-da-campanha-do-corretor-sem-ia]] — lead da campanha do próprio corretor: a IA não responde, só cadastra e resume (20/10)
 - [[campanha-cadastrada-pelo-corretor]] · [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]] · [[clique-no-link-cadastra-quem-escreve]] · [[anuncio-da-etiqueta-cai-sozinho-na-campanha]] — o corretor cadastra campanha com valor, agrupa anúncios, liga clientes; qualidade pela temperatura da IA e comparação pela melhor por visita (0132, 30/09)
 - [[onde-o-clique-do-anuncio-se-perde]] — pessoas por clique e quem escreveu sem a mensagem pronta, só contagem (0159, 05/10)
 - [[qualidade-do-lead-pelo-que-ele-fez]] — qualidade por degraus de comportamento (conversou, se qualificou, visitou, fechou), contagem abaixo de 5 clientes, comparativo entre campanhas (30/09)

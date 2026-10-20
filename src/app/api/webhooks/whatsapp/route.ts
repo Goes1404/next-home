@@ -85,7 +85,7 @@ import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoA
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
-import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -849,6 +849,7 @@ export async function POST(req: NextRequest) {
      * corretor — é nela que ele digita quanto gastou, e o custo por lead sai
      * sozinho.
      */
+    let iaCaladaPelaCampanha = false;
     if (anuncioMeta && !nomeDoAnuncio) {
       if (conversa.leadId) {
         await registrarLeadDeImpulsionamento({
@@ -856,6 +857,17 @@ export async function POST(req: NextRequest) {
           corretorId: instancia.corretorId,
           anuncio: anuncioMeta,
         });
+      }
+      /*
+       * Lead da campanha do PRÓPRIO corretor (20/10/2026, pedido do dono):
+       * a IA não responde. O lead é cadastrado (acima) e o resumo da ficha
+       * continua sendo feito a cada mensagem pelo caminho do silêncio
+       * (`atualizarFichaEMemoria`); quem conversa é o corretor, que pagou o
+       * anúncio. Para a IA assumir, ele usa a palavra-chave ou "IA assume
+       * agora", como em qualquer conversa desligada.
+       */
+      if (conversa.botAtivo && (await calarIaNaConversaDeCampanha(conversa.id))) {
+        iaCaladaPelaCampanha = true;
       }
     }
 
@@ -897,7 +909,7 @@ export async function POST(req: NextRequest) {
      */
     const numero = { modo: instancia.modoBot, expediente: instancia.expediente };
     const decisaoIA = decidirSeAIaResponde({
-      conversa: situacaoDaConversa(conversa),
+      conversa: situacaoDaConversa(iaCaladaPelaCampanha ? { ...conversa, botAtivo: false } : conversa),
       numero,
       ultimaFalaCorretorEm:
         instancia.modoBot === "co_piloto_3min" ? await ultimaFalaDoCorretor(conversa.id) : null,

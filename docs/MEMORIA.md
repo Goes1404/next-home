@@ -11059,3 +11059,20 @@ Notas: [[plataforma-multi-grupo]], [[conta-oculta]].
   antiga** e tem de ir para depois da 0194 ao ser juntada.
 - **Dois `db:teste` em sessões paralelas se derrubam** (mesmo `project_id` e
   portas): ver `supabase/REPRODUCAO.md` para subir uma pilha só sua.
+
+## Lead da campanha do próprio corretor não é atendido pela IA (20/10/2026)
+
+Nota: [[lead-da-campanha-do-corretor-sem-ia]].
+
+- **Decisão do dono:** lead que chega pelo anúncio pago do próprio corretor
+  (etiqueta da Meta na linha dele) é cadastrado e resumido, mas a IA não
+  responde. O link `/wa` da imobiliária continua com a IA.
+- **A IA cala no webhook, antes da decisão de responder**
+  (`calarIaNaConversaDeCampanha`, `bot_ativo = false`). O resumo já rodava no
+  caminho do silêncio para toda conversa com lead; não precisou de nada novo.
+- **Reatribuir `conversa` (let) no meio do webhook quebra os tipos** de
+  closures que vêm antes no arquivo ("possibly null"). Use uma flag e passe a
+  conversa ajustada só para quem precisa.
+- **Origem do lead `553899928763`** (pergunta de 20/10): anúncio
+  "APARTAMENTO PRONTO!" (Meta `52560103521954`) da Carolini, detectado pela
+  etiqueta em 16/10; o lead chegou em 17/10 com a mensagem pronta do Bless.
