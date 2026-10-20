@@ -330,16 +330,18 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
    * Estado da conexão é do servidor (0175): a sessão do corretor não altera
    * status, carimbos nem o nome da instância. O corretor vem da sessão e o
    * estado vem da resposta do provedor; nada aqui sai do navegador.
+   *
+   * "Já conectado" NÃO é gravado direto como conectado (0198): o número que
+   * está no ar pode ser de outra conta (o mesmo que foi recusado antes, com
+   * o logout que falhou). Quem marca conectado, carimba `conectado_em` e
+   * apaga o marco da queda é a sincronização logo abaixo, que confere o
+   * número antes.
    */
   const { error: erroEstado } = await servico.from("corretor_whatsapp_instancias").upsert(
     {
       corretor_id: corretor.id,
       instance_name: instanceName,
-      status_conexao: resultado.jaConectado ? "conectado" : "conectando",
-      // Já no ar: apaga o marco da queda e a marca do aviso, como o webhook
-      // e a sincronização fazem ao reconectar. Com o marco velho, a próxima
-      // queda herdaria o começo desta e já contaria como 3 dias fora (0176).
-      ...(resultado.jaConectado ? { desconectado_em: null, aviso_queda_enviado_em: null } : {}),
+      status_conexao: "conectando",
       // No pareamento por número não há QR para ninguém ler: guardar um
       // seria o mesmo lixo de 13 KB que já estava no banco, envelhecendo
       // sem nunca ser exibido.
@@ -350,23 +352,24 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
   );
   if (erroEstado) console.error("[whatsapp] não consegui gravar o estado da conexão:", erroEstado.message);
 
-  /*
-   * Carimba o marco do pareamento — é dele que sai a curva de aquecimento
-   * anti-ban e, sem ele, `reservarCotaCampanha` recusa TODO disparo de
-   * campanha (era o que deixava a fila inteira parada em 'pendente' sem
-   * erro nenhum). O webhook `connection.update` também carimba; este
-   * caminho cobre quem já estava pareado antes deste código existir.
-   *
-   * `is("conectado_em", null)` é o que impede uma reconexão (queda de
-   * internet, troca de aparelho, clique repetido no botão) de zerar a curva
-   * de um número que já vinha maduro.
-   */
   if (resultado.jaConectado) {
-    await servico
+    const { data: linha } = await servico
       .from("corretor_whatsapp_instancias")
-      .update({ conectado_em: new Date().toISOString() })
+      .select("id, conectado_em, telefone_conectado")
       .eq("corretor_id", corretor.id)
-      .is("conectado_em", null);
+      .maybeSingle();
+    if (linha) {
+      const estado = await sincronizarConexaoInstancia({
+        instanciaId: linha.id,
+        instanceName,
+        conectadoEmAtual: linha.conectado_em,
+        telefoneAtual: linha.telefone_conectado,
+      });
+      if (estado.estado === "numero_de_outro_grupo") {
+        revalidatePath("/corretor/whatsapp");
+        return { configurado: true, erro: estado.detalhe ?? FRASE_NUMERO_EM_OUTRO_GRUPO };
+      }
+    }
   }
 
   revalidatePath("/corretor/whatsapp");

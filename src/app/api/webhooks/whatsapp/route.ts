@@ -56,6 +56,7 @@ import {
   momentosParaSaudacao,
   registrarResultadoEnvio,
   resolverInstancia,
+  mensagemDoNumeroPodeSeguir,
   salvarDossie,
   registrarRecusaDoCliente,
   registrarParadaSemIA,
@@ -343,6 +344,17 @@ export async function POST(req: NextRequest) {
      * marca, a atualização não muda nada.
      */
     if (evento !== "connection.update" && !estadoConexao) {
+      /*
+       * Um número, um grupo (0198): se a instância recusou um número de outra
+       * conta e a sessão não caiu (o logout falhou), ou se o pareamento acabou
+       * de abrir e ninguém conferiu o número ainda, as mensagens dele não
+       * entram aqui. Sem isso, as conversas dos clientes da outra conta seriam
+       * gravadas neste grupo, e a IA daqui poderia responder por um número
+       * que não é dele. A conferência tenta derrubar a sessão de novo.
+       */
+      if (!(await mensagemDoNumeroPodeSeguir(instancia))) {
+        return NextResponse.json({ ok: true, ignored: "numero_de_outro_grupo" });
+      }
       after(() => marcarSessaoViva(instancia.id));
     }
 

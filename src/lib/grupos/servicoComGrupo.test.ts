@@ -176,6 +176,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/metaAds.ts": { categoria: "plataforma", motivo: "sincroniza a conta da Meta da Next Home, carimbada no grupo 1 (fase 7)" },
   "src/lib/whatsapp/avisoDeQueda.ts": { categoria: "plataforma", motivo: "varre instância a instância; a faixa lê só o corretor da sessão" },
   "src/lib/whatsapp/campaignDispatcher.ts": { categoria: "plataforma", motivo: "disparo item a item, pela instância do corretor dono da lista" },
+  "src/lib/whatsapp/recusaPendente.ts": { categoria: "plataforma", motivo: "repete o logout do número recusado instância a instância; não lê conversa nem junta grupos" },
   "src/lib/whatsapp/listasVivas.ts": { categoria: "plataforma", motivo: "por lista: só leads do corretor dono dela" },
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },
   "src/lib/whatsapp/sonda.ts": { categoria: "plataforma", motivo: "diagnóstico do provedor por instância, em tabela global" },

@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
+import { rederrubarNumerosRecusados } from "./recusaPendente";
 import { protegerNumerosQueCairam } from "./quedaDoNumero";
 import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
@@ -226,6 +227,9 @@ export async function processarFilaCampanhas(params?: {
    * A varredura não lança e sai barata quando não há o que avisar.
    */
   await varrerQuedasDeNumero();
+  // Número de outra conta cuja sessão não caiu na recusa (0198): tenta o
+  // logout de novo. Antes de tudo pelo mesmo motivo do aviso de queda.
+  await rederrubarNumerosRecusados();
   // Número fora do ar por 30 min: pausa as listas dele, recomeça o
   // aquecimento e guarda o motivo da queda (0174). Mesmo motivo do aviso
   // para rodar antes de tudo: não pode depender de janela nem de fila.

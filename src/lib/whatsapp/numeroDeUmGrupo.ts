@@ -14,9 +14,15 @@ import type { Database } from "@/lib/supabase/types";
  * serviço, porque a função do banco só executa para ela).
  */
 
-/** O que o corretor lê quando o número é de outra conta. Não diz de quem. */
+/**
+ * O que o corretor lê quando o número é de outra conta. Não diz de quem.
+ *
+ * Diz as duas saídas que existem: quem administra a outra conta desconecta
+ * o número lá, ou o dono do celular remove o aparelho daquela conta em
+ * "Aparelhos conectados" (a queda com o código 401 solta o número, 0198).
+ */
 export const FRASE_NUMERO_EM_OUTRO_GRUPO =
-  "Este número de WhatsApp já está ligado a outra conta da plataforma. Um número só pode estar em uma conta. Para usá-lo aqui, peça para desconectá-lo na outra conta primeiro, ou conecte outro número.";
+  "Este número de WhatsApp já está ligado a outra conta da plataforma, e um número só pode estar em uma conta. Para usá-lo aqui, quem administra a outra conta precisa desconectá-lo lá. Se o celular é seu, você mesmo pode liberá-lo: no WhatsApp, abra Aparelhos conectados e desconecte o aparelho da outra conta. Ou conecte outro número.";
 
 /**
  * Espelho de `public.chave_do_numero_whatsapp` (0198): só os dígitos, e o

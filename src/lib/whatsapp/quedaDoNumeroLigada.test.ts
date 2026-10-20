@@ -90,12 +90,13 @@ describe("toda volta do número apaga o marco da queda (0176)", () => {
   // Marco velho num número conectado faz a próxima queda herdar o começo da
   // anterior e já contar como 3 dias fora: o limite voltaria a 15 na hora.
   it("o botão Conectar com o número já no ar", () => {
+    // Desde a revisão da fase 2D (0198), o "já conectado" não grava conectado
+    // direto: passa pela sincronização, que confere o número de outra conta
+    // E apaga o marco da queda (o teste abaixo cobra o marco nela).
     const acoes = ler("src/app/corretor/(painel)/whatsapp/acoes.ts");
-    const inicio = acoes.indexOf('status_conexao: resultado.jaConectado ? "conectado"');
+    const inicio = acoes.indexOf("if (resultado.jaConectado)");
     expect(inicio).toBeGreaterThan(-1);
-    const fim = acoes.indexOf("onConflict", inicio);
-    expect(fim).toBeGreaterThan(inicio);
-    expect(acoes.slice(inicio, fim)).toMatch(/jaConectado\s*\?\s*\{\s*desconectado_em:\s*null/);
+    expect(acoes.indexOf("sincronizarConexaoInstancia(", inicio)).toBeGreaterThan(inicio);
   });
 
   it("a sincronização e o webhook", () => {

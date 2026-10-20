@@ -76,6 +76,15 @@ export type InstanciaResolvida = {
    * painel, sem virar lead, com o texto guardado e a IA desligada.
    */
   soWhatsapp: boolean;
+  /** Estado da conexão gravado no banco (conectado, conectando, desconectado). */
+  statusConexao?: string | null;
+  conectadoEm?: string | null;
+  telefoneConectado?: string | null;
+  /**
+   * O número que pareou é de outra conta e a recusa está em aberto (0198):
+   * as mensagens dele não entram no atendimento.
+   */
+  numeroRecusado?: boolean;
 };
 
 /**
@@ -92,7 +101,7 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
   const { data, error } = await supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, grupo_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim, regras_da_ia",
+      "id, corretor_id, grupo_id, instance_name, nome_assistente, tom_voz, modo_bot, webhook_secret, palavra_chave_ativacao, palavra_chave_teste, palavras_entrada_cliente, expediente_inicio, expediente_fim, regras_da_ia, status_conexao, conectado_em, telefone_conectado",
     )
     .eq("instance_name", instanceName)
     .maybeSingle();
@@ -107,6 +116,11 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 
   if (!corretor) return null;
   const soWhatsapp = await ehContaSoWhatsapp(supabase, data.corretor_id);
+  // A marca de recusa (0198) só é lida quando o número não está conectado:
+  // é o único caso em que ela muda alguma coisa, e o caminho de todo dia
+  // (conectado) não paga a consulta.
+  const numeroRecusado =
+    data.status_conexao === "conectado" ? false : await temRecusaDeNumero(supabase, data.id);
 
   return {
     id: data.id,
@@ -129,6 +143,10 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
     expediente: { inicioHora: data.expediente_inicio ?? 9, fimHora: data.expediente_fim ?? 21 },
     regrasDaIa: data.regras_da_ia ?? null,
     soWhatsapp,
+    statusConexao: data.status_conexao,
+    conectadoEm: data.conectado_em,
+    telefoneConectado: data.telefone_conectado,
+    numeroRecusado,
   };
 }
 
@@ -2619,6 +2637,17 @@ export async function sincronizarConexaoInstancia(params: {
       await recusarNumeroDeOutroGrupo({ instanciaId: params.instanciaId, instanceName: params.instanceName });
       return recusa;
     }
+  } else if (await temRecusaDeNumero(supabase, params.instanciaId)) {
+    // O provedor diz "open" sem dizer qual número, e esta instância acabou de
+    // recusar um número de outra conta: pode ser o mesmo. Sem conferir, não
+    // marca conectado (o webhook segue ignorando as mensagens dele, e a
+    // varredura derruba a sessão).
+    return {
+      conectado: false,
+      estado: "indisponivel",
+      conectadoEm: null,
+      detalhe: "O provedor não informou qual número está conectado.",
+    };
   }
 
   // Chip diferente = reputação diferente: zera cota, bloqueio e reinicia a
@@ -2656,7 +2685,20 @@ export async function sincronizarConexaoInstancia(params: {
     await recusarNumeroDeOutroGrupo({ instanciaId: params.instanciaId, instanceName: params.instanceName });
     return recusa;
   }
-  await limparRecusaDeNumero(supabase, params.instanciaId);
+  if (erroAoConectar) {
+    // Outro erro (tempo esgotado, permissão): a conexão NÃO foi gravada.
+    // Dizer "conectado" e limpar a marca de recusa seria afirmar o que o
+    // banco não sabe.
+    console.error("[whatsapp] não consegui gravar a conexão:", erroAoConectar.message);
+    return {
+      conectado: Boolean(params.conectadoEmAtual),
+      estado: "indisponivel",
+      conectadoEm: params.conectadoEmAtual ? new Date(params.conectadoEmAtual) : null,
+      detalhe: erroAoConectar.message,
+    };
+  }
+  // Só um número CONFERIDO apaga a recusa anterior (0198).
+  if (estado.telefone) await limparRecusaDeNumero(supabase, params.instanciaId);
 
   if (reset) {
     console.warn(
@@ -2704,6 +2746,19 @@ export async function registrarEventoConexao(params: {
 
   if (!instancia) return;
 
+  // "open" sem o número (sem `wuid`/`owner` no evento): não dá para conferir
+  // se é de outra conta (0198). A sincronização ativa pergunta o número ao
+  // provedor e decide.
+  if (conectado && !params.telefone) {
+    await sincronizarConexaoInstancia({
+      instanciaId: instancia.id,
+      instanceName: params.instanceName,
+      conectadoEmAtual: instancia.conectado_em,
+      telefoneAtual: instancia.telefone_conectado,
+    });
+    return;
+  }
+
   // Um número, um grupo (0198): ver `sincronizarConexaoInstancia`.
   if (
     conectado &&
@@ -2747,6 +2802,11 @@ export async function registrarEventoConexao(params: {
 
   if (ehRecusaDeNumero(erroDoEvento)) {
     await recusarNumeroDeOutroGrupo({ instanciaId: instancia.id, instanceName: params.instanceName });
+    return;
+  }
+  if (erroDoEvento) {
+    // O evento não foi gravado: nada de liberar fila nem apagar a recusa.
+    console.error("[whatsapp] não consegui gravar o evento de conexão:", erroDoEvento.message);
     return;
   }
 
@@ -2797,7 +2857,7 @@ export async function registrarEventoConexao(params: {
 export async function recusarNumeroDeOutroGrupo(params: {
   instanciaId: string;
   instanceName: string;
-}): Promise<void> {
+}): Promise<{ derrubada: boolean }> {
   const supabase = createServiceClient();
   console.warn(`[whatsapp] ${params.instanceName}: número de outro grupo recusado (0198).`);
 
@@ -2817,24 +2877,81 @@ export async function recusarNumeroDeOutroGrupo(params: {
     .eq("id", params.instanciaId);
   if (error) console.error("[whatsapp] não consegui gravar a recusa do número:", error.message);
 
+  // A sessão que não caiu fica marcada: a varredura do cron
+  // (`rederrubarNumerosRecusados`) tenta de novo, e o webhook ignora as
+  // mensagens do número enquanto isso.
+  const agora = new Date().toISOString();
   const { error: erroDaMarca } = await supabase
     .from("corretor_whatsapp_instancias")
-    .update({ numero_recusado_em: new Date().toISOString() })
+    .update({ numero_recusado_em: agora, logout_pendente_em: saida.ok ? null : agora })
     .eq("id", params.instanciaId);
   if (erroDaMarca) console.error("[whatsapp] não consegui marcar a recusa do número:", erroDaMarca.message);
+
+  return { derrubada: saida.ok };
 }
 
-/** Conexão aceita: a marca de recusa anterior deixa de valer (0198). */
+/**
+ * Conexão aceita e conferida: a marca de recusa anterior deixa de valer, e
+ * a varredura para de derrubar a sessão (0198). Sem esta limpeza, o cron
+ * derrubaria o número novo e certo que o corretor acabou de conectar.
+ */
 async function limparRecusaDeNumero(
   supabase: ReturnType<typeof createServiceClient>,
   instanciaId: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("corretor_whatsapp_instancias")
-    .update({ numero_recusado_em: null })
+    .update({ numero_recusado_em: null, logout_pendente_em: null })
     .eq("id", instanciaId)
-    .not("numero_recusado_em", "is", null);
+    .or("numero_recusado_em.not.is.null,logout_pendente_em.not.is.null");
   if (error) console.error("[whatsapp] não consegui limpar a marca de recusa do número:", error.message);
+}
+
+/**
+ * A instância tem uma recusa de número em aberto (0198)? Erro de leitura (a
+ * coluna ainda não existe) é "não": antes da migration não há recusa.
+ */
+async function temRecusaDeNumero(
+  supabase: ReturnType<typeof createServiceClient>,
+  instanciaId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("numero_recusado_em")
+    .eq("id", instanciaId)
+    .maybeSingle();
+  if (error) {
+    console.error("[whatsapp] não consegui ler a recusa do número:", error.message);
+    return false;
+  }
+  return Boolean(data?.numero_recusado_em);
+}
+
+/**
+ * Mensagem chegando por uma instância que pode estar com o número de outra
+ * conta (0198): pode seguir para o atendimento?
+ *
+ * Só entra na conta quem precisa: instância com recusa em aberto (o logout
+ * pode ter falhado e a sessão continua viva) e instância "conectando" (o
+ * pareamento acabou de abrir, e as mensagens que estavam paradas chegam
+ * junto com a conexão, antes de alguém conferir o número). Para as duas, a
+ * sincronização ativa pergunta o número ao provedor: de outra conta, recusa
+ * de novo (e tenta derrubar a sessão outra vez) e a mensagem é ignorada.
+ * Instância conectada passa direto, sem custo.
+ */
+export async function mensagemDoNumeroPodeSeguir(instancia: InstanciaResolvida): Promise<boolean> {
+  if (!instancia.numeroRecusado && instancia.statusConexao !== "conectando") return true;
+
+  const estado = await sincronizarConexaoInstancia({
+    instanciaId: instancia.id,
+    instanceName: instancia.instanceName,
+    conectadoEmAtual: instancia.conectadoEm ?? null,
+    telefoneAtual: instancia.telefoneConectado ?? null,
+  });
+  if (estado.conectado) return true;
+  if (estado.estado === "numero_de_outro_grupo") return false;
+  // Sem confirmação do número: a recusa em aberto continua valendo.
+  return !instancia.numeroRecusado;
 }
 
 // ---------------------------------------------------------------------------

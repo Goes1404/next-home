@@ -1255,6 +1255,7 @@ export type Database = {
           grupo_id: string
           aquecimento_desde: string | null
           numero_recusado_em: string | null
+          logout_pendente_em: string | null
           aviso_queda_enviado_em: string | null
           bloqueado_ate: string | null
           conectado_em: string | null
@@ -1289,6 +1290,7 @@ export type Database = {
           grupo_id?: string
           aquecimento_desde?: string | null
           numero_recusado_em?: string | null
+          logout_pendente_em?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null
@@ -1323,6 +1325,7 @@ export type Database = {
           grupo_id?: string
           aquecimento_desde?: string | null
           numero_recusado_em?: string | null
+          logout_pendente_em?: string | null
           aviso_queda_enviado_em?: string | null
           bloqueado_ate?: string | null
           conectado_em?: string | null

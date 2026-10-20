@@ -64,8 +64,10 @@ describe("a recusa", () => {
     expect(corpo).toMatch(/conectado_em:\s*null/);
   });
 
-  it("deixa a marca para a tela explicar", () => {
-    expect(corpo).toMatch(/numero_recusado_em:\s*new Date\(\)\.toISOString\(\)/);
+  it("deixa a marca para a tela explicar, e a pendência quando o logout falhou", () => {
+    expect(corpo).toMatch(/const agora = new Date\(\)\.toISOString\(\)/);
+    expect(corpo).toMatch(/numero_recusado_em:\s*agora/);
+    expect(corpo).toMatch(/logout_pendente_em:\s*saida\.ok \? null : agora/);
   });
 });
 
@@ -75,11 +77,45 @@ describe("o pareamento pelo painel", () => {
     "export async function conectarWhatsapp(",
   );
 
+  it("'já conectado' não grava conectado direto: a sincronização confere o número antes", () => {
+    // O número no ar pode ser o mesmo que foi recusado (logout que falhou).
+    expect(corpo).not.toMatch(/status_conexao:\s*resultado\.jaConectado/);
+    expect(corpo).not.toMatch(/status_conexao:\s*"conectado"/);
+    const jaConectado = corpo.indexOf("if (resultado.jaConectado)");
+    expect(jaConectado).toBeGreaterThan(-1);
+    expect(corpo.indexOf("sincronizarConexaoInstancia(", jaConectado)).toBeGreaterThan(jaConectado);
+  });
+
   it("pergunta antes de pedir o código ao provedor e recusa com a frase", () => {
     const pergunta = corpo.indexOf("numeroEmOutroGrupo(");
     const provedor = corpo.indexOf("obterQrCodeInstancia(");
     expect(pergunta).toBeGreaterThan(-1);
     expect(provedor).toBeGreaterThan(pergunta);
     expect(corpo).toContain("FRASE_NUMERO_EM_OUTRO_GRUPO");
+  });
+});
+
+describe("a sessão recusada que não caiu", () => {
+  it("o webhook confere o número antes de deixar a mensagem seguir", () => {
+    const rota = ler("src/app/api/webhooks/whatsapp/route.ts");
+    const portao = rota.indexOf("mensagemDoNumeroPodeSeguir(instancia)");
+    expect(portao, "chama mensagemDoNumeroPodeSeguir").toBeGreaterThan(-1);
+    // Antes de marcar a sessão viva e antes de qualquer gravação de conversa.
+    expect(rota.indexOf("marcarSessaoViva(instancia.id)")).toBeGreaterThan(portao);
+    expect(rota.indexOf("obterOuCriarConversa(")).toBeGreaterThan(portao);
+    expect(rota.slice(portao, portao + 200)).toMatch(/return NextResponse\.json/);
+  });
+
+  it("o cron de disparo tenta derrubar de novo, antes das saídas antecipadas", () => {
+    const disparo = ler("src/lib/whatsapp/campaignDispatcher.ts");
+    const varredura = disparo.indexOf("await rederrubarNumerosRecusados()");
+    expect(varredura).toBeGreaterThan(-1);
+    expect(varredura).toBeLessThan(disparo.indexOf("await protegerNumerosQueCairam()"));
+  });
+
+  it("a conexão aceita apaga a pendência junto com a marca (senão o cron derrubaria o número certo)", () => {
+    const corpo = corpoDe(repositorio, "async function limparRecusaDeNumero(");
+    expect(corpo).toMatch(/logout_pendente_em:\s*null/);
+    expect(corpo).toMatch(/numero_recusado_em:\s*null/);
   });
 });

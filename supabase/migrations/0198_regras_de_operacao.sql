@@ -26,6 +26,23 @@
 --        servidor derrubou a conexão e carimbou, para a tela explicar mesmo
 --        quando quem descobriu foi o webhook. Estado do servidor: fica fora do
 --        grant de update da sessão (0175).
+--      - `logout_pendente_em`: a recusa não conseguiu derrubar a sessão na
+--        Evolution (provedor fora do ar, tempo esgotado). O cron de disparo
+--        tenta de novo a cada tique até conseguir; enquanto isso o webhook
+--        ignora as mensagens do número recusado.
+--      - Número PRESO a instância morta não prende o grupo novo: a instância
+--        de outro grupo só segura o número enquanto ele pode voltar a ela.
+--        Desconectada com o código 401 (o aparelho foi removido da conta no
+--        celular), a sessão só volta com um pareamento novo, e o número fica
+--        livre. É a saída de quem saiu de uma imobiliária sem o gestor
+--        desconectar: no celular, Aparelhos conectados → desconectar. Corretor
+--        DESATIVADO não solta o número de propósito: a sessão dele pode
+--        continuar viva na Evolution, e dois grupos receberiam as mesmas
+--        mensagens.
+--      - Antes de ligar a trava, a migration recusa se já houver o mesmo
+--        número em instâncias de dois grupos: o conflito precisa de uma
+--        decisão humana antes, senão a primeira reconexão derrubaria a sessão
+--        de um dos dois lados sem ninguém ter visto.
 --   2. Aceite dos termos de uso por usuário (L44): `aceites_de_termos`
 --      (quem, versão, quando). O corretor grava e lê o próprio aceite; o
 --      gestor lê os da equipe. Sem update nem delete: aceite não se desfaz.
@@ -43,6 +60,8 @@
 --   drop function if exists public.numero_whatsapp_em_outro_grupo(uuid, text);
 --   drop function if exists public.chave_do_numero_whatsapp(text);
 --   alter table public.corretor_whatsapp_instancias drop column if exists numero_recusado_em;
+--   alter table public.corretor_whatsapp_instancias drop column if exists logout_pendente_em;
+--   drop function if exists public.instancia_prende_o_numero(text, integer);
 --   drop table if exists public.aceites_de_termos;
 
 begin;
@@ -75,7 +94,50 @@ alter table public.corretor_whatsapp_instancias
   add column if not exists numero_recusado_em timestamptz;
 
 comment on column public.corretor_whatsapp_instancias.numero_recusado_em is
-  'O número pareou no WhatsApp mas já pertence a outro grupo: o servidor derrubou a conexão (0198). Apagado na próxima conexão aceita.';
+  'O número pareou no WhatsApp mas já pertence a outro grupo: o servidor derrubou a conexão (0198). Apagado na próxima conexão aceita e conferida.';
+
+alter table public.corretor_whatsapp_instancias
+  add column if not exists logout_pendente_em timestamptz;
+
+comment on column public.corretor_whatsapp_instancias.logout_pendente_em is
+  'A recusa do número (0198) não conseguiu derrubar a sessão na Evolution: o cron de disparo tenta de novo até conseguir. Apagado quando a sessão cai ou quando uma conexão conferida é aceita.';
+
+-- Uma instância segura o número enquanto ele pode voltar a ela sem um
+-- pareamento novo. Desconectada com 401 (aparelho removido da conta no
+-- celular), não pode: o número está livre para outro grupo.
+create or replace function public.instancia_prende_o_numero(p_status text, p_motivo integer)
+returns boolean
+language sql
+immutable
+set search_path = public
+as $$
+  select not (coalesce(p_status, '') = 'desconectado' and p_motivo is not distinct from 401)
+$$;
+
+comment on function public.instancia_prende_o_numero(text, integer) is
+  'A instância ainda segura o número de WhatsApp (0198)? Não quando foi desconectada com o código 401 (aparelho removido da conta).';
+
+-- Conflito que já existe não é resolvido em silêncio: lista e para.
+do $$
+declare
+  v_conflitos integer;
+begin
+  select count(*) into v_conflitos
+    from (
+      select public.chave_do_numero_whatsapp(i.telefone_conectado) as chave
+        from public.corretor_whatsapp_instancias i
+       where i.telefone_conectado is not null
+         and public.chave_do_numero_whatsapp(i.telefone_conectado) is not null
+         and public.instancia_prende_o_numero(i.status_conexao, i.motivo_queda_codigo)
+       group by 1
+      having count(distinct i.grupo_id) > 1
+    ) repetidos;
+  if v_conflitos > 0 then
+    raise exception 'numero_em_dois_grupos: % número(s) de WhatsApp já estão em instâncias de mais de um grupo', v_conflitos
+      using hint = 'Liste com: select chave_do_numero_whatsapp(telefone_conectado), grupo_id, id, status_conexao from corretor_whatsapp_instancias where telefone_conectado is not null order by 1. Desconecte o número de um dos grupos antes de aplicar a 0198.';
+  end if;
+end
+$$;
 
 -- O gatilho lê instâncias de TODOS os grupos (é a regra): `security
 -- definer`, sem EXECUTE para ninguém. Compara pelo grupo da própria linha
@@ -101,6 +163,7 @@ begin
        and i.grupo_id <> new.grupo_id
        and i.telefone_conectado is not null
        and public.chave_do_numero_whatsapp(i.telefone_conectado) = v_chave
+       and public.instancia_prende_o_numero(i.status_conexao, i.motivo_queda_codigo)
   ) then
     raise exception 'numero_em_outro_grupo'
       using detail ='Este número de WhatsApp já está ligado a outra conta da plataforma.';
@@ -135,6 +198,7 @@ as $$
        and i.telefone_conectado is not null
        and public.chave_do_numero_whatsapp(p_telefone) is not null
        and public.chave_do_numero_whatsapp(i.telefone_conectado) = public.chave_do_numero_whatsapp(p_telefone)
+       and public.instancia_prende_o_numero(i.status_conexao, i.motivo_queda_codigo)
   )
 $$;
 
