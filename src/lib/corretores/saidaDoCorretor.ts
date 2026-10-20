@@ -45,3 +45,31 @@ export function fraseDoDesfecho(movidos: number, semDestino: number): string {
     ? passou
     : `${passou} ${leads(semDestino)} ${semDestino === 1 ? "ficou" : "ficaram"} sem destino: não há corretor ativo que atenda a região.`;
 }
+
+/**
+ * Abre o painel de saída? A conta é a da `resumoDaSaida`, que inclui os
+ * leads ARQUIVADOS: a contagem da lista de Contas não os vê, e o corretor
+ * com só arquivados sairia sem a divisão (os da imobiliária ficariam com
+ * um inativo e voltariam a ele quando o cliente respondesse).
+ */
+export function precisaDoPainelDeSaida(d: DivisaoDaCarteira): boolean {
+  return d.doCorretor + d.daImobiliaria > 0;
+}
+
+export type PassoDepoisDaDivisao = "desativar" | "escolher_restante" | "pronto";
+
+/**
+ * Depois de passar os leads da imobiliária: lead que ficou sem destino (a
+ * roleta não achou ninguém que atenda a região) segura a desativação, e o
+ * gestor escolhe um corretor para o restante. Quem já saiu não é desativado
+ * de novo.
+ */
+export function passoDepoisDaDivisao(semDestino: number, jaDesativado: boolean): PassoDepoisDaDivisao {
+  if (semDestino > 0) return "escolher_restante";
+  return jaDesativado ? "pronto" : "desativar";
+}
+
+/** O que fazer com os leads que a roleta não conseguiu passar. */
+export function fraseDoRestante(nome: string, semDestino: number): string {
+  return `${leads(semDestino)} da imobiliária ${semDestino === 1 ? "ficou" : "ficaram"} com ${nome}: ninguém ativo atende a região. Escolha um corretor para ${semDestino === 1 ? "ele" : "eles"} e confirme de novo.`;
+}

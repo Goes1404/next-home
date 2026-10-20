@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import type { CorretorAdmin } from "@/lib/corretorSessao";
-import { Check, Copy, EyeOff, KeyRound, Mail, ShieldCheck, TriangleAlert, UserPlus } from "lucide-react";
+import { Check, Copy, Download, EyeOff, KeyRound, Mail, ShieldCheck, TriangleAlert, UserPlus } from "lucide-react";
 import {
   acoesDeAcesso,
   MENSAGEM_ENDERECO_PROVISORIO,
@@ -23,7 +23,7 @@ import {
 } from "../acoes";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { copiarTexto } from "@/lib/ui/copiarTexto";
-import type { DivisaoDaCarteira } from "@/lib/corretores/saidaDoCorretor";
+import { precisaDoPainelDeSaida, type DivisaoDaCarteira } from "@/lib/corretores/saidaDoCorretor";
 import { SaidaDoCorretor } from "./SaidaDoCorretor";
 
 /**
@@ -267,27 +267,54 @@ function LinhaCorretor({
      *
      * Com leads, a saída abre o painel que divide a carteira (fase 5,
      * 0200): o que veio da imobiliária é redistribuído ali mesmo, e o que
-     * ele trouxe vira a planilha das fichas que ele leva.
+     * ele trouxe vira a planilha das fichas que ele leva. A contagem é a da
+     * saída, que inclui os ARQUIVADOS: a da lista não os vê, e quem só tem
+     * arquivados sairia sem a divisão.
      */
-    if (corretor.ativo && corretor.leads > 0) {
+    if (corretor.ativo) {
       iniciar(async () => {
         try {
           const r = await resumoDaSaida(corretor.id);
           if (r.erro !== undefined) return aoAvisar(r.erro, true);
-          setSaida({ doCorretor: r.doCorretor, daImobiliaria: r.daImobiliaria });
+          const divisao = { doCorretor: r.doCorretor, daImobiliaria: r.daImobiliaria };
+          if (precisaDoPainelDeSaida(divisao)) return setSaida(divisao);
+          if (!confirm(`Desativar ${corretor.nome}?\n\nEle sai da roleta e não recebe mais leads.`)) return;
+          const d = await alternarAtivoCorretor(corretor.id, false);
+          aoAvisar(d.erro ?? d.ok ?? "", Boolean(d.erro));
         } catch (e) {
           aoAvisar(fraseDaFalha(e), true);
         }
       });
       return;
     }
-    if (corretor.ativo && !confirm(`Desativar ${corretor.nome}?\n\nEle sai da roleta e não recebe mais leads.`)) return;
 
     iniciar(async () => {
-      const r = await alternarAtivoCorretor(corretor.id, !corretor.ativo);
-      aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
+      try {
+        const r = await alternarAtivoCorretor(corretor.id, true);
+        aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
+      } catch (e) {
+        aoAvisar(fraseDaFalha(e), true);
+      }
     });
   };
+
+  /**
+   * Quem já saiu (inclusive antes da fase 5) ainda tem a carteira: o gestor
+   * baixa as fichas para entregar a ele e passa os leads da imobiliária que
+   * ficaram, sem precisar reativar a conta.
+   */
+  const abrirSaida = () =>
+    iniciar(async () => {
+      try {
+        const r = await resumoDaSaida(corretor.id);
+        if (r.erro !== undefined) return aoAvisar(r.erro, true);
+        const divisao = { doCorretor: r.doCorretor, daImobiliaria: r.daImobiliaria };
+        if (!precisaDoPainelDeSaida(divisao)) return aoAvisar(`${corretor.nome} não tem leads na carteira.`, false);
+        setSaida(divisao);
+      } catch (e) {
+        aoAvisar(fraseDaFalha(e), true);
+      }
+    });
 
   const BOTAO =
     "text-fluid-xs border-linha-forte text-corpo hover:bg-vidro flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 disabled:opacity-60";
@@ -429,6 +456,7 @@ function LinhaCorretor({
           corretor={{ id: corretor.id, nome: corretor.nome }}
           divisao={saida}
           equipe={equipe}
+          jaDesativado={!corretor.ativo}
           aoFechar={() => setSaida(null)}
           aoAvisar={aoAvisar}
         />
@@ -449,6 +477,11 @@ function LinhaCorretor({
         >
           <EyeOff className="h-3.5 w-3.5" /> {corretor.oculta ? "Mostrar de novo" : "Ocultar conta"}
         </button>
+        {!corretor.ativo && !saida && (
+          <button type="button" onClick={abrirSaida} disabled={pendente} className={BOTAO}>
+            <Download className="h-3.5 w-3.5" /> Fichas e leads de quem saiu
+          </button>
+        )}
         {!corretor.temLogin && corretor.oculta && (
           <button
             type="button"

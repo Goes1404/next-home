@@ -545,7 +545,7 @@ export async function resumoDaSaida(
 export async function devolverLeadsDaImobiliaria(
   corretorId: string,
   destinoId: string | null,
-): Promise<ResultadoAdmin & { movidos?: number }> {
+): Promise<ResultadoAdmin & { movidos?: number; semDestino?: number }> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
 
@@ -564,7 +564,12 @@ export async function devolverLeadsDaImobiliaria(
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/pessoas");
-  return { ok: fraseDoDesfecho(r.movidos ?? 0, r.sem_destino ?? 0), movidos: r.movidos ?? 0 };
+  return {
+    ok: fraseDoDesfecho(r.movidos ?? 0, r.sem_destino ?? 0),
+    movidos: r.movidos ?? 0,
+    // Quem chama segura a desativação enquanto sobrar lead sem destino.
+    semDestino: r.sem_destino ?? 0,
+  };
 }
 
 /**
