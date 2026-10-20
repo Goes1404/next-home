@@ -213,3 +213,23 @@ describe("recusas que passavam batido (06/10/2026)", () => {
     }
   });
 });
+
+/*
+ * PENDÊNCIA da fase 4 (revisão de 20/10/2026), registrada e não corrigida:
+ * o que desarma a recusa ("não quero esta região" é preferência) só conhece
+ * as praças da Next Home (alphaville, barueri, osasco, aldeia, tambore). No
+ * grupo B, com região Campinas, a frase abaixo vira desinteresse: o lead pode
+ * ganhar "não contatar" e sair das listas. Consertar pede passar a região do
+ * grupo pelo planner (jogada.ts, classificarRecusa.ts), que a fase enxuta não
+ * mexeu. `it.fails` passa enquanto o defeito existe; quando alguém consertar,
+ * ele falha e pede para virar `it` normal.
+ */
+describe("pendência: recusa com lugar de outro grupo", () => {
+  it.fails("no grupo B, 'não tenho interesse em Valinhos, prefiro Campinas' é preferência, não recusa", () => {
+    expect(detectarRecusa("não tenho interesse em Valinhos, prefiro Campinas")).toBeNull();
+  });
+
+  it("com as praças da Next Home a mesma frase já é preferência", () => {
+    expect(detectarRecusa("não tenho interesse em Osasco, prefiro Barueri")).toBeNull();
+  });
+});

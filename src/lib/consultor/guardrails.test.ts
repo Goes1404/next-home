@@ -188,4 +188,22 @@ describe("montarPromptDoConsultor", () => {
   it("o pedido do corretor fica por ÚLTIMO", () => {
     expect(prompt.trim().endsWith("quem serve pra renda de 8 mil?")).toBe(true);
   });
+
+  // Revisão da fase 4: o consultor se apresentava como "da Next Home" para o
+  // corretor de qualquer grupo.
+  it("se apresenta com o nome da casa do grupo, nunca da Next Home de outro grupo", () => {
+    const base = {
+      blocoCatalogo: "CATÁLOGO COMPLETO (2 imóveis)…",
+      blocoCredito: "PARÂMETROS DE CRÉDITO…",
+      blocoObjecoes: "",
+      historico: [],
+      pedido: "oi",
+    };
+    const doGrupo = montarPromptDoConsultor({ ...base, nomeDaCasa: "Horizonte" });
+    expect(doGrupo).toContain("Você é o consultor imobiliário da Horizonte.");
+    expect(doGrupo).not.toContain("Next Home");
+    expect(montarPromptDoConsultor({ ...base, nomeDaCasa: null })).toContain(
+      "Você é o consultor imobiliário da imobiliária.",
+    );
+  });
 });

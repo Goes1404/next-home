@@ -9,6 +9,8 @@ import {
   removerIndicacaoPrematura,
 } from "./focoDaConversa";
 import { construirPromptSistema, type ContextoAtendimento } from "./aiAgent";
+import { casaDoGrupo } from "./casa";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 
 /**
  * Os nomes daqui são os do catálogo REAL de produção, feios de propósito:
@@ -581,7 +583,7 @@ describe("o nome da casa de cada grupo não vira foco", () => {
       catalogo: [catalogo[0]],
       mensagemAtual: "tem apartamento de dois dormitórios?",
       historico,
-      nomeDaCasa: "Oásis Imóveis",
+      casa: "Oásis Imóveis",
     });
     expect(foco).toBeNull();
     expect(imoveisCitados("aqui é a Ana, da Oásis Imóveis", catalogo, "Oásis Imóveis")).toEqual([]);
@@ -685,5 +687,63 @@ describe("indicação antes da hora", () => {
   it("o imóvel que ele trouxe pode ser citado", () => {
     const t = "O Manacá Barueri fica no Jardim Iracema. Você prefere pronto ou na planta?";
     expect(removerIndicacaoPrematura(t, catalogo, new Set(["more-na-aldeia-de-barueri-mac238"])).texto).toBe(t);
+  });
+});
+
+/*
+ * Revisão da fase 4 (20/10/2026): a REGIÃO configurada do grupo também sai do
+ * índice. "Campinas" num grupo com o "Vista Campinas" ("vista" é comum, então
+ * "campinas" seria o token do imóvel) travava o foco pela pergunta da própria
+ * IA e pela resposta do cliente.
+ */
+describe("a região configurada do grupo não vira foco", () => {
+  const casa = casaDoGrupo(
+    { nome: "Horizonte", ia_nome_da_casa: null, ia_nome_assistente: null, ia_regiao: "Campinas", ia_tom: null },
+    "00000000-0000-0000-0000-0000000000b2",
+  );
+  const catalogo = [
+    imovel("Vista Campinas", "vista-campinas", { cidade: "Campinas" }),
+    imovel("Solar das Palmeiras", "solar-das-palmeiras", { cidade: "Campinas" }),
+  ];
+  const historico = [
+    { remetente: "bot" as const, texto: "Oi! Aqui é a Ana, da Horizonte. Em qual região de Campinas você procura?" },
+  ];
+
+  it("a pergunta da IA e a resposta 'Campinas' não travam o foco", () => {
+    expect(detectarFoco({ catalogo, mensagemAtual: "Campinas mesmo", historico, casa })).toBeNull();
+    expect(imoveisCitados("em qual região de Campinas você procura?", catalogo, casa)).toEqual([]);
+  });
+
+  it("sem a região do grupo, a mesma resposta viraria foco (é o que a guarda evita)", () => {
+    expect(
+      detectarFoco({ catalogo, mensagemAtual: "Campinas mesmo", historico, casa: "Horizonte" })?.imovel.slug,
+    ).toBe("vista-campinas");
+  });
+
+  it("o nome inteiro do imóvel continua reconhecido", () => {
+    expect(detectarFoco({ catalogo, mensagemAtual: "gostei do Vista Campinas", casa })?.imovel.slug).toBe(
+      "vista-campinas",
+    );
+  });
+});
+
+/*
+ * No grupo 1, a mensagem pronta do site diz "Next Home" mesmo que o gestor
+ * configure outro nome para a assistente: a marca do site continua fora do
+ * índice, senão todo lead do site travaria o foco no Breeze Home Clube.
+ */
+describe("no grupo 1 com outro nome configurado, a marca do site segue fora do índice", () => {
+  const casa = casaDoGrupo(
+    { nome: "Next Home", ia_nome_da_casa: "NH Imóveis", ia_nome_assistente: null, ia_regiao: null, ia_tom: null },
+    GRUPO_NEXT_HOME_ID,
+  );
+  const catalogo = [imovel("Breeze Home Clube", "breeze-home-clube-bhc741")];
+
+  it("'Vim pelo site da Next Home' não vira foco no Breeze", () => {
+    expect(detectarFoco({ catalogo, mensagemAtual: "Olá! Vim pelo site da Next Home.", casa })).toBeNull();
+  });
+
+  it("o nome configurado também não vira foco", () => {
+    expect(imoveisCitados("aqui é a Lia, da NH Imóveis", catalogo, casa)).toEqual([]);
   });
 });

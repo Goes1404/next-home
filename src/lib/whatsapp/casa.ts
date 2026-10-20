@@ -139,6 +139,29 @@ export function casaDoGrupo(linha: LinhaDaCasa | null, grupoId: string): Identid
   };
 }
 
+/**
+ * O que a tela "Minha IA" do corretor sabe do nome e do tom fixados pelo
+ * gestor, a partir da leitura de `grupos`.
+ *
+ * Só a coluna ausente (42703, banco antes da 0199) é tratada como "nada
+ * fixado". Qualquer outro erro vira `naoConferido`: esconder o aviso faria o
+ * corretor mudar o nome achando que vale, enquanto a IA usa o do gestor
+ * (revisão da fase 4, 20/10/2026).
+ */
+export function fixadoPeloGrupoDaLeitura(leitura: {
+  data: { ia_nome_assistente: string | null; ia_tom: string | null } | null;
+  error: { code?: string; message: string } | null;
+}): { nomeAssistente: string | null; tom: TomVozBot | null; naoConferido: boolean } {
+  if (leitura.error) {
+    return { nomeAssistente: null, tom: null, naoConferido: leitura.error.code !== "42703" };
+  }
+  return {
+    nomeAssistente: limparCampoDaCasa(leitura.data?.ia_nome_assistente, TAMANHO_MAXIMO.nomeAssistente),
+    tom: tomValido(leitura.data?.ia_tom),
+    naoConferido: false,
+  };
+}
+
 /** Nome e tom que valem nesta conversa (precedência grupo × instância). */
 export function assistenteDaConversa(
   instancia: { nomeAssistente: string; tomVoz: string },
@@ -158,6 +181,30 @@ export function apresentacaoDaCasa(casa: IdentidadeDaCasa): string {
 /** "em qual região de Barueri" — o começo da pergunta de região do funil. */
 export function perguntaDeRegiao(casa: IdentidadeDaCasa): string {
   return casa.regiaoDaPergunta ? `em qual região de ${casa.regiaoDaPergunta}` : "em qual cidade ou bairro";
+}
+
+/**
+ * Os exemplos das regras 13b (piso), 22 (alternativa) e do pitch.
+ *
+ * No grupo 1 são imóveis e lugares reais da Next Home (Terra Alta, Viva,
+ * Vitra, Empresarial), medidos e mantidos letra por letra. Em outro grupo,
+ * citar o Terra Alta ou o piso dele como exemplo convida o modelo a falar de
+ * um imóvel que esse grupo não tem: o exemplo vira molde, sem nome nem número.
+ */
+export function exemplosDasRegras(casa: IdentidadeDaCasa): { piso: string; alternativa: string; pitch: string } {
+  if (casa.exemplosDaNextHome) {
+    return {
+      piso: '"o Terra Alta começa em R$ 470.000"',
+      alternativa: '"o Terra Alta é de 1 dormitório, não fecha com o que você precisa — o Viva tem 3, quer ver?"',
+      pitch: '"para quem trabalha no Empresarial, o Vitra economiza uns 40 minutos de trânsito por dia"',
+    };
+  }
+  return {
+    piso: '"o [nome do imóvel] começa em [o valor de \'a partir de\' da ficha]"',
+    alternativa:
+      '"o [imóvel que ele recusou] é de 1 dormitório, não fecha com o que você precisa — o [outro imóvel da ficha] tem 3, quer ver?"',
+    pitch: '"para quem trabalha no centro, o [nome do imóvel] fica a poucos minutos do trabalho"',
+  };
 }
 
 /** O exemplo da regra 23 (imóvel de outra imobiliária). */

@@ -68,3 +68,15 @@ describe("normalizarSaidaDoDossie", () => {
     expect(d({ objecoesIdentificadas: ["preco"] }).objecoesIdentificadas).toEqual(["preco"]);
   });
 });
+
+/*
+ * Revisão da fase 4 (20/10/2026): o mesmo extrator serve a todos os grupos.
+ * O texto dizia "da Next Home" e dava "Centro de Barueri" e "Alphaville" como
+ * exemplo de região, puxando a extração do grupo B para lugares da Next Home.
+ */
+describe("o prompt do dossiê não carrega a identidade da Next Home", () => {
+  it("sem o nome da casa nem lugares da Next Home como exemplo", async () => {
+    const { PROMPT_DOSSIE } = await import("./dossierExtractor");
+    expect(PROMPT_DOSSIE).not.toMatch(/Next Home|Barueri|Alphaville|Tupanci/);
+  });
+});

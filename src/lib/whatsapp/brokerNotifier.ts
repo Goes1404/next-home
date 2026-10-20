@@ -13,6 +13,12 @@ export interface ParametrosNotificacaoCorretor {
   nomeCliente: string;
   telefoneCliente: string;
   empreendimentoNome?: string;
+  /**
+   * A região da casa do grupo (`casa.ts`), para quando a conversa ainda não
+   * citou imóvel. Era "Imóveis em Alphaville" fixo, para o corretor de
+   * qualquer grupo (revisão da fase 4, 20/10/2026).
+   */
+  regiaoDaCasa?: string | null;
   temperaturaScore: number;
   resumoDossie: string;
   motivoAlerta:
@@ -39,10 +45,12 @@ export function formatarAlertaCorretor(
     nomeCliente,
     telefoneCliente,
     empreendimentoNome,
+    regiaoDaCasa,
     temperaturaScore,
     resumoDossie,
     motivoAlerta,
   } = params;
+  const interesse = empreendimentoNome || (regiaoDaCasa?.trim() ? `Imóveis em ${regiaoDaCasa.trim()}` : "Ainda não definido");
 
   const emojiAlerta =
     motivoAlerta === "visita_confirmada"
@@ -73,7 +81,7 @@ Olá, ${nomeCorretor}! A sua assistente virtual acabou de qualificar um cliente 
 
 👤 *Cliente:* ${nomeCliente}
 📱 *WhatsApp:* https://wa.me/${telefoneCliente.replace(/\D/g, "")}
-🏢 *Interesse Principal:* ${empreendimentoNome || "Imóveis em Alphaville"}
+🏢 *Interesse Principal:* ${interesse}
 
 📋 *Resumo do Dossiê:*
 ${resumoDossie}

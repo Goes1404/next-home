@@ -14,6 +14,7 @@ import {
   listarConversasDoConsultor,
 } from "@/lib/consultor/repositorio";
 import { turnoDoConsultor } from "@/lib/consultor/turno";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { VERSAO_DO_PROMPT } from "@/lib/consultor/prompt";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import {
@@ -106,9 +107,11 @@ export async function enviarMensagemDoConsultor(params: {
   // defeito que o dossiê teve até alguém reparar na duplicata.
   const historico = (anterior?.mensagens ?? []).slice(0, -1);
 
-  const [catalogo, credito] = await Promise.all([
+  const [catalogo, credito, casa] = await Promise.all([
     getEmpreendimentosDoPainel(),
     getParametrosCredito(corretor.grupoId),
+    // O consultor se apresenta com o nome da casa do grupo do corretor.
+    lerCasaDoGrupo(corretor.grupoId),
   ]);
   // O consultor recomenda o que dá para vender: rascunho fica de fora.
   const publicados = catalogo.filter((e) => e.publicado !== false);
@@ -125,6 +128,7 @@ export async function enviarMensagemDoConsultor(params: {
     catalogo: publicados,
     credito,
     exemplos,
+    nomeDaCasa: casa.nomeDaCasa,
   });
 
   await gravarMensagemDoConsultor({

@@ -50,6 +50,8 @@ describe("o prompt de outro grupo", () => {
   it("não fala de Next Home, Barueri nem Alphaville", () => {
     const prompt = construirPromptSistema({ ...base, casa });
     expect(prompt).not.toMatch(/Next Home|Barueri|Alphaville|Tambor|Parque Shopping/);
+    // Imóveis, lugares e o piso da Next Home usados como exemplo nas regras.
+    expect(prompt).not.toMatch(/Terra Alta|\bViva\b|Vitra|Empresarial|470\.000|Dom Barueri|Manac/);
     expect(prompt).toContain("consultora de imóveis de alto padrão da Horizonte em Campinas,");
     expect(prompt).toContain('"em qual região de Campinas você procura?"');
     expect(prompt).toContain("apresentação digital da Horizonte.");

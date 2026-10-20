@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { elegivel, noRecorte, type FiltroLeadsCampanha, type RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
 import { montarFilaCampanha } from "./campaignQueue";
+import { lerCasaDoGrupo } from "./casaDoGrupo";
 import { idsProtegidosDeNovaLista, leadsDoCorretor } from "./publicoDaLista";
 import type { ContextoTemplate } from "./listaDeTransmissao";
 
@@ -36,7 +37,7 @@ export async function alimentarListasVivas(agora: Date = new Date()): Promise<nu
   const { data: vivas } = await supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, corretor_id, criterio, mensagem_base, mensagem_base_b, variante_vencedora, ignorar_janela, contexto_template, status, total_leads, empreendimento:empreendimentos(nome)",
+      "id, corretor_id, grupo_id, criterio, mensagem_base, mensagem_base_b, variante_vencedora, ignorar_janela, contexto_template, status, total_leads, empreendimento:empreendimentos(nome)",
     )
     .eq("viva", true)
     .gt("viva_ate", agora.toISOString())
@@ -95,6 +96,8 @@ export async function alimentarListasVivas(agora: Date = new Date()): Promise<nu
         mensagemBaseB: decidido ? null : c.mensagem_base_b,
         empreendimentoNome: imovel?.nome,
         contexto: c.contexto_template as ContextoTemplate | null,
+        // A reserva de {imovel} com a região do grupo da lista, nunca a de outro.
+        regiaoDaCasa: (await lerCasaDoGrupo(c.grupo_id)).regiao,
         ignorarJanela: c.ignorar_janela,
         iniciarEm: ultimo?.agendado_para ?? agora,
       });

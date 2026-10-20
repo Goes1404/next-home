@@ -66,6 +66,12 @@ export function aplicarTemplate(params: {
    * criação da lista (`contextoDaLista`). `{horarios}` fica para o envio.
    */
   contexto?: ContextoTemplate | null;
+  /**
+   * A região da casa do grupo (`casa.ts`), para a reserva de `{imovel}` em
+   * lista sem imóvel. Ausente: a reserva sai sem lugar, nunca com a praça de
+   * outro grupo.
+   */
+  regiaoDaCasa?: string | null;
 }): string {
   const comContexto = params.contexto
     ? aplicarContexto(params.mensagemBase, params.contexto)
@@ -74,8 +80,18 @@ export function aplicarTemplate(params: {
   // junto com a pontuação que só existia por causa dele (`trocarNome`).
   return trocarNome(comContexto, primeiroNomeUtil(params.nomeLead)).replace(
     /{imovel}/gi,
-    params.empreendimentoNome || "nossos lançamentos em Alphaville",
+    params.empreendimentoNome || reservaDoImovel(params.regiaoDaCasa),
   );
+}
+
+/**
+ * O que `{imovel}` vira numa lista sem imóvel. Era "nossos lançamentos em
+ * Alphaville" fixo, e o cliente de qualquer grupo recebia Alphaville (revisão
+ * da fase 4, 20/10/2026): agora é a região do grupo, ou nenhuma.
+ */
+export function reservaDoImovel(regiaoDaCasa: string | null | undefined): string {
+  const regiao = regiaoDaCasa?.trim();
+  return regiao ? `nossos lançamentos em ${regiao}` : "nossos lançamentos";
 }
 
 export type ResultadoDaVariacao =
@@ -249,6 +265,8 @@ export function montarFilaCampanha(params: {
   comecarVarianteEm?: Variante;
   /** Variáveis do imóvel e do corretor (`contextoDaLista`). */
   contexto?: ContextoTemplate | null;
+  /** A região da casa do grupo, para a reserva de `{imovel}` (`aplicarTemplate`). */
+  regiaoDaCasa?: string | null;
 }): ItemFilaCampanha[] {
   const { campanhaId, leads, mensagemBase, empreendimentoNome } = params;
   const ignorarJanela = params.ignorarJanela ?? false;
@@ -324,6 +342,7 @@ export function montarFilaCampanha(params: {
         nomeLead: lead.nome,
         empreendimentoNome,
         contexto: params.contexto,
+        regiaoDaCasa: params.regiaoDaCasa,
       }),
       // A variação por IA acontece no envio (ver `variarMensagemComIA`).
       // Nasce false porque, neste instante, ela de fato ainda não ocorreu.

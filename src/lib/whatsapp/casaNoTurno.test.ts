@@ -31,10 +31,14 @@ function chamadas(nome: string): string[] {
 
 describe("o turno usa a casa do grupo no índice de foco", () => {
   for (const nome of ["imoveisCitados", "palpiteDeNome", "removerIndicacaoPrematura", "catalogoParaAtendimento"]) {
-    it(`${nome} recebe o nome da casa`, () => {
+    it(`${nome} recebe a casa do grupo`, () => {
       const lista = chamadas(nome);
       expect(lista.length).toBeGreaterThan(0);
-      for (const chamada of lista) expect(chamada).toContain("casa.nomeDaCasa");
+      for (const chamada of lista) {
+        // A casa inteira, não só o nome: a região também sai do índice.
+        expect(chamada).toMatch(/[,{(]\s*casa\s*[,)}]/);
+        expect(chamada).not.toContain("casa.nomeDaCasa");
+      }
     });
   }
 

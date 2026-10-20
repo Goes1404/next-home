@@ -77,6 +77,23 @@ describe("Nome do lead em mensagem de campanha", () => {
     // Sem nome útil, o marcador sai com a vírgula que só existia por ele.
     // Antes entrava "Tudo bem?" no lugar, e "Oi {nome}, tudo bem?" virava
     // "Oi Tudo bem?, tudo bem?" (08/10/2026).
-    expect(texto).toBe("Olá. Temos novidades em nossos lançamentos em Alphaville.");
+    // Sem a região do grupo, a reserva de {imovel} sai sem lugar.
+    expect(texto).toBe("Olá. Temos novidades em nossos lançamentos.");
+  });
+
+  /*
+   * Revisão da fase 4 (20/10/2026): a reserva de {imovel} era "nossos
+   * lançamentos em Alphaville" fixo, e o cliente do grupo B recebia
+   * Alphaville. Agora é a região do grupo da lista, ou nenhuma.
+   */
+  it("a reserva de {imovel} usa a região do grupo, nunca Alphaville fixo", () => {
+    const base = { mensagemBase: "Oi {nome}, temos novidades em {imovel}.", nomeLead: "Fernanda" };
+    expect(aplicarTemplate({ ...base, regiaoDaCasa: "Campinas" })).toBe(
+      "Oi Fernanda, temos novidades em nossos lançamentos em Campinas.",
+    );
+    expect(aplicarTemplate({ ...base, regiaoDaCasa: null })).not.toMatch(/Alphaville/);
+    expect(aplicarTemplate({ ...base, regiaoDaCasa: "Alphaville" })).toBe(
+      "Oi Fernanda, temos novidades em nossos lançamentos em Alphaville.",
+    );
   });
 });

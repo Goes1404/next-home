@@ -273,7 +273,7 @@ export async function executarTurnoDeAtendimento(
     historico: historicoAnterior,
     dossie: pedido.dossie,
     tetoPelaRenda: teto?.origem === "renda" ? teto.valor : null,
-    nomeDaCasa: casa.nomeDaCasa,
+    casa,
   });
 
   /*
@@ -341,7 +341,7 @@ export async function executarTurnoDeAtendimento(
   const falasDoCliente = historicoAnterior.filter((m) => m.remetente === "cliente").map((m) => m.texto);
   const imoveisDoCliente = new Set<string>([
     ...(foco ? [foco.slug] : []),
-    ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo, casa.nomeDaCasa)),
+    ...[...falasDoCliente, textoDaVez].flatMap((t) => imoveisCitados(t, pedido.catalogo, casa)),
     ...(estagio?.alternativa ? [estagio.alternativa.slug] : []),
   ]);
   const primeiraDoCliente = historicoAnterior.findIndex((m) => m.remetente === "cliente");
@@ -349,7 +349,7 @@ export async function executarTurnoDeAtendimento(
     primeiraDoCliente >= 0 &&
     historicoAnterior
       .slice(primeiraDoCliente)
-      .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo, casa.nomeDaCasa).length > 0);
+      .some((m) => m.remetente === "bot" && imoveisCitados(m.texto, pedido.catalogo, casa).length > 0);
 
   const imovelEmFoco = foco ? (catalogoDoPrompt.find((e) => e.slug === foco.slug) ?? null) : null;
 
@@ -380,7 +380,7 @@ export async function executarTurnoDeAtendimento(
     horasDesdeAUltimaFala: pedido.horasDesdeAUltimaFala,
     jaIndicouImovel,
     focoDoCliente: foco
-      ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo, casa.nomeDaCasa).includes(foco.slug))
+      ? [...falasDoCliente, textoDaVez].some((t) => imoveisCitados(t, pedido.catalogo, casa).includes(foco.slug))
       : false,
     ...(classificacaoDeRecusa ? { recusa: classificacaoDeRecusa.recusa } : {}),
     recusasAnterioresExtra: recusasPelaIA,
@@ -410,7 +410,7 @@ export async function executarTurnoDeAtendimento(
    * Nome de imóvel escrito errado ("vrita" = Vitra): sem foco, pergunta se é
    * esse, em vez de dizer que não tem (ver `palpiteDeNome`).
    */
-  const palpite = foco ? null : palpiteDeNome(textoDaVez, pedido.catalogo, casa.nomeDaCasa);
+  const palpite = foco ? null : palpiteDeNome(textoDaVez, pedido.catalogo, casa);
   const blocoPalpite = palpite
     ? `ATENÇÃO: ele escreveu "${palpite.escrito}", que parece ser o ${palpite.nome}, do nosso catálogo. Antes de qualquer outra coisa, pergunte se é o ${palpite.nome} que ele quer dizer. NUNCA diga que não tem, nem que vai confirmar com o corretor: o imóvel é nosso.`
     : "";
@@ -495,7 +495,7 @@ export async function executarTurnoDeAtendimento(
      * do catálogo desses imóveis também.
      */
     const semIndicacao = pendenteDaTrava
-      ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente, casa.nomeDaCasa)
+      ? removerIndicacaoPrematura(brutaConferida.textoResposta ?? "", pedido.catalogo, imoveisDoCliente, casa)
       : null;
     if (semIndicacao?.cortou) console.warn(`[turno] indicação antes da qualificação cortada (falta ${pendenteDaTrava})`);
     const anexosNaHora = (brutaConferida.anexosMidia ?? []).filter((a) => imoveisDoCliente.has(a.slug));

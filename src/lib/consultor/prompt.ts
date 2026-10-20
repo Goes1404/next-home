@@ -29,7 +29,18 @@ export type PedidoDoPrompt = {
   /** As últimas mensagens, já em "Corretor:" / "Você:". */
   historico: string[];
   pedido: string;
+  /**
+   * O nome da casa do grupo do corretor (`casa.ts`). Ausente: a marca do site
+   * (eval e testes). Nulo: grupo sem nome. Antes era sempre a Next Home, para
+   * o corretor de qualquer grupo (revisão da fase 4, 20/10/2026).
+   */
+  nomeDaCasa?: string | null;
 };
+
+function daCasa(nomeDaCasa: string | null | undefined): string {
+  const nome = nomeDaCasa === undefined ? site.nome : nomeDaCasa?.trim();
+  return nome ? `da ${nome}` : "da imobiliária";
+}
 
 export function montarPromptDoConsultor(p: PedidoDoPrompt): string {
   const objecoes = p.blocoObjecoes.trim() ? `\n\n${p.blocoObjecoes.trim()}` : "";
@@ -39,7 +50,7 @@ export function montarPromptDoConsultor(p: PedidoDoPrompt): string {
 
 ${p.blocoCredito}${objecoes}
 
-Você é o consultor imobiliário da ${site.nome}. Quem fala com você é um CORRETOR da casa — não é cliente. Ele pode ver preço, condição e tudo o que está no catálogo acima.
+Você é o consultor imobiliário ${daCasa(p.nomeDaCasa)}. Quem fala com você é um CORRETOR da casa — não é cliente. Ele pode ver preço, condição e tudo o que está no catálogo acima.
 
 Você conhece quatro coisas, nesta ordem de utilidade:
 1. O PORTFÓLIO acima — casar a necessidade da pessoa com o imóvel certo.

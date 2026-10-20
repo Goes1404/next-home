@@ -6,6 +6,7 @@ import {
   apresentacaoDaCasa,
   assistenteDaConversa,
   casaDoGrupo,
+  fixadoPeloGrupoDaLeitura,
   limparCampoDaCasa,
   perguntaDeRegiao,
 } from "./casa";
@@ -115,5 +116,36 @@ describe("frases da casa", () => {
     expect(apresentacaoDaCasa(casa)).toBe(" da Imobiliária Horizonte");
     expect(perguntaDeRegiao(casa)).toBe("em qual cidade ou bairro");
     expect(apresentacaoDaCasa(casaDoGrupo(null, GRUPO_B))).toBe("");
+  });
+});
+
+/*
+ * Revisão da fase 4 (20/10/2026): a tela "Minha IA" descartava qualquer erro
+ * da leitura de `grupos` e o aviso do nome fixado pelo gestor sumia calado.
+ */
+describe("fixadoPeloGrupoDaLeitura", () => {
+  it("lê o nome e o tom fixados", () => {
+    expect(
+      fixadoPeloGrupoDaLeitura({ data: { ia_nome_assistente: " Lia ", ia_tom: "formal_direto" }, error: null }),
+    ).toEqual({ nomeAssistente: "Lia", tom: "formal_direto", naoConferido: false });
+  });
+
+  it("coluna ausente (banco antes da 0199) é nada fixado, sem aviso", () => {
+    expect(fixadoPeloGrupoDaLeitura({ data: null, error: { code: "42703", message: "column does not exist" } })).toEqual({
+      nomeAssistente: null,
+      tom: null,
+      naoConferido: false,
+    });
+  });
+
+  it("outro erro vira aviso, nunca silêncio", () => {
+    expect(
+      fixadoPeloGrupoDaLeitura({ data: null, error: { code: "57014", message: "statement timeout" } }).naoConferido,
+    ).toBe(true);
+    expect(fixadoPeloGrupoDaLeitura({ data: null, error: { message: "fetch failed" } }).naoConferido).toBe(true);
+  });
+
+  it("tom fora da lista não vale", () => {
+    expect(fixadoPeloGrupoDaLeitura({ data: { ia_nome_assistente: null, ia_tom: "gritado" }, error: null }).tom).toBeNull();
   });
 });

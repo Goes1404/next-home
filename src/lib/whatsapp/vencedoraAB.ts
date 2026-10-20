@@ -1,6 +1,7 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { aplicarTemplate } from "@/lib/whatsapp/campaignQueue";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import type { ContextoTemplate } from "@/lib/whatsapp/listaDeTransmissao";
 import { placarDaFila, resultadoAB, vencedoraDoPlacar } from "@/lib/whatsapp/testeAB";
 
@@ -29,7 +30,7 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
   try {
     const { data: campanhas } = await supabase
       .from("whatsapp_campanhas")
-      .select("id, mensagem_base, mensagem_base_b, contexto_template, empreendimento:empreendimentos(nome)")
+      .select("id, grupo_id, mensagem_base, mensagem_base_b, contexto_template, empreendimento:empreendimentos(nome)")
       .in("id", campanhaIds)
       .not("mensagem_base_b", "is", null)
       .is("variante_vencedora", null);
@@ -79,6 +80,8 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
         ? await supabase.from("leads").select("id, nome").in("id", leadIds)
         : { data: [] as Array<{ id: string; nome: string }> };
       const nomes = new Map((leads ?? []).map((l) => [l.id, l.nome]));
+      // A reserva de {imovel} com a região do grupo da lista (revisão da fase 4).
+      const regiaoDaCasa = (await lerCasaDoGrupo(c.grupo_id)).regiao;
 
       for (const p of pendentes) {
         await supabase
@@ -100,6 +103,7 @@ export async function aplicarVencedoras(supabase: Supa, campanhaIds: string[]): 
               nomeLead: (p.lead_id && nomes.get(p.lead_id)) || "",
               empreendimentoNome: imovel?.nome ?? undefined,
               contexto: c.contexto_template as ContextoTemplate | null,
+              regiaoDaCasa,
             }),
           })
           .eq("id", p.id)

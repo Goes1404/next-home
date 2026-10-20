@@ -103,6 +103,8 @@ export async function turnoDoConsultor(params: {
   /** Few-shot do corpus real; vazio é caso normal. */
   exemplos: string;
   agora?: Date;
+  /** O nome da casa do grupo do corretor (`casa.ts`). Ausente: a marca do site. */
+  nomeDaCasa?: string | null;
 }): Promise<RespostaDoConsultor> {
   const agora = params.agora ?? new Date();
 
@@ -114,6 +116,7 @@ export async function turnoDoConsultor(params: {
       .slice(-JANELA_DO_HISTORICO)
       .map((m) => `${m.papel === "corretor" ? "Corretor" : "Você"}: ${m.conteudo}`),
     pedido: params.pedido,
+    ...(params.nomeDaCasa !== undefined ? { nomeDaCasa: params.nomeDaCasa } : {}),
   });
 
   const r = await chamarLlmJson(prompt, { temperature: 0, orcamentoMs: ORCAMENTO_MS });

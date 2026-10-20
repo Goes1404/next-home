@@ -1480,6 +1480,7 @@ export async function POST(req: NextRequest) {
         nomeCliente: payload.senderName || "Cliente WhatsApp",
         telefoneCliente: sender,
         empreendimentoNome: respostaIA.empreendimentoCitado,
+        regiaoDaCasa: casa.regiao,
         temperaturaScore: dossie.temperaturaScore,
         resumoDossie: visitaRemarcada
           ? `O cliente remarcou a visita: era ${rotuloDaVisita(visitaRemarcada)}, agora é ${rotuloDaVisita(dataGravada!)}. ${dossie.resumoExecutivo}`

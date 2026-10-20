@@ -58,7 +58,12 @@ export type ConfigIA = {
 };
 
 /** Nome e tom que o gestor fixou para a equipe (0199). Nulo: vale o do número. */
-export type FixadoPeloGrupo = { nomeAssistente: string | null; tom: TomVozBot | null };
+export type FixadoPeloGrupo = {
+  nomeAssistente: string | null;
+  tom: TomVozBot | null;
+  /** A leitura falhou: não dá para dizer se o gestor fixou nome ou tom. */
+  naoConferido?: boolean;
+};
 
 /** "a", "a" e "b", "a", "b" e "c" — lista em português, com aspas. */
 function listarEmTexto(chaves: string[]): string {
@@ -256,6 +261,12 @@ export function ConfiguracaoIA({
                 <p className="text-fluid-xs text-alerta break-words">
                   O gestor definiu &quot;{fixadoPeloGrupo.nomeAssistente}&quot; para a equipe toda. Enquanto estiver assim, é
                   esse o nome que a IA usa.
+                </p>
+              )}
+              {fixadoPeloGrupo?.naoConferido && (
+                <p className="text-fluid-xs text-apoio break-words">
+                  Não consegui conferir agora se o gestor definiu um nome ou um tom para a equipe toda. Se ele definiu,
+                  é o dele que a IA usa.
                 </p>
               )}
             </div>

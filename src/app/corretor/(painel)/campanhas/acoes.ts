@@ -27,7 +27,7 @@ import {
   MOTIVO_TEXTO_SEM_IA,
   versoesDiferentes,
 } from "@/lib/whatsapp/variacaoDeTexto";
-import { site } from "@/lib/site";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { conferirNumerosNoWhatsapp, provedorConfigurado } from "@/lib/whatsapp/provider";
 import { lerSinaisDaLista } from "@/lib/whatsapp/sinaisDaLista";
 import { MOTIVO_SESSAO_CAIU } from "@/lib/whatsapp/sessaoCaida";
@@ -249,11 +249,14 @@ export async function gerarPreviewCampanha(params: {
    * versões, o exemplo mostrava o texto cru, que era o que de fato saía.
    */
   const anteriores = (await textosRecentesDoNumero(supabase, corretor.id)) ?? [];
+  // A casa do grupo do corretor, a mesma que o disparador lê no envio: com
+  // `site.nome` aqui, o exemplo do grupo B conferia o nome da Next Home.
+  const casa = await lerCasaDoGrupo(corretor.grupoId);
   const fatos = fatosDaLista({
     contexto,
     imovelNome: imovel?.nome,
     corretorNome: corretor.nome,
-    nomeDaCasa: site.nome,
+    nomeDaCasa: casa.nomeDaCasa,
   });
   const filaA = montarFilaCampanha({
     campanhaId: "preview",
@@ -261,6 +264,7 @@ export async function gerarPreviewCampanha(params: {
     mensagemBase: params.mensagemBase,
     empreendimentoNome: imovel?.nome,
     contexto,
+    regiaoDaCasa: casa.regiao,
   });
   const exemplosA = await exemplosDaLista({
     textos: filaA.map((item, i) => ({ texto: item.mensagemPersonalizada, nomeLead: amostra[i]?.nome ?? "" })),
@@ -279,6 +283,7 @@ export async function gerarPreviewCampanha(params: {
       mensagemBase: textoB,
       empreendimentoNome: imovel?.nome,
       contexto,
+      regiaoDaCasa: casa.regiao,
     });
     const b = await exemplosDaLista({
       textos: filaB.map((item) => ({ texto: item.mensagemPersonalizada, nomeLead: amostra[0]?.nome ?? "" })),
@@ -537,6 +542,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
     mensagemBase: params.mensagemBase,
     empreendimentoNome: imovel?.nome,
     contexto,
+    regiaoDaCasa: (await lerCasaDoGrupo(corretor.grupoId)).regiao,
     mensagemBaseB: textoB,
     iniciarEm: inicio ?? undefined,
   });

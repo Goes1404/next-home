@@ -3,6 +3,7 @@ import type { DossieClienteIA } from "./types";
 import { ranquearCatalogo } from "./catalogoRelevante";
 import { pediuBusca, pediuOutraOpcao } from "./jogada";
 import { site } from "@/lib/site";
+import type { IdentidadeDaCasa } from "./casa";
 
 /**
  * Qual imóvel esta conversa está tratando AGORA.
@@ -135,10 +136,39 @@ const PALAVRAS_DA_MARCA = palavrasDoNome(site.nome);
  * grupo. `undefined` é quem não sabe o grupo (eval, traces): vale a marca do
  * site, como antes. `null` é grupo sem nome: nada sai do índice.
  */
-function palavrasDaCasa(nomeDaCasa: string | null | undefined): ReadonlySet<string> {
-  if (nomeDaCasa === undefined) return PALAVRAS_DA_MARCA;
-  return nomeDaCasa ? palavrasDoNome(nomeDaCasa) : new Set();
+function palavrasDaCasa(casa: CasaParaFoco | undefined): ReadonlySet<string> {
+  if (casa === undefined) return PALAVRAS_DA_MARCA;
+  if (casa === null || typeof casa === "string") return casa ? palavrasDoNome(casa) : new Set();
+
+  /*
+   * Revisão da fase 4 (20/10/2026): a REGIÃO que o gestor configura também
+   * sai do índice. "Campinas" num grupo com o "Vista Campinas" no catálogo
+   * ("vista" é comum, então "campinas" seria o token que identifica o imóvel)
+   * travaria o foco nele pela pergunta da própria IA, "em qual região de
+   * Campinas você procura?", e pela resposta do cliente, "Campinas". É o
+   * Breeze de 28/09 de novo, pela região. A lista GENERICAS só conhece as
+   * praças da Next Home.
+   *
+   * No grupo 1 a marca do site entra sempre: a mensagem pronta do porteiro
+   * ("Vim pelo site da Next Home") continua com o nome do site mesmo que o
+   * gestor configure outro nome para a assistente dizer.
+   */
+  const palavras = new Set<string>(casa.exemplosDaNextHome ? PALAVRAS_DA_MARCA : []);
+  for (const texto of [casa.nomeDaCasa, casa.regiao, casa.regiaoDaPergunta]) {
+    if (texto) for (const p of palavrasDoNome(texto)) palavras.add(p);
+  }
+  return palavras;
 }
+
+/**
+ * O que o índice de foco sabe da casa: só o nome (texto), ou a identidade do
+ * grupo (`casa.ts`), de onde saem o nome, a região e a marca do site no
+ * grupo 1.
+ */
+export type CasaParaFoco =
+  | string
+  | null
+  | Pick<IdentidadeDaCasa, "nomeDaCasa" | "regiao" | "regiaoDaPergunta" | "exemplosDaNextHome">;
 
 function palavrasDoNome(nome: string): Set<string> {
   return new Set(
@@ -272,8 +302,8 @@ function representante(imoveis: Empreendimento[]): Empreendimento {
  * O token existe porque ninguém digita o nome de cadastro: quem viu o
  * "Eternity Alphaville Tamboré" escreve "o Eternity".
  */
-function construirIndice(catalogo: Empreendimento[], nomeDaCasa?: string | null): Indice {
-  const daCasa = palavrasDaCasa(nomeDaCasa);
+function construirIndice(catalogo: Empreendimento[], casa?: CasaParaFoco): Indice {
+  const daCasa = palavrasDaCasa(casa);
   const termos = new Map<string, string | null>();
   const porSlug = new Map(catalogo.map((e) => [e.slug, e]));
 
@@ -324,7 +354,7 @@ function construirIndice(catalogo: Empreendimento[], nomeDaCasa?: string | null)
          * Um token à distância de edição de uma palavra genérica é a
          * palavra genérica escrita errado, e não identifica nada sozinho.
          */
-        const pareceGenerica = [...GENERICAS, ...COMUNS].some(
+        const pareceGenerica = [...GENERICAS, ...COMUNS, ...daCasa].some(
           (g) => distancia(palavra, g, tolerancia(palavra)) <= tolerancia(palavra),
         );
         if (pareceGenerica) continue;
@@ -521,11 +551,11 @@ function citadosNoTexto(
 export function imoveisCitados(
   texto: string,
   catalogo: Empreendimento[],
-  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
-  nomeDaCasa?: string | null,
+  /** A casa do grupo (`casa.ts`): nome e região saem do índice. Ausente: a marca do site. */
+  casa?: CasaParaFoco,
 ): string[] {
   if (!texto?.trim() || catalogo.length === 0) return [];
-  return citadosNoTexto(texto, construirIndice(catalogo, nomeDaCasa), { ignorarRecusa: true });
+  return citadosNoTexto(texto, construirIndice(catalogo, casa), { ignorarRecusa: true });
 }
 
 export type FocoDaConversa = {
@@ -586,13 +616,13 @@ export function detectarFoco(params: {
   catalogo: Empreendimento[];
   mensagemAtual: string;
   historico?: { remetente: string; texto: string }[];
-  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
-  nomeDaCasa?: string | null;
+  /** A casa do grupo (`casa.ts`): nome e região saem do índice. Ausente: a marca do site. */
+  casa?: CasaParaFoco;
 }): FocoDaConversa | null {
   const { catalogo, mensagemAtual } = params;
   if (catalogo.length === 0) return null;
 
-  const indice = construirIndice(catalogo, params.nomeDaCasa);
+  const indice = construirIndice(catalogo, params.casa);
   const acharImovel = (slug: string) => catalogo.find((e) => e.slug === slug) ?? null;
   const primeiroCitado = (texto: string) => citadosNoTexto(texto, indice)[0] ?? null;
 
@@ -695,14 +725,14 @@ export function catalogoParaAtendimento(params: {
   dossie?: DossieClienteIA | null;
   /** O teto calculado pela renda (`tetoDeCompra`), quando não há orçamento dito. */
   tetoPelaRenda?: number | null;
-  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
-  nomeDaCasa?: string | null;
+  /** A casa do grupo (`casa.ts`): nome e região saem do índice. Ausente: a marca do site. */
+  casa?: CasaParaFoco;
 }): { catalogo: Empreendimento[]; foco: { slug: string; nome: string } | null } {
   const foco = detectarFoco({
     catalogo: params.catalogo,
     mensagemAtual: params.mensagemAtual,
     historico: params.historico,
-    ...(params.nomeDaCasa !== undefined ? { nomeDaCasa: params.nomeDaCasa } : {}),
+    ...(params.casa !== undefined ? { casa: params.casa } : {}),
   });
 
   const ranqueado = ranquearCatalogo({
@@ -738,11 +768,11 @@ export function catalogoParaAtendimento(params: {
 export function palpiteDeNome(
   mensagem: string,
   catalogo: Empreendimento[],
-  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
-  nomeDaCasa?: string | null,
+  /** A casa do grupo (`casa.ts`): nome e região saem do índice. Ausente: a marca do site. */
+  casa?: CasaParaFoco,
 ): { nome: string; slug: string; escrito: string } | null {
   if (catalogo.length === 0) return null;
-  const indice = construirIndice(catalogo, nomeDaCasa);
+  const indice = construirIndice(catalogo, casa);
   const ordenada = (p: string) => [...p].sort().join("");
 
   const palpites = new Map<string, string>();
@@ -776,12 +806,12 @@ export function removerIndicacaoPrematura(
   texto: string,
   catalogo: Empreendimento[],
   permitidos: ReadonlySet<string>,
-  /** O nome da casa do grupo (`casa.ts`). Ausente: a marca do site. */
-  nomeDaCasa?: string | null,
+  /** A casa do grupo (`casa.ts`): nome e região saem do índice. Ausente: a marca do site. */
+  casa?: CasaParaFoco,
 ): { texto: string; cortou: boolean } {
   const frasesDoTexto = texto.split(/(?<=[.!?])\s+|\n+|\s*---\s*/).filter((f) => f.trim().length > 0);
   const ficam = frasesDoTexto.filter((f) =>
-    imoveisCitados(f, catalogo, nomeDaCasa).every((slug) => permitidos.has(slug)),
+    imoveisCitados(f, catalogo, casa).every((slug) => permitidos.has(slug)),
   );
   if (ficam.length === frasesDoTexto.length || ficam.length === 0) return { texto, cortou: false };
   return { texto: ficam.join("\n\n"), cortou: true };

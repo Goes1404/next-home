@@ -1,16 +1,21 @@
-import { site } from "@/lib/site";
 import { algumProvedorConfigurado, chamarLlmJson, ORCAMENTO_DOSSIE_MS } from "./llm";
 import { TETO_DA_MEMORIA } from "./memoriaDaConversa";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
-const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial imobiliária da ${site.nome}.
+/*
+ * O mesmo extrator serve a todos os grupos (revisão da fase 4, 20/10/2026):
+ * por isso o texto não diz o nome da casa nem dá como exemplo de região os
+ * lugares da Next Home ("Centro de Barueri", "Alphaville"), que puxavam a
+ * extração para eles. Os exemplos são de FORMATO.
+ */
+export const PROMPT_DOSSIE = `Você é um analista sênior de inteligência comercial de uma imobiliária.
 Sua missão é ler a transcrição de uma conversa de WhatsApp entre um cliente e a imobiliária e extrair um DOSSIÊ EXECUTIVO ESTRUTURADO do cliente.
 
 Você DEVE responder EXCLUSIVAMENTE um objeto JSON válido no seguinte formato:
 {
   "orcamentoMin": number ou null,
   "rendaMensal": number ou null (renda MENSAL da família, não o valor do imóvel; só preencha se o cliente disser),
-  "regiaoInteresse": string ou null (região/bairro onde o CLIENTE disse que procura imóvel, ex: "Centro de Barueri", "Alphaville", "Jardim Tupanci"; use as palavras dele, nunca deduza do imóvel que a atendente ofereceu),
+  "regiaoInteresse": string ou null (região/bairro onde o CLIENTE disse que procura imóvel, ex. de formato: "centro", "perto da estação", o nome do bairro que ele disse; use as palavras dele, nunca deduza do imóvel que a atendente ofereceu),
   "dormitoriosMin": number ou null (quantos dormitórios o cliente disse precisar; só se ELE disser, nunca deduza do imóvel apresentado),
   "nomeCliente": string ou null (o PRIMEIRO NOME do cliente, e SÓ quando ele se apresenta de forma inequívoca: "meu nome é X", "sou o/a X", "aqui é o/a X", ou assinatura no fim da mensagem. NUNCA um nome citado no meio da frase: em "vou ver com o João" ou "a Maria indicou", João e Maria NÃO são o cliente. Na dúvida, null),
   "email": string ou null (só se o cliente escrever o e-mail DELE),

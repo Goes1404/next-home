@@ -488,6 +488,18 @@ describe("Alerta de lead quente ao corretor", () => {
     expect(texto).toContain("wa.me/5511988881111");
   });
 
+  // Revisão da fase 4: sem imóvel citado, o interesse era "Imóveis em
+  // Alphaville" para o corretor de qualquer grupo.
+  it("sem imóvel citado, o interesse usa a região do grupo, nunca Alphaville fixo", () => {
+    const semImovel = { ...params, empreendimentoNome: undefined };
+    expect(formatarAlertaCorretor({ ...semImovel, regiaoDaCasa: "Campinas" })).toContain(
+      "*Interesse Principal:* Imóveis em Campinas",
+    );
+    const semRegiao = formatarAlertaCorretor(semImovel);
+    expect(semRegiao).not.toContain("Alphaville");
+    expect(semRegiao).toContain("*Interesse Principal:* Ainda não definido");
+  });
+
   it("reporta enviado=false quando não há provedor configurado", async () => {
     // O contrato mais importante do módulo: um alerta que não saiu NUNCA
     // pode se declarar entregue — o corretor confiaria e perderia a venda.
