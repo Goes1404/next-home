@@ -25,9 +25,10 @@ import { ehEmailDeAcesso } from "./credenciaisIniciais";
  * então um `corretorId` de outro grupo não acha a ficha.
  *
  * O convite cria o usuário no Auth (`generateLink('invite')`) ANTES de
- * vincular a ficha. Se o vínculo falha, o usuário é apagado: sem isso
- * sobraria um login órfão com o e-mail queimado pela unicidade, e nenhuma
- * tentativa futura com o mesmo e-mail funcionaria.
+ * vincular a ficha. Se o vínculo falha, o usuário é apagado — só se nenhuma
+ * ficha o tiver (`apagarLoginSemFicha`): sem isso sobraria um login órfão com
+ * o e-mail queimado pela unicidade; e apagar sem conferir mataria o login
+ * quando o vínculo GRAVOU e só a resposta se perdeu.
  *
  * Sem `RESEND_API_KEY` (ou com o envio recusado), o convite NÃO falha: a URL
  * volta para a tela, e o gestor a manda pelo WhatsApp. A URL só volta nesse
@@ -100,6 +101,31 @@ export const MENSAGEM_SEM_EMAIL_CONFIGURADO =
 /** O e-mail com o link de uma conta já usada não saiu, e o link não volta para a tela. */
 export const MENSAGEM_EMAIL_NAO_SAIU =
   "O e-mail com o link não saiu agora. Tente de novo em alguns minutos.";
+
+/**
+ * Apaga o login que um convite criou — só se, agora, ele não for de ficha
+ * nenhuma. É a regra do desfazer da plataforma: o vínculo pode ter gravado e
+ * só a resposta se perdido (a ficha tem o login), e o Auth reaproveita o
+ * convite pendente de outra ficha. Se a conferência falhar, o login fica:
+ * apagar o login de outra pessoa é pior que deixar um órfão.
+ */
+export async function apagarLoginSemFicha(
+  servico: Servico,
+  userId: string,
+): Promise<"apagado" | "mantido" | "nao_conferido"> {
+  const { count, error } = await servico
+    .from("corretores")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (error) {
+    console.error(`[acesso] login do convite não conferido; mantido: ${error.message}`);
+    return "nao_conferido";
+  }
+  if ((count ?? 0) > 0) return "mantido";
+  const { error: erroApagar } = await servico.auth.admin.deleteUser(userId);
+  if (erroApagar) console.error(`[acesso] usuário do convite não apagado: ${erroApagar.message}`);
+  return "apagado";
+}
 
 /**
  * Manda o link por e-mail; sem envio, devolve a URL para a tela — só quando
@@ -242,9 +268,11 @@ export async function convidarCorretorDoGrupo({
 
   if (erroVinculo || !vinculadas || vinculadas.length === 0) {
     console.error(`[acesso] convite não vinculado à ficha ${corretorId}: ${erroVinculo?.message ?? "nenhuma linha"}`);
-    const { error: erroApagar } = await servico.auth.admin.deleteUser(link.userId);
-    if (erroApagar) console.error(`[acesso] usuário do convite não apagado: ${erroApagar.message}`);
-    return { ok: false, erro: "Convite criado mas não vinculado; desfeito. Tente novamente." };
+    const destino = await apagarLoginSemFicha(servico, link.userId);
+    if (destino === "apagado") return { ok: false, erro: "Convite criado mas não vinculado; desfeito. Tente novamente." };
+    const erro =
+      "Não deu para confirmar o convite agora. Atualize a página e veja se o corretor já aparece com acesso antes de tentar de novo.";
+    return destino === "nao_conferido" ? { ok: false, erro, loginNaoConferido: link.userId } : { ok: false, erro };
   }
 
   await registrarEventoDeAcesso(servico, {

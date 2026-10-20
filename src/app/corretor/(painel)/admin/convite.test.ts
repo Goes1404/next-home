@@ -53,7 +53,9 @@ vi.mock("@/lib/auth/emailsDeAcesso", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 vi.mock("@/lib/catalogo/revalidar", () => ({ revalidarCorretores: () => {} }));
 
-const { criarAcessoCorretor, reenviarConvite, trocarEmailDoCorretor, enviarLinkDeSenha } = await import("./acoes");
+const { cadastrarCorretor, criarAcessoCorretor, reenviarConvite, trocarEmailDoCorretor, enviarLinkDeSenha } = await import(
+  "./acoes"
+);
 const {
   acoesDeAcesso,
   MENSAGEM_ADMIN_DA_PLATAFORMA,
@@ -507,5 +509,70 @@ describe("o gestor não assume login alheio", () => {
     expect(pedidosDeLink).toEqual([]);
     expect(await trocarEmailDoCorretor("c3", "x@gmail.com")).toMatchObject({ ok: false });
     expect(trocasNoAuth).toEqual([]);
+  });
+});
+
+/*
+ * A compensação do convite não apaga login que tem ficha (revisão da fase
+ * 2A, a regra de `apagarLoginSemFicha` da plataforma). O vínculo pode gravar
+ * e só a resposta se perder: apagar o login aí deixaria a ficha apontando
+ * para um usuário que não existe.
+ */
+describe("compensação do convite", () => {
+  /** Faz o update de `corretores` devolver erro; `aplica` decide se ele gravou mesmo assim. */
+  function vinculoQueFalha({ aplica, recontagemFalha = false, apagarFalha = false }: { aplica: boolean; recontagemFalha?: boolean; apagarFalha?: boolean }) {
+    const original = banco.cliente.from;
+    banco.cliente.from = (tabela: string) => {
+      const q = original(tabela);
+      if (tabela !== "corretores") return q;
+      const select = q.select;
+      q.select = ((colunas?: string, opcoes?: { head?: boolean }) => {
+        if (recontagemFalha && opcoes?.head) return { eq: async () => ({ count: null, error: { message: "timeout" } }) } as never;
+        return select(colunas, opcoes);
+      }) as never;
+      if (apagarFalha) q.delete = (() => ({ eq: () => ({ eq: async () => ({ error: { message: "violates foreign key" } }) }) })) as never;
+      q.update = ((valores: Record<string, unknown>) => ({
+        eq: (_c: string, id: string) => ({
+          eq: () => ({
+            select: async () => {
+              if (aplica) Object.assign(banco.tabelas.corretores.find((c) => c.id === id)!, valores);
+              return { data: null, error: { message: "fetch failed" } };
+            },
+          }),
+        }),
+      })) as never;
+      return q;
+    };
+  }
+
+  it("vínculo que gravou e só perdeu a resposta não apaga o login", async () => {
+    vinculoQueFalha({ aplica: true });
+    const r = await criarAcessoCorretor("c1", "ana@gmail.com");
+    expect(r.ok).toBe(false);
+    expect(usuariosApagados).toEqual([]);
+    expect(corretor("c1").user_id).toBe("usuario-novo");
+  });
+
+  it("sem conseguir reconferir, mantém o login e devolve-o para quem chama decidir", async () => {
+    vinculoQueFalha({ aplica: false, recontagemFalha: true });
+    const r = await criarAcessoCorretor("c1", "ana@gmail.com");
+    expect(r).toMatchObject({ ok: false, loginNaoConferido: "usuario-novo" });
+    expect(usuariosApagados).toEqual([]);
+  });
+
+  it("cadastrar desfaz a ficha e, depois dela, o login que era só dela", async () => {
+    vinculoQueFalha({ aplica: true });
+    const r = await cadastrarCorretor({ nome: "Nina Nova", creci: "12345", whatsapp: "11987654321", email: "nina@gmail.com" });
+    expect(r.ok).toBe(false);
+    expect(banco.tabelas.corretores.some((c) => c.nome === "Nina Nova")).toBe(false);
+    expect(usuariosApagados).toEqual(["usuario-novo"]);
+  });
+
+  it("cadastrar: a ficha que não sai é dita na tela, e o login dela fica", async () => {
+    vinculoQueFalha({ aplica: true, apagarFalha: true });
+    const r = await cadastrarCorretor({ nome: "Nina Nova", creci: "12345", whatsapp: "11987654321", email: "nina@gmail.com" });
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.erro).toMatch(/ficou na lista sem acesso/);
+    expect(usuariosApagados).toEqual([]);
   });
 });

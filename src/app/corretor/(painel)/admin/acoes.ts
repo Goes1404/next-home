@@ -16,8 +16,10 @@ import {
   MENSAGEM_OUTRO_GESTOR,
 } from "@/lib/corretores/acessoDaConta";
 import {
+  apagarLoginSemFicha,
   convidarCorretorDoGrupo,
   limparEmail,
+  type FalhaDoConvite,
   mandarLinkDeAcesso,
   registrarEventoDeAcesso,
   type ResultadoDoLink,
@@ -104,7 +106,10 @@ async function emailDeAcessoLivre(
  * Volta `{ ok, enviado }`. Sem e-mail configurado (ou com o envio recusado),
  * volta também a `url`, para o gestor copiar e mandar pelo WhatsApp.
  */
-export async function criarAcessoCorretor(corretorId: string, email: string): Promise<ResultadoDoLink> {
+export async function criarAcessoCorretor(
+  corretorId: string,
+  email: string,
+): Promise<ResultadoDoLink | FalhaDoConvite> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
@@ -159,8 +164,13 @@ export type DadosNovoCorretor = { nome: string; creci: string; whatsapp: string;
  * acesso que aparece no site, e a próxima tentativa com o mesmo nome
  * ganharia slug com sufixo. E-mail que não saiu NÃO é falha: o link volta
  * para a tela.
+ *
+ * O desfazer segue o da plataforma: o login que ficou na ficha (o vínculo
+ * gravou e só a resposta se perdeu) e o que o convite não conseguiu conferir
+ * (`loginNaoConferido`) saem depois da ficha, e só se nenhuma ficha os tiver.
+ * Ficha que não sai é dita na tela: ela fica na lista, sem acesso.
  */
-export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoDoLink> {
+export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<ResultadoDoLink | FalhaDoConvite> {
   const guarda = await exigirGestorNaAcao();
   if (!guarda.corretor) return { ok: false, erro: guarda.erro ?? "Acesso negado." };
 
@@ -195,10 +205,30 @@ export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<Resul
   }
 
   const convite = await criarAcessoCorretor(ficha.id, email);
-  if (!convite.ok) {
-    await servico.from("corretores").delete().eq("id", ficha.id).eq("grupo_id", guarda.corretor.grupoId);
+  if (convite.ok) return convite;
+
+  const grupoId = guarda.corretor.grupoId;
+  const { data: fichaAgora, error: erroLeitura } = await servico
+    .from("corretores")
+    .select("user_id")
+    .eq("id", ficha.id)
+    .eq("grupo_id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) console.error(`[admin] ficha ${ficha.id} não relida antes de desfazer: ${erroLeitura.message}`);
+
+  const { error: erroApagar } = await servico.from("corretores").delete().eq("id", ficha.id).eq("grupo_id", grupoId);
+  if (erroApagar) {
+    console.error(`[admin] ficha ${ficha.id} do cadastro que falhou não foi desfeita: ${erroApagar.message}`);
+    return {
+      ok: false,
+      erro: `${convite.erro} A ficha de ${nome} ficou na lista sem acesso: use 'Convidar' nela ou desative.`,
+    };
   }
-  return convite;
+
+  // Depois da ficha: com ela fora, o login que era só dela não tem mais dono.
+  const logins = new Set([fichaAgora?.user_id, "loginNaoConferido" in convite ? convite.loginNaoConferido : undefined]);
+  for (const login of logins) if (login) await apagarLoginSemFicha(servico, login);
+  return { ok: false, erro: convite.erro };
 }
 
 /** Falha ao perguntar ao Auth (ou à lista da plataforma) quem é a conta. */
