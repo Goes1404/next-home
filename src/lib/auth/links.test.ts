@@ -59,7 +59,7 @@ describe("gerarLinkDeAcesso", () => {
     expect(r).toEqual({
       ok: true,
       userId: "usuario-1",
-      url: `${site.url}/auth/confirmar?token_hash=hash-123&type=invite&next=%2Fcorretor%2Fdefinir-senha`,
+      url: `${site.url}/auth/confirmar?token_hash=hash-123&type=invite&next=%2Fcorretor%2Fdefinir-senha&email=ana%40exemplo.com.br`,
     });
     if (!r.ok) throw new Error("deveria ter gerado");
     expect(r.url).not.toContain("supabase.co");

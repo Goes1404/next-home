@@ -111,7 +111,9 @@ export async function gerarLinkDeAcesso(tipo: TipoDeLink, email: string, next: s
       return { ok: false, motivo: "falha" };
     }
 
-    const query = new URLSearchParams({ token_hash: hashedToken, type: tipo, next });
+    // O `email` só serve para a tela do botão dizer qual conta vai abrir
+    // (`linkPendente.ts`); quem decide a conta é o token.
+    const query = new URLSearchParams({ token_hash: hashedToken, type: tipo, next, email: email.toLowerCase() });
     return { ok: true, url: `${base}${CAMINHO_DE_CONFIRMACAO}?${query}`, userId };
   } catch (e) {
     console.error(`[links] generateLink(${tipo}) lançou: ${e instanceof Error ? e.message : String(e)}`);

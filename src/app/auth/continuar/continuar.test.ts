@@ -10,6 +10,8 @@ import { COOKIE_DO_LINK, valorDoCookie } from "@/lib/auth/linkPendente";
  */
 
 let erroDoVerify: unknown = null;
+let usuarioDoVerify: { email: string } | null = { email: "ana@exemplo.com.br" };
+let saidas = 0;
 const verificacoes: unknown[] = [];
 let valorNoCookie: string | undefined;
 const apagados: unknown[] = [];
@@ -19,7 +21,11 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: {
       verifyOtp: async (params: unknown) => {
         verificacoes.push(params);
-        return { data: {}, error: erroDoVerify };
+        return { data: erroDoVerify ? {} : { user: usuarioDoVerify }, error: erroDoVerify };
+      },
+      signOut: async () => {
+        saidas++;
+        return { error: null };
       },
     },
   }),
@@ -52,7 +58,11 @@ async function apertar(): Promise<string> {
 }
 
 beforeEach(() => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
   erroDoVerify = null;
+  usuarioDoVerify = { email: "ana@exemplo.com.br" };
+  saidas = 0;
   verificacoes.length = 0;
   apagados.length = 0;
   valorNoCookie = valorDoCookie({ tokenHash: "h1", tipo: "invite", next: "/corretor/definir-senha" });
@@ -80,5 +90,54 @@ describe("confirmarAcesso (botão de /auth/continuar)", () => {
   it("cookie adulterado com next externo vai para /corretor", async () => {
     valorNoCookie = "token_hash=h1&type=recovery&next=https%3A%2F%2Fx.com";
     expect(await apertar()).toBe("/corretor");
+  });
+});
+
+/*
+ * Revisão da fase 2A: falha passageira do Auth não queima o link, e o
+ * e-mail que a tela mostra só vale se o token confirmar.
+ */
+describe("falhas e a conta que o link abre", () => {
+  it("falha passageira (rede, 5xx, limite) mantém o cookie e volta ao botão com aviso", async () => {
+    for (const erro of [
+      { name: "AuthRetryableFetchError", message: "fetch failed", status: 0 },
+      { message: "Internal Server Error", status: 503 },
+      { message: "Request rate limit reached", status: 429, code: "over_request_rate_limit" },
+    ]) {
+      apagados.length = 0;
+      erroDoVerify = erro;
+      expect(await apertar()).toBe("/auth/continuar?erro=tentar");
+      expect(apagados).toEqual([]);
+    }
+  });
+
+  it("link inválido ou vencido (4xx do Auth) apaga o cookie e manda pedir outro", async () => {
+    erroDoVerify = { message: "Token has expired or is invalid", status: 403, code: "otp_expired" };
+    expect(await apertar()).toBe("/corretor/entrar?link=expirado");
+    expect(apagados).toHaveLength(1);
+    apagados.length = 0;
+    erroDoVerify = { message: "invalid", status: 400 };
+    expect(await apertar()).toBe("/corretor/entrar?link=expirado");
+    expect(apagados).toHaveLength(1);
+  });
+
+  it("conta aberta diferente da que o link dizia: fecha a sessão", async () => {
+    valorNoCookie = valorDoCookie({ tokenHash: "h1", tipo: "invite", next: "/corretor/definir-senha", email: "ana@exemplo.com.br" });
+    usuarioDoVerify = { email: "outra@exemplo.com.br" };
+    expect(await apertar()).toBe("/corretor/entrar?link=expirado");
+    expect(saidas).toBe(1);
+
+    usuarioDoVerify = { email: "Ana@Exemplo.com.br" };
+    expect(await apertar()).toBe("/corretor/definir-senha");
+    expect(saidas).toBe(1);
+  });
+
+  it("o botão trava no primeiro toque", async () => {
+    const { readFileSync } = await import("node:fs");
+    const botao = readFileSync("src/app/auth/continuar/BotaoContinuar.tsx", "utf8");
+    expect(botao).toMatch(/useFormStatus\(\)/);
+    expect(botao).toMatch(/disabled=\{pending\}/);
+    const pagina = readFileSync("src/app/auth/continuar/page.tsx", "utf8");
+    expect(pagina).toMatch(/<BotaoContinuar \/>/);
   });
 });
