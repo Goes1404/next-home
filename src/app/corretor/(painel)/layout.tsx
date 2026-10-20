@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
+import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
 import { LuzDosCartoes } from "./_componentes/LuzDosCartoes";
 import { TransicaoDeTela } from "./_componentes/TransicaoDeTela";
@@ -121,6 +122,9 @@ export default async function PainelLayout({
             sempre (ver FaixaConexao).
           */}
           <FaixaConexao corretorId={corretor.id} />
+          {/* A cota de respostas da IA do grupo (fase 2B): gestor a partir de
+              80%, todos quando acaba. `null` quase sempre. */}
+          <FaixaCotaDaIa />
 
           {/*
             A coluna de conteúdo fica em 1fr e a da lateral em `auto`: quem

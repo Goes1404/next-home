@@ -9,6 +9,7 @@ import { faltaNaLista, garantirNaLista } from "./listaDeConversas";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp } from "@/lib/whatsapp/types";
@@ -85,7 +86,7 @@ export default async function ConversasPage({
     );
   }
 
-  const [{ data: conversas }, { data: instancia }] = await Promise.all([
+  const [{ data: conversas }, { data: instancia }, cotaDaIa] = await Promise.all([
     // 150 e não 100: as conversas sem fala do cliente saem logo abaixo.
     consultaConversas.order("ultima_interacao_em", { ascending: false }).limit(150),
     supabase
@@ -93,6 +94,9 @@ export default async function ConversasPage({
       .select("modo_bot, status_conexao, instance_name, expediente_inicio, expediente_fim")
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
+    // A cota de respostas da IA do grupo (fase 2B): o cabeçalho da conversa
+    // diz quando a IA calou por ela.
+    lerCotaDaIa(corretor.grupoId),
   ]);
 
   /*
@@ -339,6 +343,7 @@ export default async function ConversasPage({
             ? {
                 modo: instancia.modo_bot as NonNullable<ContextoDaIA>["modo"],
                 expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
+                cotaEsgotada: cotaDaIa.nivel === "esgotada",
               }
             : null
         }
