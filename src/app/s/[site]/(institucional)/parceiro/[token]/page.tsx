@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
 import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { resumoDoEspelho, type UnidadeDoEspelho } from "@/lib/crm/espelhoDeVendas";
 import { precoAPartirDe } from "@/lib/format";
+import { enderecoCertoDoLink, marcaDoGrupoDoLink } from "@/lib/sites/marcaDoLink";
 import { siteDaPagina, type ParamsDoSite } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_LABEL, type StatusObra } from "@/lib/types";
@@ -25,7 +26,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * oferecer —, nunca dados de cliente.
  */
 export default async function EspelhoPage({ params }: { params: Promise<{ token: string } & ParamsDoSite> }) {
-  const { marca } = await siteDaPagina(params);
+  const site = await siteDaPagina(params);
   const { token } = await params;
   if (!UUID.test(token)) notFound();
   const supabase = createServiceClient();
@@ -35,6 +36,14 @@ export default async function EspelhoPage({ params }: { params: Promise<{ token:
     .eq("token", token)
     .maybeSingle();
   if (!parceiro || !parceiro.ativo) notFound();
+
+  // A marca é a do grupo do PARCEIRO, não a do endereço (revisão da fase 3).
+  const marca = await marcaDoGrupoDoLink(supabase, parceiro.grupo_id, site);
+  const certo = enderecoCertoDoLink(marca, site, `/parceiro/${token}`);
+  if (certo) redirect(certo);
+  // Aberto fora do site do grupo (grupo sem endereço próprio): a ficha do
+  // imóvel não está NESTE endereço, então o link não sai.
+  const fichaAqui = marca.grupoId === site.grupoId;
 
   // Só o estoque do grupo que cadastrou o parceiro (L12): pela chave de
   // serviço, sem o filtro, o espelho de outro grupo apareceria aqui.
@@ -62,9 +71,13 @@ export default async function EspelhoPage({ params }: { params: Promise<{ token:
             {lista.map((e) => (
               <li key={e.id} className="space-y-2 rounded-2xl border border-linha-forte bg-superficie p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <Link href={`/empreendimentos/${e.slug}`} className="text-fluid-base font-semibold break-words text-titulo underline-offset-4 hover:underline">
-                    {e.nome}
-                  </Link>
+                  {fichaAqui ? (
+                    <Link href={`/empreendimentos/${e.slug}`} className="text-fluid-base font-semibold break-words text-titulo underline-offset-4 hover:underline">
+                      {e.nome}
+                    </Link>
+                  ) : (
+                    <span className="text-fluid-base font-semibold break-words text-titulo">{e.nome}</span>
+                  )}
                   <span className="text-fluid-xs text-apoio">{STATUS_LABEL[e.status as StatusObra]}</span>
                 </div>
                 <p className="text-fluid-xs text-apoio">

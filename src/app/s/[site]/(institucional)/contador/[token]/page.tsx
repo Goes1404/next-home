@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CabecalhoDePagina } from "@/components/institucional/CabecalhoDePagina";
 import { Pagina } from "@/components/institucional/Pagina";
 import { Secao } from "@/components/institucional/Secao";
 import { lerAcessoContador, registrarAcessoDoContador } from "@/lib/financeiro/acessoContador";
 import { nomeDoMes } from "@/lib/financeiro/periodo";
 import { formatarReais } from "@/lib/financeiro/venda";
+import { enderecoCertoDoLink, marcaDoGrupoDoLink } from "@/lib/sites/marcaDoLink";
 import { siteDaPagina, type ParamsDoSite } from "@/lib/sites/pagina";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -22,13 +23,19 @@ const dataBr = (iso: string) =>
  * planilha do mês. Abre só pelo link; nada de login.
  */
 export default async function ContadorPublicoPage({ params }: { params: Promise<{ token: string } & ParamsDoSite> }) {
-  const { marca } = await siteDaPagina(params);
+  const site = await siteDaPagina(params);
   const { token } = await params;
   const acesso = await lerAcessoContador(token);
   if (!acesso) notFound();
+
+  const supabase = createServiceClient();
+  // A marca é a do grupo do LINK, não a do endereço (revisão da fase 3).
+  const marca = await marcaDoGrupoDoLink(supabase, acesso.grupoId, site);
+  const certo = enderecoCertoDoLink(marca, site, `/contador/${token}`);
+  if (certo) redirect(certo);
   await registrarAcessoDoContador(acesso.token);
 
-  const { data } = await createServiceClient()
+  const { data } = await supabase
     .from("meses_fechados")
     .select("mes, fechado_em, totais")
     // Chave de serviço: só os meses do grupo do link (0192).

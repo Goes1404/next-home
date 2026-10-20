@@ -110,7 +110,12 @@ gratuito continua abrindo o site, e o link canônico aponta para o próprio
   (`integracaoLiberada`); nos outros sites ficam desligados.
 - Links que a IA e o painel mandam por WhatsApp (página do imóvel, seleção,
   agenda) ainda usam `NEXT_PUBLIC_SITE_URL`, o endereço da Next Home
-  (lacuna L45, pendência).
+  (lacuna L45, pendência). O mesmo vale para os links do espelho do parceiro
+  e do contador: eles saem do painel no endereço da Next Home. Para não
+  misturar marcas, essas duas páginas mostram a marca do grupo DONO do link
+  e, se o grupo tiver endereço próprio, levam o visitante para lá. Seleção,
+  portal, proposta e documentos ainda abrem com o cabeçalho e o rodapé do
+  endereço em que foram abertos (pendência junto com a L45).
 
 ## Plano da Vercel
 
