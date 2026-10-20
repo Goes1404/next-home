@@ -92,7 +92,8 @@ Dois prazos menores, que são do código e não mudam aqui:
   e-mail abrem o link antes da pessoa e não gastam nada).
 - Depois de apertar o botão, ela tem **15 minutos** para criar a senha. Fora
   disso, a tela de criar senha manda para "Trocar senha", que pede a senha
-  atual — quem ainda não tem senha pede outro link em "Esqueci a senha".
+  atual. Quem ainda não tem senha toca em **Sair e receber novo link** ali
+  mesmo: o link novo vai para o e-mail da conta e a sessão fecha.
 
 ## 5. Cadastrar-se como administrador da plataforma
 
@@ -149,3 +150,36 @@ Se algo falhar no meio da criação do grupo (ficha ou convite), o grupo é
 desfeito sozinho e o endereço fica livre para tentar de novo. A tentativa
 fica registrada em `admin_eventos` como `grupo_desfeito` (sem e-mail nem
 nome, só o endereço e o passo que falhou).
+
+## 7. O que o gestor pode fazer com o acesso dos outros
+
+Tomar o login de alguém é o jeito de ler as conversas dessa pessoa, e nem o
+gestor nem o administrador da plataforma leem conversa de outro. Por isso,
+em **Contas**:
+
+| Conta | O que o gestor pode fazer |
+|---|---|
+| Corretor que **nunca entrou** (convite pendente) | Reenviar o convite e trocar o e-mail. Sem e-mail ligado, o link aparece na tela para mandar pelo WhatsApp. |
+| Corretor que **já entrou** | Só "Mandar link de senha", e o link vai **só para o e-mail da pessoa** — nunca aparece na tela. Sem `RESEND_API_KEY`, o botão recusa e manda a pessoa usar "Esqueci a senha". O e-mail dele não é trocado pela administração. |
+| **Outro gestor** ou quem **administra a plataforma** | Nada. A própria pessoa pede o link em "Esqueci a senha". |
+
+Ou seja: **com o e-mail desligado, quem já entrou e esqueceu a senha não tem
+saída pela mão do gestor.** É mais um motivo para fazer os passos 1 e 2.
+
+## 8. "Esqueci a senha": o limite e quem consegue usar
+
+- No máximo **1 pedido por minuto e 5 por hora** para cada e-mail. Pedido
+  acima disso não manda nada, e a tela responde igual (ela nunca diz se a
+  conta existe). O registro fica em `admin_eventos` como
+  `link_de_senha_pedido`, no grupo da ficha.
+- O e-mail é procurado nas **fichas de corretor** (`corretores.email`).
+  E-mail sem ficha com login não recebe link. Duas consequências:
+  - conta antiga cuja ficha está sem e-mail (criada à mão, antes do convite)
+    não recupera a senha por aqui — o gestor manda o link pelo botão de
+    Contas, que usa o e-mail do login;
+  - o administrador da plataforma **sem** ficha de corretor não recupera a
+    senha pelo site: o caminho é o painel do Supabase (Authentication →
+    Users), por quem tem acesso a ele.
+- O link carrega o e-mail de quem o recebe (`&email=` no fim). A tela do
+  botão "Continuar" mostra qual conta ele abre e avisa quando o navegador
+  já está com outra conta aberta.

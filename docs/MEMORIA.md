@@ -10980,3 +10980,28 @@ e-mail e virar administrador da plataforma: `docs/CONVITE-E-EMAIL.md`.
 - **Para rodar o app contra o Supabase local**, exporte TODAS as chaves que
   `.env`/`.env.local` definem (inclusive `SUPABASE_JWKS_URL`): o `@next/env`
   só não sobrescreve o que já está definido.
+
+## Revisão do acesso da fase 2A: ninguém assume o login de outro (20/10/2026)
+
+- **Link de senha na tela é tomada de conta.** O gestor via o link de senha
+  de qualquer corretor (inclusive de outro gestor) para "mandar pelo
+  WhatsApp", e podia trocar o e-mail de quem já entrava. Hoje: outro gestor
+  e administrador da plataforma são recusados; conta com `last_sign_in_at`
+  só recebe o link no próprio e-mail (sem `RESEND_API_KEY`, nem é gerado) e
+  não troca de e-mail. Sem conseguir ler o Auth, recusa — "não sei se já foi
+  usada" nunca vira "nunca foi".
+- **`generateLink` pela chave de serviço passa por cima do limite do
+  Supabase.** "Esqueci a senha" ganhou limite nosso (1/min, 5/h por e-mail),
+  registrado em `admin_eventos` (`link_de_senha_pedido`, CHECK da 0186). Lê
+  antes de gravar (quem insiste não enche a tabela) e relê depois (pedidos
+  simultâneos se veem e desistem).
+- **Erro do `verifyOtp` não é sempre "link ruim".** Só 4xx (`otp_expired`)
+  queima o cookie do link; rede, 5xx e 429 voltam ao botão com o link ainda
+  valendo.
+- **Compensação que apaga login confere a ficha antes**: o vínculo pode ter
+  gravado e só a resposta se perdido (`apagarLoginSemFicha`, agora no
+  convite do gestor também).
+- **Vitest pelo Git Bash com `cd /c/...` falha com "failed to find the
+  runner"** (a letra do drive em minúscula carrega o vitest duas vezes). Use
+  `cd C:/...` ou PowerShell. E `npx vitest run` pega os testes de
+  `.claude/worktrees/*` de outros agentes: `--exclude ".claude/**"`.

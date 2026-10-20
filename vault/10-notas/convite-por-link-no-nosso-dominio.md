@@ -14,8 +14,10 @@ codigo:
   - src/lib/corretores/convite.ts
   - src/app/plataforma/acoes.ts
   - docs/CONVITE-E-EMAIL.md
+  - src/lib/auth/pedidoDeLinkDeSenha.ts
+  - src/app/corretor/(painel)/admin/acoes.ts
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 summary: Fase 2A — o acesso ao painel é por link de convite/recuperação no nosso domínio (token_hash), gasto só num botão; a tela de criar senha vale só para a sessão do link (amr otp, 15 min). Armadilhas do action_link, do scanner de e-mail, do GoTrue e do ilike do PostgREST.
 ---
 
@@ -106,6 +108,21 @@ chave de serviço.
   convite não falha: a tela mostra o link para copiar.
 - No DNS da Hostinger, o campo **Nome** já completa o domínio: digitar
   `send.nexthomeimoveis.com` cria `send.nexthomeimoveis.com.nexthomeimoveis.com`.
+
+## Revisão de 20/10: ninguém assume o login de outro
+
+- O gestor não manda link, reenvio nem troca de e-mail de **outro gestor**
+  nem de **administrador da plataforma**.
+- Conta com `last_sign_in_at`: link de senha **só no e-mail da pessoa**
+  (sem `RESEND_API_KEY`, nem é gerado) e e-mail que não se troca. Link na
+  tela só para quem nunca entrou. Sem ler o Auth, recusa.
+- "Esqueci a senha" e "Sair e receber novo link" (em `/corretor/senha` com
+  o link vencido) passam por `pedidoDeLinkDeSenha.ts`: 1/min e 5/h por
+  e-mail, registro `link_de_senha_pedido` em `admin_eventos`. E-mail sem
+  ficha com login não gera nada.
+- O link carrega `&email=`; a tela do botão mostra a conta que ele abre, e o
+  botão fecha a sessão se o token abrir outra. Falha passageira do
+  `verifyOtp` (rede, 5xx, 429) não apaga o cookie do link.
 
 ## Relacionados
 
