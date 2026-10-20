@@ -2,7 +2,7 @@
  * Desfazer um grupo recém-criado que não chegou ao fim (fase 2A).
  *
  * Nenhuma chave estrangeira para `grupos` apaga em cascata, então a ordem é
- * a das chaves: as linhas que `criar_grupo` (0186) gravou — evento, taxas,
+ * a das chaves: as linhas que `criar_grupo` (0195) gravou — evento, taxas,
  * fiscal —, a ficha do primeiro acesso, e só então o grupo, que é o que
  * devolve o endereço.
  *
@@ -25,7 +25,7 @@ export type PassoQueFalhou = "ficha" | "convite";
 /**
  * O evento que fica depois do desfazer. Os eventos do grupo (`grupo_criado`,
  * `convite_enviado`) saem junto com ele; sem este, a tentativa falhada
- * sumiria sem rastro. Evento da plataforma (`grupo_id` nulo, 0182): só o
+ * sumiria sem rastro. Evento da plataforma (`grupo_id` nulo, 0191): só o
  * endereço e o passo — nem e-mail, nem nome de pessoa.
  */
 export const ACAO_GRUPO_DESFEITO = "grupo_desfeito";

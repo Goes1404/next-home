@@ -1,6 +1,9 @@
--- 0186 · grupos da plataforma e `criar_grupo` (fase 2A, spec §10, §11, §18)
+-- 0195 · grupos da plataforma e `criar_grupo` (fase 2A, spec §10, §11, §18)
 --
--- A 0181 criou `grupos` com o mínimo da fase 1 (nome, slug, tipo). A fase 2
+-- Nasceu como 0186 na branch `fase-2-plataforma`, sobre a numeração antiga
+-- da fase 1; renumerada para 0195 na junção de 20/10/2026 (depois da 0194).
+--
+-- A 0190 criou `grupos` com o mínimo da fase 1 (nome, slug, tipo). A fase 2
 -- cria grupo pelo painel da plataforma, e o grupo passa a carregar o que a
 -- plataforma precisa saber dele:
 --
@@ -22,10 +25,10 @@
 --      `grupos`, taxas de crédito copiadas da Next Home (spec §19.5),
 --      configuração fiscal vazia e o evento `grupo_criado`;
 --
--- Escrita em `grupos` continua só pela chave de serviço (0181 §6): nenhuma
+-- Escrita em `grupos` continua só pela chave de serviço (0190 §6): nenhuma
 -- coluna nova ganha grant para `anon` nem `authenticated`; o logado segue com
--- o SELECT da 0181, recortado à linha do próprio grupo pela policy — até a
--- 0187, que troca esse SELECT de tabela por SELECT só das colunas básicas
+-- o SELECT da 0190, recortado à linha do próprio grupo pela policy — até a
+-- 0196, que troca esse SELECT de tabela por SELECT só das colunas básicas
 -- (documento, cobrança e LGPD ficam para a chave de serviço).
 
 begin;
@@ -60,7 +63,7 @@ update public.grupos
    set plano = 'custo'
  where id = '00000000-0000-0000-0000-000000000001';
 
--- A 0181 já tirou tudo do anon e do authenticated e devolveu só o SELECT.
+-- A 0190 já tirou tudo do anon e do authenticated e devolveu só o SELECT.
 -- Repetido aqui para a migration não depender disso: coluna nova herda o
 -- grant de tabela, e grant de tabela é o único que o logado pode ter.
 revoke all on public.grupos from anon;
@@ -95,7 +98,7 @@ as $$
 $$;
 
 comment on function public.slug_de_grupo_reservado(text) is
-  'Slug que nenhum grupo pode usar (subdomínio da plataforma). A mesma lista de src/lib/grupos/slugDoGrupo.ts (0186).';
+  'Slug que nenhum grupo pode usar (subdomínio da plataforma). A mesma lista de src/lib/grupos/slugDoGrupo.ts (0195).';
 
 -- ---------------------------------------------------------------------------
 -- 6. `admin_eventos`: o ator da plataforma e as ações novas
@@ -105,7 +108,7 @@ alter table public.admin_eventos
   add column if not exists ator_plataforma_user_id uuid references auth.users(id) on delete set null;
 
 comment on column public.admin_eventos.ator_plataforma_user_id is
-  'Login do operador da plataforma que agiu (não é corretor, por isso não cabe em ator_id) (0186).';
+  'Login do operador da plataforma que agiu (não é corretor, por isso não cabe em ator_id) (0195).';
 
 alter table public.admin_eventos drop constraint if exists admin_eventos_acao_check;
 alter table public.admin_eventos add constraint admin_eventos_acao_check check (
@@ -142,7 +145,7 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
 -- quem decide que o chamador é administrador da plataforma é o servidor,
 -- antes de chamar (a sessão do operador não tem EXECUTE).
 --
--- Grupo de cada linha, pelo carimbo da 0182: todas recebem o grupo novo
+-- Grupo de cada linha, pelo carimbo da 0191: todas recebem o grupo novo
 -- explícito. O papel aqui dentro é `postgres` (dono da função), então o
 -- passo "logado só grava no próprio grupo" não se aplica; o evento é do
 -- grupo criado, e não um evento de plataforma sem grupo, para o gestor do
@@ -232,7 +235,7 @@ end
 $$;
 
 comment on function public.criar_grupo(text, text, text, text, jsonb, uuid) is
-  'Cria um grupo inteiro (linha, taxas copiadas da Next Home, fiscal vazio, evento grupo_criado). Só a chave de serviço executa (0186).';
+  'Cria um grupo inteiro (linha, taxas copiadas da Next Home, fiscal vazio, evento grupo_criado). Só a chave de serviço executa (0195).';
 
 revoke all on function public.criar_grupo(text, text, text, text, jsonb, uuid) from public, anon, authenticated;
 grant execute on function public.criar_grupo(text, text, text, text, jsonb, uuid) to service_role;

@@ -16,7 +16,7 @@
 --   3. Grant de SELECT na coluna para `anon`: a prévia é pública por
 --      natureza e o site a lê pela chave publicável. Hoje o `anon` já tem
 --      SELECT de tabela; o grant por coluna deixa a leitura valendo também
---      quando a leitura pública passar a ser por coluna (0187, outra branch,
+--      quando a leitura pública passar a ser por coluna (0196, ex-0187, fase 2,
 --      ainda não publicada: ao juntar, `chamada_do_link` precisa entrar na
 --      lista de colunas públicas e no grant de lá, porque o `revoke select`
 --      de tabela leva junto os grants por coluna).

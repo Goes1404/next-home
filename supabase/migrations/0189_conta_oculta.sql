@@ -21,8 +21,8 @@
 --          conta oculta precisa abrir o painel) e, se for gestor, tudo.
 --      O gestor e a chave de serviço continuam enxergando a conta: para eles
 --      o recorte é do código (`src/lib/corretores/contaOculta.ts`).
---      Coluna citada só na policy não precisa de SELECT na coluna: a 0187
---      (fase 2) pode tirar `oculta` da chave pública sem quebrar isto.
+--      Coluna citada só na policy não precisa de SELECT na coluna: a 0196
+--      (fase 2, ex-0187) pode tirar `oculta` da chave pública sem quebrar isto.
 --   3. A roleta de leads deixa a conta oculta de FORA (filtro, não ordem).
 --      É a exceção declarada à régua "ordem, nunca filtro" da 0093: lead
 --      atribuído a uma conta que ninguém vê é pior que lead sem dono, porque o

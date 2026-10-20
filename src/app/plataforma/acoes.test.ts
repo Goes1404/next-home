@@ -4,7 +4,7 @@ import { bancoFalso, type BancoFalso } from "../../../test/bancoFalso";
 /**
  * A plataforma cria o grupo com o primeiro acesso (fase 2A, Task 6).
  *
- * Uma operação só para quem opera: o grupo nasce (`criar_grupo`, 0186), a
+ * Uma operação só para quem opera: o grupo nasce (`criar_grupo`, 0195), a
  * ficha do primeiro corretor nasce gestora do grupo e o convite sai pelo
  * mesmo caminho do gestor (`convidarCorretorDoGrupo`). Se o convite ou a
  * ficha falham, nada fica para trás — senão o endereço do grupo ficaria
@@ -52,7 +52,7 @@ const DADOS = {
   primeiroEmail: "  Ana@Silva.com.br ",
 };
 
-/** O `criar_grupo` falso grava o que o real grava (0186), para o desfazer ter o que apagar. */
+/** O `criar_grupo` falso grava o que o real grava (0195), para o desfazer ter o que apagar. */
 function criarGrupoFalso(args: Record<string, unknown>) {
   if (erroDoCriarGrupo) return { data: null, error: erroDoCriarGrupo };
   if (banco.tabelas.grupos.some((g) => g.slug === args.p_slug)) {

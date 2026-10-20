@@ -140,6 +140,11 @@ montado do zero. 0181–0187 ficam vazias de propósito (`RESERVADOS` em
 migrations aplicam em ordem, da 0001 à 0194, e a suíte inteira com
 `DB_TESTE_URL` passa.
 
+A fase 2 nasceu sobre a numeração antiga, como 0186 e 0187, e foi
+renumerada para **0195** (grupos da plataforma) e **0196** (colunas públicas
+de `corretores`) na junção de 20/10: em 0186/0187 ela ordenaria antes de
+`grupos` existir (0190). 0186 e 0187 também ficam vazias.
+
 **Dois `db:teste` ao mesmo tempo se derrubam.** O `project_id` e as portas são
 fixos em `config.toml`, então uma segunda sessão que rode `npm run db:teste`
 enquanto outra testa recria o MESMO container no meio da suíte (aparece como

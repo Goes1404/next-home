@@ -1,4 +1,4 @@
-// Slug do grupo (0186, spec §18 "Slug do grupo", L34).
+// Slug do grupo (0195, spec §18 "Slug do grupo", L34).
 //
 // O slug vira subdomínio na fase 3 (`<slug>.nexthomeimoveis.com`), então
 // segue a regra de rótulo de DNS: minúsculas, dígitos e hífen, sem hífen nas
@@ -7,13 +7,13 @@
 //
 // Três lugares aplicam a regra, e os três têm de concordar:
 //   - esta função, para a tela recusar antes de gravar;
-//   - `criar_grupo` (0186), que é por onde a plataforma cria grupo;
-//   - o CHECK de `grupos.slug` (0186), para quem gravar por fora da função.
+//   - `criar_grupo` (0195), que é por onde a plataforma cria grupo;
+//   - o CHECK de `grupos.slug` (0195), para quem gravar por fora da função.
 // O CHECK aceita uma letra só (os grupos de teste da fase 1 se chamam "a" e
 // "b"); a tela e `criar_grupo` exigem pelo menos dois caracteres, o que pela
 // forma do rótulo dá três ou mais.
 //
-// A lista de reservados existe aqui e em `slug_de_grupo_reservado` (0186);
+// A lista de reservados existe aqui e em `slug_de_grupo_reservado` (0195);
 // `slugDoGrupo.test.ts` lê a migration e compara as duas.
 
 /** Rótulo de DNS: 1 caractere, ou 3 a 63 com hífen só no meio. */

@@ -10,7 +10,7 @@ sai sozinho.
 
 **Ordem:** os passos 1 a 4 podem ser feitos a qualquer hora. O passo 5
 (cadastrar-se como administrador da plataforma) só funciona depois que as
-migrations 0181 a 0187 estiverem aplicadas em produção — antes disso a
+migrations 0188 a 0196 estiverem aplicadas em produção — antes disso a
 tabela não existe.
 
 ---

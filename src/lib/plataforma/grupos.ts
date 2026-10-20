@@ -7,7 +7,7 @@ import type { Database } from "@/lib/supabase/types";
  * As leituras do painel da plataforma (fase 2A, desenho §11).
  *
  * Pela chave de serviço, porque o administrador da plataforma lê TODOS os
- * grupos e a RLS (0184) recorta a sessão ao grupo de quem está logado. Por
+ * grupos e a RLS (0193) recorta a sessão ao grupo de quem está logado. Por
  * isso cada função pede a PROVA da guarda (`exigirAdminDaPlataforma*`,
  * `src/lib/guardas.ts`) no parâmetro: quem chama não tem como esquecê-la, e a
  * guarda `servicoComGrupo.test.ts` (categoria `plataforma-admin`) confere que

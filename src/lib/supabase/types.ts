@@ -57,7 +57,7 @@
  * E, da 0192, o valor `repasse` em `lead_interacoes.tipo` e as funções
  * `slug_de_corretor_livre`, `slug_de_imovel_livre` e `email_de_acesso_livre`.
  *
- * E, da 0186, as colunas novas de `grupos` (plano e situação com as uniões
+ * E, da 0195, as colunas novas de `grupos` (plano e situação com as uniões
  * dos CHECKs, contato de cobrança, identidade jurídica, `criado_por`),
  * `admin_eventos.ator_plataforma_user_id` e as funções `criar_grupo` e
  * `slug_de_grupo_reservado`.

@@ -23,7 +23,7 @@ import { createServiceClient } from "@/lib/supabase/service";
  * serviço nunca decide QUEM pode. Quem decide é
  * `exigirAdminDaPlataformaNaAcao()`, pela sessão; a chave só entra depois,
  * porque o operador age em grupos que a RLS dele não alcança (e o
- * `criar_grupo` só executa pela chave, 0186).
+ * `criar_grupo` só executa pela chave, 0195).
  *
  * Nada aqui lê conversa, ficha nem lead (§4): cadastro do grupo e do
  * primeiro acesso, e mais nada (`servicoComGrupo.test.ts`, `plataforma-admin`).
@@ -37,7 +37,7 @@ export type ResultadoNovoGrupo =
 
 /**
  * O e-mail já é de alguma ficha (de qualquer grupo)? A plataforma não chama
- * `email_de_acesso_livre` (0183), que é do gestor: a mesma pergunta vai pela
+ * `email_de_acesso_livre` (0192), que é do gestor: a mesma pergunta vai pela
  * chave de serviço, e só a contagem volta. Conferir antes de criar o grupo
  * poupa criar e desfazer; o Auth ainda recusa e-mail com login no convite.
  *
@@ -60,7 +60,7 @@ async function emailEmFicha(servico: Servico, email: string): Promise<boolean> {
 /**
  * Primeiro slug de corretor livre a partir do nome, olhando TODOS os grupos
  * (o slug de corretor é global até a fase 3). É a regra de
- * `slug_de_corretor_livre` (0183), que exige gestor; o operador não é, então
+ * `slug_de_corretor_livre` (0192), que exige gestor; o operador não é, então
  * a pergunta vai pela chave de serviço. Erro na conferência não vira
  * "livre": o slug sai com o sufixo de tempo.
  */

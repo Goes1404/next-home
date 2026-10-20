@@ -1,5 +1,7 @@
 # Fase 2 — mapa: cadastro e convite de corretor com e-mail real
 
+> **Numeração (20/10/2026):** este documento foi escrito com a numeração antiga. A fase 1 (0181–0185) virou **0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194) e a fase 2 (0186, 0187) virou **0195** e **0196**. Os números abaixo, inclusive as referências `arquivo:linha`, são os antigos.
+
 Branch `fase-1-multi-grupo`, lido em 19/10/2026. Só leitura. Caminhos relativos a
 `C:/Users/User/nexthome/next-home`. `(painel)` = `src/app/corretor/(painel)`.
 

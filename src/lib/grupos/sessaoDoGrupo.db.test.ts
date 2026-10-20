@@ -3,7 +3,7 @@
 //
 // `getCorretorLogado` faz, pela sessão do logado, duas leituras em paralelo:
 // a ficha (`corretores`, com `SELECT_CORRETOR, papel, ativo, grupo_id`) e o
-// tipo do grupo (`grupos`, só `id, tipo` — `lerTipoDoGrupo`). A 0187 trocou o
+// tipo do grupo (`grupos`, só `id, tipo` — `lerTipoDoGrupo`). A 0196 trocou o
 // SELECT de tabela de `grupos` por SELECT de COLUNAS para `authenticated`:
 // se a leitura do tipo pedisse uma coluna fora da lista, ela viria vazia e o
 // grupo independente veria o menu de imobiliária, calado.
@@ -39,7 +39,7 @@ function comoServico<T>(tx: Conexao, userId: string, fn: (s: TransactionSql) => 
 
 /**
  * As colunas que `corretorSessao.ts` pede, lidas do PRÓPRIO código: se alguém
- * acrescentar à leitura do tipo uma coluna que a 0187 não libera, é este
+ * acrescentar à leitura do tipo uma coluna que a 0196 não libera, é este
  * teste que reprova — e não o menu do independente que vira o de
  * imobiliária, calado.
  */
@@ -52,7 +52,7 @@ const LEITURA_DO_TIPO = /\.from\("grupos"\)\s*\.select\("([^"]+)"\)/.exec(FONTE_
 const COLUNAS_DA_FICHA = [...colunas(SELECT_CORRETOR), ...colunas(SUFIXO_DA_FICHA ?? "")];
 const COLUNAS_DO_TIPO = colunas(LEITURA_DO_TIPO ?? "");
 
-describe.skipIf(!process.env.DB_TESTE_URL)("sessão do painel e o tipo do grupo (Task 7 × 0187)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("sessão do painel e o tipo do grupo (Task 7 × 0196)", () => {
   let sql: Sql;
 
   beforeAll(async () => {
@@ -105,7 +105,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("sessão do painel e o tipo do grupo 
           expect(grupos).toEqual([{ id: grupoId, tipo: "independente" }]);
         });
 
-        // A 0187 vale: o mesmo logado NÃO lê o cadastro de cobrança do grupo.
+        // A 0196 vale: o mesmo logado NÃO lê o cadastro de cobrança do grupo.
         // Prova de que a leitura acima passou por estar dentro das colunas
         // liberadas, e não por um SELECT de tabela que tivesse sobrado.
         await expect(

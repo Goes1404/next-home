@@ -47,6 +47,7 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 
 ## Migrations: numeração e ordem
 - [[colisao-de-migration-entre-branches]] — a guarda só enxerga a própria branch
+- [[revoke-de-tabela-leva-os-grants-por-coluna]] — a fase 2 virou 0195/0196 na junção; o `revoke select` de tabela da 0196 apagaria o grant de `chamada_do_link` da 0188 (20/10)
 - [[rodada-de-26-09-parte-3]] — `corretores` é pública para anon: credencial (token da agenda) saiu para tabela fechada na 0126 (26/09)
 
 ## Relacionados

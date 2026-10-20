@@ -43,7 +43,7 @@ export type PapelCorretor = "corretor" | "gestor";
 /**
  * O corretor logado. Carrega `papel` e `ativo`, que o `CorretorPerfil`
  * público não tem: a vitrine da equipe não precisa saber quem é gestor. As
- * telas públicas de `/corretores` leem `COLUNAS_PUBLICAS_DE_CORRETOR` (0187),
+ * telas públicas de `/corretores` leem `COLUNAS_PUBLICAS_DE_CORRETOR` (0196),
  * que contém as colunas de `SELECT_CORRETOR`.
  */
 export type CorretorSessao = CorretorPerfil & {
@@ -124,7 +124,7 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
     grupoId: data.grupo_id,
     // A linha lida tem de ser a do PRÓPRIO grupo: se um dia uma policy
     // deixar ler outro, o menu não pega o tipo do vizinho.
-    tipoDoGrupo: tipoDoGrupo?.id === data.grupo_id ? tipoDoGrupo.tipo : "imobiliaria",
+    tipoDoGrupo: tipoDoGrupo && tipoDoGrupo.id === data.grupo_id ? tipoDoGrupo.tipo : "imobiliaria",
   };
 });
 
@@ -133,7 +133,7 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
  * sessão: erro, ausência da linha ou valor inesperado devolvem `null`, e o
  * chamador cai em "imobiliária" — o menu completo de antes.
  *
- * A policy "grupos: cada um le o proprio" (0181) só deixa ver a linha do
+ * A policy "grupos: cada um le o proprio" (0190) só deixa ver a linha do
  * próprio grupo, por isso a consulta não precisa esperar o `grupo_id` de
  * `corretores` e roda em paralelo com ela. Mais de uma linha visível faz o
  * `maybeSingle` errar, e o erro também vira `null`.

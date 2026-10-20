@@ -1,8 +1,8 @@
-// Os vocabulários fechados do grupo (0186, desenho §10) e os rótulos da tela.
+// Os vocabulários fechados do grupo (0195, desenho §10) e os rótulos da tela.
 //
 // Módulo PURO: a lista de grupos, o formulário de grupo novo (cliente) e a
 // validação da action usam as mesmas listas. As três precisam concordar com
-// os CHECKs de `grupos` (0186); `rotulosDoGrupo.test.ts` lê a migration.
+// os CHECKs de `grupos` (0195); `rotulosDoGrupo.test.ts` lê a migration.
 
 export const TIPOS_DE_GRUPO = ["imobiliaria", "independente"] as const;
 export type TipoDeGrupo = (typeof TIPOS_DE_GRUPO)[number];

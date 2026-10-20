@@ -48,8 +48,8 @@ const RESERVADOS = new Set<number>([
   // já aplicadas no banco. Para a fase 1 rodar DEPOIS delas — em produção e
   // num banco do zero —, ela foi renumerada para 0190–0194, e 0181–0187
   // ficaram vazias de propósito. A 0186/0187 da branch `fase-2-plataforma`
-  // nasceu sobre a numeração antiga e precisa ir para depois da 0194 ao ser
-  // juntada: num número antigo ela ordenaria antes de `grupos` existir.
+  // nasceu sobre a numeração antiga e, na junção de 20/10/2026, virou
+  // 0195/0196: num número antigo ela ordenaria antes de `grupos` existir.
   181, 182, 183, 184, 185, 186, 187,
 ]);
 

@@ -193,7 +193,8 @@ describe("0189 no banco", () => {
  * oculta de volta na roleta, no ranking e no sorteio, sem nada vermelho. Em
  * 20/10/2026 a fase 1 foi renumerada para 0190–0194 (a 0192 é a que redefine
  * as três, com o recorte), e o caso continua possível: a 0186/0187 da branch
- * `fase-2-plataforma` nasceu sobre a numeração antiga.
+ * `fase-2-plataforma` nasceu sobre a numeração antiga (virou 0195/0196 na
+ * junção de 20/10).
  *
  * Por isso a régua vale para TODA definição em migration posterior à 0180,
  * qualquer que seja a ordem em que ela rode: definição que lê `corretores`

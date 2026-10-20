@@ -245,8 +245,8 @@ function LinhaCorretor({
       try {
         const r = await alternarContaOculta(corretor.id, ocultar);
         aoAvisar(r.erro ?? r.ok ?? "", Boolean(r.erro));
-      } catch {
-        aoAvisar("Não consegui salvar. Confira a conexão e tente de novo.", true);
+      } catch (e) {
+        aoAvisar(fraseDaFalha(e), true);
       }
     });
   };

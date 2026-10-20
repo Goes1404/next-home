@@ -55,7 +55,7 @@ export async function exigirGestorNaAcao(): Promise<ResultadoGuarda> {
  * O administrador da PLATAFORMA (área `/plataforma`), não o gestor de um grupo.
  *
  * Decide pela SESSÃO: `eh_admin_da_plataforma()` lê
- * `administradores_da_plataforma` com o `auth.uid()` do JWT (0181). Nunca
+ * `administradores_da_plataforma` com o `auth.uid()` do JWT (0190). Nunca
  * pela chave de serviço, que ignora quem chama e diria "sim" a qualquer um.
  *
  * Não passa por `getCorretorLogado()`: o administrador da plataforma pode não

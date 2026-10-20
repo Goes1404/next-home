@@ -1,5 +1,7 @@
 # Mapa — cobrança e suspensão (fase 2 multi-grupo)
 
+> **Numeração (20/10/2026):** este documento foi escrito com a numeração antiga. A fase 1 (0181–0185) virou **0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194) e a fase 2 (0186, 0187) virou **0195** e **0196**. Os números abaixo, inclusive as referências `arquivo:linha`, são os antigos.
+
 Branch `fase-1-multi-grupo`, leitura de 19/10/2026. Só fatos com arquivo:linha.
 Desenho: `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`
 §10 (planos/medidor), §11 (painel da plataforma, `situacao`), §18 "Fase 2",

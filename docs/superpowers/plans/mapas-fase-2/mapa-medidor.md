@@ -1,5 +1,7 @@
 # Fase 2 — mapa factual: medidor, cotas, Storage, contingência
 
+> **Numeração (20/10/2026):** este documento foi escrito com a numeração antiga. A fase 1 (0181–0185) virou **0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194) e a fase 2 (0186, 0187) virou **0195** e **0196**. Os números abaixo, inclusive as referências `arquivo:linha`, são os antigos.
+
 Branch `fase-1-multi-grupo` (HEAD 334c337). Só leitura. Spec: §10 (medidor
 único, reserva atômica antes de gastar, mês em SP, aviso 80%, IA para e avisa
 ao acabar), §18 Fase 2 ("medidor cobre toda chamada paga… grava tokens por

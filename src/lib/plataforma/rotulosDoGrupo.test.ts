@@ -16,9 +16,9 @@ function listaDoCheck(arquivo: string, coluna: string): string[] {
 
 describe("vocabulário do grupo", () => {
   it("tipo, plano e situação são os dos CHECKs", () => {
-    expect([...TIPOS_DE_GRUPO]).toEqual(listaDoCheck("0181_grupos.sql", "tipo"));
-    expect([...PLANOS]).toEqual(listaDoCheck("0186_grupos_da_plataforma.sql", "plano"));
-    expect([...SITUACOES]).toEqual(listaDoCheck("0186_grupos_da_plataforma.sql", "situacao"));
+    expect([...TIPOS_DE_GRUPO]).toEqual(listaDoCheck("0190_grupos.sql", "tipo"));
+    expect([...PLANOS]).toEqual(listaDoCheck("0195_grupos_da_plataforma.sql", "plano"));
+    expect([...SITUACOES]).toEqual(listaDoCheck("0195_grupos_da_plataforma.sql", "situacao"));
   });
 
   it("todo valor tem rótulo", () => {

@@ -19,7 +19,7 @@ export function grupoDoSite(): string {
 }
 
 /**
- * O tipo do grupo (0181, `grupos.tipo`): imobiliária com equipe, ou corretor
+ * O tipo do grupo (0190, `grupos.tipo`): imobiliária com equipe, ou corretor
  * independente, que é um grupo de uma pessoa só. O painel usa para esconder
  * do menu o que só faz sentido com equipe (ranking, repasse de leads, convite
  * de contas). Esconder não é bloquear: as rotas continuam abrindo.

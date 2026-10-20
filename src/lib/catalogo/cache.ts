@@ -75,7 +75,7 @@ export const catalogoPublicado = unstable_cache(
 export const corretoresPublicos = unstable_cache(
   async (grupoId: string): Promise<CorretorPerfil[]> => {
     const supabase = createClient();
-    // Só as colunas que a chave pública pode ler (0187): sem e-mail, sem
+    // Só as colunas que a chave pública pode ler (0196): sem e-mail, sem
     // login. Um `select("*")` aqui seria recusado pelo banco inteiro.
     const { data, error } = await comRetentativa("corretores", () =>
       supabase

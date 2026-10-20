@@ -6710,7 +6710,7 @@ ruins — deixe somente a conversa, sem muito segredo"*.
   `FIM_DA_ARTE`.
 - **A barra invertida some entre o heredoc e o disco, de novo.** `"\n}"` num
   script Python chegou ao arquivo como QUEBRA DE LINHA real e o vitest
-  reprovou com "Unterminated string" — mesma família do `` que virou
+  reprovou com "Unterminated string" — mesma família do `\b` que virou
   BACKSPACE em 09/09. O conserto foi tirar a barra da equação (uma constante
   com o texto literal), e a conferência é `repr()`, nunca `grep`.
 - **Âncora de guarda não usa caractere de caixa nem acento.**
@@ -10985,7 +10985,7 @@ e-mail e virar administrador da plataforma: `docs/CONVITE-E-EMAIL.md`.
 - **O `*` do `ilike` não tem escape pelo PostgREST**: ele troca todo `*` por
   `%`, inclusive o escapado. Na comparação de e-mail, o `*` vira `_`.
 - **A chave pública lia o e-mail real de `corretores`** (a policy é
-  pública). A 0187 troca o grant de tabela por grant de colunas; em `grupos`,
+  pública). A 0196 (ex-0187) troca o grant de tabela por grant de colunas; em `grupos`,
   o logado lê só as colunas básicas.
 - **Desfazer grupo apaga os eventos do grupo**, então deixa um evento da
   plataforma (`grupo_desfeito`, `grupo_id` nulo, endereço e passo, sem e-mail).
@@ -11010,7 +11010,7 @@ e-mail e virar administrador da plataforma: `docs/CONVITE-E-EMAIL.md`.
   usada" nunca vira "nunca foi".
 - **`generateLink` pela chave de serviço passa por cima do limite do
   Supabase.** "Esqueci a senha" ganhou limite nosso (1/min, 5/h por e-mail),
-  registrado em `admin_eventos` (`link_de_senha_pedido`, CHECK da 0186). Lê
+  registrado em `admin_eventos` (`link_de_senha_pedido`, CHECK da 0195, ex-0186). Lê
   antes de gravar (quem insiste não enche a tabela) e relê depois (pedidos
   simultâneos se veem e desistem).
 - **Erro do `verifyOtp` não é sempre "link ruim".** Só 4xx (`otp_expired`)
@@ -11125,3 +11125,26 @@ Notas: [[plataforma-multi-grupo]], [[conta-oculta]].
   antiga** e tem de ir para depois da 0194 ao ser juntada.
 - **Dois `db:teste` em sessões paralelas se derrubam** (mesmo `project_id` e
   portas): ver `supabase/REPRODUCAO.md` para subir uma pilha só sua.
+
+## A fase 2 juntada à fase 1: 0195 e 0196 (20/10/2026)
+
+Nota: [[revoke-de-tabela-leva-os-grants-por-coluna]].
+
+- **A fase 2 virou 0195/0196** (eram 0186/0187, sobre a numeração antiga da
+  fase 1). Em 0186/0187 ela ordenaria antes de `grupos` (0190). 0181–0187
+  seguem em `RESERVADOS`. Os documentos de plano da fase 2 ganharam uma nota
+  de topo dizendo que os números deles são os antigos; o código e as notas do
+  vault foram atualizados.
+- **`revoke select` de TABELA apaga os grants por COLUNA do mesmo papel.** A
+  0196 tiraria do `anon` o `chamada_do_link` da 0188, e a prévia do link
+  voltaria ao padrão calada. A lista pública passou a ter `chamada_do_link` e
+  `oculta`; a 0196 não toca em policy, e a policy da 0189 continua escondendo
+  a conta oculta do `anon`.
+- **Guarda que lê nome de arquivo com `\b018x\b` não acha `0181_grupos.sql`**:
+  `_` é caractere de palavra. Ao renumerar, procurar também `018x_`.
+- **`tipoDoGrupo?.id === data.grupo_id` com os dois indefinidos dá `true`** e
+  quebra em `null.tipo`. A comparação agora exige a linha antes.
+- Pilha local própria para não brigar com outra sessão: cópia de
+  `supabase/config.toml` e das migrations numa pasta temporária com outro
+  `project_id` e portas 573xx (`supabase/REPRODUCAO.md`).
+

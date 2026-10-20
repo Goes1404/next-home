@@ -44,8 +44,8 @@ desativar, reativar ou mostrar de novo.
   `admin_eventos.acao` não tem valor para isto, então o registro é o log.
 - **Tolerante a migration ausente:** sem a 0189, `idsDeContasOcultas` devolve
   vazio e tudo segue como antes.
-- **Coluna citada só em policy não exige SELECT na coluna**: a 0187 (fase 2,
-  tira colunas da chave pública) não quebra o filtro do `anon`.
+- **Coluna citada só em policy não exige SELECT na coluna**: a 0196 (fase 2,
+  ex-0187, tira colunas da chave pública) não quebra o filtro do `anon`.
 
 ## A fusão com a fase multi-grupo (renumerada para 0190–0194 em 20/10/2026)
 
@@ -64,7 +64,9 @@ v_eu)`), e o invólucro de dois argumentos só repassa ao de três. A 0194
 `contaOculta.test.ts` continua cobrando TODA definição dessas funções em
 migration posterior à 0180 que leia `corretores`, qualquer que seja a ordem em
 que ela rode: a 0186/0187 da branch `fase-2-plataforma` nasceu sobre a
-numeração antiga e precisa ir para depois da 0194 ao ser juntada.
+numeração antiga e, ao ser juntada (20/10), virou 0195/0196. A 0196 dá ao
+`anon` SELECT em `chamada_do_link` e `oculta` sem tocar nas duas policies
+da 0189: o `anon` segue sem ver a linha oculta.
 
 A policy restritiva por grupo da 0193 (`isolamento_por_grupo`) é só do
 `authenticated` e soma por AND às duas da 0189: o `anon` continua lendo só

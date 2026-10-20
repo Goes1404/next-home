@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 import { SLUGS_DE_GRUPO_RESERVADOS, validarSlugDoGrupo } from "./slugDoGrupo";
 
 /*
- * Slug do grupo (0186, spec §18 / L34): vira nome de DNS na fase 3
+ * Slug do grupo (0195, spec §18 / L34): vira nome de DNS na fase 3
  * (`<slug>.nexthomeimoveis.com`), então segue a regra de rótulo de DNS e não
  * pode tomar um nome que a própria plataforma usa (www, api, painel…).
  *
  * A lista de reservados existe duas vezes: no TS (a tela recusa antes de
  * gravar) e no SQL (`slug_de_grupo_reservado`, que `criar_grupo` consulta).
  * Duas cópias divergem no primeiro nome acrescentado a uma só; o último teste
- * lê a 0186 e compara.
+ * lê a 0195 e compara.
  */
 
 describe("validarSlugDoGrupo", () => {
@@ -50,13 +50,13 @@ describe("validarSlugDoGrupo", () => {
 
   it("a lista do TS é a mesma do SQL", () => {
     const sql = readFileSync(
-      join(process.cwd(), "supabase", "migrations", "0186_grupos_da_plataforma.sql"),
+      join(process.cwd(), "supabase", "migrations", "0195_grupos_da_plataforma.sql"),
       "utf8",
     ).replace(/--[^\n]*/g, "");
     const inicio = sql.search(
       /create (?:or replace )?function public\.slug_de_grupo_reservado/i,
     );
-    expect(inicio, "slug_de_grupo_reservado não está na 0186").toBeGreaterThan(-1);
+    expect(inicio, "slug_de_grupo_reservado não está na 0195").toBeGreaterThan(-1);
     const fim = sql.indexOf("$$;", inicio);
     const corpo = sql.slice(inicio, fim);
     const doSql = [...corpo.matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]).sort();

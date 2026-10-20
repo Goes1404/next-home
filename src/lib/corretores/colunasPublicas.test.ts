@@ -1,9 +1,9 @@
-// Guarda da 0187: dado pessoal do corretor fora da chave pública.
+// Guarda da 0196: dado pessoal do corretor fora da chave pública.
 //
 // `corretores` é lida pela chave `anon` (a página da equipe, o link pessoal).
 // Com e-mail REAL gravado na ficha (fase 2), um `select("*")` pela chave
 // pública listaria o e-mail de cada corretor de todos os grupos. O banco já
-// recusa (a 0187 dá ao `anon` só as colunas públicas), mas a recusa chega
+// recusa (a 0196 dá ao `anon` só as colunas públicas), mas a recusa chega
 // como erro em produção, com o site da equipe fora do ar. Esta guarda pega
 // antes: toda leitura de `corretores` no site público passa pela lista única
 // `COLUNAS_PUBLICAS_DE_CORRETOR`, e a lista é a mesma do grant da migration.
@@ -69,7 +69,7 @@ function leiturasDeCorretores(): Leitura[] {
   return saida;
 }
 
-describe("corretores pela chave pública (0187)", () => {
+describe("corretores pela chave pública (0196)", () => {
   it("a lista pública não tem dado pessoal", () => {
     for (const c of PESSOAIS) expect(colunas(COLUNAS_PUBLICAS_DE_CORRETOR)).not.toContain(c);
   });
@@ -79,9 +79,9 @@ describe("corretores pela chave pública (0187)", () => {
     for (const c of colunas(SELECT_CORRETOR)) expect(publicas.has(c), c).toBe(true);
   });
 
-  it("o grant da 0187 é exatamente a lista pública", () => {
+  it("o grant da 0196 é exatamente a lista pública", () => {
     const sql = readFileSync(
-      join(RAIZ, "supabase", "migrations", "0187_corretores_sem_dado_pessoal_publico.sql"),
+      join(RAIZ, "supabase", "migrations", "0196_corretores_sem_dado_pessoal_publico.sql"),
       "utf8",
     )
       .split("\n")
@@ -91,6 +91,29 @@ describe("corretores pela chave pública (0187)", () => {
     const grant = /grant\s+select\s*\(([^)]*)\)\s*on\s+public\.corretores\s+to\s+anon\s*;/i.exec(sql);
     expect(grant, "grant select (...) on public.corretores to anon").not.toBeNull();
     expect(colunas(grant![1]).sort()).toEqual(colunas(COLUNAS_PUBLICAS_DE_CORRETOR).sort());
+  });
+
+  it("a lista pública leva o texto da prévia (0188) e a marca da conta oculta (0189)", () => {
+    // O `revoke select` de tabela da 0196 leva junto o grant por coluna da
+    // 0188: sem `chamada_do_link` na lista, a prévia do link cairia no padrão
+    // calada. `oculta` é a segunda trava do recorte no código.
+    const publicas = colunas(COLUNAS_PUBLICAS_DE_CORRETOR);
+    expect(publicas).toContain("chamada_do_link");
+    expect(publicas).toContain("oculta");
+  });
+
+  it("a 0196 não mexe nas policies de leitura de corretores (o anon segue sem ver conta oculta)", () => {
+    // As duas policies da 0189 ("visiveis ao publico", `not oculta`; "visiveis
+    // ao logado") são a primeira trava. Ler a coluna `oculta` não revela nada
+    // só porque a linha oculta nem chega ao `anon`.
+    const sql = readFileSync(
+      join(RAIZ, "supabase", "migrations", "0196_corretores_sem_dado_pessoal_publico.sql"),
+      "utf8",
+    )
+      .split(/\r?\n/)
+      .map((l) => l.replace(/--.*$/, ""))
+      .join("\n");
+    expect(sql).not.toMatch(/policy/i);
   });
 
   it("a guarda encontra as leituras do site (não está cega)", () => {
@@ -105,7 +128,7 @@ describe("corretores pela chave pública (0187)", () => {
     expect(
       fora.map((l) => `${l.arquivo}: ${l.cadeia.replace(/\s+/g, " ").slice(0, 120)}`),
       "No site público, `corretores` se lê com .select(COLUNAS_PUBLICAS_DE_CORRETOR): " +
-        "a chave anon só tem SELECT nessas colunas (0187), e e-mail, user_id e " +
+        "a chave anon só tem SELECT nessas colunas (0196), e e-mail, user_id e " +
         "deve_trocar_senha não podem sair do banco por ela.",
     ).toEqual([]);
   });

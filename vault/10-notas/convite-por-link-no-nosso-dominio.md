@@ -93,7 +93,7 @@ endereço e o passo — sem e-mail nem nome.
 ## A chave pública lia o e-mail real
 
 Com e-mail real na ficha, a policy pública de `corretores` deixava o `anon`
-ler `email`, `user_id` e `deve_trocar_senha`. A 0187 troca o grant de tabela
+ler `email`, `user_id` e `deve_trocar_senha`. A 0196 troca o grant de tabela
 por grant de colunas (as que o site mostra). Mesma migration: `grupos` só
 mostra ao logado as colunas básicas; documento, cobrança e LGPD ficam para a
 chave de serviço.

@@ -17,7 +17,7 @@ export const SELECT_EMPREENDIMENTO = `
 
 /**
  * As colunas que `mapCorretor` lê. A leitura PÚBLICA de corretores usa
- * `COLUNAS_PUBLICAS_DE_CORRETOR` (`corretores/colunasPublicas.ts`, 0187), que
+ * `COLUNAS_PUBLICAS_DE_CORRETOR` (`corretores/colunasPublicas.ts`, 0196), que
  * as contém; aqui fica o que o login do painel lê pela sessão.
  */
 export const SELECT_CORRETOR =

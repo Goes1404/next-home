@@ -183,7 +183,7 @@ describe("convidar", () => {
   });
 
   it("convidar não revela o grupo de um e-mail em uso", async () => {
-    // Pela conferência global (0183): ocupado em qualquer grupo.
+    // Pela conferência global (0192): ocupado em qualquer grupo.
     emailLivre = false;
     const r1 = await criarAcessoCorretor("c1", "beto@gmail.com");
     expect(r1).toEqual({ ok: false, erro: MENSAGEM_EMAIL_EM_USO });

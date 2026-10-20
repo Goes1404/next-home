@@ -1,4 +1,4 @@
-// Grupos da plataforma e `criar_grupo` (0186), medidos no banco local
+// Grupos da plataforma e `criar_grupo` (0195), medidos no banco local
 // (`npm run db:teste`).
 //
 // Criar grupo é ato da plataforma: só a chave de serviço executa
@@ -43,7 +43,7 @@ const CONTATO = {
   telefone: "11999990000",
 };
 
-describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0195, 0196)", () => {
   let sql: Sql;
 
   beforeAll(async () => {
@@ -323,7 +323,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
     expect(escreve).toBe(false);
   });
 
-  // 0187: com e-mail REAL na ficha (fase 2), a chave pública só lê as colunas
+  // 0196: com e-mail REAL na ficha (fase 2), a chave pública só lê as colunas
   // que o site mostra. `authenticated` não muda nesta migration.
   it("anon não lê email de corretores", async () => {
     for (const coluna of ["email", "user_id", "deve_trocar_senha"]) {
@@ -363,7 +363,37 @@ describe.skipIf(!process.env.DB_TESTE_URL)("grupos da plataforma (0186, 0187)", 
     expect(logado).toBe(true);
   });
 
-  // Mesma migration: as colunas da 0186 (documento, cobrança, LGPD) são da
+  // A 0196 tira o SELECT de tabela do anon, o que leva junto o grant por
+  // coluna da 0188: `chamada_do_link` tem de seguir legível (prévia do link).
+  // E ler `oculta` não pode virar porta para a conta oculta: a policy da 0189
+  // continua escondendo a linha.
+  it("anon lê a prévia do link e continua sem ver conta oculta", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const b = await criarGrupo(tx, { slug: "grupo-b" });
+      await tx`
+        update public.corretores set chamada_do_link = 'Meus imóveis em Barueri'
+         where id = ${b.corretorId}
+      `;
+      await tx`update public.corretores set oculta = true where id = ${b.gestorId}`;
+      const linhas = await tx.savepoint(async (s) => {
+        await s`set local role anon`;
+        return s.unsafe(
+          `select ${COLUNAS_PUBLICAS_DE_CORRETOR} from public.corretores where grupo_id = $1 order by nome`,
+          [b.grupoId],
+        );
+      });
+      expect(linhas.map((l) => l.nome)).toEqual(["corretor grupo-b"]);
+      expect(linhas[0].chamada_do_link).toBe("Meus imóveis em Barueri");
+      expect(linhas[0].oculta).toBe(false);
+      const [{ n }] = await tx.savepoint(async (s) => {
+        await s`set local role anon`;
+        return s`select count(*)::int as n from public.corretores where oculta`;
+      });
+      expect(n).toBe(0);
+    });
+  });
+
+  // Mesma migration: as colunas da 0195 (documento, cobrança, LGPD) são da
   // plataforma, não de todo corretor do grupo. O logado lê só o básico.
   it("corretor lê tipo do grupo e não lê documento", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {

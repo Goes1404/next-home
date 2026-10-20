@@ -1,5 +1,7 @@
 # Mapa da frente "Painel da plataforma e grupos" — fase 2 multi-grupo
 
+> **Numeração (20/10/2026):** este documento foi escrito com a numeração antiga. A fase 1 (0181–0185) virou **0190–0194** (0181→0190, 0182→0191, 0183→0192, 0184→0193, 0185→0194) e a fase 2 (0186, 0187) virou **0195** e **0196**. Os números abaixo, inclusive as referências `arquivo:linha`, são os antigos.
+
 Branch `fase-1-multi-grupo` (HEAD 334c337), lida em 19/10/2026. Só leitura.
 Caminhos relativos a `C:/Users/User/nexthome/next-home`. Desenho: spec
 `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`
