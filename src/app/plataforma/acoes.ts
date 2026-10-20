@@ -173,7 +173,9 @@ async function apagarLoginSemFicha(servico: Servico, userId: string): Promise<vo
 function erroDoCriarGrupo(error: { message: string; code?: string }): string {
   if (error.code === "23505") return "Esse endereço já é de outro grupo. Escolha outro.";
   console.error("[plataforma] criar_grupo falhou:", error.message);
-  return "Não foi possível criar o grupo agora. Tente de novo.";
+  // Pode ter falhado só a resposta, com o grupo já criado: tentar de novo
+  // às cegas bateria no endereço repetido e pareceria culpa dele.
+  return "Não foi possível confirmar a criação do grupo. Antes de tentar de novo, confira na lista de grupos se ele já aparece.";
 }
 
 /**

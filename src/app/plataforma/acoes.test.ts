@@ -419,7 +419,14 @@ describe("criar grupo com o primeiro acesso", () => {
   it("erro inesperado do criar_grupo não vaza a mensagem do banco", async () => {
     erroDoCriarGrupo = { message: "taxas de crédito da Next Home ausentes", code: "P0001" };
     const r = await criarGrupoComPrimeiroAcesso(DADOS);
-    expect(r).toEqual({ ok: false, erro: "Não foi possível criar o grupo agora. Tente de novo." });
+    expect(r.ok).toBe(false);
+    const erro = r.ok ? "" : r.erro;
+    expect(erro).not.toContain("taxas");
+    // Erro que não é de endereço repetido pode ter acontecido DEPOIS de o
+    // grupo nascer (a resposta se perdeu): a frase manda olhar a lista antes
+    // de tentar de novo, e não culpa o endereço.
+    expect(erro).toMatch(/lista de grupos/);
+    expect(erro).not.toMatch(/endereço/i);
   });
 
   it("quem não é administrador não cria grupo", async () => {
