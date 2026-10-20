@@ -79,3 +79,16 @@ TTFB local) fica no fim deste plano e na nota do vault.
 `next build` antes/depois (tabela de rotas) e TTFB local com `next start`
 (`x-nextjs-cache`) na home, `/sobre` e ficha do imóvel, para o host da Next
 Home e para um host de outro grupo.
+
+## Resultado da medida (20/10/2026, `next start` local, banco local)
+
+| | antes | depois |
+|---|---|---|
+| Páginas estáticas no build | `/`, `/sobre`, `/contato`, `/corretores`, `/mapa`, `/privacidade`, `/anunciar-imovel`, `/financiamento`, `/regioes/*` | as mesmas, sob `/s/<host canônico>` |
+| `/`, `/sobre`, `/corretores`, `/mapa` (2ª visita) | HIT, 13–22 ms | HIT, 11–27 ms, em qualquer host |
+| 1ª visita de um host novo | — | MISS, 60–300 ms, depois HIT |
+| `s-maxage` | 3600 | 3600 na Next Home; 300 em outro grupo (cache do endereço) |
+| `/sitemap.xml`, `/robots.txt` | estáticos | dinâmicos, 8–15 ms (dados em cache) |
+| Endereço desconhecido | site da Next Home | 404 neutro, `robots: Disallow: /` |
+
+Decisão mantida: host no caminho, páginas geradas por site.
