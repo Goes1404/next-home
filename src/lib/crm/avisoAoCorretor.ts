@@ -26,9 +26,23 @@ export async function avisarCorretor(
 ): Promise<boolean> {
   const [porWhatsapp, porNotificacao] = await Promise.all([
     avisarPorWhatsapp(supabase, corretorId, texto),
-    notificarCorretor(supabase, corretorId, { titulo: site.nome, corpo: texto, url }),
+    notificarCorretor(supabase, corretorId, { ...notificacaoDoTexto(texto), url }),
   ]);
   return porWhatsapp || porNotificacao > 0;
+}
+
+/**
+ * A mesma mensagem, na forma de notificação: a primeira linha (a ação) vira
+ * o título e o resto o corpo, sem os endereços — quem leva ao lugar certo é
+ * o toque. Texto de uma linha só sai com o nome da casa no título.
+ */
+export function notificacaoDoTexto(texto: string): { titulo: string; corpo: string } {
+  const linhas = texto
+    .split("\n")
+    .map((l) => l.replace(/\*/g, "").trim())
+    .filter((l) => l && !/^(\S+: )?https?:\/\//.test(l));
+  if (linhas.length < 2) return { titulo: site.nome, corpo: linhas[0] ?? "" };
+  return { titulo: linhas[0], corpo: linhas.slice(1).join("\n") };
 }
 
 async function avisarPorWhatsapp(supabase: Supa, corretorId: string, texto: string): Promise<boolean> {

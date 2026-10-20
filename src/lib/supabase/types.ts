@@ -3344,6 +3344,7 @@ export type Database = {
         Row: {
           grupo_id: string
           alerta_quente_em: string | null
+          alertas_ao_corretor: Json
           atendida_em: string | null
           aviso_sem_resposta_em: string | null
           memoria: string | null
@@ -3371,6 +3372,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           alerta_quente_em?: string | null
+          alertas_ao_corretor?: Json
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
           memoria?: string | null
@@ -3398,6 +3400,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           alerta_quente_em?: string | null
+          alertas_ao_corretor?: Json
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
           memoria?: string | null

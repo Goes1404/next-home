@@ -113,3 +113,4 @@ F0–F6.
 - [[a-ia-so-responde]] — listas sugeridas no Início, resumo do lead na ficha, estado da IA em uma frase, nova paleta do funil (03/10)
 - [[visita-remarcada-e-desmarcada-pela-conversa]] — visita combinada pelo corretor no chat vira sugestão de registro na fila do Início (0163, 06/10)
 - [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)
+- [[aviso-ao-corretor-diz-o-que-fazer]] — alertas do atendimento e resumo do dia: o que fazer primeiro, ficha numa linha, carência por motivo (20/10)

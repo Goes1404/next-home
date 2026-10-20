@@ -76,4 +76,9 @@ comment on column public.leads.aviso_lead_novo_em is
 -- mas a marca deixa a regra valer sem depender da janela.
 update public.leads set aviso_lead_novo_em = created_at where aviso_lead_novo_em is null;
 
+-- Carência do alerta ao corretor por motivo (20/10/2026): { "<motivo>": "<quando saiu>" }.
+-- Só a chave de serviço escreve (o webhook); a tela não lê.
+alter table public.whatsapp_conversas
+  add column if not exists alertas_ao_corretor jsonb not null default '{}'::jsonb;
+
 commit;

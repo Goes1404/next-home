@@ -11090,3 +11090,21 @@ Nota: [[notificacao-no-celular-do-corretor]].
   mundo.
 - `Uint8Array.from` é `Uint8Array<ArrayBufferLike>` e o `subscribe` recusa
   no TS 5.9: monte a chave sobre `new ArrayBuffer`.
+
+## O aviso ao corretor dizia a mesma coisa em toda situação (20/10/2026)
+
+Nota: [[aviso-ao-corretor-diz-o-que-fazer]].
+
+- **`formatarAlertaCorretor` tinha um corpo só para oito motivos**, com
+  "cliente de alto padrão", "taxa de conversão" e "Imóveis em Alphaville"
+  mesmo em visita desmarcada. Agora: o que fazer, o fato, o que o cliente
+  disse, a ficha numa linha e o que falta saber.
+- **Repetição:** só o lead quente tinha carência. Agora cada motivo tem a
+  sua (`alertas_ao_corretor`, na 0203); a visita proposta pela IA deixou de
+  ser motivo de alerta.
+- **Resumo do dia:** fora os leads cadastrados pelo próprio corretor, origem
+  em português e a visita sem retorno aparece uma vez só.
+- **Python escrevendo TypeScript trocou `
+` por quebra de linha real outra
+  vez**, em dois arquivos. Trecho com barra invertida vai pela ferramenta de
+  edição.

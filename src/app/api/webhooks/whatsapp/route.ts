@@ -16,7 +16,10 @@ import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
 import { mesclarMemoria } from "@/lib/whatsapp/memoriaDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { instrucaoDoAudio, transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
-import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
+import { formatarAlertaCorretor, formatarAtualizacaoDossie, type MotivoAlerta } from "@/lib/whatsapp/brokerNotifier";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { site } from "@/lib/site";
 import {
   baixarMidiaDoProvedor,
   enviarMensagemWhatsapp,
@@ -49,7 +52,7 @@ import {
   marcarRespostaCampanha,
   ultimaListaDoLead,
   obterOuCriarConversa,
-  podeAlertarLeadQuente,
+  podeAlertar,
   preencherNomeContato,
   registrarEventoConexao,
   desligarIaPorFalaDoCorretor,
@@ -1453,59 +1456,63 @@ export async function POST(req: NextRequest) {
      * ninguém ficou sabendo que precisava acontecer.
      */
     const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
-    const exigeAcaoAgora =
-      visitaConfirmada || visitaDesmarcada !== null || respostaIA.transferirHumano || pediuLigacao;
     /*
-     * A IA prometeu que o corretor traz a resposta ("confirmo com o corretor
-     * e te trago"). Sem este aviso ninguém ficava sabendo, e a promessa
-     * virava mentira (ver `promessaDeRetorno.ts`). Passa pela mesma carência
-     * do lead quente: prometer de novo na mensagem seguinte não repete o
-     * aviso.
+     * Um motivo por alerta, na ordem do que exige ação primeiro. A visita
+     * que a IA PROPÔS por conta própria não é motivo: o cliente ainda não
+     * respondeu (era ela que virava o "SOLICITAÇÃO DE VISITA" de mentira).
+     * A promessa de retorno (`promessaDeRetorno.ts`) e o lead quente passam
+     * pela carência por motivo de `podeAlertar`, como o resto.
      */
-    const prometeuRetorno =
-      !exigeAcaoAgora &&
-      iaPrometeuRetorno(respostaIA.textoResposta ?? "") &&
-      (await podeAlertarLeadQuente(conversa.id));
-    const deveAlertar =
-      exigeAcaoAgora ||
-      prometeuRetorno ||
-      (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
+    const motivoDoAlerta: MotivoAlerta | null = visitaRemarcada
+      ? "visita_remarcada"
+      : visitaDesmarcada
+      ? "visita_desmarcada"
+      : visitaConfirmada
+      ? "visita_confirmada"
+      : pediuLigacao
+      ? "ligacao_solicitada"
+      : respostaIA.transferirHumano
+      ? "transferencia_humana"
+      : iaPrometeuRetorno(respostaIA.textoResposta ?? "")
+      ? "duvida_pendente"
+      : dossie.temperaturaScore >= 75
+      ? "lead_quente"
+      : null;
+    const deveAlertar = motivoDoAlerta !== null && (await podeAlertar(conversa.id, motivoDoAlerta));
+    /* O nome da FICHA; o apelido do perfil só na falta dela; senão, o telefone. */
+    const nomeDoClienteNoAviso = nomeParaExibir({
+      nome: dossie.nomeCliente ?? payload.senderName ?? null,
+      telefone: sender,
+    });
+    const linkDaFicha = conversa.leadId ? `${site.url}/corretor/leads/${conversa.leadId}` : null;
+    const caminhoDaFicha = conversa.leadId ? `/corretor/leads/${conversa.leadId}` : `/corretor/conversas?c=${conversa.id}`;
 
-    if (deveAlertar) {
-      const resultadoAlerta = await notificarCorretorLeadQuente({
-        instanceName: instancia.instanceName,
-        telefoneCorretor: instancia.whatsappCorretor,
-        nomeCorretor: instancia.nomeCorretor,
-        nomeCliente: payload.senderName || "Cliente WhatsApp",
+    if (deveAlertar && motivoDoAlerta) {
+      const texto = formatarAlertaCorretor({
+        motivo: motivoDoAlerta,
+        nomeCliente: nomeDoClienteNoAviso,
         telefoneCliente: sender,
-        empreendimentoNome: respostaIA.empreendimentoCitado,
-        temperaturaScore: dossie.temperaturaScore,
-        resumoDossie: visitaRemarcada
-          ? `O cliente remarcou a visita: era ${rotuloDaVisita(visitaRemarcada)}, agora é ${rotuloDaVisita(dataGravada!)}. ${dossie.resumoExecutivo}`
+        imovel: respostaIA.empreendimentoCitado ?? null,
+        ficha: {
+          rendaMensal: dossie.rendaMensal,
+          regiaoInteresse: dossie.regiaoInteresse,
+          dormitoriosMin: dossie.dormitoriosMin,
+          orcamentoMax: dossie.orcamentoMax,
+        },
+        fato: visitaRemarcada
+          ? `Era ${rotuloDaVisita(visitaRemarcada)}; agora é ${rotuloDaVisita(dataGravada!)}. O funil já está com a data nova.`
           : visitaDesmarcada
-          ? `O cliente desmarcou a visita de ${rotuloDaVisita(visitaDesmarcada)}. Ele disse: "${turno.vezDoCliente.join(" / ")}". ${dossie.resumoExecutivo}`
+          ? `Era ${rotuloDaVisita(visitaDesmarcada)}. Já saiu da sua agenda.`
           : visitaConfirmada
-          ? `Visita confirmada para ${new Date(respostaIA.visitaProposta!.dataHoraISO).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. ${dossie.resumoExecutivo}`
-          : prometeuRetorno
-          ? `O cliente perguntou: "${turno.vezDoCliente.join(" / ")}". A assistente disse que você responde. ${dossie.resumoExecutivo}`
-          : dossie.resumoExecutivo,
-        motivoAlerta: visitaRemarcada
-          ? "visita_remarcada"
-          : visitaDesmarcada
-          ? "visita_desmarcada"
-          : visitaConfirmada
-          ? "visita_confirmada"
-          : pediuLigacao
-          ? "ligacao_solicitada"
-          : prometeuRetorno
-          ? "duvida_pendente"
-          : respostaIA.sugerirVisita
-          ? "visita_solicitada"
-          : respostaIA.transferirHumano
-          ? "transferencia_humana"
-          : "lead_quente_score_alto",
+          ? `${rotuloDaVisita(dataGravada!)}. Já está no seu funil.`
+          : motivoDoAlerta === "duvida_pendente"
+          ? "A assistente disse que você responde."
+          : null,
+        falaDoCliente: turno.vezDoCliente.join(" / "),
+        linkFicha: linkDaFicha,
       });
-      alerta = { enviado: resultadoAlerta.enviado, motivo: resultadoAlerta.motivo };
+      const enviado = await avisarCorretor(createServiceClient(), instancia.corretorId, texto, caminhoDaFicha);
+      alerta = { enviado, motivo: enviado ? undefined : "aviso_nao_saiu" };
     } else {
       /*
        * Aviso curto de evolução — só o que um corretor consideraria
@@ -1526,15 +1533,18 @@ export async function POST(req: NextRequest) {
       if (evolucao) {
         const ultimo = await ultimoAvisoEvolucao(conversa.id);
         if (podeAvisarAgora(ultimo, evolucao.urgente)) {
-          const resultadoAtualizacao = await notificarAtualizacaoCorretor({
-            instanceName: instancia.instanceName,
-            telefoneCorretor: instancia.whatsappCorretor,
-            nomeCliente: payload.senderName || "Cliente WhatsApp",
-            telefoneCliente: sender,
-            resumoMudancas: evolucao.linhas.join("\n"),
-          });
-          alerta = { enviado: resultadoAtualizacao.enviado, motivo: resultadoAtualizacao.motivo };
-          if (resultadoAtualizacao.enviado) await marcarAvisoEvolucao(conversa.id);
+          const enviado = await avisarCorretor(
+            createServiceClient(),
+            instancia.corretorId,
+            formatarAtualizacaoDossie({
+              nomeCliente: nomeDoClienteNoAviso,
+              resumoMudancas: evolucao.linhas.join("\n"),
+              linkFicha: linkDaFicha,
+            }),
+            caminhoDaFicha,
+          );
+          alerta = { enviado, motivo: enviado ? undefined : "aviso_nao_saiu" };
+          if (enviado) await marcarAvisoEvolucao(conversa.id);
         }
       }
     }
