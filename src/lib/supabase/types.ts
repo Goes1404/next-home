@@ -1808,6 +1808,50 @@ export type Database = {
           },
         ]
       }
+      inscricoes_push: {
+        Row: {
+          aparelho: string | null
+          auth: string
+          corretor_id: string
+          created_at: string
+          endpoint: string
+          grupo_id: string
+          id: string
+          p256dh: string
+          ultimo_envio_em: string | null
+        }
+        Insert: {
+          aparelho?: string | null
+          auth: string
+          corretor_id: string
+          created_at?: string
+          endpoint: string
+          grupo_id?: string
+          id?: string
+          p256dh: string
+          ultimo_envio_em?: string | null
+        }
+        Update: {
+          aparelho?: string | null
+          auth?: string
+          corretor_id?: string
+          created_at?: string
+          endpoint?: string
+          grupo_id?: string
+          id?: string
+          p256dh?: string
+          ultimo_envio_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscricoes_push_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inbound_logs: {
         Row: {
           grupo_id: string
@@ -2742,6 +2786,7 @@ export type Database = {
           grupo_id: string
           anuncio_origem: string | null
           arquivado_em: string | null
+          aviso_lead_novo_em: string | null
           arquivado_motivo: string | null
           campos_do_corretor: Json
           consentimento_lgpd: boolean
@@ -2801,6 +2846,7 @@ export type Database = {
           grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
@@ -2860,6 +2906,7 @@ export type Database = {
           grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean

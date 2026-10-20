@@ -112,3 +112,4 @@ F0–F6.
 - [[tabela-de-precos-lida-pela-ia]] — a tabela da construtora (unidades) é lida pela IA; o menor valor só entra se estiver escrito no arquivo; PDF e prints (o tabelão da RSF) desde 13/10
 - [[a-ia-so-responde]] — listas sugeridas no Início, resumo do lead na ficha, estado da IA em uma frase, nova paleta do funil (03/10)
 - [[visita-remarcada-e-desmarcada-pela-conversa]] — visita combinada pelo corretor no chat vira sugestão de registro na fila do Início (0163, 06/10)
+- [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)

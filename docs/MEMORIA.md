@@ -11076,3 +11076,17 @@ Nota: [[lead-da-campanha-do-corretor-sem-ia]].
 - **Origem do lead `553899928763`** (pergunta de 20/10): anúncio
   "APARTAMENTO PRONTO!" (Meta `52560103521954`) da Carolini, detectado pela
   etiqueta em 16/10; o lead chegou em 17/10 com a mensagem pronta do Bless.
+
+## O aviso ao corretor não tocava: notificação no celular (0203, 20/10/2026)
+
+Nota: [[notificacao-no-celular-do-corretor]].
+
+- **Aviso pelo WhatsApp do próprio número cai na conversa "Você", sem
+  notificação.** Foi assim que 8 leads de anúncio da Carolini ficaram três
+  dias sem resposta. Agora lead que chega vira notificação no celular (Web
+  Push), e todo `avisarCorretor` manda pelos dois canais.
+- **Chaves VAPID nas variáveis da Vercel**; sem elas nada sai. A 0203 marca
+  os leads antigos como avisados, para o primeiro tique não notificar todo
+  mundo.
+- `Uint8Array.from` é `Uint8Array<ArrayBufferLike>` e o `subscribe` recusa
+  no TS 5.9: monte a chave sobre `new ArrayBuffer`.

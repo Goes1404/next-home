@@ -86,6 +86,7 @@ import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -869,6 +870,17 @@ export async function POST(req: NextRequest) {
       if (conversa.botAtivo && (await calarIaNaConversaDeCampanha(conversa.id))) {
         iaCaladaPelaCampanha = true;
       }
+    }
+
+    /*
+     * Lead novo (0203): notificação no celular do corretor, na hora. Só age
+     * se o lead acabou de nascer (o claim `aviso_lead_novo_em` está vazio);
+     * para lead antigo é uma consulta que não devolve nada. Depois da
+     * resposta, para não atrasar o atendimento.
+     */
+    if (conversa.leadId) {
+      const leadParaAviso = conversa.leadId;
+      after(() => avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0));
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de
