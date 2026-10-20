@@ -11259,3 +11259,28 @@ Nota: [[identidade-da-ia-de-cada-grupo]].
   (coluna ausente) é "nada fixado"; o resto loga e avisa.
 - **Pendência**: a recusa com lugar de outro grupo (`COMPLEMENTO_QUE_DESARMA`)
   fica para quando a região passar pelo planner; `it.fails` documenta.
+
+## Saída do corretor: etiqueta de origem e fichas (0200, 20/10/2026)
+
+Nota: [[saida-do-corretor-e-etiqueta-de-origem]].
+
+- **`leads.trazido_por` é escrita só pelo gatilho `leads_trazido_por`**, que
+  ignora o valor do insert e qualquer troca, até pela chave de serviço. Muda
+  só com troca de `corretor_id` (vira `imobiliaria`) e com a ficha
+  `whatsapp/organico` ganhando a origem verdadeira (impulsionamento, 0127).
+  Teste que precise de lead "do corretor" escolhe a ORIGEM, não a coluna.
+- **Gatilho BEFORE roda em ordem alfabética**: `leads_trazido_por` vem depois
+  de `leads_distribuir`, então já vê `origem_atribuicao = 'roleta'`.
+- **"Dividir pela roleta" lead antigo dá tudo para uma pessoa** se usar só a
+  carga da roleta: ela conta lead criado nos últimos 30 dias, e lead movido
+  não muda essa conta. A devolução põe um contador da própria divisão antes
+  da carga; `saidaUsaOrdemDaRoleta.test.ts` mantém as duas ordens iguais.
+- **`leads.mensagem` pode ter falas do cliente** (importação de conversa):
+  fica fora da planilha das fichas, junto com `detalhes`, dossiê e notas.
+- **Corretor desativado perde a sessão (0190)**: por isso quem baixa as
+  fichas é o gestor, antes ou depois de desativar.
+- **`next build` no Windows falha por `PixelMeta.tsx` × `pixelMeta.ts`**
+  (só a caixa difere), então a catraca de bundle não roda aqui: confira no CI.
+- **Heredoc de Python com acento no Windows** pode não casar o texto do
+  arquivo (a codificação do stdin troca "→" e "ã"). Para editar trecho com
+  acento, use a ferramenta de edição ou `node -e`.

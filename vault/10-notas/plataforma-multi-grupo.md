@@ -175,3 +175,7 @@ viraria N migrations.
   grupo com o primeiro acesso. Armadilhas e o que é configuração de
   produção em [[convite-por-link-no-nosso-dominio]]; passo a passo em
   `docs/CONVITE-E-EMAIL.md`.
+- **Fase 5 enxuta: saída do corretor (20/10).** Todo lead diz quem o trouxe
+  (`leads.trazido_por`, 0200); desativar quem tem leads divide a carteira, e o
+  gestor baixa a planilha das fichas que o corretor leva (ele perde a sessão
+  ao ser desativado, 0190). Ver [[saida-do-corretor-e-etiqueta-de-origem]].
