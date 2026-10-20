@@ -1657,6 +1657,7 @@ export type Database = {
       }
       grupos: {
         Row: {
+          cancelado_em: string | null
           contato_cobranca_email: string | null
           contato_cobranca_nome: string | null
           contato_cobranca_telefone: string | null
@@ -1666,6 +1667,8 @@ export type Database = {
           criado_por: string | null
           documento: string | null
           encarregado_lgpd_email: string | null
+          dados_apagados_em: string | null
+          exportacao_final_caminho: string | null
           encarregado_lgpd_nome: string | null
           ia_nome_assistente: string | null
           ia_nome_da_casa: string | null
@@ -1681,6 +1684,7 @@ export type Database = {
           tipo: "imobiliaria" | "independente"
         }
         Insert: {
+          cancelado_em?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null
@@ -1690,6 +1694,8 @@ export type Database = {
           criado_por?: string | null
           documento?: string | null
           encarregado_lgpd_email?: string | null
+          dados_apagados_em?: string | null
+          exportacao_final_caminho?: string | null
           encarregado_lgpd_nome?: string | null
           ia_nome_assistente?: string | null
           ia_nome_da_casa?: string | null
@@ -1705,6 +1711,7 @@ export type Database = {
           tipo: "imobiliaria" | "independente"
         }
         Update: {
+          cancelado_em?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null
@@ -1714,6 +1721,8 @@ export type Database = {
           criado_por?: string | null
           documento?: string | null
           encarregado_lgpd_email?: string | null
+          dados_apagados_em?: string | null
+          exportacao_final_caminho?: string | null
           encarregado_lgpd_nome?: string | null
           ia_nome_assistente?: string | null
           ia_nome_da_casa?: string | null
@@ -3828,6 +3837,14 @@ export type Database = {
       }
       devolver_leads_da_imobiliaria: {
         Args: { p_corretor: string; p_destino?: string | null }
+        Returns: Json
+      }
+      apagar_dados_do_titular: {
+        Args: { p_lead: string }
+        Returns: Json
+      }
+      apagar_dados_do_grupo: {
+        Args: { p_grupo: string }
         Returns: Json
       }
       atualizar_identidade_da_ia: {

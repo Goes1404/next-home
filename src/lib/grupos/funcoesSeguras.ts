@@ -94,6 +94,7 @@ export const FUNCOES_QUE_CONFEREM_O_CHAMADOR: Record<string, string> = {
   "marcar_repasse_pago(uuid, uuid, date)": "só gestor, e a venda tem de ser do grupo dele",
   "devolver_leads_da_imobiliaria(uuid, uuid)":
     "só gestor (eh_gestor()); quem sai e o destino têm de ser do grupo dele (grupo_atual()), e o destino ativo",
+  "apagar_dados_do_titular(uuid)": "só gestor (eh_gestor()), e o lead tem de ser do grupo dele (grupo_atual()) (0202)",
 };
 
 /** Parâmetro com id de corretor, instância ou lead (L20). */
