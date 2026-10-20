@@ -25,6 +25,12 @@ interface Props {
   corretorNome: string;
   /** WhatsApp do cadastro, usado só para pré-preencher o campo de pareamento. */
   whatsappCadastro?: string;
+  /**
+   * O último número pareado era de outra conta da plataforma e foi recusado
+   * (0198). A aba de conexão abre com a frase, mesmo quando quem recusou foi
+   * o webhook e não esta tela.
+   */
+  avisoDeRecusa?: string | null;
   /** Configuração já gravada, quando a instância existe. */
   configInicial?: {
     nomeAssistente: string;
@@ -50,7 +56,7 @@ const ABAS: { valor: Aba; label: string }[] = [
   { valor: "teste", label: "Testar" },
 ];
 
-export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial }: Props) {
+export function WhatsappManager({ corretorNome, whatsappCadastro, avisoDeRecusa, configInicial }: Props) {
   const conectadoDeInicio = configInicial?.statusConexao === "conectado";
 
   // Quem nunca conectou cai na aba de conexão; quem já conectou provavelmente
@@ -107,6 +113,7 @@ export function WhatsappManager({ corretorNome, whatsappCadastro, configInicial 
           whatsappCadastro={whatsappCadastro}
           statusInicial={configInicial?.statusConexao ?? "desconectado"}
           telefoneInicial={configInicial?.telefoneConectado ?? null}
+          avisoInicial={avisoDeRecusa ?? null}
           aoConectar={setConectado}
         />
       )}

@@ -31,12 +31,15 @@ export function PainelConexao({
   whatsappCadastro,
   statusInicial,
   telefoneInicial,
+  avisoInicial,
   aoConectar,
 }: {
   corretorNome: string;
   whatsappCadastro?: string;
   statusInicial: StatusConexaoWhatsapp;
   telefoneInicial: string | null;
+  /** Frase que a tela já abre mostrando (o número recusado por ser de outra conta). */
+  avisoInicial?: string | null;
   /** Avisa a casca para liberar as outras abas assim que o número entra no ar. */
   aoConectar?: (conectado: boolean) => void;
 }) {
@@ -48,7 +51,7 @@ export function PainelConexao({
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const [conectando, setConectando] = useState(false);
   const [desconectando, setDesconectando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(avisoInicial ?? null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   /**
@@ -102,6 +105,17 @@ export function PainelConexao({
 
   const confirmarConexao = useCallback(async () => {
     const estado = await verificarConexaoWhatsapp();
+    // Pareou, mas o número é de outra conta da plataforma (0198): o servidor
+    // já derrubou a conexão. Para de perguntar e diz o porquê.
+    if (estado.recusado) {
+      setStatus("desconectado");
+      setCodigoPareamento(null);
+      setQrCodeBase64(null);
+      setMetodo(null);
+      setErro(estado.recusado);
+      aoConectar?.(false);
+      return true;
+    }
     if (!estado.conectado) return false;
 
     setStatus("conectado");

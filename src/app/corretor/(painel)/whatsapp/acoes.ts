@@ -16,6 +16,8 @@ import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado, type DesfechoPareamento } from "@/lib/whatsapp/provider";
 import { sincronizarConexaoInstancia } from "@/lib/whatsapp/repositorio";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { FRASE_NUMERO_EM_OUTRO_GRUPO, numeroEmOutroGrupo } from "@/lib/whatsapp/numeroDeUmGrupo";
+import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 
 /**
@@ -297,9 +299,24 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
     };
   }
 
+  // O risco do número é do corretor (L44): sem o aceite da versão vigente
+  // dos termos, nada de conectar. O layout já leva aos termos; isto cobre a
+  // action chamada direto.
+  if (!(await aceitouTermosVigentes(await createClient(), corretor.id))) {
+    return { configurado: true, erro: "Antes de conectar o número, aceite os termos de uso. Recarregue a página para vê-los." };
+  }
+
   const numero = telefone?.trim() ? normalizarWhatsapp(telefone) : null;
   if (telefone?.trim() && !numero) {
     return { configurado: true, erro: "Número inválido. Use DDD + número, ex.: 11 99999-8888." };
+  }
+
+  // Um número, um grupo (0198). No pareamento por código o número vem
+  // digitado, então dá para recusar antes de falar com o provedor. No QR o
+  // número só aparece quando conecta, e quem recusa é a sincronização.
+  const servico = createServiceClient();
+  if (numero && (await numeroEmOutroGrupo(servico, corretor.grupoId, numero)) === true) {
+    return { configurado: true, erro: FRASE_NUMERO_EM_OUTRO_GRUPO };
   }
 
   const instanceName = nomeInstanciaDe(corretor.slug);
@@ -314,7 +331,6 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
    * status, carimbos nem o nome da instância. O corretor vem da sessão e o
    * estado vem da resposta do provedor; nada aqui sai do navegador.
    */
-  const servico = createServiceClient();
   const { error: erroEstado } = await servico.from("corretor_whatsapp_instancias").upsert(
     {
       corretor_id: corretor.id,
@@ -379,6 +395,8 @@ export async function verificarConexaoWhatsapp(): Promise<{
   conectado: boolean;
   estado: string;
   telefone?: string | null;
+  /** O número pareou mas é de outra conta da plataforma (0198): a frase para a tela. */
+  recusado?: string;
 }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { conectado: false, estado: "sem_sessao" };
@@ -398,6 +416,11 @@ export async function verificarConexaoWhatsapp(): Promise<{
     conectadoEmAtual: instancia.conectado_em,
     telefoneAtual: instancia.telefone_conectado,
   });
+
+  if (estado.estado === "numero_de_outro_grupo") {
+    revalidatePath("/corretor/whatsapp");
+    return { conectado: false, estado: estado.estado, recusado: estado.detalhe ?? FRASE_NUMERO_EM_OUTRO_GRUPO };
+  }
 
   if (estado.conectado) {
     revalidatePath("/corretor/whatsapp");

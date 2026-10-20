@@ -1,3 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+
 /**
  * Um número de WhatsApp pertence a UM grupo só (0198, resposta 4 do dono).
  *
@@ -7,7 +10,7 @@
  * erro de banco, e o reconhecimento do erro do gatilho quando a pergunta não
  * chegou a tempo.
  *
- * Não importa o cliente do Supabase: quem chama passa o dele (a chave de
+ * Não cria cliente do Supabase: quem chama passa o dele (a chave de
  * serviço, porque a função do banco só executa para ela).
  */
 
@@ -28,12 +31,7 @@ export function chaveDoNumero(telefone: string | null | undefined): string | nul
   return digitos;
 }
 
-type ClienteComRpc = {
-  rpc: (
-    funcao: string,
-    args: Record<string, unknown>,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-};
+type ClienteComRpc = Pick<SupabaseClient<Database>, "rpc">;
 
 /**
  * O número já está ligado a uma instância de OUTRO grupo? `true`/`false`,
@@ -45,7 +43,7 @@ export async function numeroEmOutroGrupo(
   grupoId: string,
   telefone: string | null | undefined,
 ): Promise<boolean | null> {
-  if (!chaveDoNumero(telefone)) return false;
+  if (!telefone || !chaveDoNumero(telefone)) return false;
   const { data, error } = await cliente.rpc("numero_whatsapp_em_outro_grupo", {
     p_grupo: grupoId,
     p_telefone: telefone,

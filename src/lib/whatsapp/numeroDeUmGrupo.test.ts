@@ -36,7 +36,7 @@ describe("numeroEmOutroGrupo", () => {
 
   it("pergunta ao banco pelo grupo de quem conecta e devolve sim/não", async () => {
     const c = cliente({ data: true, error: null });
-    expect(await numeroEmOutroGrupo(c, "g1", "5511988887777")).toBe(true);
+    expect(await numeroEmOutroGrupo(c as never, "g1", "5511988887777")).toBe(true);
     expect(c.rpc).toHaveBeenCalledWith("numero_whatsapp_em_outro_grupo", {
       p_grupo: "g1",
       p_telefone: "5511988887777",
@@ -45,12 +45,12 @@ describe("numeroEmOutroGrupo", () => {
 
   it("erro do banco vira 'não sei' (null): o gatilho continua sendo a trava", async () => {
     const c = cliente({ data: null, error: { message: "function does not exist" } });
-    expect(await numeroEmOutroGrupo(c, "g1", "5511988887777")).toBeNull();
+    expect(await numeroEmOutroGrupo(c as never, "g1", "5511988887777")).toBeNull();
   });
 
   it("número vazio nem pergunta", async () => {
     const c = cliente({ data: true, error: null });
-    expect(await numeroEmOutroGrupo(c, "g1", "")).toBe(false);
+    expect(await numeroEmOutroGrupo(c as never, "g1", "")).toBe(false);
     expect(c.rpc).not.toHaveBeenCalled();
   });
 });

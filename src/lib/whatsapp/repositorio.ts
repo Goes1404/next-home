@@ -22,7 +22,8 @@ import {
   INTERVALO_MINIMO_SEGUNDOS,
   INTERVALO_MAXIMO_SEGUNDOS,
 } from "./antiBan";
-import { consultarEstadoConexao, consultarMotivoDaQueda } from "./provider";
+import { consultarEstadoConexao, consultarMotivoDaQueda, desconectarInstancia } from "./provider";
+import { ehRecusaDeNumero, FRASE_NUMERO_EM_OUTRO_GRUPO, numeroEmOutroGrupo } from "./numeroDeUmGrupo";
 import { diaDaQueda } from "./protecaoDaQueda";
 import { codigoDaQueda } from "./motivoDaQueda";
 import { resetPorTrocaDeNumero } from "./trocaDeNumero";
@@ -2599,13 +2600,34 @@ export async function sincronizarConexaoInstancia(params: {
     return { conectado: false, estado: estado.estado, conectadoEm: null };
   }
 
+  // Um número, um grupo (0198): o número que acabou de abrir pode ser de
+  // outra conta da plataforma. A pergunta vem antes de marcar conectado; o
+  // gatilho do banco é a trava, e a recusa dele cai no mesmo caminho abaixo.
+  const recusa = {
+    conectado: false,
+    estado: "numero_de_outro_grupo",
+    conectadoEm: null,
+    detalhe: FRASE_NUMERO_EM_OUTRO_GRUPO,
+  } satisfies EstadoInstancia;
+  if (estado.telefone) {
+    const { data: dona } = await supabase
+      .from("corretor_whatsapp_instancias")
+      .select("grupo_id")
+      .eq("id", params.instanciaId)
+      .maybeSingle();
+    if (dona?.grupo_id && (await numeroEmOutroGrupo(supabase, dona.grupo_id, estado.telefone)) === true) {
+      await recusarNumeroDeOutroGrupo({ instanciaId: params.instanciaId, instanceName: params.instanceName });
+      return recusa;
+    }
+  }
+
   // Chip diferente = reputação diferente: zera cota, bloqueio e reinicia a
   // curva de aquecimento (ver trocaDeNumero.ts). Reconexão do MESMO número
   // não zera nada.
   const reset = resetPorTrocaDeNumero(params.telefoneAtual, estado.telefone);
   const conectadoEm = reset?.conectado_em ?? params.conectadoEmAtual ?? new Date().toISOString();
 
-  await supabase
+  const { error: erroAoConectar } = await supabase
     .from("corretor_whatsapp_instancias")
     .update({
       status_conexao: "conectado",
@@ -2629,6 +2651,12 @@ export async function sincronizarConexaoInstancia(params: {
       updated_at: new Date().toISOString(),
     })
     .eq("id", params.instanciaId);
+
+  if (ehRecusaDeNumero(erroAoConectar)) {
+    await recusarNumeroDeOutroGrupo({ instanciaId: params.instanciaId, instanceName: params.instanceName });
+    return recusa;
+  }
+  await limparRecusaDeNumero(supabase, params.instanciaId);
 
   if (reset) {
     console.warn(
@@ -2670,11 +2698,21 @@ export async function registrarEventoConexao(params: {
 
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, conectado_em, telefone_conectado")
+    .select("id, grupo_id, conectado_em, telefone_conectado")
     .eq("instance_name", params.instanceName)
     .maybeSingle();
 
   if (!instancia) return;
+
+  // Um número, um grupo (0198): ver `sincronizarConexaoInstancia`.
+  if (
+    conectado &&
+    params.telefone &&
+    (await numeroEmOutroGrupo(supabase, instancia.grupo_id, params.telefone)) === true
+  ) {
+    await recusarNumeroDeOutroGrupo({ instanciaId: instancia.id, instanceName: params.instanceName });
+    return;
+  }
 
   // Chip diferente = reputação diferente. Zera cota do dia, bloqueio e
   // reinicia o aquecimento (ver trocaDeNumero.ts); reconexão do MESMO
@@ -2683,7 +2721,7 @@ export async function registrarEventoConexao(params: {
     ? resetPorTrocaDeNumero(instancia.telefone_conectado, params.telefone)
     : null;
 
-  await supabase
+  const { error: erroDoEvento } = await supabase
     .from("corretor_whatsapp_instancias")
     .update({
       status_conexao: conectado ? "conectado" : params.estado === "connecting" ? "conectando" : "desconectado",
@@ -2707,6 +2745,11 @@ export async function registrarEventoConexao(params: {
     })
     .eq("id", instancia.id);
 
+  if (ehRecusaDeNumero(erroDoEvento)) {
+    await recusarNumeroDeOutroGrupo({ instanciaId: instancia.id, instanceName: params.instanceName });
+    return;
+  }
+
   if (reset) {
     console.warn(
       `[whatsapp] número trocado em ${params.instanceName}: cota, bloqueio e aquecimento zerados.`,
@@ -2717,6 +2760,7 @@ export async function registrarEventoConexao(params: {
     // A sessão voltou: a fila que esperava por ela anda, e o número volta ao
     // rodízio do link (ver `sessaoCaida.ts`).
     await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
+    await limparRecusaDeNumero(supabase, instancia.id);
     return;
   }
 
@@ -2739,6 +2783,58 @@ export async function registrarEventoConexao(params: {
     if (error) console.error("[whatsapp] falha ao guardar o motivo da queda:", error.message);
     console.warn(`[whatsapp] ${params.instanceName} caiu com o código ${codigo}.`);
   }
+}
+
+/**
+ * O número que acabou de abrir é de outra conta da plataforma (0198): derruba
+ * a sessão na Evolution e solta esta instância, como o "Desconectar" do
+ * painel faz. `conectado_em` vai junto: sem ele o logout não vira "queda" (o
+ * evento de conexão para cedo em número que não conectou), e o número que
+ * vier depois começa a curva de aquecimento do zero, como numa troca de chip.
+ * A marca `numero_recusado_em` é gravada à parte: se a coluna ainda não
+ * existir (migration depois do deploy), a recusa acontece do mesmo jeito.
+ */
+export async function recusarNumeroDeOutroGrupo(params: {
+  instanciaId: string;
+  instanceName: string;
+}): Promise<void> {
+  const supabase = createServiceClient();
+  console.warn(`[whatsapp] ${params.instanceName}: número de outro grupo recusado (0198).`);
+
+  const saida = await desconectarInstancia(params.instanceName);
+  if (!saida.ok) console.error("[whatsapp] não consegui derrubar o número recusado:", saida.detalhe);
+
+  const { error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({
+      status_conexao: "desconectado",
+      conectado_em: null,
+      telefone_conectado: null,
+      qrcode_base64: null,
+      desconectado_em: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.instanciaId);
+  if (error) console.error("[whatsapp] não consegui gravar a recusa do número:", error.message);
+
+  const { error: erroDaMarca } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({ numero_recusado_em: new Date().toISOString() })
+    .eq("id", params.instanciaId);
+  if (erroDaMarca) console.error("[whatsapp] não consegui marcar a recusa do número:", erroDaMarca.message);
+}
+
+/** Conexão aceita: a marca de recusa anterior deixa de valer (0198). */
+async function limparRecusaDeNumero(
+  supabase: ReturnType<typeof createServiceClient>,
+  instanciaId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .update({ numero_recusado_em: null })
+    .eq("id", instanciaId)
+    .not("numero_recusado_em", "is", null);
+  if (error) console.error("[whatsapp] não consegui limpar a marca de recusa do número:", error.message);
 }
 
 // ---------------------------------------------------------------------------

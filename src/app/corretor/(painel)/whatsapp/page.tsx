@@ -3,6 +3,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
+import { FRASE_NUMERO_EM_OUTRO_GRUPO } from "@/lib/whatsapp/numeroDeUmGrupo";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = {
@@ -34,6 +35,17 @@ export default async function WhatsappPainelPage() {
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
   ]);
+
+  // O número recusado por ser de outra conta (0198). Consulta à parte: se a
+  // coluna ainda não existir (migration depois do deploy), a tela segue sem
+  // o aviso em vez de cair inteira.
+  const { data: recusa } = await supabase
+    .from("corretor_whatsapp_instancias")
+    .select("numero_recusado_em")
+    .eq("corretor_id", corretor.id)
+    .maybeSingle();
+  const avisoDeRecusa =
+    recusa?.numero_recusado_em && instancia?.status_conexao !== "conectado" ? FRASE_NUMERO_EM_OUTRO_GRUPO : null;
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -87,6 +99,7 @@ export default async function WhatsappPainelPage() {
         // Quase sempre é o mesmo número que vai ser pareado — deixar o
         // campo pronto poupa digitação no celular, onde este fluxo mora.
         whatsappCadastro={corretor.whatsapp ?? ""}
+        avisoDeRecusa={avisoDeRecusa}
         configInicial={
           instancia
             ? {
