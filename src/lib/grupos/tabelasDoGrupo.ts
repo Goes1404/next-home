@@ -44,6 +44,9 @@ export const CHAVES_UNICAS_GLOBAIS = {
   corretores_user_id_key: "um login pertence a um corretor só",
   // Nome da instância no provedor de WhatsApp, que é um servidor só.
   corretor_whatsapp_instancias_instance_name_key: "identidade da instância no provedor",
+  // Um endereço de site pertence a um grupo só (0201): o mesmo host em dois
+  // grupos seria dois sites disputando a mesma URL.
+  enderecos_do_site_pkey: "host do site público; um endereço, um grupo",
   // Tokens sorteados: são a credencial do link, não um dado de negócio.
   acessos_contador_pkey: "token sorteado do link do contador",
   links_do_cliente_pkey: "token sorteado do link do cliente",

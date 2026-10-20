@@ -113,6 +113,30 @@ export type Database = {
         }
         Relationships: []
       }
+      enderecos_do_site: {
+        Row: {
+          host: string
+          grupo_id: string
+          tipo: "proprio" | "gratuito"
+          principal: boolean
+          created_at: string
+        }
+        Insert: {
+          host: string
+          grupo_id: string
+          tipo?: "proprio" | "gratuito"
+          principal?: boolean
+          created_at?: string
+        }
+        Update: {
+          host?: string
+          grupo_id?: string
+          tipo?: "proprio" | "gratuito"
+          principal?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       admin_eventos: {
         Row: {
           grupo_id: string | null
@@ -3760,6 +3784,10 @@ export type Database = {
       }
     }
     Functions: {
+      site_do_endereco: {
+        Args: { p_host: string; p_dominio_da_plataforma?: string | null }
+        Returns: { grupo_id: string; nome: string; host_principal: string }[]
+      }
       marcar_comissao_recebida: {
         Args: { p_venda: string; p_data: string | null }
         Returns: boolean
