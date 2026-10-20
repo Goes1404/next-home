@@ -134,6 +134,11 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   /** Cancelamento registrado (0202): os dados ficam 90 dias e depois são apagados. */
   canceladoEm: string | null;
   dadosApagadosEm: string | null;
+  /** A cópia final guardada foi apagada (30 dias depois dos dados). */
+  copiaFinalApagadaEm: string | null;
+  /** Última falha da rotina dos 90 dias, sem dado pessoal. */
+  falhaAoApagar: string | null;
+  tentativaDeApagarEm: string | null;
 };
 
 /**
@@ -145,7 +150,7 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
   const { data: g, error } = await servico
     .from("grupos")
     .select(
-      "id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em",
+      "id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
     )
     .eq("id", grupoId)
     .maybeSingle();
@@ -170,6 +175,9 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     encarregadoEmail: g.encarregado_lgpd_email,
     canceladoEm: g.cancelado_em,
     dadosApagadosEm: g.dados_apagados_em,
+    copiaFinalApagadaEm: g.copia_final_apagada_em,
+    falhaAoApagar: g.falha_ao_apagar,
+    tentativaDeApagarEm: g.tentativa_de_apagar_em,
     ...(await contarDoGrupo(servico, g)),
   };
 }

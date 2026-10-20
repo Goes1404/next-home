@@ -2,10 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { DIAS_DE_RETENCAO, apagarEm, diasAteApagar } from "@/lib/grupos/encerramentoRegras";
+import {
+  DIAS_DA_COPIA_FINAL,
+  DIAS_DE_RETENCAO,
+  apagarEm,
+  diasAteApagar,
+  exportacaoLiberadaEm,
+  plataformaPodeExportar,
+  podeDesfazerCancelamento,
+} from "@/lib/grupos/encerramentoRegras";
 import { desfazerCancelamento, registrarCancelamento } from "../../acoes";
 
 const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short" });
+const DATA_E_HORA = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  dateStyle: "short",
+  timeStyle: "short",
+});
 
 const BOTAO_PRINCIPAL =
   "text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 cursor-pointer items-center rounded-xl px-5 font-bold disabled:opacity-60";
@@ -24,11 +37,17 @@ export function CancelamentoDoGrupo({
   grupoId,
   canceladoEm,
   dadosApagadosEm,
+  copiaFinalApagadaEm,
+  falhaAoApagar,
+  tentativaDeApagarEm,
   rotinaLigada,
 }: {
   grupoId: string;
   canceladoEm: string | null;
   dadosApagadosEm: string | null;
+  copiaFinalApagadaEm: string | null;
+  falhaAoApagar: string | null;
+  tentativaDeApagarEm: string | null;
   rotinaLigada: boolean;
 }) {
   const [confirmando, setConfirmando] = useState(false);
@@ -58,11 +77,16 @@ export function CancelamentoDoGrupo({
         Cancelamento e dados
       </h2>
 
-      {dadosApagadosEm ? (
+      {dadosApagadosEm && copiaFinalApagadaEm ? (
+        <p className="text-fluid-sm text-apoio">
+          Os dados deste grupo foram apagados em {DATA.format(new Date(dadosApagadosEm))}. A cópia guardada também foi
+          apagada, em {DATA.format(new Date(copiaFinalApagadaEm))}: não sobrou nada.
+        </p>
+      ) : dadosApagadosEm ? (
         <>
           <p className="text-fluid-sm text-apoio">
             Os dados deste grupo foram apagados em {DATA.format(new Date(dadosApagadosEm))}. Ficou guardada a planilha
-            gerada antes de apagar.
+            gerada antes de apagar, por {DIAS_DA_COPIA_FINAL} dias. Cada download fica registrado.
           </p>
           <div>
             <a href={linkDaPlanilha} className="botao-secundario text-fluid-sm inline-flex min-h-11 items-center rounded-xl px-4">
@@ -82,28 +106,45 @@ export function CancelamentoDoGrupo({
               A rotina que apaga está desligada neste ambiente: nada é apagado sozinho até alguém ligá-la.
             </p>
           )}
+          {falhaAoApagar && tentativaDeApagarEm && (
+            <p role="alert" className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo rounded-xl border px-4 py-3">
+              A rotina tentou apagar em {DATA_E_HORA.format(new Date(tentativaDeApagarEm))} e não conseguiu:{" "}
+              {falhaAoApagar}. Ela tenta de novo depois dos outros grupos da fila.
+            </p>
+          )}
           <p className="text-fluid-sm text-apoio">
-            Entregue ao cliente a planilha com os leads, os imóveis, os corretores e as vendas. Conversas não entram.
+            Entregue ao cliente a planilha com os leads, os imóveis, os corretores e as vendas. Conversas não entram, nem
+            o CPF dos compradores: avise o cliente para baixar os pacotes do contador (Financeiro, Contador) antes do fim
+            do prazo, porque os dados fiscais das vendas também são apagados.
           </p>
           <div className="flex flex-wrap gap-3">
-            <a href={linkDaPlanilha} className="botao-secundario text-fluid-sm inline-flex min-h-11 items-center rounded-xl px-4">
-              Baixar os dados do grupo
-            </a>
-            <button
-              type="button"
-              disabled={pendente}
-              onClick={() => agir(() => desfazerCancelamento(grupoId), "Cancelamento desfeito. O grupo voltou ao ar.")}
-              className={BOTAO_PRINCIPAL}
-            >
-              {pendente ? "Desfazendo…" : "Desfazer cancelamento"}
-            </button>
+            {plataformaPodeExportar(canceladoEm) ? (
+              <a href={linkDaPlanilha} className="botao-secundario text-fluid-sm inline-flex min-h-11 items-center rounded-xl px-4">
+                Baixar os dados do grupo
+              </a>
+            ) : (
+              <p className="text-fluid-sm text-tenue flex min-h-11 items-center">
+                A planilha fica disponível a partir de {DATA_E_HORA.format(exportacaoLiberadaEm(canceladoEm))}.
+              </p>
+            )}
+            {podeDesfazerCancelamento(canceladoEm, rotinaLigada) && (
+              <button
+                type="button"
+                disabled={pendente}
+                onClick={() => agir(() => desfazerCancelamento(grupoId), "Cancelamento desfeito. O grupo voltou ao ar.")}
+                className={BOTAO_PRINCIPAL}
+              >
+                {pendente ? "Desfazendo…" : "Desfazer cancelamento"}
+              </button>
+            )}
           </div>
         </>
       ) : (
         <>
           <p className="text-fluid-sm text-apoio">
             Se o cliente cancelar, registre aqui. O site do grupo sai do ar, os dados ficam guardados por {DIAS_DE_RETENCAO} dias
-            (dá para desfazer nesse prazo) e depois são apagados, com uma cópia guardada antes.
+            (dá para desfazer nesse prazo) e depois são apagados, com uma cópia guardada antes por mais{" "}
+            {DIAS_DA_COPIA_FINAL} dias. A planilha com os dados se baixa aqui a partir de 24 horas depois do cancelamento.
           </p>
           {confirmando ? (
             <div className="border-perigo-linha bg-perigo-lavado flex flex-col gap-3 rounded-xl border p-4">

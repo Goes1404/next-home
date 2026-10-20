@@ -5,7 +5,7 @@ import { MENSAGEM_EMAIL_EM_USO } from "@/lib/corretores/acessoDaConta";
 import { convidarCorretorDoGrupo } from "@/lib/corretores/convite";
 import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
-import { apagarEm, podeCancelar } from "@/lib/grupos/encerramentoRegras";
+import { apagarEm, podeCancelar, podeDesfazerCancelamento, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import {
   ehUuid,
   padraoDoEmail,
@@ -368,9 +368,21 @@ export async function registrarCancelamento(grupoId: string): Promise<ResultadoC
 
   const agora = new Date().toISOString();
   const servico = createServiceClient();
+  // A situação de antes (ativo ou suspenso) é guardada: desfazer volta a ela,
+  // e não a um `ativo` que tiraria a suspensão por atraso sem ninguém pedir.
+  const { data: antes, error: erroAntes } = await servico
+    .from("grupos")
+    .select("situacao")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroAntes) {
+    console.error(`[plataforma] grupo ${grupoId} não lido para cancelar: ${erroAntes.message}`);
+    return { ok: false, erro: "Não foi possível registrar o cancelamento agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
   const { data, error } = await servico
     .from("grupos")
-    .update({ cancelado_em: agora, situacao: "encerrado" })
+    .update({ cancelado_em: agora, situacao: "encerrado", situacao_antes_do_cancelamento: antes.situacao })
     .eq("id", grupoId)
     .is("cancelado_em", null)
     .is("dados_apagados_em", null)
@@ -397,8 +409,10 @@ export async function registrarCancelamento(grupoId: string): Promise<ResultadoC
 }
 
 /**
- * Desfaz o cancelamento dentro dos 90 dias: o grupo volta a `ativo` e a data
- * some. Depois que a rotina apagou, não há o que desfazer.
+ * Desfaz o cancelamento dentro dos 90 dias: o grupo volta à situação de antes
+ * (ativo ou suspenso) e a data some. Depois que a rotina apagou, não há o que
+ * desfazer; e depois dos 90 dias, com a rotina ligada, também não (os
+ * arquivos podem estar saindo naquele instante).
  */
 export async function desfazerCancelamento(grupoId: string): Promise<ResultadoCancelamento> {
   const guarda = await exigirAdminDaPlataformaNaAcao();
@@ -408,7 +422,7 @@ export async function desfazerCancelamento(grupoId: string): Promise<ResultadoCa
   const servico = createServiceClient();
   const { data: grupo, error: erroLeitura } = await servico
     .from("grupos")
-    .select("cancelado_em, dados_apagados_em")
+    .select("cancelado_em, dados_apagados_em, situacao_antes_do_cancelamento")
     .eq("id", grupoId)
     .maybeSingle();
   if (erroLeitura) {
@@ -418,10 +432,19 @@ export async function desfazerCancelamento(grupoId: string): Promise<ResultadoCa
   if (!grupo) return { ok: false, erro: "Grupo não encontrado." };
   if (grupo.dados_apagados_em) return { ok: false, erro: "Os dados deste grupo já foram apagados; não dá para desfazer." };
   if (!grupo.cancelado_em) return { ok: false, erro: "Este grupo não está cancelado." };
+  if (!podeDesfazerCancelamento(grupo.cancelado_em, rotinaDeApagarLigada(process.env))) {
+    return {
+      ok: false,
+      erro: "Passaram os 90 dias e a rotina que apaga está ligada: os dados deste grupo podem estar sendo apagados agora. Não dá para desfazer.",
+    };
+  }
 
+  const situacaoAnterior = (["ativo", "suspenso", "encerrado"] as const).find(
+    (s) => s === grupo.situacao_antes_do_cancelamento,
+  );
   const { data, error } = await servico
     .from("grupos")
-    .update({ cancelado_em: null, situacao: "ativo" })
+    .update({ cancelado_em: null, situacao: situacaoAnterior ?? "ativo", situacao_antes_do_cancelamento: null })
     .eq("id", grupoId)
     .is("dados_apagados_em", null)
     .select("id");

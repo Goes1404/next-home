@@ -94,6 +94,9 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           grupoId={grupo.id}
           canceladoEm={grupo.canceladoEm}
           dadosApagadosEm={grupo.dadosApagadosEm}
+          copiaFinalApagadaEm={grupo.copiaFinalApagadaEm}
+          falhaAoApagar={grupo.falhaAoApagar}
+          tentativaDeApagarEm={grupo.tentativaDeApagarEm}
           rotinaLigada={rotinaDeApagarLigada(process.env)}
         />
       )}

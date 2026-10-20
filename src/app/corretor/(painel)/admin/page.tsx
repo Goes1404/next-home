@@ -340,7 +340,8 @@ export default async function AdminVisaoGeralPage() {
         </h2>
         <p className="text-fluid-sm text-apoio">
           Uma planilha com os leads (a ficha de cada um), os imóveis, os corretores e as vendas. Conversas não entram. Cada
-          download fica registrado.
+          download fica registrado. O CPF dos compradores e os dados fiscais das vendas ficam nos pacotes do contador
+          (Financeiro, Contador): se a imobiliária for sair da plataforma, baixe os dois.
         </p>
         <div>
           <a

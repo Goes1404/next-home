@@ -89,4 +89,30 @@ describe("desfazer o cancelamento", () => {
     expect(r).toEqual({ ok: false, erro: expect.stringMatching(/apagados/) });
     expect(grupo().situacao).toBe("encerrado");
   });
+
+  it("volta à situação de antes do cancelamento (suspenso continua suspenso)", async () => {
+    grupo().situacao = "suspenso";
+    await registrarCancelamento(G);
+    expect(grupo()).toMatchObject({ situacao: "encerrado", situacao_antes_do_cancelamento: "suspenso" });
+    const r = await desfazerCancelamento(G);
+    expect(r).toEqual({ ok: true });
+    expect(grupo()).toMatchObject({ situacao: "suspenso", cancelado_em: null });
+  });
+
+  it("depois dos 90 dias, com a rotina ligada, não desfaz", async () => {
+    vi.stubEnv("APAGAR_GRUPOS_CANCELADOS", "1");
+    try {
+      Object.assign(grupo(), { cancelado_em: "2026-01-01T00:00:00Z", situacao: "encerrado" });
+      const r = await desfazerCancelamento(G);
+      expect(r).toEqual({ ok: false, erro: expect.stringMatching(/90 dias/) });
+      expect(grupo().cancelado_em).toBe("2026-01-01T00:00:00Z");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("depois dos 90 dias, com a rotina desligada (nada é apagado), ainda desfaz", async () => {
+    Object.assign(grupo(), { cancelado_em: "2026-01-01T00:00:00Z", situacao: "encerrado" });
+    expect(await desfazerCancelamento(G)).toEqual({ ok: true });
+  });
 });
