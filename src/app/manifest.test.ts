@@ -84,9 +84,12 @@ describe("atalho do iPhone", () => {
   it("o layout desliga o capable que o Next liga sozinho", () => {
     // Com `appleWebApp: { title }` o Next escreve `mobile-web-app-capable`,
     // e o atalho passaria a abrir sem a barra do navegador.
-    const layout = readFileSync(join(raiz, "src/app/layout.tsx"), "utf8");
-    const linha = layout.split("\n").find((l) => /^\s*appleWebApp:/.test(l)) ?? "";
-    expect(linha).toMatch(/capable:\s*false/);
+    // Desde a revisão da fase 3 os metadados do raiz moram em
+    // `lib/sites/metadados.ts`, junto com os de cada site.
+    const fonte = readFileSync(join(raiz, "src/lib/sites/metadados.ts"), "utf8");
+    const linhas = fonte.split("\n").filter((l) => /^\s*appleWebApp:/.test(l));
+    expect(linhas.length).toBeGreaterThanOrEqual(2);
+    for (const linha of linhas) expect(linha).toMatch(/capable:\s*false/);
   });
 });
 

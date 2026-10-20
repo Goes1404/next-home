@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { imagemDeCompartilhamento } from "@/lib/dadosEstruturados";
+import { site } from "@/lib/site";
 import type { MarcaDoSite } from "./marca";
 
 /**
@@ -14,6 +15,66 @@ import type { MarcaDoSite } from "./marca";
  * metadados é MESCLADO entre layouts (Object.assign no Next), e no raiz elas
  * vazariam o endereço da Next Home para o site de qualquer grupo.
  */
+/**
+ * Os metadados do layout raiz: só o que é neutro ou da área da plataforma.
+ * O título padrão e o sufixo servem ao login e às telas sem título próprio
+ * fora do site (o painel e a plataforma têm os seus); todo site declara o
+ * próprio título em `metadadosDoSite`, e o endereço sem grupo declara um
+ * título absoluto em `metadadosSemSite`. Nada de descrição, imagem,
+ * palavras-chave ou autor da Next Home aqui: o raiz vale para todo
+ * endereço, e o que o segmento de baixo não substitui vaza para ele.
+ */
+export const METADADOS_DO_RAIZ: Metadata = {
+  metadataBase: new URL(site.url),
+  title: { default: site.nomeCompleto, template: `%s · ${site.nome}` },
+  // `capable: false` porque o Next liga sozinho o `mobile-web-app-capable`,
+  // que abriria o atalho sem a barra do navegador. O título do atalho mora
+  // no site de cada grupo.
+  appleWebApp: { capable: false },
+  formatDetection: { telephone: true, address: true, email: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+/**
+ * O ícone de quem não é a Next Home. O favicon, o `icon.png`, o
+ * `apple-icon.png` e o manifesto em `src/app/` são ARQUIVOS do raiz: o Next
+ * os põe no `<head>` de toda página, de todo endereço. Fora da Next Home a
+ * página declara `icons` e `manifest: null`: com `icons` declarado, o Next
+ * deixa de usar os ícones de arquivo (resolve-metadata, `leafSegmentStaticIcons`
+ * só vale quando ninguém declarou), e o manifesto de arquivo é substituído
+ * pelo nulo do segmento filho.
+ */
+export const ICONES_NEUTROS: NonNullable<Metadata["icons"]> = {
+  icon: [{ url: "/icones/icone-neutro.svg", type: "image/svg+xml" }],
+};
+
+/**
+ * Os metadados de um endereço que não é de nenhum grupo (ou de grupo
+ * encerrado): a página neutra, sem nome, descrição, imagem, ícone nem
+ * manifesto de ninguém. A prévia de um domínio apontado para a Vercel sem
+ * cadastro, colado no WhatsApp, não pode sair com a imagem da Next Home.
+ */
+export function metadadosSemSite(): Metadata {
+  return {
+    // Sem base: o raiz aponta para o endereço da Next Home.
+    metadataBase: null,
+    title: { absolute: "Página não encontrada" },
+    robots: { index: false, follow: false },
+    icons: ICONES_NEUTROS,
+    manifest: null,
+  };
+}
+
 export function metadadosDoSite(marca: MarcaDoSite): Metadata {
   const titulo = marca.ehNextHome ? `${marca.nomeCompleto} — Imobiliária em Alphaville e Barueri` : marca.nomeCompleto;
   const imagem = imagemDeCompartilhamento(marca);
@@ -53,6 +114,7 @@ export function metadadosDoSite(marca: MarcaDoSite): Metadata {
           },
         }
       : {}),
+    ...(marca.ehNextHome ? {} : { icons: ICONES_NEUTROS, manifest: null }),
   };
 }
 

@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { site } from "@/lib/site";
 import { marcaDoGrupo } from "./marca";
-import { metadadosDoSite } from "./metadados";
+import { OG_IMAGEM } from "@/lib/dadosEstruturados";
+import { metadata as metadadosDo404 } from "@/app/not-found";
+import { ICONES_NEUTROS, METADADOS_DO_RAIZ, metadadosDoSite, metadadosSemSite } from "./metadados";
 
 const casa = marcaDoGrupo({ grupoId: GRUPO_NEXT_HOME_ID, nome: "Next Home", url: site.url });
 const outro = marcaDoGrupo({ grupoId: "44444444-4444-4444-4444-444444444444", nome: "Casa Azul", url: "https://casaazul.com.br" });
@@ -32,5 +34,49 @@ describe("metadadosDoSite", () => {
   it("as etiquetas geo saíram do layout raiz (o other é mesclado entre layouts)", () => {
     const raiz = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
     expect(raiz).not.toMatch(/geo\.placename|geo\.position|ICBM/);
+  });
+
+  it("o site de outro grupo troca o ícone e o manifesto da Next Home (arquivos do raiz) pelos neutros", () => {
+    const m = metadadosDoSite(outro);
+    expect(m.icons).toEqual(ICONES_NEUTROS);
+    expect(m).toHaveProperty("manifest", null);
+    // A Next Home não declara: os arquivos do raiz (favicon, icon, manifest) valem.
+    const c = metadadosDoSite(casa);
+    expect(c).not.toHaveProperty("icons");
+    expect(c).not.toHaveProperty("manifest");
+  });
+});
+
+/**
+ * O endereço de nenhum grupo: o raiz, o layout do site (sem site) e o 404,
+ * mesclados como o Next mescla — cada chave do segmento de baixo substitui a
+ * de cima. Antes da correção, a descrição, o Open Graph (com a imagem), o
+ * Twitter, as palavras-chave e os autores da Next Home vinham do raiz para a
+ * prévia de qualquer domínio apontado para a Vercel sem cadastro.
+ */
+describe("metadados do endereço de nenhum grupo", () => {
+  const resolvido = { ...METADADOS_DO_RAIZ, ...metadadosSemSite(), ...metadadosDo404 };
+
+  it("nada da Next Home: nome, descrição, imagem, endereço", () => {
+    const texto = JSON.stringify(resolvido).toLowerCase();
+    for (const proibido of ["next home", "nexthome", "alphaville", OG_IMAGEM.url.toLowerCase(), site.descricao.toLowerCase()]) {
+      expect(texto, proibido).not.toContain(proibido);
+    }
+    expect(resolvido).not.toHaveProperty("openGraph");
+    expect(resolvido).not.toHaveProperty("twitter");
+    expect(resolvido).not.toHaveProperty("description");
+  });
+
+  it("ícone neutro, sem manifesto e fora do índice", () => {
+    expect(resolvido.icons).toEqual(ICONES_NEUTROS);
+    expect(resolvido.manifest).toBeNull();
+    expect(resolvido.robots).toEqual({ index: false, follow: false });
+    expect(resolvido.title).toEqual({ absolute: "Página não encontrada" });
+  });
+
+  it("o raiz não carrega descrição, imagem nem autor de ninguém", () => {
+    for (const chave of ["description", "keywords", "openGraph", "twitter", "authors", "creator", "publisher", "applicationName", "icons", "manifest"]) {
+      expect(METADADOS_DO_RAIZ, chave).not.toHaveProperty(chave);
+    }
   });
 });

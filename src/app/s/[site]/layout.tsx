@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/layout/Footer";
 import { site as siteDaCasa } from "@/lib/site";
 import { normalizarHost } from "@/lib/sites/endereco";
-import { metadadosDoSite } from "@/lib/sites/metadados";
+import { metadadosDoSite, metadadosSemSite } from "@/lib/sites/metadados";
 import { type ParamsDoSite } from "@/lib/sites/pagina";
 import { resolverSite } from "@/lib/sites/resolver";
 
@@ -38,7 +38,7 @@ function urlHost(url: string): string | null {
 
 export async function generateMetadata({ params }: { params: Promise<ParamsDoSite> }): Promise<Metadata> {
   const site = await resolverSite(decodeURIComponent((await params).site));
-  return site ? metadadosDoSite(site.marca) : { robots: { index: false, follow: false } };
+  return site ? metadadosDoSite(site.marca) : metadadosSemSite();
 }
 
 export default async function SiteLayout({

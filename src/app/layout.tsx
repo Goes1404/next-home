@@ -6,8 +6,7 @@ import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { AvisoDeVersaoNovaSobDemanda } from "@/components/layout/SobDemanda";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { MovimentoDoSite } from "@/components/motion/MovimentoDoSite";
-import { site } from "@/lib/site";
-import { OG_IMAGEM } from "@/lib/dadosEstruturados";
+import { METADADOS_DO_RAIZ } from "@/lib/sites/metadados";
 import { COR_DA_BARRA, SCRIPT_TEMA_ANTES_DA_PINTURA, TEMA_PADRAO } from "@/lib/tema";
 import "./globals.css";
 
@@ -55,57 +54,15 @@ const plexMono = IBM_Plex_Mono({
  * ser desenhada, ela volta junto.
  */
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: {
-    default: `${site.nomeCompleto} — Imobiliária em Alphaville e Barueri`,
-    template: `%s · ${site.nome}`,
-  },
-  description: site.descricao,
-  keywords: [...site.keywords],
-  applicationName: site.nome,
-  // Nome que o iPhone sugere ao pôr o site na tela inicial. Sem ele, sugere
-  // o título da página inteiro. `capable: false` porque o Next liga sozinho o
-  // `mobile-web-app-capable`, que abriria o atalho sem a barra do navegador.
-  appleWebApp: { title: site.nome, capable: false },
-  authors: [{ name: site.nomeCompleto, url: site.url }],
-  creator: site.nomeCompleto,
-  publisher: site.nomeCompleto,
-  formatDetection: {
-    telephone: true,
-    address: true,
-    email: true,
-  },
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    url: site.url,
-    siteName: site.nomeCompleto,
-    title: `${site.nomeCompleto} — Imobiliária em Alphaville e Barueri`,
-    description: site.descricao,
-    images: [OG_IMAGEM],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${site.nomeCompleto} — Imobiliária em Alphaville`,
-    description: site.descricao,
-    images: [OG_IMAGEM.url],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  // As etiquetas `geo.*` do escritório moram nos metadados do SITE da Next
-  // Home (`lib/sites/metadados.ts`), não aqui: o `other` é mesclado entre
-  // layouts, e no raiz ele levaria o endereço dela ao site de outro grupo.
-};
+/**
+ * Os metadados do RAIZ são neutros (revisão da fase 3, 20/10/2026): valem
+ * para toda rota, inclusive o endereço de nenhum grupo e o site de outro
+ * grupo, e o que a página de cima não substitui vaza para a de baixo. A
+ * descrição, o Open Graph, o Twitter, as palavras-chave e os autores da Next
+ * Home moram em `metadadosDoSite` (`lib/sites/metadados.ts`), só no site
+ * dela. Aqui sobra o que serve à área da plataforma (login, painel).
+ */
+export const metadata: Metadata = METADADOS_DO_RAIZ;
 
 /**
  * `viewport` ESTÁTICO (era `generateViewport` lendo o cookie, até 12/10/2026).
