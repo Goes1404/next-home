@@ -26,6 +26,7 @@ let emailLivre: boolean | null;
 let respostaDoLink: Record<string, unknown>;
 let respostaDoEnvio: { enviado: boolean; motivo?: string; id?: string | null };
 let usuarioDoAuth: { id: string; email: string; last_sign_in_at: string | null } | null;
+let erroDoAuth: { message: string } | null;
 let erroAoTrocarEmail: { message: string; code?: string } | null;
 const pedidosDeLink: unknown[][] = [];
 const enviados: unknown[][] = [];
@@ -53,11 +54,22 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 vi.mock("@/lib/catalogo/revalidar", () => ({ revalidarCorretores: () => {} }));
 
 const { criarAcessoCorretor, reenviarConvite, trocarEmailDoCorretor, enviarLinkDeSenha } = await import("./acoes");
-const { acoesDeAcesso, MENSAGEM_EMAIL_EM_USO, MENSAGEM_ENDERECO_PROVISORIO } = await import(
-  "@/lib/corretores/acessoDaConta"
-);
+const {
+  acoesDeAcesso,
+  MENSAGEM_ADMIN_DA_PLATAFORMA,
+  MENSAGEM_EMAIL_DE_CONTA_USADA,
+  MENSAGEM_EMAIL_EM_USO,
+  MENSAGEM_ENDERECO_PROVISORIO,
+  MENSAGEM_OUTRO_GESTOR,
+} = await import("@/lib/corretores/acessoDaConta");
+const { MENSAGEM_EMAIL_NAO_SAIU, MENSAGEM_SEM_EMAIL_CONFIGURADO } = await import("@/lib/corretores/convite");
 
 beforeEach(() => {
+  vi.unstubAllEnvs();
+  // Sem chave de e-mail, como no ambiente de quem desenvolve; os testes do
+  // link "só por e-mail" ligam a chave quando precisam.
+  vi.stubEnv("RESEND_API_KEY", "");
+  erroDoAuth = null;
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
   pedidosDeLink.length = 0;
@@ -95,10 +107,10 @@ beforeEach(() => {
   };
   banco.cliente.auth = {
     admin: {
-      getUserById: async (id: string) => ({
-        data: { user: usuarioDoAuth && usuarioDoAuth.id === id ? usuarioDoAuth : null },
-        error: null,
-      }),
+      getUserById: async (id: string) =>
+        erroDoAuth
+          ? { data: { user: null }, error: erroDoAuth }
+          : { data: { user: usuarioDoAuth && usuarioDoAuth.id === id ? usuarioDoAuth : null }, error: null },
       updateUserById: async (id: string, dados: Record<string, unknown>) => {
         trocasNoAuth.push({ id, dados });
         if (erroAoTrocarEmail && "email_confirm" in dados && dados.email !== usuarioDoAuth?.email) {
@@ -235,15 +247,13 @@ describe("convidar", () => {
 
 describe("conta antiga @nexthome.com", () => {
   it("conta @nexthome.com só oferece trocar e-mail", async () => {
-    expect(acoesDeAcesso({ temLogin: true, email: "duda@nexthome.com", convitePendente: false })).toEqual([
-      "trocar_email",
-    ]);
+    // Conta já usada não troca e-mail pela mão do gestor (ver "conta já usada").
+    expect(acoesDeAcesso({ temLogin: true, email: "duda@nexthome.com", convitePendente: false })).toEqual([]);
     expect(acoesDeAcesso({ temLogin: true, email: "DUDA@NEXTHOME.COM", convitePendente: true })).toEqual([
       "trocar_email",
     ]);
     expect(acoesDeAcesso({ temLogin: true, email: "carla@gmail.com", convitePendente: false })).toEqual([
       "link_de_senha",
-      "trocar_email",
     ]);
     expect(acoesDeAcesso({ temLogin: true, email: "carla@gmail.com", convitePendente: true })).toEqual([
       "reenviar_convite",
@@ -277,9 +287,12 @@ describe("reenviar e mandar link de senha", () => {
     expect(antes).toEqual({ ok: true, enviado: false, url: URL_CONVITE });
     expect(pedidosDeLink[0]).toEqual(["invite", "carla@gmail.com", "/corretor/definir-senha"]);
 
+    // Depois do primeiro login, o link de senha só vai por e-mail.
+    vi.stubEnv("RESEND_API_KEY", "re_teste");
+    respostaDoEnvio = { enviado: true, id: "m" };
     usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
     const depois = await reenviarConvite("c3");
-    expect(depois).toEqual({ ok: true, enviado: false, url: URL_SENHA });
+    expect(depois).toEqual({ ok: true, enviado: true });
     expect(pedidosDeLink[1]).toEqual(["recovery", "carla@gmail.com", "/corretor/definir-senha"]);
 
     expect(eventos().map((e) => e.acao)).toEqual(["convite_reenviado", "convite_reenviado"]);
@@ -302,6 +315,7 @@ describe("reenviar e mandar link de senha", () => {
   });
 
   it("link de senha manda recovery e registra", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_teste");
     usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
     respostaDoEnvio = { enviado: true, id: "m" };
     expect(await enviarLinkDeSenha("c3")).toEqual({ ok: true, enviado: true });
@@ -320,7 +334,7 @@ describe("trocar e-mail", () => {
   });
 
   it("troca no Auth e na ficha, registra e manda link de senha ao endereço novo", async () => {
-    usuarioDoAuth = { id: "usuario-4", email: "duda@nexthome.com", last_sign_in_at: "2026-10-01T10:00:00Z" };
+    usuarioDoAuth = { id: "usuario-4", email: "duda@nexthome.com", last_sign_in_at: null };
     respostaDoLink.recovery = { ok: true, url: URL_SENHA, userId: "usuario-4" };
 
     const r = await trocarEmailDoCorretor("c4", " Duda@Gmail.com ");
@@ -402,5 +416,96 @@ describe("guarda de credencial derivada", () => {
   it("o módulo de credenciais só reconhece o endereço antigo, não o fabrica", async () => {
     const modulo = await import("@/lib/corretores/credenciaisIniciais");
     expect(Object.keys(modulo).sort()).toEqual(["ehEmailDeAcesso", "normalizarParaEmail"]);
+  });
+});
+
+/*
+ * O gestor não assume o login de ninguém (revisão da fase 2A). Tomar o login
+ * de alguém é o jeito de ler as conversas dele, e nem gestor nem
+ * administrador da plataforma lê conversa de outro.
+ */
+describe("o gestor não assume login alheio", () => {
+  beforeEach(() => {
+    banco.tabelas.corretores.push(
+      { id: "c5", nome: "Edu Gestor", slug: "edu", user_id: "usuario-5", email: "edu@gmail.com", papel: "gestor", grupo_id: GRUPO_A },
+      { id: "gestor-a", nome: "Eu Gestor", slug: "eu", user_id: "usuario-eu", email: "eu@gmail.com", papel: "gestor", grupo_id: GRUPO_A },
+    );
+  });
+
+  it("recusa outro gestor nas três ações, sem gerar link nem trocar e-mail", async () => {
+    usuarioDoAuth = { id: "usuario-5", email: "edu@gmail.com", last_sign_in_at: null };
+    respostaDoLink.invite = { ok: true, url: URL_CONVITE, userId: "usuario-5" };
+    expect(await reenviarConvite("c5")).toEqual({ ok: false, erro: MENSAGEM_OUTRO_GESTOR });
+    expect(await enviarLinkDeSenha("c5")).toEqual({ ok: false, erro: MENSAGEM_OUTRO_GESTOR });
+    expect(await trocarEmailDoCorretor("c5", "meu@gmail.com")).toEqual({ ok: false, erro: MENSAGEM_OUTRO_GESTOR });
+    expect(pedidosDeLink).toEqual([]);
+    expect(trocasNoAuth).toEqual([]);
+    expect(acoesDeAcesso({ temLogin: true, email: "edu@gmail.com", convitePendente: true, outroGestor: true })).toEqual([]);
+  });
+
+  it("recusa quem administra a plataforma", async () => {
+    banco.tabelas.administradores_da_plataforma = [{ user_id: "usuario-1" }];
+    usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: null };
+    respostaDoLink.invite = { ok: true, url: URL_CONVITE, userId: "usuario-1" };
+    expect(await reenviarConvite("c3")).toEqual({ ok: false, erro: MENSAGEM_ADMIN_DA_PLATAFORMA });
+    expect(await enviarLinkDeSenha("c3")).toEqual({ ok: false, erro: MENSAGEM_ADMIN_DA_PLATAFORMA });
+    expect(await trocarEmailDoCorretor("c3", "outra@gmail.com")).toEqual({ ok: false, erro: MENSAGEM_ADMIN_DA_PLATAFORMA });
+    expect(pedidosDeLink).toEqual([]);
+    expect(trocasNoAuth).toEqual([]);
+  });
+
+  it("o gestor manda o próprio link de senha (pelo e-mail dele)", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_teste");
+    respostaDoEnvio = { enviado: true, id: "m" };
+    usuarioDoAuth = { id: "usuario-eu", email: "eu@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
+    respostaDoLink.recovery = { ok: true, url: URL_SENHA, userId: "usuario-eu" };
+    expect(await enviarLinkDeSenha("gestor-a")).toEqual({ ok: true, enviado: true });
+  });
+
+  it("conta já usada: sem e-mail configurado, recusa e nem gera o link", async () => {
+    usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
+    const r1 = await enviarLinkDeSenha("c3");
+    const r2 = await reenviarConvite("c3");
+    expect(r1).toEqual({ ok: false, erro: MENSAGEM_SEM_EMAIL_CONFIGURADO });
+    expect(r2).toEqual({ ok: false, erro: MENSAGEM_SEM_EMAIL_CONFIGURADO });
+    expect(pedidosDeLink).toEqual([]);
+    expect(JSON.stringify([r1, r2])).not.toContain("token_hash");
+  });
+
+  it("conta já usada: e-mail recusado é erro, e o link nunca volta para a tela", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_teste");
+    respostaDoEnvio = { enviado: false, motivo: "recusado" };
+    usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
+    const r = await enviarLinkDeSenha("c3");
+    expect(r).toEqual({ ok: false, erro: MENSAGEM_EMAIL_NAO_SAIU });
+    expect(JSON.stringify(r)).not.toContain(URL_SENHA);
+    expect(enviados.map((e) => e[1])).toEqual(["carla@gmail.com"]);
+  });
+
+  it("conta já usada não troca de e-mail", async () => {
+    usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
+    expect(await trocarEmailDoCorretor("c3", "gestor@gmail.com")).toEqual({
+      ok: false,
+      erro: MENSAGEM_EMAIL_DE_CONTA_USADA,
+    });
+    expect(trocasNoAuth).toEqual([]);
+    expect(pedidosDeLink).toEqual([]);
+    expect(corretor("c3").email).toBe("carla@gmail.com");
+  });
+
+  it("conta que nunca entrou: o link do convite ainda pode ir para a tela", async () => {
+    respostaDoLink.invite = { ok: true, url: URL_CONVITE, userId: "usuario-1" };
+    usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: null };
+    expect(await reenviarConvite("c3")).toEqual({ ok: true, enviado: false, url: URL_CONVITE });
+  });
+
+  it("sem conseguir ler o Auth, recusa (não trata como conta nunca usada)", async () => {
+    erroDoAuth = { message: "timeout" };
+    respostaDoLink.invite = { ok: true, url: URL_CONVITE, userId: "usuario-1" };
+    const r = await reenviarConvite("c3");
+    expect(r.ok).toBe(false);
+    expect(pedidosDeLink).toEqual([]);
+    expect(await trocarEmailDoCorretor("c3", "x@gmail.com")).toMatchObject({ ok: false });
+    expect(trocasNoAuth).toEqual([]);
   });
 });

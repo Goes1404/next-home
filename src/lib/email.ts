@@ -57,6 +57,15 @@ export interface Email {
   texto: string;
 }
 
+/**
+ * Há como mandar e-mail neste ambiente? Para quem precisa decidir ANTES de
+ * gerar um link que só pode sair por e-mail (o link de senha de uma conta
+ * que já foi usada): sem chave, o link nem é gerado.
+ */
+export function emailConfigurado(): boolean {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
 export async function enviarEmail(email: Email): Promise<ResultadoEmail> {
   const chave = process.env.RESEND_API_KEY;
 

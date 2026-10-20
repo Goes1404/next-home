@@ -8,9 +8,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import {
+  MENSAGEM_ADMIN_DA_PLATAFORMA,
+  MENSAGEM_EMAIL_DE_CONTA_USADA,
   MENSAGEM_EMAIL_EM_USO,
   MENSAGEM_ENDERECO_DE_ACESSO,
   MENSAGEM_ENDERECO_PROVISORIO,
+  MENSAGEM_OUTRO_GESTOR,
 } from "@/lib/corretores/acessoDaConta";
 import {
   convidarCorretorDoGrupo,
@@ -198,22 +201,36 @@ export async function cadastrarCorretor(dados: DadosNovoCorretor): Promise<Resul
   return convite;
 }
 
+/** Falha ao perguntar ao Auth (ou à lista da plataforma) quem é a conta. */
+const MENSAGEM_ACESSO_NAO_CONFERIDO = "Não foi possível conferir este acesso agora. Tente de novo.";
+
 /**
- * A ficha do grupo do gestor e o usuário do Auth dela. O e-mail usado nos
- * links é o do AUTH, que é para onde o login aponta — a ficha pode estar
- * desatualizada numa conta antiga.
+ * A ficha do grupo do gestor e o usuário do Auth dela, e se o gestor pode
+ * mexer no acesso. O e-mail usado nos links é o do AUTH, que é para onde o
+ * login aponta — a ficha pode estar desatualizada numa conta antiga.
+ *
+ * Tomar o login de alguém é o jeito de ler as conversas dele, e nenhum gestor
+ * lê conversa de outro. Por isso:
+ * - OUTRO gestor e administrador da plataforma são recusados (o gestor pode
+ *   mandar o próprio link, pelo próprio e-mail);
+ * - `jaUsada` (o Auth tem `last_sign_in_at`) diz a quem chama que o link só
+ *   pode ir para o e-mail da pessoa, e que o e-mail não se troca.
+ *
+ * Tudo falha FECHADO: sem conseguir ler o Auth, "não sei se a conta já foi
+ * usada" não vira "nunca foi" — senão o link sairia na tela de quem pediu.
  */
 async function contaDoGrupo(
   corretorId: string,
   grupoId: string,
+  quemAge: string,
 ): Promise<
   | { erro: string }
-  | { erro?: undefined; userId: string; emailDoLogin: string; ultimoLogin: string | null }
+  | { erro?: undefined; userId: string; emailDoLogin: string; jaUsada: boolean }
 > {
   const supabase = await createClient();
   const { data: alvo } = await supabase
     .from("corretores")
-    .select("id, user_id, email")
+    .select("id, user_id, email, papel")
     .eq("id", corretorId)
     // O link sai pela chave de serviço: a ficha tem de ser do grupo de quem
     // pede, senão o gestor de um grupo mandaria o link de outro.
@@ -222,30 +239,56 @@ async function contaDoGrupo(
   if (!alvo) return { erro: "Corretor não encontrado." };
   if (!alvo.user_id) return { erro: "Este corretor ainda não tem acesso. Use 'Convidar'." };
 
-  const { data, error } = await createServiceClient().auth.admin.getUserById(alvo.user_id);
-  if (error) console.error(`[admin] falha ao ler o login do corretor ${corretorId}: ${error.message}`);
-  const email = data?.user?.email ?? alvo.email;
+  const outraPessoa = alvo.id !== quemAge;
+  if (outraPessoa && alvo.papel === "gestor") return { erro: MENSAGEM_OUTRO_GESTOR };
+
+  const servico = createServiceClient();
+  const { data, error } = await servico.auth.admin.getUserById(alvo.user_id);
+  if (error || !data?.user) {
+    console.error(`[admin] falha ao ler o login do corretor ${corretorId}: ${error?.message ?? "sem usuário"}`);
+    return { erro: MENSAGEM_ACESSO_NAO_CONFERIDO };
+  }
+
+  if (outraPessoa) {
+    const { data: admin, error: erroAdmin } = await servico
+      .from("administradores_da_plataforma")
+      .select("user_id")
+      .eq("user_id", alvo.user_id)
+      .maybeSingle();
+    if (erroAdmin) {
+      console.error(`[admin] falha ao conferir se o corretor ${corretorId} administra a plataforma: ${erroAdmin.message}`);
+      return { erro: MENSAGEM_ACESSO_NAO_CONFERIDO };
+    }
+    if (admin) return { erro: MENSAGEM_ADMIN_DA_PLATAFORMA };
+  }
+
+  const email = data.user.email ?? alvo.email;
   if (!email) return { erro: "Este acesso está sem e-mail. Use 'Trocar e-mail'." };
-  return { userId: alvo.user_id, emailDoLogin: email, ultimoLogin: data?.user?.last_sign_in_at ?? null };
+  return { userId: alvo.user_id, emailDoLogin: email, jaUsada: Boolean(data.user.last_sign_in_at) };
 }
 
 /**
  * Manda de novo o link de quem tem acesso: convite enquanto a pessoa nunca
- * entrou, link de senha depois. O convite também cai para o link de senha
- * quando o Auth o recusa — conta já confirmada que nunca entrou (criada pelo
- * caminho antigo, com senha provisória) não aceita convite, e o link de
- * senha resolve do mesmo jeito.
+ * entrou, link de senha depois — e esse só pelo e-mail dela, nunca na tela.
+ * O convite também cai para o link de senha quando o Auth o recusa — conta já
+ * confirmada que nunca entrou (criada pelo caminho antigo, com senha
+ * provisória) não aceita convite, e o link de senha resolve do mesmo jeito.
  */
 export async function reenviarConvite(corretorId: string): Promise<ResultadoDoLink> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
-  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId);
+  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId, guarda.corretor.id);
   if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
   if (ehEmailDeAcesso(conta.emailDoLogin)) return { ok: false, erro: MENSAGEM_ENDERECO_PROVISORIO };
 
-  const pedido = { grupoId: guarda.corretor.grupoId, email: conta.emailDoLogin, usuarioEsperado: conta.userId };
-  let tipo: "invite" | "recovery" = conta.ultimoLogin ? "recovery" : "invite";
+  const pedido = {
+    grupoId: guarda.corretor.grupoId,
+    email: conta.emailDoLogin,
+    usuarioEsperado: conta.userId,
+    somentePorEmail: conta.jaUsada,
+  };
+  let tipo: "invite" | "recovery" = conta.jaUsada ? "recovery" : "invite";
   let r = await mandarLinkDeAcesso({ ...pedido, tipo });
   if (!r.ok && tipo === "invite" && r.motivo === "email_em_uso") {
     tipo = "recovery";
@@ -267,13 +310,14 @@ export async function reenviarConvite(corretorId: string): Promise<ResultadoDoLi
 
 /**
  * Link para criar uma senha nova (no lugar da antiga "Redefinir senha", que
- * devolvia uma senha em claro para o gestor repassar).
+ * devolvia uma senha em claro para o gestor repassar). Conta já usada: só
+ * pelo e-mail da pessoa.
  */
 export async function enviarLinkDeSenha(corretorId: string): Promise<ResultadoDoLink> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
 
-  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId);
+  const conta = await contaDoGrupo(corretorId, guarda.corretor.grupoId, guarda.corretor.id);
   if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
   if (ehEmailDeAcesso(conta.emailDoLogin)) return { ok: false, erro: MENSAGEM_ENDERECO_PROVISORIO };
 
@@ -282,6 +326,7 @@ export async function enviarLinkDeSenha(corretorId: string): Promise<ResultadoDo
     tipo: "recovery",
     email: conta.emailDoLogin,
     usuarioEsperado: conta.userId,
+    somentePorEmail: conta.jaUsada,
   });
   if (!r.ok) return { ok: false, erro: r.erro };
 
@@ -298,7 +343,9 @@ export async function enviarLinkDeSenha(corretorId: string): Promise<ResultadoDo
 /**
  * Troca o e-mail de login de um corretor e manda o link de senha para o
  * endereço novo. É o caminho das contas antigas `@nexthome.com` (domínio de
- * terceiro), que não podem receber link nenhum.
+ * terceiro), que não podem receber link nenhum — e só de conta que NUNCA foi
+ * usada: trocar o e-mail de quem já entra no painel mandaria o link de senha
+ * para um endereço escolhido pelo gestor, que entraria na conta dela.
  *
  * Troca no Auth primeiro e depois na ficha; se a ficha falhar, o Auth volta
  * ao endereço antigo — senão login e ficha apontariam para e-mails
@@ -313,8 +360,9 @@ export async function trocarEmailDoCorretor(corretorId: string, emailNovo: strin
   if (ehEmailDeAcesso(email)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
 
   const grupoId = guarda.corretor.grupoId;
-  const conta = await contaDoGrupo(corretorId, grupoId);
+  const conta = await contaDoGrupo(corretorId, grupoId, guarda.corretor.id);
   if (conta.erro !== undefined) return { ok: false, erro: conta.erro };
+  if (conta.jaUsada) return { ok: false, erro: MENSAGEM_EMAIL_DE_CONTA_USADA };
   if (conta.emailDoLogin.toLowerCase() === email) return { ok: false, erro: "Esse já é o e-mail deste acesso." };
 
   const supabase = await createClient();

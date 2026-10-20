@@ -1,6 +1,7 @@
 import "server-only";
 
 import { enviarLinkDeAcesso } from "@/lib/auth/emailsDeAcesso";
+import { emailConfigurado } from "@/lib/email";
 import { gerarLinkDeAcesso, type TipoDeLink } from "@/lib/auth/links";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -88,17 +89,38 @@ export async function registrarEventoDeAcesso(
   }
 }
 
-/** Manda o link por e-mail; sem envio, devolve a URL para a tela. */
+/**
+ * O link de uma conta que JÁ foi usada não aparece na tela de ninguém: quem
+ * o copiasse entraria na conta de outra pessoa (e leria as conversas dela).
+ * Sem e-mail configurado, ele nem é gerado.
+ */
+export const MENSAGEM_SEM_EMAIL_CONFIGURADO =
+  "Esta pessoa já entrou no painel, então o link só pode ir para o e-mail dela, e o envio de e-mail não está ligado. Peça para ela usar \"Esqueci a senha\" na tela de entrar.";
+
+/** O e-mail com o link de uma conta já usada não saiu, e o link não volta para a tela. */
+export const MENSAGEM_EMAIL_NAO_SAIU =
+  "O e-mail com o link não saiu agora. Tente de novo em alguns minutos.";
+
+/**
+ * Manda o link por e-mail; sem envio, devolve a URL para a tela — só quando
+ * `somentePorEmail` é falso (conta que nunca entrou). Com ele, envio que não
+ * sai é erro, e a URL não volta.
+ */
 async function entregar(
   servico: Servico,
   tipo: TipoDeLink,
   email: string,
   grupoId: string,
   url: string,
-): Promise<{ ok: true; enviado: boolean; url?: string }> {
+  somentePorEmail = false,
+): Promise<{ ok: true; enviado: boolean; url?: string } | { ok: false; erro: string }> {
   const { data: grupo } = await servico.from("grupos").select("nome").eq("id", grupoId).maybeSingle();
   const envio = await enviarLinkDeAcesso(tipo, email, grupo?.nome ?? site.nome, url);
   if (envio.enviado) return { ok: true, enviado: true };
+  if (somentePorEmail) {
+    console.warn(`[acesso] link (${tipo}) de conta já usada não saiu por e-mail: ${envio.motivo}; não mostrado`);
+    return { ok: false, erro: MENSAGEM_EMAIL_NAO_SAIU };
+  }
   console.warn(`[acesso] link (${tipo}) não saiu por e-mail: ${envio.motivo}; volta para a tela`);
   return { ok: true, enviado: false, url };
 }
@@ -114,25 +136,34 @@ function erroDoLink(motivo: "email_em_uso" | "email_de_acesso" | "falha"): strin
  * link de senha, depois de trocar o e-mail). `usuarioEsperado` é o login da
  * ficha: se o Auth devolver outro usuário, o link entraria na conta errada, e
  * nada é enviado.
+ *
+ * `somentePorEmail`: a conta já foi usada (o Auth tem `last_sign_in_at`). O
+ * link só vai para o e-mail da própria pessoa, nunca para a tela: sem e-mail
+ * configurado ele nem é gerado, e envio recusado é erro.
  */
 export async function mandarLinkDeAcesso({
   grupoId,
   tipo,
   email,
   usuarioEsperado,
+  somentePorEmail = false,
 }: {
   grupoId: string;
   tipo: TipoDeLink;
   email: string;
   usuarioEsperado: string;
-}): Promise<ResultadoDoLink & { motivo?: "email_em_uso" | "email_de_acesso" | "falha" }> {
+  somentePorEmail?: boolean;
+}): Promise<ResultadoDoLink & { motivo?: "email_em_uso" | "email_de_acesso" | "falha" | "sem_email" }> {
+  if (somentePorEmail && !emailConfigurado()) {
+    return { ok: false, erro: MENSAGEM_SEM_EMAIL_CONFIGURADO, motivo: "sem_email" };
+  }
   const link = await gerarLinkDeAcesso(tipo, email, DESTINO_DO_LINK);
   if (!link.ok) return { ok: false, erro: erroDoLink(link.motivo), motivo: link.motivo };
   if (link.userId !== usuarioEsperado) {
     console.error(`[acesso] link (${tipo}) voltou para outro usuário do Auth; não enviado`);
     return { ok: false, erro: "Não foi possível gerar o link agora. Tente de novo.", motivo: "falha" };
   }
-  return entregar(createServiceClient(), tipo, email, grupoId, link.url);
+  return entregar(createServiceClient(), tipo, email, grupoId, link.url, somentePorEmail);
 }
 
 /**

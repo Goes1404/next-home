@@ -6,6 +6,7 @@ import { Check, Copy, KeyRound, Mail, ShieldCheck, TriangleAlert, UserPlus } fro
 import {
   acoesDeAcesso,
   MENSAGEM_ENDERECO_PROVISORIO,
+  motivoSemAcaoDeAcesso,
   usaEnderecoProvisorio,
 } from "@/lib/corretores/acessoDaConta";
 import {
@@ -152,8 +153,12 @@ function LinhaCorretor({
 }) {
   const [editando, setEditando] = useState<null | "convidar" | "trocar_email">(null);
   const [pendente, iniciar] = useTransition();
-  const acoes = acoesDeAcesso(corretor);
+  // Outro gestor não recebe link nem troca de e-mail pela mão de ninguém
+  // (as actions recusam de novo, conferindo o Auth).
+  const conta = { ...corretor, outroGestor: corretor.papel === "gestor" && !souEu };
+  const acoes = acoesDeAcesso(conta);
   const provisorio = usaEnderecoProvisorio(corretor);
+  const semAcao = motivoSemAcaoDeAcesso(conta);
 
   /** Roda uma das actions de link e mostra o desfecho. */
   const comLink = (
@@ -252,10 +257,10 @@ function LinhaCorretor({
         </span>
       </div>
 
-      {provisorio && (
+      {(semAcao || (provisorio && acoes.includes("trocar_email"))) && (
         <p className="text-fluid-xs border-alerta-linha bg-alerta-lavado text-corpo mt-3 flex items-start gap-2 rounded-xl border px-3 py-2">
           <TriangleAlert className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
-          {MENSAGEM_ENDERECO_PROVISORIO}
+          {semAcao ?? MENSAGEM_ENDERECO_PROVISORIO}
         </p>
       )}
 
