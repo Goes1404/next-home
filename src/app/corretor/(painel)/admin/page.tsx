@@ -332,6 +332,25 @@ export default async function AdminVisaoGeralPage() {
       <Suspense fallback={null}>
         <SaudeDaOperacao />
       </Suspense>
+
+      {/* Exportação do grupo (0202): só a ficha, nunca a conversa. */}
+      <section className="cartao flex flex-col gap-3 p-5" aria-labelledby="titulo-dados-da-imobiliaria">
+        <h2 id="titulo-dados-da-imobiliaria" className="text-fluid-base text-titulo font-bold">
+          Dados da imobiliária
+        </h2>
+        <p className="text-fluid-sm text-apoio">
+          Uma planilha com os leads (a ficha de cada um), os imóveis, os corretores e as vendas. Conversas não entram. Cada
+          download fica registrado.
+        </p>
+        <div>
+          <a
+            href="/api/painel/dados-do-grupo"
+            className="botao-secundario text-fluid-sm inline-flex min-h-11 items-center rounded-xl px-4"
+          >
+            Baixar planilha com todos os dados
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
