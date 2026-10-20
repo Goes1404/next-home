@@ -108,6 +108,13 @@ que o webhook grava herda o grupo da linha-mãe pelo gatilho
 lead "alheio" só no grupo da instância, e o catálogo que a IA recebe é o
 do grupo da instância (`getEmpreendimentos(instancia.grupoId)`, Task 12).
 
+Casa do grupo (0199, fase 4): junto com o catálogo, o webhook lê
+`lerCasaDoGrupo(instancia.grupoId)` e passa como `identidade.casa`: nome da
+imobiliária e região no prompt e no planner, nome e tom do grupo ganhando
+dos da instância, e o nome da casa fora do índice de foco
+([[identidade-da-ia-de-cada-grupo]]). Leitura que falha cai no padrão do
+grupo; a IA não cala por isso.
+
 Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
 a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um
 "Registrar?" no Início, nunca registro automático (0163).

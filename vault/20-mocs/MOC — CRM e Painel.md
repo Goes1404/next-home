@@ -68,6 +68,7 @@ F0–F6.
 ## Administração (gestor)
 
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
+- [[identidade-da-ia-de-cada-grupo]] — tela Administração > Assistente: o gestor dá nome, região e tom à IA da equipe (0199, 20/10)
 - [[cota-de-respostas-da-ia-por-grupo]] — teto mensal de respostas da IA por grupo (plano ou ajuste da plataforma), contado por gatilho; no teto a IA cala com `cota_do_grupo` (0197, 20/10)
 - [[numero-em-um-grupo-e-aceite-dos-termos]] — um número de WhatsApp só fica num grupo (gatilho por grupo, recusa com frase no pareamento e no webhook) e o painel pede o aceite dos termos no primeiro acesso (0198, 20/10)
 - [[papel-nunca-ganha-grant-update]]

@@ -11208,3 +11208,32 @@ Nota: [[numero-em-um-grupo-e-aceite-dos-termos]].
 - **Exceção de rota pelo `pathname` no layout não funciona**: layout não
   re-executa entre rotas irmãs. A tela de senha saiu do `(painel)` (URL
   igual) para não depender do aceite dos termos.
+
+## A IA de cada grupo: nome, região e tom (0199, 20/10/2026)
+
+Nota: [[identidade-da-ia-de-cada-grupo]].
+
+- **Antes de trocar literal do prompt, grave o instantâneo.** O prompt do
+  grupo 1 foi gravado em `casaNoPrompt.test.ts` ANTES da mudança, e é ele
+  que prova que a Next Home continua letra por letra igual (`PROMPT_VERSAO`
+  não mudou). "Alphaville" (apresentação) e "Barueri" (pergunta do funil)
+  são dois valores diferentes do grupo 1; um campo só os teria fundido.
+- **Outro grupo sem configuração não pode cair na Next Home**: o padrão dele
+  é `grupos.nome`, e leitura que falha deixa sem nome. Só o grupo 1 usa
+  `site.nome` como padrão.
+- **O turno exige a casa; o prompt não.** Com `casa` opcional no turno, um
+  chamador esquecido falaria como a Next Home no número de outro grupo, e o
+  `tsc` não diria nada. Obrigatória, o compilador listou os sete chamadores.
+- **O nome da casa também mora no índice de foco.** "Aqui é a Ana, da Oásis
+  Imóveis" travaria o foco no "Oásis Home Resort" do mesmo grupo, como a
+  Next Home travou no Breeze em 28/09. `nomeDaCasa` vai a toda chamada do
+  índice no turno (guarda `casaNoTurno.test.ts`, provocada).
+- **`grupos` tem SELECT por coluna (0196)**: coluna nova que o logado precisa
+  ler pede `grant select (col)`, senão a tela lê vazio calada.
+- **A variação de lista também usava `site.nome`** como fato permitido: agora
+  é o nome da casa do grupo do número.
+- **Python que lê arquivo em modo texto converte CRLF para LF** ao gravar com
+  `newline=''`; o git normaliza, mas o aviso "LF will be replaced" aparece.
+- **Ficou para depois** (L64–L68): segmento "alto padrão", fala preço ou não,
+  regras da casa, fuso por grupo, estilo próprio, dossiê, aviso ao corretor,
+  marketing e evals por grupo.

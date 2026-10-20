@@ -89,6 +89,7 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[pedir-um-tempo-nao-e-aceitar-a-visita]] — "vou confirmar depois, pode ser?" gravou visita; "corretor Carlos" inventado; último domingo do mês; lista duplicada por telefone (v50, 16/10)
 - [[agenda-padrao-aberta]] — sem agenda preenchida, vale todos os dias das 9h às 20h (16/10)
 - [[erro-de-leitura-nao-e-numero-sem-lead]] — erro na leitura da conversa virava 200 "sem lead" e a mensagem sumia; hoje 503 (19/10)
+- [[identidade-da-ia-de-cada-grupo]] — nome da casa, região, nome e tom da assistente por grupo; o grupo 1 continua igual, outro grupo nunca herda a Next Home (0199, 20/10)
 
 ## Relacionados
 - [[MOC — Evals e Medição]] · [[MOC — Campanhas e Anti-ban]] · [[Home]]
