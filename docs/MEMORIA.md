@@ -11382,3 +11382,30 @@ Nota: [[encerramento-do-grupo-e-pedido-do-titular]].
   as FKs deixarem; não há ordem escrita à mão para envelhecer.
 - **Teste de banco: o efeito de `comoUsuario` se lê dentro do callback**,
   depois de `reset role`; fora dele o savepoint já desfez.
+
+## A revisão da 0202: o que apagava demais e o que não apagava (0202, 20/10/2026)
+
+Nota: [[encerramento-do-grupo-e-pedido-do-titular]].
+
+- **Leitura que decide se algo é apagado não pode ignorar o `error`.** A
+  rotina dos 90 dias lia quantos administradores da plataforma havia com
+  `count` e sem `error`: numa piscada do banco, `null` virava "não é
+  administrador" e o login dele era apagado. Hoje é uma consulta só, antes de
+  apagar qualquer coisa, e erro PARA a rotina.
+- **Fila que pega sempre o mais antigo trava no primeiro que falha sempre.**
+  Falha agora fica em `grupos.falha_ao_apagar` (a tela mostra) e a ordem põe
+  antes quem nunca falhou.
+- **"Apagar o grupo" que só apaga linhas deixa os documentos para sempre**:
+  `documentos-clientes/<lead>/` (RG, CPF, mídia do WhatsApp) e
+  `contabilidade/<grupo>/` (CPF/CNPJ da DIMOB) saem antes das linhas, porque
+  depois delas não há como saber de quem é cada pasta.
+- **`storage.list` não pagina sozinho**: limite de 1000 por chamada, use
+  `offset` (`src/lib/grupos/arquivosPrivados.ts`).
+- **O pedido do titular é da pessoa, não da ficha**: vão as fichas do grupo
+  com o mesmo telefone ou e-mail. A venda fica com nome e CPF do comprador
+  (`venda_fiscal`), e a tela diz isso.
+- **Decisões sem o dono (registrar e confirmar):** a cópia final guardada
+  some 30 dias depois dos dados; a plataforma só baixa a planilha 24 h depois
+  do cancelamento; desfazer depois dos 90 dias, com a rotina ligada, é
+  recusado; o CPF dos compradores não entra na planilha, e a tela manda baixar
+  os pacotes do contador.
