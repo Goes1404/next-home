@@ -12,6 +12,7 @@ import { textoMudancaEtapa } from "@/lib/crm/timeline";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 export type EstadoLogin = { erro?: string } | undefined;
 export type EstadoForm = { erro?: string; ok?: string } | undefined;
@@ -136,7 +137,7 @@ export async function salvarPerfil(
   // corretores, que só a etiqueta derruba.
   revalidarCorretores();
   revalidatePath("/corretor/perfil");
-  revalidatePath("/corretores");
+  revalidarSitePublico();
   return { ok: "Perfil atualizado." };
 }
 
@@ -222,12 +223,10 @@ export async function enviarMidiaCorretor(
   }
 
   revalidatePath("/corretor/perfil");
-  revalidatePath("/corretores");
+  revalidarSitePublico();
   revalidarCatalogo();
   revalidarCorretores();
   revalidatePath("/", "layout");
-  revalidatePath("/portfolio", "layout");
-  revalidatePath("/empreendimentos", "layout");
 
   return { ok: "Enviado com sucesso." };
 }

@@ -5,6 +5,7 @@ import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { validarChamadaDoLink } from "@/lib/previaDoLink";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 /**
  * Texto da prévia do link do portfólio (0188). Grava só a própria linha: a
@@ -32,7 +33,7 @@ export async function salvarChamadaDoLink(texto: string): Promise<{ ok?: string;
 
   revalidarCorretores();
   revalidatePath("/corretor/perfil");
-  revalidatePath("/portfolio");
+  revalidarSitePublico();
   return {
     ok: validado.valor ? "Texto da prévia salvo." : "A prévia voltou ao texto padrão.",
   };

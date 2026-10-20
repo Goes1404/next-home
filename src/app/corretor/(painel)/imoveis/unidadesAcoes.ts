@@ -12,12 +12,13 @@ import {
   type StatusUnidade,
 } from "@/lib/imoveis/unidades";
 import { chaveDaUnidade } from "@/lib/imoveis/tabelaDeDisponibilidade";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 type Resultado = { ok?: string; erro?: string };
 
 function revalidar(slug: string) {
   revalidatePath(`/corretor/imoveis/${slug}`);
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
 }
 

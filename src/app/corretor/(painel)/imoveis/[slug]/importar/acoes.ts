@@ -24,6 +24,7 @@ import { lerPlanta } from "@/lib/imoveis/lerPlanta";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import { limparTextoDeApresentacao } from "@/lib/imoveis/textoDoDeck";
 import type { Database } from "@/lib/supabase/types";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 type AtualizacaoEmpreendimento = Database["public"]["Tables"]["empreendimentos"]["Update"];
 
@@ -228,9 +229,8 @@ export async function gravarEscolhasDoPdf(entrada: {
   // (`descartarPdfDeImportacao`): é dele que sai o texto onde moram o nome e
   // a metragem de cada tipologia — a imagem sozinha não tem isso.
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, gravadas, duplicadas, falhas, plantas, porItem };
@@ -327,7 +327,7 @@ async function gravarTipologiaLida(
     return { ok: false, erro: "não consegui salvar a tipologia" };
   }
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, nome: t.nome, criada: !existente };
@@ -422,9 +422,8 @@ export async function trazerArquivoDoDrive(entrada: {
 
   if (!resultado.ok) return { ok: false, erro: resultado.erro };
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, duplicada: resultado.duplicada };
@@ -536,9 +535,8 @@ export async function aplicarRascunhoNoCadastro(entrada: {
     return { ok: false, erro: "Não consegui salvar no cadastro agora. Tente de novo." };
   }
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
   revalidarCatalogo();
   revalidatePath("/", "layout");
@@ -749,9 +747,8 @@ export async function trazerImagemDoSite(entrada: {
     .is("origem_url", null);
   if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, duplicada: resultado.duplicada, url: resultado.url };
@@ -854,9 +851,8 @@ export async function trazerVideoDoSite(entrada: {
     .is("origem_url", null);
   if (erroOrigem) console.warn("[importar do site] sem origem_url (0113 aplicada?):", erroOrigem.message);
 
-  revalidatePath(`/empreendimentos/${entrada.slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
   return { ok: true };
 }

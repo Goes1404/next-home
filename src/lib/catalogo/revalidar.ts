@@ -8,14 +8,17 @@ import { TAG_CATALOGO, TAG_CORRETORES, TAG_CREDITO } from "./tags";
  * `empreendimentos`, `midias`, `tipologias`, `empreendimento_lazer`,
  * `corretores` (campos públicos) ou `parametros_credito`.
  *
- * `"max"` é o perfil de expiração: a próxima requisição recalcula e o
- * resultado velho não é servido nem como "stale". Para catálogo de imóveis
- * é o certo — o corretor que acabou de publicar um imóvel abre a vitrine
- * para conferir, e "stale-while-revalidate" mostraria a lista sem ele.
+ * `"max"` marca o dado como velho (stale-while-revalidate, doc do Next 16):
+ * a próxima leitura FORA de uma rota derrubada ainda recebe o velho e
+ * recalcula ao fundo. Quem garante que a página que o corretor abre para
+ * conferir venha fresca é o `revalidarSitePublico()` (`sites/revalidar.ts`):
+ * ele expira na hora as etiquetas implícitas das páginas públicas, e o
+ * `unstable_cache` lido dentro delas obedece a essas etiquetas.
  *
- * Os `revalidatePath` que já existiam nas actions continuam: eles limpam o
- * cache de ROTA (o HTML/RSC), estas limpam o cache de DADO. Sem as duas, a
- * rota é recalculada com o dado velho.
+ * Desde a fase 3 o caminho precisa ser o de DESTINO (`/s/[site]`): o proxy
+ * reescreve o site para `/s/<host>/...`, e `revalidatePath("/empreendimentos")`
+ * não acha rota nenhuma. A guarda `revalidarSitePublico.test.ts` reprova
+ * caminho público sem o prefixo.
  *
  * A guarda `cacheDoCatalogo.test.ts` lê as actions e cobra a chamada.
  */

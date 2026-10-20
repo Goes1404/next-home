@@ -15,6 +15,7 @@ import {
   type EntradaDescricaoIA,
 } from "@/lib/imoveis/descricaoIA";
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 export interface DadosGeraisInput {
   nome: string;
@@ -116,8 +117,7 @@ export async function salvarDadosGerais(
   }
 
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
-  revalidatePath(`/empreendimentos/${slugAtual}`);
+  revalidarSitePublico();
   revalidatePath("/corretor/imoveis");
   revalidarCatalogo();
   revalidatePath("/", "layout");
@@ -199,9 +199,8 @@ export async function uploadFotoOuPlanta(
     return { ok: false, erro: resultado.erro };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return {
@@ -244,9 +243,8 @@ export async function removerMidiaImovel(
     }
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
 
@@ -342,9 +340,8 @@ export async function salvarOrdemDasFotos(
     return { ok: false, erro: "Não foi possível salvar a ordem das fotos." };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/", "layout");
   revalidatePath("/corretor/imoveis");
   revalidatePath(`/corretor/imoveis/${slug}`);
@@ -389,9 +386,8 @@ export async function definirTipoDaMidia(
     return { ok: false, erro: "Esta imagem não pôde ser alterada. Recarregue a página." };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
   revalidatePath(`/corretor/imoveis/${slug}`);
   return { ok: true };
@@ -468,7 +464,7 @@ export async function salvarTipologias(
   }
 
   revalidatePath(`/corretor/imoveis/${slug}`);
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
   return { ok: true, ids: tipologias.map((t) => idPorPlanta.get(t) ?? null) };
 }
@@ -518,9 +514,8 @@ export async function salvarLazerEmpreendimento(
     }
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
 
@@ -577,9 +572,8 @@ export async function uploadBookDigital(
     return { ok: false, erro: "PDF enviado, mas houve erro ao salvar o link no imóvel." };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return { ok: true, url: urlPublica.publicUrl, titulo };
@@ -612,9 +606,8 @@ export async function salvarLinkBookDigital(
     return { ok: false, erro: "Não foi possível salvar o link do Book." };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
 
@@ -651,9 +644,8 @@ export async function removerBookDigital(
     }
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
 
@@ -697,9 +689,8 @@ export async function adicionarMidiaExterna(
     return { ok: false, erro: "Não foi possível salvar o link agora. Tente novamente." };
   }
 
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   revalidatePath("/corretor/imoveis");
 
   return {
@@ -843,9 +834,8 @@ export async function excluirImovel(slug: string): Promise<{ ok: boolean; erro?:
 
   revalidatePath("/corretor/imoveis");
   revalidatePath("/corretor/imoveis/candidatos");
-  revalidatePath(`/empreendimentos/${slug}`);
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos", "layout");
   return { ok: true };
 }
 
@@ -905,7 +895,7 @@ export async function salvarOrdemDaVitrine(
 
   revalidarCatalogo();
   revalidatePath("/", "layout");
-  revalidatePath("/empreendimentos", "layout");
+  revalidarSitePublico();
   revalidatePath("/corretor/imoveis", "layout");
 
   return { ok: true };

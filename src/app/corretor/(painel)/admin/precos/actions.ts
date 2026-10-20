@@ -7,6 +7,7 @@ import { exigirGestorNaAcao } from "@/lib/guardas";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
 import { lerTabelaDePrecosComIa, transcreverPrintDaTabela } from "@/lib/precos/leituraPorIa";
+import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 /**
  * Busca a lista de empreendimentos para conciliação no cliente.
@@ -129,14 +130,12 @@ export async function aplicarLotePrecos(
     aplicados += 1;
   }
 
-  // 3. Revalida as listas. As páginas de imóvel são ISR (5 min) e NÃO são
-  // purgadas por aqui — por isso a mensagem de sucesso fala em "até 5
-  // minutos", e não em "já está no site".
-  revalidatePath("/");
-  revalidatePath("/portfolio");
+  // 3. Revalida o site público inteiro (home, listas e fichas, de todo
+  // endereço: o caminho de destino `/s/[site]`, ver `sites/revalidar.ts`).
+  // A mensagem de sucesso fala em "até 5 minutos" porque o site pode estar
+  // aberto numa aba que só atualiza ao recarregar.
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos");
-  revalidatePath("/mapa");
   revalidatePath("/corretor/admin/precos");
 
   return { ok: true, loteId, totalAlterados: aplicados };
@@ -202,10 +201,8 @@ export async function reverterLotePrecos(loteId: string): Promise<{ ok: boolean;
     .eq("id", loteId);
 
   // 4. Revalidação
-  revalidatePath("/");
-  revalidatePath("/portfolio");
+  revalidarSitePublico();
   revalidarCatalogo();
-  revalidatePath("/empreendimentos");
   revalidatePath("/corretor/admin/precos");
 
   return { ok: true };

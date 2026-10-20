@@ -67,8 +67,10 @@ describe("o site público não vai ao banco por requisição", () => {
     for (const p of arquivosTs(join(SRC, "app", "corretor"))) {
       const fonte = semComentarios(readFileSync(p, "utf8"));
       const revalidaVitrine =
-        fonte.includes('revalidatePath("/empreendimentos"') || fonte.includes('revalidatePath("/", "layout")');
-      if (revalidaVitrine && !fonte.includes("revalidarCatalogo(")) culpados.push(p.replace(RAIZ, ""));
+        fonte.includes("revalidarSitePublico(") || fonte.includes('revalidatePath("/", "layout")');
+      // O perfil do corretor (página da equipe) derruba a etiqueta dos corretores.
+      const derrubaEtiqueta = fonte.includes("revalidarCatalogo(") || fonte.includes("revalidarCorretores(");
+      if (revalidaVitrine && !derrubaEtiqueta) culpados.push(p.replace(RAIZ, ""));
     }
     expect(culpados).toEqual([]);
   });
