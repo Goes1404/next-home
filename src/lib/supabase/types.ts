@@ -1669,6 +1669,11 @@ export type Database = {
           encarregado_lgpd_email: string | null
           dados_apagados_em: string | null
           exportacao_final_caminho: string | null
+          exportacao_final_em: string | null
+          copia_final_apagada_em: string | null
+          tentativa_de_apagar_em: string | null
+          falha_ao_apagar: string | null
+          situacao_antes_do_cancelamento: string | null
           encarregado_lgpd_nome: string | null
           ia_nome_assistente: string | null
           ia_nome_da_casa: string | null
@@ -1696,6 +1701,11 @@ export type Database = {
           encarregado_lgpd_email?: string | null
           dados_apagados_em?: string | null
           exportacao_final_caminho?: string | null
+          exportacao_final_em?: string | null
+          copia_final_apagada_em?: string | null
+          tentativa_de_apagar_em?: string | null
+          falha_ao_apagar?: string | null
+          situacao_antes_do_cancelamento?: string | null
           encarregado_lgpd_nome?: string | null
           ia_nome_assistente?: string | null
           ia_nome_da_casa?: string | null
@@ -1723,6 +1733,11 @@ export type Database = {
           encarregado_lgpd_email?: string | null
           dados_apagados_em?: string | null
           exportacao_final_caminho?: string | null
+          exportacao_final_em?: string | null
+          copia_final_apagada_em?: string | null
+          tentativa_de_apagar_em?: string | null
+          falha_ao_apagar?: string | null
+          situacao_antes_do_cancelamento?: string | null
           encarregado_lgpd_nome?: string | null
           ia_nome_assistente?: string | null
           ia_nome_da_casa?: string | null

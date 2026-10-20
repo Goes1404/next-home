@@ -139,7 +139,8 @@ async function cancelar(sql: Conexao, grupoId: string, diasAtras: number, comCop
     update public.grupos
        set cancelado_em = now() - make_interval(days => ${diasAtras}),
            situacao = 'encerrado',
-           exportacao_final_caminho = ${comCopia ? `${grupoId}/final.xlsx` : null}
+           exportacao_final_caminho = ${comCopia ? `${grupoId}/final.xlsx` : null},
+           exportacao_final_em = ${comCopia ? new Date(Date.now() + 60_000) : null}
      where id = ${grupoId}
   `;
 }
@@ -231,6 +232,44 @@ describe.skipIf(!process.env.DB_TESTE_URL)("dados do grupo e LGPD (0202)", () =>
       });
     });
 
+    it("apaga também as outras fichas da mesma pessoa no grupo (mesmo telefone ou e-mail), e só elas", async () => {
+      await emTransacaoDesfeita(sql, async (tx) => {
+        const a = await criarGrupo(tx, { slug: "titular-f" });
+        const b = await criarGrupo(tx, { slug: "titular-g" });
+        const s = await semearTitular(tx, a, "f");
+        await tx`update public.leads set email = 'Titular@Exemplo.com' where id = ${s.lead}`;
+        const ficha = async (g: GrupoDeTeste, nome: string, telefone: string, email: string | null, corretor = g.corretorId) => {
+          const [{ id }] = await tx<{ id: string }[]>`
+            insert into public.leads (nome, telefone, email, corretor_id)
+            values (${nome}, ${telefone}, ${email}, ${corretor}) returning id
+          `;
+          return id;
+        };
+        // Reimportada pelo outro corretor do grupo, com o mesmo número.
+        const mesmoTelefone = await ficha(a, "Titular dup", "11988887777", null, a.gestorId);
+        // Outro número, mesmo e-mail com caixa e espaço diferentes.
+        const mesmoEmail = await ficha(a, "Titular mail", "11911112222", "  titular@exemplo.COM ");
+        // Outra pessoa do grupo, e a mesma pessoa em OUTRA imobiliária.
+        const outraPessoa = await ficha(a, "Outra", "11933334444", "outra@exemplo.com");
+        const outroGrupo = await ficha(b, "Titular B", "11988887777", "titular@exemplo.com");
+
+        const { resposta, sobraram } = await comoUsuario(tx, a.gestorUserId, async (eu) => {
+          const [{ r }] = await eu<{ r: { apagados: { fichas: number }; leads: string[] } }[]>`
+            select public.apagar_dados_do_titular(${s.lead}) as r
+          `;
+          await eu`reset role`;
+          const linhas = await eu<{ id: string }[]>`
+            select id from public.leads
+             where id in (${s.lead}, ${mesmoTelefone}, ${mesmoEmail}, ${outraPessoa}, ${outroGrupo})
+          `;
+          return { resposta: r, sobraram: linhas.map((l) => l.id).sort() };
+        });
+        expect(resposta.apagados.fichas).toBe(3);
+        expect([...resposta.leads].sort()).toEqual([s.lead, mesmoTelefone, mesmoEmail].sort());
+        expect(sobraram).toEqual([outraPessoa, outroGrupo].sort());
+      });
+    });
+
     it("o anon não executa", async () => {
       const [{ pode }] = await sql<{ pode: boolean }[]>`
         select has_function_privilege('anon', 'public.apagar_dados_do_titular(uuid)', 'EXECUTE') as pode
@@ -261,6 +300,21 @@ describe.skipIf(!process.env.DB_TESTE_URL)("dados do grupo e LGPD (0202)", () =>
         await cancelar(tx, g.grupoId, 91, false);
         await expect(tentar()).rejects.toThrow(/sem_copia/);
         expect(Object.keys(await linhasDoGrupo(tx, g.grupoId)).length).toBeGreaterThan(0);
+      });
+    });
+
+    it("recusa se entrou lead ou venda depois da cópia (o que entrou não está nela)", async () => {
+      await emTransacaoDesfeita(sql, async (tx) => {
+        const g = await criarGrupo(tx, { slug: "apagar-d" });
+        await cancelar(tx, g.grupoId, 91);
+        await tx`
+          update public.grupos set exportacao_final_em = now() - interval '1 hour' where id = ${g.grupoId}
+        `;
+        await semearTitular(tx, g, "dep");
+        await expect(
+          tx.savepoint((sp) => comoServico(sp, g.gestorUserId, (s) => s`select public.apagar_dados_do_grupo(${g.grupoId})`)),
+        ).rejects.toThrow(/entrou_dado_depois_da_copia/);
+        expect(Object.keys(await linhasDoGrupo(tx, g.grupoId))).toContain("leads");
       });
     });
 
