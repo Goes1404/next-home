@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bancoFalso, type BancoFalso } from "../../../../../test/bancoFalso";
+import { bancoFalso, type BancoFalso } from "../../../../test/bancoFalso";
 
 /**
  * "Sair e receber novo link" (revisão da fase 2A): o convidado que passou
@@ -95,7 +95,7 @@ describe("sair e receber novo link", () => {
   });
 
   it("a página de senha vencida mostra o botão e explica o que fazer", () => {
-    const pagina = readFileSync("src/app/corretor/(painel)/senha/page.tsx", "utf8");
+    const pagina = readFileSync("src/app/corretor/senha/page.tsx", "utf8");
     expect(pagina).toMatch(/action=\{sairEReceberNovoLink\}/);
     expect(pagina).toContain("Sair e receber novo link");
     expect(pagina).toMatch(/pedido === "espera"/);

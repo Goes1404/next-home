@@ -18,6 +18,15 @@ describe("o texto dos termos", () => {
     expect(tudo).toMatch(/LGPD/);
   });
 
+  it("serve ao corretor independente, que não tem imobiliária", () => {
+    const tudo = SECOES_DOS_TERMOS.flatMap((s) => s.paragrafos).join(" ");
+    expect(tudo).toMatch(/corretor independente/);
+    // Nada afirma que toda conta tem uma imobiliária por trás.
+    for (const afirmacao of ["oferecido à sua imobiliária", "sua imobiliária desativar", "plano da sua imobiliária", "gestor da sua imobiliária"]) {
+      expect(tudo).not.toContain(afirmacao);
+    }
+  });
+
   it("não promete o que o produto não faz", () => {
     const tudo = SECOES_DOS_TERMOS.flatMap((s) => s.paragrafos).join(" ").toLowerCase();
     for (const promessa of ["garantimos que", "nunca será bloqueado", "100%", "sem risco", "api oficial do whatsapp"]) {

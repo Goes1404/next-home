@@ -21,14 +21,14 @@ export const SECOES_DOS_TERMOS: SecaoDosTermos[] = [
   {
     titulo: "O que é este painel",
     paragrafos: [
-      "Este painel ajuda você a organizar seus contatos (leads), as conversas de WhatsApp, os imóveis e as vendas da sua imobiliária. Ele é oferecido à sua imobiliária, que convidou você para usá-lo.",
+      "Este painel ajuda você a organizar seus contatos (leads), as conversas de WhatsApp, os imóveis e as vendas. Você o usa pela conta da sua imobiliária, quando ela convidou você, ou pela sua conta de corretor independente.",
     ],
   },
   {
     titulo: "Sua conta",
     paragrafos: [
       "A conta é pessoal. Não passe sua senha para ninguém. Tudo o que for feito com a sua conta fica registrado como feito por você.",
-      "Se a sua imobiliária desativar a sua conta, você deixa de entrar no painel.",
+      "Se a conta for de uma imobiliária e ela desativar o seu acesso, você deixa de entrar no painel.",
     ],
   },
   {
@@ -43,14 +43,14 @@ export const SECOES_DOS_TERMOS: SecaoDosTermos[] = [
     titulo: "A assistente de IA",
     paragrafos: [
       "Quando ligada, a assistente responde seus clientes no WhatsApp em seu nome. Ela pode errar: confira o que ela diz e assuma a conversa sempre que precisar. Você pode desligá-la a qualquer momento.",
-      "A assistente tem um limite de respostas por mês, definido no plano da sua imobiliária. Quando o limite acaba, ela para de responder e você atende normalmente.",
+      "A assistente tem um limite de respostas por mês, definido no plano da conta. Quando o limite acaba, ela para de responder e você atende normalmente.",
     ],
   },
   {
     titulo: "Os dados dos seus clientes",
     paragrafos: [
       "Cadastre e procure apenas pessoas que podem ser contatadas por você para tratar de imóveis, e respeite quem pedir para não receber mais mensagens. Use os dados só para o atendimento imobiliário, como pede a Lei Geral de Proteção de Dados (LGPD).",
-      "As conversas e as fichas dos clientes ficam guardadas no painel. O gestor da sua imobiliária vê as fichas dos leads da equipe, mas não lê as suas conversas pelo painel.",
+      "As conversas e as fichas dos clientes ficam guardadas no painel. Numa conta de imobiliária, o gestor vê as fichas dos leads da equipe, mas não lê as suas conversas pelo painel.",
     ],
   },
   {
@@ -62,9 +62,9 @@ export const SECOES_DOS_TERMOS: SecaoDosTermos[] = [
 ];
 
 /**
- * Depois de aceitar: quem ainda entra com a senha provisória vai direto
- * trocá-la (a tela de senha mora dentro do painel e passaria pelos termos
- * de novo antes, o que daria a ordem termos → senha sem volta).
+ * Depois de aceitar: quem ainda tem a senha provisória vai direto trocá-la,
+ * para não esquecer. (A tela de senha mora fora do painel e abre mesmo sem
+ * o aceite.)
  */
 export function caminhoDepoisDoAceite(deveTrocarSenha: boolean): string {
   return deveTrocarSenha ? "/corretor/senha" : "/corretor";

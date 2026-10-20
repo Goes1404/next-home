@@ -56,7 +56,8 @@ export default async function PainelLayout({
   // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
   // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
   // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
-  // e entrar, recuperar e criar senha também: nada disso passa por aqui.
+  // e entrar, recuperar, criar e trocar senha também: nada disso passa por
+  // aqui (trocar a senha provisória não pode esperar o aceite).
   if (corretor && !(await aceitouTermosVigentes(await createClient(), corretor.id))) {
     redirect("/corretor/termos");
   }

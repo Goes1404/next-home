@@ -9,8 +9,9 @@
  *   redirecionaria para ela mesma: loop);
  * - "Sair" na própria página dos termos (quem não quer aceitar precisa
  *   conseguir sair);
- * - as rotas de entrar, recuperar e criar senha continuam fora do `(painel)`
- *   (o convite e o "esqueci a senha" chegam antes de qualquer aceite).
+ * - as rotas de entrar, recuperar, criar e trocar senha continuam fora do
+ *   `(painel)` (o convite e o "esqueci a senha" chegam antes de qualquer
+ *   aceite, e trocar a senha provisória é segurança: não espera o aceite).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -34,7 +35,7 @@ describe("o aceite dos termos no painel", () => {
   it("a página dos termos mora fora do (painel), e as rotas de senha e link também", () => {
     expect(existsSync(join(raiz, "termos", "page.tsx"))).toBe(true);
     expect(existsSync(join(raiz, "(painel)", "termos"))).toBe(false);
-    for (const rota of ["entrar", "esqueci-a-senha", "definir-senha"]) {
+    for (const rota of ["entrar", "esqueci-a-senha", "definir-senha", "senha"]) {
       expect(existsSync(join(raiz, rota)), rota).toBe(true);
       expect(existsSync(join(raiz, "(painel)", rota)), rota).toBe(false);
     }
