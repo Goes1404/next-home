@@ -64,6 +64,9 @@
  *
  * E, da 0199, as colunas `ia_*` de `grupos` (tom com a união do CHECK) e a
  * função `atualizar_identidade_da_ia`.
+ *
+ * E, da 0200, `leads.trazido_por` (com a união do CHECK) e a função
+ * `devolver_leads_da_imobiliaria`.
  */
 
 export type Json =
@@ -3790,6 +3793,10 @@ export type Database = {
       salvar_venda: {
         Args: { p_venda: string | null; p_dados: Json; p_participantes: Json }
         Returns: string
+      }
+      devolver_leads_da_imobiliaria: {
+        Args: { p_corretor: string; p_destino?: string | null }
+        Returns: Json
       }
       atualizar_identidade_da_ia: {
         Args: {

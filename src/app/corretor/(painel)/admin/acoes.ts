@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
+import { fraseDoDesfecho, traduzirErroDaSaida } from "@/lib/corretores/saidaDoCorretor";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
@@ -499,6 +500,71 @@ export async function alternarAtivoCorretor(
   revalidarCorretores();
   revalidatePath("/corretor/admin/contas");
   return { ok: ativo ? "Corretor reativado." : "Corretor desativado — sai da roleta de leads." };
+}
+
+/**
+ * Saída do corretor (fase 5, 0200): quantos leads da carteira dele vieram da
+ * imobiliária (ficam e são redistribuídos) e quantos ele trouxe (leva a
+ * ficha). Conta pela sessão do gestor, no grupo dele; arquivados entram,
+ * porque também mudam de dono.
+ */
+export async function resumoDaSaida(
+  corretorId: string,
+): Promise<{ erro: string } | { erro?: undefined; doCorretor: number; daImobiliaria: number }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+  const grupoId = guarda.corretor.grupoId;
+
+  const supabase = await createClient();
+  const contar = (trazidoPor: "corretor" | "imobiliaria") =>
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("grupo_id", grupoId)
+      .eq("corretor_id", corretorId)
+      .eq("trazido_por", trazidoPor);
+  const [dele, daCasa] = await Promise.all([contar("corretor"), contar("imobiliaria")]);
+  if (dele.error || daCasa.error) {
+    const msg = (dele.error ?? daCasa.error)!.message;
+    console.error("[saída] falha ao contar a carteira:", msg);
+    return {
+      erro: /trazido_por/.test(msg)
+        ? "O banco ainda não tem a saída do corretor (migration 0200)."
+        : "Não consegui contar os leads agora. Tente de novo.",
+    };
+  }
+  return { doCorretor: dele.count ?? 0, daImobiliaria: daCasa.count ?? 0 };
+}
+
+/**
+ * Passa os leads que vieram da imobiliária para outro corretor (`destinoId`)
+ * ou pela ordem da roleta (`null`). Os que ele trouxe ficam com ele. A regra
+ * inteira (gestor do grupo, destino ativo, origem anterior na linha do
+ * tempo, registro em `admin_eventos`) mora na função do banco.
+ */
+export async function devolverLeadsDaImobiliaria(
+  corretorId: string,
+  destinoId: string | null,
+): Promise<ResultadoAdmin & { movidos?: number }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("devolver_leads_da_imobiliaria", {
+    p_corretor: corretorId,
+    p_destino: destinoId,
+  });
+  if (error) {
+    console.error("[saída] falha ao devolver os leads:", error.message);
+    return { erro: traduzirErroDaSaida(error.message) };
+  }
+
+  const r = (data ?? {}) as { movidos?: number; sem_destino?: number };
+  revalidatePath("/corretor/admin/contas");
+  revalidatePath("/corretor/leads");
+  revalidatePath("/corretor/funil");
+  revalidatePath("/corretor/pessoas");
+  return { ok: fraseDoDesfecho(r.movidos ?? 0, r.sem_destino ?? 0), movidos: r.movidos ?? 0 };
 }
 
 /**

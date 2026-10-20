@@ -16,12 +16,15 @@ import {
   alternarContaOculta,
   alternarSoWhatsapp,
   criarAcessoCorretor,
+  resumoDaSaida,
   enviarLinkDeSenha,
   reenviarConvite,
   trocarEmailDoCorretor,
 } from "../acoes";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { copiarTexto } from "@/lib/ui/copiarTexto";
+import type { DivisaoDaCarteira } from "@/lib/corretores/saidaDoCorretor";
+import { SaidaDoCorretor } from "./SaidaDoCorretor";
 
 /**
  * Falha ao chamar a action. Aba aberta durante um deploy chama a action de
@@ -182,15 +185,19 @@ function CampoDeEmail({
 function LinhaCorretor({
   corretor,
   souEu,
+  equipe,
   aoEntregar,
   aoAvisar,
 }: {
   corretor: CorretorAdmin;
   souEu: boolean;
+  /** Quem pode receber os leads na saída dele: ativo, visível, outro. */
+  equipe: { id: string; nome: string }[];
   aoEntregar: (e: Entrega) => void;
   aoAvisar: (msg: string, erro: boolean) => void;
 }) {
   const [editando, setEditando] = useState<null | "convidar" | "trocar_email">(null);
+  const [saida, setSaida] = useState<DivisaoDaCarteira | null>(null);
   const [pendente, iniciar] = useTransition();
   // Outro gestor não recebe link nem troca de e-mail pela mão de ninguém
   // (as actions recusam de novo, conferindo o Auth).
@@ -257,14 +264,24 @@ function LinhaCorretor({
      * E o aviso diz o que o botão não faz: os leads NÃO mudam de mão
      * sozinhos — sem redistribuir, viram um bolo que ninguém atende, e o
      * dono some da tabela de carga.
+     *
+     * Com leads, a saída abre o painel que divide a carteira (fase 5,
+     * 0200): o que veio da imobiliária é redistribuído ali mesmo, e o que
+     * ele trouxe vira a planilha das fichas que ele leva.
      */
-    if (corretor.ativo) {
-      const aviso =
-        corretor.leads > 0
-          ? `Desativar ${corretor.nome}?\n\nEle sai da roleta, mas os ${corretor.leads} lead${corretor.leads === 1 ? "" : "s"} dele CONTINUAM com ele. Passe a carteira em Administração → Leads da equipe → Passar carteira (antes ou depois, mas não esqueça).`
-          : `Desativar ${corretor.nome}?\n\nEle sai da roleta e não recebe mais leads.`;
-      if (!confirm(aviso)) return;
+    if (corretor.ativo && corretor.leads > 0) {
+      iniciar(async () => {
+        try {
+          const r = await resumoDaSaida(corretor.id);
+          if (r.erro !== undefined) return aoAvisar(r.erro, true);
+          setSaida({ doCorretor: r.doCorretor, daImobiliaria: r.daImobiliaria });
+        } catch (e) {
+          aoAvisar(fraseDaFalha(e), true);
+        }
+      });
+      return;
     }
+    if (corretor.ativo && !confirm(`Desativar ${corretor.nome}?\n\nEle sai da roleta e não recebe mais leads.`)) return;
 
     iniciar(async () => {
       const r = await alternarAtivoCorretor(corretor.id, !corretor.ativo);
@@ -405,6 +422,16 @@ function LinhaCorretor({
             </>
           )}
         </div>
+      )}
+
+      {saida && (
+        <SaidaDoCorretor
+          corretor={{ id: corretor.id, nome: corretor.nome }}
+          divisao={saida}
+          equipe={equipe}
+          aoFechar={() => setSaida(null)}
+          aoAvisar={aoAvisar}
+        />
       )}
 
       {/*
@@ -548,6 +575,9 @@ export function ContasManager({
   const semAcesso = corretores.filter((c) => c.ativo && !c.temLogin).length;
   const visiveis = corretores.filter((c) => !c.oculta);
   const ocultas = corretores.filter((c) => c.oculta);
+  // Quem pode receber os leads de quem sai (fase 5): ativo e visível.
+  const destinos = corretores.filter((c) => c.ativo && !c.oculta).map((c) => ({ id: c.id, nome: c.nome }));
+  const equipeSem = (id: string) => destinos.filter((d) => d.id !== id);
 
   const entregar = (e: Entrega) => {
     setEntrega(e);
@@ -592,6 +622,7 @@ export function ContasManager({
             key={c.id}
             corretor={c}
             souEu={c.id === meuId}
+            equipe={equipeSem(c.id)}
             aoEntregar={entregar}
             aoAvisar={(msg, erro) => setAviso({ msg, erro })}
           />
@@ -619,6 +650,7 @@ export function ContasManager({
                 key={c.id}
                 corretor={c}
                 souEu={c.id === meuId}
+                equipe={equipeSem(c.id)}
                 aoEntregar={entregar}
                 aoAvisar={(msg, erro) => setAviso({ msg, erro })}
               />
