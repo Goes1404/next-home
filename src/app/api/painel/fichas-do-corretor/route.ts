@@ -48,6 +48,9 @@ export async function GET(req: Request) {
       .eq("corretor_id", corretorId)
       .eq("trazido_por", "corretor")
       .order("created_at")
+      // Desempate: a importação em lote dá o mesmo created_at a centenas de
+      // fichas, e sem ele a página seguinte repete ou pula linhas.
+      .order("id")
       .range(de, de + PAGINA - 1);
     if (error) {
       console.error("[fichas do corretor] falha ao ler:", error.message);
@@ -60,11 +63,17 @@ export async function GET(req: Request) {
   const ids = [...new Set(fichas.flatMap((f) => [f.imovel_interesse_id, f.empreendimento_id]).filter(Boolean))] as string[];
   const nomeDoImovel = new Map<string, string>();
   if (ids.length > 0) {
-    const { data: imoveis } = await supabase
+    const { data: imoveis, error: erroImoveis } = await supabase
       .from("empreendimentos")
       .select("id, nome")
       .eq("grupo_id", grupoId)
       .in("id", ids);
+    // Sem os nomes, a planilha sairia sem "Imóvel de interesse" e a entrega
+    // seria registrada como feita.
+    if (erroImoveis) {
+      console.error("[fichas do corretor] falha ao ler os imóveis:", erroImoveis.message);
+      return texto("Não consegui ler as fichas agora. Tente de novo.", 500);
+    }
     for (const i of imoveis ?? []) nomeDoImovel.set(i.id, i.nome);
   }
 

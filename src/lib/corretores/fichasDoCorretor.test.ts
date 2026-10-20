@@ -80,3 +80,23 @@ describe("a rota da planilha não toca em conversa", () => {
     expect(rota.indexOf("exigirGestorNaAcao(")).toBeLessThan(rota.indexOf("createServiceClient("));
   });
 });
+
+describe("a rota da planilha não entrega planilha incompleta", () => {
+  const rota = readFileSync(
+    join(process.cwd(), "src", "app", "api", "painel", "fichas-do-corretor", "route.ts"),
+    "utf8",
+  ).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+
+  it("pagina com desempate por id (importação em lote empata o created_at)", () => {
+    expect(rota).toMatch(/\.order\("created_at"\)\s*\.order\("id"\)\s*\.range\(/);
+  });
+
+  it("erro ao ler os imóveis devolve 500 antes de registrar a entrega", () => {
+    const leitura = rota.indexOf('.from("empreendimentos")');
+    const erro = rota.search(/if \(erroImoveis\)[\s\S]{0,200}status|if \(erroImoveis\)[\s\S]{0,200}500/);
+    const registro = rota.indexOf('.from("admin_eventos")');
+    expect(leitura).toBeGreaterThan(0);
+    expect(erro).toBeGreaterThan(leitura);
+    expect(registro).toBeGreaterThan(erro);
+  });
+});
