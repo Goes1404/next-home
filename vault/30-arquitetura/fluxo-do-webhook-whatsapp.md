@@ -16,7 +16,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
-2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa. Desde a 0174 o `connection.update` também apaga o marco da queda ao reconectar, carimba a queda uma vez e guarda o `statusReason`; qualquer outro evento tira a marca de sessão caída em segundo plano ([[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]). Desde a 0198, o `connection.update` que abre um número já ligado a outro grupo derruba a sessão na Evolution e marca `numero_recusado_em` em vez de conectar ([[numero-em-um-grupo-e-aceite-dos-termos]]).
+2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa. Desde a 0174 o `connection.update` também apaga o marco da queda ao reconectar, carimba a queda uma vez e guarda o `statusReason`; qualquer outro evento tira a marca de sessão caída em segundo plano ([[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]). Desde a 0198, o `connection.update` que abre um número já ligado a outro grupo derruba a sessão na Evolution e marca `numero_recusado_em` em vez de conectar ([[numero-em-um-grupo-e-aceite-dos-termos]]). Evento de mensagem por instância com recusa em aberto, ou ainda "conectando", só segue depois de a sincronização conferir o número (`mensagemDoNumeroPodeSeguir`); de outra conta, a mensagem é ignorada com 200 e o logout é tentado de novo.
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
    não manda áudio para transcrição ([[conversa-casa-com-lead-por-telefone]]).

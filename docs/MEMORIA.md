@@ -11189,3 +11189,22 @@ Nota: [[numero-em-um-grupo-e-aceite-dos-termos]].
   painel (a migration pode vir depois do deploy).
 - **O setup do E2E aceita os termos** na conta sintética; sem isso todo spec
   do painel cai em `/corretor/termos`.
+
+## Sessão recusada que não cai e as correções da revisão da 2D (0198, 20/10/2026)
+
+Nota: [[numero-em-um-grupo-e-aceite-dos-termos]].
+
+- **Recusa que só loga a falha do logout deixa o número de outra conta no
+  ar.** O webhook resolve a instância pelo nome e não olhava o estado: as
+  mensagens dos clientes da outra conta seriam gravadas aqui. Agora a recusa
+  grava `logout_pendente_em`, o cron tenta de novo e o webhook confere o
+  número antes de deixar a mensagem seguir.
+- **Pendência de logout tem de ser apagada por toda conexão aceita**, senão
+  a varredura derruba o número novo e certo que o corretor conectou.
+- **"Já conectado" não pode gravar `conectado` direto**: o número no ar pode
+  ser o recusado. O botão Conectar passa pela sincronização.
+- **Número preso a instância caída com 401 fica livre** para outro grupo
+  (`instancia_prende_o_numero`); corretor desativado não solta.
+- **Exceção de rota pelo `pathname` no layout não funciona**: layout não
+  re-executa entre rotas irmãs. A tela de senha saiu do `(painel)` (URL
+  igual) para não depender do aceite dos termos.
