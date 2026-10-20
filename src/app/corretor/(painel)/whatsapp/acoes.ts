@@ -11,6 +11,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import type { MotivoFalhaLlm } from "@/lib/whatsapp/llmTipos";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { extrairDossieCliente } from "@/lib/whatsapp/dossierExtractor";
 import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado, type DesfechoPareamento } from "@/lib/whatsapp/provider";
@@ -89,6 +90,8 @@ export async function testarAgenteIA(
       nomeAssistente: instancia?.nome_assistente ?? site.assistente,
       tomVoz: instancia?.tom_voz ?? "consultivo_alto_padrao",
       regrasDaIa: instancia?.regras_da_ia ?? null,
+      // A casa do grupo do corretor, como no atendimento de verdade (fase 4).
+      casa: await lerCasaDoGrupo(corretor.grupoId),
     },
     catalogo,
     historico: [...historico, { remetente: "cliente" as const, texto: mensagem }],

@@ -7,6 +7,7 @@ import { conversaEhAtendimento, guardaOTextoDaConversa } from "@/lib/whatsapp/pr
 import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { extrairDossieCliente, normalizarSaidaDoDossie } from "@/lib/whatsapp/dossierExtractor";
@@ -1081,7 +1082,7 @@ export async function POST(req: NextRequest) {
     // O dossiê ANTERIOR entra no prompt (a IA deixa de re-perguntar o que
     // já qualificou) e serve de base de comparação para a nota incremental
     // ao corretor. O NOVO é extraído depois da resposta, da conversa toda.
-    const [catalogo, historico, dossieAnterior] = await Promise.all([
+    const [catalogo, historico, dossieAnterior, casa] = await Promise.all([
       // O catálogo do grupo da instância (L15): a IA de um grupo não oferece
       // o imóvel de outro.
       getEmpreendimentos(instancia.grupoId).catch((err) => {
@@ -1090,6 +1091,8 @@ export async function POST(req: NextRequest) {
       }),
       historicoRecente(conversa.id),
       conversa.leadId ? buscarDossieAtual(conversa.leadId) : Promise.resolve(null),
+      // Nome da casa, região e tom da IA do grupo do número (fase 4).
+      lerCasaDoGrupo(instancia.grupoId),
     ]);
 
     /*
@@ -1141,6 +1144,7 @@ export async function POST(req: NextRequest) {
         nomeAssistente: instancia.nomeAssistente,
         tomVoz: instancia.tomVoz,
         regrasDaIa: instancia.regrasDaIa,
+        casa,
       },
       catalogo,
       historico,

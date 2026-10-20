@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { lerCasaDoGrupo } from "./casaDoGrupo";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import { enviarMensagemWhatsapp, enviarMidiaWhatsapp } from "@/lib/whatsapp/provider";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -170,6 +171,8 @@ export async function gerarEEnviarPelaIA(params: {
         nomeAssistente: instancia.nome_assistente ?? site.assistente,
         tomVoz: instancia.tom_voz ?? "profissional e acolhedor",
         regrasDaIa: await regrasDaIaDaInstancia(instancia.id),
+        // A casa do grupo do corretor da instância (fase 4).
+        casa: await lerCasaDoGrupo(corretor.grupo_id),
       },
       catalogo,
       historico,
@@ -311,6 +314,8 @@ export async function rascunharPelaIA(params: {
       nomeAssistente: instancia.nome_assistente ?? site.assistente,
       tomVoz: instancia.tom_voz ?? "profissional e acolhedor",
       regrasDaIa: await regrasDaIaDaInstancia(instancia.id),
+      // A casa do grupo do corretor da instância (fase 4).
+      casa: await lerCasaDoGrupo(corretor.grupo_id),
     },
     catalogo,
     historico,

@@ -28,6 +28,7 @@ import {
 import { getEmpreendimentos } from "@/lib/queries";
 import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { TETO_DA_MEMORIA } from "@/lib/whatsapp/memoriaDaConversa";
 import { lerResumoDoLead, type ResumoDoLead } from "@/lib/crm/resumoDoLead";
 
@@ -658,10 +659,12 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
     return { erro: "A última mensagem não é do cliente — não há o que responder." };
   }
 
-  const [catalogo, dossie] = await Promise.all([
+  const [catalogo, dossie, casa] = await Promise.all([
     // O catálogo do grupo da instância, como no webhook (L15).
     getEmpreendimentos(identidade.grupoId),
     conversa.lead_id ? buscarDossieAtual(conversa.lead_id) : Promise.resolve(null),
+    // Nome da casa, região e tom da IA do grupo da instância (fase 4).
+    lerCasaDoGrupo(identidade.grupoId),
   ]);
 
   const turno = await executarTurnoDeAtendimento({
@@ -673,6 +676,7 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
       nomeAssistente: identidade.nomeAssistente,
       tomVoz: identidade.tomVoz,
       regrasDaIa: identidade.regrasDaIa,
+      casa,
     },
     catalogo,
     historico,

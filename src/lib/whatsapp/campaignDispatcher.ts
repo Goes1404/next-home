@@ -7,7 +7,7 @@ import { rederrubarNumerosRecusados } from "./recusaPendente";
 import { protegerNumerosQueCairam } from "./quedaDoNumero";
 import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
-import { site } from "@/lib/site";
+import { lerCasaDoGrupo } from "./casaDoGrupo";
 import { textosRecentesDoNumero } from "./textosDoNumero";
 import {
   ajustarSaudacaoAoHorario,
@@ -266,7 +266,7 @@ export async function processarFilaCampanhas(params?: {
   let query = supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado, expediente_inicio, expediente_fim",
+      "id, corretor_id, grupo_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado, expediente_inicio, expediente_fim",
     );
 
   if (params?.corretorId) query = query.eq("corretor_id", params.corretorId);
@@ -326,6 +326,7 @@ export async function processarFilaCampanhas(params?: {
 type InstanciaLinha = {
   id: string;
   corretor_id: string;
+  grupo_id: string;
   instance_name: string;
   status_conexao: string;
   conectado_em: string | null;
@@ -446,6 +447,9 @@ async function processarInstancia(ctx: {
   // chamada e só quando algum texto precisa ser conferido.
   let recentes: TextoAnterior[] | null | undefined;
   let nomeDoCorretor: string | null | undefined;
+  // O nome da casa é do grupo do número (fase 4): a variação não pode
+  // escrever "Next Home" na lista de outro grupo. Lido uma vez por vez.
+  let nomeDaCasa: string | null | undefined;
   // A marca de sessão caída sai no primeiro envio que dá certo (uma vez).
   let sessaoConferida = false;
 
@@ -626,6 +630,7 @@ async function processarInstancia(ctx: {
             .maybeSingle();
           nomeDoCorretor = corretor?.nome ?? null;
         }
+        if (nomeDaCasa === undefined) nomeDaCasa = (await lerCasaDoGrupo(instancia.grupo_id)).nomeDaCasa;
         const imovelDaLista = (
           Array.isArray(aindaAtiva.empreendimento) ? aindaAtiva.empreendimento[0] : aindaAtiva.empreendimento
         ) as { nome: string } | null;
@@ -639,7 +644,7 @@ async function processarInstancia(ctx: {
             contexto: aindaAtiva.contexto_template as ContextoTemplate | null,
             imovelNome: imovelDaLista?.nome,
             corretorNome: nomeDoCorretor,
-            nomeDaCasa: site.nome,
+            nomeDaCasa,
           }),
           anteriores: recentes.filter((a) => a.id !== item.id),
           // Abertura mantida só quando o teste compara duas versões de

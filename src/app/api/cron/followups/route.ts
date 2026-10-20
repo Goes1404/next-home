@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
+import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import {
   decidirSeAIaResponde,
   podeEnviarPorIniciativa,
@@ -487,6 +488,8 @@ async function responderAtrasada(
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
       regrasDaIa: instancia.regras_da_ia,
+      // Nome da casa, região e tom da IA do grupo (fase 4): o do catálogo.
+      casa: await lerCasaDoGrupo(corretor.grupo_id),
     },
     catalogo,
     historico,
@@ -1008,6 +1011,8 @@ async function processarFollowup(
       nomeAssistente: instancia.nome_assistente,
       tomVoz: instancia.tom_voz,
       regrasDaIa: instancia.regras_da_ia,
+      // Nome da casa, região e tom da IA do grupo (fase 4): o do catálogo.
+      casa: await lerCasaDoGrupo(corretor.grupo_id),
     },
     catalogo,
     historico,

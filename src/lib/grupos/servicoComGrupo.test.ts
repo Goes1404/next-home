@@ -144,6 +144,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/midiaRecebida.ts": { categoria: "helper", motivo: "mídia da mensagem que o webhook validou, guardada na pasta do lead" },
   "src/lib/whatsapp/respostaAosFollowups.ts": { categoria: "helper", motivo: "conversa em atendimento, validada por quem chama" },
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
+  "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
   "src/lib/planos/usoDaIa.ts": { categoria: "helper", motivo: "cota da IA do grupo que quem chama validou (instância do webhook, sessão, guarda da plataforma); toda leitura filtra o grupo" },
 
   // ── Telas da equipe: toda leitura filtra o grupo do gestor ────────────────

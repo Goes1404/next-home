@@ -61,6 +61,9 @@
  * dos CHECKs, contato de cobrança, identidade jurídica, `criado_por`),
  * `admin_eventos.ator_plataforma_user_id` e as funções `criar_grupo` e
  * `slug_de_grupo_reservado`.
+ *
+ * E, da 0199, as colunas `ia_*` de `grupos` (tom com a união do CHECK) e a
+ * função `atualizar_identidade_da_ia`.
  */
 
 export type Json =
@@ -1633,6 +1636,10 @@ export type Database = {
           documento: string | null
           encarregado_lgpd_email: string | null
           encarregado_lgpd_nome: string | null
+          ia_nome_assistente: string | null
+          ia_nome_da_casa: string | null
+          ia_regiao: string | null
+          ia_tom: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id: string
           nome: string
           plano: "essencial" | "profissional" | "imobiliaria" | "custo"
@@ -1653,6 +1660,10 @@ export type Database = {
           documento?: string | null
           encarregado_lgpd_email?: string | null
           encarregado_lgpd_nome?: string | null
+          ia_nome_assistente?: string | null
+          ia_nome_da_casa?: string | null
+          ia_regiao?: string | null
+          ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id?: string
           nome: string
           plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
@@ -1673,6 +1684,10 @@ export type Database = {
           documento?: string | null
           encarregado_lgpd_email?: string | null
           encarregado_lgpd_nome?: string | null
+          ia_nome_assistente?: string | null
+          ia_nome_da_casa?: string | null
+          ia_regiao?: string | null
+          ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id?: string
           nome?: string
           plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
@@ -3772,6 +3787,15 @@ export type Database = {
       salvar_venda: {
         Args: { p_venda: string | null; p_dados: Json; p_participantes: Json }
         Returns: string
+      }
+      atualizar_identidade_da_ia: {
+        Args: {
+          p_nome_assistente: string | null
+          p_nome_da_casa: string | null
+          p_regiao: string | null
+          p_tom: string | null
+        }
+        Returns: boolean
       }
       atualizar_parametros_credito: {
         Args: {
