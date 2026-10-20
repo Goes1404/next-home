@@ -59,3 +59,14 @@ prompt antes/depois). `PROMPT_VERSAO` não muda.
 - Guarda: turno passa `nomeDaCasa` a toda chamada do índice de foco.
 - `identidadeDaIa.db.test.ts`: gestor grava só no próprio grupo; corretor
   comum é recusado; outro grupo não é alterado; evento gravado.
+
+## Revisão (20/10/2026)
+
+Corrigidos: região do grupo fora do índice de foco; exemplos da Next Home
+fora das regras 13b/22/pitch de outro grupo; reserva de `{imovel}`, aviso ao
+corretor, consultor e prompt do dossiê sem lugares da Next Home; erro de
+leitura do nome/tom fixados vira aviso na Minha IA.
+
+Pendência: `COMPLEMENTO_QUE_DESARMA` (`recusaDoCliente.ts`) só conhece as
+praças da Next Home; passar a região do grupo pelo planner (`jogada.ts`,
+`classificarRecusa.ts`). Teste `it.fails` em `recusaDoCliente.test.ts`.

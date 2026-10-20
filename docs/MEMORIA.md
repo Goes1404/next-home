@@ -11237,3 +11237,25 @@ Nota: [[identidade-da-ia-de-cada-grupo]].
 - **Ficou para depois** (L64–L68): segmento "alto padrão", fala preço ou não,
   regras da casa, fuso por grupo, estilo próprio, dossiê, aviso ao corretor,
   marketing e evals por grupo.
+
+## Revisão da fase 4: a região também é identidade (20/10/2026)
+
+Nota: [[identidade-da-ia-de-cada-grupo]].
+
+- **Tirar o nome da casa do índice de foco não bastava: a região configurada
+  também trava o foco.** `GENERICAS` só conhece as praças da Next Home; num
+  grupo com `ia_regiao = 'Campinas'` e um "Vista Campinas", a pergunta da IA
+  e a resposta "Campinas" viravam foco. O índice recebe a casa inteira.
+- **Teste de exclusão por regex só pega o que a regex conhece.** "Sem Next
+  Home, Barueri e Alphaville" passava com Terra Alta, Vitra e R$ 470.000 no
+  prompt do grupo B. Ao isolar identidade, listar também os IMÓVEIS e os
+  números usados como exemplo.
+- **Texto de reserva também é identidade**: "nossos lançamentos em
+  Alphaville" (lista sem imóvel) e "Imóveis em Alphaville" (aviso ao
+  corretor) iam fixos para todo grupo. Procurar `|| "` com nome de lugar.
+- **No grupo 1 a marca do site fica fora do índice mesmo com outro nome
+  configurado**: a mensagem pronta do porteiro continua dizendo Next Home.
+- **Erro descartado numa leitura opcional esconde o aviso**: só o 42703
+  (coluna ausente) é "nada fixado"; o resto loga e avisa.
+- **Pendência**: a recusa com lugar de outro grupo (`COMPLEMENTO_QUE_DESARMA`)
+  fica para quando a região passar pelo planner; `it.fails` documenta.

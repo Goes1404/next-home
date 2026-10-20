@@ -4,7 +4,7 @@ tags: [prompt, ia, decisao]
 type: nota
 status: seedling
 custou: medio
-codigo: [supabase/migrations/0199_identidade_da_ia_do_grupo.sql, src/lib/whatsapp/casa.ts, src/lib/whatsapp/casaDoGrupo.ts, src/lib/whatsapp/aiAgent.ts, src/lib/whatsapp/jogada.ts, src/lib/whatsapp/focoDaConversa.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/app/corretor/(painel)/admin/assistente/page.tsx]
+codigo: [supabase/migrations/0199_identidade_da_ia_do_grupo.sql, src/lib/whatsapp/casa.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/brokerNotifier.ts, src/lib/consultor/prompt.ts, src/lib/whatsapp/dossierExtractor.ts, src/lib/whatsapp/casaDoGrupo.ts, src/lib/whatsapp/aiAgent.ts, src/lib/whatsapp/jogada.ts, src/lib/whatsapp/focoDaConversa.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/app/corretor/(painel)/admin/assistente/page.tsx]
 created: 2026-10-20
 updated: 2026-10-20
 fonte: fase 4 enxuta da plataforma multi-grupo (20/10/2026)
@@ -48,6 +48,30 @@ palavras de `site.nome`. Num segundo grupo, ela falaria da Next Home.
   da sessão), com evento `identidade_da_ia_alterada`. O logado lê as quatro
   colunas (a 0196 recorta `grupos` por coluna; precisou de grant).
 
+## Revisão (20/10/2026)
+
+- **A região configurada também sai do índice de foco**, não só o nome.
+  `GENERICAS` é escrita à mão e só conhece as praças da Next Home: com
+  `ia_regiao = 'Campinas'` e um "Vista Campinas" no catálogo ("vista" é
+  comum), a pergunta da IA "em qual região de Campinas" e a resposta
+  "Campinas" travavam o foco nele. O índice recebe a casa inteira
+  (`CasaParaFoco`), e o turno passa `casa`, não `casa.nomeDaCasa` (guarda
+  `casaNoTurno.test.ts`).
+- **No grupo 1 a marca do site fica sempre fora do índice**, mesmo com outro
+  nome configurado: a mensagem pronta do porteiro diz "Next Home" e travaria
+  o foco no Breeze Home Clube.
+- **Exemplos das regras 13b, 22 e do pitch** (Terra Alta, Viva, Vitra,
+  Empresarial, R$ 470.000) saíram do prompt de outro grupo
+  (`exemplosDasRegras`); o teste de exclusão procura esses nomes, porque a
+  regex antiga (Next Home, Barueri, Alphaville) passava com eles.
+- **Texto fixo para o cliente ou o corretor**: `{imovel}` sem imóvel virava
+  "nossos lançamentos em Alphaville", o aviso ao corretor dizia "Imóveis em
+  Alphaville", o consultor se apresentava "da Next Home" e o prompt do
+  dossiê dava "Centro de Barueri" como exemplo. Todos agora vêm da casa do
+  grupo ou são neutros. O exemplo da lista no painel conferia `site.nome`.
+- **Minha IA**: só a coluna ausente (42703) é "nada fixado"; outro erro ao
+  ler o nome/tom do gestor vira log e aviso neutro, nunca silêncio.
+
 ## Como diagnosticar
 
 - "A IA de um grupo falou de outra casa": conferir `grupos.ia_*` e
@@ -58,5 +82,8 @@ palavras de `site.nome`. Num segundo grupo, ela falaria da Next Home.
 ## Ficou para depois
 
 Segmento ("alto padrão"), fala preço ou não, regras da casa, fuso por grupo,
-exemplos de estilo próprios do grupo, dossiê/aviso ao corretor/marketing e
-evals por grupo (L64–L68).
+exemplos de estilo próprios do grupo, marketing e evals por grupo
+(L64–L68). E a recusa: `COMPLEMENTO_QUE_DESARMA` (`recusaDoCliente.ts`) só
+conhece as praças da Next Home, então "não tenho interesse em Valinhos,
+prefiro Campinas" vira recusa no grupo B (teste `it.fails` documenta);
+consertar pede a região pelo planner.

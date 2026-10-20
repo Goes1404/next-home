@@ -111,9 +111,10 @@ do grupo da instância (`getEmpreendimentos(instancia.grupoId)`, Task 12).
 Casa do grupo (0199, fase 4): junto com o catálogo, o webhook lê
 `lerCasaDoGrupo(instancia.grupoId)` e passa como `identidade.casa`: nome da
 imobiliária e região no prompt e no planner, nome e tom do grupo ganhando
-dos da instância, e o nome da casa fora do índice de foco
+dos da instância, e o nome E a região da casa fora do índice de foco
 ([[identidade-da-ia-de-cada-grupo]]). Leitura que falha cai no padrão do
-grupo; a IA não cala por isso.
+grupo; a IA não cala por isso. O aviso ao corretor sem imóvel citado diz
+"Imóveis em <região do grupo>" (era "Imóveis em Alphaville" fixo).
 
 Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
 a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um

@@ -136,3 +136,10 @@ Tudo que fala com cliente por iniciativa nossa passa por
 - [[fechar-o-ciclo-e-ligar-a-plataforma]]
 - [[a-conversa-fantasma-do-disparo-sem-ddi]]
 - [[botoes-perigosos-atras-de-avancado]]
+
+Reserva de `{imovel}` (revisão da fase 4, 20/10/2026): lista sem imóvel troca
+`{imovel}` por "nossos lançamentos em <região do grupo>" (`reservaDoImovel`,
+`campaignQueue.ts`), nunca "em Alphaville" fixo. Criação da lista, lista viva
+e reescrita da vencedora A/B leem a casa do grupo da lista
+(`lerCasaDoGrupo`); sem região, a reserva sai sem lugar
+([[identidade-da-ia-de-cada-grupo]]).
