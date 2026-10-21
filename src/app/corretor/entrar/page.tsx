@@ -93,6 +93,20 @@ export default async function EntrarPage({
     "--login-b": b,
     "--login-base": base,
     ...(acento ? { "--color-acento": acento, "--color-acento-hover": acentoHover } : {}),
+    // A AstroImob não usa a paleta sálvia da Next Home no cartão: neutro e
+    // claro, para combinar com o violeta. A Next Home segue o tema do site.
+    ...(marca.rodape === "convite"
+      ? {
+          "--color-superficie": "#ffffff",
+          "--color-elevado": "#f5f6fb",
+          "--color-linha": "#e6e8f2",
+          "--color-linha-forte": "#d5d8e8",
+          "--color-titulo": "#141631",
+          "--color-corpo": "#3a3e57",
+          "--color-apoio": "#5c6079",
+          "--color-tenue": "#7b7f98",
+        }
+      : {}),
   } as CSSProperties;
 
   return (
