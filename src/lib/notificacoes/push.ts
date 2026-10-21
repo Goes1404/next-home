@@ -1,4 +1,5 @@
 import "server-only";
+import { ehEnderecoDePush } from "@/lib/notificacoes/enderecoDePush";
 import webpush from "web-push";
 import type { createServiceClient } from "@/lib/supabase/service";
 
@@ -60,6 +61,8 @@ export async function notificarCorretor(supabase: Supa, corretorId: string, n: N
     let entregues = 0;
     await Promise.all(
       inscricoes.map(async (i) => {
+        // Conferido de novo aqui: linha gravada antes da regra não vira POST para lugar qualquer.
+        if (!ehEnderecoDePush(i.endpoint)) return;
         try {
           await webpush.sendNotification(
             { endpoint: i.endpoint, keys: { p256dh: i.p256dh, auth: i.auth } },

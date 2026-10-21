@@ -1,5 +1,6 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ehEnderecoDePush } from "@/lib/notificacoes/enderecoDePush";
 
 /**
  * Liga e desliga a notificação no celular deste aparelho (0203).
@@ -13,15 +14,6 @@ export const dynamic = "force-dynamic";
 
 const NAO = (status: number, erro: string) =>
   Response.json({ ok: false, erro }, { status, headers: { "cache-control": "no-store" } });
-
-function ehEnderecoDePush(v: unknown): v is string {
-  if (typeof v !== "string" || v.length > 1000) return false;
-  try {
-    return new URL(v).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: Request) {
   const corretor = await getCorretorLogado();
