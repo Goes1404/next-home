@@ -40,4 +40,8 @@ Pedido do dono (20/10/2026). Desenho:
 - **Aviso de lead novo** não sai para A quando há repasse;
   `aviso_lead_novo_em` é marcado para o tique não repetir para B.
 
+- **O lead é de quem pagou o anúncio** (decisão de 21/10, 0206): a roleta
+  grava `leads.anuncio_pago_por`; se quem recebeu sair da empresa,
+  `devolver_leads_da_imobiliaria` devolve o lead a quem pagou (se ativo).
+
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].

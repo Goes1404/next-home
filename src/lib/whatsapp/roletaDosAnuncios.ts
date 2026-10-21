@@ -178,6 +178,8 @@ async function passarAFicha(
     .update({
       corretor_id: p.destino,
       origem_atribuicao: "roleta",
+      // Se B sair, o lead volta para quem pagou o anúncio (0206).
+      anuncio_pago_por: p.corretorId,
       // B é avisado pela roleta; o aviso de lead novo não repete.
       aviso_lead_novo_em: new Date().toISOString(),
     })

@@ -3001,6 +3001,7 @@ export type Database = {
         Row: {
           grupo_id: string
           anuncio_origem: string | null
+          anuncio_pago_por: string | null
           arquivado_em: string | null
           aviso_lead_novo_em: string | null
           arquivado_motivo: string | null
@@ -3062,6 +3063,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           anuncio_origem?: string | null
+          anuncio_pago_por?: string | null
           arquivado_em?: string | null
           aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null
@@ -3123,6 +3125,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           anuncio_origem?: string | null
+          anuncio_pago_por?: string | null
           arquivado_em?: string | null
           aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null

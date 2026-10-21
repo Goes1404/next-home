@@ -11503,3 +11503,12 @@ Nota: [[controles-rapidos-do-inicio]].
 - Cada fase só conflitou em MEMORIA, vault, `tabelasDoGrupo.ts` (listas) e,
   na fase 4, no alerta ao corretor reescrito no mesmo dia (vale o formato
   novo, sem região da casa).
+
+## Lead da roleta é de quem pagou o anúncio (0206, 21/10/2026)
+
+- Decisão do dono. A roleta grava `leads.anuncio_pago_por`; na saída de quem
+  recebeu, `devolver_leads_da_imobiliaria` devolve o lead a quem pagou, se
+  ativo no grupo. A etiqueta `trazido_por` continua `imobiliaria` (é o que
+  faz a função pegar o lead); quem decide o destino é a coluna nova.
+- Limpeza: os leads "TESTE ROTEIRO 2/3/6" (site/contato, sem conversa nem
+  venda) foram apagados de produção.

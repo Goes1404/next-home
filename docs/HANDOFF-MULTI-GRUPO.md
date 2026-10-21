@@ -66,9 +66,8 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
    Resend + `insert into administradores_da_plataforma` (2A),
    `DOMINIO_DA_PLATAFORMA` e domínio curinga (3), `APAGAR_GRUPOS_CANCELADOS`
    (Op, quando quiser ligar a rotina dos 90 dias).
-3. Decidir com o dono: lead que a **roleta dos anúncios** repassa nasce
-   `origem_atribuicao = 'roleta'`, que a etiqueta da fase 5 classifica como
-   trazido pela **imobiliária** (não pelo corretor que pagou o anúncio).
+3. ~~Roleta × saída do corretor~~ — decidido em 21/10: o lead é de quem
+   pagou o anúncio (`leads.anuncio_pago_por`, 0206).
 4. Textos com o nome da casa ainda usam `site.nome` (roleta, título da
    notificação de lead novo); com outro grupo no ar, trocar pelo nome do
    grupo (`lerCasaDoGrupo`).
