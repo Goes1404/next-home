@@ -38,6 +38,10 @@ export type MarcaDoSite = {
   logoUrl: string | null;
   /** Cor principal `#rrggbb`. Nulo = a cor padrão do site. */
   cor: string | null;
+  /** Cor secundária, fundo e texto das páginas (0210). Nulos = o padrão; sempre nulos na Next Home. */
+  corSecundaria: string | null;
+  corFundo: string | null;
+  corTexto: string | null;
   capaUrl: string | null;
   /** Título do topo da home. Nulo = o texto padrão. */
   titulo: string | null;
@@ -107,6 +111,9 @@ export function marcaDoGrupo({
       regioes: [...site.regioes],
       logoUrl: null,
       cor: null,
+      corSecundaria: null,
+      corFundo: null,
+      corTexto: null,
       capaUrl: null,
       titulo: null,
       frase: null,
@@ -133,6 +140,9 @@ export function marcaDoGrupo({
     regioes: [],
     logoUrl: p?.logoUrl ?? null,
     cor: p?.cor ?? null,
+    corSecundaria: p?.corSecundaria ?? null,
+    corFundo: p?.corFundo ?? null,
+    corTexto: p?.corTexto ?? null,
     capaUrl: p?.capaUrl ?? null,
     titulo: p?.titulo ?? null,
     frase: p?.frase ?? null,

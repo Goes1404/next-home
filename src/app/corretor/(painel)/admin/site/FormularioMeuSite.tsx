@@ -2,14 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { LIMITES, normalizarCor, textoSobreACor, type SiteDigitado } from "@/lib/sites/siteEditavel";
+import { LIMITES, type SiteDigitado } from "@/lib/sites/siteEditavel";
 import { salvarMeuSite, type ResultadoDoSite } from "./acoes";
+import { SecaoDeCores } from "./SecaoDeCores";
 
 const CLASSE_DO_CAMPO =
   "text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 min-w-0 rounded-xl border px-3.5 py-2.5 focus:outline-none";
 
 /**
- * Cor, texto do topo, "Sobre" e contatos do site (0209). Campo vazio apaga e
+ * Cores, texto do topo, "Sobre" e contatos do site (0209). Campo vazio apaga e
  * o site volta ao padrão naquele ponto. O que cada campo aceita é decidido de
  * novo no servidor (`validarSiteDigitado`).
  */
@@ -18,8 +19,6 @@ export function FormularioMeuSite({ inicial }: { inicial: SiteDigitado }) {
   const [erros, setErros] = useState<Partial<Record<keyof SiteDigitado, string>>>({});
   const [aviso, setAviso] = useState<{ texto: string; erro: boolean } | null>(null);
   const [pendente, iniciar] = useTransition();
-
-  const corValida = normalizarCor(dados.cor);
 
   const mudar = (k: keyof SiteDigitado, valor: string) => setDados((d) => ({ ...d, [k]: valor }));
 
@@ -68,34 +67,7 @@ export function FormularioMeuSite({ inicial }: { inicial: SiteDigitado }) {
         salvar();
       }}
     >
-      <fieldset className="cartao grid gap-3 p-5">
-        <legend className="text-fluid-sm text-titulo px-1 font-bold">Cor principal</legend>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="text-fluid-xs text-apoio flex flex-col gap-1">
-            Escolher
-            <input
-              type="color"
-              aria-label="Escolher a cor principal"
-              value={corValida ?? "#1f6f5c"}
-              onChange={(e) => mudar("cor", e.target.value)}
-              className="border-linha-forte bg-campo h-11 w-16 cursor-pointer rounded-xl border p-1"
-            />
-          </label>
-          <div className="w-40">{campo("cor", "Hexadecimal", "text", "#1f6f5c", 7)}</div>
-          {corValida && (
-            <span
-              className="text-fluid-sm border-linha-forte inline-flex min-h-11 items-center rounded-xl border px-4 font-medium"
-              style={{ background: corValida, color: textoSobreACor(corValida) }}
-            >
-              Assim fica o botão
-            </span>
-          )}
-        </div>
-        <p className="text-fluid-xs text-apoio">
-          Vale para botões e destaques do site. O texto sobre a cor (branco ou escuro) é escolhido sozinho, pelo contraste.
-          Deixe vazio para usar a cor padrão.
-        </p>
-      </fieldset>
+      <SecaoDeCores dados={dados} erros={erros} mudar={mudar} preencher={(cores) => setDados((d) => ({ ...d, ...cores }))} />
 
       <fieldset className="cartao grid gap-3 p-5">
         <legend className="text-fluid-sm text-titulo px-1 font-bold">Topo da página inicial</legend>

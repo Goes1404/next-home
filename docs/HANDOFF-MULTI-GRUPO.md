@@ -93,6 +93,15 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   `docs/superpowers/plans/2026-10-21-site-editavel.md`; nota
   `vault/10-notas/meu-site-da-imobiliaria.md`.
 
+- **Meu site: envio de imagem e cores (0210, 21/10/2026, branch
+  `site-editavel`, ainda NÃO publicada)**: logo e capa enviam ao escolher
+  (reduzidas no navegador antes); o gestor escolhe quatro cores (principal,
+  secundária, fundo, texto) com temas prontos, prévia ao vivo e aviso de
+  contraste. Com fundo/texto o site fixa as cores e esconde o seletor de tema.
+  Antes do deploy: aplicar a 0210 (aditiva) ANTES do código (sem as colunas o
+  site dos grupos cai em branco). Plano:
+  `docs/superpowers/plans/2026-10-21-meu-site-uploads-e-cores.md`.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio

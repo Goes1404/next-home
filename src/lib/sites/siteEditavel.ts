@@ -4,10 +4,20 @@
 // que o banco guarda e a cor do site com o texto legível por cima. Os
 // mesmos limites estão nos CHECKs da 0209 (a coluna é a última barreira).
 
-/** O que se guarda de um grupo (espelho das colunas `site_*` + logo e CRECI). */
+/**
+ * O que se guarda de um grupo (espelho das colunas `site_*` + logo e CRECI).
+ * As três cores da 0210 são opcionais no tipo (ausente = nulo) para os dados
+ * que já existiam antes dela continuarem valendo como estão.
+ */
 export type SiteEditavel = {
   logoUrl: string | null;
   cor: string | null;
+  /** Segunda cor (0210): etiquetas, selos e o segundo tom dos degradês. */
+  corSecundaria?: string | null;
+  /** Fundo das páginas do site (0210). */
+  corFundo?: string | null;
+  /** Texto principal do site (0210); os títulos acompanham. */
+  corTexto?: string | null;
   capaUrl: string | null;
   titulo: string | null;
   frase: string | null;
@@ -27,6 +37,9 @@ export type EnderecoEditavel = { logradouro: string; bairro: string; cidade: str
 export const SITE_EM_BRANCO: SiteEditavel = {
   logoUrl: null,
   cor: null,
+  corSecundaria: null,
+  corFundo: null,
+  corTexto: null,
   capaUrl: null,
   titulo: null,
   frase: null,
@@ -45,6 +58,9 @@ export const LIMITES = { titulo: 90, frase: 200, sobre: 1200, email: 160, rede: 
 /** Os campos de texto que a tela envia (tudo texto digitado; vazio = apagar). */
 export type SiteDigitado = {
   cor: string;
+  corSecundaria: string;
+  corFundo: string;
+  corTexto: string;
   titulo: string;
   frase: string;
   sobre: string;
@@ -62,7 +78,7 @@ export type SiteDigitado = {
 /** O que a gravação leva ao banco (só os campos que o formulário edita). */
 export type SiteParaGravar = Pick<
   SiteEditavel,
-  "cor" | "titulo" | "frase" | "sobre" | "whatsapp" | "email" | "endereco" | "instagram" | "facebook"
+  "cor" | "corSecundaria" | "corFundo" | "corTexto" | "titulo" | "frase" | "sobre" | "whatsapp" | "email" | "endereco" | "instagram" | "facebook"
 >;
 
 export type ResultadoDaValidacao =
@@ -179,6 +195,15 @@ export function validarSiteDigitado(d: SiteDigitado): ResultadoDaValidacao {
   const corBruta = limpo(d.cor);
   const cor = corBruta ? normalizarCor(corBruta) : null;
   if (corBruta && !cor) erros.cor = "Use uma cor em hexadecimal, como #1f6f5c.";
+  const lerCor = (campo: "corSecundaria" | "corFundo" | "corTexto"): string | null => {
+    const bruta = limpo(d[campo]);
+    const lida = bruta ? normalizarCor(bruta) : null;
+    if (bruta && !lida) erros[campo] = "Use uma cor em hexadecimal, como #1f6f5c.";
+    return lida;
+  };
+  const corSecundaria = lerCor("corSecundaria");
+  const corFundo = lerCor("corFundo");
+  const corTexto = lerCor("corTexto");
 
   const titulo = limpo(d.titulo);
   if (titulo && titulo.length > LIMITES.titulo) erros.titulo = `O título passa de ${LIMITES.titulo} caracteres.`;
@@ -205,7 +230,7 @@ export function validarSiteDigitado(d: SiteDigitado): ResultadoDaValidacao {
   const endereco = lerEndereco(d, erros);
 
   if (Object.keys(erros).length > 0) return { ok: false, erros };
-  return { ok: true, valor: { cor, titulo, frase, sobre, whatsapp, email, endereco, instagram, facebook } };
+  return { ok: true, valor: { cor, corSecundaria, corFundo, corTexto, titulo, frase, sobre, whatsapp, email, endereco, instagram, facebook } };
 }
 
 // ── Cor do site ───────────────────────────────────────────────────────────
@@ -236,7 +261,7 @@ export function textoSobreACor(hex: string): string {
 }
 
 /** Mistura `hex` com `alvo` na proporção `parte` (0 a 1). */
-function misturar(hex: string, alvo: string, parte: number): string {
+export function misturar(hex: string, alvo: string, parte: number): string {
   const a = Number.parseInt(hex.slice(1), 16);
   const b = Number.parseInt(alvo.slice(1), 16);
   const c = (deslocamento: number) => {
@@ -249,7 +274,7 @@ function misturar(hex: string, alvo: string, parte: number): string {
   return `#${c(16)}${c(8)}${c(0)}`;
 }
 
-function rgbDe(hex: string): string {
+export function rgbDe(hex: string): string {
   const n = Number.parseInt(hex.slice(1), 16);
   return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
 }

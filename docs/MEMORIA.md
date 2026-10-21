@@ -11599,3 +11599,22 @@ Nota: [[controles-rapidos-do-inicio]].
   `whitespace-pre-line` exige `break-words` (`naoCortaTexto.test.ts`).
 - A plataforma liga/tira endereço do site em `/plataforma/grupos/[id]`; o
   domínio também precisa estar em Vercel → Settings → Domains.
+
+
+## Meu site: envio de imagem sem segundo clique e quatro cores (0210, 21/10/2026)
+
+- Nota: [[meu-site-da-imobiliaria]]. Plano:
+  `docs/superpowers/plans/2026-10-21-meu-site-uploads-e-cores.md`. Migration
+  0210 aditiva (3 colunas `site_cor_*`), ainda não aplicada em produção.
+- "O botão de logo/capa não funciona" era defeito de uso, não de código
+  (automação provou que enviava): escolher o arquivo e esperar subir, quando
+  faltava o segundo clique. Agora escolher/soltar já envia, reduzindo antes
+  no navegador (foto de celular passa de 5 MB e do corpo de 4,5 MB da Vercel).
+- Cor em `:root` via `<style>` (não envoltório `contents`): o fundo pinta o
+  `<body>` e o menu mobile é portal. Escala `brand-*` remapeada para a cor do
+  grupo cobre os `bg-brand-500 text-white` fixos dos componentes sem tocar
+  neles (e sem mudar a Next Home); o degrau 500 é escurecido até o branco ler.
+- `textoSobreACor` (melhor de branco/preto) nunca fica abaixo de 4,58:1: o
+  aviso de contraste do botão não dispara nunca, só o de texto sobre fundo.
+- Com fundo ou texto definidos o tema claro/escuro some (cores fixas).
+

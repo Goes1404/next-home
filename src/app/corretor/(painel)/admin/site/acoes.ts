@@ -77,6 +77,9 @@ export async function salvarMeuSite(digitado: SiteDigitado): Promise<ResultadoDo
     .from("grupos")
     .update({
       site_cor: v.cor,
+      site_cor_secundaria: v.corSecundaria,
+      site_cor_fundo: v.corFundo,
+      site_cor_texto: v.corTexto,
       site_titulo: v.titulo,
       site_frase: v.frase,
       site_sobre: v.sobre,

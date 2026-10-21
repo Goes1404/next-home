@@ -22,7 +22,7 @@ export async function lerSiteDoGrupo(grupoId: string): Promise<SiteEditavel | nu
     servico
       .from("grupos")
       .select(
-        "logo_url, creci, creci_tipo, site_cor, site_capa_url, site_titulo, site_frase, site_sobre, site_whatsapp, site_email, site_endereco, site_instagram, site_facebook",
+        "logo_url, creci, creci_tipo, site_cor, site_cor_secundaria, site_cor_fundo, site_cor_texto, site_capa_url, site_titulo, site_frase, site_sobre, site_whatsapp, site_email, site_endereco, site_instagram, site_facebook",
       )
       .eq("id", grupoId)
       .maybeSingle(),
@@ -35,6 +35,9 @@ export async function lerSiteDoGrupo(grupoId: string): Promise<SiteEditavel | nu
   return {
     logoUrl: data.logo_url,
     cor: data.site_cor,
+    corSecundaria: data.site_cor_secundaria,
+    corFundo: data.site_cor_fundo,
+    corTexto: data.site_cor_texto,
     capaUrl: data.site_capa_url,
     titulo: data.site_titulo,
     frase: data.site_frase,

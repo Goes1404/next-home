@@ -65,7 +65,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Movimento
 - [[movimento-do-site-publico-e-css-puro]] — botão vivo, sublinhado do menu, barra de progresso por scroll-timeline e anel do WhatsApp, zero JS (13/09)
-- [[meu-site-da-imobiliaria]] — o gestor edita cor, capa, textos e contatos do site do grupo; grupo 1 intocado por teste (21/10)
+- [[meu-site-da-imobiliaria]] — o gestor edita quatro cores, capa, textos e contatos do site do grupo, e a imagem envia ao escolher; grupo 1 intocado por teste (21/10)
 - [[ordem-do-catalogo-no-site-tem-tela]] — a sequência da vitrine (destaque, depois `ordem`) agora se edita no painel (24/09)
 - [[rodada-de-26-09-parte-3]] — me avise quando surgir, favoritos e /comparar, portal do comprador, espelho de vendas (26/09)
 

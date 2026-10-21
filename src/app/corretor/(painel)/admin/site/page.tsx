@@ -50,6 +50,9 @@ export default async function MeuSitePage() {
   const s = site ?? SITE_EM_BRANCO;
   const inicial: SiteDigitado = {
     cor: s.cor ?? "",
+    corSecundaria: s.corSecundaria ?? "",
+    corFundo: s.corFundo ?? "",
+    corTexto: s.corTexto ?? "",
     titulo: s.titulo ?? "",
     frase: s.frase ?? "",
     sobre: s.sobre ?? "",
@@ -69,7 +72,7 @@ export default async function MeuSitePage() {
       <CabecalhoDeTela
         secao="Administração"
         titulo="Meu site"
-        descricao="A cor, a logo, a capa, os textos e os contatos que aparecem no site público da sua imobiliária. O que ficar vazio usa o padrão."
+        descricao="As cores, a logo, a capa, os textos e os contatos que aparecem no site público da sua imobiliária. O que ficar vazio usa o padrão."
       />
       <div className="mt-6 space-y-4">
         <section className="cartao flex flex-wrap items-center justify-between gap-3 p-4" aria-labelledby="titulo-previa">

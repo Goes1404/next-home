@@ -21,6 +21,9 @@ import {
 
 const VAZIO: SiteDigitado = {
   cor: "",
+  corSecundaria: "",
+  corFundo: "",
+  corTexto: "",
   titulo: "",
   frase: "",
   sobre: "",
@@ -39,13 +42,16 @@ describe("validarSiteDigitado", () => {
   it("tudo vazio é válido e não grava nada (o site cai no padrão)", () => {
     expect(validarSiteDigitado(VAZIO)).toEqual({
       ok: true,
-      valor: { cor: null, titulo: null, frase: null, sobre: null, whatsapp: null, email: null, endereco: null, instagram: null, facebook: null },
+      valor: { cor: null, corSecundaria: null, corFundo: null, corTexto: null, titulo: null, frase: null, sobre: null, whatsapp: null, email: null, endereco: null, instagram: null, facebook: null },
     });
   });
 
   it("normaliza tudo para o formato do banco", () => {
     const r = validarSiteDigitado({
       cor: " #1F6F5C ",
+      corSecundaria: "#0369A1",
+      corFundo: "fff",
+      corTexto: " #101a17",
       titulo: "  Seu   próximo endereço ",
       frase: "Frase",
       sobre: "Primeira linha  \n\n\n\nSegunda",
@@ -63,6 +69,9 @@ describe("validarSiteDigitado", () => {
       ok: true,
       valor: {
         cor: "#1f6f5c",
+        corSecundaria: "#0369a1",
+        corFundo: "#ffffff",
+        corTexto: "#101a17",
         titulo: "Seu próximo endereço",
         frase: "Frase",
         sobre: "Primeira linha\n\nSegunda",
@@ -86,6 +95,12 @@ describe("validarSiteDigitado", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(Object.keys(r.erros).sort()).toEqual(["cor", "email", "facebook", "instagram", "whatsapp"]);
+  });
+
+  it("recusa as três cores novas que não são hex, campo a campo", () => {
+    const r = validarSiteDigitado({ ...VAZIO, corSecundaria: "azul", corFundo: "#12345", corTexto: "rgb(0,0,0)" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.erros).sort()).toEqual(["corFundo", "corSecundaria", "corTexto"]);
   });
 
   it("respeita os limites de tamanho", () => {

@@ -1718,6 +1718,9 @@ export type Database = {
           ia_tom: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url: string | null
           site_cor: string | null
+          site_cor_fundo: string | null
+          site_cor_secundaria: string | null
+          site_cor_texto: string | null
           site_capa_url: string | null
           site_titulo: string | null
           site_frase: string | null
@@ -1763,6 +1766,9 @@ export type Database = {
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url?: string | null
           site_cor?: string | null
+          site_cor_fundo?: string | null
+          site_cor_secundaria?: string | null
+          site_cor_texto?: string | null
           site_capa_url?: string | null
           site_titulo?: string | null
           site_frase?: string | null
@@ -1808,6 +1814,9 @@ export type Database = {
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url?: string | null
           site_cor?: string | null
+          site_cor_fundo?: string | null
+          site_cor_secundaria?: string | null
+          site_cor_texto?: string | null
           site_capa_url?: string | null
           site_titulo?: string | null
           site_frase?: string | null

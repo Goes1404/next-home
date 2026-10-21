@@ -23,6 +23,9 @@ const { salvarMeuSite, trocarCapaDoSite, tirarCapaDoSite } = await import("./aco
 
 const DIGITADO = {
   cor: "#1F6F5C",
+  corSecundaria: "#0369A1",
+  corFundo: "#F3F7FD",
+  corTexto: "",
   titulo: "Seu endereço",
   frase: "",
   sobre: "Texto sobre",
@@ -50,6 +53,9 @@ describe("salvarMeuSite", () => {
     const meu = banco.tabelas.grupos.find((g) => g.id === GRUPO_DO_GESTOR);
     expect(meu).toMatchObject({
       site_cor: "#1f6f5c",
+      site_cor_secundaria: "#0369a1",
+      site_cor_fundo: "#f3f7fd",
+      site_cor_texto: null,
       site_titulo: "Seu endereço",
       site_frase: null,
       site_whatsapp: "5511999998888",

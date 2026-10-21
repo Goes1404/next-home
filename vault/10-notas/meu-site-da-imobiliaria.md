@@ -6,6 +6,11 @@ status: growing
 custou: medio
 codigo:
   - supabase/migrations/0209_site_do_grupo.sql
+  - supabase/migrations/0210_cores_do_site.sql
+  - src/lib/sites/coresDoSite.ts
+  - src/lib/imagem/reduzir.ts
+  - src/components/grupos/EnviarImagem.tsx
+  - src/app/corretor/(painel)/admin/site/SecaoDeCores.tsx
   - src/lib/sites/siteEditavel.ts
   - src/lib/sites/siteDoGrupo.ts
   - src/lib/sites/marca.ts
@@ -19,14 +24,14 @@ codigo:
   - src/app/s/[site]/layout.tsx
   - src/components/ui/LogoDaMarca.tsx
   - src/components/layout/Footer.tsx
-summary: O gestor edita cor, logo, capa, título, frase, "Sobre" e contatos do site do próprio grupo; o site lê isso para grupos diferentes do 1 (campo vazio cai no padrão) e a Next Home continua vindo de site.ts, travada por teste. A plataforma liga os endereços.
+summary: O gestor edita quatro cores (principal, secundária, fundo, texto), logo, capa, título, frase, "Sobre" e contatos do site do próprio grupo; o site lê isso para grupos diferentes do 1 (campo vazio cai no padrão) e a Next Home continua vindo de site.ts, travada por teste. A plataforma liga os endereços.
 created: 2026-10-21
 updated: 2026-10-21
 ---
 
 # Meu site
 
-Plano: `docs/superpowers/plans/2026-10-21-site-editavel.md`. Migration 0209.
+Planos: `docs/superpowers/plans/2026-10-21-site-editavel.md` (0209) e `2026-10-21-meu-site-uploads-e-cores.md` (0210, envio de imagem e cores). Migrations 0209 e 0210.
 
 ## Decisões
 
@@ -70,3 +75,44 @@ Plano: `docs/superpowers/plans/2026-10-21-site-editavel.md`. Migration 0209.
   os helpers de host moram em `sites/hostsDaPlataforma.ts`.
 - Antes do deploy: aplicar a 0209 (aditiva) e conferir um grupo com e sem
   campos preenchidos.
+
+## Envio de imagem e quatro cores (0210, 21/10/2026)
+
+- **Envio de logo e capa**: o upload já funcionava; o defeito era de uso (campo
+  nativo feio + segundo clique em "Enviar"). `EnviarImagem.tsx` (usado por
+  `FormularioDeLogo`, na plataforma e no CRM, e `FormularioDeCapa`): botão
+  grande, ao escolher (ou soltar na prévia) reduz no navegador e envia na
+  hora, com prévia imediata (`createObjectURL`) e "Enviando…". Redução em
+  `lib/imagem/reduzir.ts`: lado maior 2400 px (capa, teto 4 MB, abaixo dos
+  4,5 MB de corpo da Vercel) e 800 px (logo, 1 MB); PNG continua PNG (cai
+  para WebP só se não couber), JPEG/WebP idem, HEIC vira JPEG se o navegador
+  abrir, senão mensagem "tire um print ou exporte como JPG".
+- **Colunas** `site_cor_secundaria`, `site_cor_fundo`, `site_cor_texto` (0210,
+  hex minúsculo, sem grant). `SiteEditavel` as tem OPCIONAIS no tipo, para os
+  testes de igualdade do grupo 1 (fixtures) ficarem intocados.
+- **CSS em `:root`, não num envoltório**: `cssDasCoresDoSite` vira um
+  `<style>:root{...}</style>` no layout `s/[site]` (fora de `@layer`, vence os
+  dois temas). Foi trocado o `div contents` da 0209 porque o fundo pinta o
+  `<body>` e o menu do celular é portal (agora também recebe as cores).
+- **O que cada cor reaponta**: principal → `--color-acento*` e a escala
+  `--color-brand-*` (os botões antigos pedem `bg-brand-500 text-white` por
+  classe, inclusive o "Buscar imóveis" do herói; o degrau 500 é escurecido até
+  o branco ler, `paraTextoBranco`); secundária → `--color-realce*` e a escala
+  `azure` (selo de estágio, mascote); fundo/texto → papéis `fundo`,
+  `superficie`, `elevado`, `campo`, `linha*`, `vidro*`, `titulo`, `corpo*`,
+  `apoio`, `tenue` e `color-scheme`. Só o fundo ou só o texto: o outro é
+  deduzido pelo contraste. O texto de acento é puxado até ler sobre o fundo.
+- **Decisão do tema claro/escuro**: com fundo OU texto definidos, as cores
+  ficam fixas nos dois temas e o `SeletorTema` some (regra CSS em
+  `[role="radiogroup"][aria-label="Tema"]`). Só principal/secundária: o
+  seletor segue valendo.
+- **Contraste**: WCAG em `siteEditavel.ts` (`contraste`). Aviso texto/fundo
+  < 4,5:1 com "Ajustar automaticamente" (`ajustarTexto`); nunca bloqueia salvar.
+  O aviso do botão sobre a principal é rede de segurança: o texto sobre a cor
+  é o melhor de branco/preto, que nunca fica abaixo de 4,58:1.
+- 6 temas prontos em `TEMAS_PRONTOS` (testados: todos passam 4,5:1).
+- Grupo 1 intocado: `layout.test.tsx` (HTML idêntico, sem `<style>`),
+  `marca.test.ts`, `resolver.test.ts`, `Footer.meuSite.test.tsx`.
+- Antes do deploy: aplicar a 0210 ANTES do código. `lerSiteDoGrupo` seleciona
+  as colunas novas e, com 42703 (0210 não aplicada), devolve o site em branco:
+  os grupos perdem por um instante as edições da 0209 em vez de quebrar.

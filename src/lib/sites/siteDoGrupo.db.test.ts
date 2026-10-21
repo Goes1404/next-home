@@ -86,10 +86,30 @@ describe.skipIf(!process.env.DB_TESTE_URL)("site do grupo (0209)", () => {
     });
   });
 
+  it("as três cores da 0210 nascem nulas, aceitam hex minúsculo e recusam o resto", async () => {
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "site-cores" });
+      const [antes] = await tx<Record<string, unknown>[]>`
+        select site_cor_secundaria, site_cor_fundo, site_cor_texto from public.grupos where id = ${a.grupoId}`;
+      expect(Object.values(antes).every((v) => v === null)).toBe(true);
+      await tx`
+        update public.grupos set site_cor_secundaria = '#0369a1', site_cor_fundo = '#f3f7fd', site_cor_texto = '#0f1f3d'
+         where id = ${a.grupoId}`;
+      for (const coluna of ["site_cor_secundaria", "site_cor_fundo", "site_cor_texto"]) {
+        for (const ruim of ["0369a1", "#0369A1", "#fff", "#0369a1;", "rgb(0,0,0)", ""]) {
+          await expect(
+            tx.savepoint((sp) => sp.unsafe(`update public.grupos set ${coluna} = $1 where id = $2`, [ruim, a.grupoId])),
+            `${coluna} ${ruim}`,
+          ).rejects.toThrow(/check/);
+        }
+      }
+    });
+  });
+
   it("a sessão do grupo (nem o gestor) lê ou grava as colunas site_*; anon também não", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const a = await criarGrupo(tx, { slug: "site-privs" });
-      const colunas = ["site_cor", "site_capa_url", "site_titulo", "site_frase", "site_sobre", "site_whatsapp", "site_email", "site_endereco", "site_instagram", "site_facebook"];
+      const colunas = ["site_cor", "site_capa_url", "site_titulo", "site_frase", "site_sobre", "site_whatsapp", "site_email", "site_endereco", "site_instagram", "site_facebook", "site_cor_secundaria", "site_cor_fundo", "site_cor_texto"];
       for (const coluna of colunas) {
         const [p] = await tx<{ anon: boolean; logado_le: boolean; logado_grava: boolean }[]>`
           select has_column_privilege('anon', 'public.grupos', ${coluna}, 'select') as anon,
