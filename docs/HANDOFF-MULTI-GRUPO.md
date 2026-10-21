@@ -10,8 +10,7 @@ transformar o CRM da Next Home numa plataforma de várias imobiliárias
   `prhhrqyubjcafvucirri`. Tem clientes reais e conversas reais de WhatsApp.
 - **Fase 1 (fundação) está no ar** desde 20/10: tabela `grupos`, `grupo_id`
   em todas as tabelas, RLS restritiva por grupo, migrations 0190–0193
-  aplicadas. **A 0194 (pós-deploy) ainda NÃO foi aplicada**: aplicar depois
-  de 24–48 h sem erro (roteiro em `docs/superpowers/plans/2026-10-18-fase-1-fundacao-multi-grupo.md`).
+  aplicadas. A 0194 (pós-deploy) foi aplicada em 21/10/2026.
 - **Depois da fase 1 subiram** (já no ar, migrations 0203–0205 aplicadas):
   notificação no celular, roleta dos anúncios, botões do Início.
 - **Fases 2A, 2B, 2D, 4, 5, 3 e Op foram PUBLICADAS em 20–21/10/2026**, nesta
@@ -61,7 +60,8 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
 
 ## 1b. Próximos passos (depois de 21/10/2026)
 
-1. Aplicar a **0194** (pós-deploy da fase 1) — ver o roteiro da fase 1.
+1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio
+   apagada; `anon` sem insert em `leads` e `cliques_whatsapp`; `/wa` conferido).
 2. Configurar o que cada fase precisa fora do código (lista acima):
    Resend + `insert into administradores_da_plataforma` (2A),
    `DOMINIO_DA_PLATAFORMA` e domínio curinga (3), `APAGAR_GRUPOS_CANCELADOS`
