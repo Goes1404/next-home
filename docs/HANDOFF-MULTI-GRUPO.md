@@ -58,6 +58,13 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
 - Desenho completo e o que falta depois: `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`
   e `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
 
+- **Fase 2C (cobrança manual e suspensão) publicada em 21/10/2026**, migration
+  0207 aplicada: mensalidade e dia de vencimento por grupo, pagamentos
+  registrados em /plataforma, aviso no painel desde o vencimento e suspensão
+  automática no 5º dia (derivada na leitura, sem cron); suspenso cala IA,
+  follow-ups, listas, artes e vídeos. Plano `custo` (Next Home) é isento.
+  Plano: `docs/superpowers/plans/2026-10-21-fase-2c-cobranca-manual.md`.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio
