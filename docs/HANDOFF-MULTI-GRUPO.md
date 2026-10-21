@@ -74,6 +74,15 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   O login (`src/app/corretor/entrar/page.tsx`) mostra a marca AstroImob
   nesse endereço e a Next Home no site (21/10, layout inspirado no Facebook).
 
+- **Marca do grupo no CRM (0208, 21/10/2026, branch `marca-do-grupo-no-crm`,
+  ainda NÃO publicada)**: o painel, os avisos ao corretor, os e-mails de acesso
+  e os links do cliente usam o nome, a logo e o endereço do grupo; a Next Home
+  fica igual (teste que trava). Antes do deploy: aplicar a 0208 (aditiva).
+  Variável opcional `PAINEL_URL` (padrão `https://astroimob.vercel.app`).
+  Upload da logo em `/plataforma/grupos/[id]` e em Administração → Marca.
+  Plano: `docs/superpowers/plans/2026-10-21-marca-do-grupo-no-crm.md`; nota
+  `vault/10-notas/marca-do-grupo-no-crm.md`.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio
@@ -85,9 +94,22 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
    (Op, quando quiser ligar a rotina dos 90 dias).
 3. ~~Roleta × saída do corretor~~ — decidido em 21/10: o lead é de quem
    pagou o anúncio (`leads.anuncio_pago_por`, 0206).
-4. Textos com o nome da casa ainda usam `site.nome` (roleta, título da
-   notificação de lead novo); com outro grupo no ar, trocar pelo nome do
-   grupo (`lerCasaDoGrupo`).
+4. ~~Textos com o nome da casa usam `site.nome`~~ — trocados pela marca do
+   grupo na branch `marca-do-grupo-no-crm` (roleta, notificações, resumos,
+   relatórios, lembretes). Falta publicar e conferir:
+   - links do CLIENTE dentro da conversa da IA (`resolverMidia.ts`,
+     `apresentacaoDigital.ts`) ainda usam o endereço da Next Home; é a fase do
+     prompt/guardrails (exceção declarada em `semMarcaFixaNoCrm.test.ts`);
+   - `src/app/manifest.ts` e o `favicon.ico` de arquivo são da Next Home; o
+     painel de outro grupo declara `icons` e `manifest: null`, mas o
+     `favicon.ico` do raiz não obedece;
+   - o cliente de um grupo SEM site próprio abre a seleção no endereço do
+     painel, sem as páginas de imóvel (não há site para elas);
+   - `PAINEL_URL` diferente do padrão exige também listar o host em
+     `ENDERECOS_DO_PAINEL`;
+   - o `redirectUri` do Gmail segue o endereço do painel do grupo: se o Gmail
+     for liberado para outro grupo, cadastrar essa URI no Google Cloud;
+   - `VAPID_SUBJECT` (e-mail do push) ainda tem a Next Home como padrão.
 5. Itens fora do escopo das fases enxutas: cobrança (2C), medidor de custo
    da IA, mover conta entre grupos, e o resto das lacunas em
    `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.

@@ -11531,3 +11531,29 @@ Nota: [[controles-rapidos-do-inicio]].
 - **A 0207 marca como pagas (valor 0) todas as competências dos grupos que já
   existiam até o mês corrente**: sem isso o deploy suspenderia todos de uma vez.
 - `grupos` usa `criado_em` (o plano dizia `created_at`).
+
+## Marca do grupo no CRM (0208, 21/10/2026)
+
+- Nota: [[marca-do-grupo-no-crm]]. Plano:
+  `docs/superpowers/plans/2026-10-21-marca-do-grupo-no-crm.md`.
+- Quem entra pelo CRM de outra imobiliária vê o nome dela (`ia_nome_da_casa`,
+  senão `grupos.nome`) e a logo (`grupos.logo_url`, 0208), no cabeçalho, no
+  menu, na aba e nos avisos ao corretor. A Next Home (grupo 1) é a marca de
+  `site.ts`, sem consulta, e dois testes travam as palavras e os links.
+- **Duas funções de endereço** (`src/lib/marcaDoCrm/marca.ts`):
+  `enderecoDoPainel` (corretor; outros grupos `PAINEL_URL`, padrão
+  `astroimob.vercel.app`) e `enderecoDoCliente` (cliente; site principal do
+  grupo, senão o painel). `site.url` para montar link do painel reprova em
+  `semMarcaFixaNoCrm.test.ts`; as exceções (links do cliente dentro da conversa
+  da IA em `resolverMidia`/`apresentacaoDigital`) estão declaradas ali.
+- **Armadilha:** o `proxy.ts` mandava toda página do site para `/corretor` no
+  endereço só do CRM, e `resolverSite` não conhece esse host: abrir a seleção
+  do cliente ali dava 404 mesmo liberando a rota. Agora o proxy libera as
+  rotas de token e `siteDaPagina` devolve um site neutro (marca sem nome, sem
+  contato) para esse endereço.
+- Logo: PNG/JPEG/WebP até 1 MB, sem SVG, formato pelos bytes; só chave de
+  serviço grava (gestor do próprio grupo ou operador da plataforma).
+- `gerarLinkDeAcesso` ganhou o `grupoId` (4º parâmetro, obrigatório): o link
+  de convite e de senha de outro grupo sai no painel dele.
+- O Gmail só liga para o grupo 1 (`integracaoLiberada`); `redirectUri` do Google
+  agora vem de `enderecoDoPainel`, igual a antes no grupo 1.

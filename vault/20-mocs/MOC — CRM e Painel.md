@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-12
+updated: 2026-10-21
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -20,6 +20,7 @@ F0–F6.
 - [[medir-carga-com-rollback]]
 
 ## Telas
+- [[marca-do-grupo-no-crm]] — nome, logo e endereços do painel por imobiliária; a Next Home não muda (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[lateral-recolhe-e-rola-sozinha]] — lateral rola por dentro, recolhe em ícones; cabeçalho do celular some ao rolar (09/10)
 - [[navegacao-do-painel-tem-regua]]
