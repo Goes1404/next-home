@@ -11557,3 +11557,27 @@ Nota: [[controles-rapidos-do-inicio]].
   de convite e de senha de outro grupo sai no painel dele.
 - O Gmail só liga para o grupo 1 (`integracaoLiberada`); `redirectUri` do Google
   agora vem de `enderecoDoPainel`, igual a antes no grupo 1.
+
+## Ficha pública do imóvel para grupo sem site (21/10/2026)
+
+- Nota: [[ficha-publica-do-imovel]]. Plano:
+  `docs/superpowers/plans/2026-10-21-ficha-publica-do-imovel.md`. Sem migration.
+- Grupo SEM endereço em `enderecos_do_site` abria a seleção do cliente em
+  `astroimob.vercel.app` e os cartões levavam ao login (as páginas de imóvel
+  do site não existem no endereço do painel); a IA mandava o link da Next Home.
+  Agora existe `/imovel/<grupos.slug>/<slug>?c=<corretor>`, aberta em qualquer
+  endereço (`/imovel` em `FORA_DO_SITE` do `proxy.ts`), só imóvel publicado do
+  grupo da URL, `noindex`, WhatsApp só com `c` de corretor ativo do MESMO grupo.
+- **Um só montador de link** (`src/lib/imovelPublico/link.ts`): grupo 1 =
+  link de sempre; grupo com host = `https://<host>/empreendimentos/<slug>`;
+  sem site = a ficha. Usado na rota de clique da seleção, nas campanhas, no
+  aviso de novidade e na IA (`casa.links`, ausente no grupo 1: prompt e
+  mensagens byte a byte iguais, snapshot intacto).
+- Meus links: grupo sem site não vê o link pessoal (cairia no login); vê uma
+  linha explicando e os links de cada imóvel já como ficha com o corretor; o
+  link de anúncio (`/wa/<slug>`) some.
+- Armadilha: no segmento `s/` o teste `colunasPublicas` reprova
+  `.from("corretores")`: usar `corretoresPublicos(grupoId)`.
+- Pendente: o link do catálogo (`?corretor=`) que a IA manda segue o da Next
+  Home para grupo sem site (sem página de catálogo para apontar).
+

@@ -450,7 +450,7 @@ export function construirPromptSistema(ctx: ContextoAtendimento): string {
           : "  A partir de: SEM piso cadastrado — não cite valor nenhum deste imóvel",
         ficha ? `  Ficha: ${ficha}` : null,
         `  Sobre: ${e.tagline || e.descricao.slice(0, 120)}`,
-        `  Página no site: ${linkDaPagina(e.slug)}`,
+        `  Página no site: ${linkDaPagina(e.slug, ctx.casa?.links, ctx.slugCorretor)}`,
         `  Mídia disponível: ${disponivel}`,
       ]
         .filter(Boolean)

@@ -1,3 +1,4 @@
+import type { LinksDoImovel } from "@/lib/imovelPublico/link";
 import type { Empreendimento } from "@/lib/types";
 import { site } from "@/lib/site";
 import { linkDaPagina, type PedidoMidia } from "./resolverMidia";
@@ -56,7 +57,8 @@ function escapar(texto: string): string {
 }
 
 /** Link de página de imóvel já escrito no texto, qualquer slug. */
-function linksDePagina(texto: string): { inteiro: string; slug: string }[] {
+function linksDePagina(texto: string, links?: LinksDoImovel): { inteiro: string; slug: string }[] {
+  if (links) return links.reconhecer(texto);
   const re = new RegExp(`${escapar(site.url)}/empreendimentos/([\\w-]+)`, "gi");
   return [...texto.matchAll(re)].map((m) => ({ inteiro: m[0], slug: m[1] }));
 }
@@ -67,10 +69,11 @@ function imovelDaApresentacao(
   pedidos: PedidoMidia[],
   recomendados: { slug?: string | null }[],
   catalogo: Empreendimento[],
+  links?: LinksDoImovel,
 ): string | null {
   const existe = (slug?: string | null) => !!slug && catalogo.some((e) => e.slug === slug);
 
-  const noTexto = linksDePagina(texto).find((l) => existe(l.slug));
+  const noTexto = linksDePagina(texto, links).find((l) => existe(l.slug));
   if (noTexto) return noTexto.slug;
 
   const daFoto = pedidos.find((p) => p?.tipo === "foto" && existe(p.slug));
@@ -107,6 +110,8 @@ export function decidirApresentacao(entrada: {
   catalogo: Empreendimento[];
   /** O que o cliente acabou de escrever (os balões da vez, juntos). */
   falaDoCliente?: string | null;
+  /** Os links do grupo (imóvel de outro grupo ou site próprio); ausente = Next Home. */
+  links?: LinksDoImovel;
 }): DecisaoApresentacao {
   const { texto, catalogo } = entrada;
   const pedidos = entrada.pedidos ?? [];
@@ -116,7 +121,7 @@ export function decidirApresentacao(entrada: {
   const anunciou = ANUNCIO_NA_RESPOSTA.test(texto);
   if (!pediu && !anunciou) return nada;
 
-  const slug = imovelDaApresentacao(texto, pedidos, entrada.recomendados ?? [], catalogo);
+  const slug = imovelDaApresentacao(texto, pedidos, entrada.recomendados ?? [], catalogo, entrada.links);
   if (!slug) return nada;
 
   const semFotos = pedidos.filter((p) => p?.tipo !== "foto");
@@ -133,10 +138,12 @@ export function garantirLinkDaPagina(
   texto: string,
   slug: string,
   catalogo: Empreendimento[],
+  links?: LinksDoImovel,
+  slugCorretor?: string | null,
 ): { texto: string; anexou: boolean } {
-  const certo = linkDaPagina(slug);
+  const certo = linkDaPagina(slug, links, slugCorretor);
   let novo = texto;
-  for (const l of linksDePagina(novo)) {
+  for (const l of linksDePagina(novo, links)) {
     if (!catalogo.some((e) => e.slug === l.slug)) novo = novo.split(l.inteiro).join(certo);
   }
   if (novo.includes(certo)) return { texto: novo, anexou: novo !== texto };

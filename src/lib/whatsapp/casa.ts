@@ -17,6 +17,7 @@
 // Módulo puro, sem banco: o eval e os testes usam o mesmo caminho.
 
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import type { LinksDoImovel } from "@/lib/imovelPublico/link";
 import { site } from "@/lib/site";
 import type { TomVozBot } from "./types";
 
@@ -56,6 +57,12 @@ export interface IdentidadeDaCasa {
   nomeAssistente: string | null;
   /** Fixado pelo gestor para a equipe. Nulo: o da instância do corretor. */
   tom: TomVozBot | null;
+  /**
+   * Os links de imóvel que o CÓDIGO monta para o cliente do grupo (21/10/2026,
+   * `imovelPublico/link.ts`). Ausente = a Next Home de sempre (`site.url`):
+   * o grupo 1 nunca preenche, e o prompt dele fica byte a byte o mesmo.
+   */
+  links?: LinksDoImovel;
 }
 
 /** As colunas de `grupos` que a casa lê. */

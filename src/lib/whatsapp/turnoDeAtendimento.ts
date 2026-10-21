@@ -530,6 +530,7 @@ export async function executarTurnoDeAtendimento(
       identidade.nomeAssistente,
       textoDaVez,
       jogada.tipo === "responder_dado" ? marcaDoDado(jogada.dado.resposta) : null,
+      casa.links,
     );
   };
 

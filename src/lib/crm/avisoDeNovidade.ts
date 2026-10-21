@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { linkPublicoDoImovel } from "@/lib/imovelPublico/ler";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { obterOuCriarConversa, situacaoDaConversa } from "@/lib/whatsapp/repositorio";
 import { silencioDaConversa } from "@/lib/whatsapp/quandoAIaResponde";
@@ -105,11 +106,26 @@ export async function avisarQuemPediuAlerta(limite = 2): Promise<number> {
         nome: lead.nome,
         pedido: descreverPedido(lead),
         imovel: imovel.nome,
-        link: linkDaPagina(imovel.slug),
+        link: await linkPublicoDoImovel({
+          grupoId: lead.grupo_id,
+          slug: imovel.slug,
+          corretorSlug: await slugDoCorretor(supabase, lead.corretor_id!, lead.grupo_id),
+        }),
       }),
     });
     if (r.enviou) enviados++;
     else console.warn("[aviso de novidade] não saiu:", lead.id, r.erro);
   }
   return enviados;
+}
+
+/** O slug do corretor, para o `?c=` da ficha pública. Só o grupo sem site usa; o 1 nem lê. */
+async function slugDoCorretor(
+  supabase: ReturnType<typeof createServiceClient>,
+  corretorId: string,
+  grupoId: string,
+): Promise<string | null> {
+  if (grupoId === GRUPO_NEXT_HOME_ID) return null;
+  const { data } = await supabase.from("corretores").select("slug").eq("id", corretorId).eq("grupo_id", grupoId).maybeSingle();
+  return data?.slug ?? null;
 }

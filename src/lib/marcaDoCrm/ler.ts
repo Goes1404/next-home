@@ -107,6 +107,14 @@ async function lerHostPrincipal(grupoId: string): Promise<{ host: string | null 
   }
 }
 
+/** O host principal do site do grupo (cache de 60 s); nulo = sem site ou leitura falhou. */
+export async function lerHostDoGrupo(grupoId: string, agora = Date.now()): Promise<string | null> {
+  if (grupoId === GRUPO_NEXT_HOME_ID) return null;
+  const emCache = enderecos.obter(grupoId, agora);
+  const lido = await (emCache ?? enderecos.guardar(grupoId, agora, lerHostPrincipal(grupoId)));
+  return lido?.host ?? null;
+}
+
 /**
  * Onde abre o link que o CLIENTE do grupo recebe (seleção, documentos,
  * agenda): grupo 1 `site.url`; outro grupo, o site principal dele se existir,

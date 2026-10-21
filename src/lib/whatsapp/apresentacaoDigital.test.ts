@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Empreendimento } from "@/lib/types";
 import { decidirApresentacao, garantirLinkDaPagina } from "./apresentacaoDigital";
 import { sanearRespostaIA } from "./guardrails";
+import { linksDoImovel } from "@/lib/imovelPublico/link";
 import { linkDaPagina } from "./resolverMidia";
 
 function imovel(slug: string): Empreendimento {
@@ -125,5 +126,46 @@ describe("a apresentação digital sai como link da página, nunca como foto", (
     const errado = linkDaPagina("vitra-inventado");
     const r = garantirLinkDaPagina(`Veja: ${errado}`, "vitra", catalogo);
     expect(r.texto).toBe(`Veja: ${linkDaPagina("vitra")}`);
+  });
+});
+
+describe("a apresentação de um grupo sem site aponta para a ficha pública do painel", () => {
+  const links = linksDoImovel({
+    grupoId: "22222222-2222-2222-2222-222222222222",
+    hostPrincipal: null,
+    grupoSlug: "imobsol",
+    painelUrl: "https://astroimob.vercel.app",
+  });
+  const ficha = "https://astroimob.vercel.app/imovel/imobsol/vitra?c=ana";
+
+  it("o código põe o link da ficha, com o corretor, e nunca o da Next Home", () => {
+    const saneada = sanearRespostaIA(
+      resposta("Claro! Te mandei as fotos aqui embaixo.", [{ slug: "vitra", tipo: "foto" }]),
+      catalogo,
+      [],
+      "ana",
+      null,
+      "me manda a apresentação do Vitra",
+      null,
+      links,
+    );
+    expect(saneada.anexos).toHaveLength(0);
+    expect(saneada.resposta.textoResposta).toContain(ficha);
+    expect(saneada.resposta.textoResposta).not.toContain(linkDaPagina("vitra"));
+  });
+
+  it("a ficha certa já no texto não é duplicada, e a de imóvel que não existe vira a certa", () => {
+    const certa = sanearRespostaIA(resposta(`Olha a apresentação: ${ficha}`, []), catalogo, [], "ana", null, "tem apresentação?", null, links);
+    expect(certa.resposta.textoResposta.split(ficha)).toHaveLength(2);
+
+    const errada = garantirLinkDaPagina(
+      "Segue: https://astroimob.vercel.app/imovel/imobsol/inventado?c=ana",
+      "vitra",
+      catalogo,
+      links,
+      "ana",
+    );
+    expect(errada.texto).toContain(ficha);
+    expect(errada.texto).not.toContain("inventado");
   });
 });

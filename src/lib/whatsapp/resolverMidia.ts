@@ -1,4 +1,5 @@
 import type { Empreendimento } from "@/lib/types";
+import type { LinksDoImovel } from "@/lib/imovelPublico/link";
 import { site } from "@/lib/site";
 
 /**
@@ -190,11 +191,14 @@ export function linkDoCatalogo(slugCorretor: string): string {
 export function anexarLinkDoCatalogo(
   texto: string,
   slugCorretor: string | null | undefined,
+  links?: LinksDoImovel,
 ): { texto: string; anexou: boolean } {
   const slug = slugCorretor?.trim();
   if (!slug) return { texto, anexou: false };
 
-  const certo = linkDoCatalogo(slug);
+  // Grupo com site próprio: o catálogo é o do site dele. Sem site, segue o
+  // endereço de sempre (não há página de catálogo para apontar).
+  const certo = links?.catalogo(slug) ?? linkDoCatalogo(slug);
   if (texto.includes(certo)) return { texto, anexou: false };
 
   /*
@@ -208,6 +212,6 @@ export function anexarLinkDoCatalogo(
   return { texto: `${texto.trim()} --- ${certo}`.trim(), anexou: true };
 }
 
-export function linkDaPagina(slug: string): string {
-  return `${site.url}/empreendimentos/${slug}`;
+export function linkDaPagina(slug: string, links?: LinksDoImovel, slugCorretor?: string | null): string {
+  return links ? links.pagina(slug, slugCorretor) : `${site.url}/empreendimentos/${slug}`;
 }

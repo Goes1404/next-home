@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 
-export type ItemLink = { slug: string; nome: string; bairro: string; cidade: string };
+export type ItemLink = {
+  slug: string;
+  nome: string;
+  bairro: string;
+  cidade: string;
+  /** O link pronto (grupo sem site: a ficha pública do painel). Ausente = o do site. */
+  link?: string;
+};
 
 const CAMPO =
   "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
@@ -42,10 +49,13 @@ export function ListaLinks({
   itens,
   slugCorretor,
   baseUrl,
+  semAnuncio = false,
 }: {
   itens: ItemLink[];
   slugCorretor: string;
   baseUrl: string;
+  /** O link de anúncio (`/wa/<slug>`) é uma página do site; sem site ele não abre. */
+  semAnuncio?: boolean;
 }) {
   const [busca, setBusca] = useState("");
 
@@ -78,7 +88,7 @@ export function ListaLinks({
       ) : (
         <ul className="mt-6 space-y-3">
           {filtrados.map((item) => {
-            const link = `${baseUrl}/empreendimentos/${item.slug}?corretor=${slugCorretor}`;
+            const link = item.link ?? `${baseUrl}/empreendimentos/${item.slug}?corretor=${slugCorretor}`;
             const mensagem = `Olá! Separei este empreendimento pra você: ${item.nome}, em ${item.bairro}, ${item.cidade}.\n\n${link}`;
             /*
              * O link de ANÚNCIO é diferente dos outros dois de propósito:
@@ -100,7 +110,7 @@ export function ListaLinks({
                 <div className="mt-3 flex flex-wrap gap-2">
                   <BotaoCopiar texto={link} rotulo="Copiar link" />
                   <BotaoCopiar texto={mensagem} rotulo="Copiar mensagem" />
-                  <BotaoCopiar texto={linkAnuncio} rotulo="Copiar link de anúncio (Meta)" />
+                  {!semAnuncio && <BotaoCopiar texto={linkAnuncio} rotulo="Copiar link de anúncio (Meta)" />}
                 </div>
               </li>
             );

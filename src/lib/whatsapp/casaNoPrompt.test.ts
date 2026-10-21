@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { construirPromptSistema } from "./aiAgent";
 import { blocoDaJogada } from "./jogada";
 import { CASA_NEXT_HOME, casaDoGrupo } from "./casa";
+import { linksDoImovel } from "@/lib/imovelPublico/link";
+import { site } from "@/lib/site";
+import type { Empreendimento } from "@/lib/types";
 
 /**
  * A identidade da casa no prompt (fase 4 enxuta, 20/10/2026).
@@ -71,5 +74,51 @@ describe("o prompt de outro grupo", () => {
     const bloco = blocoDaJogada({ tipo: "perguntar", assunto: "regiao" }, { nomeDoFoco: null, casa });
     expect(bloco).toContain("em qual região de Campinas ele procura");
     expect(bloco).not.toContain("Barueri");
+  });
+});
+
+describe("o link da página do imóvel no prompt (21/10/2026)", () => {
+  const imovel = {
+    nome: "Vista Verde",
+    slug: "vista-verde",
+    tagline: "Perto do parque",
+    descricao: "",
+    bairro: "Centro",
+    cidade: "Campinas",
+    status: "lancamento",
+    tipo: "apartamento",
+    finalidade: "venda",
+    precoAPartir: null,
+    iptu: null,
+    condominioValor: null,
+    construtora: null,
+    totalUnidades: null,
+    entregaPrevista: null,
+    galeria: [],
+    plantas: [],
+    videos: [],
+    tours360: [],
+    tipologias: [],
+    lazer: [],
+  } as unknown as Empreendimento;
+
+  it("grupo 1: o link do site da Next Home, como sempre", () => {
+    const prompt = construirPromptSistema({ ...base, catalogo: [imovel], casa: CASA_NEXT_HOME });
+    expect(prompt).toContain(`Página no site: ${site.url}/empreendimentos/vista-verde`);
+  });
+
+  it("grupo sem site: a ficha pública do painel, com o corretor da conversa", () => {
+    const casa = {
+      ...casaDoGrupo(null, "00000000-0000-0000-0000-0000000000b2"),
+      links: linksDoImovel({
+        grupoId: "00000000-0000-0000-0000-0000000000b2",
+        hostPrincipal: null,
+        grupoSlug: "horizonte",
+        painelUrl: "https://astroimob.vercel.app",
+      }),
+    };
+    const prompt = construirPromptSistema({ ...base, catalogo: [imovel], casa });
+    expect(prompt).toContain("Página no site: https://astroimob.vercel.app/imovel/horizonte/vista-verde?c=cristal-bruna");
+    expect(prompt).not.toContain(site.url);
   });
 });

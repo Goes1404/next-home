@@ -51,9 +51,9 @@ const PADRAO_NOME = /(?<![\w$])site\.(nome|wordmark|nomeCompleto)(?![\w$])/;
 /** `site.url` que fica, e por quê. */
 const EXCECOES_URL: Record<string, string> = {
   "src/lib/whatsapp/resolverMidia.ts":
-    "link do site que a IA manda ao CLIENTE na conversa (catálogo e página do imóvel): a rota por grupo é do prompt/guardrails da fase 4; fica anotado no HANDOFF",
+    "o link da Next Home (grupo 1) que a IA manda ao CLIENTE; os outros grupos entram por `links` (imovelPublico/link.ts), que o turno lê de casa.links; o catálogo de grupo sem site segue assim (anotado no HANDOFF)",
   "src/lib/whatsapp/apresentacaoDigital.ts":
-    "reconhece o link do site da Next Home no texto da IA (par de resolverMidia.ts)",
+    "reconhece o link da Next Home no texto da IA quando não há `links` do grupo (par de resolverMidia.ts)",
   "src/lib/whatsapp/autoDisparo.ts":
     "endereço do PRÓPRIO deploy para acender o disparo (reserva de VERCEL_PROJECT_PRODUCTION_URL); não é link para pessoa",
   "src/lib/social/linkDeIndicacao.ts":

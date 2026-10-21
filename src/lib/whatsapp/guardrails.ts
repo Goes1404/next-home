@@ -1,3 +1,4 @@
+import type { LinksDoImovel } from "@/lib/imovelPublico/link";
 import type { Empreendimento } from "@/lib/types";
 import type { RespostaAgenteIA } from "./aiAgent";
 import { removerCumprimentoRepetido, soarHumano } from "./vozHumana";
@@ -87,6 +88,8 @@ export function sanearRespostaIA(
   falaDoCliente?: string | null,
   /** O dado que ele pediu nesta fala: a frase que o traz não é cortada como eco. */
   dadoPedido?: string | null,
+  /** Os links montados por código para o grupo (site próprio ou ficha do painel); ausente = Next Home. */
+  links?: LinksDoImovel,
 ): RespostaSaneada {
   const slugsPermitidos = new Set(catalogo.map((e) => e.slug));
 
@@ -102,6 +105,7 @@ export function sanearRespostaIA(
     recomendados: resposta.imoveisRecomendados ?? [],
     catalogo,
     falaDoCliente,
+    links,
   });
 
   /*
@@ -229,10 +233,10 @@ export function sanearRespostaIA(
    * contar como repetição.
    */
   const comCatalogo = resposta.mandarCatalogo
-    ? anexarLinkDoCatalogo(semRepeticao, slugCorretor)
+    ? anexarLinkDoCatalogo(semRepeticao, slugCorretor, links)
     : { texto: semRepeticao, anexou: false };
   const comApresentacao = apresentacao.slug
-    ? garantirLinkDaPagina(comCatalogo.texto, apresentacao.slug, catalogo)
+    ? garantirLinkDaPagina(comCatalogo.texto, apresentacao.slug, catalogo, links, slugCorretor)
     : { texto: comCatalogo.texto, anexou: false };
   const texto = comApresentacao.texto;
 

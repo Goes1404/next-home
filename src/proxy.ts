@@ -156,11 +156,15 @@ export async function proxy(request: NextRequest) {
  * cache por host. Por o host estar no CAMINHO, o cache de rota (ISR) já sai
  * separado por site, e as páginas continuam estáticas (a F2b não regride).
  *
+ * `/imovel/<grupo>/<slug>` (21/10/2026) é a ficha pública do imóvel de quem
+ * não tem site: abre em qualquer endereço, inclusive nos só do painel, e não
+ * é página do site (o grupo vem da URL, não do endereço).
+ *
  * Um `/s/...` que chega de fora também é reescrito (`/s/<host>/s/...`, que
  * não existe): sem isso, `nexthomeimoveis.com/s/outro.com.br/` mostraria o
  * site de outro grupo debaixo do domínio da Next Home.
  */
-const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa"];
+const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa", "/imovel"];
 
 function ehPaginaDoSite(pathname: string): boolean {
   return !FORA_DO_SITE.some((raiz) => pathname === raiz || pathname.startsWith(`${raiz}/`));

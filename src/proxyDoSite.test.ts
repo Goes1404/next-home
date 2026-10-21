@@ -131,6 +131,15 @@ describe("proxy e o endereço só do CRM (astroimob.vercel.app)", () => {
     }
   });
 
+  it("a ficha pública do imóvel (/imovel/<grupo>/<slug>) abre no endereço do painel, sem reescrita", async () => {
+    expect(await localizacao("/imovel/imobsol/vitra")).toBeNull();
+    expect(await reescrita("/imovel/imobsol/vitra?c=ana", CRM)).toBeNull();
+    // Em qualquer endereço ela também não é página do site.
+    expect(await reescrita("/imovel/imobsol/vitra", "www.nexthomeimoveis.com")).toBeNull();
+    // A fronteira é de segmento: /imoveis continua sendo do site.
+    expect(await localizacao("/imoveis")).toBe("/corretor");
+  });
+
   it("a raiz de uma rota de token, sem token, continua indo para o painel", async () => {
     expect(await localizacao("/selecao")).toBe("/corretor");
     expect(await localizacao("/selecao/")).toBe("/corretor");

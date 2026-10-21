@@ -34,7 +34,7 @@ import { MOTIVO_SESSAO_CAIU } from "@/lib/whatsapp/sessaoCaida";
 import type { SinaisDaLista } from "@/lib/whatsapp/pausaAutomatica";
 import { dentroDaJanela, dentroDaJanelaDoCorretor, fraseDoLimite } from "@/lib/whatsapp/antiBan";
 import { calcularLimiteDoDia } from "@/lib/whatsapp/repositorio";
-import { linkDaPagina } from "@/lib/whatsapp/resolverMidia";
+import { linkPublicoDoImovel } from "@/lib/imovelPublico/ler";
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
 import {
   contextoDaLista,
@@ -159,7 +159,7 @@ function recortarPorSelecao(
  */
 async function contextoDoImovel(
   empreendimentoId: string | null,
-  corretor: { nome: string | null; grupoId: string },
+  corretor: { nome: string | null; grupoId: string; slug?: string | null },
 ): Promise<{ imovel: Empreendimento | null; contexto: ContextoTemplate }> {
   const corretorNome = corretor.nome;
   const imovel = empreendimentoId
@@ -169,7 +169,9 @@ async function contextoDoImovel(
     imovel,
     contexto: contextoDaLista({
       imovel,
-      linkDoImovel: imovel ? linkDaPagina(imovel.slug) : null,
+      linkDoImovel: imovel
+        ? await linkPublicoDoImovel({ grupoId: corretor.grupoId, slug: imovel.slug, corretorSlug: corretor.slug })
+        : null,
       corretorNome,
     }),
   };

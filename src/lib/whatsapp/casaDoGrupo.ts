@@ -1,5 +1,7 @@
 import "server-only";
 
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { lerLinksDoImovel } from "@/lib/imovelPublico/ler";
 import { createServiceClient } from "@/lib/supabase/service";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { casaDoGrupo, type IdentidadeDaCasa, type LinhaDaCasa } from "./casa";
@@ -20,6 +22,14 @@ import { casaDoGrupo, type IdentidadeDaCasa, type LinhaDaCasa } from "./casa";
  * 42703: aí lê só o nome, e a IA fala como antes.
  */
 export async function lerCasaDoGrupo(grupoId: string): Promise<IdentidadeDaCasa> {
+  const casa = await lerCasaSemLinks(grupoId);
+  if (grupoId === GRUPO_NEXT_HOME_ID) return casa;
+  // Os links de imóvel que a IA manda: do site do grupo, ou da ficha do painel.
+  const links = await lerLinksDoImovel(grupoId);
+  return links ? { ...casa, links } : casa;
+}
+
+async function lerCasaSemLinks(grupoId: string): Promise<IdentidadeDaCasa> {
   try {
     const servico = createServiceClient();
     const completa = await comRetentativa("casa do grupo", () =>
