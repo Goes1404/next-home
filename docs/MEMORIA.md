@@ -11208,3 +11208,85 @@ Nota: [[numero-em-um-grupo-e-aceite-dos-termos]].
 - **Exceção de rota pelo `pathname` no layout não funciona**: layout não
   re-executa entre rotas irmãs. A tela de senha saiu do `(painel)` (URL
   igual) para não depender do aceite dos termos.
+
+## Lead da campanha do próprio corretor não é atendido pela IA (20/10/2026)
+
+Nota: [[lead-da-campanha-do-corretor-sem-ia]].
+
+- **Decisão do dono:** lead que chega pelo anúncio pago do próprio corretor
+  (etiqueta da Meta na linha dele) é cadastrado e resumido, mas a IA não
+  responde. O link `/wa` da imobiliária continua com a IA.
+- **A IA cala no webhook, antes da decisão de responder**
+  (`calarIaNaConversaDeCampanha`, `bot_ativo = false`). O resumo já rodava no
+  caminho do silêncio para toda conversa com lead; não precisou de nada novo.
+- **Reatribuir `conversa` (let) no meio do webhook quebra os tipos** de
+  closures que vêm antes no arquivo ("possibly null"). Use uma flag e passe a
+  conversa ajustada só para quem precisa.
+- **Origem do lead `553899928763`** (pergunta de 20/10): anúncio
+  "APARTAMENTO PRONTO!" (Meta `52560103521954`) da Carolini, detectado pela
+  etiqueta em 16/10; o lead chegou em 17/10 com a mensagem pronta do Bless.
+
+## O aviso ao corretor não tocava: notificação no celular (0203, 20/10/2026)
+
+Nota: [[notificacao-no-celular-do-corretor]].
+
+- **Aviso pelo WhatsApp do próprio número cai na conversa "Você", sem
+  notificação.** Foi assim que 8 leads de anúncio da Carolini ficaram três
+  dias sem resposta. Agora lead que chega vira notificação no celular (Web
+  Push), e todo `avisarCorretor` manda pelos dois canais.
+- **Chaves VAPID nas variáveis da Vercel**; sem elas nada sai. A 0203 marca
+  os leads antigos como avisados, para o primeiro tique não notificar todo
+  mundo.
+- `Uint8Array.from` é `Uint8Array<ArrayBufferLike>` e o `subscribe` recusa
+  no TS 5.9: monte a chave sobre `new ArrayBuffer`.
+
+## O aviso ao corretor dizia a mesma coisa em toda situação (20/10/2026)
+
+Nota: [[aviso-ao-corretor-diz-o-que-fazer]].
+
+- **`formatarAlertaCorretor` tinha um corpo só para oito motivos**, com
+  "cliente de alto padrão", "taxa de conversão" e "Imóveis em Alphaville"
+  mesmo em visita desmarcada. Agora: o que fazer, o fato, o que o cliente
+  disse, a ficha numa linha e o que falta saber.
+- **Repetição:** só o lead quente tinha carência. Agora cada motivo tem a
+  sua (`alertas_ao_corretor`, na 0203); a visita proposta pela IA deixou de
+  ser motivo de alerta.
+- **Resumo do dia:** fora os leads cadastrados pelo próprio corretor, origem
+  em português e a visita sem retorno aparece uma vez só.
+- **Python escrevendo TypeScript trocou `
+` por quebra de linha real outra
+  vez**, em dois arquivos. Trecho com barra invertida vai pela ferramenta de
+  edição.
+
+## Roleta dos anúncios (0204, 20/10/2026)
+
+Nota: [[roleta-dos-anuncios]].
+
+- **Lead que nasce pela etiqueta da Meta vai para o próximo da lista do dono
+  do número**, se ele ligou a roleta (Anúncios pagos). O número de quem
+  recebe manda a abertura na hora, sem limite diário nem intervalo; o do dono
+  avisa quem vai atender; a IA fica calada nas duas conversas.
+- **A abertura sai antes de a ficha mudar de dono**: falhou, tenta o próximo.
+  Ninguém conseguiu, o lead fica com o dono.
+- `obterOuCriarConversa` devolve `leadCriadoAgora`: é ele que separa lead
+  novo de cliente antigo clicando no anúncio.
+
+## A metragem da planta não tinha campo (20/10/2026)
+
+Nota: [[metragem-da-planta-nao-tinha-campo]].
+
+- O editor salvava `area_privativa`, mas não tinha campo para ela (nem para
+  dormitórios e banheiros). "Adicionar planta" nascia com 80 m², 2 dorm e 2
+  suítes de padrão, gravados sem ninguém ver. Hoje cada número tem campo e a
+  planta nova nasce em branco. Valor padrão em campo escondido vira dado
+  inventado.
+
+## Pausar a IA e dividir os leads no Início (0205, 20/10/2026)
+
+Nota: [[controles-rapidos-do-inicio]].
+
+- Pausar guarda o modo em `modo_antes_da_pausa`; retomar o devolve.
+- **A catraca de peso do CI ficou vermelha na publicação anterior** e eu só
+  vi depois: a Vercel publica sem esperar o CI. Depois de subir, conferir
+  `actions/runs` do commit. O log do job sai pela API do GitHub com o token
+  de `git credential fill` (host github.com).
