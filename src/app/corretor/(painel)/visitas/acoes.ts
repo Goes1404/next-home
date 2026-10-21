@@ -90,12 +90,12 @@ export async function gerarLinkDaAgenda(): Promise<{ link?: string; erro?: strin
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
   const { createServiceClient } = await import("@/lib/supabase/service");
-  const { site } = await import("@/lib/site");
+  const { lerEnderecoDoCliente } = await import("@/lib/marcaDoCrm/ler");
   const token = crypto.randomUUID();
   const { error } = await createServiceClient()
     .from("corretor_agenda")
     .upsert({ corretor_id: corretor.id, token, created_at: new Date().toISOString() });
   if (error) return { erro: "Não consegui gerar o link agora. Tente de novo." };
   revalidatePath("/corretor/visitas");
-  return { link: `${site.url}/api/agenda/${token}.ics` };
+  return { link: `${await lerEnderecoDoCliente(corretor.grupoId)}/api/agenda/${token}.ics` };
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { textoDoAvisoDoLink, type TipoDeEventoDoLink } from "@/lib/crm/linksDoCliente";
@@ -35,13 +35,13 @@ export async function registrarEventoDoLink(
 /** O aviso do evento no WhatsApp do corretor (`avisoAoCorretor.ts`). */
 export async function avisarCorretorDoLink(
   supabase: Supa,
-  p: { corretorId: string; leadId: string; tipo: TipoDeEventoDoLink; nomeLead: string | null; detalhe?: string | null },
+  p: { grupoId: string; corretorId: string; leadId: string; tipo: TipoDeEventoDoLink; nomeLead: string | null; detalhe?: string | null },
 ): Promise<boolean> {
   const texto = textoDoAvisoDoLink({
     tipo: p.tipo,
     nome: p.nomeLead,
     detalhe: p.detalhe ?? null,
-    fichaUrl: `${site.url}/corretor/leads/${p.leadId}`,
+    fichaUrl: linkDoPainel(p.grupoId, `/corretor/leads/${p.leadId}`),
   });
   return texto ? avisarCorretor(supabase, p.corretorId, texto) : false;
 }

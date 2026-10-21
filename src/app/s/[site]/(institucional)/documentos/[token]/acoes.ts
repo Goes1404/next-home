@@ -128,6 +128,7 @@ export async function confirmarEnvio(p: {
       token: p.token,
       leadId: link.leadId,
       corretorId: link.corretorId,
+      grupoId: link.grupoId,
       item: p.item,
       dados: link.dados,
     }),
@@ -138,7 +139,7 @@ export async function confirmarEnvio(p: {
 /** Evento do documento e, quando cabe, o aviso ao corretor. */
 async function registrarAvanco(
   supabase: ReturnType<typeof createServiceClient>,
-  p: { token: string; leadId: string; corretorId: string; item: string; dados: Record<string, unknown> },
+  p: { token: string; leadId: string; corretorId: string; grupoId: string; item: string; dados: Record<string, unknown> },
 ): Promise<void> {
   const [{ data: anteriores }, lista, { data: lead }] = await Promise.all([
     supabase.from("links_do_cliente_eventos").select("tipo").eq("token", p.token),
@@ -146,7 +147,7 @@ async function registrarAvanco(
     supabase.from("leads").select("nome").eq("id", p.leadId).maybeSingle(),
   ]);
   const ja = new Set((anteriores ?? []).map((e) => e.tipo));
-  const base = { token: p.token, leadId: p.leadId, corretorId: p.corretorId };
+  const base = { token: p.token, leadId: p.leadId, corretorId: p.corretorId, grupoId: p.grupoId };
 
   await registrarEventoDoLink(supabase, { ...base, tipo: "documento", detalhe: p.item });
   if (!ja.has("documento")) {

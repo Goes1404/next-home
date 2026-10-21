@@ -1,4 +1,3 @@
-import { Wordmark } from "@/components/ui/Wordmark";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -18,6 +17,9 @@ import { CabecalhoDoPainel } from "./_componentes/CabecalhoDoPainel";
 import { COOKIE_MENU_LATERAL, lerMenuRecolhido } from "./_componentes/menuLateral";
 import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
+import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
+import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
+import { ICONES_NEUTROS } from "@/lib/sites/metadados";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -25,10 +27,26 @@ import { iniciais } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 
-export const metadata: Metadata = {
-  title: { default: "Painel do corretor", template: "%s · Painel" },
-  robots: { index: false, follow: false },
-};
+/**
+ * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
+ * foi. Outro grupo não herda o nome nem o ícone dela: a aba leva o nome da
+ * casa dele, e o ícone é a logo dele ou o neutro (o manifesto do raiz é da
+ * Next Home, e o `favicon.ico` de arquivo não obedece a `icons`: anotado em
+ * docs/HANDOFF-MULTI-GRUPO.md).
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaDoPainel();
+  const base: Metadata = { robots: { index: false, follow: false } };
+  if (marca.ehNextHome) {
+    return { ...base, title: { default: "Painel do corretor", template: "%s · Painel" } };
+  }
+  return {
+    ...base,
+    title: { default: `Painel · ${marca.nome}`, template: `%s · ${marca.nome}` },
+    icons: marca.logoUrl ? { icon: [{ url: marca.logoUrl }] } : ICONES_NEUTROS,
+    manifest: null,
+  };
+}
 
 /**
  * Casca da área logada.
@@ -62,6 +80,7 @@ export default async function PainelLayout({
   if (corretor && !(await aceitouTermosVigentes(await createClient(), corretor.id))) {
     redirect("/corretor/termos");
   }
+  const marca = await marcaDoPainel();
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
   // padrão de antes (imobiliária), que só esconde o que já escondia.
@@ -70,6 +89,7 @@ export default async function PainelLayout({
   const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
 
   return (
+    <MarcaDoPainelProvider marca={{ nome: marca.nome, wordmark: marca.wordmark, logoUrl: marca.logoUrl }}>
     <CromaDoModulo className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
       {/*
         A aurora e o grão, fixos atrás de todo o painel (24/09/2026). São o
@@ -91,7 +111,7 @@ export default async function PainelLayout({
                 corretor não há gaveta para abrir. */}
             {corretor && <BotaoGaveta />}
             <Link href="/" className="font-display text-titulo text-lg">
-              <Wordmark destaque="text-acento-suave" />
+              <LogoDoPainel marca={marca} destaque="text-acento-suave" />
             </Link>
           </div>
 
@@ -169,6 +189,7 @@ export default async function PainelLayout({
         </div>
       )}
     </CromaDoModulo>
+    </MarcaDoPainelProvider>
   );
 }
 

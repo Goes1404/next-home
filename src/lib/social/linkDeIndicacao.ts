@@ -16,7 +16,7 @@ import { site } from "@/lib/site";
  * que leva a uma home sem vínculo nenhum — pior que não marcar. Aí vai o
  * endereço limpo.
  */
-export function linkDeIndicacao(slug: string | null | undefined): string {
-  const base = site.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+export function linkDeIndicacao(slug: string | null | undefined, enderecoDoCliente: string = site.url): string {
+  const base = enderecoDoCliente.replace(/^https?:\/\//, "").replace(/\/$/, "");
   return slug ? `${base}/?corretor=${slug}&origem=ig` : base;
 }

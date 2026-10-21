@@ -1,4 +1,4 @@
-import { site } from "@/lib/site";
+import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorAvatar } from "./EditorAvatar";
@@ -21,6 +21,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
   const { gmail: volta } = await searchParams;
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
+  const marca = await marcaDoPainel();
   // A caixa do Gmail (0125) só o servidor lê: o refresh token nunca sai daqui.
   const { data: contaGmail } = await createServiceClient()
     .from("contas_email_google")
@@ -76,7 +77,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
           </span>
         </div>
         <p className="text-fluid-xs mt-2 text-apoio">
-          O CRECI é gerenciado pela administração da {site.nome}.
+          O CRECI é gerenciado pela administração da {marca.nome}.
         </p>
       </div>
 

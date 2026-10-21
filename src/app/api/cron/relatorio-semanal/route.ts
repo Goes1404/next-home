@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { enviarEmail } from "@/lib/email";
-import { site } from "@/lib/site";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { coletarNumerosDaSemana } from "@/lib/admin/numerosDaSemana";
 import { leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
@@ -103,8 +104,9 @@ export async function GET(req: NextRequest) {
     for (const { id: grupoId } of grupos ?? []) {
       const numeros = await coletarNumerosDaSemana(await leituraDoGrupo(supabase, grupoId));
       const achados = acharNoticias(numeros);
-      const { texto, html } = corpoDoRelatorio({ achados, numeros, urlPainel: site.url });
-      const assunto = assuntoDoRelatorio(achados);
+      const { texto, html } = corpoDoRelatorio({ achados, numeros, urlPainel: enderecoDoPainel(grupoId) });
+      // O nome da casa no assunto é o do grupo que recebe (um por volta do laço).
+      const assunto = assuntoDoRelatorio(achados, (await lerMarcaDoCrm(grupoId)).nome);
 
       const para = await destinatarios(supabase, grupoId);
       if (para.length === 0) {

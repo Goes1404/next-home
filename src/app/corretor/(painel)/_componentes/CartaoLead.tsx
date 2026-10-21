@@ -28,14 +28,14 @@ const dataCurta = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-d
  * digitado à mão num formulário, então pode chegar com ou sem código do país;
  * `wa.me` só aceita E.164.
  */
-export function linkWhatsappLead(lead: Lead): string | null {
+export function linkWhatsappLead(lead: Lead, nomeDaCasa: string = site.nome): string | null {
   if (!lead.telefone) return null;
   const digitos = lead.telefone.replace(/\D/g, "");
   if (digitos.length < 10) return null;
   const e164 = digitos.length <= 11 ? `55${digitos}` : digitos;
   const primeiroNome = lead.nome.split(" ")[0];
 
-  let textoOrigem = `pelo site da ${site.nome}`;
+  let textoOrigem = `pelo site da ${nomeDaCasa}`;
   if (lead.portalOrigem === "zap_imoveis") textoOrigem = "pelo Zap Imóveis";
   else if (lead.portalOrigem === "vivareal") textoOrigem = "pelo VivaReal";
   else if (lead.portalOrigem === "olx") textoOrigem = "pela OLX";
@@ -47,7 +47,7 @@ export function linkWhatsappLead(lead: Lead): string | null {
 
   return linkWhatsappPara(
     e164,
-    `Olá, ${primeiroNome}! Aqui é da ${site.nome}, recebi seu contato ${textoOrigem}${textoImovel}. Como posso te ajudar?`,
+    `Olá, ${primeiroNome}! Aqui é da ${nomeDaCasa}, recebi seu contato ${textoOrigem}${textoImovel}. Como posso te ajudar?`,
   );
 }
 

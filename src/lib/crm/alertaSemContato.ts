@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
@@ -25,7 +25,7 @@ export async function alertarLeadsSemContato(supabase: Supa, agora = new Date(),
   const desde = new Date(agora.getTime() - 24 * 3_600_000).toISOString();
   const { data: candidatos } = await supabase
     .from("leads")
-    .select("id, nome, telefone, corretor_id, portal_origem, meta_lead_id, created_at")
+    .select("id, nome, telefone, corretor_id, grupo_id, portal_origem, meta_lead_id, created_at")
     .is("alerta_sem_contato_em", null)
     .is("arquivado_em", null)
     .is("nao_contatar_em", null)
@@ -65,7 +65,7 @@ export async function alertarLeadsSemContato(supabase: Supa, agora = new Date(),
       nome: nomeParaExibir(lead),
       origem,
       minutos: Math.round((agora.getTime() - new Date(lead.created_at).getTime()) / 60_000),
-      fichaUrl: `${site.url}/corretor/leads/${lead.id}`,
+      fichaUrl: linkDoPainel(lead.grupo_id, `/corretor/leads/${lead.id}`),
     });
     if (await avisarCorretor(supabase, lead.corretor_id!, texto)) avisados++;
   }

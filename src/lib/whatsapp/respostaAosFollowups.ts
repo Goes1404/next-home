@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
@@ -48,7 +48,6 @@ export async function instrucaoPelosFollowups(p: {
       ultimoFollowupEnviado(p.conversaId, "indicacao"),
     ]);
     const supabase = createServiceClient();
-    const ficha = p.leadId ? `\n${site.url}/corretor/leads/${p.leadId}` : "";
     const texto = vezDoCliente(p.historico);
 
     // O mais recente dos três é o que ele está respondendo.
@@ -63,9 +62,11 @@ export async function instrucaoPelosFollowups(p: {
     if (!alvo) return undefined;
 
     const { data: lead } = p.leadId
-      ? await supabase.from("leads").select("nome, telefone").eq("id", p.leadId).maybeSingle()
+      ? await supabase.from("leads").select("nome, telefone, grupo_id").eq("id", p.leadId).maybeSingle()
       : { data: null };
     const quem = lead ? nomeParaExibir(lead) : "Seu cliente";
+    // O link da ficha é do painel do grupo do lead (nunca o da Next Home).
+    const ficha = p.leadId && lead ? `\n${linkDoPainel(lead.grupo_id, `/corretor/leads/${p.leadId}`)}` : "";
 
     if (alvo.tipo === "pos_visita") {
       return respondeAoPosVisita(alvo.em, p.historico) ? instrucaoDaRespostaAoPosVisita() : undefined;

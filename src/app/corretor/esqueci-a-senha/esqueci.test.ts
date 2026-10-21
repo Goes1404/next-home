@@ -90,7 +90,7 @@ describe("pedirLinkDeSenha", () => {
   it("esqueci a senha responde igual exista ou não a conta", async () => {
     const comConta = await pedir("ana@exemplo.com.br");
     await rodarDepois();
-    expect(pedidosDeLink).toEqual([["recovery", "ana@exemplo.com.br", "/corretor/definir-senha"]]);
+    expect(pedidosDeLink).toEqual([["recovery", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO]]);
     expect(enviados).toEqual([["recovery", "ana@exemplo.com.br", "Imobiliária Sol", "https://site/auth/confirmar?token_hash=h&type=recovery"]]);
 
     enviados.length = 0;

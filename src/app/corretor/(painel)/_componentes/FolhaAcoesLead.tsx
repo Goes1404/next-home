@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Phone } from "lucide-react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { linkWhatsappLead } from "./CartaoLead";
+import { useNomeDaCasa } from "./NomeDaCasa";
 import { BotaoMensagemPelaIA } from "./MensagemPelaIA";
 import { cn } from "@/lib/utils";
 import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
@@ -27,7 +28,7 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
   const router = useRouter();
   const [movendo, iniciarTransicao] = useTransition();
   const { falhar } = useAvisos();
-  const whatsapp = linkWhatsappLead(lead);
+  const whatsapp = linkWhatsappLead(lead, useNomeDaCasa());
 
   useEffect(() => {
     const aoTeclar = (ev: KeyboardEvent) => {

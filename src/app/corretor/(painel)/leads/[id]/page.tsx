@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import { dataHora, diasParado, linkWhatsappLead } from "@/app/corretor/(painel)/_componentes/CartaoLead";
+import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { REGUA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BotaoAvancar } from "@/app/corretor/(painel)/_componentes/BotaoAvancar";
 import { createClient } from "@/lib/supabase/server";
@@ -81,7 +82,7 @@ export default async function FichaLeadPage({
     ]);
   const resumo = await lerResumoDoLead(supabase, id);
 
-  const whatsapp = linkWhatsappLead(lead);
+  const whatsapp = linkWhatsappLead(lead, (await marcaDoPainel()).nome);
   const parado = diasParado(lead);
 
   return (

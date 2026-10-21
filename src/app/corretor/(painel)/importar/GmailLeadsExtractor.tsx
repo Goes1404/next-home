@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
+import { site } from "@/lib/site";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { PortalOrigem } from "@/lib/inbound/types";
@@ -110,6 +112,9 @@ export function GmailLeadsExtractor({
   empreendimentos: Empreendimento[];
   ehGestor: boolean;
 }) {
+  // A grafia de sempre ("NextHome") fica na Next Home; os outros grupos leem o nome da casa deles.
+  const nomeDaCasa = useNomeDaCasa();
+  const nomeNoTexto = nomeDaCasa === site.nome ? "NextHome" : nomeDaCasa;
   const [secao, setSecao] = useState<"extrator" | "automacao" | "historico">("extrator");
   const [textoEmail, setTextoEmail] = useState("");
   const [assuntoEmail, setAssuntoEmail] = useState("");
@@ -715,7 +720,7 @@ export function GmailLeadsExtractor({
                 </div>
                 <h4 className="font-semibold text-sm text-titulo">Leads no CRM em 2s</h4>
                 <p className="text-fluid-xs text-apoio">
-                  Assim que o portal notificar novo cliente, a IA da NextHome processa, qualifica e
+                  Assim que o portal notificar novo cliente, a IA da {nomeNoTexto} processa, qualifica e
                   coloca no funil de vendas.
                 </p>
               </div>

@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { TETO_INDICACOES_POR_HORA } from "@/lib/crm/espelhoDeVendas";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -87,7 +87,7 @@ export async function indicarCliente(
     await avisarCorretor(
       supabase,
       lead.corretor_id,
-      `🤝 O parceiro ${quem} indicou ${nome}${nomeImovel ? ` para o ${nomeImovel}` : ""}. Fale com ele enquanto a indicação está quente.\n${site.url}/corretor/leads/${lead.id}`,
+      `🤝 O parceiro ${quem} indicou ${nome}${nomeImovel ? ` para o ${nomeImovel}` : ""}. Fale com ele enquanto a indicação está quente.\n${linkDoPainel(parceiro.grupo_id, `/corretor/leads/${lead.id}`)}`,
     );
   }
   return { ok: `${nome} foi indicado. Um corretor da equipe entra em contato e você acompanha com a imobiliária.` };

@@ -136,7 +136,7 @@ describe("convidar", () => {
     const r = await criarAcessoCorretor("c1", "  Ana@Gmail.com ");
 
     expect(r).toEqual({ ok: true, enviado: false, url: URL_CONVITE });
-    expect(pedidosDeLink).toEqual([["invite", "ana@gmail.com", "/corretor/definir-senha"]]);
+    expect(pedidosDeLink).toEqual([["invite", "ana@gmail.com", "/corretor/definir-senha", GRUPO_A]]);
     expect(enviados).toEqual([["invite", "ana@gmail.com", "Imobiliária Sol", URL_CONVITE]]);
     expect(corretor("c1")).toMatchObject({
       user_id: "usuario-novo",
@@ -287,7 +287,7 @@ describe("reenviar e mandar link de senha", () => {
     usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: null };
     const antes = await reenviarConvite("c3");
     expect(antes).toEqual({ ok: true, enviado: false, url: URL_CONVITE });
-    expect(pedidosDeLink[0]).toEqual(["invite", "carla@gmail.com", "/corretor/definir-senha"]);
+    expect(pedidosDeLink[0]).toEqual(["invite", "carla@gmail.com", "/corretor/definir-senha", GRUPO_A]);
 
     // Depois do primeiro login, o link de senha só vai por e-mail.
     vi.stubEnv("RESEND_API_KEY", "re_teste");
@@ -295,7 +295,7 @@ describe("reenviar e mandar link de senha", () => {
     usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
     const depois = await reenviarConvite("c3");
     expect(depois).toEqual({ ok: true, enviado: true });
-    expect(pedidosDeLink[1]).toEqual(["recovery", "carla@gmail.com", "/corretor/definir-senha"]);
+    expect(pedidosDeLink[1]).toEqual(["recovery", "carla@gmail.com", "/corretor/definir-senha", GRUPO_A]);
 
     expect(eventos().map((e) => e.acao)).toEqual(["convite_reenviado", "convite_reenviado"]);
     expect(eventos().every((e) => e.grupo_id === GRUPO_A && e.alvo_corretor_id === "c3")).toBe(true);
@@ -321,7 +321,7 @@ describe("reenviar e mandar link de senha", () => {
     usuarioDoAuth = { id: "usuario-1", email: "carla@gmail.com", last_sign_in_at: "2026-10-18T12:00:00Z" };
     respostaDoEnvio = { enviado: true, id: "m" };
     expect(await enviarLinkDeSenha("c3")).toEqual({ ok: true, enviado: true });
-    expect(pedidosDeLink).toEqual([["recovery", "carla@gmail.com", "/corretor/definir-senha"]]);
+    expect(pedidosDeLink).toEqual([["recovery", "carla@gmail.com", "/corretor/definir-senha", GRUPO_A]]);
     expect(eventos()[0]).toMatchObject({ acao: "link_de_senha_enviado", alvo_corretor_id: "c3", grupo_id: GRUPO_A });
   });
 });
@@ -345,7 +345,7 @@ describe("trocar e-mail", () => {
     expect(trocasNoAuth).toEqual([{ id: "usuario-4", dados: { email: "duda@gmail.com", email_confirm: true } }]);
     expect(corretor("c4").email).toBe("duda@gmail.com");
     expect(eventos()[0]).toMatchObject({ acao: "email_alterado", alvo_corretor_id: "c4", grupo_id: GRUPO_A });
-    expect(pedidosDeLink).toEqual([["recovery", "duda@gmail.com", "/corretor/definir-senha"]]);
+    expect(pedidosDeLink).toEqual([["recovery", "duda@gmail.com", "/corretor/definir-senha", GRUPO_A]]);
   });
 
   it("e-mail novo em uso tem a frase neutra", async () => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import {
   organizarFila,
   resumoDoCandidato,
@@ -19,26 +20,30 @@ import { decidirCandidato } from "./acoes";
  * do mercado da Next Home; "já temos" é sinal de que o imóvel pode estar
  * cadastrado com outro nome — e aí o que falta é apelido, não cadastro.
  */
-const BOTOES: { decisao: DecisaoCandidato; rotulo: string; motivo: string; tom: string }[] = [
-  {
-    decisao: "cadastrar",
-    rotulo: "Vamos cadastrar",
-    motivo: "a Next Home representa ou vai representar",
-    tom: "border-acento-linha text-titulo hover:bg-elevado",
-  },
-  {
-    decisao: "descartado",
-    rotulo: "Não é nosso",
-    motivo: "não é da carteira da Next Home",
-    tom: "border-linha text-corpo hover:bg-elevado",
-  },
-  {
-    decisao: "ja_temos",
-    rotulo: "Já temos",
-    motivo: "já está no catálogo (conferir se falta apelido)",
-    tom: "border-linha text-corpo hover:bg-elevado",
-  },
-];
+type BotaoDaFila = { decisao: DecisaoCandidato; rotulo: string; motivo: string; tom: string };
+
+function botoesDaFila(nomeDaCasa: string): BotaoDaFila[] {
+  return [
+    {
+      decisao: "cadastrar",
+      rotulo: "Vamos cadastrar",
+      motivo: `a ${nomeDaCasa} representa ou vai representar`,
+      tom: "border-acento-linha text-titulo hover:bg-elevado",
+    },
+    {
+      decisao: "descartado",
+      rotulo: "Não é nosso",
+      motivo: `não é da carteira da ${nomeDaCasa}`,
+      tom: "border-linha text-corpo hover:bg-elevado",
+    },
+    {
+      decisao: "ja_temos",
+      rotulo: "Já temos",
+      motivo: "já está no catálogo (conferir se falta apelido)",
+      tom: "border-linha text-corpo hover:bg-elevado",
+    },
+  ];
+}
 
 const NOME_DA_DECISAO: Record<DecisaoCandidato, string> = {
   pendente: "esperando decisão",
@@ -62,6 +67,7 @@ function LinkDaFonte({ href }: { href: string | null }) {
 }
 
 export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[] }) {
+  const nomeDaCasa = useNomeDaCasa();
   const [pendente, iniciar] = useTransition();
   const [emAndamento, setEmAndamento] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -126,7 +132,7 @@ export function FilaCandidatos({ candidatos }: { candidatos: readonly Candidato[
                 )}
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {BOTOES.map((b) => (
+                  {botoesDaFila(nomeDaCasa).map((b) => (
                     <button
                       key={b.decisao}
                       type="button"

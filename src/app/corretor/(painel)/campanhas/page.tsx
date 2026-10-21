@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { CampanhasManager } from "./CampanhasManager";
 import { carregarListaParaReabrir, listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -10,9 +11,10 @@ import { getListasSugeridas } from "@/lib/crm/listasSugeridasDados";
 import { descreverLista, lerDiasDeParado } from "@/lib/crm/listasSugeridas";
 import type { InicialDaLista } from "./_componentes/NovaCampanha";
 
-export const metadata: Metadata = {
-  title: "Listas de Transmissão de WhatsApp | Next Home",
-};
+// O nome depois da barra é o da casa de quem está logado (a Next Home no grupo 1).
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `Listas de Transmissão de WhatsApp | ${(await marcaDoPainel()).nome}` };
+}
 
 /**
  * Criar a lista confere os números no WhatsApp antes de responder; o teto

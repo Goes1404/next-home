@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
 import {
@@ -54,7 +55,7 @@ function IconeWhatsapp({ className }: { className?: string }) {
 
 /** Ações de contato — os mesmos três atalhos do cartão antigo, em 36px. */
 function AcoesContato({ lead, aoVivo = false }: { lead: Lead; aoVivo?: boolean }) {
-  const whatsapp = linkWhatsappLead(lead);
+  const whatsapp = linkWhatsappLead(lead, useNomeDaCasa());
   const parar = aoVivo ? (e: React.MouseEvent) => e.stopPropagation() : undefined;
 
   return (
@@ -198,6 +199,7 @@ export function TabelaLeads({
   const [leadFolha, setLeadFolha] = useState<Lead | null>(null);
 
   const alternar = (id: string) => setAbertoId((atual) => (atual === id ? null : id));
+  const nomeDaCasa = useNomeDaCasa();
 
   return (
     <div className="cartao overflow-hidden">
@@ -209,7 +211,7 @@ export function TabelaLeads({
       <ul className="divide-y divide-linha md:hidden">
         {leads.map((lead) => {
           const aberto = abertoId === lead.id;
-          const whatsapp = linkWhatsappLead(lead);
+          const whatsapp = linkWhatsappLead(lead, nomeDaCasa);
           return (
             <li key={lead.id}>
               <div

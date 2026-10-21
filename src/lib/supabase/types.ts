@@ -1716,6 +1716,7 @@ export type Database = {
           ia_nome_da_casa: string | null
           ia_regiao: string | null
           ia_tom: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
+          logo_url: string | null
           id: string
           mensalidade: number | null
           nome: string
@@ -1750,6 +1751,7 @@ export type Database = {
           ia_nome_da_casa?: string | null
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
+          logo_url?: string | null
           id?: string
           mensalidade?: number | null
           nome: string
@@ -1784,6 +1786,7 @@ export type Database = {
           ia_nome_da_casa?: string | null
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
+          logo_url?: string | null
           id?: string
           mensalidade?: number | null
           nome?: string

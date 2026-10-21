@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
@@ -49,7 +49,7 @@ export async function processarLembretesDeTarefa(supabase: Supa, agora = new Dat
 
     const { data: lead } = await supabase
       .from("leads")
-      .select("nome, telefone, arquivado_em")
+      .select("nome, telefone, arquivado_em, grupo_id")
       .eq("id", tarefa.lead_id)
       .maybeSingle();
     // Lead arquivado: a tarefa ficou para trás junto com ele.
@@ -61,7 +61,7 @@ export async function processarLembretesDeTarefa(supabase: Supa, agora = new Dat
     const texto = formatarLembreteWhatsapp({
       texto: tarefa.titulo,
       leadNome: nomeParaExibir(lead),
-      link: `${site.url}/corretor/leads/${tarefa.lead_id}`,
+      link: linkDoPainel(lead.grupo_id, `/corretor/leads/${tarefa.lead_id}`),
     });
 
     if (await avisarCorretor(supabase, tarefa.corretor_id, texto)) {

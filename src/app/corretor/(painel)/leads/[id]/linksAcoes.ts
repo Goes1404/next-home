@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { compatibilidade, perfilDoLead } from "@/lib/crm/compatibilidade";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { validarProposta, type EntradaDaProposta } from "@/lib/crm/proposta";
@@ -38,7 +38,7 @@ async function leadDaCarteira(leadId: string) {
 
 async function gravar(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  p: { tipo: TipoDeLink; leadId: string; corretorId: string; dados: Record<string, unknown>; nome: string; expiraEm?: string },
+  p: { tipo: TipoDeLink; leadId: string; corretorId: string; grupoId: string; dados: Record<string, unknown>; nome: string; expiraEm?: string },
 ): Promise<LinkCriado> {
   const { data, error } = await supabase
     .from("links_do_cliente")
@@ -53,7 +53,7 @@ async function gravar(
     .single();
   if (error || !data) return { erro: "Não foi possível criar o link agora." };
   revalidatePath(`/corretor/leads/${p.leadId}`);
-  const url = `${site.url}${caminhoDoLink(p.tipo, data.token)}`;
+  const url = `${await lerEnderecoDoCliente(p.grupoId)}${caminhoDoLink(p.tipo, data.token)}`;
   const primeiroNome = p.nome.trim().split(/\s+/)[0] || null;
   return { url, mensagem: mensagemParaCliente({ tipo: p.tipo, primeiroNome, url }) };
 }
@@ -152,6 +152,7 @@ export async function criarSelecao(leadId: string, escolhidos: string[]): Promis
     tipo: "selecao",
     leadId,
     corretorId: corretor.id,
+    grupoId: corretor.grupoId,
     nome: lead.nome,
     // Só os imóveis: a renda do cliente não viaja num link compartilhável.
     dados: { empreendimentos: ids },
@@ -171,6 +172,7 @@ export async function criarProposta(leadId: string, entrada: EntradaDaProposta):
     tipo: "proposta",
     leadId,
     corretorId: r.corretor.id,
+    grupoId: r.corretor.grupoId,
     nome: r.lead.nome,
     dados: v.dados,
   });
@@ -195,13 +197,14 @@ export async function criarPortal(leadId: string): Promise<LinkCriado> {
     .limit(1)
     .maybeSingle();
   if (existente) {
-    const url = `${site.url}${caminhoDoLink("portal", existente.token)}`;
+    const url = `${await lerEnderecoDoCliente(r.corretor.grupoId)}${caminhoDoLink("portal", existente.token)}`;
     return { url, mensagem: mensagemParaCliente({ tipo: "portal", primeiroNome, url }) };
   }
   return gravar(r.supabase, {
     tipo: "portal",
     leadId,
     corretorId: r.corretor.id,
+    grupoId: r.corretor.grupoId,
     nome: r.lead.nome,
     dados: {},
     // Obra na planta leva anos: o link acompanha o cliente até as chaves.

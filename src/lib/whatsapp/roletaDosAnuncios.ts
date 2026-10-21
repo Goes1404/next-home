@@ -6,7 +6,8 @@ import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { registrarInteracao } from "@/lib/crm/interacoes";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { primeiroNome } from "@/lib/format";
-import { site } from "@/lib/site";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "./roletaTextos";
 
 type Supa = ReturnType<typeof createServiceClient>;
@@ -65,6 +66,9 @@ async function repassar(
   const imovel = (Array.isArray(lead.empreendimento) ? lead.empreendimento[0] : lead.empreendimento)?.nome ?? null;
   const cliente = primeiroNomeUtil(lead.nome ?? p.nomeCliente);
 
+  // O nome da casa é o do grupo do lead (cache de 60 s; o grupo 1 não consulta).
+  const imobiliaria = (await lerMarcaDoCrm(lead.grupo_id)).nome;
+
   const excluidos: string[] = [];
   for (let tentativa = 0; tentativa < 10; tentativa++) {
     const { data: destino, error } = await supabase.rpc("proximo_da_roleta", {
@@ -97,7 +101,7 @@ async function repassar(
       corretor: primeiroNome(novo.nome),
       cliente,
       imovel,
-      imobiliaria: site.nome,
+      imobiliaria,
     };
     const abertura = preencherTexto(roleta.texto_abertura || TEXTO_ABERTURA_PADRAO, vars);
     const envio = await enviarMensagemWhatsapp({
@@ -152,7 +156,7 @@ async function repassar(
     await avisarCorretor(
       supabase,
       destino,
-      `*🎯 Lead de anúncio para você: ${nomeNoAviso}*\nVeio pela roleta. Já mandei a primeira mensagem do seu número; a conversa é sua.\n${site.url}/corretor/leads/${p.leadId}`,
+      `*🎯 Lead de anúncio para você: ${nomeNoAviso}*\nVeio pela roleta. Já mandei a primeira mensagem do seu número; a conversa é sua.\n${linkDoPainel(lead.grupo_id, `/corretor/leads/${p.leadId}`)}`,
       `/corretor/leads/${p.leadId}`,
     );
     return destino;

@@ -99,3 +99,41 @@ describe("o matcher do proxy", async () => {
     expect(passa("/_next/static/x.js")).toBe(false);
   });
 });
+
+describe("proxy e o endereço só do CRM (astroimob.vercel.app)", () => {
+  const CRM = "astroimob.vercel.app";
+
+  async function localizacao(caminho: string): Promise<string | null> {
+    const req = new NextRequest(new URL(caminho, `https://${CRM}`), { headers: { host: CRM } });
+    const r = await proxy(req);
+    const alvo = r.headers.get("location");
+    return alvo ? new URL(alvo).pathname : null;
+  }
+
+  it("página do site vai para o painel", async () => {
+    expect(await localizacao("/")).toBe("/corretor");
+    expect(await localizacao("/sobre")).toBe("/corretor");
+    expect(await localizacao("/empreendimentos/dom-barueri")).toBe("/corretor");
+  });
+
+  it("as páginas de token que o cliente recebe abrem ali mesmo", async () => {
+    for (const caminho of [
+      "/selecao/abc",
+      "/selecao/abc/ir/dom-barueri",
+      "/documentos/abc",
+      "/proposta/abc",
+      "/portal/abc",
+      "/contador/abc",
+      "/parceiro/abc",
+    ]) {
+      expect(await localizacao(caminho), caminho).toBeNull();
+      expect(await reescrita(caminho, CRM), caminho).toBe(`/s/${CRM}${caminho}`);
+    }
+  });
+
+  it("a raiz de uma rota de token, sem token, continua indo para o painel", async () => {
+    expect(await localizacao("/selecao")).toBe("/corretor");
+    expect(await localizacao("/selecao/")).toBe("/corretor");
+    expect(await localizacao("/documentosx/abc")).toBe("/corretor");
+  });
+});

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { autorizarEnvio, conferirArquivoEnviado } from "@/lib/crm/envioAutorizado";
 import {
   caminhoDoLink,
@@ -291,7 +291,7 @@ export async function linkDosDocumentos(leadId: string, fase: string, perfil: st
   }
   const primeiroNome = r.lead.nome.trim().split(/\s+/)[0] || null;
   if (daFase.link?.valido) {
-    const url = `${site.url}${caminhoDoLink("documentos", daFase.link.token)}`;
+    const url = `${await lerEnderecoDoCliente(r.corretor.grupoId)}${caminhoDoLink("documentos", daFase.link.token)}`;
     return { url, mensagem: mensagemParaCliente({ tipo: "documentos", primeiroNome, url }) };
   }
   const { data, error } = await r.supabase
@@ -301,7 +301,7 @@ export async function linkDosDocumentos(leadId: string, fase: string, perfil: st
     .single();
   if (error || !data) return { erro: "Não foi possível criar o link agora." };
   revalidar(leadId);
-  const url = `${site.url}${caminhoDoLink("documentos", data.token)}`;
+  const url = `${await lerEnderecoDoCliente(r.corretor.grupoId)}${caminhoDoLink("documentos", data.token)}`;
   return { url, mensagem: mensagemParaCliente({ tipo: "documentos", primeiroNome, url }) };
 }
 

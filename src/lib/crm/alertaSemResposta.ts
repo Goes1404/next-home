@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { enderecoDoPainel, linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
@@ -33,7 +33,7 @@ export async function alertarClientesSemResposta(supabase: Supa, agora = new Dat
   const desde = new Date(agora.getTime() - HORAS_LIMITE_DO_AVISO * 3_600_000).toISOString();
   const { data: esperando } = await supabase
     .from("whatsapp_esperando_resposta")
-    .select("conversa_id, corretor_id, lead_id, nome_cliente, telefone_cliente, esperando_desde")
+    .select("conversa_id, corretor_id, grupo_id, lead_id, nome_cliente, telefone_cliente, esperando_desde")
     .gte("esperando_desde", desde)
     .lte("esperando_desde", ate)
     .order("esperando_desde", { ascending: true })
@@ -56,6 +56,7 @@ export async function alertarClientesSemResposta(supabase: Supa, agora = new Dat
   const leadPorId = new Map((leads ?? []).map((l) => [l.id, l]));
 
   const porCorretor = new Map<string, EsperaParaAviso[]>();
+  const grupoDoCorretor = new Map<string, string>();
 
   for (const linha of linhas) {
     const conversa = conversaPorId.get(linha.conversa_id!);
@@ -107,14 +108,15 @@ export async function alertarClientesSemResposta(supabase: Supa, agora = new Dat
       nome: nomeParaExibir({ nome: lead.nome ?? linha.nome_cliente, telefone: lead.telefone ?? linha.telefone_cliente }),
       minutos: decisao.minutos,
       iaDesligada: !conversa.bot_ativo,
-      link: `${site.url}/corretor/conversas?c=${conversa.id}`,
+      link: linkDoPainel(linha.grupo_id!, `/corretor/conversas?c=${conversa.id}`),
     });
     porCorretor.set(linha.corretor_id!, lista);
+    grupoDoCorretor.set(linha.corretor_id!, linha.grupo_id!);
   }
 
   let avisados = 0;
   for (const [corretorId, esperas] of porCorretor) {
-    if (await avisarCorretor(supabase, corretorId, textoDoAvisoSemResposta(esperas, site.url))) {
+    if (await avisarCorretor(supabase, corretorId, textoDoAvisoSemResposta(esperas, enderecoDoPainel(grupoDoCorretor.get(corretorId)!)))) {
       avisados += esperas.length;
     }
   }

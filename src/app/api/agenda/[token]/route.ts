@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { ehToken, montarIcs, type VisitaDoFeed } from "@/lib/crm/agendaIcs";
-import { site } from "@/lib/site";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { enderecoDoPainel, hostDoEndereco, linkDoPainel } from "@/lib/marcaDoCrm/marca";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
   const supabase = createServiceClient();
   const { data: agenda } = await supabase
     .from("corretor_agenda")
-    .select("corretor:corretores(id, nome, ativo)")
+    .select("corretor:corretores(id, nome, ativo, grupo_id)")
     .eq("token", token)
     .maybeSingle();
   const corretor = Array.isArray(agenda?.corretor) ? agenda?.corretor[0] : agenda?.corretor;
@@ -53,13 +54,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
       imovel: e?.nome ?? null,
       endereco: endereco || null,
       confirmada: Boolean(l.visita_confirmada_em),
-      linkFicha: `${site.url}/corretor/leads/${l.id}`,
+      linkFicha: linkDoPainel(corretor.grupo_id, `/corretor/leads/${l.id}`),
     };
   });
 
   const corpo = montarIcs(visitas, {
-    nomeCalendario: `Visitas ${site.nome} — ${corretor.nome}`,
-    dominio: new URL(site.url).hostname,
+    nomeCalendario: `Visitas ${(await lerMarcaDoCrm(corretor.grupo_id)).nome} — ${corretor.nome}`,
+    dominio: hostDoEndereco(enderecoDoPainel(corretor.grupo_id)),
   });
   return new Response(corpo, {
     headers: {

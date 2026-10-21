@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
@@ -7,9 +8,10 @@ import { FRASE_NUMERO_EM_OUTRO_GRUPO } from "@/lib/whatsapp/numeroDeUmGrupo";
 import { fixadoPeloGrupoDaLeitura } from "@/lib/whatsapp/casa";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
-export const metadata: Metadata = {
-  title: "Meu Assistente WhatsApp IA | Next Home",
-};
+// O nome depois da barra é o da casa de quem está logado (a Next Home no grupo 1).
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `Meu Assistente WhatsApp IA | ${(await marcaDoPainel()).nome}` };
+}
 
 export default async function WhatsappPainelPage() {
   const corretor = await getCorretorLogado();

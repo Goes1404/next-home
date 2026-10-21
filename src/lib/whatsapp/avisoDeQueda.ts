@@ -1,7 +1,7 @@
 import "server-only";
 
 import { enviarEmail } from "@/lib/email";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import {
@@ -225,9 +225,9 @@ export async function avisarQuedaSeNecessario(
 
     const { data: corretor } = await supabase
       .from("corretores")
-      .select("nome, email, user_id")
+      .select("nome, email, user_id, grupo_id")
       .eq("id", data.corretor_id)
-      .maybeSingle<{ nome: string; email: string | null; user_id: string | null }>();
+      .maybeSingle<{ nome: string; email: string | null; user_id: string | null; grupo_id: string }>();
 
     if (!corretor) return;
 
@@ -242,7 +242,7 @@ export async function avisarQuedaSeNecessario(
 
     const { assunto, html, texto } = montarEmailDeQueda(aviso, {
       nomeCorretor: corretor.nome,
-      urlPainel: site.url,
+      urlPainel: enderecoDoPainel(corretor.grupo_id),
     });
 
     const resultado = await enviarEmail({ para: email, assunto, html, texto });

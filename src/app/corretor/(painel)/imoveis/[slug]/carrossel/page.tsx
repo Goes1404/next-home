@@ -4,6 +4,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { montarCarrossel } from "@/lib/social/carrossel";
 import { legendaDoPost } from "@/lib/social/legenda";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import { CopiarLegenda } from "./CopiarLegenda";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -38,7 +39,7 @@ export default async function CarrosselPage({
   const imovel = await getEmpreendimentoDoPainel(slug);
   if (!imovel) notFound();
 
-  const link = linkDeIndicacao(corretor.slug);
+  const link = linkDeIndicacao(corretor.slug, await lerEnderecoDoCliente(corretor.grupoId));
   const slides = montarCarrossel({ imovel, linkDaChamada: link });
   const legenda = legendaDoPost({ imovel, linkDaChamada: link, nomeCorretor: corretor.nome });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Wordmark } from "@/components/ui/Wordmark";
+import { LogoDoPainel, useMarcaDoPainel } from "./_componentes/NomeDaCasa";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -87,6 +87,7 @@ function Chevron({ aberto, className }: { aberto: boolean; className?: string })
 }
 
 export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; tipoDoGrupo: TipoDoGrupo }) {
+  const marca = useMarcaDoPainel();
   const atual = usePathname();
   const aberta = useGavetaAberta(atual);
   const montado = useMontado();
@@ -207,11 +208,11 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
             aria-hidden
             className="bg-acento text-sobre-cor font-display grid h-10 w-10 place-items-center rounded-xl text-lg"
           >
-            N
+            {marca.nome.trim().charAt(0).toUpperCase() || "N"}
           </span>
           <div className="min-w-0 leading-tight">
             <p className="font-display text-titulo text-lg">
-              <Wordmark destaque="text-acento-suave" />
+              <LogoDoPainel marca={marca} destaque="text-acento-suave" />
             </p>
             <p className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase">
               Painel do corretor

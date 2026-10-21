@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import type { RascunhoCadastro as Rascunho } from "@/lib/imoveis/rascunhoDePdf";
 import { adicionarMidiaExterna } from "../../actions";
 import {
@@ -45,6 +46,7 @@ export function OrigemSite({
   /** O link da última leitura (0113): vira o atalho "Buscar novidades". */
   siteSalvo?: string;
 }) {
+  const nomeDaCasa = useNomeDaCasa();
   const [link, setLink] = useState(linkInicial ?? siteSalvo ?? "");
   const [mostrarTrazidas, setMostrarTrazidas] = useState(false);
   const [lendo, setLendo] = useState(false);
@@ -474,7 +476,7 @@ export function OrigemSite({
       {analise && (itens.length > 0 || analise.midias.length > 0) ? (
         <div className="space-y-2">
           <p className="text-fluid-xs text-apoio">
-            As fotos são da construtora: traga só as de imóveis que a Next Home representa.
+            As fotos são da construtora: traga só as de imóveis que a {nomeDaCasa} representa.
           </p>
           <button
             type="button"

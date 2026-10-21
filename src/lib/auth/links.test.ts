@@ -37,6 +37,7 @@ vi.mock("@/lib/email", () => ({
 const { gerarLinkDeAcesso } = await import("./links");
 const { enviarLinkDeAcesso } = await import("./emailsDeAcesso");
 const { site } = await import("@/lib/site");
+const { GRUPO_NEXT_HOME_ID } = await import("@/lib/grupos/grupo");
 
 const linkDoSupabase = "https://projeto.supabase.co/auth/v1/verify?token=abc&type=invite&redirect_to=x";
 
@@ -54,7 +55,7 @@ beforeEach(() => {
 
 describe("gerarLinkDeAcesso", () => {
   it("gerarLinkDeAcesso monta a URL do nosso domínio com token_hash", async () => {
-    const r = await gerarLinkDeAcesso("invite", "ana@exemplo.com.br", "/corretor/definir-senha");
+    const r = await gerarLinkDeAcesso("invite", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID);
 
     expect(r).toEqual({
       ok: true,
@@ -67,21 +68,28 @@ describe("gerarLinkDeAcesso", () => {
     expect(chamadas[0]).toMatchObject({ type: "invite", email: "ana@exemplo.com.br" });
   });
 
+  it("o grupo de fora da Next Home recebe o link do painel do CRM, nunca o da Next Home", async () => {
+    const r = await gerarLinkDeAcesso("invite", "ana@exemplo.com.br", "/corretor/definir-senha", "00000000-0000-0000-0000-0000000000b2");
+    if (!r.ok) throw new Error("deveria ter gerado");
+    expect(r.url.startsWith("https://astroimob.vercel.app/auth/confirmar?")).toBe(true);
+    expect(r.url).not.toContain(new URL(site.url).host);
+  });
+
   it("recuperação usa o mesmo formato, com type=recovery", async () => {
-    const r = await gerarLinkDeAcesso("recovery", "ana@exemplo.com.br", "/corretor/definir-senha");
+    const r = await gerarLinkDeAcesso("recovery", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID);
     expect(r.ok && new URL(r.url).searchParams.get("type")).toBe("recovery");
     expect(chamadas[0]).toMatchObject({ type: "recovery" });
   });
 
   it("recusa endereço de acesso @nexthome.com", async () => {
-    const r = await gerarLinkDeAcesso("recovery", "Fulano@NextHome.com", "/corretor/definir-senha");
+    const r = await gerarLinkDeAcesso("recovery", "Fulano@NextHome.com", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID);
     expect(r).toEqual({ ok: false, motivo: "email_de_acesso" });
     expect(chamadas).toHaveLength(0);
   });
 
   it("e-mail que já tem conta no convite vira email_em_uso", async () => {
     resposta = { data: { user: null, properties: null }, error: { code: "email_exists", message: "already registered" } };
-    expect(await gerarLinkDeAcesso("invite", "ana@exemplo.com.br", "/corretor/definir-senha")).toEqual({
+    expect(await gerarLinkDeAcesso("invite", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID)).toEqual({
       ok: false,
       motivo: "email_em_uso",
     });
@@ -89,7 +97,7 @@ describe("gerarLinkDeAcesso", () => {
 
   it("qualquer outra falha vira falha, sem lançar", async () => {
     resposta = { data: { user: null, properties: null }, error: { code: "user_not_found", message: "User not found" } };
-    expect(await gerarLinkDeAcesso("recovery", "ninguem@exemplo.com.br", "/corretor/definir-senha")).toEqual({
+    expect(await gerarLinkDeAcesso("recovery", "ninguem@exemplo.com.br", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID)).toEqual({
       ok: false,
       motivo: "falha",
     });
@@ -97,7 +105,7 @@ describe("gerarLinkDeAcesso", () => {
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("ninguem@");
 
     resposta = { data: { user: { id: "u" }, properties: { hashed_token: "" } }, error: null };
-    expect(await gerarLinkDeAcesso("recovery", "ana@exemplo.com.br", "/corretor/definir-senha")).toEqual({
+    expect(await gerarLinkDeAcesso("recovery", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO_NEXT_HOME_ID)).toEqual({
       ok: false,
       motivo: "falha",
     });

@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
@@ -70,7 +70,7 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
 
     const texto = montarResumoDoDia(
       { ...(await coletar(supabase, corretor.id, corretor.grupo_id, hoje, agora)), nomeCorretor: corretor.nome },
-      site.url,
+      enderecoDoPainel(corretor.grupo_id),
     );
     if (!texto) continue;
 
@@ -83,7 +83,7 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
 
 async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje: string, agora: Date) {
   const { inicio, fim } = limitesDoDiaSP(hoje);
-  const painel = `${site.url}/corretor`;
+  const painel = `${enderecoDoPainel(grupoId)}/corretor`;
 
   const [visitas, esperando, novos, lembretes] = await Promise.all([
     supabase

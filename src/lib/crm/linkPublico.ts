@@ -58,7 +58,7 @@ export async function lerLinkPublico(
       .is("aberto_em", null)
       .select("token");
     if (carimbou && carimbou.length > 0) {
-      const evento = { token, leadId: link.lead_id, corretorId: link.corretor_id, tipo: "abriu" as const };
+      const evento = { token, leadId: link.lead_id, corretorId: link.corretor_id, grupoId: link.grupo_id, tipo: "abriu" as const };
       after(async () => {
         await registrarEventoDoLink(supabase, evento);
         if (tipo === "selecao" || tipo === "proposta") {

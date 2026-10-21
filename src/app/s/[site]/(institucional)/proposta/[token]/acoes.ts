@@ -39,7 +39,7 @@ export async function responderProposta(
   if (ultima?.tipo === resposta) return { ok: true };
 
   const detalhe = `${proposta.imovel}${proposta.unidade ? `, unidade ${proposta.unidade}` : ""}, ${formatarMoedaBRL(proposta.valor)}`;
-  const evento = { token, leadId: link.leadId, corretorId: link.corretorId, tipo: resposta, detalhe };
+  const evento = { token, leadId: link.leadId, corretorId: link.corretorId, grupoId: link.grupoId, tipo: resposta, detalhe };
   await registrarEventoDoLink(supabase, evento);
   after(async () => {
     const { data: lead } = await supabase.from("leads").select("nome").eq("id", link.leadId).maybeSingle();

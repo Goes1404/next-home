@@ -36,7 +36,7 @@ import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
@@ -764,7 +764,7 @@ async function processarLembretesDeAnotacao(
           .select("instance_name, status_conexao")
           .eq("corretor_id", nota.destinatario_id)
           .maybeSingle(),
-        supabase.from("corretores").select("whatsapp").eq("id", nota.destinatario_id).maybeSingle(),
+        supabase.from("corretores").select("whatsapp, grupo_id").eq("id", nota.destinatario_id).maybeSingle(),
         nota.corretor_id !== nota.destinatario_id
           ? supabase.from("corretores").select("nome").eq("id", nota.corretor_id).maybeSingle()
           : Promise.resolve({ data: null }),
@@ -786,7 +786,7 @@ async function processarLembretesDeAnotacao(
         texto: nota.texto,
         leadNome: lead?.nome ?? null,
         autorNome: autor?.nome ?? null,
-        link: nota.lead_id ? `${site.url}/corretor/leads/${nota.lead_id}` : null,
+        link: nota.lead_id ? linkDoPainel(destinatario.grupo_id, `/corretor/leads/${nota.lead_id}`) : null,
       }),
     });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { chegouEm } from "@/lib/types";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { useState } from "react";
 import type { Lead } from "@/lib/types";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
@@ -15,6 +16,7 @@ interface Props {
 export function ModalDossieLead({ lead, onFechar }: Props) {
   const [aba, setAba] = useState<"dossie" | "chat">("dossie");
   const [botAtivo, setBotAtivo] = useState(true);
+  const nomeDaCasa = useNomeDaCasa();
 
   if (!lead) return null;
 
@@ -24,7 +26,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
   const temperaturaScore =
     chegouEm(lead.etapa, "visita_agendada") ? 92 : 65;
   const isQuente = temperaturaScore >= 75;
-  const linkWhatsapp = linkWhatsappLead(lead);
+  const linkWhatsapp = linkWhatsappLead(lead, nomeDaCasa);
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

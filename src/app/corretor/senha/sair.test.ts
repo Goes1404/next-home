@@ -75,7 +75,7 @@ beforeEach(() => {
 describe("sair e receber novo link", () => {
   it("manda o link para o e-mail do Auth da sessão e só então sai", async () => {
     expect(await apertar()).toBe("/corretor/esqueci-a-senha?enviado=conta");
-    expect(pedidosDeLink).toEqual([["recovery", "ana@exemplo.com.br", "/corretor/definir-senha"]]);
+    expect(pedidosDeLink).toEqual([["recovery", "ana@exemplo.com.br", "/corretor/definir-senha", GRUPO]]);
     expect(saidas).toBe(1);
     expect(banco.tabelas.admin_eventos).toHaveLength(1);
   });

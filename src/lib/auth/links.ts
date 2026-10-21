@@ -1,7 +1,7 @@
 import "server-only";
 
 import { ehEmailDeAcesso } from "@/lib/corretores/credenciaisIniciais";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -79,10 +79,17 @@ export function destinoSeguro(next: string | null | undefined): string {
  * Recusa o endereço de acesso antigo (`@nexthome.com`): o domínio é de
  * terceiro, e o link de entrada iria para a caixa de um estranho.
  */
-export async function gerarLinkDeAcesso(tipo: TipoDeLink, email: string, next: string): Promise<LinkDeAcesso> {
+export async function gerarLinkDeAcesso(
+  tipo: TipoDeLink,
+  email: string,
+  next: string,
+  grupoId: string,
+): Promise<LinkDeAcesso> {
   if (ehEmailDeAcesso(email)) return { ok: false, motivo: "email_de_acesso" };
 
-  const base = site.url.replace(/\/+$/, "");
+  // O link leva a pessoa ao painel do grupo dela: o da Next Home no grupo 1,
+  // o endereço do CRM (`PAINEL_URL`) nos outros.
+  const base = enderecoDoPainel(grupoId);
   // O `redirectTo` não é usado pelo nosso link (o `action_link` é
   // descartado), mas vai coerente: se um dia alguém usar o link do Supabase,
   // ele cai na mesma rota.

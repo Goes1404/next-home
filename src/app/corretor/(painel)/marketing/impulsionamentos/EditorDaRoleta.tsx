@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { salvarRoleta } from "./roletaAcoes";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "@/lib/whatsapp/roletaTextos";
 import { primeiroNome } from "@/lib/format";
@@ -37,6 +38,7 @@ export function EditorDaRoleta({
   );
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [salvando, iniciar] = useTransition();
+  const nomeDaCasa = useNomeDaCasa();
 
   const c = rascunhos[donoId];
   const nomeDe = useMemo(() => new Map(equipe.map((m) => [m.id, m])), [equipe]);
@@ -72,7 +74,7 @@ export function EditorDaRoleta({
   }
 
   const primeiro = c.destinos[0] ? primeiroNome(nomeDe.get(c.destinos[0])?.nome ?? "") : "Bruna";
-  const exemplo = { corretor: primeiro, cliente: "Ana", imovel: "Dom Parque", imobiliaria: "Next Home" };
+  const exemplo = { corretor: primeiro, cliente: "Ana", imovel: "Dom Parque", imobiliaria: nomeDaCasa };
   const foraDaLista = equipe.filter((m) => !c.destinos.includes(m.id));
 
   return (

@@ -2,7 +2,7 @@ import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { notificarCorretor } from "@/lib/notificacoes/push";
 import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
-import { site } from "@/lib/site";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 
 type Supa = ReturnType<typeof createServiceClient>;
 
@@ -49,7 +49,7 @@ export async function avisarLeadsNovos(supabase: Supa, agora = new Date(), somen
   const desde = new Date(agora.getTime() - JANELA_MIN * 60_000).toISOString();
   let consulta = supabase
     .from("leads")
-    .select("id, nome, telefone, origem, anuncio_origem, corretor_id")
+    .select("id, nome, telefone, origem, anuncio_origem, corretor_id, grupo_id")
     .is("aviso_lead_novo_em", null)
     .is("arquivado_em", null)
     .not("corretor_id", "is", null)
@@ -73,8 +73,16 @@ export async function avisarLeadsNovos(supabase: Supa, agora = new Date(), somen
     await supabase.from("leads").update({ aviso_lead_novo_em: agora.toISOString() }).in("id", proprios).is("aviso_lead_novo_em", null);
   }
 
+  const aAvisar = (leads ?? []).filter((x) => !cadastradoPeloCorretor(x.origem));
+  // O nome da casa no título é o do grupo do lead: lido UMA vez por grupo
+  // antes do laço (o grupo 1 não consulta nada).
+  const nomeDaCasa = new Map<string, string>();
+  for (const grupoId of new Set(aAvisar.map((x) => x.grupo_id))) {
+    nomeDaCasa.set(grupoId, (await lerMarcaDoCrm(grupoId)).nome);
+  }
+
   let avisados = 0;
-  for (const l of (leads ?? []).filter((x) => !cadastradoPeloCorretor(x.origem))) {
+  for (const l of aAvisar) {
     const { data: claim } = await supabase
       .from("leads")
       .update({ aviso_lead_novo_em: agora.toISOString() })
@@ -83,7 +91,7 @@ export async function avisarLeadsNovos(supabase: Supa, agora = new Date(), somen
       .select("id");
     if (!claim?.length) continue;
     const n = await notificarCorretor(supabase, l.corretor_id!, {
-      titulo: `Novo lead · ${site.nome}`,
+      titulo: `Novo lead · ${nomeDaCasa.get(l.grupo_id)}`,
       corpo: textoDoLeadNovo(l),
       url: `/corretor/leads/${l.id}`,
       tag: `lead-${l.id}`,

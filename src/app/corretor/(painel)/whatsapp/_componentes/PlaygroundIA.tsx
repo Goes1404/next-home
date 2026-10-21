@@ -1,6 +1,6 @@
 "use client";
 
-import { site } from "@/lib/site";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { testarAgenteIA } from "../acoes";
@@ -57,10 +57,10 @@ function explicarFallback(motivo?: string | null): string {
   }
 }
 
-function saudacao(nomeAssistente: string, corretorNome: string): MensagemPlayground {
+function saudacao(nomeAssistente: string, corretorNome: string, nomeDaCasa: string): MensagemPlayground {
   return {
     remetente: "bot",
-    texto: `Olá! Sou a ${nomeAssistente}, assistente do consultor ${corretorNome} da ${site.nome}. Como posso te ajudar hoje?`,
+    texto: `Olá! Sou a ${nomeAssistente}, assistente do consultor ${corretorNome} da ${nomeDaCasa}. Como posso te ajudar hoje?`,
     hora: "Agora",
   };
 }
@@ -72,8 +72,9 @@ export function PlaygroundIA({
   nomeAssistente: string;
   corretorNome: string;
 }) {
+  const nomeDaCasa = useNomeDaCasa();
   const [mensagens, setMensagens] = useState<MensagemPlayground[]>([
-    saudacao(nomeAssistente, corretorNome),
+    saudacao(nomeAssistente, corretorNome, nomeDaCasa),
   ]);
   const [entrada, setEntrada] = useState("");
   const [digitando, setDigitando] = useState(false);
@@ -131,7 +132,7 @@ export function PlaygroundIA({
         </div>
         <button
           onClick={() => {
-            setMensagens([saudacao(nomeAssistente, corretorNome)]);
+            setMensagens([saudacao(nomeAssistente, corretorNome, nomeDaCasa)]);
             setDossie({ resumo: null, temperatura: null });
             setAviso(null);
           }}

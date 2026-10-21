@@ -4,7 +4,7 @@ import { ListaLinks } from "./ListaLinks";
 import { CopiarLink } from "../CopiarLink";
 import { getCorretorLogado, getMeusDestaques } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Links" };
@@ -12,6 +12,7 @@ export const metadata: Metadata = { title: "Links" };
 export default async function LinksPage() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
+  const enderecoDoCliente = await lerEnderecoDoCliente(corretor.grupoId);
 
   const [empreendimentos, destaques] = await Promise.all([
     getEmpreendimentos(corretor.grupoId),
@@ -38,7 +39,7 @@ export default async function LinksPage() {
         <p className="text-fluid-sm mt-1 text-apoio">
           Para quando o cliente ainda não sabe o que procura.
         </p>
-        <CopiarLink link={`${site.url}/?corretor=${corretor.slug}`} />
+        <CopiarLink link={`${enderecoDoCliente}/?corretor=${corretor.slug}`} />
       </section>
 
       <section className="mt-10">
@@ -61,7 +62,7 @@ export default async function LinksPage() {
             cidade: e.cidade,
           }))}
           slugCorretor={corretor.slug}
-          baseUrl={site.url}
+          baseUrl={enderecoDoCliente}
         />
       </section>
     </div>

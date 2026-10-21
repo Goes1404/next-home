@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { createClient } from "@/lib/supabase/server";
 import { GestaoDeParceiros } from "./GestaoDeParceiros";
 
@@ -14,7 +14,8 @@ export const metadata: Metadata = { title: "Parceiros" };
  * venda, no Financeiro.
  */
 export default async function ParceirosPage() {
-  await exigirGestorNaPagina();
+  const gestor = await exigirGestorNaPagina();
+  const enderecoDoCliente = await lerEnderecoDoCliente(gestor.grupoId);
   const supabase = await createClient();
   const { data: parceiros } = await supabase
     .from("parceiros")
@@ -43,7 +44,7 @@ export default async function ParceirosPage() {
             creci: p.creci,
             telefone: p.telefone,
             ativo: p.ativo,
-            link: `${site.url}/parceiro/${p.token}`,
+            link: `${enderecoDoCliente}/parceiro/${p.token}`,
             indicados: contagem.get(p.id) ?? 0,
           }))}
         />

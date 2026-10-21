@@ -3,6 +3,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { montarCarrossel } from "@/lib/social/carrossel";
 import { renderizarSlide } from "@/lib/social/renderizarSlide";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 
 /**
@@ -29,7 +30,7 @@ export async function GET(
 
   const slides = montarCarrossel({
     imovel,
-    linkDaChamada: linkDeIndicacao(corretor.slug),
+    linkDaChamada: linkDeIndicacao(corretor.slug, await lerEnderecoDoCliente(corretor.grupoId)),
   });
 
   const n = Number(indice);

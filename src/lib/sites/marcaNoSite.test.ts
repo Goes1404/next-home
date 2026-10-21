@@ -19,8 +19,6 @@ const COMPONENTES = "src/components";
 /** Quem ainda importa `site` no site público, com o motivo. */
 const EXCECOES: Record<string, string> = {
   "src/app/s/[site]/layout.tsx": "o endereço canônico da Next Home, prerenderizado no build",
-  "src/app/s/[site]/(institucional)/parceiro/[token]/acoes.ts":
-    "link do PAINEL no aviso ao corretor; painel por grupo é a lacuna L46",
   "src/components/ui/Wordmark.tsx": "padrão para o painel; o site passa a marca do site em `nomes`",
 };
 

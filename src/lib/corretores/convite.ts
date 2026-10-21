@@ -183,7 +183,7 @@ export async function mandarLinkDeAcesso({
   if (somentePorEmail && !emailConfigurado()) {
     return { ok: false, erro: MENSAGEM_SEM_EMAIL_CONFIGURADO, motivo: "sem_email" };
   }
-  const link = await gerarLinkDeAcesso(tipo, email, DESTINO_DO_LINK);
+  const link = await gerarLinkDeAcesso(tipo, email, DESTINO_DO_LINK, grupoId);
   if (!link.ok) return { ok: false, erro: erroDoLink(link.motivo), motivo: link.motivo };
   if (link.userId !== usuarioEsperado) {
     console.error(`[acesso] link (${tipo}) voltou para outro usuário do Auth; não enviado`);
@@ -231,7 +231,7 @@ export async function convidarCorretorDoGrupo({
   const slugFinal = ficha.slug ?? slug;
   if (!slugFinal) return { ok: false, erro: "Este corretor está sem link pessoal. Salve o cadastro e tente de novo." };
 
-  const link = await gerarLinkDeAcesso("invite", emailLimpo, DESTINO_DO_LINK);
+  const link = await gerarLinkDeAcesso("invite", emailLimpo, DESTINO_DO_LINK, grupoId);
   if (!link.ok) return { ok: false, erro: erroDoLink(link.motivo) };
 
   /*

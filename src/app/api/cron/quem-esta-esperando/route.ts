@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { enviarEmail } from "@/lib/email";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import {
@@ -163,7 +163,7 @@ async function avisarOGrupo(
     const para = await emailDoCorretor(supabase, grupoId, corretorId);
     if (!para) continue;
 
-    const { texto, html } = corpoDoAviso({ esperas, urlPainel: site.url });
+    const { texto, html } = corpoDoAviso({ esperas, urlPainel: enderecoDoPainel(grupoId) });
     const r = await enviarEmail({ para, assunto: assuntoDoAviso(esperas), texto, html });
     if (r.enviado) enviados++;
   }

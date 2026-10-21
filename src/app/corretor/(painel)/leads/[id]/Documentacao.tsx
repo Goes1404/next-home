@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { caminhoDoLink } from "@/lib/crm/linksDoCliente";
 import { FASES_DOCUMENTO, sugereDocumentacao } from "@/lib/crm/documentacao";
 import { lerDocumentacaoDoLead } from "@/lib/crm/documentacaoDados";
@@ -38,6 +38,8 @@ export async function Documentacao({
     getCorretorLogado(),
   ]);
   const podeEditar = Boolean(corretor && corretor.id === corretorDoLead);
+  // O link que o cliente recebe abre no endereço do grupo dele (`marcaDoCrm`).
+  const enderecoDoCliente = corretor ? await lerEnderecoDoCliente(corretor.grupoId) : null;
 
   const assinados = new Map<string, string>();
   if (doc.documentos.length > 0) {
@@ -82,7 +84,7 @@ export async function Documentacao({
       aConferir: f.resumo.aConferir,
       pendentes: f.resumo.pendentesDoCliente.length,
       urlDoLink: f.link?.valido
-        ? `${site.url}${caminhoDoLink("documentos", f.link.token)}`
+        ? `${enderecoDoCliente}${caminhoDoLink("documentos", f.link.token)}`
         : null,
     };
   });

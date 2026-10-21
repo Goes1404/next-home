@@ -14,3 +14,19 @@ describe("endereços só do painel", () => {
     expect(ehEnderecoSoDoPainel("crm.exemplo.com", "crm.exemplo.com, outro.app")).toBe(true);
   });
 });
+
+describe("rotas de token do cliente", () => {
+  it("reconhece as que o cliente recebe, com token", async () => {
+    const { ehRotaDeTokenDoCliente } = await import("./enderecosDoPainel");
+    for (const r of ["/selecao/x", "/documentos/x", "/proposta/x", "/portal/x", "/contador/x", "/parceiro/x"]) {
+      expect(ehRotaDeTokenDoCliente(r), r).toBe(true);
+    }
+  });
+
+  it("não confunde com outras páginas do site", async () => {
+    const { ehRotaDeTokenDoCliente } = await import("./enderecosDoPainel");
+    for (const r of ["/", "/sobre", "/selecao", "/selecao/", "/selecaoX/abc", "/corretores/x", "/empreendimentos/x"]) {
+      expect(ehRotaDeTokenDoCliente(r), r).toBe(false);
+    }
+  });
+});

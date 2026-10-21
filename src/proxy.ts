@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
-import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
+import { ehEnderecoSoDoPainel, ehRotaDeTokenDoCliente } from "@/lib/enderecosDoPainel";
 import { normalizarHost } from "@/lib/sites/endereco";
 import { SEGMENTO_SEM_ENDERECO } from "@/lib/sites/segmento";
 
@@ -55,7 +55,14 @@ export async function proxy(request: NextRequest) {
 
   // Endereço só do CRM (astroimob.vercel.app): página do site público não
   // existe ali; quem abre a raiz ou qualquer página do site vai ao painel.
-  if (ehEnderecoSoDoPainel(request.headers.get("host")) && ehPaginaDoSite(pathname)) {
+  // Fora a página de TOKEN que o cliente recebe do corretor (seleção,
+  // documentos, proposta, portal, contador, parceiro): o grupo sem site
+  // próprio manda esses links no endereço do painel.
+  if (
+    ehEnderecoSoDoPainel(request.headers.get("host")) &&
+    ehPaginaDoSite(pathname) &&
+    !ehRotaDeTokenDoCliente(pathname)
+  ) {
     return NextResponse.redirect(new URL("/corretor", request.url));
   }
   let response = NextResponse.next({ request });

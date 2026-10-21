@@ -16,6 +16,7 @@ import {
 } from "@/lib/plataforma/dadosDoGrupo";
 import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
+import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -466,4 +467,55 @@ export async function desfazerCancelamento(grupoId: string): Promise<ResultadoCa
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);
   return { ok: true };
+}
+
+export type ResultadoDaLogoDoGrupo = ResultadoDaLogo;
+
+/**
+ * Troca a logo do grupo no CRM (0208). PNG, JPEG ou WebP até 1 MB, sem SVG;
+ * o arquivo vai para o bucket público `empreendimentos`, em
+ * `grupos/<grupo_id>/logo-<hash>.<ext>`.
+ */
+export async function trocarLogoDoGrupo(grupoId: string, dados: FormData): Promise<ResultadoDaLogoDoGrupo> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+
+  const arquivo = dados.get("logo");
+  const r = await gravarLogoDoGrupo(grupoId, arquivo instanceof File ? arquivo : null);
+  if (!r.ok) return r;
+
+  const { error: erroDoEvento } = await createServiceClient().from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "logo_do_grupo_alterada",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", mudanca: "trocada", url: r.url },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento da logo (${grupoId}) não gravado: ${erroDoEvento.message}`);
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return r;
+}
+
+/** Tira a logo: o CRM do grupo volta a mostrar o nome escrito. */
+export async function tirarLogoDoGrupoNaPlataforma(grupoId: string): Promise<ResultadoDaLogoDoGrupo> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+
+  const r = await tirarLogoDoGrupo(grupoId);
+  if (!r.ok) return r;
+
+  const { error: erroDoEvento } = await createServiceClient().from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "logo_do_grupo_alterada",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", mudanca: "removida", url: null },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento da logo (${grupoId}) não gravado: ${erroDoEvento.message}`);
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return r;
 }

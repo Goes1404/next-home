@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { FormularioDeLogo } from "@/components/grupos/FormularioDeLogo";
 import { exigirGestorNaPagina } from "@/lib/guardas";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { lerMarca } from "@/lib/marca";
 import { site } from "@/lib/site";
+import { tirarLogoDaCasa, trocarLogoDaCasa } from "./acoes";
 import { GeradorDeMarca } from "./GeradorDeMarca";
 
 export const metadata: Metadata = { title: "Marca" };
@@ -13,7 +18,43 @@ export const metadata: Metadata = { title: "Marca" };
  * tela mostra o que está valendo e monta o valor da variável.
  */
 export default async function MarcaPage() {
-  await exigirGestorNaPagina();
+  const gestor = await exigirGestorNaPagina();
+  // Outra imobiliária: a marca da instalação (variável, CRECI e contatos da
+  // Next Home) não é dela. Aqui ela cuida do nome e da logo do CRM dela.
+  if (gestor.grupoId !== GRUPO_NEXT_HOME_ID) {
+    const marca = await lerMarcaDoCrm(gestor.grupoId);
+    return (
+      <div>
+        <CabecalhoDeTela
+          secao="Administração"
+          titulo="Marca"
+          descricao="O nome e a logo da sua imobiliária que aparecem no CRM, nos avisos e nas mensagens."
+        />
+        <div className="mt-6 space-y-4">
+          <section className="cartao space-y-2 p-4">
+            <p className="text-fluid-sm text-titulo">
+              Valendo agora: <strong>{marca.nome}</strong>
+            </p>
+            <p className="text-fluid-xs text-apoio">
+              O nome é o da imobiliária no cadastro, ou o que você definiu em{" "}
+              <Link href="/corretor/admin/assistente" className="text-acento-suave underline underline-offset-2">
+                Administração → Assistente
+              </Link>
+              . A logo substitui o nome escrito no cabeçalho e no menu.
+            </p>
+          </section>
+          <section className="cartao p-4">
+            <FormularioDeLogo
+              nomeDaCasa={marca.nome}
+              logoAtual={marca.logoUrl}
+              enviar={trocarLogoDaCasa}
+              remover={tirarLogoDaCasa}
+            />
+          </section>
+        </div>
+      </div>
+    );
+  }
   const personalizada = Object.keys(lerMarca(process.env.NEXT_PUBLIC_MARCA)).length > 0;
 
   return (

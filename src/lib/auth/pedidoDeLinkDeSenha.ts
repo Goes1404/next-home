@@ -107,7 +107,7 @@ async function reservarPedido(servico: Servico, ficha: Ficha, via: string, agora
 
 /** Gera o link de recuperação do e-mail e manda — só se o Auth devolver o login da ficha. */
 async function gerarEMandar(servico: Servico, ficha: Ficha, email: string): Promise<DesfechoDoPedido> {
-  const link = await gerarLinkDeAcesso("recovery", email, "/corretor/definir-senha");
+  const link = await gerarLinkDeAcesso("recovery", email, "/corretor/definir-senha", ficha.grupo_id);
   if (!link.ok) return "nao_enviado";
   if (link.userId !== ficha.user_id) {
     console.error(`[senha] o e-mail da ficha ${ficha.id} é de outro login; link não enviado`);

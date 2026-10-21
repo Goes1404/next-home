@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { emailDoIdToken } from "@/lib/inbound/gmail";
 import { createServiceClient } from "@/lib/supabase/service";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,13 +12,15 @@ export const dynamic = "force-dynamic";
  * token e guarda em `contas_email_google` (só o servidor lê a tabela).
  */
 export async function GET(req: NextRequest) {
+  const corretor = await getCorretorLogado();
+  // Sem sessão não há grupo: volta ao login do endereço em que a pessoa está.
+  if (!corretor) return NextResponse.redirect(new URL("/corretor/entrar", req.url));
+  const painel = enderecoDoPainel(corretor.grupoId);
   const destino = (motivo: string) => {
-    const res = NextResponse.redirect(`${site.url}/corretor/perfil?gmail=${motivo}`);
+    const res = NextResponse.redirect(`${painel}/corretor/perfil?gmail=${motivo}`);
     res.cookies.delete({ name: "gmail_oauth_state", path: "/api/gmail" });
     return res;
   };
-  const corretor = await getCorretorLogado();
-  if (!corretor) return NextResponse.redirect(`${site.url}/corretor/entrar`);
 
   const url = req.nextUrl;
   const state = url.searchParams.get("state");
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
       code,
       client_id: process.env.GOOGLE_OAUTH_CLIENT_ID ?? "",
       client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "",
-      redirect_uri: `${site.url}/api/gmail/retorno`,
+      redirect_uri: `${painel}/api/gmail/retorno`,
       grant_type: "authorization_code",
     }),
     signal: AbortSignal.timeout(10_000),

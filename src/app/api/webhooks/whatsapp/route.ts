@@ -20,7 +20,7 @@ import { instrucaoDoAudio, transcreverAudioWhatsapp } from "@/lib/whatsapp/audio
 import { formatarAlertaCorretor, formatarAtualizacaoDossie, type MotivoAlerta } from "@/lib/whatsapp/brokerNotifier";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import {
   baixarMidiaDoProvedor,
   enviarMensagemWhatsapp,
@@ -1544,7 +1544,7 @@ export async function POST(req: NextRequest) {
       nome: dossie.nomeCliente ?? payload.senderName ?? null,
       telefone: sender,
     });
-    const linkDaFicha = conversa.leadId ? `${site.url}/corretor/leads/${conversa.leadId}` : null;
+    const linkDaFicha = conversa.leadId ? linkDoPainel(instancia.grupoId, `/corretor/leads/${conversa.leadId}`) : null;
     const caminhoDaFicha = conversa.leadId ? `/corretor/leads/${conversa.leadId}` : `/corretor/conversas?c=${conversa.id}`;
 
     if (deveAlertar && motivoDoAlerta) {

@@ -7,6 +7,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { getSaldo } from "@/lib/video/fila";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import { OficinaDeMarketing } from "./OficinaDeMarketing";
 
@@ -70,7 +71,7 @@ export default async function PaginaMarketing() {
         }))}
         imoveisProntos={comFoto.length}
         imoveisTotal={publicados.length}
-        linkDeIndicacao={linkDeIndicacao(corretor.slug)}
+        linkDeIndicacao={linkDeIndicacao(corretor.slug, await lerEnderecoDoCliente(corretor.grupoId))}
         temSlug={Boolean(corretor.slug)}
         imoveisParaCarrossel={comFoto.slice(0, 6).map((i) => ({
           slug: i.slug,

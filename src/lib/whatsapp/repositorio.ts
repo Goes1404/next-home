@@ -6,7 +6,7 @@ import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./priv
 import { mesclarDossie } from "./mesclarDossie";
 import type { SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
-import { site } from "@/lib/site";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import type { ClassificacaoDeRecusa } from "./recusaEmCamadas";
@@ -1736,7 +1736,7 @@ export async function registrarParadaSemIA(params: {
     .update({ nao_contatar_em: agora, nao_contatar_motivo: "parada" })
     .eq("id", params.leadId)
     .is("nao_contatar_em", null)
-    .select("id, nome, telefone");
+    .select("id, nome, telefone, grupo_id");
   if (error) {
     console.error("[recusa sem IA] falha ao marcar o lead:", error.message);
     return false;
@@ -1764,7 +1764,7 @@ export async function registrarParadaSemIA(params: {
   await avisarCorretor(
     supabase,
     params.corretorId,
-    `🚫 ${nome} pediu para não receber mais mensagens ("${params.trecho}"). Tirei das listas de transmissão. A conversa é sua: se foi engano, dá para reverter na ficha.\n${site.url}/corretor/conversas?c=${params.conversaId}`,
+    `🚫 ${nome} pediu para não receber mais mensagens ("${params.trecho}"). Tirei das listas de transmissão. A conversa é sua: se foi engano, dá para reverter na ficha.\n${linkDoPainel(lead.grupo_id, `/corretor/conversas?c=${params.conversaId}`)}`,
   );
   return true;
 }

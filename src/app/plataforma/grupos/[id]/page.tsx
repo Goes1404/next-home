@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormularioDeLogo } from "@/components/grupos/FormularioDeLogo";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { UsoDaIa } from "../../UsoDaIa";
+import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
@@ -29,6 +33,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   if (!ehUuid(id)) notFound();
   const grupo = await lerGrupoDaPlataforma(prova, id);
   if (!grupo) notFound();
+  // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
+  const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
 
   return (
     <section className="flex max-w-3xl flex-col gap-6">
@@ -86,6 +92,20 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         podeSuspender={grupo.situacao === "ativo" && grupo.canceladoEm === null}
         hoje={diaEmSP(new Date())}
       />
+
+      {marca && (
+        <section className="cartao flex flex-col gap-4 p-5" aria-labelledby="titulo-logo">
+          <h2 id="titulo-logo" className="text-fluid-sm text-titulo font-bold">
+            Logo no CRM
+          </h2>
+          <FormularioDeLogo
+            nomeDaCasa={marca.nome}
+            logoAtual={marca.logoUrl}
+            enviar={trocarLogoDoGrupo.bind(null, grupo.id)}
+            remover={tirarLogoDoGrupoNaPlataforma.bind(null, grupo.id)}
+          />
+        </section>
+      )}
 
       <FormularioDadosDoGrupo
         grupoId={grupo.id}

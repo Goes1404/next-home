@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import {
   useEffect,
   useMemo,
@@ -618,7 +619,8 @@ function Cartao({
   onSoltar: (evento: React.PointerEvent<HTMLElement>) => void;
   onCancelar: () => void;
 }) {
-  const whatsapp = linkWhatsappLead(lead);
+  const nomeDaCasa = useNomeDaCasa();
+  const whatsapp = linkWhatsappLead(lead, nomeDaCasa);
   const parado = diasParado(lead);
 
   return (

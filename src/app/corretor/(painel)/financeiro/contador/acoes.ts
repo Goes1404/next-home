@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { BUCKET_CONTABILIDADE, montarPacoteDoMes } from "@/lib/financeiro/contadorDados";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 
 /**
  * As ações do contador (0168). Toda função confere o gestor antes de tocar no
@@ -99,7 +99,7 @@ export async function criarAcessoContador(nome: string): Promise<ResultadoContad
     return { erro: "Não foi possível criar o link agora." };
   }
   revalidatePath(ROTA);
-  return { ok: "Link criado. Copie e mande ao contador.", link: `${site.url}/contador/${data.token}` };
+  return { ok: "Link criado. Copie e mande ao contador.", link: `${await lerEnderecoDoCliente(guarda.corretor.grupoId)}/contador/${data.token}` };
 }
 
 export async function revogarAcessoContador(token: string): Promise<ResultadoContador> {

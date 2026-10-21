@@ -1,6 +1,8 @@
 import "server-only";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
+import { marcaDoGrupo } from "./marca";
 import { resolverSite, type SiteDoGrupo } from "./resolver";
 
 /** Os parâmetros do segmento `src/app/s/[site]`: o host, posto pelo proxy. */
@@ -16,9 +18,31 @@ export type ParamsDoSite = { site: string };
  */
 export async function siteDaPagina(params: Promise<ParamsDoSite> | ParamsDoSite): Promise<SiteDoGrupo> {
   const { site } = await params;
-  const resolvido = await resolverSite(decodeURIComponent(site));
+  const host = decodeURIComponent(site);
+  const resolvido = (await resolverSite(host)) ?? sitePadraoDoPainel(host);
   if (!resolvido) notFound();
   return resolvido;
+}
+
+/** Id de grupo que não existe: o "site" do endereço só do painel não é de ninguém. */
+export const GRUPO_DO_ENDERECO_DO_PAINEL = "00000000-0000-0000-0000-00000000ffff";
+
+/**
+ * O endereço só do CRM não é site de grupo nenhum, mas as páginas de TOKEN
+ * que o cliente recebe (seleção, documentos, proposta, portal, contador,
+ * parceiro) abrem ali quando o grupo não tem site próprio (`proxy.ts`). Elas
+ * pedem um site à casca; este é NEUTRO: sem nome, sem contato, sem endereço
+ * (a marca de um grupo sem nome). A marca de verdade vem do token
+ * (`marcaDoGrupoDoLink`). Só vale para as páginas do segmento: `/wa`, a API e
+ * os arquivos de metadados usam `resolverSite`, que segue nulo aqui.
+ */
+function sitePadraoDoPainel(host: string): SiteDoGrupo | null {
+  if (!ehEnderecoSoDoPainel(host)) return null;
+  return {
+    grupoId: GRUPO_DO_ENDERECO_DO_PAINEL,
+    host,
+    marca: marcaDoGrupo({ grupoId: GRUPO_DO_ENDERECO_DO_PAINEL, nome: "", url: "" }),
+  };
 }
 
 /**

@@ -152,10 +152,10 @@ export function acharNoticias(n: NumerosDaSemana): Achado[] {
  * Assunto genérico é o que faz o relatório não ser aberto — e um relatório
  * não aberto é exatamente igual a não existir.
  */
-export function assuntoDoRelatorio(achados: readonly Achado[]): string {
+export function assuntoDoRelatorio(achados: readonly Achado[], nomeDaCasa: string = site.nome): string {
   const pior = achados[0];
-  if (!pior || pior.gravidade === "ok") return `${site.nome} · a semana correu bem`;
-  return `${site.nome} · ${pior.titulo}`;
+  if (!pior || pior.gravidade === "ok") return `${nomeDaCasa} · a semana correu bem`;
+  return `${nomeDaCasa} · ${pior.titulo}`;
 }
 
 export function corpoDoRelatorio(params: {

@@ -13,7 +13,7 @@ import {
 } from "@/lib/corretorSessao";
 import { getFilaDeTrabalho } from "@/lib/crm/filaDeTrabalho";
 import { getMinhasTarefas } from "@/lib/crm/dadosLead";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
@@ -86,6 +86,7 @@ export default async function PainelInicio({
   const diasParado = lerDiasDeParado(parados);
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
+  const enderecoDoCliente = await lerEnderecoDoCliente(corretor.grupoId);
 
   /*
    * O nome de quem abriu o painel, não o da casa. O cadastro vem como
@@ -162,7 +163,7 @@ export default async function PainelInicio({
             Enquanto um cliente navegar por ele, todo botão de WhatsApp do site — em qualquer
             imóvel — fala com você.
           </p>
-          <CopiarLink link={`${site.url}/?corretor=${corretor.slug}`} />
+          <CopiarLink link={`${enderecoDoCliente}/?corretor=${corretor.slug}`} />
         </div>
 
         <Suspense fallback={<CartaoDeCliques carregando />}>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import {
   canalPor,
@@ -242,7 +243,7 @@ export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string
       imovelSlug: p.imovelSlug,
       imovelNome: p.imovelNome,
       corretorId: corretor.id,
-      rodape: `${corretor.nome} · ${linkDeIndicacao(corretor.slug)}`,
+      rodape: `${corretor.nome} · ${linkDeIndicacao(corretor.slug, await lerEnderecoDoCliente(corretor.grupoId))}`,
       ...p.copy,
     },
     roteiro: planos,

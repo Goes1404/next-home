@@ -1,5 +1,5 @@
 import "server-only";
-import { site } from "@/lib/site";
+import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
@@ -32,7 +32,7 @@ export async function enviarRelatoriosDasAvaliacoes(supabase: Supa, agora = new 
   for (const inst of instancias) {
     const { data: corretor } = await supabase
       .from("corretores")
-      .select("id, nome, whatsapp, ativo, relatorio_avaliacoes_em")
+      .select("id, nome, whatsapp, ativo, grupo_id, relatorio_avaliacoes_em")
       .eq("id", inst.corretor_id)
       .maybeSingle();
     if (!corretor?.ativo || !corretor.whatsapp) continue;
@@ -49,7 +49,7 @@ export async function enviarRelatoriosDasAvaliacoes(supabase: Supa, agora = new 
     const texto = montarRelatorioDasAvaliacoes({
       ...(await coletar(supabase, corretor.id, agora)),
       nomeCorretor: corretor.nome,
-      urlPainel: site.url,
+      urlPainel: enderecoDoPainel(corretor.grupo_id),
     });
     if (!texto) continue;
 

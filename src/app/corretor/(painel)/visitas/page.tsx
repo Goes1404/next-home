@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
 import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
 import { createServiceClient } from "@/lib/supabase/service";
-import { site } from "@/lib/site";
+import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { linkWhatsappPara } from "@/lib/site";
 import {
@@ -51,7 +51,8 @@ export default async function VisitasPage({
   const { data: agenda } = corretor
     ? await createServiceClient().from("corretor_agenda").select("token").eq("corretor_id", corretor.id).maybeSingle()
     : { data: null };
-  const linkDaAgenda = agenda ? `${site.url}/api/agenda/${agenda.token}.ics` : null;
+  const linkDaAgenda =
+    agenda && corretor ? `${await lerEnderecoDoCliente(corretor.grupoId)}/api/agenda/${agenda.token}.ics` : null;
   const { data: grade } = corretor
     ? await supabase
         .from("corretor_disponibilidade")
