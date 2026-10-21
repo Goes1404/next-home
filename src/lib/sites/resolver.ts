@@ -5,12 +5,15 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { comRetentativa } from "@/lib/supabase/retentativa";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { site as siteDaCasa } from "@/lib/site";
-import { ENDERECOS_DA_NEXT_HOME, ehHostDeDesenvolvimento, normalizarHost } from "./endereco";
+import { normalizarHost } from "./endereco";
+import { dominioDaPlataforma, ehEnderecoDaNextHome } from "./hostsDaPlataforma";
 import { marcaDoGrupo, type MarcaDoSite } from "./marca";
 import { SEGMENTO_SEM_ENDERECO } from "./segmento";
+import { TAG_ENDERECOS, TAG_SITE_DO_GRUPO } from "./tags";
+import { SITE_EM_BRANCO, type SiteEditavel } from "./siteEditavel";
+import { lerSiteDoGrupo } from "./siteDoGrupo";
 
-/** Etiqueta do cache de endereços: limpa ao ligar ou trocar um domínio. */
-export const TAG_ENDERECOS = "enderecos-do-site";
+export { TAG_ENDERECOS, TAG_SITE_DO_GRUPO, dominioDaPlataforma, ehEnderecoDaNextHome };
 
 /** O site público servido num endereço: de que grupo é e com que marca. */
 export type SiteDoGrupo = {
@@ -19,37 +22,6 @@ export type SiteDoGrupo = {
   host: string;
   marca: MarcaDoSite;
 };
-
-/**
- * O domínio da plataforma, para o endereço gratuito `<slug>.<domínio>`.
- * Variável de servidor; sem ela (o padrão até o dono comprar o domínio,
- * decisão de 19/10) só vale o domínio próprio cadastrado.
- */
-export function dominioDaPlataforma(): string | null {
-  return normalizarHost(process.env.DOMINIO_DA_PLATAFORMA);
-}
-
-/**
- * Endereços que servem o site da Next Home sem perguntar ao banco: os três
- * dela, o de `NEXT_PUBLIC_SITE_URL` (o projeto de testes da Vercel tem o
- * próprio), a máquina de quem desenvolve e os previews da Vercel deste
- * projeto (protegidos por login da Vercel).
- */
-export function ehEnderecoDaNextHome(host: string): boolean {
-  if (ENDERECOS_DA_NEXT_HOME.includes(host)) return true;
-  if (ehHostDeDesenvolvimento(host)) return true;
-  if (host === normalizarHost(urlHost(siteDaCasa.url))) return true;
-  if (process.env.VERCEL_ENV === "preview" && host.endsWith(".vercel.app")) return true;
-  return false;
-}
-
-function urlHost(url: string): string | null {
-  try {
-    return new URL(url).host;
-  } catch {
-    return null;
-  }
-}
 
 type LinhaDoSite = { grupoId: string; nome: string; hostPrincipal: string };
 
@@ -79,6 +51,17 @@ const consultarEndereco = unstable_cache(
 );
 
 /**
+ * O que o grupo editou em "Meu site" (0209), com o mesmo cache do endereço.
+ * Nunca para a Next Home (quem chama já a separou). Grupo sem linha ou sem
+ * nada preenchido vale como em branco: o site cai no comportamento de hoje.
+ */
+const consultarPersonalizacao = unstable_cache(
+  async (grupoId: string): Promise<SiteEditavel> => (await lerSiteDoGrupo(grupoId)) ?? { ...SITE_EM_BRANCO },
+  ["site-editavel-do-grupo"],
+  { tags: [TAG_SITE_DO_GRUPO], revalidate: 300 },
+);
+
+/**
  * O site do endereço, ou nulo (página neutra) para host que não é de nenhum
  * grupo — ou de grupo encerrado. `cache` do React: uma resolução por
  * requisição, por mais que layout, página e metadados perguntem.
@@ -97,9 +80,15 @@ export const resolverSite = cache(async (hostCru: string | null | undefined): Pr
 
   const linha = await consultarEndereco(host, dominioDaPlataforma());
   if (!linha) return null;
+  const personalizacao = linha.grupoId === GRUPO_NEXT_HOME_ID ? null : await consultarPersonalizacao(linha.grupoId);
   return {
     grupoId: linha.grupoId,
     host,
-    marca: marcaDoGrupo({ grupoId: linha.grupoId, nome: linha.nome, url: `https://${linha.hostPrincipal}` }),
+    marca: marcaDoGrupo({
+      grupoId: linha.grupoId,
+      nome: linha.nome,
+      url: `https://${linha.hostPrincipal}`,
+      personalizacao,
+    }),
   };
 });

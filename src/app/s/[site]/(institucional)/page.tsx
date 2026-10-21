@@ -136,6 +136,16 @@ export default async function HomeInstitucional({ params }: { params: Promise<Pa
             cima volta ao centro, porque lá quem manda na composição é o
             texto do hero. */}
         <section className="relative flex min-h-svh flex-col items-center justify-end px-4 pt-24 pb-6 sm:justify-center sm:px-8 sm:pt-28 sm:pb-20 lg:pt-[clamp(5rem,13svh,7rem)] lg:pb-[clamp(0.5rem,2svh,1.5rem)]">
+          {/* A foto de capa que a imobiliária enviou em "Meu site" (0209), atrás do
+              topo. O véu mantém o título legível em qualquer foto. Só os outros
+              grupos têm capa; o fundo da Next Home é o do layout. */}
+          {marca.capaUrl && (
+            <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element -- capa do grupo (URL pública do Storage) */}
+              <img src={marca.capaUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-fundo/70 via-fundo/55 to-fundo" />
+            </div>
+          )}
           {/* O medidor do parallax do fundo. Precisa de um ancestral que
               ROLE (esta seção, agora `relative`) — o fundo é `fixed` e não
               serve de referência de scroll. */}
@@ -178,14 +188,14 @@ export default async function HomeInstitucional({ params }: { params: Promise<Pa
               data-abertura="1"
               className="so-para-leitor text-fluid-4xl lg:text-[length:clamp(2.25rem,min(4vw,7.5svh),4.5rem)] leading-[1.05] tracking-tight text-titulo"
             >
-              {todos.length} imóveis em Alphaville, Barueri e região.
+              {/* O título que a imobiliária escreveu em "Meu site" (0209); sem ele, o de sempre. */}
+              {marca.titulo ?? <>{todos.length} imóveis em Alphaville, Barueri e região.</>}
             </h1>
             <p
               data-abertura="2"
               className="so-para-leitor text-fluid-base mx-auto sm:mt-6 lg:mt-[clamp(0.75rem,2svh,1.5rem)] max-w-xl text-corpo-suave lg:mx-0"
             >
-              Lançamentos na planta e prontos para morar, com condições
-              facilitadas e atendimento direto no WhatsApp.
+              {marca.frase ?? "Lançamentos na planta e prontos para morar, com condições facilitadas e atendimento direto no WhatsApp."}
             </p>
           </Camada>
 
@@ -476,6 +486,21 @@ export default async function HomeInstitucional({ params }: { params: Promise<Pa
               </Link>
             </CartaoTilt>
           </section>
+
+          {marca.sobre && (
+            <section className="px-4 pb-16 sm:px-8 sm:pb-24">
+              <div className="mx-auto w-full max-w-3xl">
+                <p className="text-fluid-xs text-apoio mb-3">Sobre a {marca.nome}</p>
+                <p className="text-fluid-base text-corpo-suave text-pretty break-words whitespace-pre-line">{marca.sobre}</p>
+                <Link
+                  href="/sobre"
+                  className="text-fluid-sm text-acento-suave mt-4 inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
+                >
+                  Conheça a {marca.nome} →
+                </Link>
+              </div>
+            </section>
+          )}
 
           <div className="secao-passa">
             <CtaFinal />

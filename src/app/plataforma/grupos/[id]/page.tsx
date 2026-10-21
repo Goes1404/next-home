@@ -14,6 +14,7 @@ import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
+import { EnderecosDoGrupo } from "./EnderecosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 
@@ -106,6 +107,9 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           />
         </section>
       )}
+
+      {/* Os endereços da Next Home ficam no código (`ENDERECOS_DA_NEXT_HOME`). */}
+      {grupo.id !== GRUPO_NEXT_HOME_ID && <EnderecosDoGrupo grupoId={grupo.id} enderecos={grupo.enderecos} />}
 
       <FormularioDadosDoGrupo
         grupoId={grupo.id}

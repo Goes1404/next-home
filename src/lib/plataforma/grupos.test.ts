@@ -92,6 +92,8 @@ function consulta(tabela: string) {
           ? { data: GRUPOS, error: null }
           : tabela === "pagamentos_do_grupo"
             ? { data: PAGAMENTOS, error: null }
+            : tabela === "enderecos_do_site"
+            ? { data: [{ host: "sol.com.br", tipo: "proprio", principal: true }], error: null }
             : falharContagem
             ? { data: null, count: null, error: { message: "tempo esgotado" } }
             : { data: null, count: contagem(c), error: null };
@@ -239,10 +241,12 @@ describe("lerGrupoDaPlataforma", () => {
       mensalidade: 299,
       diaDoVencimento: 10,
       pagamentos: [{ id: "p1", competencia: "2026-09-01", valor: 250, pagoEm: "2026-09-02", observacao: null }],
+      enderecos: [{ host: "sol.com.br", tipo: "proprio", principal: true }],
     });
     expect([...new Set(chamadas.map((c) => c.tabela))].sort()).toEqual([
       "corretor_whatsapp_instancias",
       "corretores",
+      "enderecos_do_site",
       "grupos",
       "pagamentos_do_grupo",
       "uso_da_ia",
@@ -253,7 +257,7 @@ describe("lerGrupoDaPlataforma", () => {
     const historico = chamadas.filter((c) => c.tabela === "pagamentos_do_grupo" && c.select !== "competencia");
     expect(historico).toHaveLength(1);
     expect(historico[0].select).toBe("id, competencia, valor, pago_em, observacao");
-    for (const c of chamadas.filter((c) => !["grupos", "uso_da_ia", "pagamentos_do_grupo"].includes(c.tabela))) {
+    for (const c of chamadas.filter((c) => !["grupos", "uso_da_ia", "pagamentos_do_grupo", "enderecos_do_site"].includes(c.tabela))) {
       expect(c.opcoes).toEqual({ count: "exact", head: true });
     }
   });

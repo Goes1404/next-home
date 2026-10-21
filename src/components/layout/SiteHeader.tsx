@@ -1,4 +1,4 @@
-import { Wordmark } from "@/components/ui/Wordmark";
+import { LogoDaMarca } from "@/components/ui/LogoDaMarca";
 import type { MarcaDoSite } from "@/lib/sites/marca";
 import Link from "next/link";
 import { GlassSurface } from "@/components/glass/GlassSurface";
@@ -50,7 +50,7 @@ export function SiteHeader({ marca }: { marca: MarcaDoSite }) {
           href="/"
           className="font-display shrink-0 text-lg leading-none font-medium tracking-tight whitespace-nowrap text-titulo"
         >
-          <Wordmark destaque="text-acento-forte" nomes={marca.wordmark} />
+          <LogoDaMarca marca={marca} destaque="text-acento-forte" />
         </Link>
 
         <LinksDoCabecalho links={LINKS} />

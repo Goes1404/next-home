@@ -29,7 +29,7 @@ export function MapaDaSede({
   endereco,
 }: {
   className?: string;
-  endereco: NonNullable<MarcaDoSite["endereco"]>;
+  endereco: NonNullable<MarcaDoSite["endereco"]> & { lat: number; lng: number };
 }) {
   const { lat, lng } = endereco;
   const enderecoLinha = `${endereco.logradouro} — ${endereco.bairro}, ${endereco.cidade}/${endereco.uf}`;

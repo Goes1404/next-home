@@ -105,6 +105,23 @@ export default async function ContatoPage({ params }: { params: Promise<ParamsDo
                   </li>
                 </ul>
 
+                {/* Os contatos da casa que a imobiliária pôs em "Meu site" (0209). */}
+                {((!marca.ehNextHome && marca.whatsapp.length > 0) || marca.email) && (
+                  <p className="text-fluid-sm text-apoio mt-4">
+                    {!marca.ehNextHome &&
+                      marca.whatsapp.map((w) => (
+                        <a key={w.numero} href={`tel:+${w.numero}`} className="text-corpo hover:text-acento-suave mr-4 inline-flex min-h-11 items-center">
+                          {w.label}
+                        </a>
+                      ))}
+                    {marca.email && (
+                      <a href={`mailto:${marca.email}`} className="text-corpo hover:text-acento-suave inline-flex min-h-11 items-center break-all">
+                        {marca.email}
+                      </a>
+                    )}
+                  </p>
+                )}
+
                 {e && (
                   <>
                     <h2 className="font-display text-titulo mt-6 text-lg">Endereço</h2>
@@ -119,9 +136,9 @@ export default async function ContatoPage({ params }: { params: Promise<ParamsDo
                 {marca.creci && <p className="text-fluid-xs text-tenue mt-3">CRECI {marca.creci}</p>}
               </Reveal>
 
-              {e && (
+              {e && e.lat !== undefined && e.lng !== undefined && (
                 <Reveal delay={0.15} from="baixo">
-                  <MapaDaSede endereco={e} />
+                  <MapaDaSede endereco={{ ...e, lat: e.lat, lng: e.lng }} />
                 </Reveal>
               )}
             </div>

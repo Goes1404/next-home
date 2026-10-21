@@ -156,7 +156,9 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
   "src/lib/marcaDoCrm/ler.ts": { categoria: "helper", motivo: "nome, logo e endereço principal do grupo que quem chama validou (sessão, ficha lida pelo cron, instância do webhook); lê UMA linha pelo id" },
   "src/lib/imovelPublico/ler.ts": { categoria: "helper", motivo: "slug do grupo, grupo pelo slug da URL (a ficha pública) e base do link do imóvel do grupo que quem chama validou; lê UMA linha de grupos" },
+  "src/lib/sites/siteDoGrupo.ts": { categoria: "helper", motivo: "lê o site editável do grupo que quem chama provou (gestor da sessão ou o grupo que o endereço resolveu); UMA linha pelo id" },
   "src/lib/marcaDoCrm/gravarLogo.ts": { categoria: "helper", motivo: "grava a logo do grupo que quem chama provou (gestor da sessão ou operador da plataforma); só toca a linha e a pasta desse grupo" },
+  "src/app/corretor/(painel)/admin/site/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o grupo é o do gestor da sessão; a chave só grava o site dele (colunas site_*, capa no Storage) e o evento" },
   "src/app/corretor/(painel)/admin/marca/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o grupo é o do gestor da sessão; a chave só grava a logo dele e o evento" },
   "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
   "src/lib/planos/cobrancaDoGrupo.ts": { categoria: "helper", motivo: "cobrança do grupo que quem chama validou (instância do webhook ou do disparador, sessão do painel); toda leitura filtra o grupo (fase 2C)" },
@@ -207,6 +209,7 @@ const MAPA: Record<string, Entrada> = {
   // ── Área da plataforma: lê vários grupos, só depois da guarda dela ────────
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
   "src/app/plataforma/cobrancaAcoes.ts": { categoria: "plataforma-admin", motivo: "registra e remove pagamento, ajusta mensalidade e vencimento e suspende ou reativa o grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (fase 2C)" },
+  "src/app/plataforma/enderecosAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e tira o endereço do site de UM grupo (0201); a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso e edita o cadastro dele; a chave só depois de exigirAdminDaPlataformaNaAcao" },
 };
 
@@ -309,6 +312,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/app/api/webhooks/email-lead/route.ts": { validadoPor: "token !== segredo", motivo: "segredo do webhook dos portais; o grupo é o fixo da Next Home" },
   "src/app/corretor/(painel)/campanhas/acoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; agenda e conversas dele" },
   "src/app/corretor/(painel)/admin/marca/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; lê o nome e a logo do grupo dele" },
+  "src/app/corretor/(painel)/admin/site/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; lê o site do grupo dele" },
   "src/app/corretor/(painel)/admin/parceiros/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; o endereço do link é o do grupo dele" },
   "src/app/corretor/(painel)/imoveis/[slug]/carrossel/page.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link do carrossel é o do grupo dele" },
   "src/app/corretor/(painel)/imoveis/[slug]/carrossel/slide/[indice]/route.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link do slide é o do grupo dele" },

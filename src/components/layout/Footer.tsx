@@ -1,4 +1,4 @@
-import { Wordmark } from "@/components/ui/Wordmark";
+import { LogoDaMarca } from "@/components/ui/LogoDaMarca";
 import Link from "next/link";
 import { FundoEmCamadas } from "@/components/motion/FundoEmCamadas";
 import { SeletorTema } from "@/components/tema/SeletorTema";
@@ -34,7 +34,7 @@ export function Footer({ marca }: { marca: MarcaDoSite }) {
       <div className="mx-auto grid w-full max-w-6xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">
-            <Wordmark destaque="text-acento-forte" nomes={marca.wordmark} />
+            <LogoDaMarca marca={marca} destaque="text-acento-forte" altura="h-10" />
           </p>
           <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{marca.descricao}</p>
           {marca.creci && <p className="text-fluid-xs mt-4 text-tenue">CRECI {marca.creci}</p>}
@@ -70,6 +70,30 @@ export function Footer({ marca }: { marca: MarcaDoSite }) {
                 Falar no WhatsApp
               </a>
             </li>
+            {/* O WhatsApp e o e-mail que a imobiliária pôs em "Meu site" (0209).
+                O botão acima segue pelo porteiro (`/wa`); este número é só o
+                da casa, para quem prefere ligar. A Next Home não entra aqui. */}
+            {!marca.ehNextHome &&
+              marca.whatsapp.map((w) => (
+                <li key={w.numero}>
+                  <a
+                    href={`tel:+${w.numero}`}
+                    className="text-fluid-sm text-legenda inline-flex min-h-11 items-center transition-colors hover:text-acento-suave"
+                  >
+                    {w.label}
+                  </a>
+                </li>
+              ))}
+            {marca.email && (
+              <li>
+                <a
+                  href={`mailto:${marca.email}`}
+                  className="text-fluid-sm text-legenda inline-flex min-h-11 items-center break-all transition-colors hover:text-acento-suave"
+                >
+                  {marca.email}
+                </a>
+              </li>
+            )}
           </ul>
 
           <div className="mt-5 flex gap-4">

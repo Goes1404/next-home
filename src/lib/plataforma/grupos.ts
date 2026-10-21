@@ -164,7 +164,11 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   diaDoVencimento: number;
   /** Os últimos pagamentos registrados, do mais recente ao mais antigo. */
   pagamentos: PagamentoRegistrado[];
+  /** Os endereços do site do grupo (0201), o principal primeiro. */
+  enderecos: EnderecoDoGrupo[];
 };
+
+export type EnderecoDoGrupo = { host: string; tipo: "proprio" | "gratuito"; principal: boolean };
 
 export type PagamentoRegistrado = {
   id: string;
@@ -201,6 +205,13 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     .order("competencia", { ascending: false })
     .limit(PAGAMENTOS_NA_TELA);
   if (erroDoHistorico) throw new Error(`Falha ao ler os pagamentos: ${erroDoHistorico.message}`);
+  const { data: enderecos, error: erroDosEnderecos } = await servico
+    .from("enderecos_do_site")
+    .select("host, tipo, principal")
+    .eq("grupo_id", grupoId)
+    .order("principal", { ascending: false })
+    .order("host", { ascending: true });
+  if (erroDosEnderecos) throw new Error(`Falha ao ler os endereços do site: ${erroDosEnderecos.message}`);
   return {
     id: g.id,
     nome: g.nome,
@@ -232,6 +243,7 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
       pagoEm: p.pago_em,
       observacao: p.observacao,
     })),
+    enderecos: (enderecos ?? []).map((e) => ({ host: e.host, tipo: e.tipo, principal: e.principal })),
     ...(await contarDoGrupo(servico, g)),
   };
 }

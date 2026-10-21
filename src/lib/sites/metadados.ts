@@ -126,8 +126,9 @@ export function metadadosDoSite(marca: MarcaDoSite): Metadata {
           other: {
             "geo.region": `BR-${e.uf}`,
             "geo.placename": `${e.bairro}, ${e.cidade}`,
-            "geo.position": `${e.lat};${e.lng}`,
-            ICBM: `${e.lat}, ${e.lng}`,
+            ...(e.lat !== undefined && e.lng !== undefined
+              ? { "geo.position": `${e.lat};${e.lng}`, ICBM: `${e.lat}, ${e.lng}` }
+              : {}),
           },
         }
       : {}),

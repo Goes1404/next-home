@@ -60,9 +60,10 @@ export function organizacaoJsonLd(marca: MarcaDoSite) {
     alternateName: nomesAlternativos(marca),
     description: marca.descricao,
     url: marca.url,
-    ...(marca.ehNextHome ? { logo: `${marca.url}/marca/logo-original.png` } : {}),
+    ...(marca.ehNextHome ? { logo: `${marca.url}/marca/logo-original.png` } : marca.logoUrl ? { logo: marca.logoUrl } : {}),
     ...(imagem ? { image: imagem.url } : {}),
     ...(marca.whatsapp.length ? { telephone: marca.whatsapp.map((w) => `+${w.numero}`) } : {}),
+    ...(marca.email ? { email: marca.email } : {}),
     ...(e
       ? {
           address: {
@@ -73,11 +74,10 @@ export function organizacaoJsonLd(marca: MarcaDoSite) {
             postalCode: e.cep,
             addressCountry: "BR",
           },
-          geo: {
-            "@type": "GeoCoordinates",
-            latitude: e.lat,
-            longitude: e.lng,
-          },
+          // O endereço que o grupo digita não tem coordenada: sem ela, sem `geo`.
+          ...(e.lat !== undefined && e.lng !== undefined
+            ? { geo: { "@type": "GeoCoordinates", latitude: e.lat, longitude: e.lng } }
+            : {}),
         }
       : {}),
     ...(marca.regioes.length ? { areaServed: marca.regioes.map((r) => ({ "@type": "Place", name: r })) } : {}),

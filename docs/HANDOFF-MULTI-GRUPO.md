@@ -83,6 +83,16 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   Plano: `docs/superpowers/plans/2026-10-21-marca-do-grupo-no-crm.md`; nota
   `vault/10-notas/marca-do-grupo-no-crm.md`.
 
+- **Meu site (0209, 21/10/2026, branch `site-editavel`, ainda NÃO
+  publicada)**: Administração → "Meu site" (`/corretor/admin/site`): o gestor
+  edita cor, logo (a mesma do CRM), capa, título, frase, "Sobre" e contatos; o
+  site dos grupos ≠ 1 usa isso (campo vazio = padrão) e a Next Home segue vindo
+  de `site.ts` (testes travam). Em `/plataforma/grupos/[id]` a plataforma liga
+  e tira os endereços do site (e o domínio também vai em Vercel → Settings →
+  Domains). Antes do deploy: aplicar a 0209 (aditiva). Plano:
+  `docs/superpowers/plans/2026-10-21-site-editavel.md`; nota
+  `vault/10-notas/meu-site-da-imobiliaria.md`.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio

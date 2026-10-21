@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<ParamsDoSit
   return {
     title: `Sobre a ${marca.nome}`,
     description:
-      marca.endereco && marca.creci
+      marca.ehNextHome && marca.endereco && marca.creci
         ? `Imobiliária de ${marca.endereco.cidade} com CRECI ${marca.creci}: lançamentos e imóveis prontos em Alphaville e região, com atendimento direto no WhatsApp.`
         : `Conheça ${marca.nome}: lançamentos e imóveis prontos, com atendimento direto no WhatsApp.`,
     alternates: { canonical: "/sobre" },
@@ -114,7 +114,7 @@ export default async function SobrePage({ params }: { params: Promise<ParamsDoSi
             }
             titulo="Quem está do outro lado do WhatsApp"
             lead={
-              e ? (
+              e && marca.ehNextHome ? (
                 <>
                   A {marca.nomeCompleto} é uma imobiliária de {e.cidade}, com registro no CRECI,
                   especializada em lançamentos e imóveis prontos em Alphaville e região.
@@ -130,6 +130,14 @@ export default async function SobrePage({ params }: { params: Promise<ParamsDoSi
             }
           />
         </Secao>
+
+        {/* O texto que a imobiliária escreveu em "Meu site" (0209); a Next Home não tem. */}
+        {marca.sobre && (
+          <Secao>
+            <p className="text-fluid-xs text-apoio mb-3">Sobre a {marca.nome}</p>
+            <p className="text-fluid-base text-corpo-suave max-w-2xl text-pretty break-words whitespace-pre-line">{marca.sobre}</p>
+          </Secao>
+        )}
 
         <Secao espaco="final">
           <FaixaDeProva
@@ -257,9 +265,11 @@ export default async function SobrePage({ params }: { params: Promise<ParamsDoSi
               </Reveal>
             </div>
 
-            <Reveal delay={0.1} from="baixo">
-              <MapaDaSede endereco={e} />
-            </Reveal>
+            {e.lat !== undefined && e.lng !== undefined && (
+              <Reveal delay={0.1} from="baixo">
+                <MapaDaSede endereco={{ ...e, lat: e.lat, lng: e.lng }} />
+              </Reveal>
+            )}
           </div>
         </Secao>
         )}

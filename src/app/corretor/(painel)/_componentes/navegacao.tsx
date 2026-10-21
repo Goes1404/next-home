@@ -308,6 +308,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio" },
           { href: "/corretor/admin/assistente", label: "Assistente", icone: IconeRobo, secao: "Sistema" },
           { href: "/corretor/admin/marca", label: "Marca", icone: IconeSelo, secao: "Sistema" },
+          { href: "/corretor/admin/site", label: "Meu site", icone: IconeGlobo, secao: "Sistema" },
         ],
       },
     ],
@@ -941,6 +942,17 @@ function IconeSelo(p: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="10" r="6.5" />
       <path d="M12 7l1 2.1 2.3.3-1.7 1.6.4 2.3L12 12.2l-2 1.1.4-2.3-1.7-1.6 2.3-.3z" />
       <path d="M8.5 15.5L7 21l5-2.2L17 21l-1.5-5.5" />
+    </svg>
+  );
+}
+
+function IconeGlobo(p: SVGProps<SVGSVGElement>) {
+  // Globo com meridianos: o site público da imobiliária.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z" />
     </svg>
   );
 }

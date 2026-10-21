@@ -5,6 +5,7 @@ import { normalizarHost } from "@/lib/sites/endereco";
 import { metadadosDoSite, metadadosSemSite } from "@/lib/sites/metadados";
 import { type ParamsDoSite } from "@/lib/sites/pagina";
 import { resolverSite } from "@/lib/sites/resolver";
+import { variaveisDaCor } from "@/lib/sites/siteEditavel";
 
 /**
  * O site público de cada grupo, pelo endereço (fase 3, 20/10/2026).
@@ -54,10 +55,21 @@ export default async function SiteLayout({
   // rotas e a página, logo abaixo (`siteDaPagina`), e o 404 cai em
   // `./not-found.tsx`, inteiro no HTML do servidor. Sem site, sem rodapé.
   const site = await resolverSite(decodeURIComponent((await params).site));
-  return (
+  // A cor que a imobiliária escolheu em "Meu site" (0209) só reaponta a
+  // família do acento, como o login faz. `display: contents` não cria caixa:
+  // o layout do site segue igual, e as variáveis herdam para o rodapé também.
+  // Sem cor (e SEMPRE na Next Home) o envoltório nem existe.
+  const cor = site?.marca.cor ?? null;
+  const conteudo = (
     <>
       {children}
       {site && <Footer marca={site.marca} />}
     </>
+  );
+  if (!cor) return conteudo;
+  return (
+    <div style={variaveisDaCor(cor) as React.CSSProperties} className="contents">
+      {conteudo}
+    </div>
   );
 }

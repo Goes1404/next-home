@@ -1717,6 +1717,16 @@ export type Database = {
           ia_regiao: string | null
           ia_tom: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url: string | null
+          site_cor: string | null
+          site_capa_url: string | null
+          site_titulo: string | null
+          site_frase: string | null
+          site_sobre: string | null
+          site_whatsapp: string | null
+          site_email: string | null
+          site_endereco: Json | null
+          site_instagram: string | null
+          site_facebook: string | null
           id: string
           mensalidade: number | null
           nome: string
@@ -1752,6 +1762,16 @@ export type Database = {
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url?: string | null
+          site_cor?: string | null
+          site_capa_url?: string | null
+          site_titulo?: string | null
+          site_frase?: string | null
+          site_sobre?: string | null
+          site_whatsapp?: string | null
+          site_email?: string | null
+          site_endereco?: Json | null
+          site_instagram?: string | null
+          site_facebook?: string | null
           id?: string
           mensalidade?: number | null
           nome: string
@@ -1787,6 +1807,16 @@ export type Database = {
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           logo_url?: string | null
+          site_cor?: string | null
+          site_capa_url?: string | null
+          site_titulo?: string | null
+          site_frase?: string | null
+          site_sobre?: string | null
+          site_whatsapp?: string | null
+          site_email?: string | null
+          site_endereco?: Json | null
+          site_instagram?: string | null
+          site_facebook?: string | null
           id?: string
           mensalidade?: number | null
           nome?: string

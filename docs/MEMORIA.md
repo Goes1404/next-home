@@ -11581,3 +11581,21 @@ Nota: [[controles-rapidos-do-inicio]].
 - Pendente: o link do catálogo (`?corretor=`) que a IA manda segue o da Next
   Home para grupo sem site (sem página de catálogo para apontar).
 
+
+## Meu site: a imobiliária edita o próprio site (0209, 21/10/2026)
+
+- Nota: [[meu-site-da-imobiliaria]]. Plano:
+  `docs/superpowers/plans/2026-10-21-site-editavel.md`. Branch `site-editavel`,
+  migration 0209 aditiva (ainda não aplicada em produção).
+- Colunas `site_*` em `grupos` (sem tabela 1:1; sem grant para o logado: só a
+  chave de serviço, depois de `exigirGestorNaAcao`). O site lê pelo
+  `resolverSite` (cache `site-do-grupo`, 300 s); grupo 1 nunca lê nem usa os
+  campos novos (testes em `marca.test.ts`, `resolver.test.ts`,
+  `Footer.meuSite.test.tsx`).
+- Defeitos que custaram tempo: constante exportada de arquivo `"use server"`;
+  `semGrupoDoSiteNoPainel.test.ts` barra import de `sites/resolver` no painel
+  (helpers de host foram para `sites/hostsDaPlataforma.ts`); toda action que
+  chama `revalidarSitePublico()` também precisa de `revalidarCatalogo()`;
+  `whitespace-pre-line` exige `break-words` (`naoCortaTexto.test.ts`).
+- A plataforma liga/tira endereço do site em `/plataforma/grupos/[id]`; o
+  domínio também precisa estar em Vercel → Settings → Domains.
