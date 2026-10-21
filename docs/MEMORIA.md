@@ -11618,3 +11618,10 @@ Nota: [[controles-rapidos-do-inicio]].
   aviso de contraste do botão não dispara nunca, só o de texto sobre fundo.
 - Com fundo ou texto definidos o tema claro/escuro some (cores fixas).
 
+
+## Saúde e custo da IA por grupo na plataforma (0211, 21/10/2026)
+
+- Nota: [[saude-e-custo-da-ia-por-grupo]]. `/plataforma` (lista e detalhe) ganhou semáforo de saúde e custo da IA em R$ com margem sobre a mensalidade (alerta > 30%).
+- `ia_interacoes` já tinha `grupo_id`, mas a guarda `servicoComGrupo` proíbe a plataforma de ler essa tabela e o PostgREST corta em 1.000 linhas: a leitura é por duas funções agregadas (`custo_da_ia_por_grupo`, `saude_da_ia_por_grupo`, `security invoker`, só `service_role`). Quem precisar de outro número da telemetria na plataforma estende a função, não relaxa a guarda.
+- Preços por modelo são de tabela pública (marcados "conferir"); câmbio em `CAMBIO_USD_BRL` (padrão 5,50). Custo é estimativa, não fatura.
+- Tentativa da IA = interação do webhook que não foi silêncio por modo, humano ou debounce; "IA calada" só é vermelho com tentativa e zero resposta em 24h.

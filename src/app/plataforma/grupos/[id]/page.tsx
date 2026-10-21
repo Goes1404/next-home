@@ -10,6 +10,9 @@ import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
+import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
+import { CustoDaIa } from "../../CustoDaIa";
+import { SaudeNoDetalhe } from "../../SaudeDoGrupo";
 import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
@@ -34,6 +37,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   if (!ehUuid(id)) notFound();
   const grupo = await lerGrupoDaPlataforma(prova, id);
   if (!grupo) notFound();
+  const agora = new Date();
+  const saude = (await lerSaudeDosGrupos(prova, [grupo], agora))[grupo.id];
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
 
@@ -46,6 +51,10 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         <h1 className="font-display text-titulo text-fluid-2xl mt-1 break-words">{grupo.nome}</h1>
         <p className="text-fluid-sm text-apoio mt-1 break-all">{grupo.slug}</p>
       </div>
+
+      <SaudeNoDetalhe saude={saude} agora={agora} />
+
+      <SaudeNoDetalhe saude={saude} agora={agora} />
 
       <dl className="cartao text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-3 p-5 sm:grid-cols-3">
         <div>
@@ -80,6 +89,12 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           Respostas da IA
         </h2>
         <UsoDaIa uso={grupo.usoDaIa} ajustado={grupo.tetoAjustado !== null} />
+        <div className="border-linha border-t pt-5">
+          <CustoDaIa custo={saude.custo} mensalidade={saude.mensalidade} cambio={saude.cambio} />
+        </div>
+        <div className="border-linha border-t pt-5">
+          <CustoDaIa custo={saude.custo} mensalidade={saude.mensalidade} cambio={saude.cambio} />
+        </div>
         <FormularioTetoDaIa grupoId={grupo.id} inicial={grupo.tetoAjustado} padraoDoPlano={grupo.tetoDoPlano} />
       </section>
 

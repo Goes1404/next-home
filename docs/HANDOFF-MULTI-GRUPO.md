@@ -130,8 +130,7 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
    - o `redirectUri` do Gmail segue o endereço do painel do grupo: se o Gmail
      for liberado para outro grupo, cadastrar essa URI no Google Cloud;
    - `VAPID_SUBJECT` (e-mail do push) ainda tem a Next Home como padrão.
-5. Itens fora do escopo das fases enxutas: cobrança (2C), medidor de custo
-   da IA, mover conta entre grupos, e o resto das lacunas em
+5. Itens fora do escopo das fases enxutas: mover conta entre grupos, e o resto das lacunas em
    `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
 6. No worktree principal, rode testes com `npx vitest run --exclude ".claude/**"`:
    há um worktree antigo dentro de `.claude/worktrees/` e o vitest roda os
@@ -262,3 +261,6 @@ arquivos Markdown: qualquer IA pode lê-los e seguir.
 - Notas atômicas: `vault/10-notas/plataforma-multi-grupo.md` (entrada)
 - Isolamento por grupo e guardas: `src/lib/grupos/`
 - Memória das decisões: `docs/MEMORIA.md` (buscar com grep)
+
+### Saúde e custo da IA por grupo (21/10/2026, branch `saude-por-grupo`)
+Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no detalhe do grupo (nota [[saude-e-custo-da-ia-por-grupo]]). No deploy: **migration 0211** (duas funções agregadas + dois índices, só aditiva; aplicar antes do código) e env opcional `CAMBIO_USD_BRL` (padrão 5,50). Conferir os preços de `PRECOS_POR_MODELO` (`src/lib/planos/custoDaIa.ts`).

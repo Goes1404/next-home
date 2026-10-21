@@ -4,6 +4,9 @@ import Link from "next/link";
 import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
+import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
+import { CustoDaIa } from "./CustoDaIa";
+import { SaudeNoCartao } from "./SaudeDoGrupo";
 import { UsoDaIa } from "./UsoDaIa";
 
 export const metadata: Metadata = { title: "Grupos" };
@@ -32,6 +35,7 @@ const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", d
 export default async function PlataformaPage() {
   const prova = await exigirAdminDaPlataformaNaPagina();
   const grupos = await listarGruposDaPlataforma(prova);
+  const saudes = await lerSaudeDosGrupos(prova, grupos);
 
   return (
     <section className="flex flex-col gap-6">
@@ -58,6 +62,7 @@ export default async function PlataformaPage() {
           {grupos.map((g) => {
             const situacao = SITUACAO[g.situacao];
             const cobranca = COBRANCA[g.cobranca.estado];
+            const saude = saudes[g.id];
             return (
               <li key={g.id} className="cartao flex min-w-0 flex-col gap-4 p-5">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
@@ -79,6 +84,10 @@ export default async function PlataformaPage() {
                       </span>
                     )}
                   </div>
+                </div>
+
+                <div className="border-linha border-t pt-4">
+                  <SaudeNoCartao saude={saude} />
                 </div>
 
                 <dl className="text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-2">
@@ -113,6 +122,10 @@ export default async function PlataformaPage() {
 
                 <div className="border-linha border-t pt-4">
                   <UsoDaIa uso={g.usoDaIa} ajustado={g.tetoAjustado !== null} />
+                </div>
+
+                <div className="border-linha border-t pt-4">
+                  <CustoDaIa custo={saude.custo} mensalidade={saude.mensalidade} cambio={saude.cambio} compacto />
                 </div>
               </li>
             );
