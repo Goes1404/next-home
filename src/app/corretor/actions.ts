@@ -73,6 +73,13 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
       .maybeSingle();
 
     if (corretor?.deve_trocar_senha) redirect("/corretor/senha");
+
+    // Administrador da plataforma sem ficha de corretor (o dono): o painel
+    // do corretor mostraria "conta sem vínculo"; a área dele é /plataforma.
+    if (!corretor && !next) {
+      const { data: ehAdmin } = await supabase.rpc("eh_admin_da_plataforma");
+      if (ehAdmin === true) redirect("/plataforma");
+    }
   }
 
   redirect(destinoSeguro(typeof next === "string" ? next : null));
