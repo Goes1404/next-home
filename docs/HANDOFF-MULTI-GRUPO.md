@@ -14,8 +14,10 @@ transformar o CRM da Next Home numa plataforma de várias imobiliárias
   de 24–48 h sem erro (roteiro em `docs/superpowers/plans/2026-10-18-fase-1-fundacao-multi-grupo.md`).
 - **Depois da fase 1 subiram** (já no ar, migrations 0203–0205 aplicadas):
   notificação no celular, roleta dos anúncios, botões do Início.
-- **Fases 2 a Op estão prontas em branches, NÃO publicadas.** Cada branch sai
-  da anterior; publicar UMA de cada vez, na ordem abaixo.
+- **Fases 2A, 2B, 2D, 4, 5, 3 e Op foram PUBLICADAS em 20–21/10/2026**, nesta
+  ordem, com as migrations 0195–0202 aplicadas antes de cada deploy (commit
+  final `5fc1a14`). A tabela abaixo fica como registro do que cada uma trouxe.
+  O que falta está na seção "Próximos passos".
 
 | Ordem | Fase | Branch @ commit | Migration | Ordem com o deploy |
 |---|---|---|---|---|
@@ -56,6 +58,26 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   no domínio da plataforma não foram feitos.
 - Desenho completo e o que falta depois: `docs/superpowers/specs/2026-10-18-plataforma-multi-grupo-design.md`
   e `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
+
+## 1b. Próximos passos (depois de 21/10/2026)
+
+1. Aplicar a **0194** (pós-deploy da fase 1) — ver o roteiro da fase 1.
+2. Configurar o que cada fase precisa fora do código (lista acima):
+   Resend + `insert into administradores_da_plataforma` (2A),
+   `DOMINIO_DA_PLATAFORMA` e domínio curinga (3), `APAGAR_GRUPOS_CANCELADOS`
+   (Op, quando quiser ligar a rotina dos 90 dias).
+3. Decidir com o dono: lead que a **roleta dos anúncios** repassa nasce
+   `origem_atribuicao = 'roleta'`, que a etiqueta da fase 5 classifica como
+   trazido pela **imobiliária** (não pelo corretor que pagou o anúncio).
+4. Textos com o nome da casa ainda usam `site.nome` (roleta, título da
+   notificação de lead novo); com outro grupo no ar, trocar pelo nome do
+   grupo (`lerCasaDoGrupo`).
+5. Itens fora do escopo das fases enxutas: cobrança (2C), medidor de custo
+   da IA, mover conta entre grupos, e o resto das lacunas em
+   `docs/superpowers/specs/2026-10-19-lacunas-multi-grupo.md`.
+6. No worktree principal, rode testes com `npx vitest run --exclude ".claude/**"`:
+   há um worktree antigo dentro de `.claude/worktrees/` e o vitest roda os
+   testes dele contra o código atual.
 
 ## 2. Regras que não se quebram
 

@@ -11491,3 +11491,15 @@ Nota: [[controles-rapidos-do-inicio]].
   vi depois: a Vercel publica sem esperar o CI. Depois de subir, conferir
   `actions/runs` do commit. O log do job sai pela API do GitHub com o token
   de `git credential fill` (host github.com).
+
+## As fases 2A a Op foram publicadas (20–21/10/2026)
+
+- Ordem: 2A (0195–0196), 2B (0197), 2D (0198), 4 (0199), 5 (0200),
+  3 (0201), Op (0202); migrations sempre antes do deploy, todas aditivas.
+  Passo a passo e pendências: `docs/HANDOFF-MULTI-GRUPO.md`.
+- **No worktree principal o vitest roda os testes do worktree antigo em
+  `.claude/worktrees/`** contra o código atual e reprova dezenas de guardas.
+  Use `--exclude ".claude/**"`.
+- Cada fase só conflitou em MEMORIA, vault, `tabelasDoGrupo.ts` (listas) e,
+  na fase 4, no alerta ao corretor reescrito no mesmo dia (vale o formato
+  novo, sem região da casa).
