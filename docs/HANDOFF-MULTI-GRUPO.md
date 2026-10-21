@@ -65,6 +65,13 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   follow-ups, listas, artes e vídeos. Plano `custo` (Next Home) é isento.
   Plano: `docs/superpowers/plans/2026-10-21-fase-2c-cobranca-manual.md`.
 
+- **Endereço só do CRM: `astroimob.vercel.app`** (21/10/2026), alias do MESMO
+  projeto da Vercel (nunca um projeto separado: as rotinas rodariam em dobro).
+  Ali a raiz e as páginas do site vão para `/corretor`; `/plataforma` e o
+  login abrem normalmente. A Next Home continua entrando também por
+  `nexthomeimoveis.com/corretor`. Lista em `src/lib/enderecosDoPainel.ts`
+  (+ variável `ENDERECOS_DO_PAINEL`). Redirect URL do Supabase já cadastrada.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio

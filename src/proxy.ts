@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
+import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { normalizarHost } from "@/lib/sites/endereco";
 import { SEGMENTO_SEM_ENDERECO } from "@/lib/sites/segmento";
 
@@ -51,6 +52,12 @@ const OPCOES_COOKIE_CORRETOR = {
  */
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  // Endereço só do CRM (astroimob.vercel.app): página do site público não
+  // existe ali; quem abre a raiz ou qualquer página do site vai ao painel.
+  if (ehEnderecoSoDoPainel(request.headers.get("host")) && ehPaginaDoSite(pathname)) {
+    return NextResponse.redirect(new URL("/corretor", request.url));
+  }
   let response = NextResponse.next({ request });
 
   // Checagem com fronteira explícita, não `startsWith("/corretor")`: aquele
