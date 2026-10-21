@@ -60,12 +60,14 @@ export function EditorImovelClient({ imovel }: Props) {
   const handleAdicionarTipologia = () => {
     const nova: Tipologia = {
       id: `temp-${Date.now()}`,
-      nome: "Nova Planta",
-      areaPrivativa: 80,
-      dormitorios: 2,
-      suites: 2,
-      banheiros: 2,
-      vagas: 2,
+      // Em branco, não um palpite: com a metragem escondida na tela, os
+      // "80 m², 2 dorm, 2 suítes" do padrão iam para o cadastro como fato.
+      nome: "",
+      areaPrivativa: null,
+      dormitorios: 0,
+      suites: 0,
+      banheiros: 0,
+      vagas: 0,
       preco: null,
       plantaUrl: null,
       unidadesDisponiveis: null,

@@ -1306,6 +1306,7 @@ export type Database = {
           motivo_queda_codigo: number | null
           motivo_queda_em: string | null
           modo_bot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa: string | null
           nome_assistente: string
           palavra_chave_ativacao: string | null
           palavra_chave_teste: string | null
@@ -1341,6 +1342,7 @@ export type Database = {
           motivo_queda_codigo?: number | null
           motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa?: string | null
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
@@ -1376,6 +1378,7 @@ export type Database = {
           motivo_queda_codigo?: number | null
           motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa?: string | null
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
@@ -1973,6 +1976,94 @@ export type Database = {
             columns: ["conversa_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roleta_anuncios: {
+        Row: {
+          corretor_id: string
+          grupo_id: string
+          ligada: boolean
+          destinos: string[]
+          ultimo_indice: number
+          texto_passagem: string | null
+          texto_abertura: string | null
+          atualizado_em: string
+          atualizado_por: string | null
+        }
+        Insert: {
+          corretor_id: string
+          grupo_id?: string
+          ligada?: boolean
+          destinos?: string[]
+          ultimo_indice?: number
+          texto_passagem?: string | null
+          texto_abertura?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+        }
+        Update: {
+          corretor_id?: string
+          grupo_id?: string
+          ligada?: boolean
+          destinos?: string[]
+          ultimo_indice?: number
+          texto_passagem?: string | null
+          texto_abertura?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roleta_anuncios_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: true
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inscricoes_push: {
+        Row: {
+          aparelho: string | null
+          auth: string
+          corretor_id: string
+          created_at: string
+          endpoint: string
+          grupo_id: string
+          id: string
+          p256dh: string
+          ultimo_envio_em: string | null
+        }
+        Insert: {
+          aparelho?: string | null
+          auth: string
+          corretor_id: string
+          created_at?: string
+          endpoint: string
+          grupo_id?: string
+          id?: string
+          p256dh: string
+          ultimo_envio_em?: string | null
+        }
+        Update: {
+          aparelho?: string | null
+          auth?: string
+          corretor_id?: string
+          created_at?: string
+          endpoint?: string
+          grupo_id?: string
+          id?: string
+          p256dh?: string
+          ultimo_envio_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscricoes_push_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
             referencedColumns: ["id"]
           },
         ]
@@ -2911,6 +3002,7 @@ export type Database = {
           grupo_id: string
           anuncio_origem: string | null
           arquivado_em: string | null
+          aviso_lead_novo_em: string | null
           arquivado_motivo: string | null
           campos_do_corretor: Json
           consentimento_lgpd: boolean
@@ -2971,6 +3063,7 @@ export type Database = {
           grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
@@ -3031,6 +3124,7 @@ export type Database = {
           grupo_id?: string
           anuncio_origem?: string | null
           arquivado_em?: string | null
+          aviso_lead_novo_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
@@ -3469,6 +3563,7 @@ export type Database = {
         Row: {
           grupo_id: string
           alerta_quente_em: string | null
+          alertas_ao_corretor: Json
           atendida_em: string | null
           aviso_sem_resposta_em: string | null
           memoria: string | null
@@ -3496,6 +3591,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           alerta_quente_em?: string | null
+          alertas_ao_corretor?: Json
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
           memoria?: string | null
@@ -3523,6 +3619,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           alerta_quente_em?: string | null
+          alertas_ao_corretor?: Json
           atendida_em?: string | null
           aviso_sem_resposta_em?: string | null
           memoria?: string | null
@@ -4003,6 +4100,10 @@ export type Database = {
       travar_disparo: {
         Args: { p_dono: string; p_escopo: string; p_segundos: number }
         Returns: boolean
+      }
+      proximo_da_roleta: {
+        Args: { p_corretor: string; p_excluir?: string[] }
+        Returns: string | null
       }
     }
     Enums: {

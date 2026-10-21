@@ -233,42 +233,95 @@ export function EditorTipologias({
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-[11px] font-bold text-apoio uppercase">Nome / Metragem</label>
+                    <label htmlFor={`planta-${index}-nome`} className="text-[11px] font-bold text-apoio uppercase">Nome da planta</label>
                     <input
+                      id={`planta-${index}-nome`}
                       type="text"
                       value={tip.nome}
                       onChange={(e) => onChange(index, "nome", e.target.value)}
-                      placeholder="Ex: 140m² — 3 Suítes"
+                      placeholder="Ex: Planta 3 suítes"
+                      className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 space-y-1">
+                    <label htmlFor={`planta-${index}-area`} className="text-[11px] font-bold text-apoio uppercase">Metragem (m² privativos)</label>
+                    <input
+                      id={`planta-${index}-area`}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      value={tip.areaPrivativa ?? ""}
+                      onChange={(e) => onChange(index, "areaPrivativa", e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
+                      placeholder="Ex: 72,5"
                       className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-apoio uppercase">Dormitórios / Suítes</label>
+                    <label htmlFor={`planta-${index}-dormitorios`} className="text-[11px] font-bold text-apoio uppercase">Dormitórios</label>
                     <input
+                      id={`planta-${index}-dormitorios`}
                       type="number"
-                      value={tip.suites}
-                      onChange={(e) => onChange(index, "suites", Number(e.target.value))}
+                      inputMode="numeric"
+                      min={0}
+                      value={tip.dormitorios || ""}
+                      onChange={(e) => onChange(index, "dormitorios", e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value))))}
                       placeholder="3"
                       className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-apoio uppercase">Vagas de Garagem</label>
+                    <label htmlFor={`planta-${index}-suites`} className="text-[11px] font-bold text-apoio uppercase">Suítes</label>
                     <input
+                      id={`planta-${index}-suites`}
                       type="number"
-                      value={tip.vagas}
-                      onChange={(e) => onChange(index, "vagas", Number(e.target.value))}
+                      inputMode="numeric"
+                      min={0}
+                      value={tip.suites || ""}
+                      onChange={(e) => onChange(index, "suites", e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value))))}
+                      placeholder="1"
+                      className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor={`planta-${index}-banheiros`} className="text-[11px] font-bold text-apoio uppercase">Banheiros</label>
+                    <input
+                      id={`planta-${index}-banheiros`}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={tip.banheiros || ""}
+                      onChange={(e) => onChange(index, "banheiros", e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value))))}
+                      placeholder="2"
+                      className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor={`planta-${index}-vagas`} className="text-[11px] font-bold text-apoio uppercase">Vagas de garagem</label>
+                    <input
+                      id={`planta-${index}-vagas`}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={tip.vagas || ""}
+                      onChange={(e) => onChange(index, "vagas", e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value))))}
                       placeholder="2"
                       className="min-h-[44px] w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-xs text-titulo focus:border-acento focus:outline-none"
                     />
                   </div>
 
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-[11px] font-bold text-apoio uppercase">Preço Desta Planta (R$)</label>
+                    <label htmlFor={`planta-${index}-preco`} className="text-[11px] font-bold text-apoio uppercase">Preço desta planta (R$)</label>
                     <input
+                      id={`planta-${index}-preco`}
                       type="number"
+                      inputMode="numeric"
+                      min={0}
                       value={tip.preco ?? ""}
                       onChange={(e) => onChange(index, "preco", e.target.value ? Number(e.target.value) : null)}
                       placeholder="1850000"

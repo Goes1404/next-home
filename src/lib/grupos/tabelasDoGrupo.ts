@@ -47,6 +47,9 @@ export const CHAVES_UNICAS_GLOBAIS = {
   // Um endereço de site pertence a um grupo só (0201): o mesmo host em dois
   // grupos seria dois sites disputando a mesma URL.
   enderecos_do_site_pkey: "host do site público; um endereço, um grupo",
+  // O endereço de push identifica um navegador num aparelho; se outra conta o
+  // inscrever (celular trocado de mão), ele passa para ela (0203).
+  inscricoes_push_endpoint_key: "um aparelho recebe as notificações de uma conta só",
   // Tokens sorteados: são a credencial do link, não um dado de negócio.
   acessos_contador_pkey: "token sorteado do link do contador",
   links_do_cliente_pkey: "token sorteado do link do cliente",
