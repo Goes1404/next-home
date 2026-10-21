@@ -1,4 +1,5 @@
 import "server-only";
+import { alertaLiberado, type MotivoAlerta } from "./brokerNotifier";
 import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
@@ -132,6 +133,8 @@ export async function resolverInstancia(instanceName: string): Promise<Instancia
 }
 
 export type ConversaPersistida = {
+  /** O lead nasceu nesta chamada (pelo convite). Só `obterOuCriarConversa` preenche. Roleta dos anúncios (0204). */
+  leadCriadoAgora?: boolean;
   id: string;
   /** Nulo apenas em objetos legados/testes; a 0111 torna impossível no banco. */
   leadId: string | null;
@@ -561,12 +564,11 @@ export async function obterOuCriarConversa(params: {
     // antes de o lead ser cadastrado): tenta religar agora. É barato e é o
     // que permite ao dossiê desta mensagem ter um destino.
     if (!existente.lead_id) {
-      const leadId =
-        (await encontrarLeadCadastrado(supabase, params)) ??
-        (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+      const cadastrado = await encontrarLeadCadastrado(supabase, params);
+      const leadId = cadastrado ?? (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
       if (leadId) {
         await supabase.from("whatsapp_conversas").update({ lead_id: leadId }).eq("id", existente.id);
-        return mapConversa({ ...existente, lead_id: leadId });
+        return { ...mapConversa({ ...existente, lead_id: leadId }), leadCriadoAgora: !cadastrado };
       }
       // Conta só WhatsApp: a conversa sem lead é o normal, não estoque velho.
       if (params.semLead) return mapConversa(existente);
@@ -578,9 +580,8 @@ export async function obterOuCriarConversa(params: {
     return mapConversa(existente);
   }
 
-  const leadId =
-    (await encontrarLeadCadastrado(supabase, params)) ??
-    (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
+  const cadastrado = await encontrarLeadCadastrado(supabase, params);
+  const leadId = cadastrado ?? (params.convite ? await cadastrarLeadDeConvite(supabase, params) : null);
   if (!leadId && params.semLead) return criarConversaSemLead(supabase, params);
   if (!leadId) return null;
 
@@ -617,7 +618,7 @@ export async function obterOuCriarConversa(params: {
 
   if (error || !criada) return null;
 
-  return mapConversa(criada);
+  return { ...mapConversa(criada), leadCriadoAgora: !cadastrado };
 }
 
 /** A conversa de quem não é lead, numa conta só WhatsApp (0180). */
@@ -1055,31 +1056,33 @@ export async function ultimaMensagemClienteId(conversaId: string): Promise<strin
 }
 
 /**
- * Debounce do alerta de lead quente: devolve true (e carimba) no máximo uma
- * vez por janela. Sem isso, TODA mensagem de uma conversa com score alto
- * disparava alerta novo — e alerta que spamma é alerta que o corretor
- * silencia.
+ * Carência do alerta ao corretor, POR MOTIVO (20/10/2026). Antes só o lead
+ * quente tinha janela (6h, em `alerta_quente_em`); pedido de ligação e de
+ * atendimento humano saíam de novo a cada mensagem do cliente, e o
+ * corretor recebia o mesmo aviso cinco vezes. Visita é fato novo a cada
+ * vez e não espera (ver `CARENCIA_DO_ALERTA_H`). Carimba antes do envio:
+ * a trava `resposta:<conversa>` já serializa o webhook desta conversa.
+ * Erro de leitura libera o aviso: aviso a mais custa menos que cliente sem
+ * retorno.
  */
-export async function podeAlertarLeadQuente(
-  conversaId: string,
-  janelaHoras = 6,
-): Promise<boolean> {
+export async function podeAlertar(conversaId: string, motivo: MotivoAlerta, agora = new Date()): Promise<boolean> {
   const supabase = createServiceClient();
-
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("whatsapp_conversas")
-    .select("alerta_quente_em")
+    .select("alertas_ao_corretor")
     .eq("id", conversaId)
     .maybeSingle();
-
-  const ultimo = data?.alerta_quente_em ? new Date(data.alerta_quente_em).getTime() : 0;
-  if (Date.now() - ultimo < janelaHoras * 3600_000) return false;
-
-  await supabase
+  if (error) {
+    console.warn("[alerta] falha ao ler a carência:", error.message);
+    return true;
+  }
+  const enviados = (data?.alertas_ao_corretor ?? {}) as Record<string, string>;
+  if (!alertaLiberado(motivo, enviados, agora)) return false;
+  const { error: erroCarimbo } = await supabase
     .from("whatsapp_conversas")
-    .update({ alerta_quente_em: new Date().toISOString() })
+    .update({ alertas_ao_corretor: { ...enviados, [motivo]: agora.toISOString() } })
     .eq("id", conversaId);
-
+  if (erroCarimbo) console.warn("[alerta] falha ao carimbar a carência:", erroCarimbo.message);
   return true;
 }
 

@@ -112,3 +112,7 @@ F0–F6.
 - [[tabela-de-precos-lida-pela-ia]] — a tabela da construtora (unidades) é lida pela IA; o menor valor só entra se estiver escrito no arquivo; PDF e prints (o tabelão da RSF) desde 13/10
 - [[a-ia-so-responde]] — listas sugeridas no Início, resumo do lead na ficha, estado da IA em uma frase, nova paleta do funil (03/10)
 - [[visita-remarcada-e-desmarcada-pela-conversa]] — visita combinada pelo corretor no chat vira sugestão de registro na fila do Início (0163, 06/10)
+- [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)
+- [[aviso-ao-corretor-diz-o-que-fazer]] — alertas do atendimento e resumo do dia: o que fazer primeiro, ficha numa linha, carência por motivo (20/10)
+- [[metragem-da-planta-nao-tinha-campo]] — editor do imóvel sem campo de metragem; planta nova nascia com 80 m² inventados (20/10)
+- [[controles-rapidos-do-inicio]] — pausar a IA e dividir os leads do anúncio direto no Início (20/10)

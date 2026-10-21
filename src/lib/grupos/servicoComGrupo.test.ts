@@ -103,6 +103,11 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/inbound/processarEmail.ts": { categoria: "helper", motivo: "grupo explícito de quem chama (portal = grupo 1; Gmail = grupo da conta); leituras com grupo_id (portas.test.ts)" },
 
   // ── Painel: o id vem do navegador e é conferido pela sessão ───────────────
+  "src/app/api/notificacoes/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "inscreve o aparelho só para o corretor da sessão, no grupo dele" },
+  "src/app/corretor/(painel)/marketing/impulsionamentos/RoletaDosAnuncios.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "roleta do grupo da sessão; o corretor comum só lê a dele" },
+  "src/app/corretor/(painel)/marketing/impulsionamentos/roletaAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "grava a roleta do próprio número, ou de quem o gestor escolheu, no grupo da sessão" },
+  "src/app/corretor/(painel)/_componentes/acoesRapidas.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "pausa a IA e liga a roleta só do número do corretor da sessão" },
+  "src/app/corretor/(painel)/_componentes/ControlesRapidos.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "lê o modo da IA e a roleta só do corretor da sessão" },
   "src/app/api/gmail/retorno/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/api/imagens/gerar/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "a mídia do catálogo só é lida no grupo do corretor da sessão (L16)" },
   "src/app/api/painel/contador-excel/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o mês é lido no grupo do gestor da sessão" },
@@ -135,6 +140,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/video/fila.ts": { categoria: "helper", motivo: "corretor da sessão; o worker pega o job pela trava, um por vez" },
   "src/lib/corretores/convite.ts": { categoria: "helper", motivo: "grupo provado por quem chama (gestor da sessão ou operador da plataforma); a ficha só é lida e escrita com o grupo no filtro" },
   "src/lib/crm/agendaDoCorretor.ts": { categoria: "helper", motivo: "corretor da instância que o webhook validou" },
+  "src/lib/notificacoes/push.ts": { categoria: "helper", motivo: "notifica os aparelhos do corretor que o chamador já escolheu" },
   "src/lib/crm/avisoAoCorretor.ts": { categoria: "helper", motivo: "manda ao próprio corretor, a partir da linha que o cron leu" },
   "src/lib/crm/envioAutorizado.ts": { categoria: "helper", motivo: "caminho <lead>/... montado por quem chama depois de validar o lead" },
   "src/lib/whatsapp/aberturaPelaIA.ts": { categoria: "helper", motivo: "conversa e instância do corretor validadas por quem chama (sessão ou webhook)" },
@@ -165,6 +171,8 @@ const MAPA: Record<string, Entrada> = {
   // ── Crons linha a linha ───────────────────────────────────────────────────
   "src/app/api/cron/event-outbox/route.ts": { categoria: "plataforma", motivo: "processa o outbox linha a linha; cada evento é do grupo da própria linha" },
   "src/app/api/cron/followups/route.ts": { categoria: "plataforma", motivo: "follow-ups e respostas atrasadas por conversa, cada uma com a instância do próprio corretor" },
+  "src/lib/notificacoes/leadNovo.ts": { categoria: "plataforma", motivo: "aviso por lead, ao corretor dono dele" },
+  "src/lib/whatsapp/roletaDosAnuncios.ts": { categoria: "plataforma", motivo: "repasse de UM lead, para quem o banco escolhe dentro do grupo da roleta" },
   "src/lib/crm/alertaSemContato.ts": { categoria: "plataforma", motivo: "alerta por lead, ao corretor dono dele" },
   "src/lib/crm/alertaSemResposta.ts": { categoria: "plataforma", motivo: "alerta por conversa, ao corretor dono dela" },
   "src/lib/crm/enviarRelatorioDasAvaliacoes.ts": { categoria: "plataforma", motivo: "por instância: cada corretor recebe só as avaliações dele" },

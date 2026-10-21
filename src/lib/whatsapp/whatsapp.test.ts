@@ -12,9 +12,7 @@ import {
 } from "./campaignQueue";
 import { transcreverAudioWhatsapp, transcricaoTemConteudo } from "./audioTranscriber";
 import {
-  formatarAlertaCorretor,
   formatarAtualizacaoDossie,
-  notificarCorretorLeadQuente,
 } from "./brokerNotifier";
 import { enviarMensagemWhatsapp, provedorConfigurado } from "./provider";
 import type { Empreendimento } from "@/lib/types";
@@ -441,16 +439,17 @@ describe("Dossiê do cliente", () => {
 
 
 describe("Nota de acompanhamento ao corretor", () => {
-  it("formata a atualização sem soar como alerta urgente", () => {
+  it("diz quem avançou e o que mudou, sem prometer quem conduz", () => {
     const texto = formatarAtualizacaoDossie({
       nomeCliente: "Fernanda",
-      telefoneCliente: "5511988882222",
       resumoMudancas: "💰 Orçamento identificado: R$ 1.200.000",
+      linkFicha: "https://x/corretor/leads/1",
     });
 
-    expect(texto).toContain("Fernanda");
+    expect(texto.split("\n")[0]).toContain("Fernanda");
     expect(texto).toContain("Orçamento identificado");
-    expect(texto).not.toMatch(/URGENTE|SOLICITAÇÃO DE VISITA/i);
+    expect(texto).toContain("https://x/corretor/leads/1");
+    expect(texto).not.toMatch(/continua conduzindo|URGENTE/i);
   });
 });
 
@@ -462,42 +461,6 @@ describe("Transcrição de áudio", () => {
     // O texto mostrado no CRM tem que contar a mesma história do `sucesso`.
     expect(resAudio.textoTranscrito).not.toMatch(/sucesso/i);
     expect(resAudio.textoTranscrito).toMatch(/não foi possível|indisponível/i);
-  });
-});
-
-describe("Alerta de lead quente ao corretor", () => {
-  const params = {
-    instanceName: "nexthome-carlos",
-    telefoneCorretor: "5511999998888",
-    nomeCorretor: "Carlos Silva",
-    nomeCliente: "Dr. Roberto",
-    telefoneCliente: "5511988881111",
-    empreendimentoNome: "Canvas Alphaville",
-    temperaturaScore: 92,
-    resumoDossie: "Busca 3 suítes, orçamento 2M, pagamento à vista.",
-    motivoAlerta: "visita_solicitada" as const,
-  };
-
-  it("formata a mensagem executiva com os dados do lead", () => {
-    const texto = formatarAlertaCorretor(params);
-
-    expect(texto).toContain("SOLICITAÇÃO DE VISITA AGENDADA");
-    expect(texto).toContain("Dr. Roberto");
-    expect(texto).toContain("Carlos Silva");
-    expect(texto).toContain("Canvas Alphaville");
-    expect(texto).toContain("wa.me/5511988881111");
-  });
-
-  it("reporta enviado=false quando não há provedor configurado", async () => {
-    // O contrato mais importante do módulo: um alerta que não saiu NUNCA
-    // pode se declarar entregue — o corretor confiaria e perderia a venda.
-    expect(provedorConfigurado()).toBe(false);
-
-    const notificacao = await notificarCorretorLeadQuente(params);
-
-    expect(notificacao.enviado).toBe(false);
-    expect(notificacao.motivo).toBe("provedor_nao_configurado");
-    expect(notificacao.mensagemFormatada).toContain("Dr. Roberto");
   });
 });
 
