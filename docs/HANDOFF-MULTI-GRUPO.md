@@ -71,6 +71,8 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   login abrem normalmente. A Next Home continua entrando também por
   `nexthomeimoveis.com/corretor`. Lista em `src/lib/enderecosDoPainel.ts`
   (+ variável `ENDERECOS_DO_PAINEL`). Redirect URL do Supabase já cadastrada.
+  O login (`src/app/corretor/entrar/page.tsx`) mostra a marca AstroImob
+  nesse endereço e a Next Home no site (21/10, layout inspirado no Facebook).
 
 ## 1b. Próximos passos (depois de 21/10/2026)
 
