@@ -34,7 +34,7 @@ const APP = join(NEXT, "server", "app");
  * folgado é catraca que não catraca.
  */
 const TETOS_KB = {
-  "/corretor/(painel)/leads/page": 739, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/leads/page": 740, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // 12/10/2026: a catraca desceu em TODA rota, pelos dois cortes do dia.
   // (1) GSAP + ScrollTrigger + Lenis saíram do painel: o layout raiz monta o
   // `SmoothScroll` por `MovimentoDoSite`, que só o carrega (dynamic) fora de
@@ -49,6 +49,7 @@ const TETOS_KB = {
   // porque `Chat.tsx` e `ChatBase` entram estáticos — é a F4 que os move
   // para `next/dynamic`, e aí este número desce.
   "*": 738,
+  "/corretor/(painel)/funil/page": 739, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // As cinco telas de chat: `Chat` e `ChatBase` já vão por `next/dynamic`
   // (F4); o que sobra é o supabase-js (245 KB, Realtime) e o GSAP (111 KB)
   // que o layout RAIZ monta em toda rota — inclusive no painel. Tirar os
@@ -65,25 +66,25 @@ const TETOS_KB = {
   // (higieneDaBase) e o funil de 10 etapas com grupos (types.ts), que todas
   // puxam pelos utilitários de lead.
   // 07/10: +1 KB: o menu ganhou "Alertas e IA" no Financeiro.
-  "/corretor/(painel)/pessoas/page": 714, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/pessoas/page": 715, // 20/10: medida do CI com a fase 2A (convite e plataforma)
   // 28/09: +9 KB (conversas) e +16 (importar) vêm de funcionalidades pedidas:
   // o painel ganhou a transição de tela e a luz dos cartões no LAYOUT (vale
   // em toda rota do painel), e o importador ganhou tours, vídeo em arquivo e
   // a leitura do site da construtora.
   // 29/09: +2 KB em conversas, do motivo do 👎 e do resumo semanal das
   // avaliações (0131), que já tinha ido ao ar 1 KB acima do teto.
-  "/corretor/(painel)/conversas/page": 751, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/conversas/page": 752, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // 28/09: +1 KB em criar-imagem, editor do imóvel e vídeo é
   // `mensagensDoSite` (as mensagens que o porteiro reconhece), puxado via
   // `site.ts`. Sem ela, o visitante novo do site é ignorado pelo webhook.
-  "/corretor/(painel)/imoveis/criar-imagem/page": 718, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/imoveis/criar-imagem/page": 719, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // 30/09: +1 KB. Três ícones novos no menu (Construtoras, Crédito e Marca
   // tinham ícone repetido); o menu vai em toda rota do painel.
   "/corretor/(painel)/imoveis/[slug]/importar/page": 728, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
   // O editor do imóvel mostra na mesma tela as unidades, o andamento da obra
   // e os leads que combinam (com "reabrir perdidos"): 26/09.
-  "/corretor/(painel)/imoveis/[slug]/page": 781, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
-  "/corretor/(painel)/marketing/video/page": 710, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/imoveis/[slug]/page": 784, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
+  "/corretor/(painel)/marketing/video/page": 711, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // 03/10: +7 KB nas listas de transmissão (0153-0155): pausar, cancelar,
   // variáveis, A/B que decide sozinho e o motivo do limite do dia, tudo no
   // assistente. Vermelho desde 04/10 sem ninguém ver.
@@ -93,14 +94,14 @@ const TETOS_KB = {
   // de teto padrão abaixo: a lateral do computador que recolhe em trilho de
   // ícones (cartões, cookie) e o cabeçalho que some ao rolar no celular. Os
   // dois moram no layout, então pesam em toda rota do painel.
-  "/corretor/(painel)/marketing/impulsionamentos/page": 745, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/marketing/impulsionamentos/page": 753, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // 16/10: a ficha do lead ganhou a seção Documentação (0179): conferir e
   // recusar com motivo, lista por fase editável, anexar e o .zip montado no
   // navegador (o montador do zip vai por import() no clique).
   // 16/10: +1 KB, anexo em dois tempos (autoriza, sobe direto ao armazenamento,
   // confere); o redutor de foto e o envio vão por import() no clique.
-  "/corretor/(painel)/leads/[id]/page": 754,
-  "/corretor/(painel)/importar/page": 747, // 14/10: +1 KB, cor por seção da Administração no menu (moduloDaSecao, no layout)
+  "/corretor/(painel)/leads/[id]/page": 755, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
+  "/corretor/(painel)/importar/page": 748, // 20/10: medida do CI depois da notificação no celular, roleta e campos da planta
   // Site público — os números da linha de base de 13/09, sem folga: nenhuma
   // rota pública pode engordar um chunk sem alguém explicar por quê.
   // 28/09: +3 KB na home e +7 na listagem são o coração de favorito em cada

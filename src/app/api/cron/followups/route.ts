@@ -39,6 +39,7 @@ import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
+import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
@@ -626,6 +627,15 @@ export async function GET(req: NextRequest) {
    * Antes da janela comercial: é aviso ao corretor, não contato com cliente,
    * e tem horário próprio (7h às 21h59).
    */
+  /*
+   * Lead novo (0203): notificação no celular do dono, a qualquer hora. O
+   * webhook do WhatsApp já avisa na hora; aqui entra quem chegou pelo site,
+   * pelo formulário do anúncio ou por portal.
+   */
+  const leadsNovos = await avisarLeadsNovos(supabase).catch((e) => {
+    console.error("[lead novo]", e);
+    return 0;
+  });
   const semResposta = await alertarClientesSemResposta(supabase).catch((e) => {
     console.error("[cliente sem resposta]", e);
     return 0;
@@ -650,7 +660,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -692,7 +702,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, reservasLiberadas, lembretesDeTarefa, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }
