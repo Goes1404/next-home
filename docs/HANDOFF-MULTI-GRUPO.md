@@ -128,6 +128,20 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
    há um worktree antigo dentro de `.claude/worktrees/` e o vitest roda os
    testes dele contra o código atual.
 
+### Imobiliária de exemplo (21/10/2026)
+
+- **"Imobiliária Exemplo"** (`grupos.slug = imobexemplo`, id
+  `a993d9d2-c718-448a-be00-84b6857183c8`) é o SEGUNDO grupo de produção:
+  demonstração, plano essencial, primeiro mês pago. Site em
+  `https://imobexemplo.vercel.app` (alias da Vercel + `enderecos_do_site`),
+  4 imóveis copiados do catálogo da Next Home com slug `exemplo-*`, ADM
+  `adm.exemplo@astroimob.vercel.app` (senha com o dono). Contatos fictícios.
+- **É o primeiro momento com dois grupos em produção**: o carimbo que caía no
+  "grupo único" passou a exigir grupo explícito. Conferir erros de runtime e
+  se o webhook da Next Home segue gravando mensagens depois de 21/10 16h16 UTC.
+- Pequena falha visual: no site do grupo, alguns botões (ex.: "Buscar
+  imóveis") seguem o verde da marca padrão em vez da cor do grupo.
+
 ### Atenção operacional (21/10/2026)
 
 - **A Vercel parou de criar deploy sozinha a cada push** (depois do commit
