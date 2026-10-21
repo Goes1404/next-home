@@ -18,6 +18,8 @@ import { primeiroNome } from "@/lib/format";
 import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/Esqueleto";
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
+import { AtivarNotificacoes } from "./_componentes/AtivarNotificacoes";
+import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
@@ -117,6 +119,14 @@ export default async function PainelInicio({
       <Suspense fallback={null}>
         <QuemEstaEsperando corretorId={corretor.id} />
       </Suspense>
+
+      {/* Pausar a IA e dividir os leads do anúncio (roleta, 0204), sem sair do Início. */}
+      <Suspense fallback={null}>
+        <ControlesRapidos />
+      </Suspense>
+
+      {/* Avisos no celular: some quando já estão ligados neste aparelho. */}
+      <AtivarNotificacoes />
 
       {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}
       <Suspense fallback={null}>

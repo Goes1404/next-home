@@ -27,6 +27,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    etiqueta (`externalAdReply`) ou pelo texto padrão; o lead nasce `meta/ctwa`
    e o anúncio vai para `impulsionamentos`
    ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
+   Lead que NASCE assim: a IA fica calada ([[lead-da-campanha-do-corretor-sem-ia]])
+   e, com a roleta do dono ligada, vai para o próximo da lista dele, depois da
+   resposta ([[roleta-dos-anuncios]]).
    Antes dele, a mensagem do corretor com a palavra-chave cadastra o
    número na carteira dele; se o número já é lead de outro corretor, nada é
    criado e quem digitou recebe aviso no Início
