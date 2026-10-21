@@ -11618,3 +11618,13 @@ Nota: [[controles-rapidos-do-inicio]].
   aviso de contraste do botão não dispara nunca, só o de texto sobre fundo.
 - Com fundo ou texto definidos o tema claro/escuro some (cores fixas).
 
+
+### Ícone da aba e manifesto por grupo (21/10/2026, branch icone-do-grupo)
+- Painel de grupo ≠ 1: `icons` = logo do grupo (ou ícone AstroImob em
+  `public/icones/astroimob-*`) + `manifest: /api/painel/manifest` (nome, cor
+  `site_cor`, `start_url /corretor`, standalone; `private, no-store`, `Vary:
+  Cookie`). Login/telas `/corretor` e `/plataforma` em astroimob.vercel.app:
+  ícone AstroImob decidido só pelo host (`corretor/layout.tsx`), sem ler sessão.
+  Site público de grupo ≠ 1: logo ou neutro. Next Home: nada declarado, nenhum
+  byte novo no `<head>`. Nota: `vault/10-notas/icone-e-manifesto-por-grupo.md`.
+- `VAPID_SUBJECT` mantido: não dá para provar que a env de produção o define.

@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { Wordmark } from "@/components/ui/Wordmark";
+import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 
-export const metadata: Metadata = {
-  title: { default: "Plataforma", template: "%s · Plataforma" },
-  robots: { index: false, follow: false },
-};
+/** Em `astroimob.vercel.app` o ícone é o da AstroImob; nos outros endereços, como sempre foi. */
+export async function generateMetadata(): Promise<Metadata> {
+  const base: Metadata = { title: { default: "Plataforma", template: "%s · Plataforma" }, robots: { index: false, follow: false } };
+  return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: null } : base;
+}
 
 /**
  * Casca da área do administrador da plataforma (fase 2A, desenho §11).

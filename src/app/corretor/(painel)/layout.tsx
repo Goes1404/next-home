@@ -19,7 +19,7 @@ import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
-import { ICONES_NEUTROS } from "@/lib/sites/metadados";
+import { CAMINHO_DO_MANIFESTO_DO_PAINEL, iconesDoGrupo } from "@/lib/marcaDoCrm/icones";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
@@ -30,9 +30,9 @@ import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
  * foi. Outro grupo não herda o nome nem o ícone dela: a aba leva o nome da
- * casa dele, e o ícone é a logo dele ou o neutro (o manifesto do raiz é da
- * Next Home, e o `favicon.ico` de arquivo não obedece a `icons`: anotado em
- * docs/HANDOFF-MULTI-GRUPO.md).
+ * casa dele, e o ícone é a logo dele ou o da AstroImob, e o manifesto é o dele
+ * (`/api/painel/manifest`). O `favicon.ico` mora em `public/` justamente para
+ * não vencer o `icons` do grupo.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const marca = await marcaDoPainel();
@@ -43,8 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     ...base,
     title: { default: `Painel · ${marca.nome}`, template: `%s · ${marca.nome}` },
-    icons: marca.logoUrl ? { icon: [{ url: marca.logoUrl }] } : ICONES_NEUTROS,
-    manifest: null,
+    icons: iconesDoGrupo(marca),
+    manifest: CAMINHO_DO_MANIFESTO_DO_PAINEL,
   };
 }
 

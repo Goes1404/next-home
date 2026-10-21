@@ -319,6 +319,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/app/corretor/(painel)/leads/[id]/linksAcoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link do cliente é o do grupo dele" },
   "src/app/corretor/(painel)/links/page.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; os links pessoais são os do grupo dele" },
   "src/app/corretor/(painel)/page.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link pessoal é o do grupo dele" },
+  "src/app/api/painel/manifest/route.ts": { validadoPor: "marcaDoPainel", motivo: "o grupo é o do corretor da sessão (marcaDoPainel lê getCorretorLogado); lê a cor do site dele" },
   "src/app/plataforma/grupos/[id]/page.tsx": { validadoPor: "exigirAdminDaPlataformaNaPagina", motivo: "operador da plataforma; lê a logo de UM grupo, o do id da rota" },
   "src/lib/imovelPublico/ficha.ts": { validadoPor: "lerGrupoPorSlug", motivo: "o grupo sai do slug da URL pública; catálogo, marca e corretor são lidos com o id dele" },
   "src/lib/marcaDoCrm/doPainel.ts": { validadoPor: "getCorretorLogado", motivo: "a marca é a do grupo do corretor da sessão" },

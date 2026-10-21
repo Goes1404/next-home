@@ -132,7 +132,15 @@ export function metadadosDoSite(marca: MarcaDoSite): Metadata {
           },
         }
       : {}),
-    ...(marca.ehNextHome ? { icons: ICONES_DA_NEXT_HOME } : { icons: ICONES_NEUTROS, manifest: null }),
+    ...(marca.ehNextHome
+      ? { icons: ICONES_DA_NEXT_HOME }
+      : {
+          // A logo do grupo na aba e na tela inicial; sem logo, o neutro.
+          icons: marca.logoUrl
+            ? { icon: [{ url: marca.logoUrl }], apple: [{ url: marca.logoUrl }] }
+            : ICONES_NEUTROS,
+          manifest: null,
+        }),
   };
 }
 

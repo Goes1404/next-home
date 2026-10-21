@@ -122,9 +122,12 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
      montador `src/lib/imovelPublico/link.ts` (nota `ficha-publica-do-imovel`).
      Resta: o link do CATÁLOGO (`?corretor=`) que a IA manda segue o da Next
      Home para grupo sem site; com site próprio já sai o host do grupo;
-   - `src/app/manifest.ts` e o `favicon.ico` de arquivo são da Next Home; o
-     painel de outro grupo declara `icons` e `manifest: null`, mas o
-     `favicon.ico` do raiz não obedece;
+   - ~~favicon/manifest do painel de outro grupo~~: resolvido na branch
+     `icone-do-grupo` (21/10/2026): logo do grupo ou ícone AstroImob na aba e no
+     apple-touch-icon, manifesto próprio em `/api/painel/manifest`, login e
+     `/plataforma` de `astroimob.vercel.app` com ícone AstroImob (nota
+     `icone-e-manifesto-por-grupo`). Falta só conferir no navegador depois do
+     deploy (ver relatório);
    - `PAINEL_URL` diferente do padrão exige também listar o host em
      `ENDERECOS_DO_PAINEL`;
    - o `redirectUri` do Gmail segue o endereço do painel do grupo: se o Gmail
