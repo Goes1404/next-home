@@ -3397,3 +3397,61 @@ main[data-cabecalho="oculto"] {
     opacity: 0.2;
   }
 }
+
+/* ===========================================================================
+ * Fundo da tela de login (21/10/2026)
+ *
+ * Três orbes de luz que derivam devagar, uma malha fina e estrelas que
+ * piscam. Cores por variável (`--login-a/b/c`): a marca do endereço
+ * (AstroImob no endereço do CRM, Next Home no site) define a paleta. Só
+ * `transform`/`opacity` (compositor), e nada se move com movimento reduzido (animação só em `no-preference`).
+ * ======================================================================== */
+.login-fundo {
+  background:
+    radial-gradient(120% 90% at 10% 0%, color-mix(in oklab, var(--login-a) 35%, transparent), transparent 60%),
+    radial-gradient(100% 80% at 100% 100%, color-mix(in oklab, var(--login-b) 30%, transparent), transparent 60%),
+    var(--login-base);
+}
+.login-malha {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+.login-orbe {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.55;
+  will-change: transform;
+}
+@keyframes login-deriva {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(6vw, -4vh, 0) scale(1.12); }
+  100% { transform: translate3d(-4vw, 5vh, 0) scale(0.94); }
+}
+.login-estrela {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+  background: #fff;
+  opacity: 0.4;
+}
+@keyframes login-pisca {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.9; }
+}
+@keyframes login-chega {
+  from { opacity: 0; transform: translateY(12px); }
+}
+/* Movimento só para quem não pediu menos movimento (por isso não há bloco
+   `reduce` aqui: `profundidadeDoPainel.test.ts` lê o último deles). */
+@media (prefers-reduced-motion: no-preference) {
+  .login-orbe { animation: login-deriva 22s ease-in-out infinite alternate; }
+  .login-orbe:nth-child(2) { animation-duration: 28s; animation-delay: -6s; }
+  .login-orbe:nth-child(3) { animation-duration: 34s; animation-delay: -12s; }
+  .login-estrela { animation: login-pisca 4s ease-in-out infinite; }
+  .login-cartao { animation: login-chega 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
