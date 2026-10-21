@@ -63,7 +63,8 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio
    apagada; `anon` sem insert em `leads` e `cliques_whatsapp`; `/wa` conferido).
 2. Configurar o que cada fase precisa fora do código (lista acima):
-   Resend + `insert into administradores_da_plataforma` (2A),
+   Resend (2A; o dono é administrador da plataforma desde 21/10, login
+   sq1matheusgsilva@gmail.com, SEM ficha de corretor: o login o leva a /plataforma),
    `DOMINIO_DA_PLATAFORMA` e domínio curinga (3), `APAGAR_GRUPOS_CANCELADOS`
    (Op, quando quiser ligar a rotina dos 90 dias).
 3. ~~Roleta × saída do corretor~~ — decidido em 21/10: o lead é de quem
