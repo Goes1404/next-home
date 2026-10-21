@@ -11512,3 +11512,22 @@ Nota: [[controles-rapidos-do-inicio]].
   faz a função pegar o lead); quem decide o destino é a coluna nova.
 - Limpeza: os leads "TESTE ROTEIRO 2/3/6" (site/contato, sem conversa nem
   venda) foram apagados de produção.
+
+## Cobrança manual e suspensão por atraso (fase 2C, 0207, 21/10/2026)
+
+- Nota: [[cobranca-manual-e-suspensao]]. Plano:
+  `docs/superpowers/plans/2026-10-21-fase-2c-cobranca-manual.md`.
+- A plataforma registra o pagamento da mensalidade à mão (`pagamentos_do_grupo`,
+  uma linha por grupo e competência). Vence no dia do cadastro (`dia_do_vencimento`,
+  1–28); a competência do mês do cadastro nasce paga por gatilho.
+- **A suspensão por atraso é derivada na leitura** (`situacaoDaCobranca`, módulo
+  puro), sem cron e sem estado gravado: 5 dias de atraso (ou `situacao =
+  'suspenso'`, a manual) suspendem IA no WhatsApp, listas, artes e vídeos. O
+  plano `custo` nunca é suspenso por atraso. Painel, login e site seguem. Erro de
+  leitura da cobrança libera a operação.
+- A IA cala com o motivo `grupo_suspenso` em `decidirSeAIaResponde` (vence a
+  cota); webhook, respostas atrasadas e cabeçalho da conversa passam
+  `grupoSuspenso`, e um teste lê o fonte para conferir.
+- **A 0207 marca como pagas (valor 0) todas as competências dos grupos que já
+  existiam até o mês corrente**: sem isso o deploy suspenderia todos de uma vez.
+- `grupos` usa `criado_em` (o plano dizia `created_at`).

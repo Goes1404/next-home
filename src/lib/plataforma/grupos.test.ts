@@ -22,6 +22,8 @@ const GRUPOS = [
     plano: "custo",
     situacao: "ativo",
     criado_em: "2026-10-01T00:00:00Z",
+    dia_do_vencimento: 1,
+    mensalidade: null,
     teto_respostas_ia: null,
   },
   {
@@ -32,9 +34,14 @@ const GRUPOS = [
     plano: "essencial",
     situacao: "suspenso",
     criado_em: "2026-10-10T00:00:00Z",
+    dia_do_vencimento: 10,
+    mensalidade: "299.00",
     teto_respostas_ia: null,
   },
 ];
+
+/** Só a competência de agosto paga: outubro (vence dia 1) fica em aberto. */
+const PAGAMENTOS = [{ id: "p1", competencia: "2026-09-01", valor: 250, pago_em: "2026-09-02", observacao: null }];
 
 /** Contagem que depende do grupo e dos filtros, para o teste ver o casamento. */
 function contagem(c: Chamada): number {
@@ -68,6 +75,9 @@ function consulta(tabela: string) {
     order() {
       return q;
     },
+    limit() {
+      return q;
+    },
     maybeSingle() {
       if (tabela === "uso_da_ia") {
         const grupo = c.filtros.find((f) => f.startsWith("eq:grupo_id="))?.split("=")[1];
@@ -80,7 +90,9 @@ function consulta(tabela: string) {
       const resposta =
         tabela === "grupos"
           ? { data: GRUPOS, error: null }
-          : falharContagem
+          : tabela === "pagamentos_do_grupo"
+            ? { data: PAGAMENTOS, error: null }
+            : falharContagem
             ? { data: null, count: null, error: { message: "tempo esgotado" } }
             : { data: null, count: contagem(c), error: null };
       return Promise.resolve(resposta).then(ok, falha);
@@ -106,12 +118,18 @@ describe("listarGruposDaPlataforma", () => {
   it("listar grupos não lê tabela de conversa nem de lead", async () => {
     await listarGruposDaPlataforma(PROVA);
     const tabelas = new Set(chamadas.map((c) => c.tabela));
-    expect([...tabelas].sort()).toEqual(["corretor_whatsapp_instancias", "corretores", "grupos", "uso_da_ia"]);
+    expect([...tabelas].sort()).toEqual([
+      "corretor_whatsapp_instancias",
+      "corretores",
+      "grupos",
+      "pagamentos_do_grupo",
+      "uso_da_ia",
+    ]);
   });
 
   it("das pessoas e dos números só conta (head), nunca traz linha", async () => {
     await listarGruposDaPlataforma(PROVA);
-    const contagens = chamadas.filter((c) => c.tabela !== "grupos" && c.tabela !== "uso_da_ia");
+    const contagens = chamadas.filter((c) => !["grupos", "uso_da_ia", "pagamentos_do_grupo"].includes(c.tabela));
     expect(contagens.length).toBeGreaterThan(0);
     for (const c of contagens) {
       expect(c.opcoes).toEqual({ count: "exact", head: true });
@@ -124,7 +142,17 @@ describe("listarGruposDaPlataforma", () => {
     await listarGruposDaPlataforma(PROVA);
     const doGrupo = chamadas.find((c) => c.tabela === "grupos")!;
     const colunas = doGrupo.select!.split(",").map((s) => s.trim()).sort();
-    expect(colunas).toEqual(["criado_em", "id", "nome", "plano", "situacao", "slug", "teto_respostas_ia", "tipo"]);
+    expect(colunas).toEqual([
+      "criado_em",
+      "dia_do_vencimento",
+      "id",
+      "nome",
+      "plano",
+      "situacao",
+      "slug",
+      "teto_respostas_ia",
+      "tipo",
+    ]);
   });
 
   it("monta o resumo de cada grupo com as contagens dele", async () => {
@@ -145,6 +173,8 @@ describe("listarGruposDaPlataforma", () => {
         tetoDoPlano: null,
         // Preço de custo: sem teto, por mais que use.
         usoDaIa: { respostas: 4000, teto: null, percentual: null, restantes: null, nivel: "sem_teto" },
+        // Preço de custo: nunca é cobrado (a conta é a de cobranca.ts).
+        cobranca: expect.objectContaining({ estado: "isento", competenciaEmAberto: null }),
       },
       {
         id: "g2",
@@ -161,6 +191,8 @@ describe("listarGruposDaPlataforma", () => {
         tetoDoPlano: 1000,
         // Essencial: 1.000 no mês; 850 já é aviso.
         usoDaIa: { respostas: 850, teto: 1000, percentual: 85, restantes: 150, nivel: "aviso" },
+        // Suspenso à mão (`situacao`) vence qualquer pagamento.
+        cobranca: expect.objectContaining({ estado: "suspenso" }),
       },
     ]);
     // Corretor ativo e número conectado: o filtro que dá sentido ao número.
@@ -168,6 +200,13 @@ describe("listarGruposDaPlataforma", () => {
     expect(ativos.every((c) => c.filtros.includes("eq:ativo=true"))).toBe(true);
     const numeros = chamadas.filter((c) => c.tabela === "corretor_whatsapp_instancias");
     expect(numeros.filter((c) => c.filtros.includes("eq:status_conexao=conectado"))).toHaveLength(2);
+    // Os pagamentos também são lidos no grupo da linha, e só a competência.
+    const pagamentos = chamadas.filter((c) => c.tabela === "pagamentos_do_grupo");
+    expect(pagamentos).toHaveLength(2);
+    for (const c of pagamentos) {
+      expect(c.select).toBe("competencia");
+      expect(c.filtros.some((f) => f.startsWith("eq:grupo_id="))).toBe(true);
+    }
     // O uso da IA é lido no grupo e no mês de São Paulo.
     const uso = chamadas.filter((c) => c.tabela === "uso_da_ia");
     expect(uso).toHaveLength(2);
@@ -191,16 +230,30 @@ describe("lerGrupoDaPlataforma", () => {
 
   it("um grupo lê o cadastro e conta, sem tabela de conversa nem de lead", async () => {
     const grupo = await lerGrupoDaPlataforma(PROVA, "g2");
-    expect(grupo).toMatchObject({ id: "g2", nome: "Fulana Corretora", corretoresAtivos: 6, comLogin: 3, numerosConectados: 4 });
+    expect(grupo).toMatchObject({
+      id: "g2",
+      nome: "Fulana Corretora",
+      corretoresAtivos: 6,
+      comLogin: 3,
+      numerosConectados: 4,
+      mensalidade: 299,
+      diaDoVencimento: 10,
+      pagamentos: [{ id: "p1", competencia: "2026-09-01", valor: 250, pagoEm: "2026-09-02", observacao: null }],
+    });
     expect([...new Set(chamadas.map((c) => c.tabela))].sort()).toEqual([
       "corretor_whatsapp_instancias",
       "corretores",
       "grupos",
+      "pagamentos_do_grupo",
       "uso_da_ia",
     ]);
     const colunas = chamadas.find((c) => c.tabela === "grupos")!.select!.split(",").map((s) => s.trim());
     expect(colunas).toEqual(expect.arrayContaining(["contato_cobranca_email", "documento", "encarregado_lgpd_email"]));
-    for (const c of chamadas.filter((c) => c.tabela !== "grupos" && c.tabela !== "uso_da_ia")) {
+    // O histórico traz linha de pagamento (só valor e data, nada de conversa).
+    const historico = chamadas.filter((c) => c.tabela === "pagamentos_do_grupo" && c.select !== "competencia");
+    expect(historico).toHaveLength(1);
+    expect(historico[0].select).toBe("id, competencia, valor, pago_em, observacao");
+    for (const c of chamadas.filter((c) => !["grupos", "uso_da_ia", "pagamentos_do_grupo"].includes(c.tabela))) {
       expect(c.opcoes).toEqual({ count: "exact", head: true });
     }
   });

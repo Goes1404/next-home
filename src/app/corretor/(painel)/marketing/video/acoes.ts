@@ -12,6 +12,8 @@ import {
   type ChaveObjetivo,
   type Copy,
 } from "@/lib/imagens/marketing";
+import { MENSAGEM_DE_VIDEOS_PAUSADOS } from "@/lib/planos/cobranca";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { enfileirarVideo, getMeusVideos, getSaldo } from "@/lib/video/fila";
 import { acionarRender } from "@/lib/video/acionarRender";
 import { duracaoTotal, montarRoteiro } from "@/lib/video/roteiro";
@@ -173,6 +175,10 @@ export async function verRoteiro(
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
 
+  // Grupo suspenso por cobrança (fase 2C): o roteiro também classifica as
+  // fotos por visão (IA paga), então para junto com a criação.
+  if (await grupoSuspenso(corretor.grupoId)) return { erro: MENSAGEM_DE_VIDEOS_PAUSADOS };
+
   const p = await preparar(pedido);
   if ("erro" in p) return { erro: p.erro };
 
@@ -207,6 +213,10 @@ export async function verRoteiro(
 export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string; jobId?: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+
+  // Grupo suspenso por cobrança (fase 2C): recusa antes de qualquer custo
+  // (classificar fotos por visão já é IA paga, então o roteiro também para).
+  if (await grupoSuspenso(corretor.grupoId)) return { erro: MENSAGEM_DE_VIDEOS_PAUSADOS };
 
   const p = await preparar(pedido);
   if ("erro" in p) return { erro: p.erro };

@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
+import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { UsoDaIa } from "../../UsoDaIa";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
+import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 
@@ -73,6 +75,17 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         <UsoDaIa uso={grupo.usoDaIa} ajustado={grupo.tetoAjustado !== null} />
         <FormularioTetoDaIa grupoId={grupo.id} inicial={grupo.tetoAjustado} padraoDoPlano={grupo.tetoDoPlano} />
       </section>
+
+      <CobrancaDoGrupo
+        grupoId={grupo.id}
+        cobranca={grupo.cobranca}
+        mensalidade={grupo.mensalidade}
+        diaDoVencimento={grupo.diaDoVencimento}
+        pagamentos={grupo.pagamentos}
+        suspensoManual={grupo.situacao === "suspenso"}
+        podeSuspender={grupo.situacao === "ativo" && grupo.canceladoEm === null}
+        hoje={diaEmSP(new Date())}
+      />
 
       <FormularioDadosDoGrupo
         grupoId={grupo.id}

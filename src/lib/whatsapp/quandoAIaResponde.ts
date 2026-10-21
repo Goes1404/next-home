@@ -31,9 +31,11 @@ import { inicioDoProximoMesEmSaoPaulo } from "@/lib/planos/cotaDaIa";
  *    - IA desligada no número;
  *    - modo "fora do expediente" e agora é expediente;
  *    - modo co-piloto e o corretor falou há menos de 3 min.
- * 3. **O grupo** (fase 2B, 20/10/2026): a cota de respostas da IA do mês
- *    acabou. Só entra quando a IA RESPONDERIA: se ela já calaria por outro
- *    motivo, o motivo é aquele (é ele que explica o silêncio de verdade).
+ * 3. **O grupo** (fase 2B, 20/10/2026; fase 2C, 21/10/2026): o grupo está
+ *    suspenso por cobrança (atraso de 5 dias ou suspensão da plataforma) ou
+ *    a cota de respostas da IA do mês acabou, nessa ordem. Só entra quando
+ *    a IA RESPONDERIA: se ela já calaria por outro motivo, o motivo é aquele
+ *    (é ele que explica o silêncio de verdade).
  *
  * O primeiro motivo que se aplica é O motivo. A ordem é a de quem tem a
  * palavra final: o que o cliente pediu ganha do que o corretor configurou.
@@ -88,7 +90,9 @@ export type MotivoDoSilencio =
   | "dentro_do_expediente"
   | "corretor_respondendo"
   /** A cota de respostas da IA do grupo acabou neste mês (fase 2B). */
-  | "cota_do_grupo";
+  | "cota_do_grupo"
+  /** O grupo está suspenso por cobrança (fase 2C): atraso de 5 dias ou suspensão da plataforma. */
+  | "grupo_suspenso";
 
 export type MotivoDaResposta = "sempre_ativa" | "fora_do_expediente" | "corretor_ausente";
 
@@ -135,10 +139,20 @@ export function decidirSeAIaResponde(params: {
    * desconhecida: quem não leu a cota (a tela sem ela) não cala por ela.
    */
   cotaEsgotada?: boolean;
+  /**
+   * O grupo está suspenso por cobrança (`grupoSuspenso`, fase 2C). Ausente =
+   * desconhecido: quem não leu a cobrança (a tela sem ela) não cala por ela.
+   * Vence a cota: suspenso, o motivo que explica o silêncio é o pagamento.
+   */
+  grupoSuspenso?: boolean;
   agora?: Date;
 }): DecisaoDaIA {
   const agora = params.agora ?? new Date();
   const decisao = decidirSemACota(params, agora);
+  if (decisao.responde && params.grupoSuspenso) {
+    // Sem `voltaEm`: volta quando a plataforma registrar o pagamento (ou reativar).
+    return { responde: false, motivo: "grupo_suspenso", voltaEm: null };
+  }
   if (decisao.responde && params.cotaEsgotada) {
     return { responde: false, motivo: "cota_do_grupo", voltaEm: inicioDoProximoMesEmSaoPaulo(agora) };
   }
@@ -236,6 +250,8 @@ export function fraseDaDecisao(decisao: DecisaoDaIA, numero: ConfigDoNumero | nu
       return `Você está respondendo; a IA entra depois de ${MINUTOS_COPILOTO} min sem você falar`;
     case "cota_do_grupo":
       return "As respostas da IA deste mês acabaram: você responde por aqui até o dia 1º";
+    case "grupo_suspenso":
+      return "IA pausada: mensalidade em atraso. Você responde por aqui até a plataforma registrar o pagamento";
   }
 }
 

@@ -147,6 +147,7 @@ describe("fraseDaDecisao — a tela tira a frase da mesma decisão", () => {
       "dentro_do_expediente",
       "corretor_respondendo",
       "cota_do_grupo",
+      "grupo_suspenso",
     ] as const;
     for (const motivo of motivos) {
       const frase = fraseDaDecisao({ responde: false, motivo, voltaEm: null }, noturno);
@@ -303,5 +304,86 @@ describe("cota de respostas da IA do grupo (fase 2B)", () => {
     "src/lib/whatsapp/aberturaPelaIA.ts",
   ])("%s consulta a cota antes de a IA falar", (arquivo) => {
     expect(semComentarios(arquivo)).toContain("lerCotaDaIa(");
+  });
+});
+
+describe("grupo suspenso por cobrança (fase 2C)", () => {
+  it("grupo suspenso cala com o motivo próprio, sem dizer quando volta", () => {
+    const d = decidirSeAIaResponde({ conversa: livre, numero: sempre, agora: QUARTA_14H_BRT, grupoSuspenso: true });
+    expect(d).toEqual({ responde: false, motivo: "grupo_suspenso", voltaEm: null });
+  });
+
+  it("suspenso vence a cota: o que explica o silêncio é o pagamento", () => {
+    const d = decidirSeAIaResponde({
+      conversa: livre,
+      numero: sempre,
+      agora: QUARTA_14H_BRT,
+      grupoSuspenso: true,
+      cotaEsgotada: true,
+    });
+    expect(d.motivo).toBe("grupo_suspenso");
+  });
+
+  it("o que já calaria cala pelo motivo de antes", () => {
+    expect(
+      decidirSeAIaResponde({ conversa: { ...livre, botAtivo: false }, numero: sempre, agora: QUARTA_14H_BRT, grupoSuspenso: true })
+        .motivo,
+    ).toBe("ia_desligada_na_conversa");
+    expect(
+      decidirSeAIaResponde({ conversa: livre, numero: noturno, agora: QUARTA_14H_BRT, grupoSuspenso: true }).motivo,
+    ).toBe("dentro_do_expediente");
+  });
+
+  it("sem a informação (ou com o grupo em dia), nada muda", () => {
+    expect(decidirSeAIaResponde({ conversa: livre, numero: sempre, agora: QUARTA_14H_BRT }).responde).toBe(true);
+    expect(
+      decidirSeAIaResponde({ conversa: livre, numero: sempre, agora: QUARTA_14H_BRT, grupoSuspenso: false }).responde,
+    ).toBe(true);
+  });
+
+  it("não é motivo da conversa, e o registro do silêncio leva o motivo sem data de volta", () => {
+    expect(silencioDaConversa(livre)).toBeNull();
+    const d = decidirSeAIaResponde({ conversa: livre, numero: sempre, agora: QUARTA_14H_BRT, grupoSuspenso: true });
+    if (d.responde) throw new Error("devia calar");
+    expect(registroDoSilencio(d, sempre)).toMatchObject({ motivo: "grupo_suspenso", volta_em: null });
+  });
+
+  it("a frase diz que o corretor atende e por que a IA parou", () => {
+    const frase = fraseDaDecisao({ responde: false, motivo: "grupo_suspenso", voltaEm: null }, sempre);
+    expect(frase).toMatch(/mensalidade/i);
+    expect(frase).toMatch(/você/i);
+  });
+
+  // O defeito recorrente deste projeto: a tela e o webhook fazerem contas diferentes.
+  it.each([
+    ["src/app/api/webhooks/whatsapp/route.ts", "grupoSuspenso: suspenso"],
+    ["src/app/api/cron/followups/route.ts", "grupoSuspenso: await grupoSuspenso("],
+  ])("%s passa a cobrança para decidirSeAIaResponde", (arquivo, trecho) => {
+    const codigo = semComentarios(arquivo);
+    expect(codigo).toContain("grupoSuspenso(");
+    expect(codigo.includes(trecho), trecho).toBe(true);
+  });
+
+  it("o cabeçalho da conversa leva a cobrança para a mesma decisão", () => {
+    expect(semComentarios("src/app/corretor/(painel)/conversas/chatModelo.ts")).toContain(
+      "grupoSuspenso: ia?.grupoSuspenso",
+    );
+  });
+
+  it.each([
+    "src/app/corretor/(painel)/conversas/page.tsx",
+    "src/app/corretor/(painel)/pessoas/page.tsx",
+  ])("%s entrega a cobrança ao cabeçalho da conversa", (arquivo) => {
+    expect(semComentarios(arquivo)).toContain("grupoSuspenso: suspenso");
+  });
+
+  it.each([
+    ["src/app/api/cron/followups/route.ts", /if \(await grupoSuspenso\(instancia\.grupo_id\)\) return "pulado"/],
+    ["src/lib/whatsapp/campaignDispatcher.ts", /if \(await grupoSuspenso\(instancia\.grupo_id\)\)\s*\{\s*return vazio\(\s*"grupo_suspenso"/],
+    ["src/lib/whatsapp/aberturaPelaIA.ts", /grupoSuspenso\(data\.grupo_id\)/],
+    ["src/app/api/imagens/gerar/route.ts", /await grupoSuspenso\(corretor\.grupoId\)[\s\S]*MENSAGEM_DE_ARTES_PAUSADAS/],
+    ["src/app/corretor/(painel)/marketing/video/acoes.ts", /await grupoSuspenso\(corretor\.grupoId\)\) return \{ erro: MENSAGEM_DE_VIDEOS_PAUSADOS/],
+  ])("%s respeita a suspensão", (arquivo, regra) => {
+    expect(semComentarios(arquivo)).toMatch(regra);
   });
 });

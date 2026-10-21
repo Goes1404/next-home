@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import Link from "next/link";
+import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { UsoDaIa } from "./UsoDaIa";
@@ -12,6 +13,13 @@ const SITUACAO: Record<ResumoDeGrupo["situacao"], { rotulo: string; classe: stri
   ativo: { rotulo: "Ativo", classe: "bg-ok-lavado text-ok border-ok-linha" },
   suspenso: { rotulo: "Suspenso", classe: "bg-alerta-lavado text-alerta border-alerta-linha" },
   encerrado: { rotulo: "Encerrado", classe: "bg-perigo-lavado text-perigo border-perigo-linha" },
+};
+
+/** A mensalidade na lista (fase 2C); o plano de custo não é cobrado e fica sem etiqueta. */
+const COBRANCA: Partial<Record<EstadoDaCobranca, { rotulo: string; classe: string }>> = {
+  em_dia: { rotulo: "Mensalidade em dia", classe: "bg-ok-lavado text-ok border-ok-linha" },
+  pendente: { rotulo: "Mensalidade vencida", classe: "bg-alerta-lavado text-alerta border-alerta-linha" },
+  suspenso: { rotulo: "Suspenso por cobrança", classe: "bg-perigo-lavado text-perigo border-perigo-linha" },
 };
 
 const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short" });
@@ -49,6 +57,7 @@ export default async function PlataformaPage() {
         <ul className="grid gap-4 md:grid-cols-2">
           {grupos.map((g) => {
             const situacao = SITUACAO[g.situacao];
+            const cobranca = COBRANCA[g.cobranca.estado];
             return (
               <li key={g.id} className="cartao flex min-w-0 flex-col gap-4 p-5">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
@@ -60,9 +69,16 @@ export default async function PlataformaPage() {
                     </h2>
                     <p className="text-fluid-xs text-apoio break-all">{g.slug}</p>
                   </div>
-                  <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${situacao.classe}`}>
-                    {situacao.rotulo}
-                  </span>
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${situacao.classe}`}>
+                      {situacao.rotulo}
+                    </span>
+                    {cobranca && (
+                      <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${cobranca.classe}`}>
+                        {cobranca.rotulo}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <dl className="text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-2">

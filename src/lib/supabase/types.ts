@@ -749,6 +749,39 @@ export type Database = {
         Relationships: []
       }
       /** 0114 — a venda (F1 do módulo financeiro). */
+      pagamentos_do_grupo: {
+        Row: {
+          competencia: string
+          created_at: string
+          grupo_id: string
+          id: string
+          observacao: string | null
+          pago_em: string
+          registrado_por: string | null
+          valor: number
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          grupo_id: string
+          id?: string
+          observacao?: string | null
+          pago_em: string
+          registrado_por?: string | null
+          valor: number
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          observacao?: string | null
+          pago_em?: string
+          registrado_por?: string | null
+          valor?: number
+        }
+        Relationships: []
+      }
       uso_da_ia: {
         Row: {
           atualizado_em: string
@@ -1668,6 +1701,7 @@ export type Database = {
           creci_tipo: "J" | "F" | null
           criado_em: string
           criado_por: string | null
+          dia_do_vencimento: number
           documento: string | null
           encarregado_lgpd_email: string | null
           dados_apagados_em: string | null
@@ -1683,6 +1717,7 @@ export type Database = {
           ia_regiao: string | null
           ia_tom: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id: string
+          mensalidade: number | null
           nome: string
           plano: "essencial" | "profissional" | "imobiliaria" | "custo"
           razao_social: string | null
@@ -1700,6 +1735,7 @@ export type Database = {
           creci_tipo?: "J" | "F" | null
           criado_em?: string
           criado_por?: string | null
+          dia_do_vencimento?: number
           documento?: string | null
           encarregado_lgpd_email?: string | null
           dados_apagados_em?: string | null
@@ -1715,6 +1751,7 @@ export type Database = {
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id?: string
+          mensalidade?: number | null
           nome: string
           plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
           razao_social?: string | null
@@ -1732,6 +1769,7 @@ export type Database = {
           creci_tipo?: "J" | "F" | null
           criado_em?: string
           criado_por?: string | null
+          dia_do_vencimento?: number
           documento?: string | null
           encarregado_lgpd_email?: string | null
           dados_apagados_em?: string | null
@@ -1747,6 +1785,7 @@ export type Database = {
           ia_regiao?: string | null
           ia_tom?: "consultivo_alto_padrao" | "formal_direto" | "descontraido_acolhedor" | null
           id?: string
+          mensalidade?: number | null
           nome?: string
           plano?: "essencial" | "profissional" | "imobiliaria" | "custo"
           razao_social?: string | null

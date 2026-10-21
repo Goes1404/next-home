@@ -8,6 +8,7 @@ import { ListaPessoas } from "./ListaPessoas";
 import { carregarConversaDaPessoa } from "./acoes";
 import { getPaginaDePessoas } from "@/lib/crm/pessoas";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -106,7 +107,7 @@ async function Conteudo({
    * pareado o `Chat` troca o campo por uma frase que leva à tela de Conexão —
    * melhor que um campo que aceita texto e não entrega nada.
    */
-  const [{ pessoas, total }, { data: instancia }, conversa, cotaDaIa] = await Promise.all([
+  const [{ pessoas, total }, { data: instancia }, conversa, cotaDaIa, suspenso] = await Promise.all([
     getPaginaDePessoas({ busca: busca || undefined }),
     supabase
       .from("corretor_whatsapp_instancias")
@@ -115,6 +116,7 @@ async function Conteudo({
       .maybeSingle(),
     conversaInicial ? carregarConversaDaPessoa(conversaInicial) : Promise.resolve(null),
     lerCotaDaIa(grupoId),
+    grupoSuspenso(grupoId),
   ]);
 
   return (
@@ -130,6 +132,7 @@ async function Conteudo({
               modo: instancia.modo_bot as NonNullable<ContextoDaIA>["modo"],
               expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
               cotaEsgotada: cotaDaIa.nivel === "esgotada",
+              grupoSuspenso: suspenso,
             }
           : null
       }

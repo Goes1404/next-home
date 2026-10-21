@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
 import { rederrubarNumerosRecusados } from "./recusaPendente";
@@ -143,7 +144,9 @@ export type MotivoParada =
   | "sem_tempo"
   | "outro_disparador"
   /** A próxima mensagem sairia parecida com outra do número: a fila espera. */
-  | "texto_repetido";
+  | "texto_repetido"
+  /** Mensalidade em atraso (fase 2C): a fila espera o pagamento, sem perder nada. */
+  | "grupo_suspenso";
 
 export type ResultadoDispatch = {
   processados: number;
@@ -414,6 +417,15 @@ async function processarInstancia(ctx: {
 
   const idsCampanhas = (campanhasAtivas ?? []).map((c) => c.id);
   if (idsCampanhas.length === 0) return vazio("sem_campanha_ativa");
+
+  // Grupo suspenso por cobrança (fase 2C): a lista não dispara. A fila não
+  // muda: volta a sair sozinha quando o pagamento for registrado.
+  if (await grupoSuspenso(instancia.grupo_id)) {
+    return vazio(
+      "grupo_suspenso",
+      "As listas de transmissão estão pausadas: mensalidade em atraso. A fila volta a sair quando o pagamento for registrado.",
+    );
+  }
 
   const escopo = `instancia:${instancia.id}`;
   if (!(await travarDisparo(escopo, dono, TRAVA_SEGUNDOS))) {

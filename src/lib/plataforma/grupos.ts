@@ -1,5 +1,6 @@
 import "server-only";
 
+import { situacaoDaCobranca, type SituacaoDaCobranca } from "@/lib/planos/cobranca";
 import { mesEmSaoPaulo, situacaoDaCota, tetoDeRespostasDaIa, type SituacaoDaCota } from "@/lib/planos/cotaDaIa";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Database } from "@/lib/supabase/types";
@@ -40,6 +41,8 @@ export type ResumoDeGrupo = {
   tetoDoPlano: number | null;
   /** Respostas da IA no mês (São Paulo) contra o teto (fase 2B). */
   usoDaIa: SituacaoDaCota;
+  /** A mensalidade: em dia, pendente, suspensa ou isenta (fase 2C). Mesma conta do webhook. */
+  cobranca: SituacaoDaCobranca;
 };
 
 type Servico = ReturnType<typeof createServiceClient>;
@@ -58,10 +61,17 @@ function contagem(resposta: { count: number | null; error: { message: string } |
  */
 async function contarDoGrupo(
   servico: Servico,
-  grupo: { id: string; plano: Grupo["plano"]; teto_respostas_ia: number | null },
+  grupo: {
+    id: string;
+    plano: Grupo["plano"];
+    situacao: Grupo["situacao"];
+    criado_em: string;
+    dia_do_vencimento: number;
+    teto_respostas_ia: number | null;
+  },
 ) {
   const grupoId = grupo.id;
-  const [ativos, comLogin, conectados, instancias, uso] = await Promise.all([
+  const [ativos, comLogin, conectados, instancias, uso, pagamentos] = await Promise.all([
     servico
       .from("corretores")
       .select("id", { count: "exact", head: true })
@@ -81,8 +91,10 @@ async function contarDoGrupo(
     // Os assentos da cota (provisório): todo número cadastrado no grupo.
     servico.from("corretor_whatsapp_instancias").select("id", { count: "exact", head: true }).eq("grupo_id", grupoId),
     servico.from("uso_da_ia").select("respostas").eq("grupo_id", grupoId).eq("mes", mesEmSaoPaulo()).maybeSingle(),
+    servico.from("pagamentos_do_grupo").select("competencia").eq("grupo_id", grupoId),
   ]);
   if (uso.error) throw new Error(`Falha ao ler o uso da IA: ${uso.error.message}`);
+  if (pagamentos.error) throw new Error(`Falha ao ler os pagamentos: ${pagamentos.error.message}`);
   const assentos = contagem(instancias, "números cadastrados");
   const teto = tetoDeRespostasDaIa({ plano: grupo.plano, tetoAjustado: grupo.teto_respostas_ia, assentos });
   return {
@@ -92,6 +104,14 @@ async function contarDoGrupo(
     tetoAjustado: grupo.teto_respostas_ia,
     tetoDoPlano: tetoDeRespostasDaIa({ plano: grupo.plano, tetoAjustado: null, assentos }),
     usoDaIa: situacaoDaCota({ respostas: uso.data?.respostas ?? 0, teto }),
+    cobranca: situacaoDaCobranca({
+      plano: grupo.plano,
+      suspensoManual: grupo.situacao === "suspenso",
+      criadoEm: grupo.criado_em,
+      diaDoVencimento: grupo.dia_do_vencimento,
+      competenciasPagas: (pagamentos.data ?? []).map((p) => p.competencia),
+      hoje: new Date(),
+    }),
   };
 }
 
@@ -102,7 +122,7 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
   const servico = createServiceClient();
   const { data, error } = await servico
     .from("grupos")
-    .select("id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia")
+    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, teto_respostas_ia")
     .order("criado_em", { ascending: true });
   if (error) throw new Error(`Falha ao listar os grupos: ${error.message}`);
 
@@ -139,7 +159,25 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   /** Última falha da rotina dos 90 dias, sem dado pessoal. */
   falhaAoApagar: string | null;
   tentativaDeApagarEm: string | null;
+  /** Mensalidade combinada, em reais; `null` = não definida (fase 2C). */
+  mensalidade: number | null;
+  diaDoVencimento: number;
+  /** Os últimos pagamentos registrados, do mais recente ao mais antigo. */
+  pagamentos: PagamentoRegistrado[];
 };
+
+export type PagamentoRegistrado = {
+  id: string;
+  /** `AAAA-MM-01`. */
+  competencia: string;
+  valor: number;
+  /** `AAAA-MM-DD`. */
+  pagoEm: string;
+  observacao: string | null;
+};
+
+/** Quantos pagamentos a tela do grupo lista. */
+const PAGAMENTOS_NA_TELA = 12;
 
 /**
  * Um grupo pelo id, com o cadastro e os números; `null` se não existe. A
@@ -150,12 +188,19 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
   const { data: g, error } = await servico
     .from("grupos")
     .select(
-      "id, nome, slug, tipo, plano, situacao, criado_em, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
+      "id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
     )
     .eq("id", grupoId)
     .maybeSingle();
   if (error) throw new Error(`Falha ao ler o grupo: ${error.message}`);
   if (!g) return null;
+  const { data: historico, error: erroDoHistorico } = await servico
+    .from("pagamentos_do_grupo")
+    .select("id, competencia, valor, pago_em, observacao")
+    .eq("grupo_id", grupoId)
+    .order("competencia", { ascending: false })
+    .limit(PAGAMENTOS_NA_TELA);
+  if (erroDoHistorico) throw new Error(`Falha ao ler os pagamentos: ${erroDoHistorico.message}`);
   return {
     id: g.id,
     nome: g.nome,
@@ -178,6 +223,15 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     copiaFinalApagadaEm: g.copia_final_apagada_em,
     falhaAoApagar: g.falha_ao_apagar,
     tentativaDeApagarEm: g.tentativa_de_apagar_em,
+    mensalidade: g.mensalidade === null ? null : Number(g.mensalidade),
+    diaDoVencimento: g.dia_do_vencimento,
+    pagamentos: (historico ?? []).map((p) => ({
+      id: p.id,
+      competencia: p.competencia,
+      valor: Number(p.valor),
+      pagoEm: p.pago_em,
+      observacao: p.observacao,
+    })),
     ...(await contarDoGrupo(servico, g)),
   };
 }

@@ -260,9 +260,10 @@ export function sinaisDoLead(row: {
 
 /**
  * O que o cabeçalho precisa saber do número para explicar o silêncio da IA,
- * e se a cota de respostas da IA do grupo acabou (fase 2B).
+ * e se a cota de respostas da IA do grupo acabou (fase 2B) ou o grupo está
+ * suspenso por cobrança (fase 2C).
  */
-export type ContextoDaIA = (ConfigDoNumero & { cotaEsgotada?: boolean }) | null;
+export type ContextoDaIA = (ConfigDoNumero & { cotaEsgotada?: boolean; grupoSuspenso?: boolean }) | null;
 
 /**
  * POR QUE a IA está ou não respondendo, em uma frase (plano de ativação,
@@ -281,7 +282,13 @@ export function fraseDoEstado(
 ): string {
   const ajustada = { ...situacaoDoResumo(conversa), botAtivo: estado !== "desligada" };
   return fraseDaDecisao(
-    decidirSeAIaResponde({ conversa: ajustada, numero: ia, agora, cotaEsgotada: ia?.cotaEsgotada }),
+    decidirSeAIaResponde({
+      conversa: ajustada,
+      numero: ia,
+      agora,
+      cotaEsgotada: ia?.cotaEsgotada,
+      grupoSuspenso: ia?.grupoSuspenso,
+    }),
     ia,
   );
 }

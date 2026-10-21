@@ -155,6 +155,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/respostaAosFollowups.ts": { categoria: "helper", motivo: "conversa em atendimento, validada por quem chama" },
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
   "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
+  "src/lib/planos/cobrancaDoGrupo.ts": { categoria: "helper", motivo: "cobrança do grupo que quem chama validou (instância do webhook ou do disparador, sessão do painel); toda leitura filtra o grupo (fase 2C)" },
   "src/lib/planos/usoDaIa.ts": { categoria: "helper", motivo: "cota da IA do grupo que quem chama validou (instância do webhook, sessão, guarda da plataforma); toda leitura filtra o grupo" },
 
   // ── Telas da equipe: toda leitura filtra o grupo do gestor ────────────────
@@ -201,6 +202,7 @@ const MAPA: Record<string, Entrada> = {
 
   // ── Área da plataforma: lê vários grupos, só depois da guarda dela ────────
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
+  "src/app/plataforma/cobrancaAcoes.ts": { categoria: "plataforma-admin", motivo: "registra e remove pagamento, ajusta mensalidade e vencimento e suspende ou reativa o grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (fase 2C)" },
   "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso e edita o cadastro dele; a chave só depois de exigirAdminDaPlataformaNaAcao" },
 };
 
@@ -302,6 +304,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/app/api/cron/limpar-artes-ia/route.ts": { validadoPor: "requisicaoAutenticada", motivo: "cron com segredo; apaga mensagens barradas antigas linha a linha e roda a rotina dos grupos cancelados (0202)" },
   "src/app/api/webhooks/email-lead/route.ts": { validadoPor: "token !== segredo", motivo: "segredo do webhook dos portais; o grupo é o fixo da Next Home" },
   "src/app/corretor/(painel)/campanhas/acoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; agenda e conversas dele" },
+  "src/app/corretor/(painel)/_componentes/FaixaCobranca.tsx": { validadoPor: "getCorretorLogado", motivo: "faixa da mensalidade do grupo do corretor da sessão" },
   "src/app/corretor/(painel)/_componentes/FaixaCotaDaIa.tsx": { validadoPor: "getCorretorLogado", motivo: "faixa da cota da IA do grupo do corretor da sessão" },
   "src/app/corretor/(painel)/conversas/page.tsx": { validadoPor: "getCorretorLogado", motivo: "cota da IA do grupo do corretor da sessão (cabeçalho da conversa)" },
   "src/app/corretor/(painel)/pessoas/page.tsx": { validadoPor: "getCorretorLogado", motivo: "cota da IA do grupo do corretor da sessão (cabeçalho da conversa)" },

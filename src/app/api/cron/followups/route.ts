@@ -30,6 +30,7 @@ import {
   situacaoDaConversa,
 } from "@/lib/whatsapp/repositorio";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
@@ -449,6 +450,9 @@ async function responderAtrasada(
     // A cota do grupo (fase 2B): esgotada, a varredura não responde — o
     // cliente espera o corretor, como no webhook.
     cotaEsgotada: (await lerCotaDaIa(instancia.grupo_id)).nivel === "esgotada",
+    // A cobrança do grupo (fase 2C): suspenso, a varredura não responde — o
+    // corretor atende à mão e o cliente não vê erro.
+    grupoSuspenso: await grupoSuspenso(instancia.grupo_id),
   });
   if (!decisao.responde) return "pulada";
 
@@ -873,7 +877,7 @@ async function processarFollowup(
   // Revalidação 3: instância, modo e cota anti-ban.
   const { data: instancia } = await supabase
     .from("corretor_whatsapp_instancias")
-    .select("id, corretor_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
+    .select("id, corretor_id, grupo_id, instance_name, nome_assistente, tom_voz, regras_da_ia, modo_bot, conectado_em, bloqueado_ate, expediente_inicio, expediente_fim")
     .eq("id", item.instancia_id)
     .maybeSingle();
 
@@ -881,6 +885,11 @@ async function processarFollowup(
   if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > new Date()) {
     return descartar(supabase, item.id, "numero_bloqueado");
   }
+
+  // Grupo suspenso por cobrança (fase 2C): não gasta IA nem manda mensagem.
+  // PULA, e não descarta: a fila volta sozinha quando o pagamento for
+  // registrado.
+  if (await grupoSuspenso(instancia.grupo_id)) return "pulado";
 
   if (!ehSugestao) {
     /*

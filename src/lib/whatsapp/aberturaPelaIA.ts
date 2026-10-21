@@ -9,6 +9,7 @@ import { lerCasaDoGrupo } from "./casaDoGrupo";
 import { separarRajada } from "@/lib/whatsapp/rajada";
 import { enviarMensagemWhatsapp, enviarMidiaWhatsapp } from "@/lib/whatsapp/provider";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import {
   avancarLeadParaPrimeiroContato,
@@ -418,13 +419,17 @@ export async function enviarRascunhoDaIA(params: {
 }
 
 /**
- * A frase para o corretor quando a cota de respostas da IA do grupo acabou
- * (fase 2B); `null` com cota. O grupo é o do corretor da instância, que quem
- * chama já validou. Escrever à mão continua valendo: só a IA para.
+ * A frase para o corretor quando a IA do grupo está parada: a mensalidade em
+ * atraso (fase 2C) ou a cota de respostas do mês acabou (fase 2B); `null`
+ * com a IA liberada. O grupo é o do corretor da instância, que quem chama já
+ * validou. Escrever à mão continua valendo: só a IA para.
  */
 async function cotaDaIaEsgotada(corretorId: string): Promise<string | null> {
   const { data } = await createServiceClient().from("corretores").select("grupo_id").eq("id", corretorId).maybeSingle();
   if (!data) return null;
+  if (await grupoSuspenso(data.grupo_id)) {
+    return "A IA está pausada: a mensalidade do grupo está em atraso. Escreva você mesmo pela conversa; a IA volta quando o pagamento for registrado.";
+  }
   const cota = await lerCotaDaIa(data.grupo_id);
   if (cota.nivel !== "esgotada") return null;
   return "As respostas da IA deste mês acabaram. Escreva você mesmo pela conversa; a IA volta no dia 1º.";

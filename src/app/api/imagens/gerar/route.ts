@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createHash } from "node:crypto";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createServiceClient } from "@/lib/supabase/service";
+import { MENSAGEM_DE_ARTES_PAUSADAS } from "@/lib/planos/cobranca";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { medirImagem } from "@/lib/imoveis/imagemDerivada";
 import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
@@ -36,6 +38,10 @@ export async function POST(req: NextRequest) {
   const corretor = await getCorretorLogado();
   if (!corretor) {
     return NextResponse.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401 });
+  }
+  // Grupo suspenso por cobrança (fase 2C): recusa ANTES de qualquer custo.
+  if (await grupoSuspenso(corretor.grupoId)) {
+    return NextResponse.json({ erro: MENSAGEM_DE_ARTES_PAUSADAS }, { status: 403 });
   }
   if (!imagensConfiguradas()) {
     return NextResponse.json(

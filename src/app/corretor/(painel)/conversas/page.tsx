@@ -9,6 +9,7 @@ import { faltaNaLista, garantirNaLista } from "./listaDeConversas";
 import { RevisaoRespostas, type ItemRevisao } from "./RevisaoRespostas";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { ROTULO_MODO } from "@/lib/whatsapp/modoBot";
 import { createClient } from "@/lib/supabase/server";
@@ -86,7 +87,7 @@ export default async function ConversasPage({
     );
   }
 
-  const [{ data: conversas }, { data: instancia }, cotaDaIa] = await Promise.all([
+  const [{ data: conversas }, { data: instancia }, cotaDaIa, suspenso] = await Promise.all([
     // 150 e não 100: as conversas sem fala do cliente saem logo abaixo.
     consultaConversas.order("ultima_interacao_em", { ascending: false }).limit(150),
     supabase
@@ -97,6 +98,8 @@ export default async function ConversasPage({
     // A cota de respostas da IA do grupo (fase 2B): o cabeçalho da conversa
     // diz quando a IA calou por ela.
     lerCotaDaIa(corretor.grupoId),
+    // A cobrança do grupo (fase 2C): idem, quando a IA calou por atraso.
+    grupoSuspenso(corretor.grupoId),
   ]);
 
   /*
@@ -344,6 +347,7 @@ export default async function ConversasPage({
                 modo: instancia.modo_bot as NonNullable<ContextoDaIA>["modo"],
                 expediente: { inicioHora: instancia.expediente_inicio, fimHora: instancia.expediente_fim },
                 cotaEsgotada: cotaDaIa.nivel === "esgotada",
+                grupoSuspenso: suspenso,
               }
             : null
         }

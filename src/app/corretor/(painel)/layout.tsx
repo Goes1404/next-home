@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
@@ -136,6 +137,9 @@ export default async function PainelLayout({
           {/* A cota de respostas da IA do grupo (fase 2B): gestor a partir de
               80%, todos quando acaba. `null` quase sempre. */}
           <FaixaCotaDaIa />
+          {/* A mensalidade do grupo (fase 2C): vencida ou em atraso, para
+              todos. `null` com a cobrança em dia ou isenta. */}
+          <FaixaCobranca />
 
           {/*
             A coluna de conteúdo fica em 1fr e a da lateral em `auto`: quem

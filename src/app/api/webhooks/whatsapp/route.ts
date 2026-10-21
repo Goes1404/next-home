@@ -88,6 +88,7 @@ import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
@@ -967,17 +968,23 @@ export async function POST(req: NextRequest) {
      * A cota de respostas da IA do grupo (fase 2B) é a terceira camada:
      * esgotada, a IA cala com `cota_do_grupo` e o corretor atende pelo
      * painel. A mensagem do cliente já foi gravada acima: nada se perde.
+     *
+     * A cobrança (fase 2C) vem antes da cota: grupo suspenso (5 dias de
+     * atraso ou suspensão da plataforma) cala a IA com `grupo_suspenso`.
+     * O cliente nunca vê erro: o corretor atende à mão.
      */
     const numero = { modo: instancia.modoBot, expediente: instancia.expediente };
-    const [ultimaFalaCorretorEm, cotaDaIa] = await Promise.all([
+    const [ultimaFalaCorretorEm, cotaDaIa, suspenso] = await Promise.all([
       instancia.modoBot === "co_piloto_3min" ? ultimaFalaDoCorretor(conversa.id) : Promise.resolve(null),
       lerCotaDaIa(instancia.grupoId),
+      grupoSuspenso(instancia.grupoId),
     ]);
     const decisaoIA = decidirSeAIaResponde({
       conversa: situacaoDaConversa(iaCaladaPelaCampanha ? { ...conversa, botAtivo: false } : conversa),
       numero,
       ultimaFalaCorretorEm,
       cotaEsgotada: cotaDaIa.nivel === "esgotada",
+      grupoSuspenso: suspenso,
     });
 
     /*
