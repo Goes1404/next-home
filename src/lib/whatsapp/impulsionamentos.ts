@@ -62,3 +62,26 @@ export async function registrarLeadDeImpulsionamento(params: {
     console.error("[impulsionamento] falha ao registrar o anúncio:", error.message);
   }
 }
+
+/**
+ * A IA não atende o lead da campanha do próprio corretor (20/10/2026).
+ *
+ * Desliga a IA NESTA conversa (`bot_ativo = false`), o mesmo estado de quando
+ * o corretor fala (0152): o resumo da ficha segue sendo feito no caminho do
+ * silêncio, e o corretor religa com a palavra-chave ou "IA assume agora".
+ *
+ * Devolve se desligou. Falha vira log e devolve false: na dúvida a conversa
+ * segue como estava, e o webhook não cai por causa disto.
+ */
+export async function calarIaNaConversaDeCampanha(conversaId: string): Promise<boolean> {
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({ bot_ativo: false })
+    .eq("id", conversaId);
+  if (error) {
+    console.error("[impulsionamento] falha ao desligar a IA na conversa:", error.message);
+    return false;
+  }
+  return true;
+}

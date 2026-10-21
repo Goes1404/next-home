@@ -17,7 +17,10 @@ import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
 import { mesclarMemoria } from "@/lib/whatsapp/memoriaDaConversa";
 import { detectarEvolucao, podeAvisarAgora } from "@/lib/whatsapp/evolucaoConversa";
 import { instrucaoDoAudio, transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
-import { notificarAtualizacaoCorretor, notificarCorretorLeadQuente } from "@/lib/whatsapp/brokerNotifier";
+import { formatarAlertaCorretor, formatarAtualizacaoDossie, type MotivoAlerta } from "@/lib/whatsapp/brokerNotifier";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import { nomeParaExibir } from "@/lib/leads/nomeExibido";
+import { site } from "@/lib/site";
 import {
   baixarMidiaDoProvedor,
   enviarMensagemWhatsapp,
@@ -51,7 +54,7 @@ import {
   marcarRespostaCampanha,
   ultimaListaDoLead,
   obterOuCriarConversa,
-  podeAlertarLeadQuente,
+  podeAlertar,
   preencherNomeContato,
   registrarEventoConexao,
   desligarIaPorFalaDoCorretor,
@@ -89,7 +92,9 @@ import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
-import { registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -869,6 +874,7 @@ export async function POST(req: NextRequest) {
      * corretor — é nela que ele digita quanto gastou, e o custo por lead sai
      * sozinho.
      */
+    let iaCaladaPelaCampanha = false;
     if (anuncioMeta && !nomeDoAnuncio) {
       if (conversa.leadId) {
         await registrarLeadDeImpulsionamento({
@@ -877,6 +883,49 @@ export async function POST(req: NextRequest) {
           anuncio: anuncioMeta,
         });
       }
+      /*
+       * Lead da campanha do PRÓPRIO corretor (20/10/2026, pedido do dono):
+       * a IA não responde. O lead é cadastrado (acima) e o resumo da ficha
+       * continua sendo feito a cada mensagem pelo caminho do silêncio
+       * (`atualizarFichaEMemoria`); quem conversa é o corretor, que pagou o
+       * anúncio. Para a IA assumir, ele usa a palavra-chave ou "IA assume
+       * agora", como em qualquer conversa desligada.
+       */
+      if (conversa.botAtivo && (await calarIaNaConversaDeCampanha(conversa.id))) {
+        iaCaladaPelaCampanha = true;
+      }
+    }
+
+    /*
+     * Lead novo (0203): notificação no celular do corretor, na hora. Só age
+     * se o lead acabou de nascer (o claim `aviso_lead_novo_em` está vazio);
+     * para lead antigo é uma consulta que não devolve nada. Depois da
+     * resposta, para não atrasar o atendimento.
+     */
+    /*
+     * Roleta dos anúncios (0204): lead que NASCEU agora pela etiqueta da Meta
+     * vai para o próximo da lista do dono do número, se ele ligou a roleta.
+     * Quem recebe é avisado pela própria roleta; sem repasse, segue o aviso
+     * de lead novo ao dono. Os dois depois da resposta, para não segurar a
+     * entrega do provedor.
+     */
+    if (conversa.leadId) {
+      const leadParaAviso = conversa.leadId;
+      const vaiParaARoleta = Boolean(anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora);
+      const conversaDoDono = conversa.id;
+      after(async () => {
+        const repassado = vaiParaARoleta
+          ? await repassarPelaRoleta({
+              leadId: leadParaAviso,
+              corretorId: instancia.corretorId,
+              instanceNameDoDono: instancia.instanceName,
+              conversaDoDonoId: conversaDoDono,
+              telefoneCliente: sender,
+              nomeCliente: payload.senderName || null,
+            })
+          : null;
+        if (!repassado) await avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0);
+      });
     }
 
     // O pushName vem em toda mensagem do CLIENTE (aqui, depois do desvio de
@@ -925,7 +974,7 @@ export async function POST(req: NextRequest) {
       lerCotaDaIa(instancia.grupoId),
     ]);
     const decisaoIA = decidirSeAIaResponde({
-      conversa: situacaoDaConversa(conversa),
+      conversa: situacaoDaConversa(iaCaladaPelaCampanha ? { ...conversa, botAtivo: false } : conversa),
       numero,
       ultimaFalaCorretorEm,
       cotaEsgotada: cotaDaIa.nivel === "esgotada",
@@ -1460,60 +1509,63 @@ export async function POST(req: NextRequest) {
      * ninguém ficou sabendo que precisava acontecer.
      */
     const pediuLigacao = turno.vezDoCliente.some(clientePediuLigacao);
-    const exigeAcaoAgora =
-      visitaConfirmada || visitaDesmarcada !== null || respostaIA.transferirHumano || pediuLigacao;
     /*
-     * A IA prometeu que o corretor traz a resposta ("confirmo com o corretor
-     * e te trago"). Sem este aviso ninguém ficava sabendo, e a promessa
-     * virava mentira (ver `promessaDeRetorno.ts`). Passa pela mesma carência
-     * do lead quente: prometer de novo na mensagem seguinte não repete o
-     * aviso.
+     * Um motivo por alerta, na ordem do que exige ação primeiro. A visita
+     * que a IA PROPÔS por conta própria não é motivo: o cliente ainda não
+     * respondeu (era ela que virava o "SOLICITAÇÃO DE VISITA" de mentira).
+     * A promessa de retorno (`promessaDeRetorno.ts`) e o lead quente passam
+     * pela carência por motivo de `podeAlertar`, como o resto.
      */
-    const prometeuRetorno =
-      !exigeAcaoAgora &&
-      iaPrometeuRetorno(respostaIA.textoResposta ?? "") &&
-      (await podeAlertarLeadQuente(conversa.id));
-    const deveAlertar =
-      exigeAcaoAgora ||
-      prometeuRetorno ||
-      (dossie.temperaturaScore >= 75 && (await podeAlertarLeadQuente(conversa.id)));
+    const motivoDoAlerta: MotivoAlerta | null = visitaRemarcada
+      ? "visita_remarcada"
+      : visitaDesmarcada
+      ? "visita_desmarcada"
+      : visitaConfirmada
+      ? "visita_confirmada"
+      : pediuLigacao
+      ? "ligacao_solicitada"
+      : respostaIA.transferirHumano
+      ? "transferencia_humana"
+      : iaPrometeuRetorno(respostaIA.textoResposta ?? "")
+      ? "duvida_pendente"
+      : dossie.temperaturaScore >= 75
+      ? "lead_quente"
+      : null;
+    const deveAlertar = motivoDoAlerta !== null && (await podeAlertar(conversa.id, motivoDoAlerta));
+    /* O nome da FICHA; o apelido do perfil só na falta dela; senão, o telefone. */
+    const nomeDoClienteNoAviso = nomeParaExibir({
+      nome: dossie.nomeCliente ?? payload.senderName ?? null,
+      telefone: sender,
+    });
+    const linkDaFicha = conversa.leadId ? `${site.url}/corretor/leads/${conversa.leadId}` : null;
+    const caminhoDaFicha = conversa.leadId ? `/corretor/leads/${conversa.leadId}` : `/corretor/conversas?c=${conversa.id}`;
 
-    if (deveAlertar) {
-      const resultadoAlerta = await notificarCorretorLeadQuente({
-        instanceName: instancia.instanceName,
-        telefoneCorretor: instancia.whatsappCorretor,
-        nomeCorretor: instancia.nomeCorretor,
-        nomeCliente: payload.senderName || "Cliente WhatsApp",
+    if (deveAlertar && motivoDoAlerta) {
+      const texto = formatarAlertaCorretor({
+        motivo: motivoDoAlerta,
+        nomeCliente: nomeDoClienteNoAviso,
         telefoneCliente: sender,
-        empreendimentoNome: respostaIA.empreendimentoCitado,
-        regiaoDaCasa: casa.regiao,
-        temperaturaScore: dossie.temperaturaScore,
-        resumoDossie: visitaRemarcada
-          ? `O cliente remarcou a visita: era ${rotuloDaVisita(visitaRemarcada)}, agora é ${rotuloDaVisita(dataGravada!)}. ${dossie.resumoExecutivo}`
+        imovel: respostaIA.empreendimentoCitado ?? null,
+        ficha: {
+          rendaMensal: dossie.rendaMensal,
+          regiaoInteresse: dossie.regiaoInteresse,
+          dormitoriosMin: dossie.dormitoriosMin,
+          orcamentoMax: dossie.orcamentoMax,
+        },
+        fato: visitaRemarcada
+          ? `Era ${rotuloDaVisita(visitaRemarcada)}; agora é ${rotuloDaVisita(dataGravada!)}. O funil já está com a data nova.`
           : visitaDesmarcada
-          ? `O cliente desmarcou a visita de ${rotuloDaVisita(visitaDesmarcada)}. Ele disse: "${turno.vezDoCliente.join(" / ")}". ${dossie.resumoExecutivo}`
+          ? `Era ${rotuloDaVisita(visitaDesmarcada)}. Já saiu da sua agenda.`
           : visitaConfirmada
-          ? `Visita confirmada para ${new Date(respostaIA.visitaProposta!.dataHoraISO).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. ${dossie.resumoExecutivo}`
-          : prometeuRetorno
-          ? `O cliente perguntou: "${turno.vezDoCliente.join(" / ")}". A assistente disse que você responde. ${dossie.resumoExecutivo}`
-          : dossie.resumoExecutivo,
-        motivoAlerta: visitaRemarcada
-          ? "visita_remarcada"
-          : visitaDesmarcada
-          ? "visita_desmarcada"
-          : visitaConfirmada
-          ? "visita_confirmada"
-          : pediuLigacao
-          ? "ligacao_solicitada"
-          : prometeuRetorno
-          ? "duvida_pendente"
-          : respostaIA.sugerirVisita
-          ? "visita_solicitada"
-          : respostaIA.transferirHumano
-          ? "transferencia_humana"
-          : "lead_quente_score_alto",
+          ? `${rotuloDaVisita(dataGravada!)}. Já está no seu funil.`
+          : motivoDoAlerta === "duvida_pendente"
+          ? "A assistente disse que você responde."
+          : null,
+        falaDoCliente: turno.vezDoCliente.join(" / "),
+        linkFicha: linkDaFicha,
       });
-      alerta = { enviado: resultadoAlerta.enviado, motivo: resultadoAlerta.motivo };
+      const enviado = await avisarCorretor(createServiceClient(), instancia.corretorId, texto, caminhoDaFicha);
+      alerta = { enviado, motivo: enviado ? undefined : "aviso_nao_saiu" };
     } else {
       /*
        * Aviso curto de evolução — só o que um corretor consideraria
@@ -1534,15 +1586,18 @@ export async function POST(req: NextRequest) {
       if (evolucao) {
         const ultimo = await ultimoAvisoEvolucao(conversa.id);
         if (podeAvisarAgora(ultimo, evolucao.urgente)) {
-          const resultadoAtualizacao = await notificarAtualizacaoCorretor({
-            instanceName: instancia.instanceName,
-            telefoneCorretor: instancia.whatsappCorretor,
-            nomeCliente: payload.senderName || "Cliente WhatsApp",
-            telefoneCliente: sender,
-            resumoMudancas: evolucao.linhas.join("\n"),
-          });
-          alerta = { enviado: resultadoAtualizacao.enviado, motivo: resultadoAtualizacao.motivo };
-          if (resultadoAtualizacao.enviado) await marcarAvisoEvolucao(conversa.id);
+          const enviado = await avisarCorretor(
+            createServiceClient(),
+            instancia.corretorId,
+            formatarAtualizacaoDossie({
+              nomeCliente: nomeDoClienteNoAviso,
+              resumoMudancas: evolucao.linhas.join("\n"),
+              linkFicha: linkDaFicha,
+            }),
+            caminhoDaFicha,
+          );
+          alerta = { enviado, motivo: enviado ? undefined : "aviso_nao_saiu" };
+          if (enviado) await marcarAvisoEvolucao(conversa.id);
         }
       }
     }

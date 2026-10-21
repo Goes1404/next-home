@@ -20,6 +20,7 @@ import { Suspense } from "react";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
 import { DoCliqueAConversa } from "./DoCliqueAConversa";
+import { RoletaDosAnuncios } from "./RoletaDosAnuncios";
 import { PainelDeIndicadores } from "./PainelDeIndicadores";
 import { montarDadosDoPainel } from "@/lib/crm/painelDosAnuncios";
 
@@ -254,6 +255,10 @@ export default async function PaginaImpulsionamentos() {
         hoje={hoje}
         indisponivel={Boolean(error)}
       />
+      {/* Roleta dos anúncios (0204): para quem vão os leads do anúncio. */}
+      <Suspense fallback={null}>
+        <RoletaDosAnuncios />
+      </Suspense>
       {/* Onde o clique no link do anúncio se perde (0159). */}
       <Suspense fallback={null}>
         <DoCliqueAConversa />
