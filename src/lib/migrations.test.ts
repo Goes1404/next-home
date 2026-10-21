@@ -51,6 +51,10 @@ const RESERVADOS = new Set<number>([
   // nasceu sobre a numeração antiga e, na junção de 20/10/2026, virou
   // 0195/0196: num número antigo ela ordenaria antes de `grupos` existir.
   181, 182, 183, 184, 185, 186, 187,
+  // 20/10/2026: reserva das fases da noite (branches fase-2 a fase-op), que
+  // nasceram como 0195–0202 antes da 0203 (notificações) ir para produção.
+  // Cada número sai daqui quando a fase dele chega (0195/0196 já chegaram).
+  201, 202,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {

@@ -2,7 +2,8 @@ import "server-only";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
-import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import { cadastradoPeloCorretor, origemLegivel } from "@/lib/notificacoes/leadNovo";
 import { medirEspera, tempoDeEspera } from "@/lib/crm/quemEstaEsperando";
 import {
   diaEmSP,
@@ -73,13 +74,9 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
     );
     if (!texto) continue;
 
-    const envio = await enviarMensagemWhatsapp({
-      instanceName: inst.instance_name,
-      telefone: corretor.whatsapp,
-      texto,
-    });
-    if (envio.enviado) enviados++;
-    else console.warn("[resumo do dia] falhou:", corretor.id, envio.motivo);
+    // Pelos dois canais: o WhatsApp para o próprio número não toca (0203).
+    if (await avisarCorretor(supabase, corretor.id, texto)) enviados++;
+    else console.warn("[resumo do dia] não saiu:", corretor.id);
   }
   return enviados;
 }
@@ -103,7 +100,7 @@ async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje
       .eq("corretor_id", corretorId),
     supabase
       .from("leads")
-      .select("id, nome, telefone, origem")
+      .select("id, nome, telefone, origem, anuncio_origem")
       .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
       .is("arquivado_em", null)
@@ -153,9 +150,14 @@ async function coletar(supabase: Supa, corretorId: string, grupoId: string, hoje
       detalhe: tempoDeEspera(e.horas),
       link: `${painel}/conversas?c=${e.conversaId}`,
     })),
-    novos: (novos.data ?? []).map((l) => ({
+    /*
+     * Lead que CHEGOU, nunca o que o próprio corretor cadastrou (planilha,
+     * painel, palavra-chave): uma importação de 300 virava "Leads novos
+     * (300)" com a origem crua ("painel/importacao") ao lado de cada nome.
+     */
+    novos: (novos.data ?? []).filter((l) => !cadastradoPeloCorretor(l.origem)).map((l) => ({
       titulo: nomeParaExibir(l),
-      detalhe: l.origem ?? undefined,
+      detalhe: origemLegivel(l.origem, l.anuncio_origem) ?? undefined,
       link: `${painel}/leads/${l.id}`,
     })),
     semRetorno,
@@ -191,8 +193,10 @@ async function visitasSemRetorno(
     .eq("tipo", "pos_visita")
     .eq("status", "enviado")
     .eq("conversa.corretor_id", corretorId)
-    .gte("enviado_em", new Date(agora.getTime() - 7 * 86_400_000).toISOString())
+    // Uma vez só (entre 24h e 48h depois): repetir a mesma visita por seis
+    // manhãs seguidas era o "sempre a mesma coisa" do resumo.
     .lte("enviado_em", new Date(agora.getTime() - 86_400_000).toISOString())
+    .gt("enviado_em", new Date(agora.getTime() - 2 * 86_400_000).toISOString())
     .limit(20);
 
   const itens: ItemDoResumo[] = [];
@@ -354,3 +358,4 @@ async function leadsQueValemRetomar(
     link: `${painel}/leads/${l.id}`,
   }));
 }
+

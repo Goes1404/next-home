@@ -5,6 +5,7 @@ import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { AjustesDoResumo } from "./AjustesDoResumo";
+import { AtivarNotificacoes } from "../_componentes/AtivarNotificacoes";
 import { TextoDaPrevia } from "./TextoDaPrevia";
 import { CaixaDoGmail } from "./CaixaDoGmail";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -110,6 +111,10 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
               : null
           }
         />
+      </div>
+
+      <div className="mt-6">
+        <AtivarNotificacoes sempreVisivel />
       </div>
 
       <div className="cartao mt-6 p-6 sm:p-7">
