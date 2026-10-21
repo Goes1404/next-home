@@ -1216,6 +1216,7 @@ export type Database = {
           motivo_queda_codigo: number | null
           motivo_queda_em: string | null
           modo_bot: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa: string | null
           nome_assistente: string
           palavra_chave_ativacao: string | null
           palavra_chave_teste: string | null
@@ -1249,6 +1250,7 @@ export type Database = {
           motivo_queda_codigo?: number | null
           motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa?: string | null
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null
@@ -1282,6 +1284,7 @@ export type Database = {
           motivo_queda_codigo?: number | null
           motivo_queda_em?: string | null
           modo_bot?: "24_7" | "noturno_e_fds" | "co_piloto_3min" | "desativado"
+          modo_antes_da_pausa?: string | null
           nome_assistente?: string
           palavra_chave_ativacao?: string | null
           palavra_chave_teste?: string | null

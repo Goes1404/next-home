@@ -97,6 +97,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/api/notificacoes/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "inscreve o aparelho só para o corretor da sessão, no grupo dele" },
   "src/app/corretor/(painel)/marketing/impulsionamentos/RoletaDosAnuncios.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "roleta do grupo da sessão; o corretor comum só lê a dele" },
   "src/app/corretor/(painel)/marketing/impulsionamentos/roletaAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "grava a roleta do próprio número, ou de quem o gestor escolheu, no grupo da sessão" },
+  "src/app/corretor/(painel)/_componentes/acoesRapidas.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "pausa a IA e liga a roleta só do número do corretor da sessão" },
+  "src/app/corretor/(painel)/_componentes/ControlesRapidos.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "lê o modo da IA e a roleta só do corretor da sessão" },
   "src/app/api/gmail/retorno/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/api/imagens/gerar/route.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "a mídia do catálogo só é lida no grupo do corretor da sessão (L16)" },
   "src/app/api/painel/contador-excel/route.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o mês é lido no grupo do gestor da sessão" },

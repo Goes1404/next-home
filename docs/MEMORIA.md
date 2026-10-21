@@ -11131,3 +11131,13 @@ Nota: [[metragem-da-planta-nao-tinha-campo]].
   suítes de padrão, gravados sem ninguém ver. Hoje cada número tem campo e a
   planta nova nasce em branco. Valor padrão em campo escondido vira dado
   inventado.
+
+## Pausar a IA e dividir os leads no Início (0205, 20/10/2026)
+
+Nota: [[controles-rapidos-do-inicio]].
+
+- Pausar guarda o modo em `modo_antes_da_pausa`; retomar o devolve.
+- **A catraca de peso do CI ficou vermelha na publicação anterior** e eu só
+  vi depois: a Vercel publica sem esperar o CI. Depois de subir, conferir
+  `actions/runs` do commit. O log do job sai pela API do GitHub com o token
+  de `git credential fill` (host github.com).

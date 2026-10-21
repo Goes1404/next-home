@@ -320,6 +320,8 @@ const LEITURA_DA_EQUIPE =
  * sobre o próprio número, não lista equipe nenhuma.
  */
 const EXCECOES: Record<string, string> = {
+  "src/app/corretor/(painel)/_componentes/acoesRapidas.ts": "o número do PRÓPRIO corretor logado",
+  "src/app/corretor/(painel)/_componentes/ControlesRapidos.tsx": "o número do PRÓPRIO corretor logado",
   "src/app/corretor/(painel)/marketing/impulsionamentos/roletaAcoes.ts":
     "confere se os ids escolhidos na tela são corretores ativos do grupo; a lista mostrada já veio sem conta oculta",
   "src/app/corretor/(painel)/admin/acoes.ts":
