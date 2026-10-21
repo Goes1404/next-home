@@ -118,6 +118,18 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
    há um worktree antigo dentro de `.claude/worktrees/` e o vitest roda os
    testes dele contra o código atual.
 
+### Atenção operacional (21/10/2026)
+
+- **A Vercel parou de criar deploy sozinha a cada push** (depois do commit
+  `009e949`): o push chega ao GitHub e o CI roda, mas nenhum deployment nasce
+  (sem status no commit). Deploy manual pela API/MCP da Vercel funciona
+  (`create_deployment` com `gitSource` da branch de produção e o sha). Conferir
+  em Vercel → Settings → Git se a conexão com o GitHub caiu.
+- **O E2E diário do site público falha desde pelo menos 16/10** em
+  `e2e/publico/vitrine.spec.ts`: o teste do fundo em vídeo descreve o fundo que
+  saiu em 13/09, e os de busca/galeria dependem de imóveis específicos do
+  catálogo. São testes desatualizados, não regressão destas fases.
+
 ## 2. Regras que não se quebram
 
 1. **Nunca** `git push --force`. Publicar = avançar as DUAS branches de
