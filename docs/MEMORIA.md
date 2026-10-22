@@ -11707,3 +11707,18 @@ Nota: [[controles-rapidos-do-inicio]].
 - Evento do ajuste reaproveita `cota_da_ia_ajustada` com `detalhes.recurso`
   para não mexer no CHECK de `admin_eventos` em branch paralela.
 
+## Lista de leads caiu por embed ambíguo (22/10/2026)
+
+- Sintoma em produção: `/corretor/leads` mostrava a tela genérica com o
+  digest `1879172430`; as demais rotas do painel abriam. A resposta RSC ainda
+  vinha 200 porque o erro aconteceu dentro do `Suspense` da página.
+- Causa: a 0206 acrescentou `leads.anuncio_pago_por`, segunda FK de `leads`
+  para `corretores`. O embed `corretor:corretores(...)` ficou ambíguo e o
+  PostgREST respondeu PGRST201 entre `leads_corretor_id_fkey` e
+  `leads_anuncio_pago_por_fkey`.
+- Correção: lista e ficha usam
+  `corretores!leads_corretor_id_fkey`; `embedsAmbiguos.test.ts` passou a
+  guardar também essa relação. Migration que cria uma segunda FK entre duas
+  tabelas exige revisar todos os embeds existentes no mesmo deploy.
+- Nota: [[fk-do-embed-de-leads-e-explicita]].
+

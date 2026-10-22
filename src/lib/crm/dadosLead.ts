@@ -75,7 +75,7 @@ const SELECT_DETALHE = `
   etapa, etapa_alterada_em, origem_atribuicao, visita_agendada_em, portal_origem, anuncio_origem,
   orcamento_min, orcamento_max, renda_mensal, dormitorios_min, regiao_interesse, empreendimento_id,
   arquivado_em, arquivado_motivo, tentativas_contato, tentativas_sem_resposta, ultima_tentativa_em, nao_contatar_em,
-  corretor:corretores(id, nome),
+  corretor:corretores!leads_corretor_id_fkey(id, nome),
   empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco),
   imovel_interesse:empreendimentos!leads_imovel_interesse_id_fkey(nome, slug)
 `;

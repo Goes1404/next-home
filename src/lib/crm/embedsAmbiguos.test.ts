@@ -18,6 +18,9 @@ import { describe, expect, it } from "vitest";
  *    `leads` e `empreendimentos`, e quebrou a lista de leads, o quadro do
  *    funil e a tela de leads da administração — provado contra a API real
  *    com a chave pública antes de corrigir.
+ * 3. `leads.anuncio_pago_por` (0206) criou um segundo caminho entre `leads`
+ *    e `corretores`; sem nomear `leads_corretor_id_fkey`, a lista e a ficha
+ *    do lead passaram a responder PGRST201 em produção.
  *
  * As duas vezes o build passou, os tipos passaram e os testes passaram: é
  * defeito de RUNTIME, e só aparece abrindo a tela ou batendo na API.
@@ -33,13 +36,22 @@ const RAIZ = join(process.cwd(), "src");
 /**
  * Só a consulta em `leads` é ambígua para `empreendimentos`.
  *
- * `midias(... empreendimentos(nome))` e `leads(... corretores(nome))` têm
- * UMA fk cada e estão certos. A primeira versão desta guarda cobrava a fk
- * em todo embed do nome e acusou os dois — régua que não sabe qual tabela
+ * `midias(... empreendimentos(nome))` e `lead_interacoes(... corretores(nome))`
+ * têm UMA fk cada e estão certos. A primeira versão desta guarda cobrava a
+ * fk em todo embed do nome e acusou os dois — régua que não sabe qual tabela
  * está sendo consultada acusa código correto, que é como este projeto já
  * perdeu tempo cinco vezes com critério que media outra coisa.
  */
-const EMBUTIDA = "empreendimentos";
+const EMBUTIDAS = [
+  {
+    tabela: "empreendimentos",
+    chave: "leads_empreendimento_id_fkey",
+  },
+  {
+    tabela: "corretores",
+    chave: "leads_corretor_id_fkey",
+  },
+] as const;
 
 /** Colunas que só existem em `leads` — identificam o select mesmo fora de um `.from()`. */
 const MARCAS_DE_LEADS = ["etapa", "visita_agendada_em", "tentativas_sem_resposta"];
@@ -69,14 +81,14 @@ function selectsDe(codigo: string): string[] {
   return [...deChamada, ...deConstante];
 }
 
-describe("consulta em leads nomeia a FK ao embutir empreendimentos", () => {
+describe("consulta em leads nomeia as FKs dos embeds ambíguos", () => {
   const todos = arquivos(RAIZ);
 
   it("encontra os arquivos (o teste não pode passar por estar vazio)", () => {
     expect(todos.length).toBeGreaterThan(50);
   });
 
-  it("nenhum select de leads embute empreendimentos sem a chave", () => {
+  it("nenhum select de leads deixa a relação para o PostgREST adivinhar", () => {
     const infratores: string[] = [];
 
     for (const caminho of todos) {
@@ -84,19 +96,19 @@ describe("consulta em leads nomeia a FK ao embutir empreendimentos", () => {
         const ehDeLeads = MARCAS_DE_LEADS.some((c) => new RegExp(`\\b${c}\\b`).test(select));
         if (!ehDeLeads) continue;
 
-        if (new RegExp(`(?<!!)\\b${EMBUTIDA}\\s*\\(`).test(select)) {
-          infratores.push(caminho.slice(process.cwd().length + 1));
+        for (const { tabela, chave } of EMBUTIDAS) {
+          if (new RegExp(`(?<!!)\\b${tabela}\\s*\\(`).test(select)) {
+            infratores.push(`${caminho.slice(process.cwd().length + 1)}: ${tabela} exige !${chave}`);
+          }
         }
       }
     }
 
     expect(
       [...new Set(infratores)],
-      `Estes selects de "leads" embutem "${EMBUTIDA}" sem nomear a chave. ` +
-        `Desde a 0083 há DUAS fks entre as tabelas (origem do lead e imóvel ` +
-        `da conversa), então o PostgREST devolve PGRST201 e a consulta ` +
-        `inteira falha em runtime — build, tipos e testes passam. ` +
-        `Use "${EMBUTIDA}!leads_empreendimento_id_fkey(...)".`,
+      `Estes selects de "leads" embutem uma tabela com mais de uma relação ` +
+        `sem nomear a chave. O PostgREST devolve PGRST201 e a consulta inteira ` +
+        `falha em runtime — build, tipos e testes passam.`,
     ).toEqual([]);
   });
 });
