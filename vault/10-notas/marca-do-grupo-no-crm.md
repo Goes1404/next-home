@@ -25,6 +25,10 @@ updated: 2026-10-21
 
 # Marca do grupo no CRM
 
+> [!warning] Editor removido em 22/10/2026
+> A identidade já gravada continua sendo usada pelo CRM, mas a rota
+> administrativa Marca e suas actions foram retiradas do painel.
+
 Pedido do dono (21/10/2026): o cliente que entra por `astroimob.vercel.app`
 não pode ver "Next Home" nem `nexthomeimoveis.com` depois do login. Plano:
 `docs/superpowers/plans/2026-10-21-marca-do-grupo-no-crm.md`.

@@ -26,12 +26,16 @@ codigo:
   - src/app/s/[site]/layout.tsx
   - src/components/ui/LogoDaMarca.tsx
   - src/components/layout/Footer.tsx
-summary: O gestor edita quatro cores (principal, secundária, fundo, texto), logo, capa, título, frase, "Sobre" e contatos do site do próprio grupo; o site lê isso para grupos diferentes do 1 (campo vazio cai no padrão) e a Next Home continua vindo de site.ts, travada por teste. A plataforma liga os endereços.
+summary: Histórico do editor Meu site, removido do painel em 22/10/2026; os dados já gravados continuam sendo lidos pelo site público.
 created: 2026-10-21
 updated: 2026-10-22
 ---
 
 # Meu site
+
+> [!warning] Removido do painel em 22/10/2026
+> O menu, a rota e as actions deste editor foram retirados por decisão do
+> usuário. A infraestrutura de leitura e os dados já gravados permanecem.
 
 Planos: `docs/superpowers/plans/2026-10-21-site-editavel.md` (0209) e `2026-10-21-meu-site-uploads-e-cores.md` (0210, envio de imagem e cores). Migrations 0209 e 0210.
 

@@ -381,12 +381,10 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // silêncio — a guarda existe para a barra de abas e o menu não voltarem a
     // discordar sobre o que é subtópico de quê.
     // Construtoras entrou em 26/09/2026 (relatório para a parceira).
-    // Parceiros (espelho de vendas) e Marca (instalar para outro cliente)
-    // entraram no mesmo dia, na segunda rodada.
+    // Parceiros (espelho de vendas) entrou no mesmo dia, na segunda rodada.
     // 30/09/2026: 12 → 9, em três seções. SLA e Eventos viraram seções da
     // Visão geral; Anúncios foi para Anúncios pagos.
-    // 21/10/2026: 10 → 11, "Meu site" (0209) na seção Sistema.
-    expect(subitensDe("/corretor/admin")).toHaveLength(11);
+    expect(subitensDe("/corretor/admin")).toHaveLength(9);
     expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
       "Equipe",
       "Negócio",
@@ -519,7 +517,6 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
     }
     // O resto da Administração continua: o independente é gestor do próprio grupo.
     expect(todosOsEnderecos(true, "independente")).toContain("/corretor/admin/whatsapp");
-    expect(todosOsEnderecos(true, "independente")).toContain("/corretor/admin/marca");
   });
 
   it("independente perde só os itens de equipe, nada além", () => {
@@ -585,8 +582,6 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
           "/corretor/admin/precos",
           "/corretor/admin/credito",
           "/corretor/admin/assistente",
-          "/corretor/admin/marca",
-          "/corretor/admin/site",
         ],
       ],
     ]);

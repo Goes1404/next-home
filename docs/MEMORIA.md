@@ -4050,6 +4050,31 @@ diagnóstico é a parte que vale.
   pegou antes de escrever — âncora de edição precisa incluir algo único da
   função (aqui, a linha do slug).
 
+## Cadastro de usuário com senha inicial pelo gestor (0221, 22/10/2026)
+
+Implementação temporária removida no mesmo dia a pedido do usuário. O CRM
+voltou a não oferecer cadastro de usuário novo pela tela; a gestão de contas
+existentes e os convites já disponíveis permanecem. A área administrativa
+"Marca" e a funcionalidade "Meu site" também foram retiradas do menu, das
+rotas e das actions da interface. Os dados de identidade e site já gravados
+continuam sendo lidos; só os editores foram removidos. O registro abaixo
+explica a decisão que chegou a ser implementada e não deve ser reativado sem
+novo pedido explícito.
+
+- O painel **Administração → Contas** chegou a aceitar cadastrar um usuário da
+  imobiliária com nome, CRECI, WhatsApp, e-mail e senha inicial. A conta nasce
+  como `corretor`; a ação existente pode promovê-la a gestor depois.
+- A proposta era uma exceção explícita ao fluxo de convite: a senha iria somente para
+  `supabase.auth.admin.createUser` no servidor, com `email_confirm: true`, e
+  nunca é salva em `corretores`, `admin_eventos`, logs, resposta da action ou
+  mostrada novamente na interface.
+- O vínculo proposto com a ficha ainda seria obrigatório (`user_id`, `grupo_id` e e-mail),
+  e falha de vínculo remove o usuário órfão do Auth. Se o e-mail já estiver
+  ocupado, a ficha também é limpa como no fluxo antigo.
+- O convite continua disponível para cadastros antigos sem login. Comprar o
+  domínio da imobiliária não é requisito técnico para criar a conta; basta
+  informar um e-mail real que esteja disponível no Auth.
+
 ## A pausa DESCARTAVA a mensagem, e a telemetria culpava a pausa (03/09/2026)
 
 Dois defeitos empilhados, e o segundo escondia o primeiro.

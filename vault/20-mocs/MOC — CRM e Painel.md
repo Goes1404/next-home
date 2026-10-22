@@ -80,6 +80,7 @@ F0–F6.
 - [[papel-nunca-ganha-grant-update]]
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
 - [[cadastrar-corretor-pelo-painel]] — ficha e login de corretor novo pela tela de Contas (07/10)
+- [[cadastro-e-marca-removidos-do-painel]] — cadastro novo, Meu site e Marca retirados por decisão do usuário; dados existentes permanecem (22/10)
 - [[perfil-de-demonstracao-do-corretor]] — corretor fictício para apresentação, isolado e com script de remoção (07/10)
 - [[painel-da-tela-de-vendas]] — indicadores e gráficos de VGV, comissão e imóveis na tela de Vendas (07/10)
 - [[mascote-da-ia]] — o botão do consultor virou o mascote da IA, sem fundo (07/10)
