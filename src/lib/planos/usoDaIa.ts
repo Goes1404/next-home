@@ -2,6 +2,18 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { mesEmSaoPaulo, situacaoDaCota, tetoDeRespostasDaIa, type SituacaoDaCota } from "./cotaDaIa";
+import {
+  COLUNA_DO_TETO,
+  COLUNA_DO_USO,
+  RECURSOS,
+  cabeNoLimite,
+  mensagemDeRecusa,
+  situacaoDoRecurso,
+  situacaoLivre,
+  tetoDoRecurso,
+  type Recurso,
+  type SituacaoDoRecurso,
+} from "./limitesDoPlano";
 
 /**
  * Quanto da cota de respostas da IA o grupo já usou neste mês (0197).
@@ -41,4 +53,106 @@ export async function lerCotaDaIa(grupoId: string, agora: Date = new Date()): Pr
     assentos: assentos.count ?? 0,
   });
   return situacaoDaCota({ respostas: uso.data?.respostas ?? 0, teto });
+}
+
+export type LimitesDoGrupo = Record<Recurso, SituacaoDoRecurso>;
+
+/** O que a área da plataforma precisa além do uso: o ajuste digitado e o padrão do plano. */
+export type LimitesDetalhados = {
+  limites: LimitesDoGrupo;
+  /** O teto que a plataforma digitou; `null` = vale o do plano. */
+  ajustados: Record<Recurso, number | null>;
+  /** O teto do plano, já com os assentos; `null` = sem limite. */
+  padroes: Record<Recurso, number | null>;
+};
+
+const LIVRES: LimitesDetalhados = {
+  limites: { arte: situacaoLivre("arte"), video: situacaoLivre("video"), lista: situacaoLivre("lista") },
+  ajustados: { arte: null, video: null, lista: null },
+  padroes: { arte: null, video: null, lista: null },
+};
+
+/**
+ * Os três usos do mês (artes, vídeos, mensagens de lista) contra o teto do
+ * plano, na mesma linha de `uso_da_ia` das respostas da IA (0214).
+ *
+ * Falha de leitura NÃO bloqueia (como `lerCotaDaIa`): devolve `sem_teto` com
+ * log. "Não sei se acabou" travaria a equipe inteira por uma piscada do banco;
+ * custa centavos a mais, não um cliente parado. A plataforma, que prefere o
+ * erro em voz alta, passa `{ estrito: true }`.
+ */
+export async function lerLimitesDetalhados(
+  grupoId: string,
+  opcoes: { agora?: Date; estrito?: boolean } = {},
+): Promise<LimitesDetalhados> {
+  const servico = createServiceClient();
+  const mes = mesEmSaoPaulo(opcoes.agora ?? new Date());
+  const [grupo, uso, assentos] = await Promise.all([
+    servico
+      .from("grupos")
+      .select("plano, teto_artes, teto_videos, teto_mensagens_lista")
+      .eq("id", grupoId)
+      .maybeSingle(),
+    servico
+      .from("uso_da_ia")
+      .select("artes, videos, mensagens_lista")
+      .eq("grupo_id", grupoId)
+      .eq("mes", mes)
+      .maybeSingle(),
+    servico.from("corretor_whatsapp_instancias").select("id", { count: "exact", head: true }).eq("grupo_id", grupoId),
+  ]);
+
+  const erro = grupo.error ?? uso.error ?? assentos.error;
+  if (erro || !grupo.data) {
+    const motivo = erro?.message ?? "grupo não encontrado";
+    if (opcoes.estrito) throw new Error(`Falha ao ler os limites do plano: ${motivo}`);
+    console.error(`[limites do plano] grupo ${grupoId}: leitura falhou, a geração segue liberada: ${motivo}`);
+    return LIVRES;
+  }
+
+  const linha = grupo.data;
+  const usado = uso.data;
+  const resultado = { limites: {}, ajustados: {}, padroes: {} } as {
+    limites: Partial<LimitesDoGrupo>;
+    ajustados: Partial<Record<Recurso, number | null>>;
+    padroes: Partial<Record<Recurso, number | null>>;
+  };
+  for (const recurso of RECURSOS) {
+    const ajustado = linha[COLUNA_DO_TETO[recurso]] ?? null;
+    const base = { recurso, plano: linha.plano, assentos: assentos.count ?? 0 };
+    resultado.ajustados[recurso] = ajustado;
+    resultado.padroes[recurso] = tetoDoRecurso({ ...base, tetoAjustado: null });
+    resultado.limites[recurso] = situacaoDoRecurso({
+      recurso,
+      usados: usado?.[COLUNA_DO_USO[recurso]] ?? 0,
+      teto: tetoDoRecurso({ ...base, tetoAjustado: ajustado }),
+    });
+  }
+  return resultado as LimitesDetalhados;
+}
+
+export async function lerLimitesDoGrupo(
+  grupoId: string,
+  opcoes: { agora?: Date; estrito?: boolean } = {},
+): Promise<LimitesDoGrupo> {
+  return (await lerLimitesDetalhados(grupoId, opcoes)).limites;
+}
+
+export type ConferenciaDeLimite = { ok: true; situacao: SituacaoDoRecurso } | { ok: false; erro: string; situacao: SituacaoDoRecurso };
+
+/**
+ * Pode gastar `pedido` unidades de `recurso` este mês? Chamar ANTES da chamada
+ * cara (a IA, o render, o envio). Esgotado: a recusa em português. Lista maior
+ * que o restante: recusa a lista inteira, com a conta. Falha de leitura:
+ * libera (ver `lerLimitesDoGrupo`). Grupo suspenso é outra regra (2C).
+ */
+export async function conferirLimite(
+  grupoId: string,
+  recurso: Recurso,
+  pedido = 1,
+  agora?: Date,
+): Promise<ConferenciaDeLimite> {
+  const situacao = (await lerLimitesDoGrupo(grupoId, { agora }))[recurso];
+  if (cabeNoLimite(situacao, pedido)) return { ok: true, situacao };
+  return { ok: false, erro: mensagemDeRecusa(situacao, pedido) ?? "O limite do mês acabou.", situacao };
 }

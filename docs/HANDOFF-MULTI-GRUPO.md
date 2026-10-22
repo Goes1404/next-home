@@ -65,6 +65,20 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   follow-ups, listas, artes e vídeos. Plano `custo` (Next Home) é isento.
   Plano: `docs/superpowers/plans/2026-10-21-fase-2c-cobranca-manual.md`.
 
+- **Limites do plano (artes, vídeos e mensagens de lista), branch
+  `limites-do-plano`, migration 0214, NÃO publicada**: a 0214 entra ANTES do
+  deploy (o código lê `grupos.teto_*` e as colunas novas de `uso_da_ia`; sem ela
+  a leitura falha e, por desenho, LIBERA tudo, mas a faixa e o formulário da
+  plataforma erram). Aditiva. Números provisórios da spec §10 em
+  `src/lib/planos/limitesDoPlano.ts`; contagem por gatilho; confere antes de
+  gastar; lista que não cabe é recusada inteira; Next Home (plano `custo`) sem
+  teto. 0211–0213 estão reservadas para outras branches (`RESERVADOS` em
+  `migrations.test.ts`: ao juntar, tirar da lista as que forem ocupadas). O
+  ajuste dos tetos reaproveita a ação `cota_da_ia_ajustada` de `admin_eventos`
+  (`detalhes.recurso`), sem mexer no CHECK. **PENDENTE: armazenamento
+  (5 / 20 / 10 GB por plano) — fora desta etapa**, e o medidor único / pacote
+  extra. Nota: `vault/10-notas/limites-do-plano-artes-videos-e-listas.md`.
+
 - **Endereço só do CRM: `astroimob.vercel.app`** (21/10/2026), alias do MESMO
   projeto da Vercel (nunca um projeto separado: as rotinas rodariam em dobro).
   Ali a raiz e as páginas do site vão para `/corretor`; `/plataforma` e o

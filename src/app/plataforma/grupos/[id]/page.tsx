@@ -10,12 +10,15 @@ import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
+import { lerLimitesDetalhados } from "@/lib/planos/usoDaIa";
+import { UsoDosLimites } from "@/components/planos/UsoDosLimites";
 import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
 import { EnderecosDoGrupo } from "./EnderecosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
+import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 
 export const metadata: Metadata = { title: "Grupo" };
@@ -34,6 +37,9 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   if (!ehUuid(id)) notFound();
   const grupo = await lerGrupoDaPlataforma(prova, id);
   if (!grupo) notFound();
+  // Artes, vídeos e mensagens de lista do mês (0214). Na plataforma a falha de
+  // leitura aparece em voz alta, diferente do painel, que segue liberado.
+  const limites = await lerLimitesDetalhados(grupo.id, { estrito: true });
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
 
@@ -81,6 +87,21 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         </h2>
         <UsoDaIa uso={grupo.usoDaIa} ajustado={grupo.tetoAjustado !== null} />
         <FormularioTetoDaIa grupoId={grupo.id} inicial={grupo.tetoAjustado} padraoDoPlano={grupo.tetoDoPlano} />
+      </section>
+
+      <section className="cartao flex flex-col gap-5 p-5" aria-labelledby="titulo-limites">
+        <h2 id="titulo-limites" className="text-fluid-sm text-titulo font-bold">
+          Artes, vídeos e listas
+        </h2>
+        <UsoDosLimites
+          limites={limites.limites}
+          ajustados={{
+            arte: limites.ajustados.arte !== null,
+            video: limites.ajustados.video !== null,
+            lista: limites.ajustados.lista !== null,
+          }}
+        />
+        <FormularioLimitesDoPlano grupoId={grupo.id} iniciais={limites.ajustados} padroes={limites.padroes} />
       </section>
 
       <CobrancaDoGrupo

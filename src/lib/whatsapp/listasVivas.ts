@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { elegivel, noRecorte, type FiltroLeadsCampanha, type RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
 import { montarFilaCampanha } from "./campaignQueue";
 import { lerCasaDoGrupo } from "./casaDoGrupo";
+import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { idsProtegidosDeNovaLista, leadsDoCorretor } from "./publicoDaLista";
 import type { ContextoTemplate } from "./listaDeTransmissao";
 
@@ -73,6 +74,16 @@ export async function alimentarListasVivas(agora: Date = new Date()): Promise<nu
           !presentes.has(l.id),
       );
       if (novos.length === 0) continue;
+
+      // O limite de mensagens de lista do PLANO (limites do plano): quem entra numa lista
+      // viva vira mensagem enfileirada, então conta como qualquer outra. Não
+      // cabe no que resta do mês: ninguém entra agora (a lista inteira ou nada,
+      // como na criação), e a próxima varredura confere de novo.
+      const limite = await conferirLimite(c.grupo_id, "lista", novos.length);
+      if (!limite.ok) {
+        console.warn(`[lista viva] ${c.id}: ${novos.length} novos não cabem no limite do plano; adiado`);
+        continue;
+      }
 
       const { data: ultimo } = await supabase
         .from("whatsapp_campanhas_fila")

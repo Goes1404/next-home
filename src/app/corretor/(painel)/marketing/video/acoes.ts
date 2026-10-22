@@ -15,6 +15,7 @@ import {
 } from "@/lib/imagens/marketing";
 import { MENSAGEM_DE_VIDEOS_PAUSADOS } from "@/lib/planos/cobranca";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
+import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { enfileirarVideo, getMeusVideos, getSaldo } from "@/lib/video/fila";
 import { acionarRender } from "@/lib/video/acionarRender";
 import { duracaoTotal, montarRoteiro } from "@/lib/video/roteiro";
@@ -180,6 +181,12 @@ export async function verRoteiro(
   // fotos por visão (IA paga), então para junto com a criação.
   if (await grupoSuspenso(corretor.grupoId)) return { erro: MENSAGEM_DE_VIDEOS_PAUSADOS };
 
+  // O limite de vídeos do PLANO, por grupo e por mês (limites do plano), antes de
+  // qualquer custo (a visão que classifica as fotos já é IA paga). A cota
+  // por corretor (`reservar_credito_video`) segue valendo por cima.
+  const limite = await conferirLimite(corretor.grupoId, "video");
+  if (!limite.ok) return { erro: limite.erro };
+
   const p = await preparar(pedido);
   if ("erro" in p) return { erro: p.erro };
 
@@ -218,6 +225,10 @@ export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string
   // Grupo suspenso por cobrança (fase 2C): recusa antes de qualquer custo
   // (classificar fotos por visão já é IA paga, então o roteiro também para).
   if (await grupoSuspenso(corretor.grupoId)) return { erro: MENSAGEM_DE_VIDEOS_PAUSADOS };
+
+  // Mesmo limite do plano na criação (a tela pode ter ficado aberta desde a prévia).
+  const limiteDoMes = await conferirLimite(corretor.grupoId, "video");
+  if (!limiteDoMes.ok) return { erro: limiteDoMes.erro };
 
   const p = await preparar(pedido);
   if ("erro" in p) return { erro: p.erro };

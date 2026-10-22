@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
+import { FaixaLimitesDoPlano } from "./_componentes/FaixaLimitesDoPlano";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
 import { LuzDosCartoes } from "./_componentes/LuzDosCartoes";
 import { TransicaoDeTela } from "./_componentes/TransicaoDeTela";
@@ -72,7 +73,7 @@ export default async function PainelLayout({
   children: React.ReactNode;
 }) {
   const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
-  // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
+  // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
   // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
   // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
   // e entrar, recuperar, criar e trocar senha também: nada disso passa por
@@ -157,6 +158,8 @@ export default async function PainelLayout({
           {/* A cota de respostas da IA do grupo (fase 2B): gestor a partir de
               80%, todos quando acaba. `null` quase sempre. */}
           <FaixaCotaDaIa />
+          {/* Artes, vídeos e mensagens de lista do plano (limites do plano): idem. */}
+          <FaixaLimitesDoPlano />
           {/* A mensalidade do grupo (fase 2C): vencida ou em atraso, para
               todos. `null` com a cobrança em dia ou isenta. */}
           <FaixaCobranca />

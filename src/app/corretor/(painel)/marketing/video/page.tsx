@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMeusVideos, getSaldo } from "@/lib/video/fila";
+import { lerLimitesDoGrupo } from "@/lib/planos/usoDaIa";
+import { RestamNoMes } from "@/components/planos/RestamNoMes";
 import { ChatDeVideo } from "./ChatDeVideo";
 import { listarConversasDoEstudio } from "@/app/corretor/(painel)/estudio/acoes";
 
@@ -34,10 +36,11 @@ export default async function PaginaVideo() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
 
-  const [videos, saldo, conversas] = await Promise.all([
+  const [videos, saldo, conversas, limites] = await Promise.all([
     getMeusVideos(),
     getSaldo(corretor.id),
     listarConversasDoEstudio("video"),
+    lerLimitesDoGrupo(corretor.grupoId),
   ]);
 
   return (
@@ -54,7 +57,7 @@ export default async function PaginaVideo() {
           </Link>
         }
       />
-
+      <RestamNoMes situacao={limites.video} />
 
       <ChatDeVideo
         corretorId={corretor.id}

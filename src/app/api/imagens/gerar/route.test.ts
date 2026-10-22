@@ -27,6 +27,13 @@ vi.mock("@/lib/imagens/galeria", () => ({
   getTetoDeHoje: async () => ({ usadasHoje: 0, teto: 20 }),
   registrarImagem: async () => ({ id: "x" }),
 }));
+let limiteEsgotado = false;
+const conferirLimite = vi.fn(async () =>
+  limiteEsgotado
+    ? { ok: false as const, erro: "Seu plano tem 30 artes por mês e elas acabaram. Voltam no dia 1º.", situacao: {} }
+    : { ok: true as const, situacao: {} },
+);
+vi.mock("@/lib/planos/usoDaIa", () => ({ conferirLimite: (...args: unknown[]) => conferirLimite(...(args as [])) }));
 vi.mock("@/lib/imoveis/catalogoDoPainel", () => ({ getEmpreendimentoDoPainel: async () => null }));
 vi.mock("@/lib/imagens/carimbo", () => ({ carimbarRessalva: async () => ({}) }));
 vi.mock("@/lib/imoveis/imagemDerivada", () => ({ medirImagem: async () => ({}) }));
@@ -45,6 +52,8 @@ describe("/api/imagens/gerar", () => {
   const fetchOriginal = globalThis.fetch;
   beforeEach(() => {
     gerarImagem.mockClear();
+    conferirLimite.mockClear();
+    limiteEsgotado = false;
     globalThis.fetch = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/jpeg" } }));
     banco = bancoFalso({
       midias: [
@@ -68,5 +77,15 @@ describe("/api/imagens/gerar", () => {
     await pedir("midia-b");
     expect(gerarImagem).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).toHaveBeenCalledWith("https://exemplo/b.jpg");
+  });
+
+  it("arte do mês esgotada: recusa com a mensagem do plano ANTES de chamar o modelo", async () => {
+    limiteEsgotado = true;
+    const resposta = await pedir("midia-b");
+    expect(resposta.status).toBe(429);
+    expect((await resposta.json()).erro).toContain("Seu plano tem 30 artes por mês e elas acabaram. Voltam no dia 1º.");
+    expect(conferirLimite).toHaveBeenCalledWith(GRUPO_B, "arte");
+    expect(gerarImagem).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

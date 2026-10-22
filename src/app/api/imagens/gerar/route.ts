@@ -4,6 +4,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createServiceClient } from "@/lib/supabase/service";
 import { MENSAGEM_DE_ARTES_PAUSADAS } from "@/lib/planos/cobranca";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
+import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { medirImagem } from "@/lib/imoveis/imagemDerivada";
 import { gerarImagem, imagensConfiguradas } from "@/lib/imagens/gerarImagem";
 import { getTetoDeHoje, registrarImagem } from "@/lib/imagens/galeria";
@@ -104,6 +105,13 @@ export async function POST(req: NextRequest) {
       },
       { status: 429 },
     );
+  }
+
+  // O limite de artes do PLANO, por grupo e por mês (limites do plano), também ANTES de
+  // gastar. Falha de leitura libera (log em `lerLimitesDoGrupo`).
+  const limite = await conferirLimite(corretor.grupoId, "arte");
+  if (!limite.ok) {
+    return NextResponse.json({ erro: limite.erro, limite: limite.situacao }, { status: 429 });
   }
 
   const formato = TAMANHOS.find((t) => t.chave === corpo?.tamanho) ?? TAMANHOS[0];

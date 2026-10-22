@@ -16,6 +16,7 @@ import {
 } from "@/lib/plataforma/dadosDoGrupo";
 import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
+import { COLUNA_DO_TETO, lerLimiteDigitado, RECURSOS, type Recurso } from "@/lib/planos/limitesDoPlano";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -343,6 +344,75 @@ export async function ajustarTetoDaIa(grupoId: string, texto: string): Promise<R
     detalhes: { origem: "plataforma", antes: tetoAntes, depois: lido.teto },
   });
   if (erroDoEvento) console.error(`[plataforma] evento do teto da IA (${grupoId}) não gravado: ${erroDoEvento.message}`);
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoLimitesDoPlano = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Os limites de artes, vídeos e mensagens de lista do grupo por mês (limites do plano).
+ * Em branco volta ao padrão do plano. Um evento por limite que MUDOU, na ação
+ * `cota_da_ia_ajustada` com `detalhes.recurso` (antes e depois), para não
+ * mexer no CHECK de `admin_eventos` a cada recurso.
+ */
+export async function ajustarLimitesDoPlano(
+  grupoId: string,
+  textos: Record<Recurso, string>,
+): Promise<ResultadoLimitesDoPlano> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+
+  const novos = {} as Record<Recurso, number | null>;
+  for (const recurso of RECURSOS) {
+    const lido = lerLimiteDigitado(String(textos?.[recurso] ?? ""), recurso);
+    if (!lido.ok) return { ok: false, erro: lido.erro };
+    novos[recurso] = lido.teto;
+  }
+
+  const servico = createServiceClient();
+  const { data: antes, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("teto_artes, teto_videos, teto_mensagens_lista")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] limites do plano do grupo ${grupoId} não lidos: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível salvar agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({
+      teto_artes: novos.arte,
+      teto_videos: novos.video,
+      teto_mensagens_lista: novos.lista,
+    })
+    .eq("id", grupoId)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] limites do plano do grupo ${grupoId} não gravados: ${error.message}`);
+    return { ok: false, erro: "Não foi possível salvar agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
+
+  for (const recurso of RECURSOS) {
+    const tetoAntes = antes[COLUNA_DO_TETO[recurso]] ?? null;
+    if (tetoAntes === novos[recurso]) continue;
+    const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+      grupo_id: grupoId,
+      acao: "cota_da_ia_ajustada",
+      ator_id: null,
+      ator_plataforma_user_id: guarda.userId,
+      alvo_corretor_id: null,
+      detalhes: { origem: "plataforma", recurso, antes: tetoAntes, depois: novos[recurso] },
+    });
+    if (erroDoEvento) console.error(`[plataforma] evento do limite ${recurso} (${grupoId}) não gravado: ${erroDoEvento.message}`);
+  }
 
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);

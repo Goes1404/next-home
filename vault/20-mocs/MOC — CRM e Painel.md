@@ -73,6 +73,7 @@ F0–F6.
 - [[saida-do-corretor-e-etiqueta-de-origem]] — todo lead diz quem o trouxe (leads.trazido_por); na saída, os da imobiliária são redistribuídos e o corretor leva só a ficha dos dele (0200, 20/10)
 - [[identidade-da-ia-de-cada-grupo]] — tela Administração > Assistente: o gestor dá nome, região e tom à IA da equipe (0199, 20/10)
 - [[cota-de-respostas-da-ia-por-grupo]] — teto mensal de respostas da IA por grupo (plano ou ajuste da plataforma), contado por gatilho; no teto a IA cala com `cota_do_grupo` (0197, 20/10)
+- [[limites-do-plano-artes-videos-e-listas]] — teto mensal de artes, vídeos e mensagens de lista por plano, contado por gatilho (colunas novas em `uso_da_ia`); confere antes de gastar, lista que não cabe é recusada inteira, Next Home sem teto (0214, 22/10)
 - [[numero-em-um-grupo-e-aceite-dos-termos]] — um número de WhatsApp só fica num grupo (gatilho por grupo, recusa com frase no pareamento e no webhook) e o painel pede o aceite dos termos no primeiro acesso (0198, 20/10)
 - [[papel-nunca-ganha-grant-update]]
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)
