@@ -316,3 +316,20 @@ Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no 
   (investigar; a Aretz tem site próprio, não bloqueia).
 ### Tipos de conta na plataforma (22/10/2026, branch `plataforma-tipos-de-conta`, parte de `saude-por-grupo`)
 Feito: `/plataforma` em duas seções (Imobiliárias / Corretores independentes) com selo e filtro `?tipo=`; criação separada em `/plataforma/grupos/novo/imobiliaria` e `/independente` (nota [[plataforma-tipos-de-conta]]). **Sem migration**, sem env novo. Depende de `saude-por-grupo` (mesma lista): publicar essa antes (ou junto). Falta conferir no navegador no celular (contraste do selo nos dois temas) e criar uma conta de cada tipo em produção de ponta a ponta.
+
+### Segunda publicação de 22/10/2026 (e21e421)
+
+- Entraram `plataforma-tipos-de-conta` (lista imobiliárias × independentes,
+  criação separada em `/plataforma/grupos/novo/{imobiliaria,independente}`)
+  e `limites-do-plano` (migration 0214 aplicada ANTES: tetos de artes,
+  vídeos e mensagens de lista por plano, contados por gatilho em `uso_da_ia`;
+  o gatilho tem `exception when others` para nunca derrubar geração/envio).
+- Build da Vercel quebrou na 1ª tentativa: formulário cliente importava
+  `dadosDoGrupo.ts` → `convite.ts` (chave de serviço). Corrigido movendo
+  `limparEmail` para `src/lib/corretores/emailLimpo.ts` (puro). Lição: o
+  `next build` local no Windows passa da etapa "Compiled" antes de cair no
+  PixelMeta — rode-o para pegar import de servidor em cliente.
+- **A publicação automática da Vercel voltou a funcionar** (o push de
+  2f07f23 e o de e21e421 publicaram sozinhos). Confira `/api/versao` antes
+  de criar deploy manual, para não publicar em dobro.
+- 0213 ficou reservada sem uso (`RESERVADOS` em `migrations.test.ts`).
