@@ -1721,6 +1721,14 @@ export type Database = {
           site_cor_fundo: string | null
           site_cor_secundaria: string | null
           site_cor_texto: string | null
+
+          site_cor_escuro: string | null
+
+          site_cor_secundaria_escuro: string | null
+
+          site_cor_fundo_escuro: string | null
+
+          site_cor_texto_escuro: string | null
           site_capa_url: string | null
           site_titulo: string | null
           site_frase: string | null
@@ -1769,6 +1777,14 @@ export type Database = {
           site_cor_fundo?: string | null
           site_cor_secundaria?: string | null
           site_cor_texto?: string | null
+
+          site_cor_escuro?: string | null
+
+          site_cor_secundaria_escuro?: string | null
+
+          site_cor_fundo_escuro?: string | null
+
+          site_cor_texto_escuro?: string | null
           site_capa_url?: string | null
           site_titulo?: string | null
           site_frase?: string | null
@@ -1817,6 +1833,14 @@ export type Database = {
           site_cor_fundo?: string | null
           site_cor_secundaria?: string | null
           site_cor_texto?: string | null
+
+          site_cor_escuro?: string | null
+
+          site_cor_secundaria_escuro?: string | null
+
+          site_cor_fundo_escuro?: string | null
+
+          site_cor_texto_escuro?: string | null
           site_capa_url?: string | null
           site_titulo?: string | null
           site_frase?: string | null

@@ -7,6 +7,8 @@ custou: medio
 codigo:
   - supabase/migrations/0209_site_do_grupo.sql
   - supabase/migrations/0210_cores_do_site.sql
+  - supabase/migrations/0212_cores_do_modo_escuro.sql
+  - src/app/corretor/(painel)/admin/site/SecaoModoEscuro.tsx
   - src/lib/sites/coresDoSite.ts
   - src/lib/imagem/reduzir.ts
   - src/components/grupos/EnviarImagem.tsx
@@ -26,7 +28,7 @@ codigo:
   - src/components/layout/Footer.tsx
 summary: O gestor edita quatro cores (principal, secundária, fundo, texto), logo, capa, título, frase, "Sobre" e contatos do site do próprio grupo; o site lê isso para grupos diferentes do 1 (campo vazio cai no padrão) e a Next Home continua vindo de site.ts, travada por teste. A plataforma liga os endereços.
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Meu site
@@ -113,6 +115,21 @@ Planos: `docs/superpowers/plans/2026-10-21-site-editavel.md` (0209) e `2026-10-2
 - 6 temas prontos em `TEMAS_PRONTOS` (testados: todos passam 4,5:1).
 - Grupo 1 intocado: `layout.test.tsx` (HTML idêntico, sem `<style>`),
   `marca.test.ts`, `resolver.test.ts`, `Footer.meuSite.test.tsx`.
+- **Modo escuro próprio (0212, 22/10/2026, branch `cores-do-modo-escuro`)**: 4 colunas
+  opcionais `site_cor_escuro`, `site_cor_secundaria_escuro`, `site_cor_fundo_escuro`,
+  `site_cor_texto_escuro` (mesmo padrão da 0210; sem `admin_eventos` novo). Pedido do
+  primeiro cliente (verde-escuro e dourado): claro como está, escuro com as cores dele.
+  `cssDasCoresDoSite({..., escuro})`: sem cor do escuro = saída da 0210 byte a byte; com
+  cor do escuro o bloco do claro passa a `:root:not([data-tema="escuro"])` (mesmo conteúdo)
+  e o escuro ganha `:root[data-tema="escuro"]` (superfícies derivadas do fundo/texto do
+  escuro, contraste ajustado sobre ele; principal/secundária que faltarem herdam as do
+  claro), e o seletor NUNCA some. Sem escolha do visitante o site abre no padrão (claro;
+  `data-tema` do `<html>`), nada lê `prefers-color-scheme`. Tela: seção "Modo escuro"
+  (`SecaoModoEscuro.tsx`), prévia escura, aviso de contraste, "Limpar cores do escuro" e o
+  tema pronto "Verde e dourado" (`#d4a64b`, `#e8c77e`, `#0e1a10`, `#f3ebd6`, sem ajuste:
+  todos passam 4,5:1). Teste de sequência de migrations: 211 declarada em RESERVADOS.
+  Grupo 1 intocado (`layout.test.tsx`). Antes do deploy: aplicar a 0212 ANTES do código
+  (sem as colunas `lerSiteDoGrupo` cai em 42703 e o site fica em branco).
 - Antes do deploy: aplicar a 0210 ANTES do código. `lerSiteDoGrupo` seleciona
   as colunas novas e, com 42703 (0210 não aplicada), devolve o site em branco:
   os grupos perdem por um instante as edições da 0209 em vez de quebrar.

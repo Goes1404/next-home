@@ -59,3 +59,37 @@ describe("SiteLayout", () => {
     expect(saida).toContain("conteudo");
   });
 });
+
+describe("SiteLayout: modo escuro (0212)", () => {
+  const entrada = { grupoId: "g-2", nome: "Aretz", url: "https://aretz.com.br" };
+  const SO_ESCURO = {
+    corEscuro: "#d4a64b",
+    corSecundariaEscuro: "#e8c77e",
+    corFundoEscuro: "#0e1a10",
+    corTextoEscuro: "#f3ebd6",
+  };
+  const ESCURO = { ...SITE_EM_BRANCO, ...SO_ESCURO };
+
+  it("grupo 1: as cores do escuro não mudam nada (HTML igual, sem tag de estilo)", async () => {
+    const g1 = { grupoId: GRUPO_NEXT_HOME_ID, nome: "Next Home", url: "https://x.com.br" };
+    const sem = await html(marcaDoGrupo(g1));
+    const com = await html(marcaDoGrupo({ ...g1, personalizacao: { ...CORES, ...SO_ESCURO } }));
+    expect(com).toBe(sem);
+    expect(sem).not.toContain("<style");
+  });
+
+  it("só cores do escuro: o CSS é só do tema escuro e o seletor não é escondido", async () => {
+    const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: ESCURO }));
+    expect(saida).toContain('<style>:root[data-tema="escuro"]{');
+    expect(saida).toContain("--color-fundo:#0e1a10");
+    expect(saida).not.toContain("radiogroup");
+  });
+
+  it("claro e escuro: cada tema com as suas", async () => {
+    const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: { ...CORES, ...SO_ESCURO } }));
+    expect(saida).toContain(':root:not([data-tema="escuro"]){');
+    expect(saida).toContain("--color-fundo:#f3f7fd");
+    expect(saida).toContain("--color-fundo:#0e1a10");
+    expect(saida).not.toContain("radiogroup");
+  });
+});

@@ -58,7 +58,8 @@ export default async function SiteLayout({
   // As cores que a imobiliária escolheu em "Meu site" (0209 e 0210) viram
   // variáveis CSS em `:root`: o acento e a escala da marca, a segunda cor e,
   // com fundo e texto escolhidos, os papéis de superfície e de texto nos dois
-  // temas (e o seletor claro/escuro some). Em `:root`, e não num envoltório,
+  // temas (e o seletor claro/escuro some). Com cores do modo escuro (0212),
+  // cada tema leva as suas e o seletor fica. Em `:root`, e não num envoltório,
   // porque o fundo pinta o `<body>` e o menu do celular é um portal. SEMPRE
   // nulo na Next Home (a marca dela vem zerada): nenhuma tag a mais no HTML.
   const marca = site?.marca;
@@ -68,6 +69,12 @@ export default async function SiteLayout({
         secundaria: marca.corSecundaria,
         fundo: marca.corFundo,
         texto: marca.corTexto,
+        escuro: {
+          principal: marca.corEscuro,
+          secundaria: marca.corSecundariaEscuro,
+          fundo: marca.corFundoEscuro,
+          texto: marca.corTextoEscuro,
+        },
       })
     : null;
   const conteudo = (

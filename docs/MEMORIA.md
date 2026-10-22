@@ -11634,3 +11634,22 @@ Nota: [[controles-rapidos-do-inicio]].
 - `ia_interacoes` já tinha `grupo_id`, mas a guarda `servicoComGrupo` proíbe a plataforma de ler essa tabela e o PostgREST corta em 1.000 linhas: a leitura é por duas funções agregadas (`custo_da_ia_por_grupo`, `saude_da_ia_por_grupo`, `security invoker`, só `service_role`). Quem precisar de outro número da telemetria na plataforma estende a função, não relaxa a guarda.
 - Preços por modelo são de tabela pública (marcados "conferir"); câmbio em `CAMBIO_USD_BRL` (padrão 5,50). Custo é estimativa, não fatura.
 - Tentativa da IA = interação do webhook que não foi silêncio por modo, humano ou debounce; "IA calada" só é vermelho com tentativa e zero resposta em 24h.
+## Meu site: cores próprias do modo escuro (0212, 22/10/2026)
+
+- Nota: [[meu-site-da-imobiliaria]]. Pedido do primeiro cliente (Aretz Imobi,
+  verde-escuro e dourado): "claro como está, escuro com detalhes dourados e verde
+  escuro". Branch `cores-do-modo-escuro`, migration 0212 aditiva (4 colunas
+  `site_cor*_escuro`), ainda não aplicada em produção. 0211 está reservada para
+  outra branch (declarada em `RESERVADOS` de `migrations.test.ts`).
+- O site alterna o tema por `data-tema` no `<html>` (cookie lido por script
+  antes da pintura; padrão claro, sem `prefers-color-scheme`). Por isso o CSS do
+  escuro é `:root[data-tema="escuro"]` e o do claro, quando há escuro, vira
+  `:root:not([data-tema="escuro"])`: sem esse escopo as superfícies fixas do
+  claro vazariam para o escuro. Sem cor do escuro a saída é a da 0210, byte a byte.
+- Com cor do escuro o seletor claro/escuro nunca é escondido. Principal e
+  secundária ausentes no escuro herdam as do claro (ajustadas ao fundo do escuro).
+- Tema "Verde e dourado" (#d4a64b, #e8c77e, #0e1a10, #f3ebd6) já passa 4,5:1 em
+  tudo; não precisou de ajuste fino.
+- Armadilhas desta máquina: `npm run build` falha local por caixa do arquivo
+  PixelMeta (os 4 erros conhecidos do tsc), então o teto de bundle fica para o CI;
+  arquivos CRLF no worktree (autocrlf) quebram edição por texto multilinha.

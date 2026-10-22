@@ -18,6 +18,11 @@ export type SiteEditavel = {
   corFundo?: string | null;
   /** Texto principal do site (0210); os títulos acompanham. */
   corTexto?: string | null;
+  /** Cores próprias do modo escuro (0212); nulas = o escuro segue o padrão. */
+  corEscuro?: string | null;
+  corSecundariaEscuro?: string | null;
+  corFundoEscuro?: string | null;
+  corTextoEscuro?: string | null;
   capaUrl: string | null;
   titulo: string | null;
   frase: string | null;
@@ -40,6 +45,10 @@ export const SITE_EM_BRANCO: SiteEditavel = {
   corSecundaria: null,
   corFundo: null,
   corTexto: null,
+  corEscuro: null,
+  corSecundariaEscuro: null,
+  corFundoEscuro: null,
+  corTextoEscuro: null,
   capaUrl: null,
   titulo: null,
   frase: null,
@@ -61,6 +70,10 @@ export type SiteDigitado = {
   corSecundaria: string;
   corFundo: string;
   corTexto: string;
+  corEscuro: string;
+  corSecundariaEscuro: string;
+  corFundoEscuro: string;
+  corTextoEscuro: string;
   titulo: string;
   frase: string;
   sobre: string;
@@ -78,7 +91,7 @@ export type SiteDigitado = {
 /** O que a gravação leva ao banco (só os campos que o formulário edita). */
 export type SiteParaGravar = Pick<
   SiteEditavel,
-  "cor" | "corSecundaria" | "corFundo" | "corTexto" | "titulo" | "frase" | "sobre" | "whatsapp" | "email" | "endereco" | "instagram" | "facebook"
+  "cor" | "corSecundaria" | "corFundo" | "corTexto" | "corEscuro" | "corSecundariaEscuro" | "corFundoEscuro" | "corTextoEscuro" | "titulo" | "frase" | "sobre" | "whatsapp" | "email" | "endereco" | "instagram" | "facebook"
 >;
 
 export type ResultadoDaValidacao =
@@ -195,7 +208,9 @@ export function validarSiteDigitado(d: SiteDigitado): ResultadoDaValidacao {
   const corBruta = limpo(d.cor);
   const cor = corBruta ? normalizarCor(corBruta) : null;
   if (corBruta && !cor) erros.cor = "Use uma cor em hexadecimal, como #1f6f5c.";
-  const lerCor = (campo: "corSecundaria" | "corFundo" | "corTexto"): string | null => {
+  const lerCor = (
+    campo: "corSecundaria" | "corFundo" | "corTexto" | "corEscuro" | "corSecundariaEscuro" | "corFundoEscuro" | "corTextoEscuro",
+  ): string | null => {
     const bruta = limpo(d[campo]);
     const lida = bruta ? normalizarCor(bruta) : null;
     if (bruta && !lida) erros[campo] = "Use uma cor em hexadecimal, como #1f6f5c.";
@@ -204,6 +219,10 @@ export function validarSiteDigitado(d: SiteDigitado): ResultadoDaValidacao {
   const corSecundaria = lerCor("corSecundaria");
   const corFundo = lerCor("corFundo");
   const corTexto = lerCor("corTexto");
+  const corEscuro = lerCor("corEscuro");
+  const corSecundariaEscuro = lerCor("corSecundariaEscuro");
+  const corFundoEscuro = lerCor("corFundoEscuro");
+  const corTextoEscuro = lerCor("corTextoEscuro");
 
   const titulo = limpo(d.titulo);
   if (titulo && titulo.length > LIMITES.titulo) erros.titulo = `O título passa de ${LIMITES.titulo} caracteres.`;
@@ -230,7 +249,7 @@ export function validarSiteDigitado(d: SiteDigitado): ResultadoDaValidacao {
   const endereco = lerEndereco(d, erros);
 
   if (Object.keys(erros).length > 0) return { ok: false, erros };
-  return { ok: true, valor: { cor, corSecundaria, corFundo, corTexto, titulo, frase, sobre, whatsapp, email, endereco, instagram, facebook } };
+  return { ok: true, valor: { cor, corSecundaria, corFundo, corTexto, corEscuro, corSecundariaEscuro, corFundoEscuro, corTextoEscuro, titulo, frase, sobre, whatsapp, email, endereco, instagram, facebook } };
 }
 
 // ── Cor do site ───────────────────────────────────────────────────────────

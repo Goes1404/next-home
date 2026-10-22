@@ -181,8 +181,8 @@ export function SecaoDeCores({
       <PreviaDoSite cores={cores} />
       <p className="text-fluid-xs text-apoio">
         A prévia usa o mesmo cálculo do site. O texto sobre a cor principal (branco ou escuro) é escolhido sozinho, pelo
-        contraste. Com fundo ou texto escolhidos, o site passa a usar essas cores nos dois temas e esconde o seletor claro
-        e escuro.
+        contraste. Com fundo ou texto escolhidos aqui, o site usa essas cores nos dois temas e esconde o seletor claro
+        e escuro; para ter um escuro próprio, use a seção "Modo escuro" abaixo (o seletor volta).
       </p>
     </fieldset>
   );

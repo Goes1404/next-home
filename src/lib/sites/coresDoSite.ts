@@ -28,6 +28,9 @@ export type CoresDoSite = {
 
 export const CORES_EM_BRANCO: CoresDoSite = { principal: null, secundaria: null, fundo: null, texto: null };
 
+/** As cores do site com as do MODO ESCURO (0212), opcionais. `escuro` ausente ou vazio = a 0210, byte a byte. */
+export type CoresDoSiteComEscuro = Partial<CoresDoSite> & { escuro?: Partial<CoresDoSite> | null };
+
 /** O mínimo de contraste (WCAG AA) para texto normal. */
 export const CONTRASTE_MINIMO = 4.5;
 
@@ -91,6 +94,15 @@ export const TEMAS_PRONTOS: readonly TemaPronto[] = [
     id: "claro-minimalista",
     nome: "Claro minimalista",
     cores: { principal: "#111827", secundaria: "#4b5563", fundo: "#ffffff", texto: "#111827" },
+  },
+];
+
+/** Temas prontos só do modo escuro (0212): preenchem as quatro cores do escuro e nada do claro. */
+export const TEMAS_ESCUROS_PRONTOS: readonly TemaPronto[] = [
+  {
+    id: "verde-e-dourado",
+    nome: "Verde e dourado",
+    cores: { principal: "#d4a64b", secundaria: "#e8c77e", fundo: "#0e1a10", texto: "#f3ebd6" },
   },
 ];
 
@@ -282,17 +294,46 @@ export function esquemaDoFundo(fundo: string): "light" | "dark" {
  * depender de especificidade. Só sai hex calculado aqui: nada digitado
  * chega ao CSS. Nulo = sem nenhuma cor, nada a injetar.
  */
-export function cssDasCoresDoSite(entrada: Partial<CoresDoSite>): string | null {
+export function cssDasCoresDoSite(entrada: CoresDoSiteComEscuro): string | null {
   const c = limparCores(entrada);
+  const e = limparCores(entrada.escuro ?? {});
+  if (!temAlgumaCor(e)) return cssDoClaro(c, ":root", true);
+  // Com cores do escuro (0212): o bloco do claro vale só fora do escuro, com o
+  // mesmo conteúdo de sempre; o escuro tem o seu; o seletor nunca some.
+  const claro = cssDoClaro(c, ':root:not([data-tema="escuro"])', false);
+  return (claro ?? "") + cssDoEscuro(c, e);
+}
+
+/** O bloco do tema claro (ou do site inteiro, sem cores do escuro): o de sempre. */
+function cssDoClaro(c: CoresDoSite, seletor: string, esconderSeletor: boolean): string | null {
   if (!temAlgumaCor(c)) return null;
   const v = variaveisDoSite(c);
   const linhas = Object.entries(v).map(([k, valor]) => `${k}:${valor}`);
   const papeis = fundoETextoEfetivos(c);
   if (papeis) linhas.unshift(`color-scheme:${esquemaDoFundo(papeis.fundo)}`);
-  let css = `:root{${linhas.join(";")}}`;
+  let css = `${seletor}{${linhas.join(";")}}`;
   // Fundo e texto fixos: o claro/escuro do visitante não mexe mais nas superfícies.
-  if (fixaFundoETexto(c)) css += `[role="radiogroup"][aria-label="Tema"]{display:none}`;
+  if (esconderSeletor && fixaFundoETexto(c)) css += `[role="radiogroup"][aria-label="Tema"]{display:none}`;
   return css;
+}
+
+/** As cores que o tema escuro usa: as dele e, no que faltar da marca, a principal e a secundária do claro. */
+export function coresEfetivasDoEscuro(claro: CoresDoSite, escuro: CoresDoSite): CoresDoSite {
+  return {
+    principal: escuro.principal ?? claro.principal,
+    secundaria: escuro.secundaria ?? claro.secundaria,
+    fundo: escuro.fundo,
+    texto: escuro.texto,
+  };
+}
+
+function cssDoEscuro(claro: CoresDoSite, escuro: CoresDoSite): string {
+  const efetivas = coresEfetivasDoEscuro(claro, escuro);
+  const linhas = Object.entries(variaveisDoSite(efetivas)).map(([k, valor]) => `${k}:${valor}`);
+  const papeis = fundoETextoEfetivos(efetivas);
+  // Sem fundo próprio vale o escuro da casa; com ele, os controles nativos acompanham o fundo.
+  linhas.unshift(`color-scheme:${papeis ? esquemaDoFundo(papeis.fundo) : "dark"}`);
+  return `:root[data-tema="escuro"]{${linhas.join(";")}}`;
 }
 
 /** O que a prévia da tela mostra: o mesmo cálculo do site, com um fundo padrão para o que ficou vazio. */
@@ -302,5 +343,21 @@ export function variaveisDaPrevia(entrada: Partial<CoresDoSite>): Record<string,
     ...c,
     fundo: c.fundo ?? (c.texto ? null : "#cfd9c2"),
     texto: c.texto ?? (c.fundo ? null : "#183630"),
+  });
+}
+
+/** Fundo e texto padrão da prévia do escuro (o escuro da casa, que leem bem). */
+const PREVIA_ESCURA = { fundo: "#0b1210", texto: "#e6eeea" } as const;
+
+/**
+ * A prévia do modo escuro: o mesmo cálculo do site (`coresEfetivasDoEscuro` +
+ * `variaveisDoSite`), com o fundo e o texto escuros padrão no que ficou vazio.
+ */
+export function variaveisDaPreviaEscura(claro: Partial<CoresDoSite>, escuro: Partial<CoresDoSite>): Record<string, string> {
+  const ef = coresEfetivasDoEscuro(limparCores(claro), limparCores(escuro));
+  return variaveisDoSite({
+    ...ef,
+    fundo: ef.fundo ?? (ef.texto ? null : PREVIA_ESCURA.fundo),
+    texto: ef.texto ?? (ef.fundo ? null : PREVIA_ESCURA.texto),
   });
 }

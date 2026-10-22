@@ -102,6 +102,15 @@ concede de volta as 15 colunas que o site lê; conferido contra o código.
   site dos grupos cai em branco). Plano:
   `docs/superpowers/plans/2026-10-21-meu-site-uploads-e-cores.md`.
 
+- **Meu site: cores do modo escuro (0212, 22/10/2026, branch `cores-do-modo-escuro`,
+  ainda NÃO publicada)**: 4 cores opcionais só do tema escuro (principal, secundária,
+  fundo, texto) + tema pronto "Verde e dourado"; o claro fica como está e o seletor
+  claro/escuro continua. Ordem: aplicar a 0212 (aditiva) ANTES do deploy do código (sem as
+  colunas o site dos grupos cai em branco por 42703). 0211 segue reservada para outra
+  branch. Build local não mede o bundle (erro conhecido de caixa do PixelMeta no Windows):
+  conferir `npm run bundle:teto` no CI; a rota admin/site ganhou um componente cliente.
+  Nota: `vault/10-notas/meu-site-da-imobiliaria.md`.
+
 ## 1b. Próximos passos (depois de 21/10/2026)
 
 1. ~~Aplicar a 0194~~ — aplicada em 21/10/2026 (assinatura antiga do sorteio

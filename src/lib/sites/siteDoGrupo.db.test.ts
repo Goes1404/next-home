@@ -106,10 +106,33 @@ describe.skipIf(!process.env.DB_TESTE_URL)("site do grupo (0209)", () => {
     });
   });
 
+  it("as quatro cores do escuro da 0212 nascem nulas, aceitam hex minúsculo e recusam o resto", async () => {
+    const colunas = ["site_cor_escuro", "site_cor_secundaria_escuro", "site_cor_fundo_escuro", "site_cor_texto_escuro"];
+    await emTransacaoDesfeita(sql, async (tx) => {
+      const a = await criarGrupo(tx, { slug: "site-escuro" });
+      const [antes] = await tx<Record<string, unknown>[]>`
+        select site_cor_escuro, site_cor_secundaria_escuro, site_cor_fundo_escuro, site_cor_texto_escuro
+          from public.grupos where id = ${a.grupoId}`;
+      expect(Object.values(antes).every((v) => v === null)).toBe(true);
+      await tx`
+        update public.grupos set site_cor_escuro = '#d4a64b', site_cor_secundaria_escuro = '#e8c77e',
+               site_cor_fundo_escuro = '#0e1a10', site_cor_texto_escuro = '#f3ebd6'
+         where id = ${a.grupoId}`;
+      for (const coluna of colunas) {
+        for (const ruim of ["d4a64b", "#D4A64B", "#fff", "#d4a64b;", "rgb(0,0,0)", ""]) {
+          await expect(
+            tx.savepoint((sp) => sp.unsafe(`update public.grupos set ${coluna} = $1 where id = $2`, [ruim, a.grupoId])),
+            `${coluna} ${ruim}`,
+          ).rejects.toThrow(/check/);
+        }
+      }
+    });
+  });
+
   it("a sessão do grupo (nem o gestor) lê ou grava as colunas site_*; anon também não", async () => {
     await emTransacaoDesfeita(sql, async (tx) => {
       const a = await criarGrupo(tx, { slug: "site-privs" });
-      const colunas = ["site_cor", "site_capa_url", "site_titulo", "site_frase", "site_sobre", "site_whatsapp", "site_email", "site_endereco", "site_instagram", "site_facebook", "site_cor_secundaria", "site_cor_fundo", "site_cor_texto"];
+      const colunas = ["site_cor", "site_capa_url", "site_titulo", "site_frase", "site_sobre", "site_whatsapp", "site_email", "site_endereco", "site_instagram", "site_facebook", "site_cor_secundaria", "site_cor_fundo", "site_cor_texto", "site_cor_escuro", "site_cor_secundaria_escuro", "site_cor_fundo_escuro", "site_cor_texto_escuro"];
       for (const coluna of colunas) {
         const [p] = await tx<{ anon: boolean; logado_le: boolean; logado_grava: boolean }[]>`
           select has_column_privilege('anon', 'public.grupos', ${coluna}, 'select') as anon,
