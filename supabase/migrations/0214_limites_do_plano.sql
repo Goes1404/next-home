@@ -125,6 +125,10 @@ begin
       + case when tg_table_name = 'whatsapp_campanhas_fila' then v_delta else 0 end),
     atualizado_em = now();
   return null;
+exception when others then
+  -- Contar o uso nunca pode derrubar a geração nem o envio da lista.
+  raise warning 'contar_uso_de_recurso (%): %', tg_table_name, sqlerrm;
+  return null;
 end
 $$;
 
