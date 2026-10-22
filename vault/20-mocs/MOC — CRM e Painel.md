@@ -75,6 +75,7 @@ F0–F6.
 - [[cota-de-respostas-da-ia-por-grupo]] — teto mensal de respostas da IA por grupo (plano ou ajuste da plataforma), contado por gatilho; no teto a IA cala com `cota_do_grupo` (0197, 20/10)
 - [[saude-e-custo-da-ia-por-grupo]] — semáforo de saúde e custo da IA (R$, margem) por grupo em /plataforma; telemetria agregada por rpc (0211, 21/10)
 - [[plataforma-tipos-de-conta]] — /plataforma em duas seções (imobiliárias × independentes) com selo e filtro; criação por rotas separadas, mesma action/RPC (22/10)
+- [[limites-do-plano-artes-videos-e-listas]] — teto mensal de artes, vídeos e mensagens de lista por plano, contado por gatilho (colunas novas em `uso_da_ia`); confere antes de gastar, lista que não cabe é recusada inteira, Next Home sem teto (0214, 22/10)
 - [[numero-em-um-grupo-e-aceite-dos-termos]] — um número de WhatsApp só fica num grupo (gatilho por grupo, recusa com frase no pareamento e no webhook) e o painel pede o aceite dos termos no primeiro acesso (0198, 20/10)
 - [[papel-nunca-ganha-grant-update]]
 - [[acesso-de-corretor-so-existia-para-um]] — o lote da 0095 nunca rodou: 1 usuário no Auth para 8 corretores, e nenhum caminho de UI para trocar e-mail ou definir senha escolhida (12/09)

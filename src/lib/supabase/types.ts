@@ -784,22 +784,31 @@ export type Database = {
       }
       uso_da_ia: {
         Row: {
+          artes: number
           atualizado_em: string
           grupo_id: string
+          mensagens_lista: number
           mes: string
           respostas: number
+          videos: number
         }
         Insert: {
+          artes?: number
           atualizado_em?: string
           grupo_id: string
+          mensagens_lista?: number
           mes: string
           respostas?: number
+          videos?: number
         }
         Update: {
+          artes?: number
           atualizado_em?: string
           grupo_id?: string
+          mensagens_lista?: number
           mes?: string
           respostas?: number
+          videos?: number
         }
         Relationships: []
       }
@@ -1746,6 +1755,9 @@ export type Database = {
           situacao: "ativo" | "suspenso" | "encerrado"
           slug: string
           teto_respostas_ia: number | null
+          teto_artes: number | null
+          teto_videos: number | null
+          teto_mensagens_lista: number | null
           tipo: "imobiliaria" | "independente"
         }
         Insert: {
@@ -1802,6 +1814,9 @@ export type Database = {
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug: string
           teto_respostas_ia?: number | null
+          teto_artes?: number | null
+          teto_videos?: number | null
+          teto_mensagens_lista?: number | null
           tipo: "imobiliaria" | "independente"
         }
         Update: {
@@ -1858,6 +1873,9 @@ export type Database = {
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug?: string
           teto_respostas_ia?: number | null
+          teto_artes?: number | null
+          teto_videos?: number | null
+          teto_mensagens_lista?: number | null
           tipo?: "imobiliaria" | "independente"
         }
         Relationships: []

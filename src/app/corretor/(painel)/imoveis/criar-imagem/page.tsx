@@ -3,6 +3,8 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { imagensConfiguradas } from "@/lib/imagens/gerarImagem";
+import { lerLimitesDoGrupo } from "@/lib/planos/usoDaIa";
+import { RestamNoMes } from "@/components/planos/RestamNoMes";
 import { ChatDeArte } from "./ChatDeArte";
 import { listarConversasDoEstudio } from "@/app/corretor/(painel)/estudio/acoes";
 
@@ -23,10 +25,11 @@ export default async function PaginaCriarImagem() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
-  const [imagens, teto, conversas] = await Promise.all([
+  const [imagens, teto, conversas, limites] = await Promise.all([
     getMinhasImagens(),
     getTetoDeHoje(corretor.id),
     listarConversasDoEstudio("arte"),
+    lerLimitesDoGrupo(corretor.grupoId),
   ]);
 
   return (
@@ -35,7 +38,7 @@ export default async function PaginaCriarImagem() {
         titulo="Criar arte"
         descricao="Diz o que você quer, com suas palavras. A IA da casa pergunta o que faltar, mostra como vai ficar e só gera quando você aprovar."
       />
-
+      <RestamNoMes situacao={limites.arte} />
 
       {!imagensConfiguradas() ? (
         <p

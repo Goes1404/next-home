@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
+import { lerLimitesDoGrupo } from "@/lib/planos/usoDaIa";
+import { RestamNoMes } from "@/components/planos/RestamNoMes";
 import { CampanhasManager } from "./CampanhasManager";
 import { carregarListaParaReabrir, listarCampanhas, statusDisparo } from "./acoes";
 import { getEmpreendimentos } from "@/lib/queries";
@@ -65,13 +67,15 @@ export default async function CampanhasPainelPage({
   };
 
   const corretor = await getCorretorLogado();
-  const [empreendimentos, campanhas, status, listas, modelos] = await Promise.all([
+  const [empreendimentos, campanhas, status, listas, modelos, limites] = await Promise.all([
     // O catálogo do grupo de quem está logado; sem sessão, nenhum.
     corretor ? getEmpreendimentos(corretor.grupoId) : Promise.resolve([]),
     listarCampanhas(),
     statusDisparo(),
     getListasSugeridas(diasParado),
     getMeusTemplates(),
+    // Mensagens de lista que ainda cabem no plano neste mês (limites do plano).
+    corretor ? lerLimitesDoGrupo(corretor.grupoId) : Promise.resolve(null),
   ]);
 
   return (
@@ -91,6 +95,8 @@ export default async function CampanhasPainelPage({
           }
         />
       </div>
+
+      {limites && <RestamNoMes situacao={limites.lista} />}
 
       {/* Listas sugeridas (plano de ativação, Fase 4). Some quando o
           corretor já veio de uma delas: a lista dele está no assistente. */}

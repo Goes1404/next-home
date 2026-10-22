@@ -11661,3 +11661,24 @@ Nota: [[controles-rapidos-do-inicio]].
 - Uma regra só: as duas actions (`criarImobiliaria`, `criarCorretorIndependente`) validam em `src/lib/plataforma/tiposDeConta.ts` e caem em `criarGrupoValidado` (RPC `criar_grupo` + `update` de razao_social/documento/creci/mensalidade/vencimento + ficha gestora + convite). Falha no `update` desfaz o grupo (passo `cadastro`).
 - A guarda `servicoComGrupo` exige `exigirAdminDaPlataforma*` ANTES do `createServiceClient()` na mesma função: helper não exportado precisa chamar a guarda ele mesmo (a validação pura pode vir antes).
 - Independente: nome do grupo = nome do corretor; CPF em `documento`; ele é gestor e contato de cobrança. Preços: 97 / 147 / 127 por usuário.
+## Limites do plano: artes, vídeos e mensagens de lista (0214, 22/10/2026)
+
+- Nota: [[limites-do-plano-artes-videos-e-listas]]. Branch `limites-do-plano`,
+  migration 0214 aditiva, ainda não aplicada em produção. Irmã da cota da IA
+  (0197): números provisórios da spec §10 em `limitesDoPlano.ts` (artes 30 /
+  100 / 50 por assento; vídeos 3 / 10 / 5 por assento; lista 1.000 / 2.500 /
+  2.500 por imobiliária), ajuste da plataforma em `grupos.teto_artes`,
+  `teto_videos`, `teto_mensagens_lista`, plano `custo` (Next Home) sem teto.
+- **Contar por gatilho, não por `count(*)` das tabelas**: o dono apaga a arte
+  e o vídeo (e há rotina de limpeza), então contar linhas vivas devolveria a
+  cota. O gatilho soma em colunas novas de `uso_da_ia`; só desconta vídeo em
+  `erro` (crédito devolvido) e mensagem da fila em `erro` (não saiu).
+- Confere ANTES de gastar (`conferirLimite`): rota de imagem, `verRoteiro` e
+  `criarVideo`, `criarCampanha` e lista viva. Lista maior que o resto do mês é
+  recusada inteira com a conta (decisão: não enviar "até o limite"). Falha de
+  leitura libera (log), como a cota da IA; a plataforma lê em modo estrito.
+- Armadilha: a sigla "2D" já era a das regras de operação (0198); este passo
+  se chama "limites do plano". Armazenamento (5/20/10 GB) ficou pendente.
+- Evento do ajuste reaproveita `cota_da_ia_ajustada` com `detalhes.recurso`
+  para não mexer no CHECK de `admin_eventos` em branch paralela.
+

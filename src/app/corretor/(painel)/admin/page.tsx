@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { UsoDasNovidades } from "./_componentes/UsoDasNovidades";
 import { ProntidaoDaEquipe } from "./_componentes/ProntidaoDaEquipe";
 import { SaudeDaOperacao } from "./_componentes/SaudeDaOperacao";
+import { UsoDoPlano } from "./_componentes/UsoDoPlano";
 import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
 import { PlacarDaEquipe } from "@/app/corretor/(painel)/_componentes/graficos/PlacarDaEquipe";
 
@@ -322,6 +323,9 @@ export default async function AdminVisaoGeralPage() {
           ))}
         </ul>
       </section>
+      <Suspense fallback={null}>
+        <UsoDoPlano />
+      </Suspense>
       <Suspense fallback={null}>
         <ProntidaoDaEquipe />
       </Suspense>

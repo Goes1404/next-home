@@ -44,6 +44,7 @@ import {
   type ContextoTemplate,
 } from "@/lib/whatsapp/listaDeTransmissao";
 import { MAXIMO_DE_MIDIAS_NA_LISTA, type MidiaDaLista } from "@/lib/whatsapp/midiasDaLista";
+import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
 import type { CriterioDaLista } from "@/lib/whatsapp/listasVivas";
 
@@ -507,6 +508,14 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
   if (elegiveis.length === 0) {
     return { erro: "Nenhum dos números desta lista tem WhatsApp. Confira os telefones dos leads." };
   }
+
+  // O limite de mensagens de lista do PLANO, por grupo e por mês (limites do plano),
+  // conferido ANTES de criar a lista e de enfileirar qualquer envio. A lista
+  // que não cabe no que resta é recusada INTEIRA, com a conta; não se envia
+  // "até o limite". O limite do dia, anti-ban, é outra régua (a cota da
+  // instância) e segue valendo no disparo. Falha de leitura libera.
+  const limiteDoMes = await conferirLimite(corretor.grupoId, "lista", elegiveis.length);
+  if (!limiteDoMes.ok) return { erro: limiteDoMes.erro };
 
   const viva = Boolean(params.viva) && params.filtro !== "selecionados";
   const midias = midiasValidas(imovel, params.midias);

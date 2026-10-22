@@ -51,6 +51,10 @@ const RESERVADOS = new Set<number>([
   // nasceu sobre a numeração antiga e, na junção de 20/10/2026, virou
   // 0195/0196: num número antigo ela ordenaria antes de `grupos` existir.
   181, 182, 183, 184, 185, 186, 187,
+  // 22/10/2026: a 0213 ficou reservada para uma branch que acabou sem
+  // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
+  // depois dela.
+  213,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
