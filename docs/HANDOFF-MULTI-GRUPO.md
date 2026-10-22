@@ -264,3 +264,6 @@ arquivos Markdown: qualquer IA pode lê-los e seguir.
 
 ### Saúde e custo da IA por grupo (21/10/2026, branch `saude-por-grupo`)
 Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no detalhe do grupo (nota [[saude-e-custo-da-ia-por-grupo]]). No deploy: **migration 0211** (duas funções agregadas + dois índices, só aditiva; aplicar antes do código) e env opcional `CAMBIO_USD_BRL` (padrão 5,50). Conferir os preços de `PRECOS_POR_MODELO` (`src/lib/planos/custoDaIa.ts`).
+
+### Tipos de conta na plataforma (22/10/2026, branch `plataforma-tipos-de-conta`, parte de `saude-por-grupo`)
+Feito: `/plataforma` em duas seções (Imobiliárias / Corretores independentes) com selo e filtro `?tipo=`; criação separada em `/plataforma/grupos/novo/imobiliaria` e `/independente` (nota [[plataforma-tipos-de-conta]]). **Sem migration**, sem env novo. Depende de `saude-por-grupo` (mesma lista): publicar essa antes (ou junto). Falta conferir no navegador no celular (contraste do selo nos dois temas) e criar uma conta de cada tipo em produção de ponta a ponta.

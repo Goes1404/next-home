@@ -26,8 +26,8 @@ describe("copiarTexto", () => {
   });
 });
 
-describe("tela de novo grupo", () => {
-  const fonte = readFileSync("src/app/plataforma/grupos/novo/FormularioNovoGrupo.tsx", "utf8");
+describe("tela de novo grupo (convite criado)", () => {
+  const fonte = readFileSync("src/app/plataforma/grupos/novo/componentes.tsx", "utf8");
 
   it("copia pelo helper, e não pela API crua sem esperar", () => {
     expect(fonte).not.toMatch(/navigator\.clipboard/);

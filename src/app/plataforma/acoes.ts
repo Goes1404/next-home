@@ -13,7 +13,15 @@ import {
   validarNovoGrupo,
   type DadosDoGrupo,
   type DadosNovoGrupo,
+  type NovoGrupoValidado,
 } from "@/lib/plataforma/dadosDoGrupo";
+import {
+  validarImobiliaria,
+  validarIndependente,
+  type CadastroDoGrupo,
+  type FormularioDaImobiliaria,
+  type FormularioDoIndependente,
+} from "@/lib/plataforma/tiposDeConta";
 import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
@@ -191,12 +199,37 @@ function erroDoCriarGrupo(error: { message: string; code?: string }): string {
  * que entre nele não serve, e o endereço ficaria preso pela unicidade.
  */
 export async function criarGrupoComPrimeiroAcesso(dados: DadosNovoGrupo): Promise<ResultadoNovoGrupo> {
-  const guarda = await exigirAdminDaPlataformaNaAcao();
-  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
-
   const validacao = validarNovoGrupo(dados);
   if (!validacao.ok) return { ok: false, erro: validacao.erro };
-  const d = validacao.dados;
+  return criarGrupoValidado(validacao.dados);
+}
+
+/**
+ * Os dois formulários por tipo (`/plataforma/grupos/novo/imobiliaria` e
+ * `/independente`) caem na MESMA criação (`criarGrupoValidado`): o que muda é
+ * só o pedido que cada um monta e valida (`tiposDeConta.ts`), mais o cadastro
+ * (documento, CRECI, mensalidade, vencimento) que o grupo recebe.
+ */
+export async function criarImobiliaria(form: FormularioDaImobiliaria): Promise<ResultadoNovoGrupo> {
+  const pedido = validarImobiliaria(form);
+  if (!pedido.ok) return { ok: false, erro: pedido.erro };
+  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro);
+}
+
+export async function criarCorretorIndependente(form: FormularioDoIndependente): Promise<ResultadoNovoGrupo> {
+  const pedido = validarIndependente(form);
+  if (!pedido.ok) return { ok: false, erro: pedido.erro };
+  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro);
+}
+
+/**
+ * O miolo comum: confere a guarda (a validação do pedido, pura, já rodou) e
+ * cria. Fica aqui, e não nas três entradas, para a guarda estar antes da
+ * chave de serviço num lugar só.
+ */
+async function criarGrupoValidado(d: NovoGrupoValidado, cadastro?: CadastroDoGrupo): Promise<ResultadoNovoGrupo> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
 
   const servico = createServiceClient();
   if (await emailEmFicha(servico, d.primeiro.email)) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
@@ -211,6 +244,20 @@ export async function criarGrupoComPrimeiroAcesso(dados: DadosNovoGrupo): Promis
   });
   if (erroGrupo || !grupoId) {
     return { ok: false, erro: erroDoCriarGrupo(erroGrupo ?? { message: "sem id" }) };
+  }
+
+  if (cadastro) {
+    // Documento, CRECI, mensalidade e vencimento: colunas que `criar_grupo` não recebe.
+    const { data: gravado, error: erroCadastro } = await servico
+      .from("grupos")
+      .update(cadastro)
+      .eq("id", grupoId)
+      .select("id");
+    if (erroCadastro || !gravado || gravado.length === 0) {
+      console.error("[plataforma] falha ao gravar o cadastro do grupo:", erroCadastro?.message);
+      await desfazerGrupo(servico, { grupoId, slug: d.slug, passo: "cadastro", operador: guarda.userId });
+      return { ok: false, erro: "Não foi possível gravar os dados do grupo agora; o grupo foi desfeito. Tente de novo." };
+    }
   }
 
   const slug = await slugDeCorretorLivre(servico, d.primeiro.nome);

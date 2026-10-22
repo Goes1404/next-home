@@ -29,6 +29,10 @@ export type ResumoDeGrupo = {
   plano: Grupo["plano"];
   situacao: Grupo["situacao"];
   criadoEm: string;
+  /** Mensalidade combinada em reais; `null` = não definida. */
+  mensalidade: number | null;
+  /** CRECI cadastrado (o do corretor, no independente). */
+  creci: string | null;
   /** Fichas de corretor ativas no grupo. */
   corretoresAtivos: number;
   /** Desses, quantos têm login (`user_id`). */
@@ -122,7 +126,7 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
   const servico = createServiceClient();
   const { data, error } = await servico
     .from("grupos")
-    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, teto_respostas_ia")
+    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, creci, teto_respostas_ia")
     .order("criado_em", { ascending: true });
   if (error) throw new Error(`Falha ao listar os grupos: ${error.message}`);
 
@@ -135,6 +139,8 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
       plano: g.plano,
       situacao: g.situacao,
       criadoEm: g.criado_em,
+      mensalidade: g.mensalidade === null ? null : Number(g.mensalidade),
+      creci: g.creci,
       ...(await contarDoGrupo(servico, g)),
     })),
   );

@@ -11625,3 +11625,11 @@ Nota: [[controles-rapidos-do-inicio]].
 - `ia_interacoes` já tinha `grupo_id`, mas a guarda `servicoComGrupo` proíbe a plataforma de ler essa tabela e o PostgREST corta em 1.000 linhas: a leitura é por duas funções agregadas (`custo_da_ia_por_grupo`, `saude_da_ia_por_grupo`, `security invoker`, só `service_role`). Quem precisar de outro número da telemetria na plataforma estende a função, não relaxa a guarda.
 - Preços por modelo são de tabela pública (marcados "conferir"); câmbio em `CAMBIO_USD_BRL` (padrão 5,50). Custo é estimativa, não fatura.
 - Tentativa da IA = interação do webhook que não foi silêncio por modo, humano ou debounce; "IA calada" só é vermelho com tentativa e zero resposta em 24h.
+
+
+## Plataforma separa imobiliária de corretor independente (22/10/2026, branch `plataforma-tipos-de-conta`)
+
+- Nota: [[plataforma-tipos-de-conta]]. `/plataforma` lista em duas seções com selo (ícone+cor+texto) e filtro `?tipo=`; criação em `/plataforma/grupos/novo/imobiliaria` e `/independente` (`/novo` só escolhe). **Sem migration.**
+- Uma regra só: as duas actions (`criarImobiliaria`, `criarCorretorIndependente`) validam em `src/lib/plataforma/tiposDeConta.ts` e caem em `criarGrupoValidado` (RPC `criar_grupo` + `update` de razao_social/documento/creci/mensalidade/vencimento + ficha gestora + convite). Falha no `update` desfaz o grupo (passo `cadastro`).
+- A guarda `servicoComGrupo` exige `exigirAdminDaPlataforma*` ANTES do `createServiceClient()` na mesma função: helper não exportado precisa chamar a guarda ele mesmo (a validação pura pode vir antes).
+- Independente: nome do grupo = nome do corretor; CPF em `documento`; ele é gestor e contato de cobrança. Preços: 97 / 147 / 127 por usuário.

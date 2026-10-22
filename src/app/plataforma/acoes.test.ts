@@ -35,7 +35,7 @@ vi.mock("@/lib/auth/links", () => ({
 vi.mock("@/lib/auth/emailsDeAcesso", () => ({ enviarLinkDeAcesso: async () => respostaDoEnvio }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-const { ajustarTetoDaIa, criarGrupoComPrimeiroAcesso, editarDadosDoGrupo } = await import("./acoes");
+const { ajustarTetoDaIa, criarCorretorIndependente, criarGrupoComPrimeiroAcesso, criarImobiliaria, editarDadosDoGrupo } = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
 
 const DADOS = {
@@ -561,5 +561,120 @@ describe("ajustar o teto de respostas da IA do grupo (fase 2B)", () => {
     const r = await ajustarTetoDaIa(G_NH, "100");
     expect(r.ok).toBe(false);
     expect(banco.consultas).toEqual([]);
+  });
+});
+
+describe("criação por tipo de conta (imobiliária e corretor independente)", () => {
+  const IMOBILIARIA = {
+    nomeFantasia: "Imobiliária Silva",
+    slug: "imobiliaria-silva",
+    razaoSocial: "Silva Negócios Imobiliários Ltda",
+    cnpj: "11.222.333/0001-81",
+    creciJ: "12345-J",
+    usuarios: "4",
+    mensalidade: "",
+    diaDoVencimento: "10",
+    contatoNome: "",
+    contatoEmail: "",
+    contatoTelefone: "",
+    gestorNome: "Ana Silva",
+    gestorEmail: "ana@silva.com.br",
+    gestorWhatsapp: "(11) 98765-4321",
+  };
+  const INDEPENDENTE = {
+    nome: "Carla Corretora",
+    slug: "carla-corretora",
+    cpf: "529.982.247-25",
+    creciF: "98765-F",
+    email: "carla@gmail.com",
+    whatsapp: "(11) 91234-5678",
+    plano: "profissional",
+    mensalidade: "",
+    diaDoVencimento: "5",
+  };
+
+  it("imobiliária: mesma RPC, cadastro gravado e gestor com convite", async () => {
+    const r = await criarImobiliaria(IMOBILIARIA);
+
+    expect(r).toEqual({ ok: true, grupoId: "grupo-2", email: "ana@silva.com.br", enviado: false, url: URL_CONVITE });
+    expect(chamadasDoRpc).toHaveLength(1);
+    expect(chamadasDoRpc[0].args).toMatchObject({ p_tipo: "imobiliaria", p_plano: "imobiliaria" });
+    expect(doGrupo("grupos", "grupo-2")[0]).toMatchObject({
+      razao_social: "Silva Negócios Imobiliários Ltda",
+      documento: "11222333000181",
+      creci: "12345-J",
+      creci_tipo: "J",
+      mensalidade: 508,
+      dia_do_vencimento: 10,
+    });
+    expect(doGrupo("corretores", "grupo-2")).toEqual([expect.objectContaining({ papel: "gestor", user_id: "usuario-novo" })]);
+  });
+
+  it("independente: o corretor vira gestor e contato de cobrança, com CPF e mensalidade do plano", async () => {
+    const r = await criarCorretorIndependente(INDEPENDENTE);
+
+    expect(r).toEqual({ ok: true, grupoId: "grupo-2", email: "carla@gmail.com", enviado: false, url: URL_CONVITE });
+    expect(chamadasDoRpc[0].args).toMatchObject({
+      p_nome: "Carla Corretora",
+      p_tipo: "independente",
+      p_plano: "profissional",
+      p_contato: { nome: "Carla Corretora", email: "carla@gmail.com", telefone: "5511912345678" },
+    });
+    expect(doGrupo("grupos", "grupo-2")[0]).toMatchObject({
+      razao_social: null,
+      documento: "52998224725",
+      creci: "98765-F",
+      creci_tipo: "F",
+      mensalidade: 147,
+      dia_do_vencimento: 5,
+    });
+    expect(doGrupo("corretores", "grupo-2")).toEqual([
+      expect.objectContaining({ papel: "gestor", nome: "Carla Corretora", creci: "98765-F" }),
+    ]);
+  });
+
+  it("documento inválido é recusado antes do banco", async () => {
+    expect(await criarImobiliaria({ ...IMOBILIARIA, cnpj: "11.222.333/0001-80" })).toEqual({
+      ok: false,
+      erro: expect.stringMatching(/CNPJ/),
+    });
+    expect(await criarCorretorIndependente({ ...INDEPENDENTE, cpf: "123.456.789-00" })).toEqual({
+      ok: false,
+      erro: expect.stringMatching(/CPF/),
+    });
+    expect(chamadasDoRpc).toEqual([]);
+  });
+
+  it("quem não administra a plataforma é recusado nas duas ações", async () => {
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    const esperado = { ok: false, erro: "Esta ação é restrita a quem administra a plataforma." };
+    expect(await criarImobiliaria(IMOBILIARIA)).toEqual(esperado);
+    expect(await criarCorretorIndependente(INDEPENDENTE)).toEqual(esperado);
+    expect(chamadasDoRpc).toEqual([]);
+    expect(banco.consultas).toEqual([]);
+  });
+
+  it("convite que falha desfaz o grupo também nos fluxos por tipo", async () => {
+    respostaDoLink.invite = { ok: false, motivo: "falha" };
+    const r = await criarCorretorIndependente(INDEPENDENTE);
+    expect(r.ok).toBe(false);
+    expect(banco.tabelas.grupos.map((g) => g.id)).toEqual([G_NH]);
+  });
+
+  it("falha ao gravar o cadastro desfaz o grupo", async () => {
+    const original = banco.cliente.from;
+    banco.cliente.from = (tabela: string) => {
+      const q = original(tabela);
+      if (tabela !== "grupos") return q;
+      q.update = () =>
+        ({ eq: () => ({ select: async () => ({ data: null, error: { message: "falhou" } }) }) }) as never;
+      return q;
+    };
+    const r = await criarImobiliaria(IMOBILIARIA);
+    expect(r).toEqual({ ok: false, erro: expect.stringMatching(/dados do grupo/) });
+    expect(banco.tabelas.grupos.map((g) => g.id)).toEqual([G_NH]);
+    expect(banco.tabelas.admin_eventos.filter((e) => e.grupo_id === null)).toEqual([
+      expect.objectContaining({ detalhes: expect.objectContaining({ passo: "cadastro" }) }),
+    ]);
   });
 });
