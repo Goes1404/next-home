@@ -11653,3 +11653,11 @@ Nota: [[controles-rapidos-do-inicio]].
 - Armadilhas desta máquina: `npm run build` falha local por caixa do arquivo
   PixelMeta (os 4 erros conhecidos do tsc), então o teto de bundle fica para o CI;
   arquivos CRLF no worktree (autocrlf) quebram edição por texto multilinha.
+
+
+## Plataforma separa imobiliária de corretor independente (22/10/2026, branch `plataforma-tipos-de-conta`)
+
+- Nota: [[plataforma-tipos-de-conta]]. `/plataforma` lista em duas seções com selo (ícone+cor+texto) e filtro `?tipo=`; criação em `/plataforma/grupos/novo/imobiliaria` e `/independente` (`/novo` só escolhe). **Sem migration.**
+- Uma regra só: as duas actions (`criarImobiliaria`, `criarCorretorIndependente`) validam em `src/lib/plataforma/tiposDeConta.ts` e caem em `criarGrupoValidado` (RPC `criar_grupo` + `update` de razao_social/documento/creci/mensalidade/vencimento + ficha gestora + convite). Falha no `update` desfaz o grupo (passo `cadastro`).
+- A guarda `servicoComGrupo` exige `exigirAdminDaPlataforma*` ANTES do `createServiceClient()` na mesma função: helper não exportado precisa chamar a guarda ele mesmo (a validação pura pode vir antes).
+- Independente: nome do grupo = nome do corretor; CPF em `documento`; ele é gestor e contato de cobrança. Preços: 97 / 147 / 127 por usuário.

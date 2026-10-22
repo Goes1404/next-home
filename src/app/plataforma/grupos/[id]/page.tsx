@@ -12,6 +12,7 @@ import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
 import { CustoDaIa } from "../../CustoDaIa";
+import { SeloDoTipo } from "../../SeloDoTipo";
 import { SaudeNoDetalhe } from "../../SaudeDoGrupo";
 import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
@@ -46,13 +47,14 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
     <section className="flex max-w-3xl flex-col gap-6">
       <div>
         <Link href="/plataforma" className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center">
-          ← Grupos
+          ← Contas
         </Link>
+        <div className="mt-1">
+          <SeloDoTipo tipo={grupo.tipo} grupoId={grupo.id} />
+        </div>
         <h1 className="font-display text-titulo text-fluid-2xl mt-1 break-words">{grupo.nome}</h1>
         <p className="text-fluid-sm text-apoio mt-1 break-all">{grupo.slug}</p>
       </div>
-
-      <SaudeNoDetalhe saude={saude} agora={agora} />
 
       <SaudeNoDetalhe saude={saude} agora={agora} />
 
@@ -69,14 +71,33 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           <dt className="text-apoio text-fluid-xs">Criado em</dt>
           <dd className="text-titulo">{DATA.format(new Date(grupo.criadoEm))}</dd>
         </div>
-        <div>
-          <dt className="text-apoio text-fluid-xs">Corretores ativos</dt>
-          <dd className="text-titulo">{grupo.corretoresAtivos}</dd>
-        </div>
-        <div>
-          <dt className="text-apoio text-fluid-xs">Com login</dt>
-          <dd className="text-titulo">{grupo.comLogin}</dd>
-        </div>
+        {grupo.tipo === "independente" ? (
+          <>
+            <div>
+              <dt className="text-apoio text-fluid-xs">O corretor</dt>
+              <dd className="text-titulo break-words">{grupo.nome}</dd>
+            </div>
+            <div>
+              <dt className="text-apoio text-fluid-xs">CRECI</dt>
+              <dd className="text-titulo break-words">{grupo.creci ?? "não informado"}</dd>
+            </div>
+            <div>
+              <dt className="text-apoio text-fluid-xs">Acesso</dt>
+              <dd className="text-titulo">{grupo.comLogin > 0 ? "criado" : "convite pendente"}</dd>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <dt className="text-apoio text-fluid-xs">Corretores ativos</dt>
+              <dd className="text-titulo">{grupo.corretoresAtivos}</dd>
+            </div>
+            <div>
+              <dt className="text-apoio text-fluid-xs">Com login</dt>
+              <dd className="text-titulo">{grupo.comLogin}</dd>
+            </div>
+          </>
+        )}
         <div>
           <dt className="text-apoio text-fluid-xs">Números no ar</dt>
           <dd className="text-titulo">{grupo.numerosConectados}</dd>
@@ -89,9 +110,6 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           Respostas da IA
         </h2>
         <UsoDaIa uso={grupo.usoDaIa} ajustado={grupo.tetoAjustado !== null} />
-        <div className="border-linha border-t pt-5">
-          <CustoDaIa custo={saude.custo} mensalidade={saude.mensalidade} cambio={saude.cambio} />
-        </div>
         <div className="border-linha border-t pt-5">
           <CustoDaIa custo={saude.custo} mensalidade={saude.mensalidade} cambio={saude.cambio} />
         </div>

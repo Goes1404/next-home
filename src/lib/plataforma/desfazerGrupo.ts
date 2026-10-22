@@ -20,7 +20,7 @@ export const ORDEM_DO_DESFAZER = [
 ] as const;
 
 /** Em que passo a criação parou. */
-export type PassoQueFalhou = "ficha" | "convite";
+export type PassoQueFalhou = "ficha" | "convite" | "cadastro";
 
 /**
  * O evento que fica depois do desfazer. Os eventos do grupo (`grupo_criado`,

@@ -24,6 +24,7 @@ const GRUPOS = [
     criado_em: "2026-10-01T00:00:00Z",
     dia_do_vencimento: 1,
     mensalidade: null,
+    creci: null,
     teto_respostas_ia: null,
   },
   {
@@ -36,6 +37,7 @@ const GRUPOS = [
     criado_em: "2026-10-10T00:00:00Z",
     dia_do_vencimento: 10,
     mensalidade: "299.00",
+    creci: "98765-F",
     teto_respostas_ia: null,
   },
 ];
@@ -145,9 +147,11 @@ describe("listarGruposDaPlataforma", () => {
     const doGrupo = chamadas.find((c) => c.tabela === "grupos")!;
     const colunas = doGrupo.select!.split(",").map((s) => s.trim()).sort();
     expect(colunas).toEqual([
+      "creci",
       "criado_em",
       "dia_do_vencimento",
       "id",
+      "mensalidade",
       "nome",
       "plano",
       "situacao",
@@ -168,6 +172,8 @@ describe("listarGruposDaPlataforma", () => {
         plano: "custo",
         situacao: "ativo",
         criadoEm: "2026-10-01T00:00:00Z",
+        mensalidade: null,
+        creci: null,
         corretoresAtivos: 15,
         comLogin: 12,
         numerosConectados: 13,
@@ -186,6 +192,8 @@ describe("listarGruposDaPlataforma", () => {
         plano: "essencial",
         situacao: "suspenso",
         criadoEm: "2026-10-10T00:00:00Z",
+        mensalidade: 299,
+        creci: "98765-F",
         corretoresAtivos: 6,
         comLogin: 3,
         numerosConectados: 4,

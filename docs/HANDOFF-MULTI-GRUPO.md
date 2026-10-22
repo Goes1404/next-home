@@ -300,3 +300,5 @@ Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no 
   por plano, migration 0214).
 - Pendente: `/imovel/aretzimobi/<slug>` no endereço do painel deu 404
   (investigar; a Aretz tem site próprio, não bloqueia).
+### Tipos de conta na plataforma (22/10/2026, branch `plataforma-tipos-de-conta`, parte de `saude-por-grupo`)
+Feito: `/plataforma` em duas seções (Imobiliárias / Corretores independentes) com selo e filtro `?tipo=`; criação separada em `/plataforma/grupos/novo/imobiliaria` e `/independente` (nota [[plataforma-tipos-de-conta]]). **Sem migration**, sem env novo. Depende de `saude-por-grupo` (mesma lista): publicar essa antes (ou junto). Falta conferir no navegador no celular (contraste do selo nos dois temas) e criar uma conta de cada tipo em produção de ponta a ponta.
