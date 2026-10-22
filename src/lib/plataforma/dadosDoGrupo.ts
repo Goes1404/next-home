@@ -1,5 +1,5 @@
 import { MENSAGEM_ENDERECO_DE_ACESSO } from "@/lib/corretores/acessoDaConta";
-import { limparEmail } from "@/lib/corretores/convite";
+import { limparEmail } from "@/lib/corretores/emailLimpo";
 import { ehEmailDeAcesso } from "@/lib/corretores/credenciaisIniciais";
 import { validarSlugDoGrupo } from "@/lib/grupos/slugDoGrupo";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { enviarLinkDeAcesso } from "@/lib/auth/emailsDeAcesso";
+import { limparEmail } from "./emailLimpo";
 import { emailConfigurado } from "@/lib/email";
 import { gerarLinkDeAcesso, type TipoDeLink } from "@/lib/auth/links";
 import { site } from "@/lib/site";
@@ -52,13 +53,7 @@ export type ResultadoDoLink = { ok: true; enviado: boolean; url?: string } | { o
  */
 export type FalhaDoConvite = { ok: false; erro: string; loginNaoConferido?: string };
 
-const FORMATO_DE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** `"  Ana@Gmail.com "` → `"ana@gmail.com"`, ou `null` se não parece e-mail. */
-export function limparEmail(email: string): string | null {
-  const limpo = email.trim().toLowerCase();
-  return FORMATO_DE_EMAIL.test(limpo) ? limpo : null;
-}
+export { limparEmail };
 
 type Servico = ReturnType<typeof createServiceClient>;
 
