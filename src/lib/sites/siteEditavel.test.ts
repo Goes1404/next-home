@@ -24,6 +24,10 @@ const VAZIO: SiteDigitado = {
   corSecundaria: "",
   corFundo: "",
   corTexto: "",
+  corEscuro: "",
+  corSecundariaEscuro: "",
+  corFundoEscuro: "",
+  corTextoEscuro: "",
   titulo: "",
   frase: "",
   sobre: "",
@@ -42,7 +46,7 @@ describe("validarSiteDigitado", () => {
   it("tudo vazio é válido e não grava nada (o site cai no padrão)", () => {
     expect(validarSiteDigitado(VAZIO)).toEqual({
       ok: true,
-      valor: { cor: null, corSecundaria: null, corFundo: null, corTexto: null, titulo: null, frase: null, sobre: null, whatsapp: null, email: null, endereco: null, instagram: null, facebook: null },
+      valor: { cor: null, corSecundaria: null, corFundo: null, corTexto: null, corEscuro: null, corSecundariaEscuro: null, corFundoEscuro: null, corTextoEscuro: null, titulo: null, frase: null, sobre: null, whatsapp: null, email: null, endereco: null, instagram: null, facebook: null },
     });
   });
 
@@ -52,6 +56,10 @@ describe("validarSiteDigitado", () => {
       corSecundaria: "#0369A1",
       corFundo: "fff",
       corTexto: " #101a17",
+      corEscuro: "D4A64B",
+      corSecundariaEscuro: "",
+      corFundoEscuro: "#0E1A10",
+      corTextoEscuro: "#f3ebd6",
       titulo: "  Seu   próximo endereço ",
       frase: "Frase",
       sobre: "Primeira linha  \n\n\n\nSegunda",
@@ -72,6 +80,10 @@ describe("validarSiteDigitado", () => {
         corSecundaria: "#0369a1",
         corFundo: "#ffffff",
         corTexto: "#101a17",
+        corEscuro: "#d4a64b",
+        corSecundariaEscuro: null,
+        corFundoEscuro: "#0e1a10",
+        corTextoEscuro: "#f3ebd6",
         titulo: "Seu próximo endereço",
         frase: "Frase",
         sobre: "Primeira linha\n\nSegunda",
@@ -101,6 +113,20 @@ describe("validarSiteDigitado", () => {
     const r = validarSiteDigitado({ ...VAZIO, corSecundaria: "azul", corFundo: "#12345", corTexto: "rgb(0,0,0)" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(Object.keys(r.erros).sort()).toEqual(["corFundo", "corSecundaria", "corTexto"]);
+  });
+
+  it("recusa as quatro cores do escuro que não são hex, campo a campo", () => {
+    const r = validarSiteDigitado({ ...VAZIO, corEscuro: "ouro", corSecundariaEscuro: "#12", corFundoEscuro: "url(x)", corTextoEscuro: "rgb(0,0,0)" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.erros).sort()).toEqual(["corEscuro", "corFundoEscuro", "corSecundariaEscuro", "corTextoEscuro"]);
+  });
+
+  it("normaliza as cores do escuro; vazio vira nulo; formulário antigo sem os campos também", () => {
+    const r = validarSiteDigitado({ ...VAZIO, corEscuro: "D4A64B", corFundoEscuro: "#0e1", corTextoEscuro: " " });
+    expect(r.ok && r.valor).toMatchObject({ corEscuro: "#d4a64b", corSecundariaEscuro: null, corFundoEscuro: "#00ee11", corTextoEscuro: null });
+    const { corEscuro: _a, corSecundariaEscuro: _b, corFundoEscuro: _c, corTextoEscuro: _d, ...antigo } = VAZIO;
+    const sem = validarSiteDigitado(antigo as SiteDigitado);
+    expect(sem.ok && sem.valor).toMatchObject({ corEscuro: null, corFundoEscuro: null });
   });
 
   it("respeita os limites de tamanho", () => {

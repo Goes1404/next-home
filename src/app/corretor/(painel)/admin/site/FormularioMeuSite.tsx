@@ -5,6 +5,7 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
 import { LIMITES, type SiteDigitado } from "@/lib/sites/siteEditavel";
 import { salvarMeuSite, type ResultadoDoSite } from "./acoes";
 import { SecaoDeCores } from "./SecaoDeCores";
+import { SecaoModoEscuro } from "./SecaoModoEscuro";
 
 const CLASSE_DO_CAMPO =
   "text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 min-w-0 rounded-xl border px-3.5 py-2.5 focus:outline-none";
@@ -68,6 +69,7 @@ export function FormularioMeuSite({ inicial }: { inicial: SiteDigitado }) {
       }}
     >
       <SecaoDeCores dados={dados} erros={erros} mudar={mudar} preencher={(cores) => setDados((d) => ({ ...d, ...cores }))} />
+      <SecaoModoEscuro dados={dados} erros={erros} mudar={mudar} preencher={(cores) => setDados((d) => ({ ...d, ...cores }))} />
 
       <fieldset className="cartao grid gap-3 p-5">
         <legend className="text-fluid-sm text-titulo px-1 font-bold">Topo da página inicial</legend>

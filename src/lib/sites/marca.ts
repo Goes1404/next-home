@@ -42,6 +42,11 @@ export type MarcaDoSite = {
   corSecundaria: string | null;
   corFundo: string | null;
   corTexto: string | null;
+  /** Cores próprias do modo escuro (0212). Nulas = o escuro segue o padrão; sempre nulas na Next Home. */
+  corEscuro: string | null;
+  corSecundariaEscuro: string | null;
+  corFundoEscuro: string | null;
+  corTextoEscuro: string | null;
   capaUrl: string | null;
   /** Título do topo da home. Nulo = o texto padrão. */
   titulo: string | null;
@@ -114,6 +119,10 @@ export function marcaDoGrupo({
       corSecundaria: null,
       corFundo: null,
       corTexto: null,
+      corEscuro: null,
+      corSecundariaEscuro: null,
+      corFundoEscuro: null,
+      corTextoEscuro: null,
       capaUrl: null,
       titulo: null,
       frase: null,
@@ -143,6 +152,10 @@ export function marcaDoGrupo({
     corSecundaria: p?.corSecundaria ?? null,
     corFundo: p?.corFundo ?? null,
     corTexto: p?.corTexto ?? null,
+    corEscuro: p?.corEscuro ?? null,
+    corSecundariaEscuro: p?.corSecundariaEscuro ?? null,
+    corFundoEscuro: p?.corFundoEscuro ?? null,
+    corTextoEscuro: p?.corTextoEscuro ?? null,
     capaUrl: p?.capaUrl ?? null,
     titulo: p?.titulo ?? null,
     frase: p?.frase ?? null,

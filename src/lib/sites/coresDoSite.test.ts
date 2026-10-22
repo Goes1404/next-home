@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONTRASTE_MINIMO,
   CORES_EM_BRANCO,
+  TEMAS_ESCUROS_PRONTOS,
   TEMAS_PRONTOS,
   ajustarPrincipal,
   ajustarTexto,
@@ -12,9 +13,10 @@ import {
   limparCores,
   paraTextoBranco,
   variaveisDaPrevia,
+  variaveisDaPreviaEscura,
   variaveisDoSite,
 } from "./coresDoSite";
-import { contraste, normalizarCor, textoSobreACor } from "./siteEditavel";
+import { contraste, luminancia, normalizarCor, textoSobreACor } from "./siteEditavel";
 
 describe("temas prontos", () => {
   it("são de 4 a 6, com ids únicos e quatro cores hex válidas cada", () => {
@@ -164,5 +166,103 @@ describe("variáveis CSS do site", () => {
     const v = variaveisDaPrevia({ principal: "#1d4ed8" });
     expect(contraste(v["--color-titulo"], v["--color-fundo"])).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
     expect(v["--color-acento"]).toBe("#1d4ed8");
+  });
+});
+
+// ── Modo escuro (0212) ────────────────────────────────────────────────────
+
+const ESCURO_AMBAR = { principal: "#d4a64b", secundaria: "#e8c77e", fundo: "#0e1a10", texto: "#f3ebd6" };
+const CLARO_PADRAO = { principal: "#1d4ed8", secundaria: "#0369a1", fundo: "#f3f7fd", texto: "#0f1f3d" };
+
+describe("modo escuro: aplicação", () => {
+  it("sem cor do escuro: a saída é a de hoje, byte a byte (com escuro ausente, nulo, vazio ou inválido)", () => {
+    for (const c of [{ principal: "#1f6f5c" }, CLARO_PADRAO, { fundo: "#101010" }]) {
+      const hoje = cssDasCoresDoSite(c);
+      expect(cssDasCoresDoSite({ ...c, escuro: null })).toBe(hoje);
+      expect(cssDasCoresDoSite({ ...c, escuro: CORES_EM_BRANCO })).toBe(hoje);
+      expect(cssDasCoresDoSite({ ...c, escuro: { principal: "javascript:1" } })).toBe(hoje);
+    }
+    expect(cssDasCoresDoSite({ escuro: CORES_EM_BRANCO })).toBeNull();
+  });
+
+  it("só o escuro (claro vazio): sem bloco do claro, o seletor fica e só o tema escuro leva as cores", () => {
+    const css = cssDasCoresDoSite({ escuro: ESCURO_AMBAR })!;
+    expect(css).toMatch(/^:root\[data-tema="escuro"\]\{color-scheme:dark;/);
+    expect(css).not.toContain("radiogroup");
+    expect(css).toContain("--color-acento:#d4a64b");
+    expect(css).toContain("--color-fundo:#0e1a10");
+    expect(css).toContain("--color-titulo:#f3ebd6");
+    expect(css.match(/:root/g)).toHaveLength(1);
+  });
+
+  it("claro com principal e escuro com fundo/texto: o claro fica como hoje (sem papéis) e o seletor continua", () => {
+    const css = cssDasCoresDoSite({ principal: "#1f6f5c", escuro: { fundo: "#0e1a10", texto: "#f3ebd6" } })!;
+    const hoje = cssDasCoresDoSite({ principal: "#1f6f5c" })!;
+    expect(css.startsWith(hoje.replace(":root{", ':root:not([data-tema="escuro"]){'))).toBe(true);
+    expect(css).not.toContain("radiogroup");
+    const escuro = css.slice(css.indexOf(':root[data-tema="escuro"]'));
+    expect(escuro).toContain("--color-acento:#1f6f5c");
+    expect(escuro).toContain("--color-fundo:#0e1a10");
+  });
+
+  it("claro e escuro completos: cada tema com as suas, e o seletor aparece", () => {
+    const css = cssDasCoresDoSite({ ...CLARO_PADRAO, escuro: ESCURO_AMBAR })!;
+    const [claro, escuro] = css.split(':root[data-tema="escuro"]');
+    expect(claro).toMatch(/^:root:not\(\[data-tema="escuro"\]\)\{color-scheme:light;/);
+    expect(claro).toContain("--color-fundo:#f3f7fd");
+    expect(claro).not.toContain("#0e1a10");
+    expect(escuro).toContain("--color-fundo:#0e1a10");
+    expect(escuro).not.toContain("#f3f7fd");
+    expect(css).not.toContain("radiogroup");
+  });
+
+  it("fundo/texto do claro sem fundo/texto do escuro: o escuro não herda as superfícies do claro", () => {
+    const css = cssDasCoresDoSite({ ...CLARO_PADRAO, escuro: { principal: "#d4a64b" } })!;
+    const corte = css.indexOf(':root[data-tema="escuro"]');
+    const escuro = css.slice(corte);
+    expect(escuro).toContain("--color-acento:#d4a64b");
+    expect(escuro).not.toContain("--color-fundo");
+    expect(escuro).toContain("color-scheme:dark");
+    expect(css.indexOf("--color-fundo:#f3f7fd")).toBeLessThan(corte);
+    expect(css.slice(0, corte)).toContain(':root:not([data-tema="escuro"])');
+  });
+
+  it("o contraste do escuro é ajustado sobre o fundo do escuro, como no claro", () => {
+    const e = { principal: "#0b2a5b", fundo: "#101820", texto: "#f3ebd6" };
+    const v = variaveisDoSite(e);
+    const css = cssDasCoresDoSite({ escuro: e })!;
+    expect(css).toContain(`--color-acento-suave:${v["--color-acento-suave"]}`);
+    expect(contraste(v["--color-acento-suave"], "#101820")).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+  });
+
+  it("só hex chega ao CSS do escuro", () => {
+    const css = cssDasCoresDoSite({ escuro: { principal: "red;}</style><script>", fundo: "#0e1a10", texto: "#F3EBD6" } })!;
+    expect(css).not.toMatch(/[<>]/);
+    expect(css).not.toContain("F3EBD6");
+  });
+
+  it("o tema pronto Verde e dourado tem hex válido e lê bem", () => {
+    expect(TEMAS_ESCUROS_PRONTOS.map((t) => t.id)).toContain("verde-e-dourado");
+    for (const t of TEMAS_ESCUROS_PRONTOS) {
+      for (const cor of Object.values(t.cores)) expect(normalizarCor(cor)).toBe(cor);
+      expect(avisosDeContraste(t.cores)).toEqual([]);
+      expect(contraste(t.cores.texto, t.cores.fundo)).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+      expect(contraste(t.cores.principal, t.cores.fundo)).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+      expect(contraste(t.cores.secundaria, t.cores.fundo)).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+    }
+  });
+
+  it("avisa contraste fraco no escuro e o ajuste conserta", () => {
+    const fraco = { ...CORES_EM_BRANCO, fundo: "#0e1a10", texto: "#2a3a2c" };
+    expect(avisosDeContraste(fraco).map((a) => a.campo)).toContain("texto");
+    expect(contraste(ajustarTexto("#2a3a2c", "#0e1a10"), "#0e1a10")).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+  });
+
+  it("a prévia do escuro usa o cálculo do site, com o escuro padrão no que faltou e a marca do claro", () => {
+    const v = variaveisDaPreviaEscura({ principal: "#1f6f5c" }, { texto: "#f3ebd6" });
+    expect(v["--color-acento"]).toBe("#1f6f5c");
+    expect(contraste(v["--color-titulo"], v["--color-fundo"])).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+    expect(luminancia(v["--color-fundo"])).toBeLessThan(0.1);
+    expect(variaveisDaPreviaEscura({}, ESCURO_AMBAR)["--color-fundo"]).toBe("#0e1a10");
   });
 });
