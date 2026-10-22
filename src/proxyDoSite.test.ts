@@ -26,6 +26,8 @@ async function reescrita(caminho: string, host = "www.nexthomeimoveis.com"): Pro
 describe("proxy e o site de cada endereço", () => {
   it("leva a página pública para o segmento do host, com a query", async () => {
     expect(await reescrita("/")).toBe("/s/www.nexthomeimoveis.com");
+    expect(await reescrita("/portfolio")).toBe("/s/www.nexthomeimoveis.com/portfolio");
+    expect(await reescrita("/empreendimentos")).toBe("/s/www.nexthomeimoveis.com/empreendimentos");
     expect(await reescrita("/sobre")).toBe("/s/www.nexthomeimoveis.com/sobre");
     expect(await reescrita("/empreendimentos?bairro=Alphaville")).toBe(
       "/s/www.nexthomeimoveis.com/empreendimentos?bairro=Alphaville",

@@ -8,6 +8,7 @@ import { LinksDoCabecalho } from "@/components/layout/LinksDoCabecalho";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 
 const LINKS = [
+  { href: "/portfolio", label: "Portfólio" },
   { href: "/empreendimentos", label: "Imóveis" },
   { href: "/financiamento", label: "Financiamento" },
   { href: "/corretores", label: "Corretores" },

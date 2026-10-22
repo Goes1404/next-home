@@ -38,6 +38,7 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 
 ## Estrutura das páginas
 - [[pagina-institucional-tem-uma-casca-so]]
+- [[navegacao-publica-explicita-portfolio-e-imoveis]] — cabeçalhos desktop e mobile expõem `/portfolio` e `/empreendimentos` (22/10)
 
 ## Movimento e listas
 - [[reveal-dentro-de-lista-vira-div]]

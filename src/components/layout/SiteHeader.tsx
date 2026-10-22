@@ -7,7 +7,8 @@ import { MenuMobile } from "@/components/layout/MenuMobile";
 import { LinksDoCabecalho } from "@/components/layout/LinksDoCabecalho";
 
 const LINKS = [
-  { href: "/empreendimentos", label: "Empreendimentos" },
+  { href: "/portfolio", label: "Portfólio" },
+  { href: "/empreendimentos", label: "Imóveis" },
   { href: "/mapa", label: "Mapa" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contato", label: "Contato" },
@@ -21,7 +22,8 @@ const LINKS = [
  * a Corretores sem rolar até o rodapé.
  */
 const LINKS_DO_CELULAR = [
-  { href: "/empreendimentos", label: "Empreendimentos" },
+  { href: "/portfolio", label: "Portfólio" },
+  { href: "/empreendimentos", label: "Imóveis" },
   { href: "/mapa", label: "Mapa" },
   { href: "/financiamento", label: "Financiamento" },
   { href: "/corretores", label: "Corretores" },
@@ -44,7 +46,7 @@ export function SiteHeader({ marca }: { marca: MarcaDoSite }) {
       <GlassSurface
         as="nav"
         preset="nav"
-        className="flex w-full max-w-3xl items-center justify-between gap-4 px-5 py-2.5"
+        className="flex w-full max-w-4xl items-center justify-between gap-4 px-5 py-2.5"
       >
         <Link
           href="/"
