@@ -276,3 +276,27 @@ arquivos Markdown: qualquer IA pode lê-los e seguir.
 
 ### Saúde e custo da IA por grupo (21/10/2026, branch `saude-por-grupo`)
 Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no detalhe do grupo (nota [[saude-e-custo-da-ia-por-grupo]]). No deploy: **migration 0211** (duas funções agregadas + dois índices, só aditiva; aplicar antes do código) e env opcional `CAMBIO_USD_BRL` (padrão 5,50). Conferir os preços de `PRECOS_POR_MODELO` (`src/lib/planos/custoDaIa.ts`).
+
+### Publicação de 22/10/2026 e o primeiro cliente (Aretz Imobi)
+
+- **No ar em d9ebab1** (deploy manual pela Vercel MCP; migrations 0211 e
+  0212 aplicadas ANTES): ícone/manifest por grupo + logo maior no site,
+  saúde e custo da IA em `/plataforma`, cores do modo escuro no "Meu site".
+- **Aretz Imobi** (`grupos.slug = aretzimobi`, id
+  `442f2289-bba9-46f9-b9de-9e0df95a049c`): 1º cliente pagante. Plano
+  imobiliaria, mensalidade R$ 600 no 1º mês (passa a R$ 889 depois do 1º
+  pagamento: 7 usuários × R$ 127), vencimento dia 22. Site
+  `https://aretzimobi.vercel.app` (alias na Vercel + `enderecos_do_site`).
+  Logo = selo verde/dourado em `grupos/<id>/logo-selo.png` no bucket
+  `empreendimentos`. Modo claro padrão; modo escuro "Verde e dourado".
+  Catálogo: 39 imóveis copiados da Next Home (slug `aretz-*`; as mídias
+  apontam para os MESMOS arquivos da Next Home). Falta: e-mail do Bruno
+  (gestor) para o convite. Contrato: Claude Docs
+  https://claude.ai/artifact/5LsM7Czn61J7ZN26Admz3h (taxa de transferência do
+  site opcional, 6 meses, R$ 1.200 − R$ 200/mês).
+- **Em andamento (branches locais, não publicadas):** `plataforma-tipos-de-conta`
+  (lista separada imobiliárias × independentes e criação diferente; parte de
+  `saude-por-grupo`) e `limites-do-plano` (artes, vídeos e mensagens de lista
+  por plano, migration 0214).
+- Pendente: `/imovel/aretzimobi/<slug>` no endereço do painel deu 404
+  (investigar; a Aretz tem site próprio, não bloqueia).
