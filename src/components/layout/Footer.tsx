@@ -34,7 +34,7 @@ export function Footer({ marca }: { marca: MarcaDoSite }) {
       <div className="mx-auto grid w-full max-w-6xl gap-10 sm:grid-cols-3">
         <div>
           <p className="font-display text-lg text-titulo">
-            <LogoDaMarca marca={marca} destaque="text-acento-forte" altura="h-10" />
+            <LogoDaMarca marca={marca} destaque="text-acento-forte" altura="h-14" />
           </p>
           <p className="text-fluid-sm mt-3 max-w-xs text-legenda">{marca.descricao}</p>
           {marca.creci && <p className="text-fluid-xs mt-4 text-tenue">CRECI {marca.creci}</p>}
