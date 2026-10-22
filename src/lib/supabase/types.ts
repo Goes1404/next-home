@@ -3989,6 +3989,21 @@ export type Database = {
       }
     }
     Functions: {
+      custo_da_ia_por_grupo: {
+        Args: { p_inicio: string }
+        Returns: { grupo_id: string; modelo: string; interacoes: number; tokens_entrada: number; tokens_saida: number }[]
+      }
+      saude_da_ia_por_grupo: {
+        Args: { p_desde: string }
+        Returns: {
+          grupo_id: string
+          tentativas: number
+          respondidas: number
+          erros_de_envio: number
+          fallbacks: number
+          ultima_resposta_em: string | null
+        }[]
+      }
       site_do_endereco: {
         Args: { p_host: string; p_dominio_da_plataforma?: string | null }
         Returns: { grupo_id: string; nome: string; host_principal: string }[]
