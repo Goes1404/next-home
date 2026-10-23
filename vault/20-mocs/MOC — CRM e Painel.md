@@ -74,6 +74,7 @@ F0–F6.
 - [[primeiro-acesso-completa-ficha-administrativa]] — gestor pode receber acesso sem dados profissionais; completa nome, CRECI e WhatsApp no primeiro acesso e segue oculto do site/roleta (23/10)
 - [[logins-da-aretz-com-senha-provisoria]] — acessos novos com troca de senha e preenchimento de CRECI/WhatsApp no perfil (23/10)
 - [[leads-distribuidos-nos-grupos-da-aretz]] — a roleta mantém o dono; o grupo `NOME & ARETZ` recebe o aviso pelo número central (23/10)
+- [[roleta-pula-whatsapp-desconectado-por-opcao]] — gestor pode transformar a preferência por conexão em filtro por imobiliária (23/10)
 
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
 - [[saida-do-corretor-e-etiqueta-de-origem]] — todo lead diz quem o trouxe (leads.trazido_por); na saída, os da imobiliária são redistribuídos e o corretor leva só a ficha dos dele (0200, 20/10)

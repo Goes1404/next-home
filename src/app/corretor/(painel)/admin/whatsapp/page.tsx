@@ -112,7 +112,7 @@ export default async function AdminWhatsappPage() {
     idsDeContasOcultas(supabase),
     supabase
       .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia")
+      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, pular_corretor_whatsapp_desconectado")
       .eq("id", gestor.grupoId)
       .maybeSingle(),
   ]);
@@ -238,6 +238,7 @@ export default async function AdminWhatsappPage() {
 
       <ConfigurarGruposDeLeads
         instanciaAtual={configuracaoDoGrupo?.envio_grupo_leads_ativo ? configuracaoDoGrupo.envio_grupo_leads_instancia : null}
+        pularDesconectados={configuracaoDoGrupo?.pular_corretor_whatsapp_desconectado ?? false}
         instancias={(instancias ?? []).map((i) => ({
           instanceName: i.instance_name,
           nome: nomePor.get(i.corretor_id) ?? i.instance_name,

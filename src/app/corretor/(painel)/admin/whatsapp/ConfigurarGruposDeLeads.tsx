@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { configurarEnvioDeLeadsNosGrupos, sincronizarGruposDeLeadsDaAretz } from "./acoes";
+import { configurarEnvioDeLeadsNosGrupos, configurarPuloDeCorretorDesconectado, sincronizarGruposDeLeadsDaAretz } from "./acoes";
 
 type Instancia = { instanceName: string; nome: string; conectada: boolean };
 type Corretor = { id: string; nome: string; grupoNome: string | null };
 
-export function ConfigurarGruposDeLeads({ instanciaAtual, instancias, corretores }: { instanciaAtual: string | null; instancias: Instancia[]; corretores: Corretor[] }) {
+export function ConfigurarGruposDeLeads({ instanciaAtual, pularDesconectados, instancias, corretores }: { instanciaAtual: string | null; pularDesconectados: boolean; instancias: Instancia[]; corretores: Corretor[] }) {
   const [escolhida, setEscolhida] = useState(instanciaAtual ?? "");
   const [pendente, iniciar] = useTransition();
   const { avisar, falhar } = useAvisos();
@@ -25,6 +25,19 @@ export function ConfigurarGruposDeLeads({ instanciaAtual, instancias, corretores
 
   return (
     <section className="cartao p-5">
+      <label className="border-linha mb-4 flex cursor-pointer items-start gap-3 rounded-xl border p-3">
+        <input
+          type="checkbox"
+          checked={pularDesconectados}
+          disabled={pendente}
+          onChange={(e) => executar(() => configurarPuloDeCorretorDesconectado(e.target.checked))}
+          className="mt-1 size-4 accent-[var(--color-acento)]"
+        />
+        <span className="grid gap-0.5">
+          <span className="text-fluid-sm font-medium text-titulo">Pular corretor com WhatsApp desconectado</span>
+          <span className="text-fluid-xs text-apoio">Ligado: o lead so vai para quem estiver conectado. Desligado: conectados seguem na frente, mas a roleta nao deixa o lead sem responsavel.</span>
+        </span>
+      </label>
       <h2 className="text-fluid-base font-bold text-titulo">Leads nos grupos da Aretz</h2>
       <p className="text-fluid-xs text-apoio mt-1">
         Ao distribuir um lead, o CRM avisa o grupo do corretor. O nÃºmero central precisa participar de todos os grupos.

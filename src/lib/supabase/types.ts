@@ -1755,6 +1755,7 @@ export type Database = {
           site_facebook: string | null
           envio_grupo_leads_ativo: boolean
           envio_grupo_leads_instancia: string | null
+          pular_corretor_whatsapp_desconectado: boolean
           id: string
           mensalidade: number | null
           nome: string
@@ -1816,6 +1817,7 @@ export type Database = {
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
+          pular_corretor_whatsapp_desconectado?: boolean
           id?: string
           mensalidade?: number | null
           nome: string
@@ -1877,6 +1879,7 @@ export type Database = {
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
+          pular_corretor_whatsapp_desconectado?: boolean
           id?: string
           mensalidade?: number | null
           nome?: string

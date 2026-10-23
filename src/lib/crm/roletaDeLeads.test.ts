@@ -100,13 +100,18 @@ describe("a roleta distribui para quem consegue atender", () => {
       minusculo.indexOf(" where ", daRoleta),
       minusculo.indexOf("order by", daRoleta),
     );
-    for (const proibido of ["user_id is not null", "status_conexao", "slug is not null"]) {
+    for (const proibido of ["user_id is not null", "slug is not null"]) {
       expect(
         where.includes(proibido),
         `"${proibido}" virou filtro no WHERE. Filtro devolve alvo nulo e o lead ` +
           `nasce órfão — pior que mal distribuído. Isso é ordem, não recorte.`,
       ).toBe(false);
     }
+  });
+
+  it("so pula WhatsApp desconectado quando a imobiliaria ativar a opcao", () => {
+    expect(corpo).toMatch(/pular_corretor_whatsapp_desconectado/);
+    expect(corpo).toMatch(/or\s+i\.corretor_id\s+is\s+not\s+null/);
   });
 });
 

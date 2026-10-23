@@ -11811,3 +11811,15 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   mensagem. Em breve, um corretor entrará em contato para te atender.”; ela é
   registrada e então a IA é desligada para aquela conversa. Não é uma resposta
   gerada por IA nem abre qualificação automática.
+
+## Roleta pode pular WhatsApp desconectado (0216, 23/10/2026)
+
+- A regra antiga permanece o padrão: WhatsApp conectado é **preferência**, não
+  filtro, para que a imobiliária não acumule leads sem dono quando todos os
+  números caem. A opção em Administração → WhatsApp da equipe permite ao gestor
+  tornar isso um filtro explícito por grupo.
+- A 0216 acrescenta `grupos.pular_corretor_whatsapp_desconectado` (default
+  `false`) e redefine tanto `distribuir_lead` quanto
+  `devolver_leads_da_imobiliaria`: assim lead novo e a redistribuição na saída
+  do corretor seguem exatamente a mesma escolha. Aplicada em produção com a
+  coluna desligada para todos os grupos.

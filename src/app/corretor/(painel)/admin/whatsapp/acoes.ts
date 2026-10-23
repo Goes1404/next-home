@@ -113,6 +113,27 @@ export async function configurarEnvioDeLeadsNosGrupos(
   return { ok: "NÃºmero central salvo. Agora sincronize os grupos da Aretz." };
 }
 
+/** Decide se a roleta pode entregar lead a corretor sem WhatsApp conectado. */
+export async function configurarPuloDeCorretorDesconectado(
+  ativado: boolean,
+): Promise<{ ok?: string; erro?: string }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const { error } = await createServiceClient()
+    .from("grupos")
+    .update({ pular_corretor_whatsapp_desconectado: ativado })
+    .eq("id", guarda.corretor.grupoId);
+  if (error) return { erro: "Nao foi possivel salvar esta regra agora." };
+
+  revalidatePath("/corretor/admin/whatsapp");
+  return {
+    ok: ativado
+      ? "A roleta vai pular corretores com WhatsApp desconectado."
+      : "A roleta volta a apenas priorizar quem estiver conectado.",
+  };
+}
+
 /**
  * Procura o padrÃ£o `NOME DO CORRETOR & ARETZ` nos grupos do nÃºmero central
  * e guarda o JID, nunca o nome visÃ­vel, como destino do envio.
