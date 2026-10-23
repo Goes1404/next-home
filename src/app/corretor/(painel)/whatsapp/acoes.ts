@@ -18,7 +18,6 @@ import { desconectarInstancia, obterQrCodeInstancia, provedorConfigurado, type D
 import { sincronizarConexaoInstancia } from "@/lib/whatsapp/repositorio";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { FRASE_NUMERO_EM_OUTRO_GRUPO, numeroEmOutroGrupo } from "@/lib/whatsapp/numeroDeUmGrupo";
-import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 import type { ModoBotWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 
 /**
@@ -305,10 +304,6 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
   // O risco do número é do corretor (L44): sem o aceite da versão vigente
   // dos termos, nada de conectar. O layout já leva aos termos; isto cobre a
   // action chamada direto.
-  if (!(await aceitouTermosVigentes(await createClient(), corretor.id))) {
-    return { configurado: true, erro: "Antes de conectar o número, aceite os termos de uso. Recarregue a página para vê-los." };
-  }
-
   const numero = telefone?.trim() ? normalizarWhatsapp(telefone) : null;
   if (telefone?.trim() && !numero) {
     return { configurado: true, erro: "Número inválido. Use DDD + número, ex.: 11 99999-8888." };

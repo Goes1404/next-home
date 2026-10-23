@@ -40,6 +40,26 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
       </div>
 
       <div>
+        <label htmlFor="creci" className="text-fluid-sm mb-1.5 block text-corpo">
+          CRECI
+        </label>
+        <input
+          id="creci"
+          name="creci"
+          type="text"
+          required
+          minLength={2}
+          maxLength={40}
+          defaultValue={corretor.creci}
+          placeholder="Ex.: 123456-F"
+          className={CAMPO}
+        />
+        <p className="text-fluid-xs mt-1 text-tenue">
+          Informe seu registro profissional para completar seu perfil.
+        </p>
+      </div>
+
+      <div>
         <label htmlFor="whatsapp" className="text-fluid-sm mb-1.5 block text-corpo">
           WhatsApp
         </label>

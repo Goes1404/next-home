@@ -11759,3 +11759,55 @@ Nota: [[controles-rapidos-do-inicio]].
   da aba e texto de apoio; o host especial do CRM continua mudando somente a
   paleta. Nota: [[tela-de-entrar-e-dividida]].
 
+## Logins da Aretz com senha provisória (23/10/2026)
+
+Nota: [[logins-da-aretz-com-senha-provisoria]].
+
+- Após a troca da senha provisória, `trocarSenha` redireciona automaticamente
+  para `/corretor`; não é necessário tocar em "Voltar ao painel".
+- O aceite dos termos foi temporariamente retirado do layout do painel e da
+  action de conexão do WhatsApp; o código e a tabela permanecem preservados
+  para reativação posterior.
+- O CRM em `aretzimoveis.com` declara o `logo-selo.png` oficial da Aretz no
+  layout de `/corretor`; não trocar o favicon raiz, pois ele continua sendo o
+  da Next para os outros hosts.
+
+- A Aretz já existia como grupo e Bruno já tinha acesso como gestor. Foram
+  criados Fernando como gestor e Moisés, André, Gediel, Fábio e Martines como
+  corretores.
+- As seis contas novas usam senha provisória e `deve_trocar_senha = true`.
+  Todas ficaram com `em_pausa = true` para não receber leads antes de o perfil
+  ser completado.
+- CRECI e WhatsApp eram obrigatórios na ficha, mas não estavam disponíveis no
+  cadastro operacional. O perfil agora permite que a própria pessoa preencha
+  os dois campos; o CRECI é salvo por action autenticada filtrada pelo
+  `user_id`, via cliente de serviço, pois o grant normal não permite alterar o
+  dado regulatório.
+
+## Leads distribuídos nos grupos da Aretz (0215, 23/10/2026)
+
+Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
+
+- A roleta continua sendo a única dona da distribuição: `distribuir_lead`
+  define `leads.corretor_id`. O WhatsApp é apenas o aviso posterior; não
+  pode ser a fonte de verdade da carteira.
+- A Aretz usa grupos no padrão `NOME DO CORRETOR & ARETZ🟢`. A tela
+  Administração → WhatsApp da equipe escolhe uma instância central conectada
+  e sincroniza os grupos, guardando o **JID** `...@g.us` por corretor; nome de
+  grupo não é identificador confiável porque pode ser renomeado.
+- A 0215 cria `lead_envios_grupo` em trigger `AFTER INSERT`: só lead trazido
+  pela imobiliária, com corretor e mapeamento configurado, entra na fila. A
+  unicidade por `lead_id` e a reserva condicional do worker impedem envio
+  duplicado entre reentregas e crons simultâneos. Falha retenta três vezes e
+  nunca muda ou remove o dono do CRM.
+- O worker roda dentro do cron de follow-ups antes da janela comercial: aviso
+  de distribuição é operacional, não campanha. O número central precisa ser
+  participante de todos os grupos; sem isso a Evolution recusa o envio e a fila preserva o erro para diagnóstico.
+- **Aplicada no Supabase de produção em 23/10/2026**: conferidos tabela,
+  colunas e trigger `leads_30_enfileirar_aviso_no_grupo`; RLS está ativo e a
+  fila não dá `SELECT` a `anon` nem a `authenticated`.
+- **Impulsionamento Meta do corretor**: não deixa mais o cliente em silêncio.
+  A primeira mensagem recebe só a boas-vindas fixa “Olá! Recebemos sua
+  mensagem. Em breve, um corretor entrará em contato para te atender.”; ela é
+  registrada e então a IA é desligada para aquela conversa. Não é uma resposta
+  gerada por IA nem abre qualificação automática.

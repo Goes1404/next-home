@@ -2,6 +2,10 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TITULO_SEM_ETIQUETA, type AnuncioMeta } from "./anuncioMeta";
 
+/** Única resposta automática para quem veio do anúncio pago do corretor. */
+export const BOAS_VINDAS_DE_CAMPANHA =
+  "Olá! Recebemos sua mensagem. Em breve, um corretor entrará em contato para te atender.";
+
 /** A chave da linha em `impulsionamentos` para este anúncio. */
 export function chaveDoAnuncio(anuncio: AnuncioMeta): string {
   return anuncio.adId ?? "sem-etiqueta";
@@ -64,7 +68,8 @@ export async function registrarLeadDeImpulsionamento(params: {
 }
 
 /**
- * A IA não atende o lead da campanha do próprio corretor (20/10/2026).
+ * Depois da única boas-vindas automática, a IA não atende o lead da campanha
+ * do próprio corretor (20/10/2026).
  *
  * Desliga a IA NESTA conversa (`bot_ativo = false`), o mesmo estado de quando
  * o corretor fala (0152): o resumo da ficha segue sendo feito no caminho do

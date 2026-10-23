@@ -3,18 +3,27 @@ import { headers } from "next/headers";
 import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 
-/**
- * Ícone das telas de `/corretor` que abrem em `astroimob.vercel.app` (login,
- * recuperar senha, termos, definir senha): o ícone da AstroImob, não o da
- * Next Home que o raiz põe em toda página. Em qualquer outro endereço devolve
- * nada, e o `<head>` da Next Home sai exatamente como sempre saiu. O painel
- * logado de cada grupo sobrescreve isto em `(painel)/layout.tsx`.
- *
- * Só olha o `host`: ler a sessão aqui cobraria uma ida ao Auth da tela de
- * login.
- */
+const ARETZ_HOSTS = new Set(["aretzimoveis.com", "www.aretzimoveis.com"]);
+const ARETZ_FAVICON =
+  "https://prhhrqyubjcafvucirri.supabase.co/storage/v1/object/public/empreendimentos/grupos/442f2289-bba9-46f9-b9de-9e0df95a049c/logo-selo.png";
+
+function hostSemPorta(host: string | null): string {
+  return (host ?? "").toLowerCase().split(":")[0].replace(/\.$/, "");
+}
+
+/** Icon for public `/corretor` pages, selected only by host. */
 export async function generateMetadata(): Promise<Metadata> {
-  if (!ehEnderecoSoDoPainel((await headers()).get("host"))) return {};
+  const host = hostSemPorta((await headers()).get("host"));
+  if (ARETZ_HOSTS.has(host)) {
+    return {
+      icons: {
+        icon: [{ url: ARETZ_FAVICON, type: "image/png" }],
+        apple: [{ url: ARETZ_FAVICON, type: "image/png" }],
+      },
+      manifest: null,
+    };
+  }
+  if (!ehEnderecoSoDoPainel(host)) return {};
   return { icons: ICONES_ASTROIMOB, manifest: null };
 }
 

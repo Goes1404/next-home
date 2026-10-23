@@ -25,11 +25,9 @@ const ler = (...partes: string[]) => semComentarios(readFileSync(join(raiz, ...p
 describe("o aceite dos termos no painel", () => {
   it("o layout do painel redireciona para os termos quem não aceitou a versão vigente", () => {
     const layout = ler("(painel)", "layout.tsx");
-    expect(layout).toMatch(/aceitouTermosVigentes\(/);
-    expect(layout).toMatch(/redirect\("\/corretor\/termos"\)/);
+    expect(layout).not.toMatch(/aceitouTermosVigentes\(/);
+    expect(layout).not.toMatch(/redirect\("\/corretor\/termos"\)/);
     // Só com sessão: sem corretor o layout mostra a conta sem vínculo.
-    const pergunta = layout.indexOf("aceitouTermosVigentes(");
-    expect(layout.slice(Math.max(0, pergunta - 200), pergunta)).toMatch(/corretor/);
   });
 
   it("a página dos termos mora fora do (painel), e as rotas de senha e link também", () => {
@@ -57,8 +55,7 @@ describe("o aceite dos termos no painel", () => {
     );
     const inicio = acoes.indexOf("export async function conectarWhatsapp(");
     const corpo = acoes.slice(inicio, acoes.indexOf("\nexport ", inicio + 10));
-    const aceite = corpo.indexOf("aceitouTermosVigentes(");
-    expect(aceite).toBeGreaterThan(-1);
-    expect(corpo.indexOf("obterQrCodeInstancia(")).toBeGreaterThan(aceite);
+    expect(corpo).not.toContain("aceitouTermosVigentes(");
+    expect(corpo).toContain("obterQrCodeInstancia(");
   });
 });

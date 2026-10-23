@@ -685,13 +685,105 @@ export async function enviarMensagemWhatsapp(params: {
       };
     }
 
-    return { enviado: true, messageId };
+  return { enviado: true, messageId };
   } catch (err) {
     return {
       enviado: false,
       motivo: "erro_provedor",
       detalhe: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+/** Identificador estÃ¡vel que a Evolution usa para grupos do WhatsApp. */
+export function ehJidDeGrupoWhatsapp(valor: string | null | undefined): valor is string {
+  return /^\d{10,24}@g\.us$/i.test((valor ?? "").trim());
+}
+
+/**
+ * Envia para um grupo, sem passar o JID pelo normalizador de telefone.
+ * A separaÃ§Ã£o Ã© deliberada: telefone malformado nÃ£o pode virar grupo, nem
+ * JID de grupo pode ser "corrigido" como se fosse um telefone brasileiro.
+ */
+export async function enviarMensagemWhatsappParaGrupo(params: {
+  instanceName: string;
+  grupoJid: string;
+  texto: string;
+}): Promise<ResultadoEnvio> {
+  const grupoJid = params.grupoJid.trim();
+  if (!params.instanceName || !params.texto.trim() || !ehJidDeGrupoWhatsapp(grupoJid)) {
+    return { enviado: false, motivo: "dados_invalidos" };
+  }
+
+  const config = configDoProvedor();
+  if (!config) {
+    return {
+      enviado: false,
+      motivo: "provedor_nao_configurado",
+      detalhe: "Defina WHATSAPP_API_URL e WHATSAPP_API_KEY para ativar o envio.",
+    };
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(`${config.baseUrl}/message/sendText/${encodeURIComponent(params.instanceName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      signal: controller.signal,
+      body: JSON.stringify({ number: grupoJid, text: params.texto }),
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      const corpo = await res.text().catch(() => "");
+      return { enviado: false, motivo: "erro_provedor", detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+    }
+    const corpo = await res.text().catch(() => "");
+    let json: unknown = null;
+    try {
+      json = corpo ? JSON.parse(corpo) : null;
+    } catch {
+      // O detalhe abaixo preserva uma resposta inesperada do provedor.
+    }
+    const messageId = messageIdDaResposta(json);
+    return messageId
+      ? { enviado: true, messageId }
+      : { enviado: false, motivo: "sem_confirmacao", detalhe: `HTTP ${res.status} sem key.id â€” resposta: ${corpo.slice(0, 300) || "(vazia)"}` };
+  } catch (err) {
+    return { enviado: false, motivo: "erro_provedor", detalhe: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export type GrupoWhatsapp = { jid: string; nome: string };
+
+/** Lista os grupos visÃ­veis para uma instÃ¢ncia conectada da Evolution. */
+export async function listarGruposWhatsapp(instanceName: string): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
+  const config = configDoProvedor();
+  if (!config) return { grupos: [], erro: "Provedor de WhatsApp nÃ£o configurado." };
+  if (!instanceName) return { grupos: [], erro: "Escolha o nÃºmero central." };
+
+  try {
+    const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}`, {
+      headers: { apikey: config.apiKey },
+      cache: "no-store",
+    });
+    if (!res.ok) return { grupos: [], erro: `NÃ£o foi possÃ­vel ler os grupos (HTTP ${res.status}).` };
+    const json: unknown = await res.json();
+    const itens = Array.isArray(json)
+      ? json
+      : typeof json === "object" && json !== null && Array.isArray((json as { groups?: unknown }).groups)
+        ? (json as { groups: unknown[] }).groups
+        : [];
+    const grupos = itens.flatMap((item): GrupoWhatsapp[] => {
+      if (typeof item !== "object" || item === null) return [];
+      const dado = item as { id?: unknown; subject?: unknown; name?: unknown };
+      const jid = typeof dado.id === "string" ? dado.id : "";
+      const nome = typeof dado.subject === "string" ? dado.subject : typeof dado.name === "string" ? dado.name : "";
+      return ehJidDeGrupoWhatsapp(jid) && nome.trim() ? [{ jid, nome: nome.trim() }] : [];
+    });
+    return { grupos };
+  } catch (err) {
+    return { grupos: [], erro: err instanceof Error ? err.message : "Falha ao consultar os grupos." };
   }
 }
 

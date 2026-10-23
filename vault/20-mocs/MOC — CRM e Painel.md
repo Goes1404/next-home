@@ -72,6 +72,9 @@ F0–F6.
 
 - [[administrador-da-plataforma-cria-acessos-do-grupo]] — o operador cria convite de corretor ou administrador no detalhe da imobiliária; titular define senha e completa dados (23/10)
 - [[primeiro-acesso-completa-ficha-administrativa]] — gestor pode receber acesso sem dados profissionais; completa nome, CRECI e WhatsApp no primeiro acesso e segue oculto do site/roleta (23/10)
+- [[logins-da-aretz-com-senha-provisoria]] — acessos novos com troca de senha e preenchimento de CRECI/WhatsApp no perfil (23/10)
+- [[leads-distribuidos-nos-grupos-da-aretz]] — a roleta mantém o dono; o grupo `NOME & ARETZ` recebe o aviso pelo número central (23/10)
+
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
 - [[saida-do-corretor-e-etiqueta-de-origem]] — todo lead diz quem o trouxe (leads.trazido_por); na saída, os da imobiliária são redistribuídos e o corretor leva só a ficha dos dele (0200, 20/10)
 - [[identidade-da-ia-de-cada-grupo]] — tela Administração > Assistente: o gestor dá nome, região e tom à IA da equipe (0199, 20/10)

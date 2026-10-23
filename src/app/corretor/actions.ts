@@ -10,6 +10,7 @@ import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from
 import { registrarInteracao } from "@/lib/crm/interacoes";
 import { textoMudancaEtapa } from "@/lib/crm/timeline";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 import { revalidarSitePublico } from "@/lib/sites/revalidar";
@@ -104,14 +105,18 @@ export async function salvarPerfil(
   _estado: EstadoForm,
   formData: FormData,
 ): Promise<EstadoForm> {
-  const { supabase, user } = await exigirSessao();
+  const { user } = await exigirSessao();
 
   const nome = String(formData.get("nome") ?? "").trim();
+  const creci = String(formData.get("creci") ?? "").trim();
   const whatsappBruto = String(formData.get("whatsapp") ?? "");
   const bio = String(formData.get("bio") ?? "").trim();
 
   if (nome.length < 2 || nome.length > 120) {
     return { erro: "Informe seu nome completo." };
+  }
+  if (creci.length < 2 || creci.length > 40) {
+    return { erro: "Informe seu CRECI." };
   }
   const whatsapp = normalizarWhatsapp(whatsappBruto);
   if (!whatsapp) {
@@ -124,9 +129,9 @@ export async function salvarPerfil(
   // `.select()` no fim é essencial, não enfeite: sem policy de UPDATE o RLS
   // não devolve erro — ele simplesmente não afeta linha nenhuma. Sem
   // conferir o que voltou, a tela diria "salvo" sem ter salvado nada.
-  const { data, error } = await supabase
+  const { data, error } = await createServiceClient()
     .from("corretores")
-    .update({ nome, whatsapp, bio: bio || null })
+    .update({ nome, creci, whatsapp, bio: bio || null })
     .eq("user_id", user.id)
     .select("id");
 
@@ -340,7 +345,7 @@ export async function trocarSenha(
     .update({ deve_trocar_senha: false })
     .eq("user_id", user.id);
 
-  return { ok: "Senha alterada." };
+  redirect("/corretor");
 }
 
 /**

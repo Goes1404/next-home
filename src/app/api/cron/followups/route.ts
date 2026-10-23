@@ -42,6 +42,7 @@ import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvali
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
@@ -643,6 +644,12 @@ export async function GET(req: NextRequest) {
     console.error("[lead novo]", e);
     return 0;
   });
+  // DistribuiÃ§Ã£o em grupo Ã© um aviso operacional, nÃ£o campanha: deve sair
+  // mesmo fora da janela comercial, assim que a roleta definiu o dono.
+  const gruposDeLeads = await enviarLeadsDistribuidosParaGrupos(supabase).catch((e) => {
+    console.error("[grupos de leads]", e);
+    return 0;
+  });
   const semResposta = await alertarClientesSemResposta(supabase).catch((e) => {
     console.error("[cliente sem resposta]", e);
     return 0;
@@ -667,7 +674,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, gruposDeLeads, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;

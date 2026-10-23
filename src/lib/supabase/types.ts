@@ -1473,6 +1473,8 @@ export type Database = {
           user_id: string | null
           video_url: string | null
           whatsapp: string
+          whatsapp_grupo_leads_jid: string | null
+          whatsapp_grupo_leads_nome: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1501,6 +1503,8 @@ export type Database = {
           user_id?: string | null
           video_url?: string | null
           whatsapp: string
+          whatsapp_grupo_leads_jid?: string | null
+          whatsapp_grupo_leads_nome?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1529,6 +1533,8 @@ export type Database = {
           user_id?: string | null
           video_url?: string | null
           whatsapp?: string
+          whatsapp_grupo_leads_jid?: string | null
+          whatsapp_grupo_leads_nome?: string | null
         }
         Relationships: [
           {
@@ -1747,6 +1753,8 @@ export type Database = {
           site_endereco: Json | null
           site_instagram: string | null
           site_facebook: string | null
+          envio_grupo_leads_ativo: boolean
+          envio_grupo_leads_instancia: string | null
           id: string
           mensalidade: number | null
           nome: string
@@ -1806,6 +1814,8 @@ export type Database = {
           site_endereco?: Json | null
           site_instagram?: string | null
           site_facebook?: string | null
+          envio_grupo_leads_ativo?: boolean
+          envio_grupo_leads_instancia?: string | null
           id?: string
           mensalidade?: number | null
           nome: string
@@ -1865,6 +1875,8 @@ export type Database = {
           site_endereco?: Json | null
           site_instagram?: string | null
           site_facebook?: string | null
+          envio_grupo_leads_ativo?: boolean
+          envio_grupo_leads_instancia?: string | null
           id?: string
           mensalidade?: number | null
           nome?: string
@@ -3119,6 +3131,75 @@ export type Database = {
           resultados_meta?: number
         }
         Relationships: []
+      }
+      lead_envios_grupo: {
+        Row: {
+          corretor_id: string
+          created_at: string
+          enviado_em: string | null
+          grupo_id: string
+          grupo_jid: string
+          grupo_nome: string | null
+          id: string
+          instance_name: string
+          lead_id: string
+          proxima_tentativa_em: string
+          provider_message_id: string | null
+          status: string
+          tentativas: number
+          ultimo_erro: string | null
+          updated_at: string
+        }
+        Insert: {
+          corretor_id: string
+          created_at?: string
+          enviado_em?: string | null
+          grupo_id: string
+          grupo_jid: string
+          grupo_nome?: string | null
+          id?: string
+          instance_name: string
+          lead_id: string
+          proxima_tentativa_em?: string
+          provider_message_id?: string | null
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          corretor_id?: string
+          created_at?: string
+          enviado_em?: string | null
+          grupo_id?: string
+          grupo_jid?: string
+          grupo_nome?: string | null
+          id?: string
+          instance_name?: string
+          lead_id?: string
+          proxima_tentativa_em?: string
+          provider_message_id?: string | null
+          status?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_envios_grupo_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_envios_grupo_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {

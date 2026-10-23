@@ -93,7 +93,7 @@ import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
-import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { BOAS_VINDAS_DE_CAMPANHA, calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
@@ -885,15 +885,30 @@ export async function POST(req: NextRequest) {
         });
       }
       /*
-       * Lead da campanha do PRÓPRIO corretor (20/10/2026, pedido do dono):
-       * a IA não responde. O lead é cadastrado (acima) e o resumo da ficha
-       * continua sendo feito a cada mensagem pelo caminho do silêncio
-       * (`atualizarFichaEMemoria`); quem conversa é o corretor, que pagou o
-       * anúncio. Para a IA assumir, ele usa a palavra-chave ou "IA assume
-       * agora", como em qualquer conversa desligada.
+       * Lead da campanha do PRÓPRIO corretor: recebe UMA boas-vindas curta
+       * e depois a IA fica desligada. Assim o cliente sabe que chegou, sem
+       * o bot iniciar uma qualificação que deveria ser do corretor que pagou
+       * o anúncio. O resumo da ficha continua no caminho do silêncio.
        */
-      if (conversa.botAtivo && (await calarIaNaConversaDeCampanha(conversa.id))) {
-        iaCaladaPelaCampanha = true;
+      if (conversa.botAtivo) {
+        const boasVindas = await enviarMensagemWhatsapp({
+          instanceName: instancia.instanceName,
+          telefone: sender,
+          texto: BOAS_VINDAS_DE_CAMPANHA,
+        });
+        if (boasVindas.enviado) {
+          await gravarMensagem({
+            conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
+            conversaId: conversa.id,
+            remetente: "bot",
+            conteudo: BOAS_VINDAS_DE_CAMPANHA,
+            providerMessageId: boasVindas.messageId ?? null,
+            statusEntrega: boasVindas.messageId ? "enviada" : null,
+          });
+        } else {
+          console.warn("[impulsionamento] boas-vindas não saiu:", boasVindas.motivo, boasVindas.detalhe);
+        }
+        if (await calarIaNaConversaDeCampanha(conversa.id)) iaCaladaPelaCampanha = true;
       }
     }
 

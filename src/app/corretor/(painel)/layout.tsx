@@ -25,8 +25,6 @@ import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
-import { aceitouTermosVigentes } from "@/lib/termos/aceite";
 import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 
 /**
@@ -78,13 +76,13 @@ export default async function PainelLayout({
   // painel até o próprio titular informar os dados obrigatórios.
   if (corretor && cadastroEstaPendente(corretor.creci)) redirect("/corretor/completar-cadastro");
   // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
+  // O aceite dos termos está temporariamente desativado; a página e a action
+  // continuam preservadas para reativação posterior.
+  // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
   // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
   // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
   // e entrar, recuperar, criar e trocar senha também: nada disso passa por
   // aqui (trocar a senha provisória não pode esperar o aceite).
-  if (corretor && !(await aceitouTermosVigentes(await createClient(), corretor.id))) {
-    redirect("/corretor/termos");
-  }
   const marca = await marcaDoPainel();
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o

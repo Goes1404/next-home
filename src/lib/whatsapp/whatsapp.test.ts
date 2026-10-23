@@ -14,7 +14,7 @@ import { transcreverAudioWhatsapp, transcricaoTemConteudo } from "./audioTranscr
 import {
   formatarAtualizacaoDossie,
 } from "./brokerNotifier";
-import { enviarMensagemWhatsapp, provedorConfigurado } from "./provider";
+import { ehJidDeGrupoWhatsapp, enviarMensagemWhatsapp } from "./provider";
 import type { Empreendimento } from "@/lib/types";
 
 const IMOVEL_MOCK: Empreendimento = {
@@ -465,6 +465,12 @@ describe("Transcrição de áudio", () => {
 });
 
 describe("Provedor de envio", () => {
+  it("reconhece JID de grupo sem confundir com telefone", () => {
+    expect(ehJidDeGrupoWhatsapp("120363012345678901@g.us")).toBe(true);
+    expect(ehJidDeGrupoWhatsapp("5511999990000")).toBe(false);
+    expect(ehJidDeGrupoWhatsapp("grupo@g.us")).toBe(false);
+  });
+
   it("recusa envio sem provedor configurado, dizendo o motivo", async () => {
     const resultado = await enviarMensagemWhatsapp({
       instanceName: "nexthome-carlos",
