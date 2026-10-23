@@ -27,6 +27,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { aceitouTermosVigentes } from "@/lib/termos/aceite";
+import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
@@ -73,6 +74,9 @@ export default async function PainelLayout({
   children: React.ReactNode;
 }) {
   const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
+  // Ficha criada só para conceder acesso administrativo: permanece fora do
+  // painel até o próprio titular informar os dados obrigatórios.
+  if (corretor && cadastroEstaPendente(corretor.creci)) redirect("/corretor/completar-cadastro");
   // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
   // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
   // termos mora FORA deste grupo (senão seria redirecionada para si mesma),

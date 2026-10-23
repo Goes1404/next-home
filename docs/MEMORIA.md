@@ -4075,6 +4075,21 @@ novo pedido explícito.
   domínio da imobiliária não é requisito técnico para criar a conta; basta
   informar um e-mail real que esteja disponível no Auth.
 
+## Administrador sem dados profissionais preenche no primeiro acesso (23/10/2026)
+
+- Uma conta de gestor ainda é uma ficha de `corretores`: nome, CRECI e
+  WhatsApp são NOT NULL. Quando o dono só tem o e-mail, não usar dados falsos
+  que virem perfil público ou entram na roleta. A ficha nasce com CRECI
+  `PENDENTE-<id>`, `oculta = true`, ativa e gestora.
+- `/(painel)/layout` detecta o marcador e manda para
+  `/corretor/completar-cadastro`, onde a própria pessoa informa nome, CRECI e
+  WhatsApp. A action deriva a ficha da sessão (`user_id`) e só atualiza quem
+  ainda está pendente; a service key entra depois da autenticação pois CRECI
+  não é editável pelo perfil comum.
+- Ao concluir, a conta permanece oculta e fora da roleta: administrador não
+  deve aparecer no site nem receber lead automaticamente. Nota:
+  [[primeiro-acesso-completa-ficha-administrativa]].
+
 ## A pausa DESCARTAVA a mensagem, e a telemetria culpava a pausa (03/09/2026)
 
 Dois defeitos empilhados, e o segundo escondia o primeiro.
