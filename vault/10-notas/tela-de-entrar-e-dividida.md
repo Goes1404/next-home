@@ -9,7 +9,7 @@ codigo:
   - src/app/corretor/entrar/page.tsx
   - src/app/corretor/entrar/FormularioLogin.tsx
 created: 2026-09-09
-updated: 2026-09-09
+updated: 2026-10-23
 fonte: pedido do usuário em 09/09/2026 + captura nos dois temas
 summary: Marca sobre a foto de um lado, cartão de entrada do outro, botão de voltar ao site dentro do cartão. Sobre foto, cor de tema não vale — o texto tem de ser fixo.
 ---
@@ -53,6 +53,9 @@ no escuro estava perfeito. Hoje é `brand-200`, tinta fixa.
   a ausência dele.
 - Campos e botão ficaram maiores (`text-fluid-base`): a senha costuma ser
   temporária, copiada de outro aplicativo, digitada no celular.
+- A marca da entrada é **ASTROimob** também quando a pessoa chega pelo
+  domínio público da Next Home. O host do CRM preserva apenas sua paleta
+  própria; a plataforma não se apresenta como uma imobiliária cliente.
 
 ## Relacionadas
 - [[navegacao-do-painel-tem-regua]]

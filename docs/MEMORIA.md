@@ -11752,3 +11752,10 @@ Nota: [[controles-rapidos-do-inicio]].
 - No primeiro login a pessoa troca a senha e depois preenche nome, CRECI e
   WhatsApp no fluxo `completar-cadastro`.
 
+## Marca da tela de entrada é ASTROimob (23/10/2026)
+
+- O login também abre pelo domínio público da Next Home, mas é a porta da
+  plataforma. Em todos os hosts ele exibe **ASTROimob** no wordmark, título
+  da aba e texto de apoio; o host especial do CRM continua mudando somente a
+  paleta. Nota: [[tela-de-entrar-e-dividida]].
+

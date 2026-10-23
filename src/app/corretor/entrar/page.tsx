@@ -1,5 +1,4 @@
 import { Wordmark } from "@/components/ui/Wordmark";
-import { site } from "@/lib/site";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -14,8 +13,8 @@ import { FormularioLogin } from "./FormularioLogin";
  * No celular, marca em cima e cartão logo abaixo.
  *
  * A marca depende do ENDEREÇO: em `astroimob.vercel.app` (o endereço só do
- * CRM, `enderecosDoPainel.ts`) a tela é da AstroImob, a plataforma; no site
- * da Next Home continua a Next Home. Por isso a página lê o `host`.
+ * CRM, `enderecosDoPainel.ts`) a tela usa a paleta especial da AstroImob. A
+ * marca exibida é AstroImob em qualquer endereço de entrada.
  *
  * O fundo é escuro nos dois temas e o texto sobre ele é branco FIXO; o
  * cartão segue o tema. Movimento só por `transform`/`opacity`, desligado com
@@ -40,18 +39,20 @@ const ASTROIMOB: Marca = {
   cores: { a: "#7c5cff", b: "#22d3ee", c: "#f472b6", base: "#090a1f", acento: "#6d5dfc", acentoHover: "#5a49ec" },
 };
 
-const NEXT_HOME: Marca = {
-  nome: site.nome,
-  wordmark: site.wordmark,
+const PAINEL_ASTROIMOB: Marca = {
+  nome: "ASTROimob",
+  wordmark: ["ASTRO", "imob"],
   frase: "Seus leads, suas conversas e sua agenda de visitas num lugar só.",
-  apoio: `Área do corretor da ${site.nome}.`,
+  apoio: "Área do corretor da ASTROimob.",
   rodape: "site",
   cores: { a: "#14b8a6", b: "#0ea5e9", c: "#34d399", base: "#03161a" },
 };
 
 async function marcaDoEndereco(): Promise<Marca> {
   const host = (await headers()).get("host");
-  return ehEnderecoSoDoPainel(host) ? ASTROIMOB : NEXT_HOME;
+  // A entrada é da plataforma, mesmo quando chegou pelo domínio público da
+  // Next Home. O host só preserva a paleta especial do endereço do CRM.
+  return ehEnderecoSoDoPainel(host) ? ASTROIMOB : PAINEL_ASTROIMOB;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
