@@ -35,7 +35,14 @@ vi.mock("@/lib/auth/links", () => ({
 vi.mock("@/lib/auth/emailsDeAcesso", () => ({ enviarLinkDeAcesso: async () => respostaDoEnvio }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-const { ajustarTetoDaIa, criarCorretorIndependente, criarGrupoComPrimeiroAcesso, criarImobiliaria, editarDadosDoGrupo } = await import("./acoes");
+const {
+  ajustarTetoDaIa,
+  criarAcessoPendenteDoGrupo,
+  criarCorretorIndependente,
+  criarGrupoComPrimeiroAcesso,
+  criarImobiliaria,
+  editarDadosDoGrupo,
+} = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
 
 const DADOS = {
@@ -102,6 +109,7 @@ beforeEach(() => {
   };
   banco.cliente.auth = {
     admin: {
+      createUser: async () => ({ data: { user: { id: "usuario-criado" } }, error: null }),
       deleteUser: async (id: string) => {
         usuariosApagados.push(id);
         return { data: {}, error: null };
@@ -113,6 +121,48 @@ beforeEach(() => {
 /** As linhas do grupo; em `grupos` a chave é `id` (sem isso, "o grupo sumiu" passaria sempre). */
 const doGrupo = (tabela: string, grupoId: string) =>
   banco.tabelas[tabela].filter((l) => (tabela === "grupos" ? l.id : l.grupo_id) === grupoId);
+
+function formDoAcesso(email: string, papel: "gestor" | "corretor" = "corretor") {
+  const form = new FormData();
+  form.set("email", email);
+  form.set("senha", "senha-temporaria-1");
+  form.set("papel", papel);
+  return form;
+}
+
+describe("acesso de grupo já criado pela plataforma", () => {
+  it("cria login com senha temporária e ficha pendente, oculta, sem inventar dados profissionais", async () => {
+    const r = await criarAcessoPendenteDoGrupo(G_NH, undefined, formDoAcesso("corretor@silva.com", "gestor"));
+
+    expect(r).toEqual({ ok: true, email: "corretor@silva.com", papel: "gestor" });
+    expect(doGrupo("corretores", G_NH)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          email: "corretor@silva.com",
+          papel: "gestor",
+          nome: "Cadastro pendente",
+          creci: expect.stringMatching(/^PENDENTE-/),
+          whatsapp: "5511000000000",
+          oculta: true,
+          user_id: "usuario-criado",
+          deve_trocar_senha: true,
+        }),
+      ]),
+    );
+    expect(banco.tabelas.admin_eventos).toEqual(
+      expect.arrayContaining([expect.objectContaining({ acao: "conta_criada", ator_plataforma_user_id: OPERADOR })]),
+    );
+  });
+
+  it("recusa quem não é administrador da plataforma antes de consultar o banco", async () => {
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    await expect(criarAcessoPendenteDoGrupo(G_NH, undefined, formDoAcesso("corretor@silva.com"))).resolves.toEqual({
+      ok: false,
+      erro: "Esta ação é restrita a quem administra a plataforma.",
+    });
+    expect(banco.consultas).toEqual([]);
+  });
+});
 
 describe("criar grupo com o primeiro acesso", () => {
   it("cria grupo, gestor e convite numa operação", async () => {

@@ -24,6 +24,7 @@ import { EnderecosDoGrupo } from "./EnderecosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
+import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -110,6 +111,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         </div>
       </dl>
       <p className="text-fluid-xs text-tenue -mt-3">O plano só muda no ciclo seguinte; nesta versão ele não se edita aqui.</p>
+
+      <FormularioNovoAcesso grupoId={grupo.id} />
 
       <section className="cartao flex flex-col gap-5 p-5" aria-labelledby="titulo-ia">
         <h2 id="titulo-ia" className="text-fluid-sm text-titulo font-bold">

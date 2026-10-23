@@ -70,6 +70,7 @@ F0–F6.
 
 ## Administração (gestor)
 
+- [[administrador-da-plataforma-cria-acessos-do-grupo]] — o operador cria convite de corretor ou administrador no detalhe da imobiliária; titular define senha e completa dados (23/10)
 - [[primeiro-acesso-completa-ficha-administrativa]] — gestor pode receber acesso sem dados profissionais; completa nome, CRECI e WhatsApp no primeiro acesso e segue oculto do site/roleta (23/10)
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)
 - [[saida-do-corretor-e-etiqueta-de-origem]] — todo lead diz quem o trouxe (leads.trazido_por); na saída, os da imobiliária são redistribuídos e o corretor leva só a ficha dos dele (0200, 20/10)

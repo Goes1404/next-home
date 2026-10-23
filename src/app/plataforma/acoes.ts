@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { MENSAGEM_EMAIL_EM_USO } from "@/lib/corretores/acessoDaConta";
-import { convidarCorretorDoGrupo } from "@/lib/corretores/convite";
-import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
+import { MENSAGEM_EMAIL_EM_USO, MENSAGEM_ENDERECO_DE_ACESSO } from "@/lib/corretores/acessoDaConta";
+import { convidarCorretorDoGrupo, limparEmail } from "@/lib/corretores/convite";
+import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
+import { creciPendenteDoCadastro } from "@/lib/corretores/cadastroPendente";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import { apagarEm, podeCancelar, podeDesfazerCancelamento, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import {
@@ -46,6 +47,88 @@ type Servico = ReturnType<typeof createServiceClient>;
 export type ResultadoNovoGrupo =
   | { ok: true; grupoId: string; email: string; enviado: boolean; url?: string }
   | { ok: false; erro: string };
+
+export type ResultadoNovoAcesso =
+  | { ok: true; email: string; papel: "gestor" | "corretor" }
+  | { ok: false; erro: string };
+
+/**
+ * Cria um acesso para um grupo que já existe. A plataforma só recebe o
+ * e-mail, senha temporária e papel: nome, CRECI e WhatsApp são informados
+ * pelo titular no primeiro acesso. Enquanto isso a ficha é oculta e nunca
+ * entra no site nem na roleta de leads.
+ */
+export async function criarAcessoPendenteDoGrupo(
+  grupoId: string,
+  _estadoAnterior: ResultadoNovoAcesso | undefined,
+  formData: FormData,
+): Promise<ResultadoNovoAcesso> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Imobiliária não encontrada." };
+
+  const email = limparEmail(String(formData.get("email") ?? ""));
+  const senha = String(formData.get("senha") ?? "");
+  const papel = String(formData.get("papel") ?? "");
+  if (!email) return { ok: false, erro: "Informe um e-mail válido." };
+  if (senha.length < 8) return { ok: false, erro: "A senha temporária precisa ter pelo menos 8 caracteres." };
+  if (ehEmailDeAcesso(email)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
+  if (papel !== "gestor" && papel !== "corretor") return { ok: false, erro: "Escolha o tipo de acesso." };
+
+  const servico = createServiceClient();
+  const { data: grupo, error: erroGrupo } = await servico.from("grupos").select("id").eq("id", grupoId).maybeSingle();
+  if (erroGrupo || !grupo) return { ok: false, erro: "Imobiliária não encontrada." };
+  if (await emailEmFicha(servico, email)) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
+
+  // A senha só vai ao Auth; nunca entra na ficha, auditoria, log ou resposta.
+  const { data: criado, error: erroDoAuth } = await servico.auth.admin.createUser({
+    email,
+    password: senha,
+    email_confirm: true,
+  });
+  if (erroDoAuth || !criado.user) {
+    if (erroDoAuth) console.error("[plataforma] falha ao criar login:", erroDoAuth.message);
+    return { ok: false, erro: "Não foi possível criar o acesso agora. Confira se esse e-mail já está em uso." };
+  }
+
+  const base = normalizarParaEmail(email.split("@")[0] ?? "") || "novo-acesso";
+  const slug = await slugDeCorretorLivre(servico, base);
+  const { data: ficha, error: erroFicha } = await servico
+    .from("corretores")
+    .insert({
+      nome: "Cadastro pendente",
+      creci: creciPendenteDoCadastro(criado.user.id),
+      whatsapp: "5511000000000",
+      slug,
+      email,
+      user_id: criado.user.id,
+      papel,
+      ativo: true,
+      oculta: true,
+      deve_trocar_senha: true,
+      grupo_id: grupoId,
+    })
+    .select("id, user_id")
+    .single();
+  if (erroFicha || !ficha) {
+    console.error("[plataforma] falha ao criar ficha de acesso pendente:", erroFicha?.message);
+    await apagarLogin(servico, criado.user.id);
+    return { ok: false, erro: "Não foi possível criar o acesso agora. Tente novamente." };
+  }
+
+  const { error: erroAuditoria } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    ator_plataforma_user_id: guarda.userId,
+    acao: "conta_criada",
+    alvo_corretor_id: ficha.id,
+    detalhes: { origem: "plataforma", cadastro_pendente: true, papel },
+  });
+  if (erroAuditoria) console.error("[plataforma] conta criada sem auditoria:", erroAuditoria.message);
+
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  revalidatePath("/plataforma");
+  return { ok: true, email, papel };
+}
 
 /**
  * O e-mail já é de alguma ficha (de qualquer grupo)? A plataforma não chama

@@ -11737,3 +11737,18 @@ Nota: [[controles-rapidos-do-inicio]].
   tabelas exige revisar todos os embeds existentes no mesmo deploy.
 - Nota: [[fk-do-embed-de-leads-e-explicita]].
 
+## Administrador da plataforma cria acesso em imobiliária existente (23/10/2026)
+
+- Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]. O painel
+  `/plataforma` já criava a imobiliária e seu primeiro gestor, mas não tinha
+  porta para o administrador da plataforma criar os acessos seguintes. No
+  detalhe de cada grupo, **Criar acesso** recebe e-mail e papel (`corretor` ou
+  `gestor`). Só `eh_admin_da_plataforma()` pode executar a action.
+- A ficha provisória é oculta, com CRECI `PENDENTE-*`; o operador informa
+  e-mail, senha temporária e papel, e o login nasce no Auth com
+  `email_confirm: true` e `deve_trocar_senha = true`. A senha só vai ao Auth,
+  nunca para ficha, auditoria, log ou resposta da action; a auditoria recebe
+  `ator_plataforma_user_id`. Se a ficha falha, o login recém-criado é apagado.
+- No primeiro login a pessoa troca a senha e depois preenche nome, CRECI e
+  WhatsApp no fluxo `completar-cadastro`.
+
