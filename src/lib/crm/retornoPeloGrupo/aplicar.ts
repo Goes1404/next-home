@@ -35,11 +35,14 @@ export type CorretorDoGrupo = { id: string; whatsapp: string; whatsapp_lid: stri
  * O relato que o corretor mandou no grupo dele, do começo ao fim (spec 6.2).
  *
  * A linha de `retornos_de_ligacao` nasce ANTES de qualquer coisa lenta, com
- * status 'falhou', e só vira 'aplicado'/'sem_leitura'/'aguardando_escolha' no
- * fim: a Evolution reentrega a mesma mensagem (o `unique` descarta a cópia) e,
- * se o processo morrer no meio, a linha fica visível como 'falhou' em vez de
- * sumir. 'falhou' também cobre o relato que não virou retorno de ninguém
- * (sem cliente aguardando, cliente de outro corretor, áudio não entendido).
+ * status 'falhou', e só vira 'aplicado'/'sem_leitura'/'aguardando_escolha'/
+ * 'ignorada' no fim: a Evolution reentrega a mesma mensagem (o `unique`
+ * descarta a cópia) e, se o processo morrer no meio, a linha fica visível como
+ * 'falhou' em vez de sumir. 'falhou' também cobre o relato que não virou
+ * retorno de ninguém (cliente de outro corretor, áudio não entendido).
+ * 'ignorada' é a conversa do grupo que não conta ligação ("bom dia", "ok",
+ * mensagem sem cliente aguardando): sem texto guardado e sem resposta, a não
+ * ser que cite o aviso ou a confirmação.
  *
  * Como o `unique` barra a reentrega, um erro inesperado depois do registro
  * perderia o relato calado: por isso o erro fica anotado na linha e, se nada
@@ -143,12 +146,18 @@ async function seguirComORetorno(
     perguntas: situacao.perguntas,
   });
 
+  // Citar uma mensagem qualquer (a do gestor, a do cliente) não é falar do lead.
+  const citouOAviso =
+    msg.citadaId !== null &&
+    [...situacao.avisos, ...situacao.aguardando].some((a) => a.avisoMensagemId === msg.citadaId);
   const desteRelato: RetornoParaAplicar = {
     retornoId,
     mensagemId: msg.mensagemId,
     relato: texto,
     textoDaLigacao: texto,
     audioPath,
+    ehAudio: msg.ehAudio,
+    citouOLead: citouOAviso,
     enviadaEm: msg.enviadaEm,
     corrigeId: null,
     corrigido: null,
@@ -169,6 +178,7 @@ async function seguirComORetorno(
       await aplicarRetornoAoLead(ctx, decisao.leadId, situacao.envios.get(decisao.leadId) ?? null, {
         ...desteRelato,
         relato: `${cadeia.relato}\nCorreção do corretor: ${texto}`,
+        citouOLead: true,
         corrigeId: cadeia.ultimo.id,
         corrigido: cadeia.aplicado,
       });
@@ -213,7 +223,9 @@ async function seguirComORetorno(
     }
 
     case "nenhum": {
-      await responderNoGrupo(ctx, TEXTO_SEM_LEAD_AGUARDANDO);
+      // Ninguém aguardando e nada citado: é conversa do grupo. Responder a
+      // cada "bom dia" encheria o grupo do corretor de avisos do sistema.
+      await fecharRetorno(ctx, retornoId, { status: "ignorada", texto: null });
       return;
     }
   }
@@ -254,6 +266,9 @@ async function resolverPergunta(
       relato: texto,
       textoDaLigacao: texto,
       audioPath: pendente.audio_path,
+      ehAudio: pendente.audio_path !== null,
+      // Respondeu à pergunta: está falando deste cliente.
+      citouOLead: true,
       enviadaEm: new Date(pendente.created_at),
       corrigeId: null,
       corrigido: null,

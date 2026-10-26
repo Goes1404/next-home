@@ -30,7 +30,7 @@ describe("migration 0218: retorno da ligação pelo grupo", () => {
       /resultado\s+text check \(resultado in \('atendeu', 'nao_atendeu', 'numero_errado', 'pediu_retorno'\)\)/,
     );
     expect(sql).toMatch(
-      /status\s+text not null check \(status in \('aplicado', 'aguardando_escolha', 'sem_leitura', 'falhou'\)\)/,
+      /status\s+text not null check \(status in \('aplicado', 'aguardando_escolha', 'sem_leitura', 'ignorada', 'falhou'\)\)/,
     );
     expect(sql).not.toMatch(/status\s+text[^,]*default 'aplicado'/);
     expect(sql).toMatch(/opcoes\s+uuid\[\] not null default '\{\}'/);

@@ -28,6 +28,14 @@ export function TEXTO_SEM_LEITURA(nome: string): string {
   return `📝 ${nome} · anotado na ficha, sem leitura automática`;
 }
 
+/**
+ * O corretor respondeu em cima do aviso ou da confirmação, mas a mensagem não
+ * conta a ligação ("ok", "👍"). Ele estava falando deste cliente: pergunta.
+ */
+export function TEXTO_NAO_ENTENDI_A_LIGACAO(nome: string): string {
+  return `Não entendi como foi a ligação com ${nome}. Pode contar de novo?`;
+}
+
 export function TEXTO_NAO_E_MAIS_SEU(nome: string): string {
   return `${nome} agora está com outro corretor, então não anotei este retorno.`;
 }

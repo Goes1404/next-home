@@ -6,6 +6,7 @@ import {
   TEXTO_CLIENTE_NAO_ENCONTRADO,
   TEXTO_NAO_CONSEGUI_ANOTAR,
   TEXTO_NAO_E_MAIS_SEU,
+  TEXTO_NAO_ENTENDI_A_LIGACAO,
   TEXTO_SEM_LEAD_AGUARDANDO,
   TEXTO_SEM_LEITURA,
   dataDaVisita,
@@ -224,6 +225,10 @@ describe("textos fixos", () => {
   it("cliente apagado e erro inesperado", () => {
     expect(TEXTO_CLIENTE_NAO_ENCONTRADO).toBe("Não achei esse cliente no CRM.");
     expect(TEXTO_NAO_CONSEGUI_ANOTAR).toBe("Não consegui anotar este retorno agora, pode mandar de novo?");
+  });
+
+  it("conversa em cima do aviso ou da confirmação: pede para contar de novo", () => {
+    expect(TEXTO_NAO_ENTENDI_A_LIGACAO("Ana")).toBe("Não entendi como foi a ligação com Ana. Pode contar de novo?");
   });
 
   it("cliente que passou para outro corretor", () => {

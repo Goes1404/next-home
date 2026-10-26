@@ -320,11 +320,11 @@ describe("aplicar o retorno", () => {
     expect(lead("lead-ana")).toMatchObject({ etapa: "novo", visita_agendada_em: null });
   });
 
-  it("nenhum cliente aguardando e sem citação: avisa como responder", async () => {
+  it("nenhum cliente aguardando e sem citação: silêncio, e a conversa não fica guardada", async () => {
     envio("env-ana").retorno_em = "2026-10-26T13:00:00.000Z";
     await tratar(mensagem({ id: "m1", texto: "falei com o cliente" }));
-    expect(enviadas).toEqual(["Não achei cliente aguardando retorno. Responda em cima do aviso do cliente para eu anotar."]);
-    expect(retornos()[0].status).toBe("falhou");
+    expect(enviadas).toEqual([]);
+    expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
     expect(lerRetornoDaLigacao).not.toHaveBeenCalled();
   });
 
@@ -535,6 +535,80 @@ describe("confirmação completa, erros e correção em cadeia", () => {
     await tratar(mensagem({ id: "m2", texto: "2", citada: "central-1" }));
     expect(enviadas[1]).toBe("Não achei esse cliente no CRM.");
     expect(interacoes("ligacao")).toHaveLength(0);
+  });
+});
+
+describe("conversa no grupo não vira ligação", () => {
+  const naoERelato = (custo: Record<string, unknown> | null = null) => ({ ok: true, leitura: "nao_e_relato", custo });
+
+  /** Nada na ficha, no aviso nem no dossiê: a Ana continua exatamente como estava. */
+  function nadaGravadoNaAna() {
+    expect(banco.tabelas.lead_interacoes).toHaveLength(0);
+    expect(lead("lead-ana")).toMatchObject({ etapa: "novo", visita_agendada_em: null });
+    expect(envio("env-ana")).toMatchObject({ tentativas_ligacao: 1, retorno_em: null });
+    expect(salvarDossie).not.toHaveBeenCalled();
+    expect(chamadasRpc).toEqual([]);
+  }
+
+  for (const texto of ["bom dia", "ok", "👍"]) {
+    it(`"${texto}" com um cliente aguardando: nada gravado, silêncio`, async () => {
+      lerRetornoDaLigacao.mockResolvedValue(naoERelato());
+      await tratar(mensagem({ id: "m1", texto }));
+      nadaGravadoNaAna();
+      expect(enviadas).toEqual([]);
+      expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
+    });
+  }
+
+  it("resposta ao gestor (cita a mensagem dele) com um cliente aguardando: nada gravado, silêncio", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(
+      naoERelato({ modelo: "modelo-teste", latenciaMs: 30, tokensEntrada: 500, tokensSaida: 10 }),
+    );
+    await tratar(mensagem({ id: "m1", texto: "pode deixar, chefe, vou ligar agora", citada: "msg-do-gestor" }));
+    nadaGravadoNaAna();
+    expect(enviadas).toEqual([]);
+    expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
+    // A leitura custou: entra no medidor mesmo sem virar ligação.
+    expect(banco.tabelas.ia_interacoes).toHaveLength(1);
+  });
+
+  it("\"ok\" em cima do aviso: nada gravado, e pede para contar de novo", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(naoERelato());
+    await tratar(mensagem({ id: "m1", texto: "ok", citada: "aviso-ana" }));
+    nadaGravadoNaAna();
+    expect(enviadas).toEqual(["Não entendi como foi a ligação com Ana. Pode contar de novo?"]);
+    expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
+  });
+
+  it("\"👍\" em cima da confirmação: não refaz a ligação, e pede para contar de novo", async () => {
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m1", texto: "liguei pra Ana, não atendeu" }));
+    lerRetornoDaLigacao.mockResolvedValueOnce(naoERelato());
+    await tratar(mensagem({ id: "m2", texto: "👍", citada: "central-1" }));
+    expect(interacoes("ligacao")).toHaveLength(1);
+    expect(envio("env-ana")).toMatchObject({ tentativas_ligacao: 2, retorno_em: null });
+    expect(enviadas[1]).toBe("Não entendi como foi a ligação com Ana. Pode contar de novo?");
+    expect(retornos()[1]).toMatchObject({ status: "ignorada", texto: null });
+  });
+
+  it("grupo suspenso e \"ok\": ignorado, sem anotar nem responder", async () => {
+    suspenso = true;
+    await tratar(mensagem({ id: "m1", texto: "ok" }));
+    nadaGravadoNaAna();
+    expect(enviadas).toEqual([]);
+    expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
+  });
+
+  it("IA fora e \"bom dia\": ignorado; IA fora e um relato de verdade: anotado sem leitura", async () => {
+    lerRetornoDaLigacao.mockResolvedValue({ ok: false });
+    await tratar(mensagem({ id: "m1", texto: "bom dia" }));
+    nadaGravadoNaAna();
+    expect(enviadas).toEqual([]);
+    expect(retornos()[0]).toMatchObject({ status: "ignorada", texto: null });
+
+    await tratar(mensagem({ id: "m2", texto: "liguei pra Ana, caixa postal" }));
+    expect(interacoes("ligacao")).toHaveLength(1);
+    expect(retornos()[1]).toMatchObject({ status: "sem_leitura", lead_id: "lead-ana" });
   });
 });
 

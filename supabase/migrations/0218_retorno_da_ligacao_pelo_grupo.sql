@@ -89,7 +89,7 @@ create table if not exists public.retornos_de_ligacao (
   audio_path              text,
   resultado               text check (resultado in ('atendeu', 'nao_atendeu', 'numero_errado', 'pediu_retorno')),
   leitura                 jsonb,
-  status                  text not null check (status in ('aplicado', 'aguardando_escolha', 'sem_leitura', 'falhou')),
+  status                  text not null check (status in ('aplicado', 'aguardando_escolha', 'sem_leitura', 'ignorada', 'falhou')),
   opcoes                  uuid[] not null default '{}',
   corrige_id              uuid references public.retornos_de_ligacao(id) on delete set null,
   created_at              timestamptz not null default now(),
@@ -116,6 +116,8 @@ comment on column public.retornos_de_ligacao.opcoes is
   'Leads candidatos quando o status é aguardando_escolha ("Esse retorno é sobre: 1) Ana 2) Paulo?").';
 comment on column public.retornos_de_ligacao.corrige_id is
   'Retorno anterior que esta mensagem corrige (6.5); o histórico guarda os dois.';
+comment on column public.retornos_de_ligacao.status is
+  'aplicado | aguardando_escolha | sem_leitura | ignorada (a mensagem não contava ligação nenhuma: conversa, "ok", recado ao gestor; nada vai para o lead e o texto não é guardado) | falhou.';
 
 alter table public.retornos_de_ligacao enable row level security;
 

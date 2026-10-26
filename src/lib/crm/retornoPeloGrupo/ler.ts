@@ -1,5 +1,5 @@
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
-import { normalizarLeituraDoRetorno, type LeituraDoRetorno } from "./leituraDoRetorno";
+import { NAO_E_RELATO, normalizarLeituraDoRetorno, type LeituraDoRetorno } from "./leituraDoRetorno";
 
 /*
  * Ninguém espera esta leitura em tela: o corretor mandou o relato no grupo e
@@ -53,12 +53,13 @@ REGRAS:
 - Valores em dinheiro vão como número simples em reais, sem texto ("600 mil" vira 600000, "1,2 milhão" vira 1200000).
 - A etapa só muda se o relato deixa claro. Valores possíveis: "primeiro_contato" (falou com o cliente, mas ainda sem conversa de verdade), "em_conversa" (conversou e segue em andamento), "qualificado" (sabe o que quer, quanto pode pagar e tem condição), "visita_agendada" (marcou data e hora de visita), "perdido" (o cliente desistiu, comprou em outro lugar ou não tem perfil; exige motivoPerda). Qualquer outra situação: null. Nunca use fechado, proposta ou documentação.
 - "resultado": "atendeu" (falou com o cliente), "nao_atendeu" (ligou e ninguém atendeu), "numero_errado" (número não é do cliente ou não existe), "pediu_retorno" (atendeu, mas pediu para ligar depois).
+- O grupo também tem conversa que NÃO conta ligação nenhuma: cumprimento ("bom dia"), "ok", "beleza", emoji, agradecimento, resposta ou recado ao gestor, aviso do que ainda vai fazer ("vou ligar agora", "já já ligo"). Nesses casos responda "resultado": null e todo o resto null ou vazio. Na correção, se o texto depois de "Correção do corretor:" só concorda ou agradece, também é null.
 - Se não atendeu ou o número está errado, não há etapa, visita nem fatos.
 - "resumo": junte o que já se sabia do cliente (ficha e dossiê abaixo) com o que o relato acrescenta, em poucas frases. Não repita o que não importa mais.
 
 Responda EXCLUSIVAMENTE um objeto JSON válido, sem texto antes ou depois, neste formato:
 {
-  "resultado": "atendeu" | "nao_atendeu" | "numero_errado" | "pediu_retorno",
+  "resultado": "atendeu" | "nao_atendeu" | "numero_errado" | "pediu_retorno" | null (null = não é relato de ligação),
   "etapa": "primeiro_contato" | "em_conversa" | "qualificado" | "visita_agendada" | "perdido" | null,
   "visitaEm": string ou null (data e hora da visita marcada em ISO 8601 com offset -03:00, ex. de formato: "2026-11-07T10:00:00-03:00"; só se o relato trouxer dia E hora),
   "motivoPerda": string ou null (só se etapa for "perdido"),
@@ -79,24 +80,27 @@ Responda EXCLUSIVAMENTE um objeto JSON válido, sem texto antes ou depois, neste
   }
 }`;
 
+export type CustoDaLeitura = {
+  tokensEntrada: number | null;
+  tokensSaida: number | null;
+  /** Quem de fato respondeu e em quanto tempo: vão para `ia_interacoes`. */
+  modelo: string;
+  latenciaMs: number;
+};
+
 export type ResultadoDaLeitura =
-  | {
-      ok: true;
-      leitura: LeituraDoRetorno;
-      tokensEntrada: number | null;
-      tokensSaida: number | null;
-      /** Quem de fato respondeu e em quanto tempo: vão para `ia_interacoes`. */
-      modelo: string;
-      latenciaMs: number;
-    }
+  | ({ ok: true; leitura: LeituraDoRetorno } & CustoDaLeitura)
+  /** Conversa, não relato. `custo` é null quando nem se chamou o modelo ("ok"). */
+  | { ok: true; leitura: typeof NAO_E_RELATO; custo: CustoDaLeitura | null }
   | { ok: false };
 
 /**
  * Lê o relato da ligação e devolve a leitura já peneirada.
  *
- * Nunca lança: relato curto demais, nenhum provedor de IA, chamada que falhou
- * ou resposta sem resultado entendível viram `{ ok: false }`, e o chamador
- * decide o que dizer no grupo.
+ * Nunca lança: relato vazio, nenhum provedor de IA, chamada que falhou ou
+ * resposta sem resultado entendível viram `{ ok: false }`, e o chamador
+ * decide o que dizer no grupo. Duas letras ou um emoji ("ok", "👍") não são
+ * relato: nem chegam ao modelo.
  */
 export async function lerRetornoDaLigacao(p: {
   relato: string;
@@ -106,7 +110,8 @@ export async function lerRetornoDaLigacao(p: {
 }): Promise<ResultadoDaLeitura> {
   try {
     const relato = p.relato.trim();
-    if (relato.length < TAMANHO_MINIMO_DO_RELATO) return { ok: false };
+    if (!relato) return { ok: false };
+    if (relato.length < TAMANHO_MINIMO_DO_RELATO) return { ok: true, leitura: NAO_E_RELATO, custo: null };
     if (!algumProvedorConfigurado()) return { ok: false };
 
     const prompt = [
@@ -133,14 +138,14 @@ export async function lerRetornoDaLigacao(p: {
 
     const leitura = normalizarLeituraDoRetorno(resultado.json, p.agora);
     if (!leitura) return { ok: false };
-    return {
-      ok: true,
-      leitura,
+    const custo: CustoDaLeitura = {
       tokensEntrada: resultado.tokensEntrada,
       tokensSaida: resultado.tokensSaida,
       modelo: resultado.modelo,
       latenciaMs: resultado.latenciaMs,
     };
+    if (leitura === NAO_E_RELATO) return { ok: true, leitura, custo };
+    return { ok: true, leitura, ...custo };
   } catch (erro) {
     console.error("Erro inesperado ao ler o retorno da ligação:", erro);
     return { ok: false };

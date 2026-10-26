@@ -8,12 +8,13 @@ import { enviarMensagemWhatsappParaGrupo } from "@/lib/whatsapp/provider";
 import { buscarDossieAtual, salvarDossie } from "@/lib/whatsapp/repositorio";
 import { dossieComORelato, textoDoDossie } from "./dossie";
 import { planejarEfeitos, type Aplicado } from "./efeitos";
-import type { LeituraDoRetorno } from "./leituraDoRetorno";
-import { lerRetornoDaLigacao } from "./ler";
+import { NAO_E_RELATO, type LeituraDoRetorno } from "./leituraDoRetorno";
+import { lerRetornoDaLigacao, type CustoDaLeitura } from "./ler";
 import type { Banco, EnvioDoLead } from "./situacao";
 import {
   TEXTO_CLIENTE_NAO_ENCONTRADO,
   TEXTO_NAO_E_MAIS_SEU,
+  TEXTO_NAO_ENTENDI_A_LIGACAO,
   TEXTO_SEM_LEITURA,
   textoDaConfirmacao,
 } from "./textos";
@@ -22,6 +23,12 @@ const ORIGEM = "grupo_whatsapp";
 const PROMPT_VERSAO = "retorno-da-ligacao-v1";
 const NOME_SEM_NOME = "Cliente sem nome";
 const LIGACAO_SO_EM_AUDIO = "Relato da ligação em áudio (sem transcrição).";
+/*
+ * Sem leitura (grupo suspenso, IA fora) não há quem diga se a mensagem conta
+ * uma ligação. "ok" e "bom dia" não contam; "não atendeu, caixa postal" sim.
+ * Abaixo disto, e sem áudio, a mensagem é tratada como conversa.
+ */
+const MINIMO_PARA_ANOTAR_SEM_LEITURA = 12;
 
 /** O relato a aplicar e de onde ele veio. */
 export type RetornoParaAplicar = {
@@ -34,6 +41,15 @@ export type RetornoParaAplicar = {
   /** O que vai na linha `ligacao` do histórico: só o que esta mensagem disse. */
   textoDaLigacao: string;
   audioPath: string | null;
+  /** O corretor mandou áudio (guardado ou não). */
+  ehAudio: boolean;
+  /**
+   * A mensagem citou o aviso ou a confirmação deste lead (ou respondeu à
+   * pergunta "Esse retorno é sobre"): o corretor falava DESTE cliente. Se
+   * não for relato, ele recebe o pedido para contar de novo; sem citação, a
+   * conversa passa calada.
+   */
+  citouOLead: boolean;
   /** Hora da mensagem: "sábado" se resolve a partir dela. */
   enviadaEm: Date;
   corrigeId: string | null;
@@ -102,10 +118,7 @@ async function fichaDoLead(
  * origem). Origem e ação próprias: não é resposta ao cliente, então não
  * entra na cota (0197) nem conta como tentativa de atendimento.
  */
-async function registrarCusto(
-  ctx: Contexto,
-  r: { modelo: string; latenciaMs: number; tokensEntrada: number | null; tokensSaida: number | null },
-): Promise<void> {
+async function registrarCusto(ctx: Contexto, r: CustoDaLeitura): Promise<void> {
   const { error } = await ctx.supabase.from("ia_interacoes").insert({
     grupo_id: ctx.grupoId,
     corretor_id: ctx.corretorId,
@@ -166,9 +179,21 @@ export async function aplicarRetornoAoLead(
         agora: r.enviadaEm,
       });
 
-  // Sem leitura (grupo suspenso ou IA fora): o relato fica anotado como veio.
   ctx.estado.nomeDoLead = nome;
+  // Conversa no grupo ("bom dia", "ok", recado ao gestor): nada vai para o lead.
+  if (leitura?.ok && leitura.leitura === NAO_E_RELATO) {
+    if (leitura.custo) await registrarCusto(ctx, leitura.custo);
+    await ignorarMensagem(ctx, r.retornoId, leadId);
+    if (r.citouOLead) await responderNoGrupo(ctx, TEXTO_NAO_ENTENDI_A_LIGACAO(nome));
+    return;
+  }
+
+  // Sem leitura (grupo suspenso ou IA fora): o relato fica anotado como veio.
   if (!leitura || !leitura.ok) {
+    if (!r.ehAudio && r.textoDaLigacao.trim().length < MINIMO_PARA_ANOTAR_SEM_LEITURA) {
+      await ignorarMensagem(ctx, r.retornoId, leadId);
+      return;
+    }
     ctx.estado.gravouNoLead = true;
     await registrarInteracao(supabase, {
       leadId,
@@ -303,6 +328,15 @@ export async function aplicarRetornoAoLead(
     confirmacao_mensagem_id: confirmacao,
     corrige_id: r.corrigeId,
   });
+}
+
+/**
+ * A mensagem não era relato de ligação. O texto não fica guardado (era
+ * conversa do corretor, não dado do cliente); o lead fica na linha só para a
+ * exclusão do lead (LGPD) achar um áudio que tenha sido guardado.
+ */
+async function ignorarMensagem(ctx: Contexto, retornoId: string, leadId: string): Promise<void> {
+  await fecharRetorno(ctx, retornoId, { status: "ignorada", texto: null, lead_id: leadId });
 }
 
 /** Grava tentativas e retorno no aviso; devolve o número da tentativa para a confirmação. */

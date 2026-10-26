@@ -6,7 +6,7 @@ vi.mock("@/lib/whatsapp/llm", () => ({
 }));
 
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
-import { agoraEmSaoPaulo, encurtarRelato, lerRetornoDaLigacao } from "./ler";
+import { PROMPT_RETORNO_DA_LIGACAO, agoraEmSaoPaulo, encurtarRelato, lerRetornoDaLigacao } from "./ler";
 
 const provedor = vi.mocked(algumProvedorConfigurado);
 const llm = vi.mocked(chamarLlmJson);
@@ -35,9 +35,32 @@ beforeEach(() => {
 });
 
 describe("lerRetornoDaLigacao", () => {
-  it("relato com menos de 3 caracteres: ok false, sem chamar o modelo", async () => {
-    expect(await lerRetornoDaLigacao(pedido({ relato: " a " }))).toEqual({ ok: false });
+  it("relato vazio: ok false, sem chamar o modelo", async () => {
+    expect(await lerRetornoDaLigacao(pedido({ relato: "   " }))).toEqual({ ok: false });
     expect(llm).not.toHaveBeenCalled();
+  });
+
+  it("\"ok\" e \"👍\" (menos de 3 caracteres): não é relato, sem chamar o modelo", async () => {
+    for (const relato of [" a ", "ok", "👍"]) {
+      expect(await lerRetornoDaLigacao(pedido({ relato }))).toEqual({ ok: true, leitura: "nao_e_relato", custo: null });
+    }
+    expect(llm).not.toHaveBeenCalled();
+  });
+
+  it("resultado null do modelo: não é relato de ligação, com o custo da leitura", async () => {
+    llm.mockResolvedValue(respostaOk({ resultado: null, etapa: "em_conversa" }));
+    expect(await lerRetornoDaLigacao(pedido({ relato: "bom dia, pessoal" }))).toEqual({
+      ok: true,
+      leitura: "nao_e_relato",
+      custo: { tokensEntrada: 1200, tokensSaida: 150, modelo: "teste", latenciaMs: 800 },
+    });
+  });
+
+  it("o prompt manda devolver resultado null para conversa que não é relato", () => {
+    expect(PROMPT_RETORNO_DA_LIGACAO).toMatch(/"resultado": null/);
+    for (const exemplo of ["bom dia", "ok", "gestor", "vou ligar agora"]) {
+      expect(PROMPT_RETORNO_DA_LIGACAO).toContain(exemplo);
+    }
   });
 
   it("sem provedor de IA: ok false, sem chamar o modelo", async () => {

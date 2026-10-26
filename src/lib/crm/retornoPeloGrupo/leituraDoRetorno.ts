@@ -152,17 +152,30 @@ function normalizarFatos(bruto: unknown): LeituraDoRetorno["fatos"] {
 }
 
 /**
+ * A mensagem não conta ligação nenhuma ("bom dia", "ok", recado ao gestor,
+ * "vou ligar agora"). Não é falha da leitura: é a resposta certa, e quem
+ * chama não grava nada no lead.
+ */
+export const NAO_E_RELATO = "nao_e_relato";
+
+/**
  * Transforma o JSON cru do modelo na leitura tipada.
  *
  * É a peneira entre o modelo e a ficha do cliente: etapa que o relato não
  * pode definir, visita fora de prazo e número sem sentido morrem aqui, e a
  * etapa que dependia deles (visita sem data, perdido sem motivo) cai junto —
  * melhor não mover o lead do que movê-lo com base num dado que não existe.
- * Devolve null quando nem o resultado da ligação dá para confiar.
+ * `resultado: null` explícito é o modelo dizendo que não é relato de ligação
+ * (`"nao_e_relato"`). Devolve null quando nem o resultado dá para confiar.
  */
-export function normalizarLeituraDoRetorno(json: unknown, agora: Date): LeituraDoRetorno | null {
+export function normalizarLeituraDoRetorno(
+  json: unknown,
+  agora: Date,
+): LeituraDoRetorno | typeof NAO_E_RELATO | null {
   if (!json || typeof json !== "object" || Array.isArray(json)) return null;
   const bruto = json as Record<string, unknown>;
+  // Só o null escrito: chave ausente é resposta incompleta, não "não é relato".
+  if ("resultado" in bruto && bruto.resultado === null) return NAO_E_RELATO;
 
   const resultado = dosValores<LeituraDoRetorno["resultado"]>(bruto.resultado, RESULTADOS);
   if (!resultado) return null;
