@@ -578,6 +578,72 @@ describe("visita ou perda que não entrou na ficha é dita na confirmação", ()
   });
 });
 
+describe("corretor com muitos avisos: a leitura não cresce sem fim", () => {
+  /** Cada lista de ids que foi parar num `.in(...)` da tabela. */
+  function listasDoIn(tabela: string): unknown[][] {
+    const listas: unknown[][] = [];
+    const from = banco.cliente.from;
+    banco.cliente.from = ((t: string) => {
+      const q = from(t);
+      if (t === tabela) {
+        const original = q.in;
+        q.in = ((coluna: string, valores: unknown[]) => {
+          listas.push(valores);
+          return original(coluna, valores);
+        }) as typeof q.in;
+      }
+      return q;
+    }) as typeof banco.cliente.from;
+    return listas;
+  }
+
+  function semearAvisos(quantos: number, respondidos: boolean) {
+    for (let i = 0; i < quantos; i++) {
+      const id = `${respondidos ? "velho" : "novo"}-${i}`;
+      banco.tabelas.leads.push({ id: `lead-${id}`, grupo_id: GRUPO, nome: `Cliente ${id}`, etapa: "em_conversa", corretor_id: "joao", visita_agendada_em: null, empreendimento_id: null });
+      banco.tabelas.lead_envios_grupo.push({
+        id: `env-${id}`,
+        grupo_id: GRUPO,
+        lead_id: `lead-${id}`,
+        corretor_id: "joao",
+        status: "enviado",
+        provider_message_id: `aviso-${id}`,
+        retorno_em: respondidos ? "2026-09-01T12:00:00.000Z" : null,
+        tentativas_ligacao: 0,
+        enviado_em: "2026-09-01T10:00:00.000Z",
+      });
+    }
+  }
+
+  it("os avisos já respondidos não são lidos, e os leads vão em lotes de até 100", async () => {
+    semearAvisos(300, true);
+    const listas = listasDoIn("leads");
+    lerRetornoDaLigacao.mockResolvedValue(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m1", texto: "liguei pra Ana, não atendeu" }));
+    expect(interacoes("ligacao")[0].lead_id).toBe("lead-ana");
+    expect(listas.length).toBeGreaterThan(0);
+    for (const lista of listas) expect(lista.length).toBeLessThanOrEqual(100);
+    expect(listas.flat().some((id) => String(id).startsWith("lead-velho"))).toBe(false);
+  });
+
+  it("aguardando demais: lê no máximo os 200 mais recentes, em lotes", async () => {
+    semearAvisos(250, false);
+    const listas = listasDoIn("leads");
+    await tratar(mensagem({ id: "m1", texto: "falei com o cliente" }));
+    for (const lista of listas) expect(lista.length).toBeLessThanOrEqual(100);
+    expect(listas.flat().length).toBeLessThanOrEqual(200);
+  });
+
+  it("em cima de um aviso já respondido (2ª ligação): o relato vai para o lead certo, com o aviso dele", async () => {
+    envio("env-ana").retorno_em = "2026-10-26T13:00:00.000Z";
+    banco.tabelas.lead_envios_grupo.push(avisoDoPaulo());
+    lerRetornoDaLigacao.mockResolvedValue(lida({ resultado: "atendeu", fatos: { dormitoriosMin: 2 } }));
+    await tratar(mensagem({ id: "m1", texto: "liguei de novo, quer 2 quartos", citada: "aviso-ana" }));
+    expect(interacoes("ligacao")[0].lead_id).toBe("lead-ana");
+    expect(retornos()[0]).toMatchObject({ status: "aplicado", lead_id: "lead-ana", envio_id: "env-ana" });
+  });
+});
+
 describe("conversa no grupo não vira ligação", () => {
   const naoERelato = (custo: Record<string, unknown> | null = null) => ({ ok: true, leitura: "nao_e_relato", custo });
 

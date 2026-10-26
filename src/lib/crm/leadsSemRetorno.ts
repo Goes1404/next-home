@@ -15,6 +15,14 @@ const FUSO = "America/Sao_Paulo";
 const HORA_DA_LISTA = 18;
 const ESPERA_MINIMA_MS = 3 * 60 * 60_000;
 const TITULO = "📋 Leads sem retorno de ligação (hoje, 18h)";
+/*
+ * Quantos avisos entram na lista. Os ids vão num `.in(...)` na URL do
+ * PostgREST: sem teto, meses de avisos esquecidos estourariam a consulta
+ * (HTTP 414) e o gestor não receberia lista nenhuma. O resto vira "…e mais N".
+ */
+const TETO_DA_LISTA = 200;
+/** Ids por `.in(...)`: a lista vai na URL da consulta. */
+const IDS_POR_CONSULTA = 100;
 
 function hojeEmSaoPaulo(agora: Date): { dia: string; hora: number } {
   const partes = Object.fromEntries(
@@ -56,8 +64,11 @@ function tentativas(n: number): string {
 
 type Item = { corretor: string; cliente: string | null; avisadoEm: Date; tentativas: number };
 
-/** Agrupado por corretor (ordem alfabética), mais antigo primeiro. `null` se vazio. */
-export function textoDaListaSemRetorno(itens: Item[], agora: Date): string | null {
+/**
+ * Agrupado por corretor (ordem alfabética), mais antigo primeiro. `null` se
+ * vazio. `alemDestes`: avisos que ficaram fora do teto, contados no fim.
+ */
+export function textoDaListaSemRetorno(itens: Item[], agora: Date, alemDestes = 0): string | null {
   if (itens.length === 0) return null;
   const porCorretor = new Map<string, Item[]>();
   for (const item of itens) porCorretor.set(item.corretor, [...(porCorretor.get(item.corretor) ?? []), item]);
@@ -70,6 +81,7 @@ export function textoDaListaSemRetorno(itens: Item[], agora: Date): string | nul
       linhas.push(`• ${item.cliente?.trim() || "Cliente novo"} · ${haQuantoTempo(item.avisadoEm, agora)} · ${tentativas(item.tentativas)}`);
     }
   }
+  if (alemDestes > 0) linhas.push("", `…e mais ${alemDestes}`);
   return linhas.join("\n");
 }
 
@@ -109,22 +121,43 @@ async function enviarListaDoGrupo(supabase: Supa, grupoId: string, instanceName:
     .eq("status", "enviado")
     .is("retorno_em", null)
     .lt("enviado_em", limite)
-    .limit(500);
+    .order("enviado_em", { ascending: false })
+    .limit(TETO_DA_LISTA);
   if (error) throw new Error(`avisos: ${error.message}`);
   if (!avisos?.length) return 0;
 
-  const [{ data: leads, error: erroLeads }, { data: equipe, error: erroEquipe }] = await Promise.all([
-    supabase
+  // Bateu no teto: conta quantos ficaram de fora, para a lista dizer.
+  let alemDestes = 0;
+  if (avisos.length === TETO_DA_LISTA) {
+    const { count, error: erroConta } = await supabase
+      .from("lead_envios_grupo")
+      .select("lead_id", { count: "exact", head: true })
+      .eq("grupo_id", grupoId)
+      .eq("status", "enviado")
+      .is("retorno_em", null)
+      .lt("enviado_em", limite);
+    if (erroConta) console.error("[sem retorno] contagem dos avisos:", erroConta.message);
+    alemDestes = Math.max(0, (count ?? 0) - TETO_DA_LISTA);
+  }
+
+  const idsDeLead = avisos.map((a) => a.lead_id);
+  const leads: Array<{ id: string; nome: string | null; corretor_id: string | null; trazido_por: string | null; etapa: string }> = [];
+  for (let i = 0; i < idsDeLead.length; i += IDS_POR_CONSULTA) {
+    const { data, error: erroLeads } = await supabase
       .from("leads")
       .select("id, nome, corretor_id, trazido_por, etapa")
       .eq("grupo_id", grupoId)
-      .in("id", avisos.map((a) => a.lead_id)),
-    supabase.from("corretores").select("id, nome, papel, ativo, oculta, whatsapp").eq("grupo_id", grupoId),
-  ]);
-  if (erroLeads) throw new Error(`leads: ${erroLeads.message}`);
+      .in("id", idsDeLead.slice(i, i + IDS_POR_CONSULTA));
+    if (erroLeads) throw new Error(`leads: ${erroLeads.message}`);
+    leads.push(...(data ?? []));
+  }
+  const { data: equipe, error: erroEquipe } = await supabase
+    .from("corretores")
+    .select("id, nome, papel, ativo, oculta, whatsapp")
+    .eq("grupo_id", grupoId);
   if (erroEquipe) throw new Error(`equipe: ${erroEquipe.message}`);
 
-  const leadPorId = new Map((leads ?? []).map((l) => [l.id, l]));
+  const leadPorId = new Map(leads.map((l) => [l.id, l]));
   const nomePorCorretor = new Map((equipe ?? []).map((c) => [c.id, c.nome]));
   const itens: Item[] = [];
   for (const aviso of avisos) {
@@ -140,7 +173,7 @@ async function enviarListaDoGrupo(supabase: Supa, grupoId: string, instanceName:
       tentativas: aviso.tentativas_ligacao ?? 0,
     });
   }
-  const texto = textoDaListaSemRetorno(itens, agora);
+  const texto = textoDaListaSemRetorno(itens, agora, alemDestes);
   if (!texto) return 0;
 
   const dia = diaEmSaoPaulo(agora);

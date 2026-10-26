@@ -17,7 +17,7 @@ import {
   reconhecerAutorNoGrupo,
   type MensagemDoGrupo,
 } from "./identificar";
-import { carregarSituacao, type Banco } from "./situacao";
+import { buscarEnvioDoLead, carregarSituacao, type Banco, type EnvioDoLead } from "./situacao";
 import {
   TEXTO_ANOTEI_EM_PARTE,
   TEXTO_AUDIO_NAO_ENTENDIDO,
@@ -146,6 +146,11 @@ async function seguirComORetorno(
     perguntas: situacao.perguntas,
   });
 
+  // O aviso do lead: o da situação ou, se ele já encerrou a espera (correção,
+  // 2ª ligação em cima do aviso), lido direto.
+  const envioDe = async (leadId: string): Promise<EnvioDoLead | null> =>
+    situacao.envios.get(leadId) ?? (await buscarEnvioDoLead(supabase, grupoId, corretorId, leadId));
+
   // Citar uma mensagem qualquer (a do gestor, a do cliente) não é falar do lead.
   const citouOAviso =
     msg.citadaId !== null &&
@@ -165,7 +170,7 @@ async function seguirComORetorno(
 
   switch (decisao.tipo) {
     case "lead": {
-      await aplicarRetornoAoLead(ctx, decisao.leadId, situacao.envios.get(decisao.leadId) ?? null, desteRelato);
+      await aplicarRetornoAoLead(ctx, decisao.leadId, await envioDe(decisao.leadId), desteRelato);
       return;
     }
 
@@ -175,7 +180,7 @@ async function seguirComORetorno(
         await responderNoGrupo(ctx, TEXTO_SEM_LEAD_AGUARDANDO);
         return;
       }
-      await aplicarRetornoAoLead(ctx, decisao.leadId, situacao.envios.get(decisao.leadId) ?? null, {
+      await aplicarRetornoAoLead(ctx, decisao.leadId, await envioDe(decisao.leadId), {
         ...desteRelato,
         relato: `${cadeia.relato}\nCorreção do corretor: ${texto}`,
         citouOLead: true,
@@ -186,7 +191,7 @@ async function seguirComORetorno(
     }
 
     case "escolha": {
-      await resolverPergunta(ctx, retornoId, decisao.retornoId, decisao.indice, situacao.envios);
+      await resolverPergunta(ctx, retornoId, decisao.retornoId, decisao.indice, envioDe);
       return;
     }
 
@@ -241,7 +246,7 @@ async function resolverPergunta(
   respostaId: string,
   perguntaId: string,
   indice: number,
-  envios: Awaited<ReturnType<typeof carregarSituacao>>["envios"],
+  envioDe: (leadId: string) => Promise<EnvioDoLead | null>,
 ): Promise<void> {
   const { data: tomadas, error } = await ctx.supabase
     .from("retornos_de_ligacao")
@@ -260,7 +265,7 @@ async function resolverPergunta(
 
   const texto = pendente.texto ?? "";
   try {
-    await aplicarRetornoAoLead(ctx, leadId, envios.get(leadId) ?? null, {
+    await aplicarRetornoAoLead(ctx, leadId, await envioDe(leadId), {
       retornoId: pendente.id,
       mensagemId: pendente.mensagem_id,
       relato: texto,

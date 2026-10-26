@@ -7,6 +7,16 @@ export type Banco = ReturnType<typeof createServiceClient>;
 
 /** Até onde se olha para trás nas confirmações e perguntas de um corretor. */
 const TETO_DE_RETORNOS = 200;
+/*
+ * Avisos ainda sem retorno que entram na conta do "único aguardando" e da
+ * pergunta. Sem teto, um corretor com meses de avisos montaria um `.in(...)`
+ * com milhares de ids, e a URL do PostgREST estoura (HTTP 414).
+ */
+const TETO_DE_AGUARDANDO = 200;
+/** Ids por `.in(...)`: a lista vai na URL da consulta. */
+const IDS_POR_CONSULTA = 100;
+
+const COLUNAS_DO_ENVIO = "id, lead_id, corretor_id, provider_message_id, retorno_em, tentativas_ligacao, enviado_em";
 
 export type EnvioDoLead = {
   id: string;
@@ -34,12 +44,20 @@ export async function carregarSituacao(
   citadaId: string | null,
 ): Promise<SituacaoDoCorretor> {
   const [envios, citado, retornos, retornoCitado] = await Promise.all([
+    /*
+     * Só os que ainda aguardam: o aviso já respondido só importa quando é
+     * citado (2ª ligação para o mesmo cliente), e esse vem pela busca direta
+     * abaixo. Os mais recentes primeiro, para o teto cortar os mais velhos.
+     */
     supabase
       .from("lead_envios_grupo")
-      .select("id, lead_id, corretor_id, provider_message_id, retorno_em, tentativas_ligacao, enviado_em")
+      .select(COLUNAS_DO_ENVIO)
       .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId)
-      .eq("status", "enviado"),
+      .eq("status", "enviado")
+      .is("retorno_em", null)
+      .order("enviado_em", { ascending: false })
+      .limit(TETO_DE_AGUARDANDO),
     /*
      * O aviso citado pode ter saído deste grupo e depois passado para outro
      * corretor (o aviso é um por lead). Sem ele na lista, a citação não seria
@@ -49,7 +67,7 @@ export async function carregarSituacao(
     citadaId
       ? supabase
           .from("lead_envios_grupo")
-          .select("id, lead_id, corretor_id, provider_message_id, retorno_em, tentativas_ligacao, enviado_em")
+          .select(COLUNAS_DO_ENVIO)
           .eq("grupo_id", grupoId)
           .eq("provider_message_id", citadaId)
       : Promise.resolve({ data: [], error: null }),
@@ -87,12 +105,12 @@ export async function carregarSituacao(
   const idsDeLead = [...new Set([...linhasDeEnvio, ...avisoAlheio].map((e) => e.lead_id))];
 
   const leads = new Map<string, { nome: string | null; etapa: string; corretorId: string | null }>();
-  if (idsDeLead.length > 0) {
+  for (let i = 0; i < idsDeLead.length; i += IDS_POR_CONSULTA) {
     const { data, error } = await supabase
       .from("leads")
       .select("id, nome, etapa, corretor_id")
       .eq("grupo_id", grupoId)
-      .in("id", idsDeLead);
+      .in("id", idsDeLead.slice(i, i + IDS_POR_CONSULTA));
     if (error) throw new Error(`leads avisados: ${error.message}`);
     for (const l of data ?? []) leads.set(l.id, { nome: l.nome || null, etapa: l.etapa, corretorId: l.corretor_id });
   }
@@ -150,4 +168,29 @@ export async function carregarSituacao(
   }
 
   return { aguardando, avisos, confirmacoes, perguntas, nomes, envios: mapaDeEnvios };
+}
+
+/**
+ * O aviso deste corretor para o lead, lido direto. A situação só carrega os
+ * avisos que ainda aguardam; a correção de um retorno que já encerrou a
+ * espera (ou a 2ª ligação em cima do aviso) precisa do aviso para acertar a
+ * tentativa e o retorno. Há um aviso por lead (0215).
+ */
+export async function buscarEnvioDoLead(
+  supabase: Banco,
+  grupoId: string,
+  corretorId: string,
+  leadId: string,
+): Promise<EnvioDoLead | null> {
+  const { data, error } = await supabase
+    .from("lead_envios_grupo")
+    .select("id, lead_id, retorno_em, tentativas_ligacao")
+    .eq("grupo_id", grupoId)
+    .eq("corretor_id", corretorId)
+    .eq("lead_id", leadId)
+    .eq("status", "enviado")
+    .maybeSingle();
+  if (error) throw new Error(`aviso do lead: ${error.message}`);
+  if (!data) return null;
+  return { id: data.id, leadId: data.lead_id, tentativas: data.tentativas_ligacao ?? 0, retornoEm: data.retorno_em };
 }
