@@ -2127,6 +2127,7 @@ export type Database = {
           ultimo_indice: number
           texto_passagem: string | null
           texto_abertura: string | null
+          modo_aviso: string
           atualizado_em: string
           atualizado_por: string | null
         }
@@ -2138,6 +2139,7 @@ export type Database = {
           ultimo_indice?: number
           texto_passagem?: string | null
           texto_abertura?: string | null
+          modo_aviso?: string
           atualizado_em?: string
           atualizado_por?: string | null
         }
@@ -2149,6 +2151,7 @@ export type Database = {
           ultimo_indice?: number
           texto_passagem?: string | null
           texto_abertura?: string | null
+          modo_aviso?: string
           atualizado_em?: string
           atualizado_por?: string | null
         }
@@ -4326,8 +4329,12 @@ export type Database = {
         Args: { p_dono: string; p_escopo: string; p_segundos: number }
         Returns: boolean
       }
+      enfileirar_aviso_do_lead: {
+        Args: { p_lead: string }
+        Returns: undefined
+      }
       proximo_da_roleta: {
-        Args: { p_corretor: string; p_excluir?: string[] }
+        Args: { p_corretor: string; p_excluir?: string[]; p_modo?: string }
         Returns: string | null
       }
     }
