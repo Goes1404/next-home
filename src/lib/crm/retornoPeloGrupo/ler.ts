@@ -80,7 +80,15 @@ Responda EXCLUSIVAMENTE um objeto JSON válido, sem texto antes ou depois, neste
 }`;
 
 export type ResultadoDaLeitura =
-  | { ok: true; leitura: LeituraDoRetorno; tokensEntrada: number | null; tokensSaida: number | null }
+  | {
+      ok: true;
+      leitura: LeituraDoRetorno;
+      tokensEntrada: number | null;
+      tokensSaida: number | null;
+      /** Quem de fato respondeu e em quanto tempo: vão para `ia_interacoes`. */
+      modelo: string;
+      latenciaMs: number;
+    }
   | { ok: false };
 
 /**
@@ -130,6 +138,8 @@ export async function lerRetornoDaLigacao(p: {
       leitura,
       tokensEntrada: resultado.tokensEntrada,
       tokensSaida: resultado.tokensSaida,
+      modelo: resultado.modelo,
+      latenciaMs: resultado.latenciaMs,
     };
   } catch (erro) {
     console.error("Erro inesperado ao ler o retorno da ligação:", erro);

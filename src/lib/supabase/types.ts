@@ -2053,7 +2053,7 @@ export type Database = {
           id: string
           latencia_ms: number | null
           modelo: string | null
-          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro"
+          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro" | "retorno_ligacao"
           prompt_versao: string
           sugeriu_visita: boolean | null
           temperatura_score: number | null
@@ -2078,7 +2078,7 @@ export type Database = {
           id?: string
           latencia_ms?: number | null
           modelo?: string | null
-          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro"
+          origem: "webhook" | "playground" | "followup" | "eval" | "painel" | "consultor" | "financeiro" | "retorno_ligacao"
           prompt_versao: string
           sugeriu_visita?: boolean | null
           temperatura_score?: number | null

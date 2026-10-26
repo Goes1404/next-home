@@ -9,7 +9,7 @@
  */
 
 export type Linha = Record<string, unknown>;
-export type Consulta = { tabela: string; operacao: string; filtros: string[]; valores?: unknown };
+export type Consulta = { tabela: string; operacao: string; filtros: string[]; valores?: unknown; opcoes?: unknown };
 
 export type BancoFalso = {
   tabelas: Record<string, Linha[]>;
@@ -60,6 +60,27 @@ function construtor(banco: { tabelas: Record<string, Linha[]>; consultas: Consul
       banco.tabelas[tabela] = [...(banco.tabelas[tabela] ?? []), ...novas];
       return { data: modo === "um" ? novas[0] : novas, error: null };
     }
+    if (registro.operacao === "upsert") {
+      // Como o PostgREST: conflito pelas colunas de `onConflict`; com
+      // `ignoreDuplicates` a linha que já existe fica como está e não volta.
+      const { onConflict, ignoreDuplicates } = (registro.opcoes ?? {}) as { onConflict?: string; ignoreDuplicates?: boolean };
+      const chaves = (onConflict ?? "id").split(",").map((c) => c.trim());
+      const atuais = (banco.tabelas[tabela] ??= []);
+      const gravadas: Linha[] = [];
+      for (const valor of ([] as Linha[]).concat(registro.valores as Linha)) {
+        const existente = atuais.find((l) => chaves.every((c) => l[c] === valor[c]));
+        if (existente) {
+          if (ignoreDuplicates) continue;
+          Object.assign(existente, valor);
+          gravadas.push(existente);
+        } else {
+          const nova = { id: `${tabela}-novo-${atuais.length}`, ...valor };
+          atuais.push(nova);
+          gravadas.push(nova);
+        }
+      }
+      return { data: modo === "um" ? (gravadas[0] ?? null) : gravadas, error: null };
+    }
     if (registro.operacao === "update") {
       for (const l of linhas) Object.assign(l, registro.valores as Linha);
       return { data: linhas, error: null };
@@ -89,6 +110,12 @@ function construtor(banco: { tabelas: Record<string, Linha[]>; consultas: Consul
     insert: (valores: unknown) => {
       registro.operacao = "insert";
       registro.valores = valores;
+      return q;
+    },
+    upsert: (valores: unknown, opcoes?: { onConflict?: string; ignoreDuplicates?: boolean }) => {
+      registro.operacao = "upsert";
+      registro.valores = valores;
+      registro.opcoes = opcoes;
       return q;
     },
     update: (valores: unknown) => {

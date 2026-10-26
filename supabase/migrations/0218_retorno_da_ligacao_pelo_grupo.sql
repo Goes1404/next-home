@@ -20,6 +20,11 @@
 --    idempotência da lista das 18h (dois crons não mandam duas vezes).
 -- 5. Bucket privado `retornos-de-ligacao` para o áudio do relato. Sem policy
 --    para anon/authenticated: só a chave de serviço lê e grava.
+-- 6. `ia_interacoes.origem` aceita 'retorno_ligacao': o custo da leitura do
+--    relato entra no medidor da plataforma (0211 soma tokens de qualquer
+--    origem), mas não na cota (0197 só conta 'respondida'/'visita_confirmada'
+--    de webhook/followup/painel) nem como tentativa de atendimento (0211
+--    conta origem 'webhook'). Sem a origem no CHECK, o insert falharia.
 --
 -- Aditiva: o código antigo não lê nada disto. Tabelas novas seguem o bloco da
 -- 0204 (grupo_id, gatilhos _00_grupo/_zz_grupo_*, policy restritiva,
@@ -208,5 +213,13 @@ values ('retornos-de-ligacao', 'retornos-de-ligacao', false)
 on conflict (id) do nothing;
 
 update storage.buckets set public = false where id = 'retornos-de-ligacao';
+
+-- ---------------------------------------------------------------------------
+-- 6. Custo da leitura do relato (não é resposta ao cliente)
+-- ---------------------------------------------------------------------------
+
+alter table public.ia_interacoes drop constraint if exists ia_interacoes_origem_check;
+alter table public.ia_interacoes add constraint ia_interacoes_origem_check
+  check (origem = any (array['webhook'::text, 'playground'::text, 'followup'::text, 'eval'::text, 'painel'::text, 'consultor'::text, 'financeiro'::text, 'retorno_ligacao'::text]));
 
 commit;

@@ -99,6 +99,23 @@ describe("migration 0218: retorno da ligação pelo grupo", () => {
     expect(sql).not.toMatch(/on storage\.objects/);
   });
 
+  it("ia_interacoes aceita a origem do retorno sem perder as que já existiam (0169)", () => {
+    const achou = sql.match(/add constraint ia_interacoes_origem_check\s+check \(origem = any \(array\[([^\]]*)\]\)\)/);
+    expect(achou).toBeTruthy();
+    const origens = [...achou![1].matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]);
+    expect(origens).toEqual([
+      "webhook",
+      "playground",
+      "followup",
+      "eval",
+      "painel",
+      "consultor",
+      "financeiro",
+      "retorno_ligacao",
+    ]);
+    expect(sql).toMatch(/alter table public\.ia_interacoes drop constraint if exists ia_interacoes_origem_check/);
+  });
+
   it("é aditiva: nada de drop table nem de apagar coluna", () => {
     expect(sql).not.toMatch(/drop table/i);
     expect(sql).not.toMatch(/drop column/i);

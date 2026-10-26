@@ -86,6 +86,8 @@ describe("lerRetornoDaLigacao", () => {
       },
       tokensEntrada: 1200,
       tokensSaida: 150,
+      modelo: "teste",
+      latenciaMs: 800,
     });
   });
 
