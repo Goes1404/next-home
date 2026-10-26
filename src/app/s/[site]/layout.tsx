@@ -99,20 +99,19 @@ export default async function SiteLayout({
 }
 
 /**
- * O movimento curto dos sites de outros grupos. Fora de `@layer` (como as
- * cores), vence as regras do `globals.css` sem `!important` — e o
- * `!important` do movimento reduzido, que está em camada, continua
- * vencendo este.
+ * O movimento curto dos sites de outros grupos: as mesmas animações da casa,
+ * em menos tempo. Fora de `@layer` (como as cores), vence as regras do
+ * `globals.css` sem `!important` — e o `!important` do movimento reduzido,
+ * que está em camada, continua vencendo este.
  *
- * - A onda entre páginas some: 1 ms ainda dispara o `animationend` que a
- *   desmonta e limpa o `data-entrando` (o mesmo caminho do movimento reduzido).
- * - A página nova entra em 160 ms, sem cascata.
- * - A travessia home → catálogo (`nav-forward`) leva 200 ms, sem atraso.
- * - `--ritmo-do-movimento` corta pela metade as entradas do GSAP
+ * - A onda entre páginas passa em 360 ms (era 640 ms), com as cores do grupo.
+ * - A página nova entra em 220 ms (era 380 ms), mantendo a cascata curta.
+ * - A travessia home → catálogo (`nav-forward`) leva 240 ms, sem atraso.
+ * - `--ritmo-do-movimento` encurta as entradas do GSAP para 60% do tempo
  *   (`Reveal`, `TituloEditorial`, via `ritmoDoMovimento`).
  */
 const CSS_DO_MOVIMENTO_RAPIDO =
-  ":root{--ritmo-do-movimento:0.5}" +
-  ".onda-transicao{animation-duration:1ms;animation-delay:0s}" +
-  ":root[data-entrando] main>*{animation-duration:160ms;animation-delay:0s}" +
-  "::view-transition-old(.nav-forward),::view-transition-new(.nav-forward){animation-duration:200ms;animation-delay:0s}";
+  ":root{--ritmo-do-movimento:0.6}" +
+  ".onda-transicao{animation-duration:360ms}" +
+  ":root[data-entrando] main>*{animation-duration:220ms}" +
+  "::view-transition-old(.nav-forward),::view-transition-new(.nav-forward){animation-duration:240ms;animation-delay:0s}";

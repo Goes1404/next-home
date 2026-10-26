@@ -10,7 +10,7 @@ codigo:
   - src/components/motion/Reveal.tsx
   - src/components/motion/TituloEditorial.tsx
 fonte: pedido do Matheus para a Aretz, 26/10/2026
-summary: Site de grupo ≠ 1 sai com transições curtas (sem a onda, entrada 160 ms, GSAP pela metade); a Aretz ficou só no escuro por cor fixa no banco.
+summary: Site de grupo ≠ 1 sai com as mesmas animações, mais curtas (onda 360 ms, entrada 220 ms, GSAP a 60%); a Aretz ficou só no escuro por cor fixa no banco.
 updated: 2026-10-26
 ---
 
@@ -19,10 +19,10 @@ updated: 2026-10-26
 Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
 
 - O layout `src/app/s/[site]/layout.tsx` injeta, só quando a marca não é a
-  Next Home, um `<style>` fora de `@layer`: a onda entre páginas cai para
-  1 ms (ainda dispara o `animationend` que a desmonta e limpa
-  `data-entrando`), a página nova entra em 160 ms, a travessia
-  `nav-forward` em 200 ms e `--ritmo-do-movimento:0.5`.
+  Next Home, um `<style>` fora de `@layer` que ENCURTA (não remove) as
+  animações: onda entre páginas 360 ms, página nova 220 ms, `nav-forward`
+  240 ms e `--ritmo-do-movimento:0.6`. Decisão do dono: "continue com as
+  animações, mas mais rápido" (a primeira versão tirou a onda e foi revista).
 - `ritmoDoMovimento()` lê essa variável; `Reveal` e `TituloEditorial`
   multiplicam duração, atraso e cascata por ela. Sem a variável (Next Home)
   o ritmo é 1: nada muda lá, e o teste do layout trava isso.

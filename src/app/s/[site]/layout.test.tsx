@@ -46,8 +46,8 @@ describe("SiteLayout", () => {
   it("outro grupo sem cor nenhuma: só o movimento curto, nenhuma cor", async () => {
     const entrada = { grupoId: "g-2", nome: "Sol", url: "https://sol.com.br" };
     const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: SITE_EM_BRANCO }));
-    expect(saida).toContain("--ritmo-do-movimento:0.5");
-    expect(saida).toContain(".onda-transicao{animation-duration:1ms");
+    expect(saida).toContain("--ritmo-do-movimento:0.6");
+    expect(saida).toContain(".onda-transicao{animation-duration:360ms");
     expect(saida).not.toContain("--color-");
   });
 
