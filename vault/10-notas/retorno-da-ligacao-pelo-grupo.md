@@ -51,6 +51,7 @@ ligação). Três partes:
 - **Mensagem do gestor** no grupo é ignorada em silêncio: o autor é
   reconhecido pelo número ou pelo `@lid` guardado na sincronização
   ([[vinculo-do-corretor-no-grupo-e-lid]]).
+- **Conversa não é ligação**: a IA pode responder "não é relato"; aí nada vai ao lead (status `ignorada`, texto não guardado) e o número central só fala se a mensagem citou o aviso. Sem cliente aguardando e sem citação: silêncio.
 - **Mensagem do cliente** em lead que está com outro corretor vira aviso no
   grupo do dono (rajada de 8 s, só a mensagem mais nova avisa).
 
