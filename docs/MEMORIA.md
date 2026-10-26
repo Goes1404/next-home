@@ -11848,3 +11848,8 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   com as capas no herói do celular (`FaixaDoHeroiNoCelular`, só grupo ≠ 1);
   fundo da Aretz `#0a0f0b`; com tema travado, faixas sem dourado e planta em
   cinza (o SVG da planta tem traço `#003d36` fixo, verde da Next Home).
+- **Segundo administrador da plataforma (26/10):** eduardosantosbbezerra@gmail.com,
+  criado por SQL (`auth.users` + `auth.identities` com `extensions.crypt`, e
+  `administradores_da_plataforma`), sem ficha de corretor: o login leva a
+  `/plataforma`. Um login = um grupo (`corretores.user_id` é UNIQUE): "acesso em
+  todos os CRMs" com o mesmo e-mail não existe; o dono escolheu admin da plataforma.
