@@ -57,6 +57,8 @@ function leitura(parcial: Partial<LeituraDoRetorno>): LeituraDoRetorno {
     resumo: null,
     proximoPasso: null,
     fatos: {},
+    visitaRecusada: false,
+    perdaSemMotivo: false,
     ...parcial,
   };
 }
@@ -535,6 +537,44 @@ describe("confirmação completa, erros e correção em cadeia", () => {
     await tratar(mensagem({ id: "m2", texto: "2", citada: "central-1" }));
     expect(enviadas[1]).toBe("Não achei esse cliente no CRM.");
     expect(interacoes("ligacao")).toHaveLength(0);
+  });
+});
+
+describe("visita ou perda que não entrou na ficha é dita na confirmação", () => {
+  it("visita que a leitura recusou: a ficha não muda e o corretor é avisado", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(lida({ visitaRecusada: true }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, visita dia 20 às 10h" }));
+    expect(lead("lead-ana")).toMatchObject({ etapa: "novo", visita_agendada_em: null });
+    expect(enviadas).toEqual(["✅ Ana · atendeu · visita não anotada: mande dia e hora"]);
+  });
+
+  it("perdido sem motivo: não marca perdido e pergunta o motivo", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(lida({ perdaSemMotivo: true }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, pode tirar ela" }));
+    expect(lead("lead-ana").etapa).toBe("novo");
+    expect(enviadas).toEqual(["✅ Ana · atendeu · não marquei como perdido: qual o motivo?"]);
+  });
+
+  it("visita recusada pelo índice de horário (0074): a etapa não muda e o corretor é avisado", async () => {
+    const from = banco.cliente.from;
+    banco.cliente.from = ((tabela: string) => {
+      const q = from(tabela);
+      if (tabela !== "leads") return q;
+      const update = q.update;
+      q.update = ((valores: Record<string, unknown>) => {
+        if (!("visita_agendada_em" in valores)) return update(valores);
+        // O índice único do horário do corretor recusa a escrita.
+        const recusado = { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" } };
+        const encadeado: Record<string, unknown> = { then: (r: (v: unknown) => unknown) => Promise.resolve(recusado).then(r) };
+        encadeado.eq = () => encadeado;
+        return encadeado;
+      }) as typeof q.update;
+      return q;
+    }) as typeof banco.cliente.from;
+    lerRetornoDaLigacao.mockResolvedValue(lida({ etapa: "visita_agendada", visitaEm: "2026-10-31T13:00:00.000Z" }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, visita sábado 10h" }));
+    expect(lead("lead-ana")).toMatchObject({ etapa: "novo", visita_agendada_em: null });
+    expect(enviadas).toEqual(["✅ Ana · atendeu · visita não anotada: mande dia e hora"]);
   });
 });
 

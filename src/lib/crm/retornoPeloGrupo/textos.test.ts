@@ -24,9 +24,28 @@ function leitura(parcial: Partial<LeituraDoRetorno>): LeituraDoRetorno {
     resumo: null,
     proximoPasso: null,
     fatos: {},
+    visitaRecusada: false,
+    perdaSemMotivo: false,
     ...parcial,
   };
 }
+
+describe("textoDaConfirmacao: o que não foi anotado", () => {
+  it("visita não anotada pede dia e hora, no fim da confirmação", () => {
+    expect(
+      textoDaConfirmacao({ nome: "Ana", leitura: leitura({ fatos: { dormitoriosMin: 3 } }), tentativa: 0, mudancas: { visitaNaoAnotada: true } }),
+    ).toBe("✅ Ana · 3 quartos · visita não anotada: mande dia e hora");
+    expect(textoDaConfirmacao({ nome: "Ana", leitura: leitura({}), tentativa: 0, mudancas: { visitaNaoAnotada: true } })).toBe(
+      "✅ Ana · atendeu · visita não anotada: mande dia e hora",
+    );
+  });
+
+  it("perdido sem motivo pergunta o motivo", () => {
+    expect(textoDaConfirmacao({ nome: "Ana", leitura: leitura({}), tentativa: 0, mudancas: { perdaSemMotivo: true } })).toBe(
+      "✅ Ana · atendeu · não marquei como perdido: qual o motivo?",
+    );
+  });
+});
 
 describe("textoDaConfirmacao", () => {
   it("atendeu com visita, quartos, orçamento e FGTS", () => {

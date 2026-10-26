@@ -5,7 +5,7 @@ import type { LeituraDoRetorno } from "./leituraDoRetorno";
 const AGORA = new Date("2026-10-26T15:00:00.000Z");
 
 function leitura(parcial: Partial<LeituraDoRetorno>): LeituraDoRetorno {
-  return { resultado: "atendeu", etapa: null, visitaEm: null, motivoPerda: null, resumo: null, proximoPasso: null, fatos: {}, ...parcial };
+  return { resultado: "atendeu", etapa: null, visitaEm: null, motivoPerda: null, resumo: null, proximoPasso: null, fatos: {}, visitaRecusada: false, perdaSemMotivo: false, ...parcial };
 }
 
 const nada: Aplicado = {

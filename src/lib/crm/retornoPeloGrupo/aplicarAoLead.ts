@@ -316,6 +316,9 @@ export async function aplicarRetornoAoLead(
         // A correção sem visita devolveu a data que havia antes do retorno corrigido.
         visitaRestaurada:
           visitaGravada && efeitos.visita?.para && !lido.visitaEm ? efeitos.visita.para : null,
+        // Recusada na leitura (data inválida) ou no banco (horário já ocupado).
+        visitaNaoAnotada: lido.visitaRecusada || (Boolean(efeitos.visita?.para) && !visitaGravada),
+        perdaSemMotivo: lido.perdaSemMotivo,
       },
     }),
   );

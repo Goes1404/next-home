@@ -106,6 +106,8 @@ describe("lerRetornoDaLigacao", () => {
         resumo: null,
         proximoPasso: null,
         fatos: { dormitoriosMin: 3, orcamentoMax: 600000 },
+        visitaRecusada: false,
+        perdaSemMotivo: false,
       },
       tokensEntrada: 1200,
       tokensSaida: 150,

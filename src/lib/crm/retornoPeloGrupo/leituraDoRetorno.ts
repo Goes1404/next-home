@@ -32,6 +32,14 @@ export type LeituraDoRetorno = {
       | "temperaturaLabel"
     >
   >;
+  /**
+   * O relato falava de visita (data recusada pela peneira, ou "visita
+   * marcada" sem dia e hora) e ela não vai para a ficha: a confirmação pede
+   * dia e hora em vez de calar.
+   */
+  visitaRecusada: boolean;
+  /** O relato dizia perdido sem motivo: o lead não é marcado, e o motivo é pedido. */
+  perdaSemMotivo: boolean;
 };
 
 const RESULTADOS: readonly LeituraDoRetorno["resultado"][] = [
@@ -187,9 +195,13 @@ export function normalizarLeituraDoRetorno(
   let etapa = semResposta ? null : dosValores<EtapaFunil>(bruto.etapa, ETAPAS_DO_RELATO);
 
   let motivoPerda = texto(bruto.motivoPerda, TETO_DO_MOTIVO);
-  if (etapa === "perdido" && !motivoPerda) etapa = null;
+  const perdaSemMotivo = etapa === "perdido" && !motivoPerda;
+  if (perdaSemMotivo) etapa = null;
   if (etapa !== "perdido") motivoPerda = null;
 
+  // O corretor falou de visita e ela não entrou: quem confirma tem de dizer.
+  const visitaFalada = typeof bruto.visitaEm === "string" && bruto.visitaEm.trim() !== "";
+  const visitaRecusada = !visitaEm && (visitaFalada || etapa === "visita_agendada");
   if (etapa === "visita_agendada" && !visitaEm) etapa = null;
 
   return {
@@ -200,5 +212,7 @@ export function normalizarLeituraDoRetorno(
     resumo: texto(bruto.resumo, TETO_DO_RESUMO),
     proximoPasso: texto(bruto.proximoPasso, TETO_DO_PROXIMO_PASSO),
     fatos: semResposta ? {} : normalizarFatos(bruto.fatos),
+    visitaRecusada: !semResposta && visitaRecusada,
+    perdaSemMotivo,
   };
 }

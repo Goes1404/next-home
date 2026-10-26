@@ -4,7 +4,7 @@ import { dossieComORelato, textoDoDossie } from "./dossie";
 import type { LeituraDoRetorno } from "./leituraDoRetorno";
 
 function leitura(fatos: LeituraDoRetorno["fatos"], extra: Partial<LeituraDoRetorno> = {}): LeituraDoRetorno {
-  return { resultado: "atendeu", etapa: null, visitaEm: null, motivoPerda: null, resumo: null, proximoPasso: null, fatos, ...extra };
+  return { resultado: "atendeu", etapa: null, visitaEm: null, motivoPerda: null, resumo: null, proximoPasso: null, fatos, visitaRecusada: false, perdaSemMotivo: false, ...extra };
 }
 
 const atual = {

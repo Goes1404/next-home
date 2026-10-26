@@ -132,7 +132,19 @@ export type MudancasNaFicha = {
   visitaDesmarcada?: boolean;
   /** A correção devolveu a visita que havia antes (ISO). */
   visitaRestaurada?: string | null;
+  /** O relato falou de visita e ela não foi para a ficha (data recusada ou horário ocupado). */
+  visitaNaoAnotada?: boolean;
+  /** O relato disse perdido, mas sem motivo: o lead não foi marcado. */
+  perdaSemMotivo?: boolean;
 };
+
+/** O que o relato pediu e não entrou na ficha: vai por último, como pergunta ao corretor. */
+function pendencias(m: MudancasNaFicha | undefined): string[] {
+  const itens: string[] = [];
+  if (m?.visitaNaoAnotada) itens.push("visita não anotada: mande dia e hora");
+  if (m?.perdaSemMotivo) itens.push("não marquei como perdido: qual o motivo?");
+  return itens;
+}
 
 function mudancasExtras(leitura: LeituraDoRetorno, m: MudancasNaFicha | undefined): string[] {
   const itens: string[] = [];
@@ -179,5 +191,5 @@ export function textoDaConfirmacao(p: {
 
   partes.push(...extras, ...fatosDoRelato(leitura));
   if (partes.length === 0) partes.push("atendeu");
-  return [`${icone} ${nome}`, ...partes].join(SEPARADOR);
+  return [`${icone} ${nome}`, ...partes, ...pendencias(p.mudancas)].join(SEPARADOR);
 }

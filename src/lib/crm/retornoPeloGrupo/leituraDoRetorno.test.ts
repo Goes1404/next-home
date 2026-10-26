@@ -48,6 +48,8 @@ describe("normalizarLeituraDoRetorno", () => {
       resumo: null,
       proximoPasso: null,
       fatos: {},
+      visitaRecusada: false,
+      perdaSemMotivo: false,
     });
   });
 
@@ -90,6 +92,12 @@ describe("normalizarLeituraDoRetorno", () => {
       ).toBeNull();
     });
 
+    it("perdido sem motivo avisa (perdaSemMotivo); com motivo, não", () => {
+      expect(normalizar(leitura({ etapa: "perdido" }), AGORA)?.perdaSemMotivo).toBe(true);
+      expect(normalizar(leitura({ etapa: "perdido", motivoPerda: "preço" }), AGORA)?.perdaSemMotivo).toBe(false);
+      expect(normalizar(leitura({ etapa: "em_conversa" }), AGORA)?.perdaSemMotivo).toBe(false);
+    });
+
     it("motivoPerda sem perdido é descartado", () => {
       const l = normalizar(leitura({ etapa: "em_conversa", motivoPerda: "preço" }), AGORA);
       expect(l?.motivoPerda).toBeNull();
@@ -99,6 +107,18 @@ describe("normalizarLeituraDoRetorno", () => {
       const l = normalizar(leitura({ etapa: "visita_agendada", visitaEm: SABADO_10H }), AGORA);
       expect(l?.etapa).toBe("visita_agendada");
       expect(l?.visitaEm).toBe(new Date(SABADO_10H).toISOString());
+    });
+
+    it("visita que a peneira recusou avisa (visitaRecusada): passado, +60 dias, sem fuso, sem hora", () => {
+      for (const visitaEm of ["2026-10-20T10:00:00-03:00", "2027-01-10T10:00:00-03:00", "2026-10-31T10:00:00", "2026-10-31"]) {
+        expect(normalizar(leitura({ visitaEm }), AGORA)?.visitaRecusada, visitaEm).toBe(true);
+      }
+      // "visita marcada" sem dia e hora também não foi anotada.
+      expect(normalizar(leitura({ etapa: "visita_agendada" }), AGORA)?.visitaRecusada).toBe(true);
+      expect(normalizar(leitura({ etapa: "visita_agendada", visitaEm: SABADO_10H }), AGORA)?.visitaRecusada).toBe(false);
+      expect(normalizar(leitura(), AGORA)?.visitaRecusada).toBe(false);
+      // Não atendeu: a visita que o modelo inventou some sem aviso.
+      expect(normalizar(leitura({ resultado: "nao_atendeu", visitaEm: SABADO_10H }), AGORA)?.visitaRecusada).toBe(false);
     });
 
     it("visita_agendada sem visitaEm vira etapa null", () => {
