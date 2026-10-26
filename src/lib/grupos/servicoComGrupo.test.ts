@@ -191,6 +191,7 @@ const MAPA: Record<string, Entrada> = {
   // ── Crons linha a linha ───────────────────────────────────────────────────
   "src/app/api/cron/event-outbox/route.ts": { categoria: "plataforma", motivo: "processa o outbox linha a linha; cada evento é do grupo da própria linha" },
   "src/app/api/cron/followups/route.ts": { categoria: "plataforma", motivo: "follow-ups e respostas atrasadas por conversa, cada uma com a instância do próprio corretor" },
+  "src/lib/crm/leadsSemRetorno.ts": { categoria: "plataforma", motivo: "lista das 18h por grupo com o envio ligado; cada leitura filtra o grupo da vez e a lista vai só aos gestores desse grupo" },
   "src/lib/notificacoes/leadNovo.ts": { categoria: "plataforma", motivo: "aviso por lead, ao corretor dono dele" },
   "src/lib/whatsapp/roletaDosAnuncios.ts": { categoria: "plataforma", motivo: "repasse de UM lead, para quem o banco escolhe dentro do grupo da roleta" },
   "src/lib/crm/alertaSemContato.ts": { categoria: "plataforma", motivo: "alerta por lead, ao corretor dono dele" },
