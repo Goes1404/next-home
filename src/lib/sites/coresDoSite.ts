@@ -399,3 +399,21 @@ export function scriptDoTemaFixo(fixo: { tema: "escuro"; fundo: string }): strin
     `var s=document.querySelector('meta[name="color-scheme"]');if(s)s.setAttribute("content","dark")}catch(e){}`
   );
 }
+
+/**
+ * O acabamento do escuro travado: menos dourado misturado nas faixas.
+ *
+ * Aretz (26/10/2026): "está muito marrom e muito verde". O percurso da home e
+ * as faixas (`secao-banda`) misturam o acento, o realce e a areia no fundo;
+ * com acento e realce dourados sobre um fundo quase preto, a mistura vira
+ * marrom-oliva. Aqui o tom cai para perto do fundo (faixa = superfície
+ * neutra) e o dourado fica só onde é destaque: botões, preços, selos.
+ * A planta que desliza atrás dos cartões tem traço verde-petróleo FIXO
+ * (`#003d36`, a cor da Next Home, escrita no SVG): em cinza ela vira
+ * textura neutra em vez de mais um verde.
+ * Mesma especificidade da regra do `globals.css` e vem depois no documento.
+ */
+export const CSS_DO_ESCURO_FIXO =
+  ':root[data-tema="escuro"] .home-percurso{--percurso-tom:5%}' +
+  ':root[data-tema="escuro"] .home-percurso::before{filter:grayscale(1)}' +
+  ".secao-banda{--cor-da-faixa:var(--color-superficie)}";

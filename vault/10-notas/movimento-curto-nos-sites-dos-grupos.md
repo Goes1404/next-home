@@ -12,6 +12,7 @@ codigo:
   - src/lib/sites/coresDoSite.ts
   - src/lib/corretores/cadastroPendente.ts
   - src/components/corretores/CardCorretor.tsx
+  - src/components/home/MosaicoDoHeroi.tsx
 fonte: pedido do Matheus para a Aretz, 26/10/2026
 summary: Site de grupo ≠ 1 sai com as mesmas animações, mais curtas (onda 360 ms, entrada 220 ms, GSAP a 60%); a Aretz ficou só no escuro por cor fixa no banco.
 updated: 2026-10-26
@@ -70,6 +71,18 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
   agora passa todo CRECI de corretor por `creciParaExibir` (nulo para
   `PENDENTE-`, `PREENCHER-` ou sem número) nos cartões, no perfil e nas
   páginas de token.
+
+## Destaques no celular e escuro menos marrom (26/10/2026)
+
+- O mosaico do herói é `hidden lg:grid`: no celular não havia nenhuma foto
+  de prédio no topo. `FaixaDoHeroiNoCelular` (mesmo arquivo) mostra os
+  destaques numa faixa de deslizar com encaixe, `lg:hidden`, só nos sites de
+  outros grupos (a home da Next Home fica igual).
+- "Muito marrom e muito verde": fundo da Aretz passou a `#0a0f0b` (o verde
+  do logo misturado com preto) e texto `#f5f5f2`. `CSS_DO_ESCURO_FIXO`
+  (só com tema travado) baixa o dourado das faixas (`--percurso-tom:5%`,
+  `secao-banda` = superfície) e põe a planta em cinza: o SVG dela tem traço
+  `#003d36` FIXO, o verde-petróleo da Next Home.
 
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]

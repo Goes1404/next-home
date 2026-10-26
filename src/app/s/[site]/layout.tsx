@@ -5,7 +5,7 @@ import { normalizarHost } from "@/lib/sites/endereco";
 import { metadadosDoSite, metadadosSemSite } from "@/lib/sites/metadados";
 import { type ParamsDoSite } from "@/lib/sites/pagina";
 import { resolverSite } from "@/lib/sites/resolver";
-import { cssDasCoresDoSite, scriptDoTemaFixo, temaFixoDoSite } from "@/lib/sites/coresDoSite";
+import { CSS_DO_ESCURO_FIXO, cssDasCoresDoSite, scriptDoTemaFixo, temaFixoDoSite } from "@/lib/sites/coresDoSite";
 
 /**
  * O site público de cada grupo, pelo endereço (fase 3, 20/10/2026).
@@ -97,6 +97,7 @@ export default async function SiteLayout({
     <>
       {/* Só hex calculado em `cssDasCoresDoSite`: nada digitado chega aqui. */}
       {temaFixo && <script dangerouslySetInnerHTML={{ __html: scriptDoTemaFixo(temaFixo) }} />}
+      {temaFixo && <style dangerouslySetInnerHTML={{ __html: CSS_DO_ESCURO_FIXO }} />}
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
       {movimento && <style dangerouslySetInnerHTML={{ __html: movimento }} />}
       {conteudo}

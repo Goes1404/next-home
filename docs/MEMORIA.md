@@ -11844,3 +11844,7 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   defeito: conferir sempre sem cookie.
 - CRECI `PREENCHER-…`/`PENDENTE-…` não aparece mais para o cliente
   (`creciParaExibir`); nomes `Andr?`/`F?bio` da carga da Aretz corrigidos no banco.
+- **Destaques no celular e escuro menos marrom (26/10):** faixa de deslizar
+  com as capas no herói do celular (`FaixaDoHeroiNoCelular`, só grupo ≠ 1);
+  fundo da Aretz `#0a0f0b`; com tema travado, faixas sem dourado e planta em
+  cinza (o SVG da planta tem traço `#003d36` fixo, verde da Next Home).
