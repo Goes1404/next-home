@@ -433,11 +433,11 @@ describe("confirmação completa, erros e correção em cadeia", () => {
     expect(interacoes("ligacao")).toHaveLength(0);
   });
 
-  it("erro depois de anotar na ficha: não pede de novo (duplicaria), mas guarda o erro", async () => {
+  it("erro depois de anotar na ficha: avisa sem pedir de novo (duplicaria) e guarda o erro", async () => {
     lerRetornoDaLigacao.mockResolvedValue(lida({ fatos: { dormitoriosMin: 2 } }));
     salvarDossie.mockRejectedValue(new Error("dossiê fora"));
     await tratar(mensagem({ id: "m1", texto: "falei com a Ana, 2 quartos" }));
-    expect(enviadas).toEqual([]);
+    expect(enviadas).toEqual(["📝 Ana · anotei a ligação, mas não consegui atualizar o resto. Confira a ficha."]);
     expect(interacoes("ligacao")).toHaveLength(1);
     expect(retornos()[0]).toMatchObject({ status: "falhou", leitura: { erro: "dossiê fora" } });
   });
@@ -535,5 +535,52 @@ describe("confirmação completa, erros e correção em cadeia", () => {
     await tratar(mensagem({ id: "m2", texto: "2", citada: "central-1" }));
     expect(enviadas[1]).toBe("Não achei esse cliente no CRM.");
     expect(interacoes("ligacao")).toHaveLength(0);
+  });
+});
+
+describe("relato novo sobre a pergunta, cadeia com elo sem leitura e visita devolvida", () => {
+  it("texto livre em cima da pergunta é relato novo, com a própria pergunta; o antigo continua pendente", async () => {
+    banco.tabelas.lead_envios_grupo.push(avisoDoPaulo());
+    await tratar(mensagem({ id: "m1", texto: "não atendeu" }));
+    await tratar(mensagem({ id: "m2", texto: "falei com o cliente, vai pensar", citada: "central-1" }));
+    expect(enviadas).toHaveLength(2);
+    expect(retornos()[0]).toMatchObject({ status: "aguardando_escolha", confirmacao_mensagem_id: "central-1", texto: "não atendeu" });
+    expect(retornos()[1]).toMatchObject({
+      status: "aguardando_escolha",
+      confirmacao_mensagem_id: "central-2",
+      opcoes: ["lead-ana", "lead-paulo"],
+    });
+
+    lerRetornoDaLigacao.mockResolvedValue(lida({}));
+    await tratar(mensagem({ id: "m3", texto: "1", citada: "central-2" }));
+    expect(lerRetornoDaLigacao.mock.calls[0][0].relato).toBe("falei com o cliente, vai pensar");
+    expect(interacoes("ligacao")[0]).toMatchObject({ lead_id: "lead-ana", conteudo: "falei com o cliente, vai pensar" });
+    expect(retornos()[0].status).toBe("aguardando_escolha");
+  });
+
+  it("cadeia que termina numa correção sem leitura: a próxima correção desfaz o que o último elo aplicado gravou", async () => {
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ etapa: "visita_agendada", visitaEm: "2026-10-31T13:00:00.000Z" }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, visita sábado 10h" }));
+
+    suspenso = true;
+    await tratar(mensagem({ id: "m2", texto: "visita é sábado mesmo", citada: "central-1" }));
+    expect(retornos()[1]).toMatchObject({ status: "sem_leitura", corrige_id: retornos()[0].id });
+
+    suspenso = false;
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({}));
+    await tratar(mensagem({ id: "m3", texto: "errei, não marcou visita", citada: "central-2" }));
+    expect(lead("lead-ana")).toMatchObject({ etapa: "novo", visita_agendada_em: null });
+    expect(retornos()[2].corrige_id).toBe(retornos()[1].id);
+    expect(enviadas[2]).toBe("✅ Ana · visita desmarcada · → Leads");
+  });
+
+  it("correção que devolve a visita de antes diz a data", async () => {
+    Object.assign(lead("lead-ana"), { etapa: "visita_agendada", visita_agendada_em: "2026-10-30T13:00:00.000Z" });
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ etapa: "visita_agendada", visitaEm: "2026-10-31T13:00:00.000Z" }));
+    await tratar(mensagem({ id: "m1", texto: "Ana passou a visita para sábado 10h" }));
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({}));
+    await tratar(mensagem({ id: "m2", texto: "não, continua sexta", citada: "central-1" }));
+    expect(lead("lead-ana").visita_agendada_em).toBe("2026-10-30T13:00:00.000Z");
+    expect(enviadas[1]).toBe("✅ Ana · visita volta para sex 30/10 10h");
   });
 });

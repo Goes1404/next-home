@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Json } from "@/lib/supabase/types";
+import { aplicadoGuardado, type Aplicado } from "./efeitos";
 import type { Banco } from "./situacao";
 
 /** Corrente de correções mais longa que isto é defeito (laço), não uso real. */
@@ -16,15 +17,17 @@ const COLUNAS = "id, texto, leitura, corrige_id, status";
  * elo antigo desfaria de novo o que a correção seguinte já desfez (tentativa
  * contada duas vezes, retorno que não sai), e o relato perderia o meio.
  *
- * Devolve o último elo aplicado e o relato inteiro: o original e cada
- * correção, na ordem.
+ * Devolve o último elo, o relato inteiro (o original e cada correção, na
+ * ordem) e o `aplicado` do último elo que mexeu na ficha: uma correção anotada
+ * sem leitura (grupo suspenso) não mudou nada, e o estado que vale continua
+ * sendo o do elo anterior a ela.
  */
 export async function cadeiaDaCorrecao(
   supabase: Banco,
   grupoId: string,
   corretorId: string,
   citadoId: string,
-): Promise<{ ultimo: Elo; relato: string } | null> {
+): Promise<{ ultimo: Elo; relato: string; aplicado: Aplicado | null } | null> {
   const ler = (id: string) =>
     supabase
       .from("retornos_de_ligacao")
@@ -66,5 +69,10 @@ export async function cadeiaDaCorrecao(
 
   const [original, ...correcoes] = cadeia;
   const relato = [original.texto ?? "", ...correcoes.map((c) => `Correção do corretor: ${c.texto ?? ""}`)].join("\n");
-  return { ultimo: cadeia[cadeia.length - 1], relato };
+  const comEfeito = [...cadeia].reverse().find((e) => aplicadoGuardado(e.leitura) !== null);
+  return {
+    ultimo: cadeia[cadeia.length - 1],
+    relato,
+    aplicado: comEfeito ? aplicadoGuardado(comEfeito.leitura) : null,
+  };
 }

@@ -211,7 +211,7 @@ function normalizar(texto: string): string {
 }
 
 /** "1", "1)", "opção 1", " 2 " → índice 0-based; `null` se não for uma escolha. */
-function indiceEscolhido(texto: string): number | null {
+export function indiceEscolhido(texto: string): number | null {
   const achou = /^(?:opcao\s+)?(\d{1,2})$/.exec(normalizar(texto));
   return achou ? Number(achou[1]) - 1 : null;
 }

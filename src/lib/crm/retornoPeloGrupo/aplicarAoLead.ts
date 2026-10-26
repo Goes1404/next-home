@@ -52,7 +52,7 @@ export type Contexto = {
    * separa "peça para mandar de novo" (nada anotado) de "não peça" (mandar de
    * novo duplicaria o que já entrou).
    */
-  estado: { gravouNoLead: boolean };
+  estado: { gravouNoLead: boolean; nomeDoLead: string | null };
 };
 
 export async function responderNoGrupo(ctx: Contexto, texto: string): Promise<string | null> {
@@ -167,6 +167,7 @@ export async function aplicarRetornoAoLead(
       });
 
   // Sem leitura (grupo suspenso ou IA fora): o relato fica anotado como veio.
+  ctx.estado.nomeDoLead = nome;
   if (!leitura || !leitura.ok) {
     ctx.estado.gravouNoLead = true;
     await registrarInteracao(supabase, {
@@ -287,6 +288,9 @@ export async function aplicarRetornoAoLead(
       mudancas: {
         etapaNova: etapaFinal !== etapaAtual ? etapaFinal : null,
         visitaDesmarcada: visitaGravada && efeitos.visita !== null && efeitos.visita.para === null,
+        // A correção sem visita devolveu a data que havia antes do retorno corrigido.
+        visitaRestaurada:
+          visitaGravada && efeitos.visita?.para && !lido.visitaEm ? efeitos.visita.para : null,
       },
     }),
   );

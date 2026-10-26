@@ -10,15 +10,16 @@ import {
   type RetornoParaAplicar,
 } from "./aplicarAoLead";
 import { cadeiaDaCorrecao } from "./correcao";
-import { aplicadoGuardado } from "./efeitos";
 import {
   escolherLeadDoRetorno,
+  indiceEscolhido,
   lerMensagemDoGrupo,
   reconhecerAutorNoGrupo,
   type MensagemDoGrupo,
 } from "./identificar";
 import { carregarSituacao, type Banco } from "./situacao";
 import {
+  TEXTO_ANOTEI_EM_PARTE,
   TEXTO_AUDIO_NAO_ENTENDIDO,
   TEXTO_NAO_CONSEGUI_ANOTAR,
   TEXTO_NAO_E_MAIS_SEU,
@@ -79,7 +80,7 @@ export async function processarRetornoDoCorretor(p: {
     grupoJid: msg.grupoJid,
     corretorId: corretor.id,
     suspenso: false,
-    estado: { gravouNoLead: false },
+    estado: { gravouNoLead: false, nomeDoLead: null },
   };
 
   try {
@@ -93,7 +94,11 @@ export async function processarRetornoDoCorretor(p: {
     } catch (erroAoAnotar) {
       console.error("[retorno] nem o erro foi anotado:", erroAoAnotar);
     }
-    if (!ctx.estado.gravouNoLead) await responderNoGrupo(ctx, TEXTO_NAO_CONSEGUI_ANOTAR);
+    // Nada na ficha: pede de novo. Algo já entrou: só avisa, mandar de novo duplicaria.
+    await responderNoGrupo(
+      ctx,
+      ctx.estado.gravouNoLead ? TEXTO_ANOTEI_EM_PARTE(ctx.estado.nomeDoLead ?? NOME_SEM_NOME) : TEXTO_NAO_CONSEGUI_ANOTAR,
+    );
   }
 }
 
@@ -165,7 +170,7 @@ async function seguirComORetorno(
         ...desteRelato,
         relato: `${cadeia.relato}\nCorreção do corretor: ${texto}`,
         corrigeId: cadeia.ultimo.id,
-        corrigido: aplicadoGuardado(cadeia.ultimo.leitura),
+        corrigido: cadeia.aplicado,
       });
       return;
     }
@@ -181,9 +186,13 @@ async function seguirComORetorno(
       /*
        * Número fora da lista em cima da pergunta: repete a MESMA pergunta, sem
        * criar outra pendência (senão o "3" viraria o relato a aplicar). A
-       * pendência original passa a apontar para a pergunta nova.
+       * pendência original passa a apontar para a pergunta nova. Texto livre
+       * em cima da pergunta é relato novo, e ganha a própria pergunta.
        */
-      const citada = msg.citadaId ? situacao.perguntas.find((q) => q.mensagemId === msg.citadaId) : undefined;
+      const citada =
+        msg.citadaId && indiceEscolhido(texto) !== null
+          ? situacao.perguntas.find((q) => q.mensagemId === msg.citadaId)
+          : undefined;
       if (citada) {
         const repetidaId = await responderNoGrupo(ctx, textoDaPergunta(nomes));
         if (repetidaId) await fecharRetorno(ctx, citada.retornoId, { confirmacao_mensagem_id: repetidaId, opcoes });

@@ -19,6 +19,11 @@ export const TEXTO_CLIENTE_NAO_ENCONTRADO = "Não achei esse cliente no CRM.";
 /** Erro inesperado antes de anotar qualquer coisa: o relato não se perde calado. */
 export const TEXTO_NAO_CONSEGUI_ANOTAR = "Não consegui anotar este retorno agora, pode mandar de novo?";
 
+/** Erro depois de anotar a ligação: não pede para mandar de novo (duplicaria). */
+export function TEXTO_ANOTEI_EM_PARTE(nome: string): string {
+  return `📝 ${nome} · anotei a ligação, mas não consegui atualizar o resto. Confira a ficha.`;
+}
+
 export function TEXTO_SEM_LEITURA(nome: string): string {
   return `📝 ${nome} · anotado na ficha, sem leitura automática`;
 }
@@ -117,11 +122,14 @@ export type MudancasNaFicha = {
   etapaNova?: EtapaFunil | null;
   /** A correção tirou a visita que o retorno anterior tinha posto. */
   visitaDesmarcada?: boolean;
+  /** A correção devolveu a visita que havia antes (ISO). */
+  visitaRestaurada?: string | null;
 };
 
 function mudancasExtras(leitura: LeituraDoRetorno, m: MudancasNaFicha | undefined): string[] {
   const itens: string[] = [];
   if (m?.visitaDesmarcada) itens.push("visita desmarcada");
+  if (m?.visitaRestaurada) itens.push(`visita volta para ${dataDaVisita(m.visitaRestaurada)}`);
   const etapa = m?.etapaNova;
   // Perdido e visita marcada já aparecem pelo motivo e pela data.
   const jaDito = etapa === "perdido" || (etapa === "visita_agendada" && leitura.visitaEm !== null);

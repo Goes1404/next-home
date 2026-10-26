@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LeituraDoRetorno } from "./leituraDoRetorno";
 import {
+  TEXTO_ANOTEI_EM_PARTE,
   TEXTO_AUDIO_NAO_ENTENDIDO,
   TEXTO_CLIENTE_NAO_ENCONTRADO,
   TEXTO_NAO_CONSEGUI_ANOTAR,
@@ -136,6 +137,17 @@ describe("textoDaConfirmacao", () => {
     ).toBe("📞 Ana · não atendeu (2ª tentativa) · visita desmarcada · → Leads");
   });
 
+  it("correção que devolve a visita de antes diz a data", () => {
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 0,
+        leitura: leitura({}),
+        mudancas: { visitaRestaurada: "2025-11-01T13:00:00.000Z" },
+      }),
+    ).toBe("✅ Ana · visita volta para sáb 01/11 10h");
+  });
+
   it("visita marcada e perdido não repetem a etapa", () => {
     expect(
       textoDaConfirmacao({
@@ -200,6 +212,12 @@ describe("textos fixos", () => {
   it("sem cliente aguardando", () => {
     expect(TEXTO_SEM_LEAD_AGUARDANDO).toBe(
       "Não achei cliente aguardando retorno. Responda em cima do aviso do cliente para eu anotar.",
+    );
+  });
+
+  it("erro depois de anotar a ligação", () => {
+    expect(TEXTO_ANOTEI_EM_PARTE("Ana")).toBe(
+      "📝 Ana · anotei a ligação, mas não consegui atualizar o resto. Confira a ficha.",
     );
   });
 
