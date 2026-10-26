@@ -53,7 +53,13 @@ export function mensagensParaAvisar(
 ): { textos: string[]; teveAudio: boolean } | null {
   const ultima = mensagens.at(-1);
   if (!ultima || ultima.id !== mensagemId) return null;
-  const legivel = (m: MensagemDoCliente) => m.conteudo.trim() && m.conteudo !== TEXTO_NAO_GUARDADO;
+  // Marcador do sistema ("[Áudio recebido — não foi possível transcrever…]",
+  // "[cliente enviou uma imagem…]", o da conversa não liberada) não é fala do
+  // cliente: não vai entre aspas para o corretor.
+  const legivel = (m: MensagemDoCliente) => {
+    const texto = m.conteudo.trim();
+    return Boolean(texto) && texto !== TEXTO_NAO_GUARDADO && !/^\[[\s\S]*\]$/.test(texto);
+  };
   return {
     textos: mensagens.filter(legivel).map((m) => m.conteudo),
     teveAudio: mensagens.some((m) => m.tipo === "audio"),
@@ -69,20 +75,24 @@ export async function avisarMensagemDoClienteNoGrupo(p: {
   leadId: string;
   conversaId: string;
   mensagemId: string;
+  /** Só para teste: o cliente do banco e a espera da rajada. */
+  supabase?: ReturnType<typeof createServiceClient>;
+  esperaMs?: number;
 }): Promise<void> {
   try {
-    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_RAJADA_MS));
-    const supabase = createServiceClient();
+    await new Promise((resolver) => setTimeout(resolver, p.esperaMs ?? ESPERA_DA_RAJADA_MS));
+    const supabase = p.supabase ?? createServiceClient();
 
     // Só lead que foi avisado no grupo: é o que diz que esta imobiliária
     // trabalha com o grupo e que o corretor espera notícias por ali.
-    const { data: envio } = await supabase
+    const { data: envio, error: erroEnvio } = await supabase
       .from("lead_envios_grupo")
       .select("id, enviado_em, ultima_mensagem_avisada_em")
       .eq("lead_id", p.leadId)
       .eq("grupo_id", p.grupoId)
       .eq("status", "enviado")
       .maybeSingle();
+    if (erroEnvio) return void console.error("[grupos de leads] aviso de mensagem: falha ao ler o envio:", erroEnvio.message);
     if (!envio) return;
 
     const [{ data: lead }, { data: grupo }] = await Promise.all([
@@ -113,13 +123,14 @@ export async function avisarMensagemDoClienteNoGrupo(p: {
       .order("created_at", { ascending: true })
       .limit(50);
     if (desde) consulta = consulta.gt("created_at", desde);
-    const { data: mensagens } = await consulta;
+    const { data: mensagens, error: erroMensagens } = await consulta;
+    if (erroMensagens) return void console.error("[grupos de leads] aviso de mensagem: falha ao ler as mensagens:", erroMensagens.message);
     const rajada = mensagensParaAvisar(mensagens ?? [], p.mensagemId);
     const maisNova = mensagens?.at(-1);
     if (!rajada || !maisNova) return;
 
     // Reserva: dois webhooks da mesma rajada não avisam duas vezes.
-    const { data: reservado } = await supabase
+    const { data: reservado, error: erroReserva } = await supabase
       .from("lead_envios_grupo")
       .update({ ultima_mensagem_avisada_em: maisNova.created_at, updated_at: new Date().toISOString() })
       .eq("id", envio.id)
@@ -127,6 +138,7 @@ export async function avisarMensagemDoClienteNoGrupo(p: {
       .or(`ultima_mensagem_avisada_em.is.null,ultima_mensagem_avisada_em.lt.${maisNova.created_at}`)
       .select("id")
       .maybeSingle();
+    if (erroReserva) return void console.error("[grupos de leads] aviso de mensagem: falha ao reservar:", erroReserva.message);
     if (!reservado) return;
 
     const envioDoAviso = await enviarMensagemWhatsappParaGrupo({
