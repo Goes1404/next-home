@@ -11,7 +11,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/EditorDaRoleta.tsx
   - src/app/api/webhooks/whatsapp/route.ts
 summary: Lead que nasce pela etiqueta de anúncio da Meta no número de um corretor vai para o próximo da lista dele; o número novo manda a primeira mensagem na hora e o do dono avisa quem vai atender.
-updated: 2026-10-20
+updated: 2026-10-27
 ---
 
 # Roleta dos anúncios
@@ -43,5 +43,15 @@ Pedido do dono (20/10/2026). Desenho:
 - **O lead é de quem pagou o anúncio** (decisão de 21/10, 0206): a roleta
   grava `leads.anuncio_pago_por`; se quem recebeu sair da empresa,
   `devolver_leads_da_imobiliaria` devolve o lead a quem pagou (se ativo).
+
+- **Modo "aviso no grupo para ligar"** (0217, 27/10): na tela, cada roleta
+  escolhe entre a mensagem do número do corretor (o de cima) e o aviso no
+  grupo `NOME & ARETZ`; no modo grupo nenhuma mensagem sai do número do
+  escolhido e a roleta exige grupo mapeado, não WhatsApp conectado. Nos dois
+  modos `proximo_da_roleta` pula `em_pausa` e `oculta`. No modo mensagem a
+  passagem sai ANTES da abertura e a boas-vindas genérica só sai quando o lead
+  fica com quem pagou; o webhook passa o modo já lido para a roleta (ler duas
+  vezes deixava o cliente sem resposta). Troca de dono que falha não avisa
+  ninguém. Ver [[retorno-da-ligacao-pelo-grupo]].
 
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].

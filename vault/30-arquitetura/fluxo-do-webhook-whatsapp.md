@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-21
+updated: 2026-10-27
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -16,6 +16,14 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
+   **Antes disso, o descarte de grupo** (`@g.us`, transmissão, status) sai com
+   200 "ignored". Única exceção (27/10): `messages.upsert` não `fromMe` num
+   grupo `@g.us` passa pela MESMA autenticação (`resolverInstancia` +
+   `requisicaoAutenticada` + `mensagemDoNumeroPodeSeguir`) e por
+   `tratarMensagemDoGrupoDeLeads`, que só aceita o número central de um grupo
+   com envio ligado e o grupo de WhatsApp de um corretor ativo; o
+   processamento do retorno da ligação roda em `after()` e nada dali chega à
+   IA ([[retorno-da-ligacao-pelo-grupo]]).
 2. **Eventos técnicos** — conexão e ACK saem sem tentar criar conversa. Desde a 0174 o `connection.update` também apaga o marco da queda ao reconectar, carimba a queda uma vez e guarda o `statusReason`; qualquer outro evento tira a marca de sessão caída em segundo plano ([[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]). Desde a 0198, o `connection.update` que abre um número já ligado a outro grupo derruba a sessão na Evolution e marca `numero_recusado_em` em vez de conectar ([[numero-em-um-grupo-e-aceite-dos-termos]]). Evento de mensagem por instância com recusa em aberto, ou ainda "conectando", só segue depois de a sincronização conferir o número (`mensagemDoNumeroPodeSeguir`); de outra conta, a mensagem é ignorada com 200 e o logout é tentado de novo.
 3. **Porteiro de cadastro** — casa o telefone com um lead da carteira. Sem
    lead, devolve `numero_sem_lead_cadastrado`: não cria conversa nem lead e
@@ -55,6 +63,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    `provider_message_id` não tinha índice que a protegesse), e o 23505 numa
    retentativa confere pelo próprio `id` — achou, é a nossa; não achou, é a
    reentrega concorrente do provedor.
+   Gravada e inédita, se o lead é de outro corretor (roleta, repasse), o
+   dono é avisado no grupo `NOME & ARETZ` dele em `after()`
+   (`avisarMensagemDoClienteNoGrupo`, rajada de 8 s, 27/10).
 6. **Porteiro da IA** — `decidirSeAIaResponde` ([[quando-a-ia-responde]]),
    a decisão inteira num lugar só: primeiro a conversa (lead de outro
    corretor, pediu para sair, IA desligada — a fala do corretor desliga, sem prazo), depois

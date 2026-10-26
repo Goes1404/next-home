@@ -379,3 +379,16 @@ Pendências que seguem abertas depois disso: reativar o aceite dos termos;
 `/imovel/aretzimobi/<slug>` com 404 no endereço do painel; armazenamento por
 plano; link do catálogo da IA para grupo sem site; `VAPID_SUBJECT`; E2E do
 site público desatualizado; botões do site do grupo com o verde padrão.
+
+### Ligação primeiro e retorno pelo grupo (27/10/2026, branch `ligacao-e-retorno-pelo-grupo`, NÃO publicada)
+
+- Spec `docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md`;
+  plano em `docs/superpowers/plans/` com o mesmo nome; nota [[retorno-da-ligacao-pelo-grupo]].
+- **Ordem do deploy:** `npm run db:teste` (Docker) → aplicar **0217** e **0218**
+  (aditivas) → regenerar `src/lib/supabase/types.ts` → publicar.
+- **Antes de ligar para a Aretz:** testar no número central o formato do
+  participante no webhook (`@lid`/`participantAlt`) — só foi testado com
+  payloads simulados; depois, em Administração → WhatsApp da equipe, escolher o
+  número central, ligar o envio e "Sincronizar grupos" (o sincronizador nunca
+  casava antes desta branch).
+- Nada muda para quem não liga o envio para grupos nem escolhe o modo grupo na roleta.

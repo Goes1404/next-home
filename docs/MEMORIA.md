@@ -11853,3 +11853,31 @@ Nota: [[audio-do-retorno-na-ficha-e-na-exclusao]].
   igual e e-mail igual; nunca decidir por `LIKE` (`%`/`_` casam com outra pessoa).
 - A guarda `servicoComGrupo.test.ts` exige classificar todo arquivo novo que
   cita `createServiceClient`.
+
+## Ligação primeiro e retorno da ligação pelo grupo (0217, 0218, 27/10/2026)
+
+Nota: [[retorno-da-ligacao-pelo-grupo]]. Branch `ligacao-e-retorno-pelo-grupo`,
+NÃO publicada; 0217 e 0218 entram ANTES do deploy e nunca rodaram em Postgres
+(Docker desligado na máquina): rodar `npm run db:teste` antes de aplicar.
+
+- **A exceção ao descarte de `@g.us` fica DEPOIS da autenticação.** O bloco do
+  grupo vem antes do `requisicaoAutenticada` no `route.ts`; era inofensivo
+  enquanto só devolvia "ignored", mas o retorno pelo grupo grava, gasta IA e
+  responde. Toda lógica nova nesse trecho precisa autenticar por conta própria.
+- **Ler a mesma configuração duas vezes em pontos diferentes do webhook deixa o
+  cliente sem resposta**: o webhook decidia pular a boas-vindas com o modo da
+  roleta lido antes, a roleta relia dentro do `after()` e, lendo "desligada",
+  não mandava nada. Passe o valor lido adiante.
+- **O aviso no grupo era enfileirado no INSERT do lead**, com o dono daquele
+  instante; a roleta troca o dono depois. O worker agora relê o dono e cancela
+  lead do próprio corretor (`trazido_por = 'corretor'`), perdido ou fechado.
+- **A sincronização de grupos nunca casava**: `nomeDeGrupoAretz` somava
+  " & Aretz" também ao nome do grupo do WhatsApp. Corrigido nesta branch.
+- **Data devolvida pela IA sem fuso vira hora errada em silêncio** (servidor em
+  UTC): só ISO com offset é aceito.
+- **Lista vinda da IA substitui a lista do dossiê** (`mesclarDossie` troca lista
+  cheia): no retorno pelo grupo as exigências/objeções SOMAM.
+- `src/lib/grupos/servicoComGrupo.test.ts` já está vermelho na produção (5
+  falhas: enviosDeLeadParaGrupo da 0215, actions.ts, completar-cadastro, admin
+  site/marca removidos, admin/whatsapp/page). Arquivo novo com chave de serviço
+  precisa entrar no MAPA mesmo assim.
