@@ -57,7 +57,7 @@ export async function lerModoDaRoleta(corretorId: string): Promise<ModoDaRoleta>
 /**
  * Roleta dos anúncios (0204). Lead que NASCEU agora pela etiqueta de anúncio
  * da Meta no número de A é repassado ao próximo da lista de A. O modo da
- * roleta (0217) diz como B fica sabendo:
+ * roleta (0218) diz como B fica sabendo:
  *
  * - `mensagem`: o número de A manda a passagem e logo depois o número de B
  *   manda a abertura. Falhou a abertura? B entra na lista de excluídos e a

@@ -80,7 +80,7 @@ export async function carregarSituacao(
       .order("created_at", { ascending: false })
       .limit(TETO_DE_RETORNOS),
     /*
-     * A confirmação ou pergunta citada é procurada direto (índice da 0218):
+     * A confirmação ou pergunta citada é procurada direto (índice da 0219):
      * fora da janela dos últimos retornos ela não seria reconhecida, e o relato
      * cairia nas regras sem citação, podendo ir para outro cliente.
      */

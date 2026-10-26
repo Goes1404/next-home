@@ -1,4 +1,4 @@
--- 0218: retorno da ligação pelo grupo de WhatsApp e lista diária do gestor
+-- 0219: retorno da ligação pelo grupo de WhatsApp e lista diária do gestor
 -- (26/10/2026).
 --
 -- Desenho: docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md
@@ -46,7 +46,7 @@ alter table public.corretores
   add column if not exists whatsapp_lid text;
 
 comment on column public.corretores.whatsapp_lid is
-  'Id @lid do corretor no WhatsApp, lido da lista de participantes do grupo dele junto com o número (0218). Nunca por adivinhação.';
+  'Id @lid do corretor no WhatsApp, lido da lista de participantes do grupo dele junto com o número (0219). Nunca por adivinhação.';
 
 create unique index if not exists corretores_grupo_whatsapp_lid_key
   on public.corretores (grupo_id, whatsapp_lid)
@@ -67,11 +67,11 @@ alter table public.lead_envios_grupo
   add constraint lead_envios_grupo_tentativas_ligacao_check check (tentativas_ligacao >= 0);
 
 comment on column public.lead_envios_grupo.tentativas_ligacao is
-  'Quantas vezes o corretor disse que ligou e não atendeu (0218).';
+  'Quantas vezes o corretor disse que ligou e não atendeu (0219).';
 comment on column public.lead_envios_grupo.retorno_em is
-  'Quando o corretor deu o primeiro resultado atendeu/numero_errado; some da lista de "aguardando retorno" (0218).';
+  'Quando o corretor deu o primeiro resultado atendeu/numero_errado; some da lista de "aguardando retorno" (0219).';
 comment on column public.lead_envios_grupo.ultima_mensagem_avisada_em is
-  'Último aviso de mensagem do cliente enviado ao grupo; junta rajadas num aviso só (0218).';
+  'Último aviso de mensagem do cliente enviado ao grupo; junta rajadas num aviso só (0219).';
 
 -- ---------------------------------------------------------------------------
 -- 3. O retorno que o corretor mandou no grupo
@@ -107,7 +107,7 @@ create index if not exists retornos_de_ligacao_corretor_idx
   on public.retornos_de_ligacao (corretor_id, created_at desc);
 
 comment on table public.retornos_de_ligacao is
-  'Relato de ligação que o corretor mandou no grupo dele (texto ou áudio) e o que o sistema leu e aplicou (0218). Só o servidor lê e grava.';
+  'Relato de ligação que o corretor mandou no grupo dele (texto ou áudio) e o que o sistema leu e aplicou (0219). Só o servidor lê e grava.';
 comment on column public.retornos_de_ligacao.mensagem_id is
   'Id da mensagem do corretor no WhatsApp; com o grupo, torna o webhook idempotente.';
 comment on column public.retornos_de_ligacao.confirmacao_mensagem_id is
@@ -180,7 +180,7 @@ create table if not exists public.listas_de_retorno_enviadas (
 );
 
 comment on table public.listas_de_retorno_enviadas is
-  'Trava de idempotência da lista diária de leads sem retorno: uma linha por gestor e dia (0218). Só o servidor lê e grava.';
+  'Trava de idempotência da lista diária de leads sem retorno: uma linha por gestor e dia (0219). Só o servidor lê e grava.';
 comment on column public.listas_de_retorno_enviadas.dia is
   'Dia em America/Sao_Paulo.';
 
@@ -248,7 +248,7 @@ as $$
 $$;
 
 comment on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) is
-  'Soma (+1) ou desconta (-1, correção) uma tentativa de ligação no aviso do grupo, nunca abaixo de zero; devolve o novo total (0218). Só service_role.';
+  'Soma (+1) ou desconta (-1, correção) uma tentativa de ligação no aviso do grupo, nunca abaixo de zero; devolve o novo total (0219). Só service_role.';
 
 revoke all on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) from public, anon, authenticated;
 grant execute on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) to service_role;

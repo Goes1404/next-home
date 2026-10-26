@@ -10,8 +10,8 @@ codigo:
   - src/lib/whatsapp/roletaDosAnuncios.ts
   - src/lib/crm/enviosDeLeadParaGrupo.ts
   - src/lib/crm/leadsSemRetorno.ts
-  - supabase/migrations/0217_roleta_aviso_no_grupo.sql
-  - supabase/migrations/0218_retorno_da_ligacao_pelo_grupo.sql
+  - supabase/migrations/0218_roleta_aviso_no_grupo.sql
+  - supabase/migrations/0219_retorno_da_ligacao_pelo_grupo.sql
 created: 2026-10-27
 updated: 2026-10-27
 fonte: spec docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md; plano e ledger da execução
@@ -23,7 +23,7 @@ summary: Primeiro contato por ligação (Aretz) — roleta avisa no grupo NOME &
 Pedido do dono em 26/10/2026 para a operação da Aretz (primeiro contato por
 ligação). Três partes:
 
-1. **Roleta dos anúncios, modo "aviso no grupo"** (0217): o escolhido não
+1. **Roleta dos anúncios, modo "aviso no grupo"** (0218): o escolhido não
    manda mensagem do número dele; recebe o aviso no grupo e liga. A roleta
    também passou a pular `em_pausa` e `oculta` nos dois modos.
 2. **Retorno pelo grupo**: o webhook abre UMA exceção ao descarte de `@g.us`
@@ -57,7 +57,7 @@ ligação). Três partes:
 
 ## Antes de publicar
 
-- Aplicar **0217** e **0218** antes do deploy (aditivas). Sem Docker na
+- Aplicar **0218** e **0219** antes do deploy (aditivas). Sem Docker na
   máquina de desenvolvimento, nenhuma das duas rodou em Postgres: rodar
   `npm run db:teste` antes.
 - O formato real do participante no webhook da Evolution (`@lid`,

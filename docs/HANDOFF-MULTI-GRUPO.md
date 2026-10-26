@@ -384,7 +384,7 @@ site público desatualizado; botões do site do grupo com o verde padrão.
 
 - Spec `docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md`;
   plano em `docs/superpowers/plans/` com o mesmo nome; nota [[retorno-da-ligacao-pelo-grupo]].
-- **Ordem do deploy:** `npm run db:teste` (Docker) → aplicar **0217** e **0218**
+- **Ordem do deploy:** `npm run db:teste` (Docker) → aplicar **0218** e **0219**
   (aditivas) → regenerar `src/lib/supabase/types.ts` → publicar.
 - **Antes de ligar para a Aretz:** testar no número central o formato do
   participante no webhook (`@lid`/`participantAlt`) — só foi testado com

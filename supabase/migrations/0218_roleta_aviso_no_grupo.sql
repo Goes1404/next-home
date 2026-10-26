@@ -1,4 +1,4 @@
--- 0217: roleta dos anúncios com "aviso no grupo para ligar" (26/10/2026).
+-- 0218: roleta dos anúncios com "aviso no grupo para ligar" (26/10/2026).
 --
 -- Desenho: docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md
 -- (seções 5.1 a 5.3).
@@ -32,7 +32,7 @@ alter table public.roleta_anuncios
   add constraint roleta_anuncios_modo_aviso_check check (modo_aviso in ('mensagem', 'grupo'));
 
 comment on column public.roleta_anuncios.modo_aviso is
-  'Como o escolhido fica sabendo: mensagem do número dele (0204) ou aviso no grupo dele pelo número central (0217).';
+  'Como o escolhido fica sabendo: mensagem do número dele (0204) ou aviso no grupo dele pelo número central (0218).';
 
 -- A coluna `status` nasceu com check inline na 0215 (nome padrão do Postgres).
 alter table public.lead_envios_grupo

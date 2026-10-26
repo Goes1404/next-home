@@ -6,9 +6,9 @@ function ler(arquivo: string): string {
   return readFileSync(join(process.cwd(), "supabase", "migrations", arquivo), "utf8");
 }
 
-const sql = ler("0218_retorno_da_ligacao_pelo_grupo.sql");
+const sql = ler("0219_retorno_da_ligacao_pelo_grupo.sql");
 
-describe("migration 0218: retorno da ligação pelo grupo", () => {
+describe("migration 0219: retorno da ligação pelo grupo", () => {
   it("o corretor ganha o lid, único por grupo quando preenchido", () => {
     expect(sql).toMatch(/add column if not exists whatsapp_lid text/);
     expect(sql).toMatch(

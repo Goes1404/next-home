@@ -32,7 +32,7 @@ export async function RoletaDosAnuncios() {
     supabase.from("grupos").select("envio_grupo_leads_ativo").eq("id", quem.grupoId).maybeSingle(),
   ]);
   // Erro na leitura da roleta: antes da 0204 a tabela não existe e, antes da
-  // 0217, a coluna `modo_aviso` não existe. Nos dois casos a seção some em vez
+  // 0218, a coluna `modo_aviso` não existe. Nos dois casos a seção some em vez
   // de quebrar a tela.
   if (error) return null;
 

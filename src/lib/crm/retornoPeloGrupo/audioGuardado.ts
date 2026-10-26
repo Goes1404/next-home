@@ -6,7 +6,7 @@
  * caminhos sem puxar a transcrição junto.
  */
 
-/** Bucket PRIVADO (0218): só a chave de serviço lê e grava. */
+/** Bucket PRIVADO (0219): só a chave de serviço lê e grava. */
 export const BUCKET_DO_AUDIO = "retornos-de-ligacao";
 
 /** Quanto tempo vale o link do player na ficha. */

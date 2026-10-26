@@ -1,5 +1,5 @@
 /**
- * Como o escolhido fica sabendo (0217): `mensagem` é a roleta de sempre (o
+ * Como o escolhido fica sabendo (0218): `mensagem` é a roleta de sempre (o
  * número dele abre a conversa) e `grupo` só avisa no grupo para ele ligar.
  * `desligada` é a roleta que o corretor não ligou: o webhook segue sem ela.
  */

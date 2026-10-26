@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * A roleta dos anúncios escolhe COMO o corretor sorteado fica sabendo do
- * lead (0217): mensagem do número dele ou aviso no grupo, pelo número
+ * lead (0218): mensagem do número dele ou aviso no grupo, pelo número
  * central. O modo "grupo" só vale se o grupo ligou o envio de leads para os
  * grupos; o parâmetro vem do navegador, então a action confere no banco.
  */

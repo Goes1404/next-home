@@ -11824,11 +11824,11 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   do corretor seguem exatamente a mesma escolha. Aplicada em produção com a
   coluna desligada para todos os grupos.
 
-## Vínculo do corretor no grupo e tabelas do retorno (0218, 26/10/2026)
+## Vínculo do corretor no grupo e tabelas do retorno (0219, 26/10/2026)
 
 Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
 
-- A 0218 cria `retornos_de_ligacao`, `listas_de_retorno_enviadas`,
+- A 0219 cria `retornos_de_ligacao`, `listas_de_retorno_enviadas`,
   `corretores.whatsapp_lid` (único por grupo quando preenchido), três colunas
   em `lead_envios_grupo` e o bucket privado `retornos-de-ligacao` (sem policy:
   só a chave de serviço). A idempotência do webhook é
@@ -11854,10 +11854,10 @@ Nota: [[audio-do-retorno-na-ficha-e-na-exclusao]].
 - A guarda `servicoComGrupo.test.ts` exige classificar todo arquivo novo que
   cita `createServiceClient`.
 
-## Ligação primeiro e retorno da ligação pelo grupo (0217, 0218, 27/10/2026)
+## Ligação primeiro e retorno da ligação pelo grupo (0218, 0219, 27/10/2026)
 
 Nota: [[retorno-da-ligacao-pelo-grupo]]. Branch `ligacao-e-retorno-pelo-grupo`,
-NÃO publicada; 0217 e 0218 entram ANTES do deploy e nunca rodaram em Postgres
+NÃO publicada; 0218 e 0219 entram ANTES do deploy e nunca rodaram em Postgres
 (Docker desligado na máquina): rodar `npm run db:teste` antes de aplicar.
 
 - **A exceção ao descarte de `@g.us` fica DEPOIS da autenticação.** O bloco do

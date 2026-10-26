@@ -5,7 +5,7 @@ type: armadilha
 status: growing
 custou: alto
 codigo:
-  - supabase/migrations/0218_retorno_da_ligacao_pelo_grupo.sql
+  - supabase/migrations/0219_retorno_da_ligacao_pelo_grupo.sql
   - src/lib/whatsapp/participantesDoGrupo.ts
   - src/lib/whatsapp/vinculoNoGrupo.ts
   - src/lib/whatsapp/provider.ts
@@ -23,7 +23,7 @@ dentro de grupos. Gestores estão nos mesmos grupos: sem reconhecer quem falou,
 mensagem de gestor viraria "retorno de ligação".
 
 **Regras.**
-- `corretores.whatsapp_lid` (0218) é único por grupo quando preenchido.
+- `corretores.whatsapp_lid` (0219) é único por grupo quando preenchido.
 - O `@lid` só é gravado a partir do par número↔lid da lista de participantes
   (`GET /group/participants/{instância}?groupJid=`), achado com `mesmoNumero`
   (dígitos, com e sem 55, com e sem o 9 do celular; fixo nunca vira celular).

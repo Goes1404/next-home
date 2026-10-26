@@ -44,7 +44,7 @@ Pedido do dono (20/10/2026). Desenho:
   grava `leads.anuncio_pago_por`; se quem recebeu sair da empresa,
   `devolver_leads_da_imobiliaria` devolve o lead a quem pagou (se ativo).
 
-- **Modo "aviso no grupo para ligar"** (0217, 27/10): na tela, cada roleta
+- **Modo "aviso no grupo para ligar"** (0218, 27/10): na tela, cada roleta
   escolhe entre a mensagem do número do corretor (o de cima) e o aviso no
   grupo `NOME & ARETZ`; no modo grupo nenhuma mensagem sai do número do
   escolhido e a roleta exige grupo mapeado, não WhatsApp conectado. Nos dois

@@ -14,7 +14,7 @@ export type ModoAviso = "mensagem" | "grupo";
  * mexe na de qualquer corretor do grupo dele. A lista só aceita corretores
  * ativos do mesmo grupo — o banco confere de novo a cada lead.
  *
- * `modoAviso` (0217) diz como o escolhido fica sabendo: "mensagem" (o número
+ * `modoAviso` (0218) diz como o escolhido fica sabendo: "mensagem" (o número
  * dele manda a abertura) ou "grupo" (o número central avisa no grupo dele).
  * O valor vem do navegador, então "grupo" só passa se o grupo da sessão
  * ligou o envio de leads para os grupos.

@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Branch `ligacao-e-retorno-pelo-grupo`. Nunca push, nunca migration em produção sem OK do dono.
-- Migrations aditivas: `0217` (Etapa 1) e `0218` (Etapas 2 e 3). Conferir antes `git ls-tree -r --name-only origin/claude/modernizar-plataforma-imobiliaria-2tm13q supabase/migrations | tail` (última usada: 0216).
+- Migrations aditivas: `0218` (Etapa 1) e `0219` (Etapas 2 e 3). Conferir antes `git ls-tree -r --name-only origin/claude/modernizar-plataforma-imobiliaria-2tm13q supabase/migrations | tail` (última usada: 0216).
 - Tabela nova: `grupo_id`, gatilhos `_00_grupo` / `_zz_grupo_*`, policy restritiva `isolamento_por_grupo`, `revoke all` de `anon` e `authenticated` — copiar o bloco de `supabase/migrations/0204_roleta_dos_anuncios.sql`. Registrar a tabela nas listas de `src/lib/grupos/tabelasDoGrupo.ts` e testes irmãos (`servicoComGrupo.test.ts`, `contaOculta.test.ts`) quando o teste pedir.
 - Toda leitura/escrita com chave de serviço filtra por `grupo_id`.
 - Textos ao corretor/gestor sem jargão ("instância", "fila", "cota", "JID" proibidos).
@@ -35,10 +35,10 @@
 
 ## Etapa 1 — Roleta: modo aviso no grupo e correções
 
-### Task 1: Migration 0217 (roleta)
+### Task 1: Migration 0218 (roleta)
 
 **Files:**
-- Create: `supabase/migrations/0217_roleta_aviso_no_grupo.sql`
+- Create: `supabase/migrations/0218_roleta_aviso_no_grupo.sql`
 - Modify: `src/lib/supabase/types.ts` (colunas e assinatura nova à mão, no padrão do arquivo)
 - Test: `src/lib/crm/roletaAvisoNoGrupo.sql.test.ts`
 
@@ -53,14 +53,14 @@
 
 ```ts
 it("a roleta pula pausa e conta oculta, e no modo grupo exige grupo, não conexão", () => {
-  const sql = ler("0217_roleta_aviso_no_grupo.sql");
+  const sql = ler("0218_roleta_aviso_no_grupo.sql");
   expect(sql).toMatch(/not c\.em_pausa/);
   expect(sql).toMatch(/not c\.oculta/);
   expect(sql).toMatch(/p_modo = 'grupo'[\s\S]*whatsapp_grupo_leads_jid is not null/);
   expect(sql).toMatch(/drop function if exists public\.proximo_da_roleta\(uuid, uuid\[\]\)/);
 });
 it("o aviso segue o dono atual e não reabre envio já feito", () => {
-  const sql = ler("0217_roleta_aviso_no_grupo.sql");
+  const sql = ler("0218_roleta_aviso_no_grupo.sql");
   expect(sql).toContain("enfileirar_aviso_do_lead");
   expect(sql).toMatch(/where public\.lead_envios_grupo\.status in \('pendente', 'erro'\)/);
   expect(sql).toMatch(/trazido_por = 'corretor'/);
@@ -70,7 +70,7 @@ it("o aviso segue o dono atual e não reabre envio já feito", () => {
 - [ ] **Step 2:** Rodar; esperado FAIL (arquivo não existe).
 - [ ] **Step 3:** Escrever a migration. Em `p_modo = 'mensagem'` o filtro de conexão é o da 0204; em `'grupo'` troca por `c.whatsapp_grupo_leads_jid is not null` e exige `grupos.envio_grupo_leads_ativo`. Pausa e oculta valem nos dois.
 - [ ] **Step 4:** Rodar o teste (PASS) e `npm run db:teste` + `npx vitest run src/lib/crm/roletaDeLeads.test.ts src/lib/migrations.test.ts --exclude ".claude/**"` (PASS). `npx supabase@2.121.0 stop --no-backup` ao fim.
-- [ ] **Step 5:** Commit `feat(roleta): modo aviso no grupo e filtros de pausa e conta oculta (0217)`.
+- [ ] **Step 5:** Commit `feat(roleta): modo aviso no grupo e filtros de pausa e conta oculta (0218)`.
 
 ### Task 2: A roleta decide pelo modo e nunca avisa sem trocar o dono
 
@@ -161,10 +161,10 @@ expect(destinoDoAviso(item, { ...lead, trazido_por: "corretor" }, dono).acao).to
 
 ## Etapa 2 — Retorno da ligação pelo grupo
 
-### Task 6: Teste real na Evolution, migration 0218 e vínculo do corretor no grupo
+### Task 6: Teste real na Evolution, migration 0219 e vínculo do corretor no grupo
 
 **Files:**
-- Create: `supabase/migrations/0218_retorno_da_ligacao_pelo_grupo.sql`
+- Create: `supabase/migrations/0219_retorno_da_ligacao_pelo_grupo.sql`
 - Create: `src/lib/whatsapp/participantesDoGrupo.ts` (puro: `ParticipanteDoGrupo`, parser da resposta da Evolution, `mesmoNumero`)
 - Modify: `src/lib/whatsapp/provider.ts` (só `listarParticipantesDoGrupo`), `src/app/corretor/(painel)/admin/whatsapp/acoes.ts` (`sincronizarGruposDeLeadsDaAretz`), `src/lib/supabase/types.ts`, `src/lib/grupos/tabelasDoGrupo.ts`
 - Test: `src/lib/whatsapp/participantesDoGrupo.test.ts`, `src/lib/crm/retornoPeloGrupo/migration.test.ts`
@@ -184,7 +184,7 @@ expect(destinoDoAviso(item, { ...lead, trazido_por: "corretor" }, dono).acao).to
 - [ ] **Step 1 (com o dono):** no número central da Aretz, chamar `/group/participants` de um grupo e mandar uma mensagem de teste no grupo com o webhook logando o `data.key` e campos de participante (log temporário, removido no fim do passo). Anotar no fim deste arquivo o formato real (`participant`, `participantAlt`, `@lid`, `phoneNumber`). **Se nenhum campo trouxer o número e a lista também não, PARAR e voltar ao dono** (o anti-objetivo "gestor vira retorno" não teria proteção).
 - [ ] **Step 2:** Testes: `mesmoNumero("5511987654321","11987654321")` true; `"551187654321"` vs `"5511987654321"` true; números diferentes false; parser de participantes com os formatos anotados no Step 1. Teste da migration (unique de `mensagem_id`, `revoke all`, policy restritiva).
 - [ ] **Step 3:** FAIL. **Step 4:** Implementar. Na sincronização: recusar JID que caiu em dois corretores (nenhum dos dois é vinculado; mensagem: "O grupo X serve a mais de um corretor; renomeie para ter um grupo por corretor."); para cada grupo vinculado, ler participantes e gravar `whatsapp_lid` do participante cujo `numero` bate com `corretores.whatsapp`. Nunca gravar lid sem o par número↔lid.
-- [ ] **Step 5:** PASS + `db:teste` + `isolamento.db.test.ts`. Commit `feat(grupos): vínculo do corretor no grupo e tabelas do retorno (0218)`.
+- [ ] **Step 5:** PASS + `db:teste` + `isolamento.db.test.ts`. Commit `feat(grupos): vínculo do corretor no grupo e tabelas do retorno (0219)`.
 
 ### Task 7: Quem falou e de qual lead é (puro)
 
@@ -233,7 +233,7 @@ expect(destinoDoAviso(item, { ...lead, trazido_por: "corretor" }, dono).acao).to
 
 - [ ] **Step 1: Testes de texto** — `atendeu` + visita sáb 01/11 10h + 3 quartos + 600 mil + FGTS → `"✅ Ana · visita agendada sáb 01/11 10h · 3 quartos · até R$ 600 mil · FGTS"`; `nao_atendeu` tentativa 2 → `"📞 Ana · não atendeu (2ª tentativa)"`; pergunta → `"Esse retorno é sobre: 1) Ana 2) Paulo? Responda em cima desta mensagem com o número."`; `TEXTO_AUDIO_NAO_ENTENDIDO` = `"Não consegui entender o áudio, pode mandar de novo?"`.
 - [ ] **Step 2: Testes de `aplicar`** (cliente Supabase falso no padrão de `src/lib/crm/*.test.ts`): mesma `mensagem_id` duas vezes → um insert só (o segundo cai no `unique` e sai sem responder); grupo suspenso → grava `ligacao` com texto bruto, `status 'sem_leitura'`, não chama a IA nem muda etapa; `nao_atendeu` incrementa `tentativas_ligacao` e não mexe em `retorno_em`; `atendeu` preenche `retorno_em`; correção sobrescreve etapa/visita do retorno corrigido e grava nova linha `ligacao` com `corrige_id`.
-- [ ] **Step 3:** FAIL. **Step 4:** Implementar `aplicar.ts`: insert em `retornos_de_ligacao` primeiro (idempotência); áudio → `baixarMidiaDoProvedor` → upload em `retornos-de-ligacao/<grupo>/<lead>/<mensagemId>.ogg` → transcrever; falhou → `TEXTO_AUDIO_NAO_ENTENDIDO`, `status 'falhou'`; etapa via service client com `.eq("grupo_id")` + linha `etapa` com `textoMudancaEtapa`; visita em `leads.visita_agendada_em`; perda: etapa `perdido` + motivo em `detalhes.motivo_perda`; dossiê via `salvarDossie` montado sobre o dossiê atual; linha `ligacao` com `detalhes: { origem: "grupo_whatsapp", resultado, mensagem_id, audio_path }`; telemetria de custo em `ia_interacoes` com `acao` que NÃO seja `respondida`/`visita_confirmada` (conferir o `check` de `acao`/`origem` e ampliar na 0218 se preciso) — não conferir cota nem limite do plano.
+- [ ] **Step 3:** FAIL. **Step 4:** Implementar `aplicar.ts`: insert em `retornos_de_ligacao` primeiro (idempotência); áudio → `baixarMidiaDoProvedor` → upload em `retornos-de-ligacao/<grupo>/<lead>/<mensagemId>.ogg` → transcrever; falhou → `TEXTO_AUDIO_NAO_ENTENDIDO`, `status 'falhou'`; etapa via service client com `.eq("grupo_id")` + linha `etapa` com `textoMudancaEtapa`; visita em `leads.visita_agendada_em`; perda: etapa `perdido` + motivo em `detalhes.motivo_perda`; dossiê via `salvarDossie` montado sobre o dossiê atual; linha `ligacao` com `detalhes: { origem: "grupo_whatsapp", resultado, mensagem_id, audio_path }`; telemetria de custo em `ia_interacoes` com `acao` que NÃO seja `respondida`/`visita_confirmada` (conferir o `check` de `acao`/`origem` e ampliar na 0219 se preciso) — não conferir cota nem limite do plano.
 - [ ] **Step 5:** Na ficha do lead (componente que desenha `lead_interacoes` em `src/app/corretor/(painel)/leads/[id]/`), a linha `ligacao` com `detalhes.audio_path` mostra o texto e um player (URL assinada de 1 h, gerada no servidor, só para quem enxerga o lead). LGPD: o prefixo `retornos-de-ligacao/<grupo>/` entra na rotina de exclusão do grupo da fase Op (procurar `APAGAR_GRUPOS_CANCELADOS`) e o de `<grupo>/<lead>/` na exclusão do lead; teste de fonte para as duas.
 - [ ] **Step 6:** PASS. Commit `feat(retorno): aplicar o retorno da ligação e confirmar no grupo`.
 
@@ -284,7 +284,7 @@ expect(destinoDoAviso(item, { ...lead, trazido_por: "corretor" }, dono).acao).to
 
 ### Task 13: Fechar a tarefa
 
-**Files:** `vault/10-notas/` (nota nova `retorno-da-ligacao-pelo-grupo.md` + atualizar `roleta-dos-anuncios.md` e `leads-distribuidos-nos-grupos-da-aretz.md`), `vault/20-mocs/MOC — CRM e Painel.md`, `vault/30-arquitetura/fluxo-do-webhook-whatsapp.md` (a exceção do `@g.us`), `docs/MEMORIA.md` (seção curta no fim), `docs/HANDOFF-MULTI-GRUPO.md` (0217 e 0218 antes do deploy; o que configurar).
+**Files:** `vault/10-notas/` (nota nova `retorno-da-ligacao-pelo-grupo.md` + atualizar `roleta-dos-anuncios.md` e `leads-distribuidos-nos-grupos-da-aretz.md`), `vault/20-mocs/MOC — CRM e Painel.md`, `vault/30-arquitetura/fluxo-do-webhook-whatsapp.md` (a exceção do `@g.us`), `docs/MEMORIA.md` (seção curta no fim), `docs/HANDOFF-MULTI-GRUPO.md` (0218 e 0219 antes do deploy; o que configurar).
 
 - [ ] **Step 1:** Seguir a skill local `fechar-tarefa`.
 - [ ] **Step 2:** `npx vitest run --exclude ".claude/**"` inteiro e `npx tsc --noEmit -p .`; anotar resultado.

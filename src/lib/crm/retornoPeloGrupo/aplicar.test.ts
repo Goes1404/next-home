@@ -113,7 +113,7 @@ function semear(extra: Partial<Record<string, Linha[]>> = {}) {
     empreendimentos: [],
     ...extra,
   });
-  // A soma da tentativa é no banco (0218): o falso faz o mesmo update, com o grupo no filtro.
+  // A soma da tentativa é no banco (0219): o falso faz o mesmo update, com o grupo no filtro.
   banco.cliente.rpc = async (nome: string, args: { p_envio: string; p_grupo: string; p_delta: number }) => {
     chamadasRpc.push({ nome, args });
     const linha = banco.tabelas.lead_envios_grupo.find((l) => l.id === args.p_envio && l.grupo_id === args.p_grupo);
