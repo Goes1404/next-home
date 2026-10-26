@@ -90,11 +90,13 @@ it("o aviso segue o dono atual e não reabre envio já feito", () => {
 - [ ] **Step 1: Teste do plano**
 
 ```ts
+// O que a ROLETA manda. No modo grupo a boas-vindas já saiu pelo webhook (Task 3).
 expect(planoDeMensagens("mensagem", true)).toEqual(["passagem", "abertura"]);
 expect(planoDeMensagens("mensagem", false)).toEqual(["boas_vindas"]);
-expect(planoDeMensagens("grupo", true)).toEqual(["boas_vindas"]);
-expect(planoDeMensagens("grupo", false)).toEqual(["boas_vindas"]);
+expect(planoDeMensagens("grupo", true)).toEqual([]);
+expect(planoDeMensagens("grupo", false)).toEqual([]);
 ```
+No modo `mensagem`, TODO caminho que termina sem repasse (ninguém disponível, vez do próprio dono, erro do RPC, exceção pega no `try/catch` de `repassarPelaRoleta`) manda a boas-vindas do número do dono, grava na conversa do dono e devolve `null` — o cliente nunca fica sem resposta.
 mais um teste de fonte: `roletaDosAnuncios.ts` chama `rpc("enfileirar_aviso_do_lead"` depois de `passarAFicha` e `passarAFicha` devolve `boolean` usado num `if`.
 
 - [ ] **Step 2:** Rodar; FAIL.
@@ -163,7 +165,8 @@ expect(destinoDoAviso(item, { ...lead, trazido_por: "corretor" }, dono).acao).to
 
 **Files:**
 - Create: `supabase/migrations/0218_retorno_da_ligacao_pelo_grupo.sql`
-- Modify: `src/lib/whatsapp/provider.ts`, `src/app/corretor/(painel)/admin/whatsapp/acoes.ts` (`sincronizarGruposDeLeadsDaAretz`), `src/lib/supabase/types.ts`, `src/lib/grupos/tabelasDoGrupo.ts`
+- Create: `src/lib/whatsapp/participantesDoGrupo.ts` (puro: `ParticipanteDoGrupo`, parser da resposta da Evolution, `mesmoNumero`)
+- Modify: `src/lib/whatsapp/provider.ts` (só `listarParticipantesDoGrupo`), `src/app/corretor/(painel)/admin/whatsapp/acoes.ts` (`sincronizarGruposDeLeadsDaAretz`), `src/lib/supabase/types.ts`, `src/lib/grupos/tabelasDoGrupo.ts`
 - Test: `src/lib/whatsapp/participantesDoGrupo.test.ts`, `src/lib/crm/retornoPeloGrupo/migration.test.ts`
 
 **Interfaces:**
