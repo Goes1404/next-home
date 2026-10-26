@@ -84,6 +84,16 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
   `secao-banda` = superfície) e põe a planta em cinza: o SVG dela tem traço
   `#003d36` FIXO, o verde-petróleo da Next Home.
 
+## Aretz em preto e branco (26/10/2026, 14h30)
+
+- Decisão do dono: "ao invés desse marrom, preto e branco". Paleta no banco:
+  principal `#f5f5f5`, secundária `#a3a3a3`, fundo `#0a0a0a`, texto
+  `#f5f5f2`→`#f5f5f5`. Os botões com `text-white` fixo saem em cinza
+  (`brand-500` = `#6e6e6e`), porque `paraTextoBranco` escurece o branco até o
+  texto branco ler — é o limite do mecanismo de cores, não defeito.
+- Lembrete: cor trocada por SQL só aparece depois de um deploy ou de o cache
+  de rota vencer (1 h).
+
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]
 - [[MOC — Front Público]]
