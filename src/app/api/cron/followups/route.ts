@@ -645,7 +645,7 @@ export async function GET(req: NextRequest) {
     console.error("[lead novo]", e);
     return 0;
   });
-  // DistribuiÃ§Ã£o em grupo Ã© um aviso operacional, nÃ£o campanha: deve sair
+  // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.
   const gruposDeLeads = await enviarLeadsDistribuidosParaGrupos(supabase).catch((e) => {
     console.error("[grupos de leads]", e);

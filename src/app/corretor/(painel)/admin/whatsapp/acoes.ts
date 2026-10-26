@@ -85,7 +85,7 @@ function nomeDeGrupoAretz(nome: string): string {
   return normalizarNome(`${nome} & Aretz`);
 }
 
-/** Define qual nÃºmero da imobiliÃ¡ria envia os avisos aos grupos dos corretores. */
+/** Define qual número da imobiliária envia os avisos aos grupos dos corretores. */
 export async function configurarEnvioDeLeadsNosGrupos(
   instanceName: string | null,
 ): Promise<{ ok?: string; erro?: string }> {
@@ -99,7 +99,7 @@ export async function configurarEnvioDeLeadsNosGrupos(
       .from("grupos")
       .update({ envio_grupo_leads_ativo: false, envio_grupo_leads_instancia: null })
       .eq("id", guarda.corretor.grupoId);
-    if (error) return { erro: "NÃ£o foi possÃ­vel desativar agora." };
+    if (error) return { erro: "Não foi possível desativar agora." };
     revalidatePath("/corretor/admin/whatsapp");
     return { ok: "Envio para grupos desativado." };
   }
@@ -111,16 +111,16 @@ export async function configurarEnvioDeLeadsNosGrupos(
     .eq("instance_name", escolhida)
     .maybeSingle();
   if (!instancia || instancia.status_conexao !== "conectado" || !instancia.conectado_em) {
-    return { erro: "Escolha um nÃºmero central que esteja conectado." };
+    return { erro: "Escolha um número central que esteja conectado." };
   }
 
   const { error } = await servico
     .from("grupos")
     .update({ envio_grupo_leads_ativo: true, envio_grupo_leads_instancia: escolhida })
     .eq("id", guarda.corretor.grupoId);
-  if (error) return { erro: "NÃ£o foi possÃ­vel salvar o nÃºmero central." };
+  if (error) return { erro: "Não foi possível salvar o número central." };
   revalidatePath("/corretor/admin/whatsapp");
-  return { ok: "NÃºmero central salvo. Agora sincronize os grupos da Aretz." };
+  return { ok: "Número central salvo. Agora sincronize os grupos da Aretz." };
 }
 
 /** Decide se a roleta pode entregar lead a corretor sem WhatsApp conectado. */

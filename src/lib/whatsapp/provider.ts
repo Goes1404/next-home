@@ -696,14 +696,14 @@ export async function enviarMensagemWhatsapp(params: {
   }
 }
 
-/** Identificador estÃ¡vel que a Evolution usa para grupos do WhatsApp. */
+/** Identificador estável que a Evolution usa para grupos do WhatsApp. */
 export function ehJidDeGrupoWhatsapp(valor: string | null | undefined): valor is string {
   return /^\d{10,24}@g\.us$/i.test((valor ?? "").trim());
 }
 
 /**
  * Envia para um grupo, sem passar o JID pelo normalizador de telefone.
- * A separaÃ§Ã£o Ã© deliberada: telefone malformado nÃ£o pode virar grupo, nem
+ * A separação é deliberada: telefone malformado não pode virar grupo, nem
  * JID de grupo pode ser "corrigido" como se fosse um telefone brasileiro.
  */
 export async function enviarMensagemWhatsappParaGrupo(params: {
@@ -749,7 +749,7 @@ export async function enviarMensagemWhatsappParaGrupo(params: {
     const messageId = messageIdDaResposta(json);
     return messageId
       ? { enviado: true, messageId }
-      : { enviado: false, motivo: "sem_confirmacao", detalhe: `HTTP ${res.status} sem key.id â€” resposta: ${corpo.slice(0, 300) || "(vazia)"}` };
+      : { enviado: false, motivo: "sem_confirmacao", detalhe: `HTTP ${res.status} sem key.id — resposta: ${corpo.slice(0, 300) || "(vazia)"}` };
   } catch (err) {
     return { enviado: false, motivo: "erro_provedor", detalhe: err instanceof Error ? err.message : String(err) };
   }
@@ -757,18 +757,18 @@ export async function enviarMensagemWhatsappParaGrupo(params: {
 
 export type GrupoWhatsapp = { jid: string; nome: string };
 
-/** Lista os grupos visÃ­veis para uma instÃ¢ncia conectada da Evolution. */
+/** Lista os grupos visíveis para uma instância conectada da Evolution. */
 export async function listarGruposWhatsapp(instanceName: string): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
   const config = configDoProvedor();
-  if (!config) return { grupos: [], erro: "Provedor de WhatsApp nÃ£o configurado." };
-  if (!instanceName) return { grupos: [], erro: "Escolha o nÃºmero central." };
+  if (!config) return { grupos: [], erro: "Provedor de WhatsApp não configurado." };
+  if (!instanceName) return { grupos: [], erro: "Escolha o número central." };
 
   try {
     const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}`, {
       headers: { apikey: config.apiKey },
       cache: "no-store",
     });
-    if (!res.ok) return { grupos: [], erro: `NÃ£o foi possÃ­vel ler os grupos (HTTP ${res.status}).` };
+    if (!res.ok) return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status}).` };
     const json: unknown = await res.json();
     const itens = Array.isArray(json)
       ? json

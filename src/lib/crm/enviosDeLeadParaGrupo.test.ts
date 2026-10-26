@@ -6,7 +6,7 @@ import { destinoDoAviso, enviarLeadsDistribuidosParaGrupos, textoDoLeadDistribui
 const enviarMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/whatsapp/provider", () => ({ enviarMensagemWhatsappParaGrupo: enviarMock }));
 
-describe("aviso de lead distribuÃ­do no grupo", () => {
+describe("aviso de lead distribuído no grupo", () => {
   it("traz o essencial para o corretor agir, em vez de expor a ficha inteira", () => {
     const texto = textoDoLeadDistribuido({
       corretor: "Andr\u00e9",
