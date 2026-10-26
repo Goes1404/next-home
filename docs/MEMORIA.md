@@ -11836,3 +11836,11 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   o seletor de tema some sozinho.
 - Cor mudada por SQL não aparece até o cache de rota vencer (até 1 h, os
   layouts têm `revalidate = 3600`); deploy novo zera.
+
+- **Celular feio, computador bonito (26/10):** cor fixa não troca as
+  superfícies escritas por `data-tema`; sem cookie o HTML nasce claro. Fundo
+  fixo escuro agora trava `data-tema="escuro"` por script inline
+  (`temaFixoDoSite`). O cookie `tema=escuro` de quem testou escondia o
+  defeito: conferir sempre sem cookie.
+- CRECI `PREENCHER-…`/`PENDENTE-…` não aparece mais para o cliente
+  (`creciParaExibir`); nomes `Andr?`/`F?bio` da carga da Aretz corrigidos no banco.

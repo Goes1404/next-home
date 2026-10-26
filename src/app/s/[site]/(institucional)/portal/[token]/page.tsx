@@ -13,6 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_LABEL } from "@/lib/types";
 
 import { srcDaMidia } from "@/lib/imagens/variantes";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 export const metadata: Metadata = {
   title: "Acompanhe sua compra",
   robots: { index: false, follow: false },
@@ -84,7 +85,7 @@ export default async function PortalPage({
     <Pagina>
       <Secao espaco="abertura">
         <CabecalhoDePagina
-          rotulo={`Acompanhado por ${link.corretor.nome}${link.corretor.creci ? ` · CRECI ${link.corretor.creci}` : ""}`}
+          rotulo={`Acompanhado por ${link.corretor.nome}${creciParaExibir(link.corretor.creci) ? ` · CRECI ${creciParaExibir(link.corretor.creci)}` : ""}`}
           titulo={link.primeiroNome ? `${link.primeiroNome}, sua compra` : "Sua compra"}
           lead={`${nomeImovel}${venda?.unidade ? ` · unidade ${venda.unidade}` : ""}${imovel ? ` · ${STATUS_LABEL[imovel.status]}` : ""}`}
         />

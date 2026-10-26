@@ -9,6 +9,7 @@ import { getParametrosCredito } from "@/lib/credito/parametros";
 import { lerLinkPublico } from "@/lib/crm/linkPublico";
 import { getEmpreendimentos } from "@/lib/queries";
 import { linkWhatsappPara } from "@/lib/site";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 
 /** Link pessoal: fora do Google, sempre. */
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default async function SelecaoPage({
     <Pagina>
       <Secao espaco="abertura">
         <CabecalhoDePagina
-          rotulo={`Separado por ${link.corretor.nome}${link.corretor.creci ? ` · CRECI ${link.corretor.creci}` : ""}`}
+          rotulo={`Separado por ${link.corretor.nome}${creciParaExibir(link.corretor.creci) ? ` · CRECI ${creciParaExibir(link.corretor.creci)}` : ""}`}
           titulo={link.primeiroNome ? `${link.primeiroNome}, estes combinam com você` : "Estes imóveis combinam com você"}
           lead="Escolhidos pelo que você contou que procura. Veja as fotos, simule o financiamento e me chame quando quiser visitar."
         />

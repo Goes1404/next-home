@@ -9,6 +9,7 @@ import { linkWhatsappPara } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
 import { documentacaoDoLink } from "@/lib/crm/documentacaoDados";
 import { EnvioDeDocumentos } from "./EnvioDeDocumentos";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 
 export const metadata: Metadata = {
   title: "Envio de documentos",
@@ -48,7 +49,7 @@ export default async function DocumentosPage({
     <Pagina>
       <Secao espaco="abertura">
         <CabecalhoDePagina
-          rotulo={`Pedido por ${link.corretor.nome}${link.corretor.creci ? ` · CRECI ${link.corretor.creci}` : ""}`}
+          rotulo={`Pedido por ${link.corretor.nome}${creciParaExibir(link.corretor.creci) ? ` · CRECI ${creciParaExibir(link.corretor.creci)}` : ""}`}
           titulo={link.primeiroNome ? `${link.primeiroNome}, envie seus documentos` : "Envie seus documentos"}
           lead="Tire uma foto ou envie o PDF de cada item. Os arquivos vão direto para o seu corretor, guardados em área privada — não ficam públicos na internet."
         />

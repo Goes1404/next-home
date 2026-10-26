@@ -3,12 +3,15 @@ title: Movimento curto nos sites dos outros grupos (Aretz escura e rápida)
 tags: [front, decisao]
 type: decisao
 status: growing
-custou: baixo
+custou: medio
 codigo:
   - src/app/s/[site]/layout.tsx
   - src/components/motion/ritmo.ts
   - src/components/motion/Reveal.tsx
   - src/components/motion/TituloEditorial.tsx
+  - src/lib/sites/coresDoSite.ts
+  - src/lib/corretores/cadastroPendente.ts
+  - src/components/corretores/CardCorretor.tsx
 fonte: pedido do Matheus para a Aretz, 26/10/2026
 summary: Site de grupo ≠ 1 sai com as mesmas animações, mais curtas (onda 360 ms, entrada 220 ms, GSAP a 60%); a Aretz ficou só no escuro por cor fixa no banco.
 updated: 2026-10-26
@@ -41,6 +44,32 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
   layouts do site têm `revalidate = 3600` e só as actions chamam
   `revalidarSitePublico`). O visitante segue vendo a cor velha até uma hora;
   um deploy novo zera o cache.
+
+## Celular "feio" e computador bonito: era o `data-tema`
+
+- Sintoma (26/10/2026): "no desktop está muito bonito, mas no celular está
+  tudo feio". Causa: cor fixa troca as VARIÁVEIS, mas várias superfícies do
+  `globals.css` são escritas por `data-tema` (vidro dos cartões, faixa da
+  planta, cabeçalho). Sem cookie o HTML nasce `claro`: no celular saía vidro
+  claro e texto apagado sobre o fundo escuro. No computador de quem testou, o
+  cookie `tema=escuro` (escolhido antes) escondia o defeito.
+- **Diagnóstico sem cookie é obrigatório**: abrir em janela anônima ou
+  renderizar sem cookie antes de dizer "está igual no celular".
+- Correção: `temaFixoDoSite` + `scriptDoTemaFixo` (`coresDoSite.ts`). Fundo
+  fixo escuro e sem cores do escuro → o layout `s/[site]` emite um script
+  inline que põe `data-tema="escuro"`, a barra do navegador na cor do fundo e
+  `color-scheme: dark`. Fundo claro ou com cores do escuro: nada muda.
+- Como medi sem acesso ao domínio: HTML e CSS de produção via
+  `web_fetch_vercel_url` (MCP da Vercel) e Playwright com `@sparticuz/chromium`
+  servindo os arquivos por `page.route`, em 390 px, com e sem `data-tema`.
+
+## CRECI de cadastro incompleto aparecia no site
+
+- A carga da Aretz (23/10) gravou `PREENCHER-ARETZ-<NOME>` no CRECI e nomes
+  com acento corrompido (`Andr?`, `F?bio`). Nomes corrigidos no banco; o site
+  agora passa todo CRECI de corretor por `creciParaExibir` (nulo para
+  `PENDENTE-`, `PREENCHER-` ou sem número) nos cartões, no perfil e nas
+  páginas de token.
 
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]

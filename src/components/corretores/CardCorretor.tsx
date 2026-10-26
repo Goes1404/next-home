@@ -5,6 +5,7 @@ import { iniciais } from "@/lib/format";
 import { linkWhatsappPara } from "@/lib/site";
 import type { CorretorPerfil } from "@/lib/types";
 import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 
 type CardCorretorProps = {
   corretor: CorretorPerfil;
@@ -87,7 +88,7 @@ export function CardCorretor({ corretor, compacto, nomeDoSite }: CardCorretorPro
             <p className="font-display group-hover:text-acento-suave truncate text-lg text-titulo transition-colors">
               {corretor.nome}
             </p>
-            <p className="text-fluid-sm text-legenda">CRECI {corretor.creci}</p>
+            {creciParaExibir(corretor.creci) && <p className="text-fluid-sm text-legenda">CRECI {creciParaExibir(corretor.creci)}</p>}
           </div>
           <span
             aria-hidden
@@ -151,7 +152,9 @@ export function CardCorretor({ corretor, compacto, nomeDoSite }: CardCorretorPro
               {corretor.nome}
             </Link>
           </h2>
-          <p className="text-xs text-legenda mt-1 tracking-[0.12em] uppercase">CRECI {corretor.creci}</p>
+          {creciParaExibir(corretor.creci) && (
+            <p className="text-xs text-legenda mt-1 tracking-[0.12em] uppercase">CRECI {creciParaExibir(corretor.creci)}</p>
+          )}
         </div>
 
         {/* Sem imóvel com dono (28/09) não há "N empreendimentos em X" para
