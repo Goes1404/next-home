@@ -94,6 +94,18 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
 - Lembrete: cor trocada por SQL só aparece depois de um deploy ou de o cache
   de rota vencer (1 h).
 
+## Nome de corretor corrigido por SQL não aparece (26/10/2026)
+
+- `corretoresPublicos` fica no cache de dados da Vercel, que SOBREVIVE ao
+  deploy; `invalidate_by_tags` do MCP da Vercel responde 404 ("CDN Cache
+  Namespace not found") e não limpa esse cache. O caminho é subir a chave do
+  `unstable_cache` (`corretores-publicos-v6`) e publicar.
+- Slugs da Aretz também corrigidos: `andr` → `andre`, `f-bio` → `fabio`,
+  `mois-s` → `moises`.
+- O gestor da Aretz NÃO edita o front do site: cores, logo e textos do site
+  só mudam por `/plataforma` (administrador da plataforma) ou SQL. Decisão
+  do dono: o cliente depende da manutenção da Astro.
+
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]
 - [[MOC — Front Público]]
