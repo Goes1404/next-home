@@ -20,6 +20,7 @@ let banco: BancoFalso;
 let uploads: Array<{ bucket: string; caminho: string; opcoes: unknown }>;
 let suspenso: boolean;
 let enviadas: string[];
+let chamadasRpc: Array<{ nome: string; args: Record<string, unknown> }>;
 
 const lerRetornoDaLigacao = vi.fn();
 const baixarMidiaDoProvedor = vi.fn();
@@ -110,6 +111,14 @@ function semear(extra: Partial<Record<string, Linha[]>> = {}) {
     empreendimentos: [],
     ...extra,
   });
+  // A soma da tentativa é no banco (0218): o falso faz o mesmo update, com o grupo no filtro.
+  banco.cliente.rpc = async (nome: string, args: { p_envio: string; p_grupo: string; p_delta: number }) => {
+    chamadasRpc.push({ nome, args });
+    const linha = banco.tabelas.lead_envios_grupo.find((l) => l.id === args.p_envio && l.grupo_id === args.p_grupo);
+    if (!linha) return { data: null, error: null };
+    linha.tentativas_ligacao = Math.max(0, Number(linha.tentativas_ligacao) + args.p_delta);
+    return { data: linha.tentativas_ligacao, error: null };
+  };
   banco.cliente.storage = {
     from: (bucket: string) => ({
       upload: async (caminho: string, _corpo: unknown, opcoes: unknown) => {
@@ -160,6 +169,7 @@ const envio = (id: string) => banco.tabelas.lead_envios_grupo.find((l) => l.id =
 beforeEach(() => {
   uploads = [];
   enviadas = [];
+  chamadasRpc = [];
   suspenso = false;
   lerRetornoDaLigacao.mockReset();
   baixarMidiaDoProvedor.mockReset();
@@ -268,7 +278,11 @@ describe("aplicar o retorno", () => {
 
     expect(enviadas).toEqual(["✅ Ana · visita agendada sáb 31/10 10h · 3 quartos · até R$ 600 mil · FGTS"]);
     expect(retornos()[0]).toMatchObject({ status: "aplicado", lead_id: "lead-ana", confirmacao_mensagem_id: "central-1" });
-    expect(lerRetornoDaLigacao.mock.calls[0][0]).toMatchObject({ dossieAtual: "antigo", agora: new Date(ENVIADA_EM) });
+    expect(lerRetornoDaLigacao.mock.calls[0][0]).toMatchObject({
+      dossieAtual: expect.stringContaining("Resumo: antigo"),
+      agora: new Date(ENVIADA_EM),
+    });
+    expect(lerRetornoDaLigacao.mock.calls[0][0].dossieAtual).toContain("Região: Centro");
   });
 
   it("perdido: etapa perdido com o motivo no histórico", async () => {
@@ -383,5 +397,143 @@ describe("áudio", () => {
     expect(transcreverAudioWhatsapp).not.toHaveBeenCalled();
     expect(interacoes("ligacao")[0]).toMatchObject({ detalhes: { audio_path: `${GRUPO}/a1.ogg`, resultado: null } });
     expect(retornos()[0].status).toBe("sem_leitura");
+  });
+});
+
+describe("confirmação completa, erros e correção em cadeia", () => {
+  it("mudança de etapa sem visita nem perda aparece na confirmação", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(lida({ etapa: "em_conversa" }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, vai pensar" }));
+    expect(lead("lead-ana").etapa).toBe("em_conversa");
+    expect(enviadas).toEqual(["✅ Ana · → Em conversa"]);
+  });
+
+  it("o lead que o dossiê avançou sozinho para qualificado: a confirmação diz onde ele ficou", async () => {
+    salvarDossie.mockImplementation(async () => {
+      lead("lead-ana").etapa = "qualificado";
+    });
+    lerRetornoDaLigacao.mockResolvedValue(lida({ fatos: { dormitoriosMin: 2 } }));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, 2 quartos" }));
+    expect(enviadas).toEqual(["✅ Ana · → Qualificado · 2 quartos"]);
+  });
+
+  it("a soma da tentativa vai ao banco com o grupo", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m1", texto: "Ana não atendeu" }));
+    expect(chamadasRpc).toEqual([
+      { nome: "somar_tentativa_de_ligacao", args: { p_envio: "env-ana", p_grupo: GRUPO, p_delta: 1 } },
+    ]);
+  });
+
+  it("erro inesperado antes de anotar: pede para mandar de novo e guarda o erro na linha", async () => {
+    buscarDossieAtual.mockRejectedValue(new Error("banco fora"));
+    await expect(tratar(mensagem({ id: "m1", texto: "falei com a Ana" }))).resolves.toEqual({ tratada: true });
+    expect(enviadas).toEqual(["Não consegui anotar este retorno agora, pode mandar de novo?"]);
+    expect(retornos()[0]).toMatchObject({ status: "falhou", leitura: { erro: "banco fora" } });
+    expect(interacoes("ligacao")).toHaveLength(0);
+  });
+
+  it("erro depois de anotar na ficha: não pede de novo (duplicaria), mas guarda o erro", async () => {
+    lerRetornoDaLigacao.mockResolvedValue(lida({ fatos: { dormitoriosMin: 2 } }));
+    salvarDossie.mockRejectedValue(new Error("dossiê fora"));
+    await tratar(mensagem({ id: "m1", texto: "falei com a Ana, 2 quartos" }));
+    expect(enviadas).toEqual([]);
+    expect(interacoes("ligacao")).toHaveLength(1);
+    expect(retornos()[0]).toMatchObject({ status: "falhou", leitura: { erro: "dossiê fora" } });
+  });
+
+  it("número fora da lista em cima da pergunta: repete a mesma pergunta, sem nova pendência", async () => {
+    banco.tabelas.lead_envios_grupo.push(avisoDoPaulo());
+    await tratar(mensagem({ id: "m1", texto: "não atendeu" }));
+    await tratar(mensagem({ id: "m2", texto: "3", citada: "central-1" }));
+    expect(enviadas).toEqual([
+      "Esse retorno é sobre: 1) Ana 2) Paulo? Responda em cima desta mensagem com o número.",
+      "Esse retorno é sobre: 1) Ana 2) Paulo? Responda em cima desta mensagem com o número.",
+    ]);
+    expect(retornos().filter((r) => r.status === "aguardando_escolha")).toHaveLength(1);
+    expect(retornos()[0].confirmacao_mensagem_id).toBe("central-2");
+    expect(retornos()[1]).toMatchObject({ status: "falhou", leitura: { pergunta_repetida: retornos()[0].id } });
+
+    lerRetornoDaLigacao.mockResolvedValue(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m3", texto: "1", citada: "central-2" }));
+    expect(lerRetornoDaLigacao.mock.calls[0][0].relato).toBe("não atendeu");
+    expect(interacoes("ligacao")[0]).toMatchObject({ lead_id: "lead-ana", conteudo: "não atendeu" });
+  });
+
+  it("correção em cadeia: não atendeu → atendeu → não atendeu deixa as contas certas e o relato inteiro", async () => {
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m1", texto: "Ana não atendeu" }));
+    expect(envio("env-ana")).toMatchObject({ tentativas_ligacao: 2, retorno_em: null });
+
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ resultado: "atendeu" }));
+    await tratar(mensagem({ id: "m2", texto: "errei, ela atendeu", citada: "central-1" }));
+    expect(envio("env-ana").tentativas_ligacao).toBe(1);
+    expect(envio("env-ana").retorno_em).toEqual(expect.any(String));
+
+    // Cita a confirmação ORIGINAL de novo: vale sobre o último da cadeia.
+    lerRetornoDaLigacao.mockResolvedValueOnce(lida({ resultado: "nao_atendeu" }));
+    await tratar(mensagem({ id: "m3", texto: "não, não atendeu mesmo", citada: "central-1" }));
+    expect(envio("env-ana")).toMatchObject({ tentativas_ligacao: 2, retorno_em: null });
+    expect(lerRetornoDaLigacao.mock.calls[2][0].relato).toBe(
+      "Ana não atendeu\nCorreção do corretor: errei, ela atendeu\nCorreção do corretor: não, não atendeu mesmo",
+    );
+    expect(retornos()[2].corrige_id).toBe(retornos()[1].id);
+    expect(retornos()[1].corrige_id).toBe(retornos()[0].id);
+  });
+
+  it("confirmação antiga, fora dos últimos 200 retornos, ainda é reconhecida", async () => {
+    envio("env-ana").retorno_em = "2026-10-20T10:00:00.000Z";
+    banco.tabelas.lead_envios_grupo.push(avisoDoPaulo());
+    for (let i = 0; i < 200; i++) {
+      banco.tabelas.retornos_de_ligacao.push({
+        id: `recente-${i}`,
+        grupo_id: GRUPO,
+        corretor_id: "joao",
+        lead_id: "lead-paulo",
+        mensagem_id: `rm-${i}`,
+        confirmacao_mensagem_id: `rc-${i}`,
+        status: "aplicado",
+        texto: "x",
+        leitura: null,
+        corrige_id: null,
+        opcoes: [],
+      });
+    }
+    banco.tabelas.retornos_de_ligacao.push({
+      id: "antigo",
+      grupo_id: GRUPO,
+      corretor_id: "joao",
+      lead_id: "lead-ana",
+      mensagem_id: "m-antiga",
+      confirmacao_mensagem_id: "conf-antiga",
+      status: "aplicado",
+      texto: "falei com a Ana",
+      leitura: null,
+      corrige_id: null,
+      opcoes: [],
+    });
+    lerRetornoDaLigacao.mockResolvedValue(lida({ resultado: "atendeu" }));
+    await tratar(mensagem({ id: "m1", texto: "na verdade ela quer 3 quartos", citada: "conf-antiga" }));
+    expect(lerRetornoDaLigacao.mock.calls[0][0].relato).toBe(
+      "falei com a Ana\nCorreção do corretor: na verdade ela quer 3 quartos",
+    );
+    expect(interacoes("ligacao")[0].lead_id).toBe("lead-ana");
+  });
+
+  it("áudio não entendido: o caminho do arquivo guardado fica na linha (para a exclusão achar)", async () => {
+    baixarMidiaDoProvedor.mockResolvedValue({ ok: true, base64: "T2dnUw==", mimeType: "audio/ogg" });
+    transcreverAudioWhatsapp.mockResolvedValue({ sucesso: false, textoTranscrito: "", parcial: false });
+    await tratar(mensagem({ id: "a1", audio: true }));
+    expect(uploads).toHaveLength(1);
+    expect(retornos()[0]).toMatchObject({ status: "falhou", audio_path: `${GRUPO}/a1.ogg` });
+  });
+
+  it("cliente apagado antes da escolha: diz que não achou, sem falar de outro corretor", async () => {
+    banco.tabelas.lead_envios_grupo.push(avisoDoPaulo());
+    await tratar(mensagem({ id: "m1", texto: "não atendeu" }));
+    banco.tabelas.leads = banco.tabelas.leads.filter((l) => l.id !== "lead-paulo");
+    await tratar(mensagem({ id: "m2", texto: "2", citada: "central-1" }));
+    expect(enviadas[1]).toBe("Não achei esse cliente no CRM.");
+    expect(interacoes("ligacao")).toHaveLength(0);
   });
 });

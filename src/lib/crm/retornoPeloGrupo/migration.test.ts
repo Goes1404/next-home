@@ -116,6 +116,22 @@ describe("migration 0218: retorno da ligação pelo grupo", () => {
     expect(sql).toMatch(/alter table public\.ia_interacoes drop constraint if exists ia_interacoes_origem_check/);
   });
 
+  it("tentativa de ligação somada no banco, com o grupo no filtro e só para a chave de serviço", () => {
+    const corpo = sql.match(
+      /create or replace function public\.somar_tentativa_de_ligacao\(p_envio uuid, p_grupo uuid, p_delta integer\)([\s\S]*?)\$\$;/,
+    )?.[1];
+    expect(corpo).toBeTruthy();
+    expect(corpo).toMatch(/security definer/);
+    expect(corpo).toMatch(/set search_path = ''/);
+    expect(corpo).toMatch(/tentativas_ligacao = greatest\(0, tentativas_ligacao \+ p_delta\)/);
+    expect(corpo).toMatch(/and grupo_id = p_grupo/);
+    expect(corpo).toMatch(/p_delta between -1 and 1/);
+    expect(sql).toMatch(
+      /revoke all on function public\.somar_tentativa_de_ligacao\(uuid, uuid, integer\) from public, anon, authenticated;/,
+    );
+    expect(sql).toMatch(/grant execute on function public\.somar_tentativa_de_ligacao\(uuid, uuid, integer\) to service_role;/);
+  });
+
   it("é aditiva: nada de drop table nem de apagar coluna", () => {
     expect(sql).not.toMatch(/drop table/i);
     expect(sql).not.toMatch(/drop column/i);

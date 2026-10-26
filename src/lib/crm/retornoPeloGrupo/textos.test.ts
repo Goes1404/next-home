@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { LeituraDoRetorno } from "./leituraDoRetorno";
 import {
   TEXTO_AUDIO_NAO_ENTENDIDO,
+  TEXTO_CLIENTE_NAO_ENCONTRADO,
+  TEXTO_NAO_CONSEGUI_ANOTAR,
   TEXTO_NAO_E_MAIS_SEU,
   TEXTO_SEM_LEAD_AGUARDANDO,
   TEXTO_SEM_LEITURA,
@@ -104,6 +106,55 @@ describe("textoDaConfirmacao", () => {
     );
   });
 
+  it("mudança de etapa aparece com o nome da coluna do funil", () => {
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 0,
+        leitura: leitura({ etapa: "em_conversa", fatos: { dormitoriosMin: 2 } }),
+        mudancas: { etapaNova: "em_conversa" },
+      }),
+    ).toBe("✅ Ana · → Em conversa · 2 quartos");
+  });
+
+  it("correção que tira a visita e volta a etapa diz as duas coisas", () => {
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 0,
+        leitura: leitura({}),
+        mudancas: { etapaNova: "novo", visitaDesmarcada: true },
+      }),
+    ).toBe("✅ Ana · visita desmarcada · → Leads");
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 2,
+        leitura: leitura({ resultado: "nao_atendeu" }),
+        mudancas: { etapaNova: "novo", visitaDesmarcada: true },
+      }),
+    ).toBe("📞 Ana · não atendeu (2ª tentativa) · visita desmarcada · → Leads");
+  });
+
+  it("visita marcada e perdido não repetem a etapa", () => {
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 0,
+        leitura: leitura({ etapa: "visita_agendada", visitaEm: "2025-11-01T13:00:00.000Z" }),
+        mudancas: { etapaNova: "visita_agendada" },
+      }),
+    ).toBe("✅ Ana · visita agendada sáb 01/11 10h");
+    expect(
+      textoDaConfirmacao({
+        nome: "Ana",
+        tentativa: 0,
+        leitura: leitura({ etapa: "perdido", motivoPerda: "desistiu" }),
+        mudancas: { etapaNova: "perdido" },
+      }),
+    ).toBe("🚫 Ana · perdido: desistiu");
+  });
+
   it("nunca mostra palavra técnica", () => {
     const t = textoDaConfirmacao({
       nome: "Ana",
@@ -150,6 +201,11 @@ describe("textos fixos", () => {
     expect(TEXTO_SEM_LEAD_AGUARDANDO).toBe(
       "Não achei cliente aguardando retorno. Responda em cima do aviso do cliente para eu anotar.",
     );
+  });
+
+  it("cliente apagado e erro inesperado", () => {
+    expect(TEXTO_CLIENTE_NAO_ENCONTRADO).toBe("Não achei esse cliente no CRM.");
+    expect(TEXTO_NAO_CONSEGUI_ANOTAR).toBe("Não consegui anotar este retorno agora, pode mandar de novo?");
   });
 
   it("cliente que passou para outro corretor", () => {

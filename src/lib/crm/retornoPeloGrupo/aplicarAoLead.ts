@@ -6,12 +6,17 @@ import type { Database, Json } from "@/lib/supabase/types";
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 import { enviarMensagemWhatsappParaGrupo } from "@/lib/whatsapp/provider";
 import { buscarDossieAtual, salvarDossie } from "@/lib/whatsapp/repositorio";
-import type { DossieClienteIA } from "@/lib/whatsapp/types";
+import { dossieComORelato, textoDoDossie } from "./dossie";
 import { planejarEfeitos, type Aplicado } from "./efeitos";
 import type { LeituraDoRetorno } from "./leituraDoRetorno";
 import { lerRetornoDaLigacao } from "./ler";
 import type { Banco, EnvioDoLead } from "./situacao";
-import { TEXTO_NAO_E_MAIS_SEU, TEXTO_SEM_LEITURA, textoDaConfirmacao } from "./textos";
+import {
+  TEXTO_CLIENTE_NAO_ENCONTRADO,
+  TEXTO_NAO_E_MAIS_SEU,
+  TEXTO_SEM_LEITURA,
+  textoDaConfirmacao,
+} from "./textos";
 
 const ORIGEM = "grupo_whatsapp";
 const PROMPT_VERSAO = "retorno-da-ligacao-v1";
@@ -42,6 +47,12 @@ export type Contexto = {
   grupoJid: string;
   corretorId: string;
   suspenso: boolean;
+  /**
+   * Se algo já foi gravado na ficha do lead. Num erro inesperado, é o que
+   * separa "peça para mandar de novo" (nada anotado) de "não peça" (mandar de
+   * novo duplicaria o que já entrou).
+   */
+  estado: { gravouNoLead: boolean };
 };
 
 export async function responderNoGrupo(ctx: Contexto, texto: string): Promise<string | null> {
@@ -86,54 +97,6 @@ async function fichaDoLead(
   return linhas.join("\n");
 }
 
-const SCORE_DA_TEMPERATURA = { quente: 80, morno: 55, frio: 25 } as const;
-
-/**
- * O dossiê atual com só o que o relato trouxe por cima. Chave ausente em
- * `fatos` não toca no que já se sabia; `salvarDossie` repete a regra no banco.
- */
-export function dossieComORelato(
-  leadId: string,
-  atual: DossieClienteIA | null,
-  leitura: LeituraDoRetorno,
-): DossieClienteIA | null {
-  const temNovidade = Object.keys(leitura.fatos).length > 0 || leitura.resumo || leitura.proximoPasso;
-  if (!temNovidade) return null;
-  const agora = new Date().toISOString();
-  const base: DossieClienteIA = atual ?? {
-    id: "",
-    leadId,
-    orcamentoMin: null,
-    orcamentoMax: null,
-    rendaMensal: null,
-    regiaoInteresse: null,
-    dormitoriosMin: null,
-    nomeCliente: null,
-    email: null,
-    memoria: null,
-    formaPagamento: null,
-    profissao: null,
-    compraEmConjunto: null,
-    perfilFamiliar: null,
-    urgenciaMudanca: null,
-    exigenciasEspecificas: [],
-    objecoesIdentificadas: [],
-    temperaturaScore: SCORE_DA_TEMPERATURA.morno,
-    temperaturaLabel: "morno",
-    resumoExecutivo: "",
-    proximoPassoSugerido: null,
-    createdAt: agora,
-    updatedAt: agora,
-  };
-  const novo: DossieClienteIA = { ...base, ...leitura.fatos };
-  if (leitura.fatos.temperaturaLabel && leitura.fatos.temperaturaLabel !== base.temperaturaLabel) {
-    novo.temperaturaScore = SCORE_DA_TEMPERATURA[leitura.fatos.temperaturaLabel];
-  }
-  if (leitura.resumo) novo.resumoExecutivo = leitura.resumo;
-  if (leitura.proximoPasso) novo.proximoPassoSugerido = leitura.proximoPasso;
-  return novo;
-}
-
 /*
  * Custo da leitura no medidor da plataforma (0211 soma tokens de qualquer
  * origem). Origem e ação próprias: não é resposta ao cliente, então não
@@ -175,8 +138,12 @@ export async function aplicarRetornoAoLead(
     .eq("grupo_id", grupoId)
     .maybeSingle();
   if (error) throw new Error(`lead do retorno: ${error.message}`);
-  if (!lead || lead.corretor_id !== corretorId) {
-    await responderNoGrupo(ctx, TEXTO_NAO_E_MAIS_SEU(lead?.nome || NOME_SEM_NOME));
+  if (!lead) {
+    await responderNoGrupo(ctx, TEXTO_CLIENTE_NAO_ENCONTRADO);
+    return;
+  }
+  if (lead.corretor_id !== corretorId) {
+    await responderNoGrupo(ctx, TEXTO_NAO_E_MAIS_SEU(lead.nome?.trim() || NOME_SEM_NOME));
     return;
   }
   const nome = lead.nome?.trim() || NOME_SEM_NOME;
@@ -195,12 +162,13 @@ export async function aplicarRetornoAoLead(
     : await lerRetornoDaLigacao({
         relato: r.relato,
         fichaAtual: await fichaDoLead(ctx, { nome, etapa: etapaAtual, empreendimento_id: lead.empreendimento_id }),
-        dossieAtual: dossieAtual?.resumoExecutivo || null,
+        dossieAtual: textoDoDossie(dossieAtual),
         agora: r.enviadaEm,
       });
 
   // Sem leitura (grupo suspenso ou IA fora): o relato fica anotado como veio.
   if (!leitura || !leitura.ok) {
+    ctx.estado.gravouNoLead = true;
     await registrarInteracao(supabase, {
       leadId,
       corretorId,
@@ -229,6 +197,7 @@ export async function aplicarRetornoAoLead(
     agora: new Date(),
   });
 
+  ctx.estado.gravouNoLead = true;
   await registrarInteracao(supabase, {
     leadId,
     corretorId,
@@ -237,7 +206,14 @@ export async function aplicarRetornoAoLead(
     detalhes: { ...detalhesBase, resultado: lido.resultado },
   });
 
-  // Visita antes da etapa: "visita marcada" sem a data gravada seria mentira na ficha.
+  /*
+   * Visita antes da etapa: "visita marcada" sem a data gravada seria mentira
+   * na ficha. Escrita direta, e não por `reservar_horario_visita`: aquela
+   * função é a trava do horário que a IA OFERECE ao cliente (recusa fora da
+   * grade do corretor e move a etapa sem histórico, sem grupo nem dono no
+   * filtro). Aqui quem marcou foi o próprio corretor, ao telefone. O choque
+   * de horário continua barrado pelo índice único da 0074.
+   */
   let visitaGravada = true;
   if (efeitos.visita) {
     const { error: erroVisita } = await supabase
@@ -282,9 +258,20 @@ export async function aplicarRetornoAoLead(
   }
 
   const dossie = dossieComORelato(leadId, dossieAtual, lido);
-  if (dossie) await salvarDossie(leadId, dossie);
+  if (dossie) {
+    await salvarDossie(leadId, dossie);
+    // `salvarDossie` pode avançar o lead para qualificado sozinho
+    // (avancarLeadParaQualificado): a confirmação diz onde ele ficou de fato.
+    const { data: depois } = await supabase
+      .from("leads")
+      .select("etapa")
+      .eq("id", leadId)
+      .eq("grupo_id", grupoId)
+      .maybeSingle();
+    if (depois?.etapa) etapaFinal = depois.etapa as EtapaFunil;
+  }
 
-  if (envio) await atualizarAviso(ctx, envio.id, efeitos);
+  const tentativa = envio ? await atualizarAviso(ctx, envio.id, efeitos) : efeitos.tentativa;
 
   const paraTexto: LeituraDoRetorno = {
     ...lido,
@@ -293,7 +280,15 @@ export async function aplicarRetornoAoLead(
   };
   const confirmacao = await responderNoGrupo(
     ctx,
-    textoDaConfirmacao({ nome, leitura: paraTexto, tentativa: efeitos.tentativa }),
+    textoDaConfirmacao({
+      nome,
+      leitura: paraTexto,
+      tentativa,
+      mudancas: {
+        etapaNova: etapaFinal !== etapaAtual ? etapaFinal : null,
+        visitaDesmarcada: visitaGravada && efeitos.visita !== null && efeitos.visita.para === null,
+      },
+    }),
   );
   await fecharRetorno(ctx, r.retornoId, {
     lead_id: leadId,
@@ -306,20 +301,24 @@ export async function aplicarRetornoAoLead(
   });
 }
 
+/** Grava tentativas e retorno no aviso; devolve o número da tentativa para a confirmação. */
 async function atualizarAviso(
   ctx: Contexto,
   envioId: string,
   efeitos: ReturnType<typeof planejarEfeitos>,
-): Promise<void> {
-  const tabela = () => ctx.supabase.from("lead_envios_grupo");
+): Promise<number> {
   const erros: string[] = [];
-  if (efeitos.tentativas !== null) {
-    const { error } = await tabela()
-      .update({ tentativas_ligacao: efeitos.tentativas })
-      .eq("id", envioId)
-      .eq("grupo_id", ctx.grupoId);
+  let tentativa = efeitos.tentativa;
+  if (efeitos.deltaTentativas !== 0) {
+    const { data, error } = await ctx.supabase.rpc("somar_tentativa_de_ligacao", {
+      p_envio: envioId,
+      p_grupo: ctx.grupoId,
+      p_delta: efeitos.deltaTentativas,
+    });
     if (error) erros.push(error.message);
+    else if (typeof data === "number" && efeitos.tentativa > 0) tentativa = data;
   }
+  const tabela = () => ctx.supabase.from("lead_envios_grupo");
   if (typeof efeitos.retornoEm === "string") {
     // Só o PRIMEIRO resultado que encerra a espera conta.
     const { error } = await tabela()
@@ -333,4 +332,5 @@ async function atualizarAviso(
     if (error) erros.push(error.message);
   }
   if (erros.length) console.error(`[retorno] aviso ${envioId} não atualizado: ${erros.join("; ")}`);
+  return tentativa;
 }

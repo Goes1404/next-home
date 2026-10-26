@@ -71,7 +71,7 @@ describe("planejarEfeitos", () => {
       corrigido: { ...nada, tentativaContada: true },
       agora: AGORA,
     });
-    expect(e.tentativas).toBe(1);
+    expect(e.deltaTentativas).toBe(-1);
     expect(e.retornoEm).toBe(AGORA.toISOString());
   });
 
@@ -84,7 +84,7 @@ describe("planejarEfeitos", () => {
       agora: AGORA,
     });
     expect(e.retornoEm).toBeNull();
-    expect(e.tentativas).toBe(1);
+    expect(e.deltaTentativas).toBe(1);
     expect(e.tentativa).toBe(1);
   });
 

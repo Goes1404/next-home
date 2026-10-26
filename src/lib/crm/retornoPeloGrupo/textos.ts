@@ -3,6 +3,7 @@
 // Puro e curto: é lido no celular, no meio do dia, entre uma ligação e outra.
 // Só entra o que o relato trouxe; nada de palavra técnica do sistema.
 
+import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
 import type { LeituraDoRetorno } from "./leituraDoRetorno";
 
 const SEPARADOR = " · ";
@@ -12,6 +13,11 @@ export const TEXTO_AUDIO_NAO_ENTENDIDO = "Não consegui entender o áudio, pode 
 
 export const TEXTO_SEM_LEAD_AGUARDANDO =
   "Não achei cliente aguardando retorno. Responda em cima do aviso do cliente para eu anotar.";
+
+export const TEXTO_CLIENTE_NAO_ENCONTRADO = "Não achei esse cliente no CRM.";
+
+/** Erro inesperado antes de anotar qualquer coisa: o relato não se perde calado. */
+export const TEXTO_NAO_CONSEGUI_ANOTAR = "Não consegui anotar este retorno agora, pode mandar de novo?";
 
 export function TEXTO_SEM_LEITURA(nome: string): string {
   return `📝 ${nome} · anotado na ficha, sem leitura automática`;
@@ -105,17 +111,43 @@ function ordinal(n: number): string {
   return `${n}ª tentativa`;
 }
 
+/** O que mudou na ficha além do que a leitura já diz: o corretor confere tudo que foi gravado. */
+export type MudancasNaFicha = {
+  /** Etapa em que o lead ficou, quando mudou. */
+  etapaNova?: EtapaFunil | null;
+  /** A correção tirou a visita que o retorno anterior tinha posto. */
+  visitaDesmarcada?: boolean;
+};
+
+function mudancasExtras(leitura: LeituraDoRetorno, m: MudancasNaFicha | undefined): string[] {
+  const itens: string[] = [];
+  if (m?.visitaDesmarcada) itens.push("visita desmarcada");
+  const etapa = m?.etapaNova;
+  // Perdido e visita marcada já aparecem pelo motivo e pela data.
+  const jaDito = etapa === "perdido" || (etapa === "visita_agendada" && leitura.visitaEm !== null);
+  if (etapa && !jaDito) itens.push(`→ ${ETAPA_LABEL[etapa] ?? etapa}`);
+  return itens;
+}
+
 /**
  * A confirmação do que foi anotado. `tentativa` é o número desta tentativa
- * sem resposta (0 quando não há aviso para contar).
+ * sem resposta (0 quando não há aviso para contar). `mudancas` traz o que a
+ * ficha mudou de fato (etapa, visita desmarcada): nada gravado fica sem aviso.
  */
-export function textoDaConfirmacao(p: { nome: string; leitura: LeituraDoRetorno; tentativa: number }): string {
+export function textoDaConfirmacao(p: {
+  nome: string;
+  leitura: LeituraDoRetorno;
+  tentativa: number;
+  mudancas?: MudancasNaFicha;
+}): string {
   const { nome, leitura } = p;
+  const extras = mudancasExtras(leitura, p.mudancas);
 
   if (leitura.resultado === "nao_atendeu") {
-    return `📞 ${nome}${SEPARADOR}não atendeu${p.tentativa >= 1 ? ` (${ordinal(p.tentativa)})` : ""}`;
+    const tentativa = p.tentativa >= 1 ? ` (${ordinal(p.tentativa)})` : "";
+    return [`📞 ${nome}`, `não atendeu${tentativa}`, ...extras].join(SEPARADOR);
   }
-  if (leitura.resultado === "numero_errado") return `❌ ${nome}${SEPARADOR}número errado`;
+  if (leitura.resultado === "numero_errado") return [`❌ ${nome}`, "número errado", ...extras].join(SEPARADOR);
 
   const partes: string[] = [];
   let icone = "✅";
@@ -129,7 +161,7 @@ export function textoDaConfirmacao(p: { nome: string; leitura: LeituraDoRetorno;
     partes.push("pediu para ligar depois");
   }
 
-  partes.push(...fatosDoRelato(leitura));
+  partes.push(...extras, ...fatosDoRelato(leitura));
   if (partes.length === 0) partes.push("atendeu");
   return [`${icone} ${nome}`, ...partes].join(SEPARADOR);
 }

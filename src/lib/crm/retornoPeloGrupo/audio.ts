@@ -40,7 +40,7 @@ function extensao(mimeType: string): string {
 
 export type AudioDoRelato =
   | { ok: true; texto: string | null; audioPath: string | null }
-  | { ok: false };
+  | { ok: false; audioPath: string | null };
 
 /**
  * Baixa o áudio do relato, guarda no Storage e (se `transcrever`) transcreve.
@@ -48,6 +48,10 @@ export type AudioDoRelato =
  * O áudio vai para `<grupo>/<mensagem>.<ext>`: na hora de guardar ainda não
  * se sabe de qual lead ele é (pode virar pergunta). Falha ao guardar não
  * impede a transcrição; falha ao baixar ou transcrever, sim (`ok: false`).
+ *
+ * Mesmo na falha da transcrição o caminho volta: quem chama grava em
+ * `retornos_de_ligacao.audio_path`, e é por essa coluna que a exclusão (LGPD)
+ * acha todo áudio guardado. Nenhum arquivo fica sem linha que aponte para ele.
  */
 export async function lerAudioDoRelato(p: {
   supabase: Banco;
@@ -65,7 +69,7 @@ export async function lerAudioDoRelato(p: {
   });
   if (!midia.ok) {
     console.warn(`[retorno] áudio ${p.mensagemId} não baixou: ${midia.motivo}`);
-    return { ok: false };
+    return { ok: false, audioPath: null };
   }
 
   let audioPath: string | null = `${p.grupoId}/${p.mensagemId}.${extensao(midia.mimeType)}`;
@@ -90,6 +94,6 @@ export async function lerAudioDoRelato(p: {
     segundos: segundosDoAudio(completa?.message),
   });
   const texto = transcricao.sucesso ? transcricao.textoTranscrito.trim() : "";
-  if (!texto) return { ok: false };
+  if (!texto) return { ok: false, audioPath };
   return { ok: true, texto, audioPath };
 }

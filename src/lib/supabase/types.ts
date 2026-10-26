@@ -4359,6 +4359,10 @@ export type Database = {
         Args: { p_lead_id: string; p_quando: string }
         Returns: boolean
       }
+      somar_tentativa_de_ligacao: {
+        Args: { p_envio: string; p_grupo: string; p_delta: number }
+        Returns: number
+      }
       configurar_followups_automaticos: {
         Args: { p_token: string; p_url: string }
         Returns: string

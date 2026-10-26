@@ -33,7 +33,7 @@ export async function carregarSituacao(
   corretorId: string,
   citadaId: string | null,
 ): Promise<SituacaoDoCorretor> {
-  const [envios, citado, retornos] = await Promise.all([
+  const [envios, citado, retornos, retornoCitado] = await Promise.all([
     supabase
       .from("lead_envios_grupo")
       .select("id, lead_id, corretor_id, provider_message_id, retorno_em, tentativas_ligacao, enviado_em")
@@ -61,10 +61,24 @@ export async function carregarSituacao(
       .not("confirmacao_mensagem_id", "is", null)
       .order("created_at", { ascending: false })
       .limit(TETO_DE_RETORNOS),
+    /*
+     * A confirmação ou pergunta citada é procurada direto (índice da 0218):
+     * fora da janela dos últimos retornos ela não seria reconhecida, e o relato
+     * cairia nas regras sem citação, podendo ir para outro cliente.
+     */
+    citadaId
+      ? supabase
+          .from("retornos_de_ligacao")
+          .select("id, lead_id, status, confirmacao_mensagem_id, opcoes, created_at")
+          .eq("grupo_id", grupoId)
+          .eq("corretor_id", corretorId)
+          .eq("confirmacao_mensagem_id", citadaId)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (envios.error) throw new Error(`avisos do corretor: ${envios.error.message}`);
   if (citado.error) throw new Error(`aviso citado: ${citado.error.message}`);
   if (retornos.error) throw new Error(`retornos do corretor: ${retornos.error.message}`);
+  if (retornoCitado.error) throw new Error(`retorno citado: ${retornoCitado.error.message}`);
 
   const linhasDeEnvio = [...(envios.data ?? [])].sort((a, b) =>
     String(a.enviado_em ?? "").localeCompare(String(b.enviado_em ?? "")),
@@ -122,7 +136,9 @@ export async function carregarSituacao(
 
   const confirmacoes: SituacaoDoCorretor["confirmacoes"] = [];
   const perguntas: SituacaoDoCorretor["perguntas"] = [];
-  for (const r of retornos.data ?? []) {
+  const recentes = retornos.data ?? [];
+  const citados = (retornoCitado.data ?? []).filter((c) => !recentes.some((r) => r.id === c.id));
+  for (const r of [...recentes, ...citados]) {
     if (!r.confirmacao_mensagem_id) continue;
     // A pergunta "Esse retorno é sobre" também guarda o id da mensagem que o
     // número central mandou; não é confirmação, e citá-la não é correção.

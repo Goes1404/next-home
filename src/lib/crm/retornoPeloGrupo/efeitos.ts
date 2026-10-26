@@ -21,11 +21,19 @@ export type Efeitos = {
   etapa: { de: EtapaFunil; para: EtapaFunil } | null;
   /** `para: null` desmarca (a correção tirou a visita que o retorno anterior pôs). */
   visita: { de: string | null; para: string | null } | null;
-  /** Novo valor de `tentativas_ligacao`, ou null se não muda. */
-  tentativas: number | null;
+  /**
+   * Quanto somar em `tentativas_ligacao` (-1, 0 ou +1). Delta, e não valor:
+   * a soma é feita no banco (`somar_tentativa_de_ligacao`), para dois relatos
+   * quase juntos não se sobrescreverem.
+   */
+  deltaTentativas: -1 | 0 | 1;
   /** `undefined`: não mexe; string: marca; null: desmarca (correção). */
   retornoEm: string | null | undefined;
-  /** Número desta tentativa sem resposta, para a confirmação (0 = sem aviso para contar). */
+  /**
+   * Número desta tentativa sem resposta, para a confirmação (0 = sem aviso
+   * para contar). Estimativa pelo que foi lido; quem grava troca pelo valor
+   * que o banco devolveu.
+   */
   tentativa: number;
   aplicado: Aplicado;
 };
@@ -90,7 +98,7 @@ export function planejarEfeitos(p: {
   }
 
   // Tentativas e retorno no aviso
-  let tentativas: number | null = null;
+  let deltaTentativas: -1 | 0 | 1 = 0;
   let retornoEm: string | null | undefined = undefined;
   let tentativaContada = false;
   let retornoMarcado = false;
@@ -98,10 +106,10 @@ export function planejarEfeitos(p: {
   if (envio) {
     const conta = leitura.resultado === "nao_atendeu";
     const jaContada = corrigido?.tentativaContada ?? false;
-    if (conta && !jaContada) tentativas = envio.tentativas + 1;
-    if (!conta && jaContada) tentativas = Math.max(0, envio.tentativas - 1);
+    if (conta && !jaContada) deltaTentativas = 1;
+    if (!conta && jaContada) deltaTentativas = -1;
     tentativaContada = conta;
-    if (conta) tentativa = tentativas ?? envio.tentativas;
+    if (conta) tentativa = Math.max(0, envio.tentativas + deltaTentativas);
 
     const encerra = leitura.resultado === "atendeu" || leitura.resultado === "numero_errado";
     const jaMarcado = corrigido?.retornoMarcado ?? false;
@@ -118,7 +126,7 @@ export function planejarEfeitos(p: {
   return {
     etapa,
     visita,
-    tentativas,
+    deltaTentativas,
     retornoEm,
     tentativa,
     aplicado: { etapaDe, etapaPara, visitaAntes, visitaDepois, tentativaContada, retornoMarcado },

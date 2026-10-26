@@ -25,6 +25,10 @@
 --    origem), mas não na cota (0197 só conta 'respondida'/'visita_confirmada'
 --    de webhook/followup/painel) nem como tentativa de atendimento (0211
 --    conta origem 'webhook'). Sem a origem no CHECK, o insert falharia.
+-- 7. `somar_tentativa_de_ligacao`: soma (ou desconta, na correção) uma
+--    tentativa no aviso dentro do banco. Ler e gravar pelo código perderia
+--    uma tentativa quando dois relatos chegam quase juntos. Só a chave de
+--    serviço executa, e sempre com o grupo no filtro.
 --
 -- Aditiva: o código antigo não lê nada disto. Tabelas novas seguem o bloco da
 -- 0204 (grupo_id, gatilhos _00_grupo/_zz_grupo_*, policy restritiva,
@@ -221,5 +225,30 @@ update storage.buckets set public = false where id = 'retornos-de-ligacao';
 alter table public.ia_interacoes drop constraint if exists ia_interacoes_origem_check;
 alter table public.ia_interacoes add constraint ia_interacoes_origem_check
   check (origem = any (array['webhook'::text, 'playground'::text, 'followup'::text, 'eval'::text, 'painel'::text, 'consultor'::text, 'financeiro'::text, 'retorno_ligacao'::text]));
+
+-- ---------------------------------------------------------------------------
+-- 7. Tentativa de ligação somada no banco
+-- ---------------------------------------------------------------------------
+
+create or replace function public.somar_tentativa_de_ligacao(p_envio uuid, p_grupo uuid, p_delta integer)
+returns integer
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.lead_envios_grupo
+     set tentativas_ligacao = greatest(0, tentativas_ligacao + p_delta),
+         updated_at = now()
+   where id = p_envio
+     and grupo_id = p_grupo
+     and p_delta between -1 and 1
+  returning tentativas_ligacao
+$$;
+
+comment on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) is
+  'Soma (+1) ou desconta (-1, correção) uma tentativa de ligação no aviso do grupo, nunca abaixo de zero; devolve o novo total (0218). Só service_role.';
+
+revoke all on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) from public, anon, authenticated;
+grant execute on function public.somar_tentativa_de_ligacao(uuid, uuid, integer) to service_role;
 
 commit;
