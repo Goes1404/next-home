@@ -95,7 +95,8 @@ import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/w
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { BOAS_VINDAS_DE_CAMPANHA, calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
-import { repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
+import { lerModoDaRoleta, repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
+import type { ModoDaRoleta } from "@/lib/whatsapp/planoDaRoleta";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
@@ -876,7 +877,11 @@ export async function POST(req: NextRequest) {
      * sozinho.
      */
     let iaCaladaPelaCampanha = false;
+    // Lido uma vez por mensagem, e só quando é lead de anúncio da Meta: o modo
+    // decide quem responde o cliente (webhook ou roleta) e se a roleta age.
+    let modoDaRoleta: ModoDaRoleta = "desligada";
     if (anuncioMeta && !nomeDoAnuncio) {
+      modoDaRoleta = await lerModoDaRoleta(instancia.corretorId);
       if (conversa.leadId) {
         await registrarLeadDeImpulsionamento({
           leadId: conversa.leadId,
@@ -891,23 +896,30 @@ export async function POST(req: NextRequest) {
        * o anúncio. O resumo da ficha continua no caminho do silêncio.
        */
       if (conversa.botAtivo) {
-        const boasVindas = await enviarMensagemWhatsapp({
-          instanceName: instancia.instanceName,
-          telefone: sender,
-          texto: BOAS_VINDAS_DE_CAMPANHA,
-        });
-        if (boasVindas.enviado) {
-          await gravarMensagem({
-            conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
-            conversaId: conversa.id,
-            remetente: "bot",
-            conteudo: BOAS_VINDAS_DE_CAMPANHA,
-            providerMessageId: boasVindas.messageId ?? null,
-            statusEntrega: boasVindas.messageId ? "enviada" : null,
+        // Roleta no modo mensagem, lead novo: quem responde é ela (passagem,
+        // abertura ou a mesma boas-vindas se não houver repasse). Mandar aqui
+        // também faria o cliente receber a boas-vindas antes da passagem.
+        const roletaResponde = modoDaRoleta === "mensagem" && conversa.leadCriadoAgora;
+        if (!roletaResponde) {
+          const boasVindas = await enviarMensagemWhatsapp({
+            instanceName: instancia.instanceName,
+            telefone: sender,
+            texto: BOAS_VINDAS_DE_CAMPANHA,
           });
-        } else {
-          console.warn("[impulsionamento] boas-vindas não saiu:", boasVindas.motivo, boasVindas.detalhe);
+          if (boasVindas.enviado) {
+            await gravarMensagem({
+              conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
+              conversaId: conversa.id,
+              remetente: "bot",
+              conteudo: BOAS_VINDAS_DE_CAMPANHA,
+              providerMessageId: boasVindas.messageId ?? null,
+              statusEntrega: boasVindas.messageId ? "enviada" : null,
+            });
+          } else {
+            console.warn("[impulsionamento] boas-vindas não saiu:", boasVindas.motivo, boasVindas.detalhe);
+          }
         }
+        // A IA fica calada em todo lead de anúncio, com ou sem boas-vindas aqui.
         if (await calarIaNaConversaDeCampanha(conversa.id)) iaCaladaPelaCampanha = true;
       }
     }
@@ -927,7 +939,9 @@ export async function POST(req: NextRequest) {
      */
     if (conversa.leadId) {
       const leadParaAviso = conversa.leadId;
-      const vaiParaARoleta = Boolean(anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora);
+      const vaiParaARoleta = Boolean(
+        anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora && modoDaRoleta !== "desligada",
+      );
       const conversaDoDono = conversa.id;
       after(async () => {
         const repassado = vaiParaARoleta
