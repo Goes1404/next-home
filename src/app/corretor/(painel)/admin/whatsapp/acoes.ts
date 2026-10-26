@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createServiceClient } from "@/lib/supabase/service";
 import { desconectarInstancia } from "@/lib/whatsapp/provider";
-import { listarGruposWhatsapp } from "@/lib/whatsapp/provider";
+import { listarGruposWhatsapp, listarParticipantesDoGrupo } from "@/lib/whatsapp/provider";
+import { lidDoCorretor, mensagemDaSincronizacao, planejarVinculos } from "@/lib/whatsapp/vinculoNoGrupo";
 
 /**
  * O ADM derruba o número de um corretor (30/09/2026, 0134).
@@ -66,13 +67,22 @@ export async function desconectarNumeroDoCorretor(
   return { ok: "Número desconectado. A IA desse corretor para até ele conectar de novo." };
 }
 
-function nomeDeGrupoAretz(nome: string): string {
-  return `${nome} & Aretz`
+/** Mai\u00fasculas, sem acento nem emoji; s\u00edmbolos viram um espa\u00e7o s\u00f3. */
+function normalizarNome(texto: string): string {
+  return texto
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, " ")
     .trim();
+}
+
+/**
+ * Como o grupo do corretor deve se chamar: `NOME DO CORRETOR & ARETZ`. O
+ * sufixo \u00e9 acrescentado s\u00f3 ao nome do corretor: o nome do grupo j\u00e1 o traz.
+ */
+function nomeDeGrupoAretz(nome: string): string {
+  return normalizarNome(`${nome} & Aretz`);
 }
 
 /** Define qual nÃºmero da imobiliÃ¡ria envia os avisos aos grupos dos corretores. */
@@ -135,60 +145,116 @@ export async function configurarPuloDeCorretorDesconectado(
 }
 
 /**
- * Procura o padrÃ£o `NOME DO CORRETOR & ARETZ` nos grupos do nÃºmero central
- * e guarda o JID, nunca o nome visÃ­vel, como destino do envio.
+ * Procura o padrão `NOME DO CORRETOR & ARETZ` nos grupos do número central
+ * e guarda o JID, nunca o nome visível, como destino do envio.
+ *
+ * Cada corretor tem o grupo só dele: grupo que cai em mais de um corretor é
+ * recusado para todos eles (spec 6.4). Para cada grupo vinculado, lê quem
+ * está nele e guarda o `@lid` do corretor, achado pelo número dele na lista
+ * (nunca por adivinhação). Falha ao ler os participantes não desfaz o
+ * vínculo do grupo.
  */
 export async function sincronizarGruposDeLeadsDaAretz(): Promise<{ ok?: string; erro?: string }> {
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { erro: guarda.erro };
   const servico = createServiceClient();
+  const grupoId = guarda.corretor.grupoId;
   const { data: configuracao } = await servico
     .from("grupos")
     .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia")
-    .eq("id", guarda.corretor.grupoId)
+    .eq("id", grupoId)
     .maybeSingle();
   if (!configuracao?.envio_grupo_leads_ativo || !configuracao.envio_grupo_leads_instancia) {
-    return { erro: "Escolha e salve primeiro o nÃºmero central da Aretz." };
+    return { erro: "Escolha e salve primeiro o número central da Aretz." };
   }
+  const instancia = configuracao.envio_grupo_leads_instancia;
 
-  const lista = await listarGruposWhatsapp(configuracao.envio_grupo_leads_instancia);
+  const lista = await listarGruposWhatsapp(instancia);
   if (lista.erro) return { erro: lista.erro };
-  const porNome = new Map(lista.grupos.map((g) => [nomeDeGrupoAretz(g.nome), g]));
+  const porNome = new Map(lista.grupos.map((g) => [normalizarNome(g.nome), g]));
   const { data: corretores, error } = await servico
     .from("corretores")
-    .select("id, nome")
-    .eq("grupo_id", guarda.corretor.grupoId)
+    .select("id, nome, whatsapp")
+    .eq("grupo_id", grupoId)
     .eq("ativo", true)
     .eq("papel", "corretor");
-  if (error) return { erro: "NÃ£o foi possÃ­vel ler a equipe agora." };
+  if (error) return { erro: "Não foi possível ler a equipe agora." };
+
+  const plano = planejarVinculos(corretores ?? [], porNome, nomeDeGrupoAretz);
+
+  // Não manter um JID antigo depois que o grupo foi renomeado, apagado ou
+  // passou a servir a dois corretores: é preferível o CRM registrar a falha
+  // a expor lead no grupo errado.
+  let semGrupo = 0;
+  for (const corretor of [...plano.semGrupo, ...plano.repetidos.flatMap((r) => r.corretores)]) {
+    const { error: erroLimpar } = await servico
+      .from("corretores")
+      .update({ whatsapp_grupo_leads_jid: null, whatsapp_grupo_leads_nome: null })
+      .eq("id", corretor.id)
+      .eq("grupo_id", grupoId);
+    if (!erroLimpar && plano.semGrupo.includes(corretor)) semGrupo++;
+  }
 
   let vinculados = 0;
-  let semGrupo = 0;
-  for (const corretor of corretores ?? []) {
-    const grupo = porNome.get(nomeDeGrupoAretz(corretor.nome));
-    if (!grupo) {
-      // NÃ£o manter um JID antigo depois que o grupo foi renomeado ou apagado:
-      // Ã© preferÃ­vel o CRM registrar a falha a expor lead no grupo errado.
-      const { error: erroLimpar } = await servico
-        .from("corretores")
-        .update({ whatsapp_grupo_leads_jid: null, whatsapp_grupo_leads_nome: null })
-        .eq("id", corretor.id)
-        .eq("grupo_id", guarda.corretor.grupoId);
-      if (!erroLimpar) semGrupo++;
-      continue;
-    }
+  for (const { corretor, grupo } of plano.vinculos) {
     const { error: erroUpdate } = await servico
       .from("corretores")
       .update({ whatsapp_grupo_leads_jid: grupo.jid, whatsapp_grupo_leads_nome: grupo.nome })
       .eq("id", corretor.id)
-      .eq("grupo_id", guarda.corretor.grupoId);
-    if (!erroUpdate) vinculados++;
+      .eq("grupo_id", grupoId);
+    if (erroUpdate) continue;
+    vinculados++;
+    await guardarLidDoCorretor(servico, grupoId, instancia, corretor, grupo.jid);
   }
 
   revalidatePath("/corretor/admin/whatsapp");
-  return {
-    ok: vinculados
-      ? `${vinculados} grupo(s) vinculado(s)${semGrupo ? `; ${semGrupo} sem grupo no padrÃ£o.` : "."}`
-      : "Nenhum grupo no padrÃ£o NOME & ARETZ foi encontrado.",
-  };
+  const mensagem = mensagemDaSincronizacao({
+    vinculados,
+    semGrupo,
+    repetidos: plano.repetidos.map((r) => ({ grupoNome: r.grupo.nome })),
+  });
+  return !vinculados && plano.repetidos.length ? { erro: mensagem } : { ok: mensagem };
+}
+
+/**
+ * Guarda o `@lid` do corretor lendo quem está no grupo dele. Só grava o par
+ * número↔lid que a lista traz; se o corretor não aparece, ou aparece só com
+ * o número, o que já estava guardado fica como está. Nunca lança: o vínculo
+ * do grupo já foi salvo e não pode ser desfeito por esta leitura.
+ */
+async function guardarLidDoCorretor(
+  servico: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+  instancia: string,
+  corretor: { id: string; whatsapp: string | null },
+  grupoJid: string,
+): Promise<void> {
+  try {
+    const leitura = await listarParticipantesDoGrupo(instancia, grupoJid);
+    if (leitura.erro) {
+      console.error("[grupos] participantes do grupo não lidos; o vínculo do grupo foi mantido", {
+        corretorId: corretor.id,
+        erro: leitura.erro,
+      });
+      return;
+    }
+    const achado = lidDoCorretor(leitura.participantes, corretor.whatsapp);
+    if (achado.achou === "nao") return;
+    const { error } = await servico
+      .from("corretores")
+      .update({ whatsapp_lid: achado.achou === "lid" ? achado.lid : null })
+      .eq("id", corretor.id)
+      .eq("grupo_id", grupoId);
+    if (error) {
+      console.error("[grupos] não foi possível guardar o id do corretor no grupo", {
+        corretorId: corretor.id,
+        erro: error.message,
+      });
+    }
+  } catch (err) {
+    console.error("[grupos] falha ao ler os participantes do grupo", {
+      corretorId: corretor.id,
+      erro: err instanceof Error ? err.message : String(err),
+    });
+  }
 }

@@ -11823,3 +11823,18 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   `devolver_leads_da_imobiliaria`: assim lead novo e a redistribuição na saída
   do corretor seguem exatamente a mesma escolha. Aplicada em produção com a
   coluna desligada para todos os grupos.
+
+## Vínculo do corretor no grupo e tabelas do retorno (0218, 26/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
+
+- A 0218 cria `retornos_de_ligacao`, `listas_de_retorno_enviadas`,
+  `corretores.whatsapp_lid` (único por grupo quando preenchido), três colunas
+  em `lead_envios_grupo` e o bucket privado `retornos-de-ligacao` (sem policy:
+  só a chave de serviço). A idempotência do webhook é
+  `unique (grupo_id, mensagem_id)`: chave única de tabela com grupo inclui o
+  grupo (0192). **Ainda não aplicada em produção.**
+- O `@lid` do corretor só é gravado pelo par número↔lid da lista de
+  participantes; grupo que serve a dois corretores é recusado na sincronização.
+- Armadilha: `nomeDeGrupoAretz` somava " & Aretz" ao nome do grupo do WhatsApp
+  também, então o nome real (`ANDRÉ & ARETZ🟢`) nunca casava com o corretor.

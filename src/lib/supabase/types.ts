@@ -1475,6 +1475,7 @@ export type Database = {
           whatsapp: string
           whatsapp_grupo_leads_jid: string | null
           whatsapp_grupo_leads_nome: string | null
+          whatsapp_lid: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1505,6 +1506,7 @@ export type Database = {
           whatsapp: string
           whatsapp_grupo_leads_jid?: string | null
           whatsapp_grupo_leads_nome?: string | null
+          whatsapp_lid?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1535,6 +1537,7 @@ export type Database = {
           whatsapp?: string
           whatsapp_grupo_leads_jid?: string | null
           whatsapp_grupo_leads_nome?: string | null
+          whatsapp_lid?: string | null
         }
         Relationships: [
           {
@@ -2160,6 +2163,121 @@ export type Database = {
             foreignKeyName: "roleta_anuncios_corretor_id_fkey"
             columns: ["corretor_id"]
             isOneToOne: true
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retornos_de_ligacao: {
+        Row: {
+          audio_path: string | null
+          confirmacao_mensagem_id: string | null
+          corretor_id: string
+          corrige_id: string | null
+          created_at: string
+          envio_id: string | null
+          grupo_id: string
+          id: string
+          lead_id: string | null
+          leitura: Json | null
+          mensagem_id: string
+          opcoes: string[]
+          resultado: string | null
+          status: string
+          texto: string | null
+        }
+        Insert: {
+          audio_path?: string | null
+          confirmacao_mensagem_id?: string | null
+          corretor_id: string
+          corrige_id?: string | null
+          created_at?: string
+          envio_id?: string | null
+          grupo_id?: string
+          id?: string
+          lead_id?: string | null
+          leitura?: Json | null
+          mensagem_id: string
+          opcoes?: string[]
+          resultado?: string | null
+          status: string
+          texto?: string | null
+        }
+        Update: {
+          audio_path?: string | null
+          confirmacao_mensagem_id?: string | null
+          corretor_id?: string
+          corrige_id?: string | null
+          created_at?: string
+          envio_id?: string | null
+          grupo_id?: string
+          id?: string
+          lead_id?: string | null
+          leitura?: Json | null
+          mensagem_id?: string
+          opcoes?: string[]
+          resultado?: string | null
+          status?: string
+          texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retornos_de_ligacao_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retornos_de_ligacao_corrige_id_fkey"
+            columns: ["corrige_id"]
+            isOneToOne: false
+            referencedRelation: "retornos_de_ligacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retornos_de_ligacao_envio_id_fkey"
+            columns: ["envio_id"]
+            isOneToOne: false
+            referencedRelation: "lead_envios_grupo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retornos_de_ligacao_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listas_de_retorno_enviadas: {
+        Row: {
+          dia: string
+          enviada_em: string
+          gestor_id: string
+          grupo_id: string
+          id: string
+        }
+        Insert: {
+          dia: string
+          enviada_em?: string
+          gestor_id: string
+          grupo_id?: string
+          id?: string
+        }
+        Update: {
+          dia?: string
+          enviada_em?: string
+          gestor_id?: string
+          grupo_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listas_de_retorno_enviadas_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
             referencedRelation: "corretores"
             referencedColumns: ["id"]
           },
@@ -3151,8 +3269,11 @@ export type Database = {
           lead_id: string
           proxima_tentativa_em: string
           provider_message_id: string | null
+          retorno_em: string | null
           status: string
           tentativas: number
+          tentativas_ligacao: number
+          ultima_mensagem_avisada_em: string | null
           ultimo_erro: string | null
           updated_at: string
         }
@@ -3168,8 +3289,11 @@ export type Database = {
           lead_id: string
           proxima_tentativa_em?: string
           provider_message_id?: string | null
+          retorno_em?: string | null
           status?: string
           tentativas?: number
+          tentativas_ligacao?: number
+          ultima_mensagem_avisada_em?: string | null
           ultimo_erro?: string | null
           updated_at?: string
         }
@@ -3185,8 +3309,11 @@ export type Database = {
           lead_id?: string
           proxima_tentativa_em?: string
           provider_message_id?: string | null
+          retorno_em?: string | null
           status?: string
           tentativas?: number
+          tentativas_ligacao?: number
+          ultima_mensagem_avisada_em?: string | null
           ultimo_erro?: string | null
           updated_at?: string
         }

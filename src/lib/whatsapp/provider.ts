@@ -2,6 +2,7 @@ import "server-only";
 
 import { decidirPareamentoPorNumero } from "./pareamento";
 import { lerRespostaDeNumeros, NUMEROS_POR_CONSULTA } from "./numerosNoWhatsapp";
+import { participantesDaResposta, type ParticipanteDoGrupo } from "./participantesDoGrupo";
 import { normalizarTelefoneBr } from "./telefone";
 
 /**
@@ -784,6 +785,38 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
     return { grupos };
   } catch (err) {
     return { grupos: [], erro: err instanceof Error ? err.message : "Falha ao consultar os grupos." };
+  }
+}
+
+/**
+ * Quem está num grupo (`GET /group/participants/{instance}?groupJid=`), com o
+ * número de cada um quando a Evolution o entrega junto do id `@lid`. Nunca
+ * lança: falha vira `erro` e lista vazia.
+ */
+export async function listarParticipantesDoGrupo(
+  instanceName: string,
+  grupoJid: string,
+): Promise<{ participantes: ParticipanteDoGrupo[]; erro?: string }> {
+  const config = configDoProvedor();
+  if (!config) return { participantes: [], erro: "Provedor de WhatsApp não configurado." };
+  if (!instanceName) return { participantes: [], erro: "Escolha o número central." };
+  if (!ehJidDeGrupoWhatsapp(grupoJid)) return { participantes: [], erro: "Grupo inválido." };
+
+  try {
+    const res = await fetch(
+      `${config.baseUrl}/group/participants/${encodeURIComponent(instanceName)}?groupJid=${encodeURIComponent(grupoJid)}`,
+      { headers: { apikey: config.apiKey }, cache: "no-store" },
+    );
+    if (!res.ok) {
+      return { participantes: [], erro: `Não foi possível ler os participantes do grupo (HTTP ${res.status}).` };
+    }
+    const json: unknown = await res.json();
+    return { participantes: participantesDaResposta(json) };
+  } catch (err) {
+    return {
+      participantes: [],
+      erro: err instanceof Error ? err.message : "Falha ao consultar os participantes do grupo.",
+    };
   }
 }
 
