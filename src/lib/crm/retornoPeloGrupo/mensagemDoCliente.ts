@@ -15,6 +15,8 @@ import { TEXTO_NAO_GUARDADO } from "@/lib/whatsapp/privacidadeDaConversa";
 const ESPERA_DA_RAJADA_MS = 8_000;
 const MAX_LINHAS = 5;
 const MAX_CARACTERES = 180;
+/** Quantas mensagens do cliente (as mais novas) a rajada considera. */
+const JANELA_DE_MENSAGENS = 50;
 
 function umaLinha(texto: string): string {
   const limpo = texto.replace(/\s+/g, " ").trim();
@@ -114,19 +116,25 @@ export async function avisarMensagemDoClienteNoGrupo(p: {
     if (!dono?.ativo || !dono.whatsapp_grupo_leads_jid) return;
 
     const desde = envio.ultima_mensagem_avisada_em ?? envio.enviado_em;
+    /*
+     * As MAIS NOVAS, depois em ordem: com a janela pelas mais antigas, passadas
+     * 50 mensagens sem aviso (corretor sem grupo por uns dias, aviso que não
+     * saiu) a mais nova nunca entraria nela, e o lead não avisaria mais.
+     */
     let consulta = supabase
       .from("whatsapp_mensagens")
       .select("id, tipo, conteudo, created_at")
       .eq("conversa_id", p.conversaId)
       .eq("grupo_id", p.grupoId)
       .eq("remetente", "cliente")
-      .order("created_at", { ascending: true })
-      .limit(50);
+      .order("created_at", { ascending: false })
+      .limit(JANELA_DE_MENSAGENS);
     if (desde) consulta = consulta.gt("created_at", desde);
-    const { data: mensagens, error: erroMensagens } = await consulta;
+    const { data: recentes, error: erroMensagens } = await consulta;
     if (erroMensagens) return void console.error("[grupos de leads] aviso de mensagem: falha ao ler as mensagens:", erroMensagens.message);
-    const rajada = mensagensParaAvisar(mensagens ?? [], p.mensagemId);
-    const maisNova = mensagens?.at(-1);
+    const mensagens = [...(recentes ?? [])].reverse();
+    const rajada = mensagensParaAvisar(mensagens, p.mensagemId);
+    const maisNova = mensagens.at(-1);
     if (!rajada || !maisNova) return;
 
     // Reserva: dois webhooks da mesma rajada não avisam duas vezes.

@@ -37,6 +37,26 @@ function semear(parcial: { envioStatus?: string; jidDoDono?: string | null } = {
       { id: "x9", grupo_id: OUTRO, conversa_id: "c1", remetente: "cliente", tipo: "texto", conteudo: "de outro grupo", created_at: "2026-10-26T13:00:07.000Z" },
     ],
   });
+  ordenarDeVerdade("whatsapp_mensagens");
+}
+
+/*
+ * O `order` do banco falso não faz nada. Aqui ele ordena a tabela antes da
+ * consulta rodar (e antes do `limit` cortar), como o Postgres: é isso que
+ * mostra qual janela de mensagens a consulta enxerga de fato.
+ */
+function ordenarDeVerdade(tabela: string) {
+  const from = banco.cliente.from;
+  banco.cliente.from = ((t: string) => {
+    const q = from(t);
+    if (t !== tabela) return q;
+    q.order = ((coluna: string, opcoes?: { ascending?: boolean }) => {
+      const sinal = opcoes?.ascending === false ? -1 : 1;
+      banco.tabelas[tabela].sort((a, b) => sinal * String(a[coluna]).localeCompare(String(b[coluna])));
+      return q;
+    }) as typeof q.order;
+    return q;
+  }) as typeof banco.cliente.from;
 }
 
 const chamar = (mensagemId: string) =>
@@ -70,6 +90,27 @@ describe("aviso de mensagem do cliente no grupo (fluxo)", () => {
     semear({ jidDoDono: null });
     await chamar("m3");
     expect(enviadas).toEqual([]);
+  });
+
+  it("mais de 50 mensagens acumuladas: a mais nova ainda avisa, com as mais recentes", async () => {
+    const base = Date.parse("2026-10-26T13:01:00.000Z");
+    for (let i = 0; i < 60; i++) {
+      banco.tabelas.whatsapp_mensagens.push({
+        id: `r${i}`,
+        grupo_id: G,
+        conversa_id: "c1",
+        remetente: "cliente",
+        tipo: "texto",
+        conteudo: `mensagem ${i}`,
+        created_at: new Date(base + i * 1000).toISOString(),
+      });
+    }
+    await chamar("r59");
+    expect(enviadas).toHaveLength(1);
+    // As 50 mais recentes (r10..r59), em ordem: as 5 primeiras aparecem, o resto é contado.
+    expect(enviadas[0].texto.split("\n").slice(1, 3)).toEqual(['"mensagem 10"', '"mensagem 11"']);
+    expect(enviadas[0].texto.split("\n").at(-1)).toBe("…e mais 45");
+    expect(banco.tabelas.lead_envios_grupo[0].ultima_mensagem_avisada_em).toBe("2026-10-26T13:01:59.000Z");
   });
 
   it("depois do aviso, só as mensagens novas entram no próximo", async () => {
