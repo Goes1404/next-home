@@ -49,9 +49,13 @@ export function EditorDaRoleta({
   const c = rascunhos[donoId];
   const nomeDe = useMemo(() => new Map(equipe.map((m) => [m.id, m])), [equipe]);
   const dono = nomeDe.get(donoId);
-  // Sem o envio para grupos a roleta funciona como sempre (mensagem). O valor
-  // salvo não é trocado aqui: o gestor pode religar o envio depois.
-  const modo: ModoAviso = grupoTemEnvio ? c.modoAviso : "mensagem";
+  // O que o servidor tem salvo (e o webhook usa) para este número. Com o envio
+  // para grupos desligado, "grupo" só aparece se já estava salvo: aí o corretor
+  // precisa poder voltar para "mensagem". Nunca se troca o valor sozinho.
+  const salvoEmGrupo = configs.find((cfg) => cfg.corretorId === donoId)?.modoAviso === "grupo";
+  const mostraEscolha = grupoTemEnvio || salvoEmGrupo;
+  // Os campos de texto e as dicas seguem o modo escolhido agora no rascunho.
+  const modo: ModoAviso = mostraEscolha ? c.modoAviso : "mensagem";
   const noGrupo = modo === "grupo";
 
   function mudar(parcial: Partial<ConfigDaRoleta>) {
@@ -100,7 +104,7 @@ export function EditorDaRoleta({
         </p>
       </div>
 
-      {!grupoTemEnvio && c.modoAviso === "grupo" && (
+      {!grupoTemEnvio && salvoEmGrupo && (
         <p role="note" className="rounded-xl border border-alerta-linha bg-alerta-lavado p-3 text-fluid-sm text-alerta">
           {AVISO_ENVIO_DESLIGADO}
         </p>
@@ -132,7 +136,7 @@ export function EditorDaRoleta({
         Roleta ligada{dono && donoId !== meuId ? ` no número de ${primeiroNome(dono.nome)}` : ""}
       </label>
 
-      {grupoTemEnvio && (
+      {mostraEscolha && (
         <fieldset className="min-w-0 space-y-2">
           <legend className="text-fluid-sm font-semibold text-titulo">Como o corretor escolhido fica sabendo</legend>
           {(
@@ -140,24 +144,29 @@ export function EditorDaRoleta({
               ["mensagem", "Mensagem do número do corretor", "O número dele manda a primeira mensagem ao cliente."],
               ["grupo", "Aviso no grupo para o corretor ligar", "O aviso do lead chega no grupo dele e ele liga. Não precisa de WhatsApp conectado."],
             ] as const
-          ).map(([valor, titulo, ajuda]) => (
-            <label
-              key={valor}
-              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-linha px-3 py-2 has-[:checked]:border-acento-linha has-[:checked]:bg-acento-lavado"
-            >
-              <input
-                type="radio"
-                name={`modo-aviso-${donoId}`}
-                checked={c.modoAviso === valor}
-                onChange={() => mudar({ modoAviso: valor })}
-                className="mt-0.5 h-5 w-5 shrink-0"
-              />
-              <span className="min-w-0 text-fluid-sm">
-                <span className="block font-semibold text-titulo">{titulo}</span>
-                <span className="block break-words text-corpo">{ajuda}</span>
-              </span>
-            </label>
-          ))}
+          ).map(([valor, titulo, ajuda]) => {
+            // Sem o envio para grupos só se pode sair do "grupo", não escolher.
+            const indisponivel = valor === "grupo" && !grupoTemEnvio;
+            return (
+              <label
+                key={valor}
+                className={`flex min-h-11 items-start gap-3 rounded-xl border border-linha px-3 py-2 has-[:checked]:border-acento-linha has-[:checked]:bg-acento-lavado ${indisponivel ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+              >
+                <input
+                  type="radio"
+                  name={`modo-aviso-${donoId}`}
+                  checked={c.modoAviso === valor}
+                  disabled={indisponivel}
+                  onChange={() => mudar({ modoAviso: valor })}
+                  className="mt-0.5 h-5 w-5 shrink-0"
+                />
+                <span className="min-w-0 text-fluid-sm">
+                  <span className="block font-semibold text-titulo">{titulo}</span>
+                  <span className="block break-words text-corpo">{ajuda}</span>
+                </span>
+              </label>
+            );
+          })}
         </fieldset>
       )}
 

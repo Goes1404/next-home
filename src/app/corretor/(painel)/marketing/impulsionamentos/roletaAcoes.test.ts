@@ -15,6 +15,7 @@ type Gravacao = { tabela: string; valores: Linha; opcoes?: unknown };
 
 let tabelas: Record<string, Linha[]>;
 let gravacoes: Gravacao[];
+let tabelaComErro: string | null;
 let sessao: { id: string; papel: "corretor" | "gestor"; grupoId: string } | null;
 
 /** Cliente mínimo: aplica eq/in de verdade (o recorte por grupo é o que se mede) e registra o upsert. */
@@ -32,7 +33,10 @@ function clienteFalso() {
           predicados.push((l) => vs.includes(l[col]));
           return q;
         },
-        maybeSingle: async () => ({ data: (tabelas[tabela] ?? []).filter((l) => predicados.every((p) => p(l)))[0] ?? null, error: null }),
+        maybeSingle: async () =>
+          tabela === tabelaComErro
+            ? { data: null, error: { message: "falha de leitura" } }
+            : { data: (tabelas[tabela] ?? []).filter((l) => predicados.every((p) => p(l)))[0] ?? null, error: null },
         upsert: async (valores: Linha, opcoes?: unknown) => {
           gravacoes.push({ tabela, valores, opcoes });
           return { error: null };
@@ -77,6 +81,7 @@ function semear(envioAtivo: boolean, roletaSalva?: Linha) {
 describe("salvarRoleta: modo do aviso", () => {
   beforeEach(() => {
     gravacoes = [];
+    tabelaComErro = null;
     sessao = { id: "ana", papel: "corretor", grupoId: GRUPO };
     semear(true);
   });
@@ -95,11 +100,20 @@ describe("salvarRoleta: modo do aviso", () => {
     expect(gravacoes).toHaveLength(0);
   });
 
-  it("a conferência olha o grupo da sessão, não o de outro grupo que tem o envio ligado", async () => {
-    // GRUPO desligado, OUTRO_GRUPO ligado: só vale o da sessão.
+  it("a conferência olha o grupo da sessão: com o envio ligado só no grupo da sessão, 'grupo' passa", async () => {
+    // semear(false): GRUPO desligado e OUTRO_GRUPO ligado. Sessão no OUTRO_GRUPO.
     semear(false);
+    sessao = { id: "caio", papel: "corretor", grupoId: OUTRO_GRUPO };
+    const r = await salvarRoleta({ ...base, corretorId: "caio", destinos: ["caio"], modoAviso: "grupo" });
+    expect(r.erro).toBeUndefined();
+    expect(gravacoes[0].valores).toMatchObject({ grupo_id: OUTRO_GRUPO, modo_aviso: "grupo" });
+  });
+
+  it("erro ao ler o grupo: escolher 'grupo' é recusado e nada é gravado", async () => {
+    tabelaComErro = "grupos";
     const r = await salvarRoleta({ ...base, modoAviso: "grupo" });
-    expect(r.erro).toBeTruthy();
+    expect(r.erro).toBe("Não foi possível salvar agora. Tente de novo.");
+    expect(gravacoes).toHaveLength(0);
   });
 
   it("modo 'mensagem' grava mesmo com o envio desligado (a roleta de hoje não muda)", async () => {
@@ -137,6 +151,7 @@ describe("salvarRoleta: modo do aviso", () => {
 describe("salvarRoleta: permissão (não mudou)", () => {
   beforeEach(() => {
     gravacoes = [];
+    tabelaComErro = null;
     semear(true);
   });
 
