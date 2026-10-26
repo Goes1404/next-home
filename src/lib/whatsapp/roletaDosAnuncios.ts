@@ -20,6 +20,18 @@ type Parametros = {
   conversaDoDonoId: string;
   telefoneCliente: string;
   nomeCliente: string | null;
+  /**
+   * Modo que o webhook já leu e usou para decidir quem responde o cliente. Com
+   * ele a roleta não lê de novo: uma segunda leitura que divergisse (falha ou
+   * roleta desligada no meio) deixaria o cliente sem resposta.
+   */
+  modo?: ModoDaRoleta;
+  /**
+   * `false` quando o webhook não pode falar pelo número do dono (IA desligada
+   * na conversa): o caminho sem repasse não manda a boas-vindas. Passagem e
+   * abertura de um repasse não dependem disso. Padrão: `true`.
+   */
+  boasVindasPermitida?: boolean;
 };
 type ModoLigado = Exclude<ModoDaRoleta, "desligada">;
 
@@ -68,7 +80,7 @@ export async function lerModoDaRoleta(corretorId: string): Promise<ModoDaRoleta>
  * Devolve o id de B quando houve repasse; `null` quando o lead fica com A.
  */
 export async function repassarPelaRoleta(params: Parametros): Promise<string | null> {
-  const modo = await lerModoDaRoleta(params.corretorId);
+  const modo = params.modo ?? (await lerModoDaRoleta(params.corretorId));
   if (modo === "desligada") return null;
 
   // `respondido`: o cliente já leu a abertura de quem vai atendê-lo. Sem
@@ -80,7 +92,9 @@ export async function repassarPelaRoleta(params: Parametros): Promise<string | n
   } catch (erro) {
     console.error("[roleta] falhou:", erro instanceof Error ? erro.message : erro);
   }
-  if (!destino && !estado.respondido) await mandarBoasVindasDoDono(modo, params);
+  if (!destino && !estado.respondido && params.boasVindasPermitida !== false) {
+    await mandarBoasVindasDoDono(modo, params);
+  }
   return destino;
 }
 

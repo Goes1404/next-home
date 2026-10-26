@@ -53,4 +53,12 @@ describe("webhook: boas-vindas do anúncio não atropela a roleta", () => {
       /registrarLeadDeImpulsionamento\(\{\s*leadId: conversa\.leadId,\s*corretorId: instancia\.corretorId,\s*anuncio: anuncioMeta,\s*\}\)/,
     );
   });
+
+  it("passa à roleta o modo já lido e a permissão da boas-vindas (botAtivo)", () => {
+    const chamada = fonte.slice(fonte.indexOf("await repassarPelaRoleta({"));
+    const argumentos = chamada.slice(0, chamada.indexOf("})"));
+    expect(argumentos).toContain("modo: modoDaRoleta");
+    expect(argumentos).toContain("boasVindasPermitida");
+    expect(fonte).toContain("const boasVindasPermitida = conversa.botAtivo;");
+  });
 });

@@ -943,6 +943,7 @@ export async function POST(req: NextRequest) {
         anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora && modoDaRoleta !== "desligada",
       );
       const conversaDoDono = conversa.id;
+      const boasVindasPermitida = conversa.botAtivo;
       after(async () => {
         const repassado = vaiParaARoleta
           ? await repassarPelaRoleta({
@@ -952,6 +953,8 @@ export async function POST(req: NextRequest) {
               conversaDoDonoId: conversaDoDono,
               telefoneCliente: sender,
               nomeCliente: payload.senderName || null,
+              modo: modoDaRoleta,
+              boasVindasPermitida,
             })
           : null;
         if (!repassado) await avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0);

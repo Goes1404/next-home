@@ -62,4 +62,14 @@ describe("roletaDosAnuncios.ts", () => {
     expect(codigo).toMatch(/export async function lerModoDaRoleta\(corretorId: string\): Promise<ModoDaRoleta>/);
     expect(codigo).toContain('"desligada"');
   });
+
+  it("usa o modo que o webhook já leu, sem ler de novo", () => {
+    expect(codigo).toMatch(/modo\?: ModoDaRoleta/);
+    expect(codigo).toContain("params.modo ?? (await lerModoDaRoleta(params.corretorId))");
+  });
+
+  it("o webhook pode proibir a boas-vindas do dono (IA desligada na conversa)", () => {
+    expect(codigo).toMatch(/boasVindasPermitida\?: boolean/);
+    expect(codigo).toMatch(/!destino && !estado\.respondido && params\.boasVindasPermitida !== false/);
+  });
 });
