@@ -17,19 +17,22 @@ export async function RoletaDosAnuncios() {
 
   let roletas = supabase
     .from("roleta_anuncios")
-    .select("corretor_id, ligada, destinos, texto_passagem, texto_abertura")
+    .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura")
     .eq("grupo_id", quem.grupoId);
   if (!gestor) roletas = roletas.eq("corretor_id", quem.id);
 
-  const [{ data: corretores }, { data: linhas, error }, { data: instancias }, ocultas] = await Promise.all([
-    supabase.from("corretores").select("id, nome").eq("grupo_id", quem.grupoId).eq("ativo", true).order("nome"),
+  const [{ data: corretores }, { data: linhas, error }, { data: instancias }, ocultas, { data: grupo }] = await Promise.all([
+    supabase.from("corretores").select("id, nome, whatsapp_grupo_leads_jid").eq("grupo_id", quem.grupoId).eq("ativo", true).order("nome"),
     roletas,
     supabase
       .from("corretor_whatsapp_instancias")
       .select("corretor_id, status_conexao, sessao_caida_em")
       .eq("grupo_id", quem.grupoId),
     idsDeContasOcultas(supabase, quem.grupoId),
+    supabase.from("grupos").select("envio_grupo_leads_ativo").eq("id", quem.grupoId).maybeSingle(),
   ]);
+  // Antes da 0217 a coluna `modo_aviso` não existe e a leitura acima falha do
+  // mesmo jeito que sem a tabela: a seção some em vez de quebrar a tela.
   // Antes da 0204 a tabela não existe: a seção some em vez de quebrar a tela.
   if (error) return null;
 
@@ -38,7 +41,12 @@ export async function RoletaDosAnuncios() {
   );
   const equipe = (corretores ?? [])
     .filter((c) => !ocultas.has(c.id))
-    .map((c) => ({ id: c.id, nome: c.nome, conectado: conectados.has(c.id) }));
+    .map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      conectado: conectados.has(c.id),
+      temGrupo: !!c.whatsapp_grupo_leads_jid?.trim(),
+    }));
 
   const porCorretor = new Map((linhas ?? []).map((l) => [l.corretor_id, l]));
   const donos = gestor ? equipe : equipe.filter((c) => c.id === quem.id);
@@ -50,9 +58,10 @@ export async function RoletaDosAnuncios() {
       destinos: (l?.destinos ?? []).filter((d) => equipe.some((e) => e.id === d)),
       textoPassagem: l?.texto_passagem || TEXTO_PASSAGEM_PADRAO,
       textoAbertura: l?.texto_abertura || TEXTO_ABERTURA_PADRAO,
+      modoAviso: l?.modo_aviso === "grupo" ? ("grupo" as const) : ("mensagem" as const),
     };
   });
   if (configs.length === 0) return null;
 
-  return <EditorDaRoleta configs={configs} equipe={equipe} meuId={quem.id} gestor={gestor} />;
+  return <EditorDaRoleta configs={configs} equipe={equipe} meuId={quem.id} gestor={gestor} grupoTemEnvio={grupo?.envio_grupo_leads_ativo === true} />;
 }
