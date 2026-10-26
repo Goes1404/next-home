@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { apagarAudiosGuardados, caminhosDeAudioDosLeads } from "@/lib/crm/retornoPeloGrupo/audioNoStorage";
 import { marcarCamposDoCorretor } from "@/lib/crm/camposDoCorretor";
 import { marcarRecusasDesfeitas } from "@/lib/whatsapp/repositorio";
 
@@ -288,14 +290,25 @@ export async function restaurarLead(leadId: string): Promise<ResultadoCrm> {
  * Desde 02/10/2026 exclui direto, sem arquivar antes. A policy (0145) deixa
  * o corretor excluir os próprios leads e o ADM os de todos; zero linhas
  * afetadas é lead de outro.
+ *
+ * O áudio do retorno da ligação (LGPD) fica no Storage, não no lead: o caminho
+ * é lido ANTES (o cascade leva a linha que aponta para ele) e o arquivo só sai
+ * DEPOIS de o banco confirmar a exclusão. Falha no Storage não impede nada.
  */
 export async function excluirLeadDefinitivo(leadId: string): Promise<ResultadoCrm> {
   const ctx = await sessao();
   if ("erro" in ctx) return { erro: ctx.erro };
 
+  // A leitura é pela sessão: lead que ela não enxerga não tem áudio listado.
+  const { data: alvo } = await ctx.supabase.from("leads").select("id, grupo_id").eq("id", leadId).maybeSingle();
+  const servico = createServiceClient();
+  const audios = alvo ? await caminhosDeAudioDosLeads(servico, [alvo]) : [];
+
   const { data, error } = await ctx.supabase.from("leads").delete().eq("id", leadId).select("id");
 
   if (error || !data?.length) return { erro: "Não foi possível excluir este lead." };
+
+  await apagarAudiosGuardados(servico, audios);
 
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/pessoas");

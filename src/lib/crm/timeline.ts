@@ -14,6 +14,11 @@ export type Interacao = {
   conteudo: string;
   autor: string | null;
   em: string;
+  /**
+   * Só na linha `ligacao` que o corretor contou no grupo do WhatsApp: o
+   * resultado em palavras e o link (1 h) do player do áudio, quando há.
+   */
+  retorno?: { resultado: string | null; audioUrl: string | null };
 };
 
 export type Tarefa = {

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BUCKET_DOCUMENTOS } from "@/lib/crm/envioAutorizado";
+import { BUCKET_DO_AUDIO } from "@/lib/crm/retornoPeloGrupo/audioGuardado";
 import { BUCKET_CONTABILIDADE } from "@/lib/financeiro/contadorDados";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Database } from "@/lib/supabase/types";
@@ -38,7 +39,9 @@ import { GRUPO_NEXT_HOME_ID } from "./grupo";
  *      não pode virar "apaga o login";
  *   4. apaga os arquivos PRIVADOS do grupo: `documentos-clientes/<lead>/`
  *      (documentos e mídia recebida no WhatsApp) e `contabilidade/<grupo>/`
- *      (pacotes do contador, com CPF/CNPJ). Antes das linhas: depois delas não
+ *      (pacotes do contador, com CPF/CNPJ) e `retornos-de-ligacao/<grupo>/`
+ *      (áudio do retorno da ligação; a pasta toda, também o áudio que não virou
+ *      retorno de lead nenhum). Antes das linhas: depois delas não
  *      haveria mais como saber de quem é cada pasta. Falhou, para (e repete
  *      no próximo tique: apagar pasta é idempotente);
  *   5. chama `apagar_dados_do_grupo`, que recusa sozinho antes dos 90 dias,
@@ -182,6 +185,7 @@ export async function apagarGruposCanceladosVencidos(opcoes: {
       if (pastas.has(lead.id)) await apagarPasta(documentos, lead.id);
     }
     await apagarPasta(servico.storage.from(BUCKET_CONTABILIDADE) as unknown as BucketDoStorage, grupo.id);
+    await apagarPasta(servico.storage.from(BUCKET_DO_AUDIO) as unknown as BucketDoStorage, grupo.id);
   } catch (e) {
     return falhou(`arquivos privados não apagados (${e instanceof Error ? e.message : String(e)})`);
   }

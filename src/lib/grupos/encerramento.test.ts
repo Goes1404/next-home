@@ -43,6 +43,9 @@ function cenario(opcoes: Opcoes = {}) {
     "documentos-clientes/l2/cpf.pdf",
     "contabilidade/g-velho/2026-05.xlsx",
     "contabilidade/g-novo/2026-05.xlsx",
+    "retornos-de-ligacao/g-velho/m1.ogg",
+    "retornos-de-ligacao/g-velho/m2.mp3",
+    "retornos-de-ligacao/g-novo/m3.ogg",
   ]);
   const rpcs: { nome: string; args: unknown }[] = [];
   const loginsApagados: string[] = [];
@@ -160,7 +163,14 @@ describe("rotina dos 90 dias", () => {
       "contabilidade/g-novo/2026-05.xlsx",
       "documentos-clientes/l2/cpf.pdf",
       "exportacoes-de-grupos/g-velho/final-2026-10-20.xlsx",
+      "retornos-de-ligacao/g-novo/m3.ogg",
     ]);
+  });
+
+  it("apaga todo o áudio do retorno da ligação do grupo (também o que não virou retorno de lead) e não toca no vizinho", async () => {
+    const c = cenario();
+    await apagarGruposCanceladosVencidos({ env: LIGADA, agora: AGORA, servico: c.servico });
+    expect([...c.arquivos].filter((a) => a.startsWith("retornos-de-ligacao/"))).toEqual(["retornos-de-ligacao/g-novo/m3.ogg"]);
   });
 
   it("se os arquivos privados não saem, as linhas ficam (para tentar de novo)", async () => {

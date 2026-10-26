@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { RETORNO_PELO_GRUPO } from "@/lib/crm/retornoPeloGrupo/audioGuardado";
 import { agruparPorDia, type Interacao, type TipoInteracao } from "@/lib/crm/timeline";
 import { adicionarNota } from "./acoes";
 import { ArrowRight, CalendarCheck, MessageSquare, Phone, Settings, StickyNote } from "lucide-react";
@@ -122,9 +123,24 @@ export function LinhaDoTempo({ leadId, itens }: { leadId: string; itens: Interac
                         <Icone className="h-3.5 w-3.5" />
                       </span>
                       <div className="min-w-0 flex-1">
+                        {item.retorno && (
+                          <p className="text-fluid-xs font-medium text-tenue">{RETORNO_PELO_GRUPO}</p>
+                        )}
                         <p className="text-fluid-sm whitespace-pre-wrap text-corpo break-words">
                           {item.conteudo}
                         </p>
+                        {item.retorno?.resultado && (
+                          <p className="text-fluid-xs text-corpo">Resultado: {item.retorno.resultado}</p>
+                        )}
+                        {item.retorno?.audioUrl && (
+                          // O link vale 1 hora e é gerado no servidor; o áudio só baixa quando a pessoa toca em ouvir.
+                          <audio
+                            controls
+                            preload="none"
+                            src={item.retorno.audioUrl}
+                            className="mt-2 h-10 w-full max-w-full"
+                          />
+                        )}
                         <p className="text-fluid-xs text-tenue">
                           {hora.format(new Date(item.em))}
                           {item.autor && ` · ${item.autor}`}

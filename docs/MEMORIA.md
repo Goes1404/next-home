@@ -11838,3 +11838,18 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
   participantes; grupo que serve a dois corretores é recusado na sincronização.
 - Armadilha: `nomeDeGrupoAretz` somava " & Aretz" ao nome do grupo do WhatsApp
   também, então o nome real (`ANDRÉ & ARETZ🟢`) nunca casava com o corretor.
+
+## Áudio do retorno da ligação na ficha e na exclusão (26/10/2026)
+
+Nota: [[audio-do-retorno-na-ficha-e-na-exclusao]].
+
+- O áudio mora em `retornos-de-ligacao/<grupo>/<mensagem>.<ext>`. A ficha
+  assina o link (1 h) no servidor, só para caminhos da pasta do grupo do lead.
+- Armadilha LGPD: `retornos_de_ligacao.lead_id` é cascade; apagar o lead leva a
+  linha que aponta para o arquivo. Ler os caminhos ANTES, apagar os arquivos
+  DEPOIS de o banco confirmar (lead, lote, pedido do titular). A rotina dos 90
+  dias apaga a pasta `<grupo>/` inteira (cobre o áudio sem lead).
+- No pedido do titular, as outras fichas da pessoa se acham por telefone
+  igual e e-mail igual; nunca decidir por `LIKE` (`%`/`_` casam com outra pessoa).
+- A guarda `servicoComGrupo.test.ts` exige classificar todo arquivo novo que
+  cita `createServiceClient`.

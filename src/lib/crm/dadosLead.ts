@@ -6,6 +6,7 @@ import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
 import type { EtapaFunil, Lead, OrigemAtribuicao } from "@/lib/types";
 import type { Interacao, Tarefa, TipoInteracao } from "./timeline";
 import { textoDaEntradaNaLista } from "./desfechoDaLista";
+import { retornosDaLigacaoNaFicha } from "./retornoPeloGrupo/retornoNaFicha";
 import type { AtribuicaoMarketing } from "@/lib/marketing/atribuicao";
 
 /**
@@ -263,7 +264,7 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
   const [{ data: interacoes }, { data: conversas }, { data: listas }] = await Promise.all([
     supabase
       .from("lead_interacoes")
-      .select("id, tipo, conteudo, created_at, corretor:corretores(nome)")
+      .select("id, tipo, conteudo, detalhes, created_at, corretor:corretores(nome)")
       .eq("lead_id", leadId)
       // `repasse` (0192) guarda a origem anterior para a fase 5; a
       // transferência já aparece na linha `sistema` que a acompanha.
@@ -282,18 +283,22 @@ export async function getTimelineDoLead(leadId: string): Promise<Interacao[]> {
       .limit(50),
   ]);
 
-  const itens: Interacao[] = ((interacoes ?? []) as unknown as {
+  const itensDoBanco = ((interacoes ?? []) as unknown as {
     id: string;
     tipo: TipoInteracao;
     conteudo: string;
+    detalhes: unknown;
     created_at: string;
     corretor: { nome: string } | null;
-  }[]).map((i) => ({
+  }[]);
+  const retornos = await retornosDaLigacaoNaFicha({ sessao: supabase, leadId, linhas: itensDoBanco });
+  const itens: Interacao[] = itensDoBanco.map((i) => ({
     id: i.id,
     tipo: i.tipo,
     conteudo: i.conteudo,
     autor: i.corretor?.nome ?? null,
     em: i.created_at,
+    ...(retornos.has(i.id) ? { retorno: retornos.get(i.id) } : {}),
   }));
 
   /*

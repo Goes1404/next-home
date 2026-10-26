@@ -17,18 +17,44 @@ let chamadasDoRpc: { nome: string; args: unknown }[];
 let pastas: Record<string, { name: string; id: string | null }[]>;
 let removidos: string[];
 let falhaAoRemover: boolean;
+let retornos: { lead_id: string; grupo_id: string; audio_path: string | null }[];
+let leadsDoGrupo: { id: string; grupo_id: string; telefone_e164: string | null; email: string | null }[];
+let ordem: string[];
+
+/** Só o que a leitura dos áudios usa: filtros por igualdade, `in`, `ilike` e `not`. */
+function consultaFalsa(tabela: string) {
+  const filtros: ((l: Record<string, unknown>) => boolean)[] = [];
+  const q = {
+    select: () => q,
+    eq: (c: string, v: unknown) => (filtros.push((l) => l[c] === v), q),
+    in: (c: string, vs: unknown[]) => (filtros.push((l) => vs.includes(l[c])), q),
+    ilike: (c: string, v: string) => (filtros.push((l) => String(l[c] ?? "").toLowerCase() === v.toLowerCase()), q),
+    not: (c: string) => (filtros.push((l) => l[c] !== null), q),
+    maybeSingle: async () => ({ data: (q as unknown as { linhas: () => unknown[] }).linhas()[0] ?? null, error: null }),
+    linhas: () => ((tabela === "leads" ? leadsDoGrupo : retornos) as Record<string, unknown>[]).filter((l) => filtros.every((f) => f(l))),
+    then: (ok: (r: unknown) => unknown) => Promise.resolve({ data: q.linhas(), error: null }).then(ok),
+  };
+  return q;
+}
 
 vi.mock("@/lib/guardas", () => ({ exigirGestorNaAcao: async () => guarda }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     rpc: async (nome: string, args: unknown) => {
+      ordem.push("rpc");
       chamadasDoRpc.push({ nome, args });
+      // O banco leva as linhas junto com os leads (cascade): depois do pedido, nada mais aponta para os áudios.
+      if (!respostaDoRpc.error) {
+        retornos = [];
+        leadsDoGrupo = [];
+      }
       return respostaDoRpc;
     },
   }),
 }));
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
+    from: (tabela: string) => consultaFalsa(tabela),
     storage: {
       from: (bucket: string) => ({
         list: async (pasta: string, opcoes?: { limit?: number; offset?: number }) => {
@@ -37,6 +63,7 @@ vi.mock("@/lib/supabase/service", () => ({
           return { data: tudo.slice(de, de + (opcoes?.limit ?? 100)), error: null };
         },
         remove: async (caminhos: string[]) => {
+          ordem.push(`remove:${bucket}`);
           if (falhaAoRemover) return { data: null, error: { message: "fora do ar" } };
           removidos.push(...caminhos.map((c) => `${bucket}/${c}`));
           return { data: [], error: null };
@@ -54,6 +81,9 @@ beforeEach(() => {
   respostaDoRpc = { data: { apagados: { conversas: 1 } }, error: null };
   chamadasDoRpc = [];
   removidos = [];
+  ordem = [];
+  retornos = [];
+  leadsDoGrupo = [{ id: LEAD, grupo_id: "g1", telefone_e164: "+5511999990000", email: null }];
   falhaAoRemover = false;
   pastas = {
     [`documentos-clientes/${LEAD}`]: [
@@ -73,6 +103,35 @@ describe("apagar os dados do titular", () => {
       `documentos-clientes/${LEAD}/rg.jpg`,
       `documentos-clientes/${LEAD}/whatsapp/m1-foto.jpg`,
     ]);
+  });
+
+  it("apaga o áudio do retorno da ligação do lead e das outras fichas da pessoa, lido ANTES do banco apagar", async () => {
+    leadsDoGrupo.push({ id: OUTRA_FICHA, grupo_id: "g1", telefone_e164: "+5511999990000", email: null });
+    retornos = [
+      { lead_id: LEAD, grupo_id: "g1", audio_path: "g1/m1.ogg" },
+      { lead_id: OUTRA_FICHA, grupo_id: "g1", audio_path: "g1/m2.ogg" },
+      { lead_id: LEAD, grupo_id: "g1", audio_path: null },
+    ];
+    respostaDoRpc = { data: { apagados: { fichas: 2 }, leads: [LEAD, OUTRA_FICHA] }, error: null };
+    const r = await apagarDadosDoTitular(LEAD);
+    expect(r.ok).toMatch(/2 fichas/);
+    expect(removidos).toContain("retornos-de-ligacao/g1/m1.ogg");
+    expect(removidos).toContain("retornos-de-ligacao/g1/m2.ogg");
+    expect(ordem.indexOf("rpc")).toBeLessThan(ordem.indexOf("remove:retornos-de-ligacao"));
+  });
+
+  it("se o banco recusa o pedido, o áudio fica", async () => {
+    retornos = [{ lead_id: LEAD, grupo_id: "g1", audio_path: "g1/m1.ogg" }];
+    respostaDoRpc = { data: null, error: { message: "sem_permissao" } };
+    await apagarDadosDoTitular(LEAD);
+    expect(removidos).toEqual([]);
+  });
+
+  it("se o áudio não sai, o lead já foi apagado e a tela diz o que sobrou", async () => {
+    retornos = [{ lead_id: LEAD, grupo_id: "g1", audio_path: "g1/m1.ogg" }];
+    falhaAoRemover = true;
+    const r = await apagarDadosDoTitular(LEAD);
+    expect(r.erro).toMatch(/arquivos/);
   });
 
   it("apaga também a pasta das outras fichas da mesma pessoa que o banco apagou", async () => {

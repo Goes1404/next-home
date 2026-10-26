@@ -2,9 +2,8 @@ import "server-only";
 
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { baixarMidiaDoProvedor } from "@/lib/whatsapp/provider";
+import { BUCKET_DO_AUDIO } from "./audioGuardado";
 import type { Banco } from "./situacao";
-
-export const BUCKET_DO_AUDIO = "retornos-de-ligacao";
 
 type Obj = Record<string, unknown>;
 const ehObjeto = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);

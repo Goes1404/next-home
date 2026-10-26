@@ -75,6 +75,7 @@ F0–F6.
 - [[logins-da-aretz-com-senha-provisoria]] — acessos novos com troca de senha e preenchimento de CRECI/WhatsApp no perfil (23/10)
 - [[leads-distribuidos-nos-grupos-da-aretz]] — a roleta mantém o dono; o grupo `NOME & ARETZ` recebe o aviso pelo número central (23/10)
 - [[vinculo-do-corretor-no-grupo-e-lid]] — o corretor é reconhecido no grupo pelo par número↔@lid; grupo de dois corretores é recusado (26/10)
+- [[audio-do-retorno-na-ficha-e-na-exclusao]] — player na ficha (link de 1 h no servidor) e o áudio sai na LGPD: ler o caminho ANTES de o lead sair (26/10)
 - [[roleta-pula-whatsapp-desconectado-por-opcao]] — gestor pode transformar a preferência por conexão em filtro por imobiliária (23/10)
 
 - [[plataforma-multi-grupo]] — produto multi-empresa: grupos, ficha no lugar da conversa, saída do corretor, planos (18/10)

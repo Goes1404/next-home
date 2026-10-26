@@ -8,6 +8,8 @@ import {
   type PaginaDeLeads,
 } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { apagarAudiosGuardados, caminhosDeAudioPorLead } from "@/lib/crm/retornoPeloGrupo/audioNoStorage";
 
 /**
  * Arquivar, restaurar e excluir VÁRIOS leads de uma vez.
@@ -90,6 +92,10 @@ export async function restaurarLeadsEmLote(leadIds: string[]): Promise<Resultado
  * Quem alcança o quê é a policy (0145): o corretor, os próprios leads; o
  * ADM, os de todos. Lead de outro simplesmente não é afetado, e a diferença
  * entre pedidos e afetados é o que a tela conta de volta.
+ *
+ * O áudio do retorno da ligação (LGPD) sai do Storage só para os leads que o
+ * banco de fato excluiu; os caminhos são lidos antes, porque o cascade leva
+ * as linhas que apontam para eles. Falha no Storage não impede a exclusão.
  */
 export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLote> {
   const corretor = await getCorretorLogado();
@@ -99,6 +105,10 @@ export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLo
   if (!ids) return { erro: "Selecione ao menos um lead." };
 
   const supabase = await createClient();
+  const servico = createServiceClient();
+  const { data: alvos } = await supabase.from("leads").select("id, grupo_id").in("id", ids);
+  const audiosPorLead = await caminhosDeAudioPorLead(servico, alvos ?? []);
+
   const { data, error } = await supabase
     .from("leads")
     .delete()
@@ -106,6 +116,9 @@ export async function excluirLeadsEmLote(leadIds: string[]): Promise<ResultadoLo
     .select("id");
 
   if (error) return { erro: "Não foi possível excluir agora." };
+
+  const excluidos = (data ?? []).flatMap((l) => audiosPorLead.get(l.id) ?? []);
+  await apagarAudiosGuardados(servico, excluidos);
 
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/pessoas");

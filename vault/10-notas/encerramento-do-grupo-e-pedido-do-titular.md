@@ -6,11 +6,13 @@ status: seedling
 custou: medio
 codigo: [supabase/migrations/0202_dados_do_grupo_e_titular.sql, src/lib/grupos/planilhasDoGrupo.ts, src/lib/grupos/exportacaoDoGrupo.ts, src/lib/grupos/encerramento.ts, src/lib/grupos/arquivosPrivados.ts, src/lib/grupos/encerramentoRegras.ts, src/app/corretor/(painel)/leads/[id]/titularAcoes.ts, src/app/plataforma/grupos/[id]/exportar/route.ts]
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-26
 summary: Operação enxuta (20/10/2026, 0202) — o gestor baixa a planilha do grupo, registra o pedido do titular na ficha, e a plataforma registra o cancelamento; uma rotina diária DESLIGADA por padrão apaga o grupo 90 dias depois, com cópia gravada antes.
 ---
 
 # Encerramento do grupo e pedido do titular
+
+> 26/10/2026: o bucket `retornos-de-ligacao` (áudio do retorno da ligação) também sai na exclusão do lead, no pedido do titular e na rotina dos 90 dias — ver [[audio-do-retorno-na-ficha-e-na-exclusao]].
 
 Parte da [[plataforma-multi-grupo]] (desenho §18 "Operação", resposta 7 do
 dono). Plano: `docs/superpowers/plans/2026-10-20-fase-op-dados-do-grupo.md`.

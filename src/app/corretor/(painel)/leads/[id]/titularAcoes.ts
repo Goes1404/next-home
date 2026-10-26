@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { BUCKET_DOCUMENTOS } from "@/lib/crm/envioAutorizado";
 import { apagarPasta } from "@/lib/grupos/arquivosPrivados";
+import { apagarAudiosGuardados, caminhosDeAudioDaPessoa } from "@/lib/crm/retornoPeloGrupo/audioNoStorage";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -23,6 +24,11 @@ import { createServiceClient } from "@/lib/supabase/service";
  * o SQL não apaga: saem aqui, pela chave de serviço, só DEPOIS que o banco
  * confirmou que os leads eram do grupo de quem pediu. As pastas são as dos
  * ids que o banco devolveu (todas as fichas apagadas), nunca as do navegador.
+ *
+ * O áudio do retorno da ligação (`retornos-de-ligacao/<grupo>/`) é o caso
+ * inverso: o caminho mora na linha que o cascade apaga junto com o lead, então
+ * é lido ANTES de o banco apagar (o lead e as fichas da mesma pessoa, no grupo
+ * do gestor) e o arquivo sai DEPOIS, quando o banco já confirmou o pedido.
  */
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +41,8 @@ export async function apagarDadosDoTitular(leadId: string): Promise<ResultadoTit
   if (!UUID.test(leadId)) return { erro: "Lead não encontrado." };
 
   const supabase = await createClient();
+  const servico = createServiceClient();
+  const audios = await caminhosDeAudioDaPessoa(servico, guarda.corretor.grupoId, leadId);
   const { data, error } = await supabase.rpc("apagar_dados_do_titular", { p_lead: leadId });
   if (error) {
     if (/lead_nao_encontrado/.test(error.message)) return { erro: "Lead não encontrado." };
@@ -50,9 +58,11 @@ export async function apagarDadosDoTitular(leadId: string): Promise<ResultadoTit
   const resposta = (data ?? {}) as { leads?: unknown; apagados?: { fichas?: number } };
   const devolvidos = Array.isArray(resposta.leads) ? resposta.leads.filter((l): l is string => typeof l === "string" && UUID.test(l)) : [];
   const leads = [...new Set([leadId, ...devolvidos])];
-  const storage = createServiceClient().storage.from(BUCKET_DOCUMENTOS);
+  const storage = servico.storage.from(BUCKET_DOCUMENTOS);
+  const audiosApagados = await apagarAudiosGuardados(servico, audios);
   try {
     for (const lead of leads) await apagarPasta(storage, lead);
+    if (!audiosApagados) throw new Error("áudios do retorno da ligação não apagados");
   } catch (e) {
     console.error("[titular] arquivos do lead não apagados:", e instanceof Error ? e.message : e);
     return {
