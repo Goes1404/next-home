@@ -92,9 +92,18 @@ function listaDeTextos(valor: unknown): string[] {
   return itens;
 }
 
+/*
+ * Data e hora COM fuso. `new Date("2026-11-07T10:00:00")` sem offset é lida no
+ * fuso do servidor (UTC na Vercel) e marcaria a visita 3 horas fora; formato
+ * solto ("Nov 7 2026 10:00") cada motor lê de um jeito. Na dúvida, null.
+ */
+const ISO_COM_FUSO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+
 function visitaValida(valor: unknown, agora: Date): string | null {
-  if (typeof valor !== "string" || !valor.trim()) return null;
-  const data = new Date(valor.trim());
+  if (typeof valor !== "string") return null;
+  const limpo = valor.trim();
+  if (!ISO_COM_FUSO.test(limpo)) return null;
+  const data = new Date(limpo);
   const t = data.getTime();
   if (Number.isNaN(t)) return null;
   if (t <= agora.getTime()) return null;
@@ -158,6 +167,7 @@ export function normalizarLeituraDoRetorno(json: unknown, agora: Date): LeituraD
   const resultado = dosValores<LeituraDoRetorno["resultado"]>(bruto.resultado, RESULTADOS);
   if (!resultado) return null;
 
+  // Sem conversa não há o que aprender: o que vier junto é invenção do modelo.
   const semResposta = resultado === "nao_atendeu" || resultado === "numero_errado";
 
   const visitaEm = semResposta ? null : visitaValida(bruto.visitaEm, agora);
@@ -176,6 +186,6 @@ export function normalizarLeituraDoRetorno(json: unknown, agora: Date): LeituraD
     motivoPerda,
     resumo: texto(bruto.resumo, TETO_DO_RESUMO),
     proximoPasso: texto(bruto.proximoPasso, TETO_DO_PROXIMO_PASSO),
-    fatos: resultado === "numero_errado" ? {} : normalizarFatos(bruto.fatos),
+    fatos: semResposta ? {} : normalizarFatos(bruto.fatos),
   };
 }

@@ -9,6 +9,19 @@ import { normalizarLeituraDoRetorno, type LeituraDoRetorno } from "./leituraDoRe
 const ORCAMENTO_RETORNO_MS = 15_000;
 const TAMANHO_MINIMO_DO_RELATO = 3;
 const TETO_DO_RELATO = 4000;
+const INICIO_DO_RELATO = 1500;
+const FIM_DO_RELATO = 2500;
+
+/**
+ * Relato maior que o teto perde o MEIO: o começo diz de quem se fala e o fim
+ * costuma trazer o desfecho ("marquei sábado 10h"), que um corte seco no
+ * começo jogaria fora.
+ */
+export function encurtarRelato(relato: string): string {
+  if (relato.length <= TETO_DO_RELATO) return relato;
+  console.warn(`Relato da ligação com ${relato.length} caracteres: cortado o meio para caber na leitura.`);
+  return `${relato.slice(0, INICIO_DO_RELATO)} […] ${relato.slice(-FIM_DO_RELATO)}`;
+}
 
 /**
  * "segunda-feira, 26/10/2026 14:05" no fuso de São Paulo.
@@ -97,7 +110,7 @@ export async function lerRetornoDaLigacao(p: {
       "",
       `--- DOSSIÊ ATUAL DO CLIENTE ---\n${p.dossieAtual?.trim() || "(vazio)"}`,
       "",
-      `--- RELATO DO CORRETOR SOBRE A LIGAÇÃO ---\n${relato.slice(0, TETO_DO_RELATO)}`,
+      `--- RELATO DO CORRETOR SOBRE A LIGAÇÃO ---\n${encurtarRelato(relato)}`,
     ].join("\n");
 
     const resultado = await chamarLlmJson(prompt, {

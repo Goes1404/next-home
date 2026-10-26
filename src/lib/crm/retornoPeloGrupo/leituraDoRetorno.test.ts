@@ -102,13 +102,19 @@ describe("normalizarLeituraDoRetorno", () => {
       expect(l?.etapa).toBeNull();
     });
 
-    it("nao_atendeu força etapa null", () => {
+    it("nao_atendeu força etapa null, sem visita e sem fatos", () => {
       const l = normalizarLeituraDoRetorno(
-        { resultado: "nao_atendeu", etapa: "qualificado", visitaEm: SABADO_10H },
+        {
+          resultado: "nao_atendeu",
+          etapa: "qualificado",
+          visitaEm: SABADO_10H,
+          fatos: { orcamentoMax: 600000, regiaoInteresse: "Alphaville" },
+        },
         AGORA,
       );
       expect(l?.etapa).toBeNull();
       expect(l?.visitaEm).toBeNull();
+      expect(l?.fatos).toEqual({});
     });
 
     it("numero_errado força etapa null, sem visita e sem fatos", () => {
@@ -144,6 +150,51 @@ describe("normalizarLeituraDoRetorno", () => {
     it("dentro dos 60 dias vale", () => {
       const dentro = new Date(AGORA.getTime() + 59 * 24 * 3600_000).toISOString();
       expect(normalizarLeituraDoRetorno(leitura({ visitaEm: dentro }), AGORA)?.visitaEm).toBe(dentro);
+    });
+
+    it("exatamente agora + 60 dias vale; um milissegundo a mais não", () => {
+      const limite = AGORA.getTime() + 60 * 24 * 3600_000;
+      expect(
+        normalizarLeituraDoRetorno(leitura({ visitaEm: new Date(limite).toISOString() }), AGORA)?.visitaEm,
+      ).toBe(new Date(limite).toISOString());
+      expect(
+        normalizarLeituraDoRetorno(leitura({ visitaEm: new Date(limite + 1).toISOString() }), AGORA)?.visitaEm,
+      ).toBeNull();
+    });
+
+    it("igual a agora não vale (precisa ser depois); um milissegundo depois vale", () => {
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: AGORA.toISOString() }), AGORA)?.visitaEm).toBeNull();
+      const logoDepois = new Date(AGORA.getTime() + 1).toISOString();
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: logoDepois }), AGORA)?.visitaEm).toBe(logoDepois);
+    });
+
+    it("sem fuso (offset) vira null: o servidor leria no fuso dele", () => {
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-10-31T10:00:00" }), AGORA)?.visitaEm).toBeNull();
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-10-31T10:00" }), AGORA)?.visitaEm).toBeNull();
+    });
+
+    it("só a data, sem hora, vira null", () => {
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-10-31" }), AGORA)?.visitaEm).toBeNull();
+    });
+
+    it("formato solto vira null", () => {
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "Nov 7 2026 10:00" }), AGORA)?.visitaEm).toBeNull();
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "31/10/2026 10:00" }), AGORA)?.visitaEm).toBeNull();
+    });
+
+    it("aceita offset, Z e fração de segundo", () => {
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-10-31T10:00-03:00" }), AGORA)?.visitaEm).toBe(
+        "2026-10-31T13:00:00.000Z",
+      );
+      expect(normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-10-31T13:00:00.000Z" }), AGORA)?.visitaEm).toBe(
+        "2026-10-31T13:00:00.000Z",
+      );
+    });
+
+    it("data impossível com formato certo vira null", () => {
+      expect(
+        normalizarLeituraDoRetorno(leitura({ visitaEm: "2026-13-45T10:00:00-03:00" }), AGORA)?.visitaEm,
+      ).toBeNull();
     });
 
     it("texto que não é data vira null", () => {
