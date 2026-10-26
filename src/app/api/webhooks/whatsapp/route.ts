@@ -96,6 +96,7 @@ import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioM
 import { BOAS_VINDAS_DE_CAMPANHA, calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { lerModoDaRoleta, repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
+import { tratarMensagemDoGrupoDeLeads } from "@/lib/crm/retornoPeloGrupo";
 import type { ModoDaRoleta } from "@/lib/whatsapp/planoDaRoleta";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
@@ -271,6 +272,23 @@ export async function POST(req: NextRequest) {
      */
     const jidBruto: string = payload.data?.key?.remoteJid || payload.remoteJid || "";
     if (/@(g\.us|broadcast)$/i.test(jidBruto) || jidBruto === "status@broadcast") {
+      /*
+       * A única exceção (26/10/2026): o corretor conta como foi a ligação no
+       * grupo "NOME & ARETZ" dele, e o número central registra na ficha. Só
+       * mensagem nova (não o recibo de entrega), só grupo, e nunca a
+       * confirmação que o próprio número central acabou de mandar. Quem
+       * decide se o grupo é mesmo de leads é `tratarMensagemDoGrupoDeLeads`;
+       * todo o resto cai no descarte de sempre, e nada daqui chega à IA.
+       */
+      const eventoDoGrupo = String(payload.event || payload.type || "").toLowerCase().replace(/_/g, ".");
+      if (
+        /@g\.us$/i.test(jidBruto) &&
+        (!eventoDoGrupo || eventoDoGrupo === "messages.upsert") &&
+        !(payload.data?.key?.fromMe || payload.fromMe)
+      ) {
+        const { tratada } = await tratarMensagemDoGrupoDeLeads({ payload, instanceName, jidBruto });
+        if (tratada) return NextResponse.json({ ok: true, action: "retorno_do_grupo" });
+      }
       return NextResponse.json({ ok: true, ignored: "Mensagem de grupo ou transmissão" });
     }
 
