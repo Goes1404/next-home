@@ -137,3 +137,5 @@ F0–F6.
 - [[metragem-da-planta-nao-tinha-campo]] — editor do imóvel sem campo de metragem; planta nova nascia com 80 m² inventados (20/10)
 - [[controles-rapidos-do-inicio]] — pausar a IA e dividir os leads do anúncio direto no Início (20/10)
 - [[icone-e-manifesto-por-grupo]] — ícone da aba e manifesto PWA por grupo
+
+- [[pareamento-fetch-failed-na-primeira-conexao]] — "fetch failed" ao gerar o código do WhatsApp; pareamento pela resposta do create, 2 tentativas e motivo no log

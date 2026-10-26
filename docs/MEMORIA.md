@@ -11881,3 +11881,59 @@ NÃO publicada; 0218 e 0219 entram ANTES do deploy e nunca rodaram em Postgres
   falhas: enviosDeLeadParaGrupo da 0215, actions.ts, completar-cadastro, admin
   site/marca removidos, admin/whatsapp/page). Arquivo novo com chave de serviço
   precisa entrar no MAPA mesmo assim.
+
+## Aretz escura e com movimento curto (26/10/2026)
+
+- Nota: [[movimento-curto-nos-sites-dos-grupos]]. Site de grupo ≠ 1 recebe um
+  `<style>` de movimento curto no layout `s/[site]`: as mesmas animações,
+  encurtadas (onda 360 ms, entrada 220 ms, `nav-forward` 240 ms,
+  `--ritmo-do-movimento:0.6` lido por `Reveal` e `TituloEditorial`). Next
+  Home intacta.
+- Aretz travada no tema escuro só por dados: paleta escura (`#0e1a10`,
+  `#c49c4e`, `#e2c584`, `#f9fbf8`) nas colunas do CLARO e as `_escuro` nulas;
+  o seletor de tema some sozinho.
+- Cor mudada por SQL não aparece até o cache de rota vencer (até 1 h, os
+  layouts têm `revalidate = 3600`); deploy novo zera.
+
+- **Celular feio, computador bonito (26/10):** cor fixa não troca as
+  superfícies escritas por `data-tema`; sem cookie o HTML nasce claro. Fundo
+  fixo escuro agora trava `data-tema="escuro"` por script inline
+  (`temaFixoDoSite`). O cookie `tema=escuro` de quem testou escondia o
+  defeito: conferir sempre sem cookie.
+- CRECI `PREENCHER-…`/`PENDENTE-…` não aparece mais para o cliente
+  (`creciParaExibir`); nomes `Andr?`/`F?bio` da carga da Aretz corrigidos no banco.
+- **Destaques no celular e escuro menos marrom (26/10):** faixa de deslizar
+  com as capas no herói do celular (`FaixaDoHeroiNoCelular`, só grupo ≠ 1);
+  fundo da Aretz `#0a0f0b`; com tema travado, faixas sem dourado e planta em
+  cinza (o SVG da planta tem traço `#003d36` fixo, verde da Next Home).
+- **Segundo administrador da plataforma (26/10):** eduardosantosbbezerra@gmail.com,
+  criado por SQL (`auth.users` + `auth.identities` com `extensions.crypt`, e
+  `administradores_da_plataforma`), sem ficha de corretor: o login leva a
+  `/plataforma`. Um login = um grupo (`corretores.user_id` é UNIQUE): "acesso em
+  todos os CRMs" com o mesmo e-mail não existe; o dono escolheu admin da plataforma.
+- **"fetch failed" ao gerar o código do WhatsApp (26/10, Aretz):** erro de rede
+  cru na tela, sem log. Agora o pareamento da primeira conexão vem da resposta
+  do `instance/create` (sem repetir o connect logo em seguida), o connect tenta
+  2x em falha de rede e o motivo (`err.cause`) vai ao log `[whatsapp] instance/…`.
+  Nota: [[pareamento-fetch-failed-na-primeira-conexao]].
+
+## O WhatsApp do Ramos caiu por primeiro contato em volume (0217, 26/10/2026)
+
+Nota: [[primeiro-contato-tem-teto-proprio]].
+
+- **O número caiu com 401 em 21/10 às 09h51, no meio de uma lista para 225
+  pessoas que nunca tinham falado com ele.** 200 delas foram importadas de
+  planilha 18 minutos antes da lista. Saíram 48 em dois dias (21 e 27).
+- **Espaçamento, cota e texto estavam certos** (mediana de 113 s, cota pelo
+  uso, semelhança até 0,70). O que a cota não separava era o primeiro contato.
+  E as 48 levavam o mesmo arquivo de foto.
+- Hoje primeiro contato (quem não tem fala de cliente em nenhum cadastro do
+  telefone) tem 10 por dia e 30 por semana, nenhum nos 7 dias depois de o
+  número conectar ou voltar de queda, e sai sem foto. Sem vaga, o item fica
+  para amanhã às 9h com o motivo à vista; quem já conversou continua saindo.
+- **Diagnóstico de 401**: contar os envios de lista nos 3 dias antes da queda.
+  As quedas da Ana Lima, Márcia e Gaby no mesmo período não tiveram lista: não
+  é a mesma causa.
+- **Esta branch estava 1.083 commits atrás da produção** quando a sessão
+  voltou. Antes de mexer, `git fetch` e conferir a última migration da `main`.
+

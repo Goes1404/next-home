@@ -113,8 +113,9 @@ export const corretoresPublicos = unstable_cache(
   // site seguiu mostrando o vídeo pela entrada antiga. "-v3" (07/10/2026): o
   // filtro de `ativo`. "-v4" (19/10/2026): por grupo (o grupo também entra na
   // chave, como argumento) e a entrada passou a levar `chamadaDoLink` (0188).
-  // "-v5" (19/10/2026): a conta oculta (0189).
-  ["corretores-publicos-v5"],
+  // "-v5" (19/10/2026): a conta oculta (0189). "-v6" (26/10/2026): nomes e
+  // slugs da Aretz corrigidos por SQL (`Andr?` → André, `f-bio` → fabio).
+  ["corretores-publicos-v6"],
   { tags: [TAG_CORRETORES], revalidate: REVALIDA_EM_SEGUNDOS },
 );
 

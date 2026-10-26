@@ -7,7 +7,7 @@ import { GlassSurface } from "@/components/glass/GlassSurface";
 import { CabeNoBolso } from "@/components/home/CabeNoBolso";
 import { CtaFinal } from "@/components/home/CtaFinal";
 import { EscolhaDeEstagio } from "@/components/home/EscolhaDeEstagio";
-import { MosaicoDoHeroi } from "@/components/home/MosaicoDoHeroi";
+import { FaixaDoHeroiNoCelular, MosaicoDoHeroi } from "@/components/home/MosaicoDoHeroi";
 import { ProfundidadeDoPonteiro } from "@/components/motion/ProfundidadeDoPonteiro";
 import { Regioes } from "@/components/home/Regioes";
 import { WhatsappCta } from "@/components/layout/WhatsappCta";
@@ -212,6 +212,13 @@ export default async function HomeInstitucional({ params }: { params: Promise<Pa
               </GlassSurface>
             </div>
           </Camada>
+          {/* No celular os destaques do mosaico viram faixa de deslizar
+              (só nos sites de outros grupos; a Next Home fica igual). */}
+          {!marca.ehNextHome && (
+            <div data-abertura="4" className="w-full">
+              <FaixaDoHeroiNoCelular imoveis={destaques} />
+            </div>
+          )}
           </div>
 
           {/* Sem `Camada` em volta desde 03/10/2026: cada card do mosaico tem

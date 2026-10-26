@@ -3836,6 +3836,7 @@ export type Database = {
           variante: "A" | "B" | null
           lead_id: string | null
           mensagem_personalizada: string
+          primeiro_contato: boolean | null
           personalizado_por_ia: boolean
           resposta_em: string | null
           semelhanca_max: number | null
@@ -3855,6 +3856,7 @@ export type Database = {
           variante?: "A" | "B" | null
           lead_id?: string | null
           mensagem_personalizada: string
+          primeiro_contato?: boolean | null
           personalizado_por_ia?: boolean
           resposta_em?: string | null
           semelhanca_max?: number | null
@@ -3874,6 +3876,7 @@ export type Database = {
           variante?: "A" | "B" | null
           lead_id?: string | null
           mensagem_personalizada?: string
+          primeiro_contato?: boolean | null
           personalizado_por_ia?: boolean
           resposta_em?: string | null
           semelhanca_max?: number | null

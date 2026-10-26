@@ -86,3 +86,63 @@ export function MosaicoDoHeroi({ imoveis }: { imoveis: Empreendimento[] }) {
     </div>
   );
 }
+
+/**
+ * Os mesmos destaques do mosaico, NO CELULAR (26/10/2026, Aretz: "não está
+ * aparecendo os cards iniciais dos prédios"). O mosaico é `hidden lg:grid`;
+ * aqui as capas viram uma faixa que desliza de lado, com encaixe, logo abaixo
+ * da busca. `lg:hidden`, então o computador continua só com o mosaico.
+ *
+ * Só nos sites de outros grupos por enquanto (quem chama decide): a home da
+ * Next Home fica como está.
+ *
+ * `sizes` cobre só o celular (a faixa não existe a partir de 1024px) e todas
+ * as fotos são `lazy` — o herói do celular não tem foto candidata a LCP.
+ */
+export function FaixaDoHeroiNoCelular({ imoveis }: { imoveis: Empreendimento[] }) {
+  const fotos = imoveis.filter((e) => e.galeria.length > 0).slice(0, 6);
+  if (fotos.length === 0) return null;
+
+  return (
+    <div className="-mx-4 mt-6 w-[calc(100%+2rem)] sm:-mx-8 sm:w-[calc(100%+4rem)] lg:hidden">
+      <ul
+        aria-label="Imóveis em destaque"
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-2 [scrollbar-width:none] sm:px-8 [&::-webkit-scrollbar]:hidden"
+      >
+        {fotos.map((e) => (
+          <li key={e.slug} className="w-[78%] max-w-[22rem] shrink-0 snap-start sm:w-[46%]">
+            <Link
+              href={`/empreendimentos/${e.slug}`}
+              prefetch={false}
+              className="group relative block aspect-[4/5] overflow-hidden rounded-[1.5rem] shadow-xl ring-1 ring-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento-forte"
+            >
+              <Image
+                src={srcDaMidia(e.capa)}
+                alt={e.capa.alt}
+                fill
+                sizes="(min-width: 1024px) 1px, (min-width: 640px) 46vw, 78vw"
+                loading="lazy"
+                placeholder={e.capa.blurDataUrl ? "blur" : "empty"}
+                blurDataURL={e.capa.blurDataUrl ?? undefined}
+                className="object-cover"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/85 via-black/45 to-transparent"
+              />
+              <span className="absolute inset-x-0 bottom-0 p-4 text-left text-white">
+                <span className="block text-[11px] font-medium tracking-[0.14em] text-brand-200 uppercase">
+                  {STATUS_LABEL[e.status]}
+                </span>
+                <span className="font-display block text-xl leading-tight">{e.nome}</span>
+                <span className="block text-sm text-white/80">
+                  {[e.bairro, e.cidade].filter(Boolean).join(", ")}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

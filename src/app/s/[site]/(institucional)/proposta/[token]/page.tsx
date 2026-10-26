@@ -13,6 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { RespostaDaProposta } from "./RespostaDaProposta";
 
 import { srcDaMidia } from "@/lib/imagens/variantes";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 export const metadata: Metadata = {
   title: "Sua proposta",
   robots: { index: false, follow: false },
@@ -65,7 +66,7 @@ export default async function PropostaPage({
     <Pagina>
       <Secao espaco="abertura">
         <CabecalhoDePagina
-          rotulo={`Preparada por ${link.corretor.nome}${link.corretor.creci ? ` · CRECI ${link.corretor.creci}` : ""}`}
+          rotulo={`Preparada por ${link.corretor.nome}${creciParaExibir(link.corretor.creci) ? ` · CRECI ${creciParaExibir(link.corretor.creci)}` : ""}`}
           titulo={link.primeiroNome ? `${link.primeiroNome}, sua proposta` : "Sua proposta"}
           lead={`${proposta.imovel}${proposta.unidade ? ` · unidade ${proposta.unidade}` : ""}`}
         />

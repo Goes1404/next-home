@@ -361,3 +361,59 @@ export function variaveisDaPreviaEscura(claro: Partial<CoresDoSite>, escuro: Par
     texto: ef.texto ?? (ef.fundo ? null : PREVIA_ESCURA.texto),
   });
 }
+
+// ── Tema travado pelo fundo ───────────────────────────────────────────────
+
+/**
+ * O site com fundo e texto FIXOS num fundo escuro (e sem cores próprias do
+ * escuro) precisa do `data-tema="escuro"` no `<html>`.
+ *
+ * Achado na Aretz (26/10/2026): as cores fixas trocam as VARIÁVEIS, mas as
+ * superfícies que o `globals.css` escreve por tema (vidro dos cartões, a
+ * faixa da planta, o cabeçalho) seguem o `data-tema`. Sem cookie o HTML nasce
+ * claro, e no celular — onde ninguém tinha escolhido o escuro — o fundo
+ * verde-quase-preto saía com vidro claro e texto apagado por cima. No
+ * computador de quem testou, o cookie do escuro escondia o defeito.
+ *
+ * Nulo = nada a travar (fundo claro, sem fundo fixo, ou com cores do escuro,
+ * caso em que o seletor existe e o visitante escolhe).
+ */
+export function temaFixoDoSite(entrada: CoresDoSiteComEscuro): { tema: "escuro"; fundo: string } | null {
+  const c = limparCores(entrada);
+  if (temAlgumaCor(limparCores(entrada.escuro ?? {}))) return null;
+  const papeis = fundoETextoEfetivos(c);
+  if (!papeis || esquemaDoFundo(papeis.fundo) !== "dark") return null;
+  return { tema: "escuro", fundo: papeis.fundo };
+}
+
+/**
+ * O script inline que trava o escuro antes da pintura (o mesmo trabalho do
+ * `SCRIPT_TEMA_ANTES_DA_PINTURA`, que roda antes dele e lê o cookie): tema,
+ * cor da barra do navegador = o fundo do site, e `color-scheme`. Só sai hex
+ * já conferido por `limparCores`; nada digitado chega aqui.
+ */
+export function scriptDoTemaFixo(fixo: { tema: "escuro"; fundo: string }): string {
+  return (
+    'try{var h=document.documentElement;h.setAttribute("data-tema","escuro");' +
+    `var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","${fixo.fundo}");` +
+    `var s=document.querySelector('meta[name="color-scheme"]');if(s)s.setAttribute("content","dark")}catch(e){}`
+  );
+}
+
+/**
+ * O acabamento do escuro travado: menos dourado misturado nas faixas.
+ *
+ * Aretz (26/10/2026): "está muito marrom e muito verde". O percurso da home e
+ * as faixas (`secao-banda`) misturam o acento, o realce e a areia no fundo;
+ * com acento e realce dourados sobre um fundo quase preto, a mistura vira
+ * marrom-oliva. Aqui o tom cai para perto do fundo (faixa = superfície
+ * neutra) e o dourado fica só onde é destaque: botões, preços, selos.
+ * A planta que desliza atrás dos cartões tem traço verde-petróleo FIXO
+ * (`#003d36`, a cor da Next Home, escrita no SVG): em cinza ela vira
+ * textura neutra em vez de mais um verde.
+ * Mesma especificidade da regra do `globals.css` e vem depois no documento.
+ */
+export const CSS_DO_ESCURO_FIXO =
+  ':root[data-tema="escuro"] .home-percurso{--percurso-tom:5%}' +
+  ':root[data-tema="escuro"] .home-percurso::before{filter:grayscale(1)}' +
+  ".secao-banda{--cor-da-faixa:var(--color-superficie)}";

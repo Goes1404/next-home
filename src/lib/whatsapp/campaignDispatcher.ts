@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { inicioDoDiaEmSaoPaulo } from "@/lib/imagens/imagensTipos";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
@@ -38,6 +39,13 @@ import {
 } from "./listaDeTransmissao";
 import { horariosDeVisita } from "@/lib/crm/agendaDoCorretor";
 import { enviarMidiasDaLista, type MidiaDaLista } from "./midiasDaLista";
+import {
+  amanhaCedoEmSaoPaulo,
+  diasDesde,
+  inicioDoPrimeiroContato,
+  motivoDoPrimeiroContato,
+  vagasDePrimeiroContato,
+} from "./primeiroContato";
 import { alimentarListasVivas } from "./listasVivas";
 import { MOTIVO_SEM_WHATSAPP, motivoDePausaAutomatica, sinaisDesdeABase } from "./pausaAutomatica";
 import { lerSinaisDaLista } from "./sinaisDaLista";
@@ -269,7 +277,7 @@ export async function processarFilaCampanhas(params?: {
   let query = supabase
     .from("corretor_whatsapp_instancias")
     .select(
-      "id, corretor_id, grupo_id, instance_name, status_conexao, conectado_em, bloqueado_ate, telefone_conectado, expediente_inicio, expediente_fim",
+      "id, corretor_id, grupo_id, instance_name, status_conexao, conectado_em, aquecimento_desde, bloqueado_ate, telefone_conectado, expediente_inicio, expediente_fim",
     );
 
   if (params?.corretorId) query = query.eq("corretor_id", params.corretorId);
@@ -333,6 +341,7 @@ type InstanciaLinha = {
   instance_name: string;
   status_conexao: string;
   conectado_em: string | null;
+  aquecimento_desde: string | null;
   bloqueado_ate: string | null;
 };
 
@@ -464,6 +473,10 @@ async function processarInstancia(ctx: {
   let nomeDaCasa: string | null | undefined;
   // A marca de sessão caída sai no primeiro envio que dá certo (uma vez).
   let sessaoConferida = false;
+  // Os primeiros contatos já feitos hoje e na semana (0217), lidos uma vez
+  // por chamada e somados a cada envio. `null` = não deu para ler.
+  let primeirosContatos: { hoje: number; semana: number } | null | undefined;
+  let adiadosPorPrimeiroContato = 0;
 
   try {
     // Com a trava na mão: só um disparador reescreve a fila por vez.
@@ -608,6 +621,50 @@ async function processarInstancia(ctx: {
           .eq("id", item.id)
           .eq("status", "pendente");
         continue;
+      }
+
+      /*
+       * Primeiro contato (0217, 26/10/2026): quem nunca escreveu ao corretor
+       * tem teto próprio por dia e por semana, e nenhum nos 7 dias depois de
+       * o número conectar ou voltar de uma queda (`primeiroContato.ts`). É o
+       * que derrubou o WhatsApp do Ramos em 21/10 e o da Bruna em 07/10, com
+       * espaçamento, cota e texto certos. Sem vaga, o item fica para amanhã
+       * com o motivo à vista, e quem já conversou continua saindo. Antes da
+       * cota: o que não sai não gasta a cota do número.
+       */
+      const primeiroContato = await nuncaFalouComOCorretor(supabase, item.lead_id, outrosCadastros);
+      if (primeiroContato) {
+        primeirosContatos ??= await contarPrimeirosContatos(supabase, instancia.corretor_id);
+        const diasDesdeInicio = diasDesde(
+          inicioDoPrimeiroContato(
+            conectadoEm ? new Date(conectadoEm) : null,
+            instancia.aquecimento_desde ? new Date(instancia.aquecimento_desde) : null,
+          ),
+        );
+        const vagas = primeirosContatos
+          ? vagasDePrimeiroContato({
+              diasDesdeInicio,
+              enviadosHoje: primeirosContatos.hoje,
+              enviadosNaSemana: primeirosContatos.semana,
+            })
+          : 0;
+        if (vagas <= 0) {
+          await supabase
+            .from("whatsapp_campanhas_fila")
+            .update({
+              erro_motivo: motivoDoPrimeiroContato({ diasDesdeInicio }),
+              agendado_para: amanhaCedoEmSaoPaulo(new Date(), Math.floor(Math.random() * 30)),
+            })
+            .eq("id", item.id)
+            .eq("status", "pendente");
+          adiadosPorPrimeiroContato++;
+          if (adiadosPorPrimeiroContato >= ADIADOS_POR_CHAMADA) {
+            parcial.motivo = "cota_diaria";
+            parcial.diagnostico = motivoDoPrimeiroContato({ diasDesdeInicio });
+            break;
+          }
+          continue;
+        }
       }
 
       /*
@@ -904,8 +961,13 @@ async function processarInstancia(ctx: {
           enviado_em: new Date().toISOString(),
           tentativas: (item.tentativas ?? 0) + 1,
           erro_motivo: null,
+          primeiro_contato: primeiroContato,
         })
         .eq("id", item.id);
+      if (primeiroContato && primeirosContatos) {
+        primeirosContatos.hoje++;
+        primeirosContatos.semana++;
+      }
 
       // Registra a conversa com origem 'campanha' (isenta da trava de
       // palavra-chave, ver modoBot.ts) e a mensagem enviada, para o
@@ -985,7 +1047,10 @@ async function processarInstancia(ctx: {
           aindaAtiva.empreendimento_id,
           (aindaAtiva.midias ?? []) as MidiaDaLista[],
         );
-        if (midias.length > 0) {
+        // Primeiro contato vai sem foto (0217): o mesmo arquivo para dezenas
+        // de desconhecidos é sinal de envio em massa. A foto vai quando a
+        // pessoa responder.
+        if (midias.length > 0 && !primeiroContato) {
           await enviarMidiasDaLista({
             instanceName: instancia.instance_name,
             telefone: item.telefone,
@@ -1207,6 +1272,67 @@ async function atualizarProgressoCampanhas(
         .eq("status", "em_andamento");
     }
   }
+}
+
+/** Quantos itens sem vaga de primeiro contato uma chamada adia antes de parar. */
+const ADIADOS_POR_CHAMADA = 25;
+
+/**
+ * A pessoa nunca escreveu ao corretor, em nenhum cadastro do mesmo telefone?
+ * Em dúvida (sem lead, erro de leitura), trata como primeiro contato: é o
+ * lado que protege o número.
+ */
+async function nuncaFalouComOCorretor(
+  supabase: ReturnType<typeof createServiceClient>,
+  leadId: string | null,
+  outrosCadastros: string[] = [],
+): Promise<boolean> {
+  if (!leadId) return true;
+  const { data: conversas, error } = await supabase
+    .from("whatsapp_conversas")
+    .select("id")
+    .in("lead_id", [leadId, ...outrosCadastros]);
+  if (error) return true;
+  const ids = (conversas ?? []).map((c) => c.id);
+  if (ids.length === 0) return true;
+  const { count, error: erroDaContagem } = await supabase
+    .from("whatsapp_mensagens")
+    .select("id", { count: "exact", head: true })
+    .in("conversa_id", ids)
+    .eq("remetente", "cliente");
+  if (erroDaContagem) return true;
+  return (count ?? 0) === 0;
+}
+
+/**
+ * Os primeiros contatos que o corretor já fez hoje (dia de São Paulo) e nos
+ * últimos 7 dias. `null` quando não deu para ler: aí não sai nenhum.
+ */
+async function contarPrimeirosContatos(
+  supabase: ReturnType<typeof createServiceClient>,
+  corretorId: string,
+): Promise<{ hoje: number; semana: number } | null> {
+  const { data: listas, error } = await supabase
+    .from("whatsapp_campanhas")
+    .select("id")
+    .eq("corretor_id", corretorId);
+  if (error) return null;
+  const ids = (listas ?? []).map((l) => l.id);
+  if (ids.length === 0) return { hoje: 0, semana: 0 };
+  const agora = new Date();
+  const contar = async (desde: string) => {
+    const { count, error: erroDaContagem } = await supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id", { count: "exact", head: true })
+      .in("campanha_id", ids)
+      .eq("primeiro_contato", true)
+      .gte("enviado_em", desde);
+    return erroDaContagem ? null : (count ?? 0);
+  };
+  const hoje = await contar(inicioDoDiaEmSaoPaulo(agora));
+  const semana = await contar(new Date(agora.getTime() - 7 * 86_400_000).toISOString());
+  if (hoje === null || semana === null) return null;
+  return { hoje, semana };
 }
 
 /** O corretor mandou mensagem a este lead nas últimas `HORAS_DA_GUARDA_HUMANA`? */

@@ -14,6 +14,7 @@ import type { MarcaDoSite } from "@/lib/sites/marca";
 import type { CorretorPerfil } from "@/lib/types";
 import { descricaoDePagina } from "@/lib/seo";
 import { mensagemDoSite } from "@/lib/whatsapp/mensagensDoSite";
+import { creciParaExibir } from "@/lib/corretores/cadastroPendente";
 
 type Params = { slug: string };
 type ParamsDaPagina = Params & ParamsDoSite;
@@ -48,7 +49,7 @@ export async function generateMetadata({
   // fim, que é onde a lista de regiões está — o nome e o CRECI, que são o
   // que identifica, ficam sempre visíveis.
   const description = descricaoDePagina(
-    `${corretor.nome} atende pela ${marca.nomeCompleto} — CRECI ${corretor.creci}.${atuacao(marca, marca.regioes.length)}`,
+    `${corretor.nome} atende pela ${marca.nomeCompleto}${creciParaExibir(corretor.creci) ? ` — CRECI ${creciParaExibir(corretor.creci)}` : ""}.${atuacao(marca, marca.regioes.length)}`,
   );
 
   return {
@@ -78,7 +79,8 @@ function apresentacao(corretor: CorretorPerfil, marca: MarcaDoSite) {
   if (corretor.bio) return corretor.bio;
   const primeiroNome = corretor.nome.split(" ")[0];
   const regioes = marca.regioes.length ? ` e atuação em ${marca.regioes.slice(0, 3).join(", ")} e região` : "";
-  return `${primeiroNome} atende pela ${marca.nomeCompleto}, com CRECI ${corretor.creci}${regioes}. Chame no WhatsApp e conte o que você procura.`;
+  const creci = creciParaExibir(corretor.creci);
+  return `${primeiroNome} atende pela ${marca.nomeCompleto}${creci ? `, com CRECI ${creci}` : ""}${regioes}. Chame no WhatsApp e conte o que você procura.`;
 }
 
 /** " Atuação em A, B." — vazio quando o site não declara regiões. */
@@ -125,7 +127,7 @@ export default async function CorretorPage({ params }: { params: Promise<ParamsD
     "@type": "RealEstateAgent",
     name: corretor.nome,
     jobTitle: "Corretor de imóveis",
-    identifier: `CRECI ${corretor.creci}`,
+    ...(creciParaExibir(corretor.creci) ? { identifier: `CRECI ${creciParaExibir(corretor.creci)}` } : {}),
     telephone: `+${corretor.whatsapp}`,
     url: `${marca.url}/corretores/${corretor.slug}`,
     ...(corretor.fotoUrl ? { image: corretor.fotoUrl } : {}),
@@ -190,7 +192,8 @@ export default async function CorretorPage({ params }: { params: Promise<ParamsD
               <div className="min-w-0 flex-1">
                 <h1 className="text-fluid-2xl text-titulo">{corretor.nome}</h1>
                 <p className="text-fluid-sm mt-1.5 text-legenda">
-                  Equipe {marca.nome} · CRECI {corretor.creci}
+                  Equipe {marca.nome}
+                  {creciParaExibir(corretor.creci) ? ` · CRECI ${creciParaExibir(corretor.creci)}` : ""}
                 </p>
 
                 <p className="text-fluid-base text-apoio mt-5 break-words whitespace-pre-line">
