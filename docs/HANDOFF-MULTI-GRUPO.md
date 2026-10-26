@@ -304,14 +304,12 @@ Feito: semáforo de saúde e medidor de custo da IA na lista `/plataforma` e no 
   Logo = selo verde/dourado em `grupos/<id>/logo-selo.png` no bucket
   `empreendimentos`. Modo claro padrão; modo escuro "Verde e dourado".
   Catálogo: 39 imóveis copiados da Next Home (slug `aretz-*`; as mídias
-  apontam para os MESMOS arquivos da Next Home). Falta: e-mail do Bruno
-  (gestor) para o convite. Contrato: Claude Docs
+  apontam para os MESMOS arquivos da Next Home). Bruno já tem acesso como
+  gestor (ver "Publicações de 22–23/10" abaixo). Contrato: Claude Docs
   https://claude.ai/artifact/5LsM7Czn61J7ZN26Admz3h (taxa de transferência do
   site opcional, 6 meses, R$ 1.200 − R$ 200/mês).
-- **Em andamento (branches locais, não publicadas):** `plataforma-tipos-de-conta`
-  (lista separada imobiliárias × independentes e criação diferente; parte de
-  `saude-por-grupo`) e `limites-do-plano` (artes, vídeos e mensagens de lista
-  por plano, migration 0214).
+- ~~Em andamento: `plataforma-tipos-de-conta` e `limites-do-plano`~~ —
+  publicadas na segunda publicação de 22/10 (e21e421).
 - Pendente: `/imovel/aretzimobi/<slug>` no endereço do painel deu 404
   (investigar; a Aretz tem site próprio, não bloqueia).
 ### Tipos de conta na plataforma (22/10/2026, branch `plataforma-tipos-de-conta`, parte de `saude-por-grupo`)
@@ -333,3 +331,51 @@ Feito: `/plataforma` em duas seções (Imobiliárias / Corretores independentes)
   2f07f23 e o de e21e421 publicaram sozinhos). Confira `/api/versao` antes
   de criar deploy manual, para não publicar em dobro.
 - 0213 ficou reservada sem uso (`RESERVADOS` em `migrations.test.ts`).
+
+### Publicações de 22–23/10/2026 (no ar em 0262c34, conferido em 26/10)
+
+`/api/versao` respondeu `0262c34738f3` em 26/10/2026. Migrations 0215 e 0216
+aplicadas em produção. Detalhes de cada item no fim de `docs/MEMORIA.md`.
+
+- **Navegação pública explícita** (014ccd8): cabeçalho do site com Portfólio e
+  Imóveis explícitos. Nota [[navegacao-publica-explicita-portfolio-e-imoveis]].
+- **Cadastro de usuário, Meu site e Marca saíram do painel** (556bbf6, decisão
+  do dono em 22/10): Administração → Contas só lista e gerencia contas
+  existentes; as rotas `/corretor/admin/site` e `/corretor/admin/marca` não
+  existem mais. O que já estava gravado (cores, logo, textos) continua valendo
+  no site e no CRM. As menções a "Administração → Marca" e "Meu site" nas
+  seções de 21–22/10 acima descrevem o que existiu. Nota
+  [[cadastro-e-marca-removidos-do-painel]].
+- **Lista de leads caiu por embed ambíguo** (2061291): a 0206 criou a 2ª FK
+  `leads → corretores` (`anuncio_pago_por`); embeds usam agora
+  `corretores!leads_corretor_id_fkey`, guardado por `embedsAmbiguos.test.ts`.
+  Migration com 2ª FK entre as mesmas tabelas exige revisar todos os embeds.
+  Nota [[fk-do-embed-de-leads-e-explicita]].
+- **Plataforma cria acessos em grupo existente** (cf70cc5, ce03171): no
+  detalhe do grupo, "Criar acesso" (e-mail, senha temporária, papel corretor
+  ou gestor). Login nasce confirmado com `deve_trocar_senha = true`; no 1º
+  acesso troca a senha e completa nome, CRECI e WhatsApp
+  (`completar-cadastro`). Nota [[administrador-da-plataforma-cria-acessos-do-grupo]].
+- **Login com a marca ASTROimob em todos os endereços** (d6266af); o host do
+  CRM muda só a paleta. Nota [[tela-de-entrar-e-dividida]].
+- **Logins da Aretz**: Bruno (gestor, já existia) + Fernando (gestor) e
+  Moisés, André, Gediel, Fábio e Martines (corretores), com senha provisória
+  e `em_pausa = true` até completarem o perfil. CRM também em
+  `aretzimoveis.com` (favicon da Aretz no layout de `/corretor`). **O aceite
+  dos termos foi desligado temporariamente** (layout do painel e conexão do
+  WhatsApp); código e tabela preservados. Nota [[logins-da-aretz-com-senha-provisoria]].
+- **Aviso do lead no grupo de WhatsApp do corretor** (0215, 711f2ab): fila
+  `lead_envios_grupo` por trigger `AFTER INSERT`; o worker roda no cron de
+  follow-ups; mapeamento por JID `@g.us` em Administração → WhatsApp da
+  equipe. A roleta segue dona da distribuição. Lead de impulsionamento Meta do
+  corretor recebe só a boas-vindas fixa e a IA desliga na conversa. Nota
+  [[leads-distribuidos-nos-grupos-da-aretz]].
+- **Roleta pode pular WhatsApp desconectado** (0216, 0262c34): coluna
+  `grupos.pular_corretor_whatsapp_desconectado` (padrão `false`, desligada em
+  todos os grupos); vale para lead novo e para a devolução na saída do
+  corretor. Nota [[roleta-pula-whatsapp-desconectado-por-opcao]].
+
+Pendências que seguem abertas depois disso: reativar o aceite dos termos;
+`/imovel/aretzimobi/<slug>` com 404 no endereço do painel; armazenamento por
+plano; link do catálogo da IA para grupo sem site; `VAPID_SUBJECT`; E2E do
+site público desatualizado; botões do site do grupo com o verde padrão.
