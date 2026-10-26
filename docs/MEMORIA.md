@@ -11823,3 +11823,15 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   `devolver_leads_da_imobiliaria`: assim lead novo e a redistribuição na saída
   do corretor seguem exatamente a mesma escolha. Aplicada em produção com a
   coluna desligada para todos os grupos.
+
+## Aretz escura e com movimento curto (26/10/2026)
+
+- Nota: [[movimento-curto-nos-sites-dos-grupos]]. Site de grupo ≠ 1 recebe um
+  `<style>` de movimento curto no layout `s/[site]` (onda 1 ms, entrada
+  160 ms, `nav-forward` 200 ms, `--ritmo-do-movimento:0.5` lido por `Reveal`
+  e `TituloEditorial`). Next Home intacta.
+- Aretz travada no tema escuro só por dados: paleta escura (`#0e1a10`,
+  `#c49c4e`, `#e2c584`, `#f9fbf8`) nas colunas do CLARO e as `_escuro` nulas;
+  o seletor de tema some sozinho.
+- Cor mudada por SQL não aparece até o cache de rota vencer (até 1 h, os
+  layouts têm `revalidate = 3600`); deploy novo zera.

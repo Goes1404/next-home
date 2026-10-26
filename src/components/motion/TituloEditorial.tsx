@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { estaNaTela } from "./estaNaTela";
+import { ritmoDoMovimento } from "./ritmo";
 
 type Tag = "h1" | "h2" | "h3" | "p";
 
@@ -60,6 +61,7 @@ export function TituloEditorial({
         if (cancelado) return;
 
         const porPalavra = por === "palavras";
+        const ritmo = ritmoDoMovimento();
 
         split = new SplitText(el, {
           // A máscara acompanha a unidade: mascarar linhas e animar palavras
@@ -73,9 +75,9 @@ export function TituloEditorial({
 
         gsap.from(porPalavra ? split.words : split.lines, {
           yPercent: 110,
-          duration: porPalavra ? 0.9 : 1.1,
-          delay,
-          stagger: porPalavra ? 0.055 : 0.09,
+          duration: (porPalavra ? 0.9 : 1.1) * ritmo,
+          delay: delay * ritmo,
+          stagger: (porPalavra ? 0.055 : 0.09) * ritmo,
           ease: "power4.out",
           scrollTrigger: { trigger: el, start: "top 88%", once: true },
         });
