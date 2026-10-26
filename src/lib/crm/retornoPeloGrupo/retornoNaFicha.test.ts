@@ -12,21 +12,27 @@ import { retornosDaLigacaoNaFicha } from "./retornoNaFicha";
 
 const G = "g-1";
 
+/** Os áudios que o número central de fato guardou para cada lead (retornos_de_ligacao). */
+const GUARDADOS = [
+  { id: "r1", grupo_id: G, lead_id: "l1", audio_path: `${G}/m1.ogg` },
+  { id: "r2", grupo_id: G, lead_id: "l2", audio_path: `${G}/de-outro-lead.ogg` },
+  { id: "r3", grupo_id: "g-2", lead_id: "l1", audio_path: `${G}/m-outro-grupo.ogg` },
+];
+
 function cenario(leadVisivel = true) {
   // O cliente de sessão só enxerga o lead quando a RLS deixa.
   const sessao = bancoFalso({ leads: leadVisivel ? [{ id: "l1", grupo_id: G }] : [] });
   const assinados: string[][] = [];
-  const servico = {
-    storage: {
-      from: () => ({
-        createSignedUrls: async (caminhos: string[]) => {
-          assinados.push(caminhos);
-          return { data: caminhos.map((path) => ({ path, signedUrl: `https://x/${path}`, error: null })), error: null };
-        },
-      }),
-    },
+  const servico = bancoFalso({ retornos_de_ligacao: GUARDADOS });
+  servico.cliente.storage = {
+    from: () => ({
+      createSignedUrls: async (caminhos: string[]) => {
+        assinados.push(caminhos);
+        return { data: caminhos.map((path) => ({ path, signedUrl: `https://x/${path}`, error: null })), error: null };
+      },
+    }),
   };
-  return { sessao: sessao.cliente as never, servico: servico as never, assinados, consultas: sessao.consultas };
+  return { sessao: sessao.cliente as never, servico: servico.cliente as never, assinados, consultas: sessao.consultas };
 }
 
 const retorno = (id: string, extra: Record<string, unknown> = {}) => ({
@@ -69,6 +75,27 @@ describe("retorno da ligação na ficha", () => {
     });
     expect(c.assinados).toEqual([]);
     expect(r.get("i1")).toEqual({ resultado: "Atendeu", audioUrl: null });
+  });
+
+  it("só assina o áudio que o retorno DESTE lead guardou, não o caminho que o histórico disser", async () => {
+    const c = cenario();
+    const r = await retornosDaLigacaoNaFicha({
+      sessao: c.sessao,
+      servico: c.servico,
+      leadId: "l1",
+      linhas: [
+        retorno("i1", { audio_path: `${G}/m1.ogg` }),
+        // Mesma pasta do grupo, mas o áudio é do relato de outro lead.
+        retorno("i2", { audio_path: `${G}/de-outro-lead.ogg` }),
+        // Linha que aponta para um arquivo que nenhum retorno guardou.
+        retorno("i3", { audio_path: `${G}/inventado.ogg` }),
+        // Retorno com o lead certo, mas registrado em outro grupo.
+        retorno("i4", { audio_path: `${G}/m-outro-grupo.ogg` }),
+      ],
+    });
+    expect(c.assinados).toEqual([[`${G}/m1.ogg`]]);
+    expect(r.get("i1")?.audioUrl).toBe(`https://x/${G}/m1.ogg`);
+    for (const id of ["i2", "i3", "i4"]) expect(r.get(id)).toEqual({ resultado: "Atendeu", audioUrl: null });
   });
 
   it("lead que a sessão não enxerga não ganha link nenhum", async () => {
