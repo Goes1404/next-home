@@ -1475,6 +1475,7 @@ export type Database = {
           whatsapp: string
           whatsapp_grupo_leads_jid: string | null
           whatsapp_grupo_leads_nome: string | null
+          whatsapp_grupo_leads_manual: boolean
           whatsapp_lid: string | null
         }
         Insert: {
@@ -1506,6 +1507,7 @@ export type Database = {
           whatsapp: string
           whatsapp_grupo_leads_jid?: string | null
           whatsapp_grupo_leads_nome?: string | null
+          whatsapp_grupo_leads_manual?: boolean
           whatsapp_lid?: string | null
         }
         Update: {
@@ -1537,6 +1539,7 @@ export type Database = {
           whatsapp?: string
           whatsapp_grupo_leads_jid?: string | null
           whatsapp_grupo_leads_nome?: string | null
+          whatsapp_grupo_leads_manual?: boolean
           whatsapp_lid?: string | null
         }
         Relationships: [
@@ -1759,6 +1762,7 @@ export type Database = {
           envio_grupo_leads_ativo: boolean
           envio_grupo_leads_instancia: string | null
           pular_corretor_whatsapp_desconectado: boolean
+          padrao_nome_grupo_leads: string | null
           id: string
           mensalidade: number | null
           nome: string
@@ -1821,6 +1825,7 @@ export type Database = {
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          padrao_nome_grupo_leads?: string | null
           id?: string
           mensalidade?: number | null
           nome: string
@@ -1883,6 +1888,7 @@ export type Database = {
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          padrao_nome_grupo_leads?: string | null
           id?: string
           mensalidade?: number | null
           nome?: string

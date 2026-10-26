@@ -2,13 +2,38 @@
 
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { configurarEnvioDeLeadsNosGrupos, configurarPuloDeCorretorDesconectado, sincronizarGruposDeLeadsDaAretz } from "./acoes";
+import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
+import {
+  configurarEnvioDeLeadsNosGrupos,
+  configurarNomeDosGrupos,
+  configurarPuloDeCorretorDesconectado,
+  sincronizarGruposDeLeads,
+  vincularGrupoDoCorretor,
+} from "./acoes";
 
 type Instancia = { instanceName: string; nome: string; conectada: boolean };
-type Corretor = { id: string; nome: string; grupoNome: string | null };
+type Corretor = { id: string; nome: string; grupoJid: string | null; grupoNome: string | null; manual: boolean };
+type GrupoDoCentral = { jid: string; nome: string };
 
-export function ConfigurarGruposDeLeads({ instanciaAtual, pularDesconectados, instancias, corretores }: { instanciaAtual: string | null; pularDesconectados: boolean; instancias: Instancia[]; corretores: Corretor[] }) {
+export function ConfigurarGruposDeLeads({
+  instanciaAtual,
+  pularDesconectados,
+  instancias,
+  corretores,
+  padraoDoNome,
+  nomeDaImobiliaria,
+  gruposDoCentral,
+}: {
+  instanciaAtual: string | null;
+  pularDesconectados: boolean;
+  instancias: Instancia[];
+  corretores: Corretor[];
+  padraoDoNome: string | null;
+  nomeDaImobiliaria: string;
+  gruposDoCentral: GrupoDoCentral[];
+}) {
   const [escolhida, setEscolhida] = useState(instanciaAtual ?? "");
+  const [padrao, setPadrao] = useState(padraoDoNome ?? "");
   const [pendente, iniciar] = useTransition();
   const { avisar, falhar } = useAvisos();
 
@@ -23,6 +48,11 @@ export function ConfigurarGruposDeLeads({ instanciaAtual, pularDesconectados, in
       }
     });
 
+  // Prévia com o primeiro corretor da lista: o gestor vê o nome que o grupo precisa ter.
+  const exemplo = corretores[0]?.nome ?? "Fernando";
+  const nomeDeExemplo = nomeEsperadoDoGrupo(padrao.trim() || null, exemplo, nomeDaImobiliaria);
+  const jidsEmUso = new Map(corretores.filter((c) => c.grupoJid).map((c) => [c.grupoJid as string, c.id]));
+
   return (
     <section className="cartao p-5">
       <label className="border-linha mb-4 flex cursor-pointer items-start gap-3 rounded-xl border p-3">
@@ -35,10 +65,10 @@ export function ConfigurarGruposDeLeads({ instanciaAtual, pularDesconectados, in
         />
         <span className="grid gap-0.5">
           <span className="text-fluid-sm font-medium text-titulo">Pular corretor com WhatsApp desconectado</span>
-          <span className="text-fluid-xs text-apoio">Ligado: o lead so vai para quem estiver conectado. Desligado: conectados seguem na frente, mas a roleta nao deixa o lead sem responsavel.</span>
+          <span className="text-fluid-xs text-apoio">Ligado: o lead só vai para quem estiver conectado. Desligado: conectados seguem na frente, mas a roleta não deixa o lead sem responsável.</span>
         </span>
       </label>
-      <h2 className="text-fluid-base font-bold text-titulo">Leads nos grupos da Aretz</h2>
+      <h2 className="text-fluid-base font-bold text-titulo">Leads nos grupos de WhatsApp dos corretores</h2>
       <p className="text-fluid-xs text-apoio mt-1">
         Ao distribuir um lead, o CRM avisa o grupo do corretor. O número central precisa participar de todos os grupos.
       </p>
@@ -53,12 +83,63 @@ export function ConfigurarGruposDeLeads({ instanciaAtual, pularDesconectados, in
         <button type="button" disabled={pendente} onClick={() => executar(() => configurarEnvioDeLeadsNosGrupos(escolhida))} className="bg-acento text-sobre-acento text-fluid-sm min-h-11 rounded-xl px-4 font-medium disabled:opacity-60">
           Salvar
         </button>
-        <button type="button" disabled={pendente || !escolhida} onClick={() => executar(sincronizarGruposDeLeadsDaAretz)} className="border-linha-forte text-corpo text-fluid-sm min-h-11 rounded-xl border px-4 disabled:opacity-60">
-          {pendente ? "Sincronizando…" : "Sincronizar grupos"}
-        </button>
       </div>
+
+      <div className="border-linha mt-5 grid gap-2 rounded-xl border p-3">
+        <label className="text-fluid-sm text-corpo grid gap-1">
+          Nome dos grupos
+          <input
+            value={padrao}
+            onChange={(e) => setPadrao(e.target.value)}
+            placeholder={PADRAO_DE_FABRICA}
+            maxLength={60}
+            disabled={pendente}
+            className="border-linha-forte bg-fundo min-h-11 rounded-xl border px-3"
+          />
+        </label>
+        <p className="text-fluid-xs text-apoio">
+          Use {"{corretor}"} no lugar do nome do corretor e {"{imobiliaria}"} no lugar de &quot;{nomeDaImobiliaria}&quot;. Maiúsculas, acentos e emoji não importam. Exemplo: o grupo de {exemplo} deve se chamar <strong className="text-titulo">{nomeDeExemplo}</strong>.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className="border-linha-forte text-corpo text-fluid-sm min-h-11 rounded-xl border px-4 disabled:opacity-60">
+            Salvar nome
+          </button>
+          <button type="button" disabled={pendente || !instanciaAtual} onClick={() => executar(sincronizarGruposDeLeads)} className="bg-acento text-sobre-acento text-fluid-sm min-h-11 rounded-xl px-4 font-medium disabled:opacity-60">
+            {pendente ? "Sincronizando…" : "Sincronizar grupos"}
+          </button>
+        </div>
+      </div>
+
       <ul className="divide-linha mt-4 divide-y">
-        {corretores.map((c) => <li key={c.id} className="text-fluid-sm flex justify-between gap-3 py-2"><span className="text-titulo">{c.nome}</span><span className={c.grupoNome ? "text-ok" : "text-apoio"}>{c.grupoNome ?? "grupo não encontrado"}</span></li>)}
+        {corretores.map((c) => (
+          <li key={c.id} className="grid gap-2 py-3 sm:flex sm:items-center sm:justify-between">
+            <span className="text-fluid-sm grid">
+              <span className="text-titulo">{c.nome}</span>
+              <span className={`text-fluid-xs ${c.grupoNome ? "text-ok" : "text-apoio"}`}>
+                {c.grupoNome ? `${c.grupoNome}${c.manual ? " · escolhido à mão" : ""}` : "grupo não encontrado"}
+              </span>
+            </span>
+            {gruposDoCentral.length > 0 && (
+              <select
+                aria-label={`Grupo de ${c.nome}`}
+                value={c.manual && c.grupoJid ? c.grupoJid : ""}
+                disabled={pendente}
+                onChange={(e) => executar(() => vincularGrupoDoCorretor(c.id, e.target.value || null))}
+                className="border-linha-forte bg-fundo text-fluid-sm min-h-11 rounded-xl border px-3 sm:max-w-64"
+              >
+                <option value="">Achar pelo nome</option>
+                {gruposDoCentral.map((g) => {
+                  const deOutro = jidsEmUso.has(g.jid) && jidsEmUso.get(g.jid) !== c.id;
+                  return (
+                    <option key={g.jid} value={g.jid} disabled={deOutro}>
+                      {g.nome}{deOutro ? " (de outro corretor)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+          </li>
+        ))}
       </ul>
     </section>
   );

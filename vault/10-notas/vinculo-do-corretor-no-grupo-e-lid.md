@@ -53,3 +53,16 @@ payloads simulados; o formato real do `key.participant` do webhook fica para a
 tarefa do webhook.
 
 Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Painel]]
+
+## Nome do grupo personalizado e vínculo à mão (0220, 27/10/2026)
+
+- Cada imobiliária escolhe o padrão do nome em Administração → WhatsApp da
+  equipe (`grupos.padrao_nome_grupo_leads`, com `{corretor}` e
+  `{imobiliaria}`); nulo = `{corretor} & {imobiliaria}`. A Aretz ficou com
+  `{corretor} & ARETZ` pela própria 0220 (o nome da casa dela é "Aretz Imobi").
+- O gestor pode escolher à mão o grupo de um corretor
+  (`corretores.whatsapp_grupo_leads_manual`): "Sincronizar grupos" não mexe
+  nele e não entrega aquele grupo a outro corretor. Um grupo, um corretor.
+- Regra pura em `src/lib/whatsapp/nomeDoGrupoDeLeads.ts` (prévia da tela e
+  sincronização usam a mesma conta).
+

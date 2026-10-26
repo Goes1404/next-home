@@ -11937,3 +11937,16 @@ Nota: [[primeiro-contato-tem-teto-proprio]].
 - **Esta branch estava 1.083 commits atrás da produção** quando a sessão
   voltou. Antes de mexer, `git fetch` e conferir a última migration da `main`.
 
+## Nome dos grupos de leads por imobiliária (0220, 27/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
+
+- O padrão `NOME & ARETZ` estava fixo no código: a Next (ou qualquer casa nova)
+  não conseguiria vincular grupo nenhum. Agora é `grupos.padrao_nome_grupo_leads`
+  (nulo = `{corretor} & {imobiliaria}`), e a 0220 grava `{corretor} & ARETZ`
+  para a Aretz — sem isso o padrão de fábrica viraria "& ARETZ IMOBI" e
+  desvincularia todos na próxima sincronização.
+- Vínculo à mão (`whatsapp_grupo_leads_manual`) vence a sincronização e tira o
+  grupo da disputa dos outros corretores.
+- A 0220 entra ANTES do deploy: a tela lê as colunas novas.
+

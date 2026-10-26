@@ -9,6 +9,8 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { motivoDaQueda } from "@/lib/whatsapp/motivoDaQueda";
 import { quandoEmSaoPaulo } from "@/lib/whatsapp/saudeDaConexao";
 import { ConfigurarGruposDeLeads } from "./ConfigurarGruposDeLeads";
+import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { listarGruposWhatsapp } from "@/lib/whatsapp/provider";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 
@@ -97,7 +99,7 @@ export default async function AdminWhatsappPage() {
       .eq("grupo_id", equipe.grupoId)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("corretores").select("id, nome, papel, whatsapp_grupo_leads_nome").eq("grupo_id", equipe.grupoId),
+    supabase.from("corretores").select("id, nome, papel, whatsapp_grupo_leads_jid, whatsapp_grupo_leads_nome, whatsapp_grupo_leads_manual").eq("grupo_id", equipe.grupoId),
     /*
      * As listas de transmissão da equipe nos últimos 30 dias (roadmap das
      * listas, Fase 3): só contagens, nunca o texto que foi mandado (0134).
@@ -112,11 +114,19 @@ export default async function AdminWhatsappPage() {
     idsDeContasOcultas(supabase),
     supabase
       .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, pular_corretor_whatsapp_desconectado")
+      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, pular_corretor_whatsapp_desconectado, padrao_nome_grupo_leads")
       .eq("id", gestor.grupoId)
       .maybeSingle(),
   ]);
   const instancias = semContasOcultas(todasInstancias ?? [], ocultas, (i) => i.corretor_id);
+  // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
+  // número central enxerga. Sem número central, ou se a leitura falhar, a
+  // lista fica vazia e a sincronização pelo nome continua valendo.
+  const centralDoGrupo = configuracaoDoGrupo?.envio_grupo_leads_ativo ? configuracaoDoGrupo.envio_grupo_leads_instancia : null;
+  const [gruposDoCentral, marcaDoGrupo] = await Promise.all([
+    centralDoGrupo ? listarGruposWhatsapp(centralDoGrupo) : Promise.resolve({ grupos: [] }),
+    lerMarcaDoCrm(gestor.grupoId),
+  ]);
   const interacoes = semContasOcultas(todasInteracoes ?? [], ocultas, (i) => i.corretor_id);
   const listas = semContasOcultas(todasListas ?? [], ocultas, (l) => l.corretor_id);
   const eventos = semContasOcultas(
@@ -246,7 +256,16 @@ export default async function AdminWhatsappPage() {
         }))}
         corretores={(pessoas ?? [])
           .filter((p) => p.papel === "corretor")
-          .map((p) => ({ id: p.id, nome: p.nome, grupoNome: p.whatsapp_grupo_leads_nome }))}
+          .map((p) => ({
+            id: p.id,
+            nome: p.nome,
+            grupoJid: p.whatsapp_grupo_leads_jid,
+            grupoNome: p.whatsapp_grupo_leads_nome,
+            manual: p.whatsapp_grupo_leads_manual,
+          }))}
+        padraoDoNome={configuracaoDoGrupo?.padrao_nome_grupo_leads ?? null}
+        nomeDaImobiliaria={marcaDoGrupo.nome}
+        gruposDoCentral={gruposDoCentral.grupos}
       />
 
       <section className="cartao p-5">
