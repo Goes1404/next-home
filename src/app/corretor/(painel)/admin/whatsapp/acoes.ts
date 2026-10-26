@@ -67,7 +67,7 @@ export async function desconectarNumeroDoCorretor(
   return { ok: "Número desconectado. A IA desse corretor para até ele conectar de novo." };
 }
 
-/** Mai\u00fasculas, sem acento nem emoji; s\u00edmbolos viram um espa\u00e7o s\u00f3. */
+/** Maiúsculas, sem acento nem emoji; símbolos viram um espaço só. */
 function normalizarNome(texto: string): string {
   return texto
     .normalize("NFD")
@@ -79,7 +79,7 @@ function normalizarNome(texto: string): string {
 
 /**
  * Como o grupo do corretor deve se chamar: `NOME DO CORRETOR & ARETZ`. O
- * sufixo \u00e9 acrescentado s\u00f3 ao nome do corretor: o nome do grupo j\u00e1 o traz.
+ * sufixo é acrescentado só ao nome do corretor: o nome do grupo já o traz.
  */
 function nomeDeGrupoAretz(nome: string): string {
   return normalizarNome(`${nome} & Aretz`);
@@ -171,7 +171,6 @@ export async function sincronizarGruposDeLeadsDaAretz(): Promise<{ ok?: string; 
 
   const lista = await listarGruposWhatsapp(instancia);
   if (lista.erro) return { erro: lista.erro };
-  const porNome = new Map(lista.grupos.map((g) => [normalizarNome(g.nome), g]));
   const { data: corretores, error } = await servico
     .from("corretores")
     .select("id, nome, whatsapp")
@@ -180,13 +179,17 @@ export async function sincronizarGruposDeLeadsDaAretz(): Promise<{ ok?: string; 
     .eq("papel", "corretor");
   if (error) return { erro: "Não foi possível ler a equipe agora." };
 
-  const plano = planejarVinculos(corretores ?? [], porNome, nomeDeGrupoAretz);
+  const plano = planejarVinculos(corretores ?? [], lista.grupos, nomeDeGrupoAretz, normalizarNome);
 
   // Não manter um JID antigo depois que o grupo foi renomeado, apagado ou
-  // passou a servir a dois corretores: é preferível o CRM registrar a falha
+  // passou a servir a dois corretores (ou a ter um homônimo): é preferível o CRM registrar a falha
   // a expor lead no grupo errado.
   let semGrupo = 0;
-  for (const corretor of [...plano.semGrupo, ...plano.repetidos.flatMap((r) => r.corretores)]) {
+  for (const corretor of [
+    ...plano.semGrupo,
+    ...plano.repetidos.flatMap((r) => r.corretores),
+    ...plano.gruposComMesmoNome.flatMap((r) => r.corretores),
+  ]) {
     const { error: erroLimpar } = await servico
       .from("corretores")
       .update({ whatsapp_grupo_leads_jid: null, whatsapp_grupo_leads_nome: null })
@@ -212,8 +215,10 @@ export async function sincronizarGruposDeLeadsDaAretz(): Promise<{ ok?: string; 
     vinculados,
     semGrupo,
     repetidos: plano.repetidos.map((r) => ({ grupoNome: r.grupo.nome })),
+    gruposComMesmoNome: plano.gruposComMesmoNome.map((r) => ({ grupoNome: r.grupos[0].nome })),
   });
-  return !vinculados && plano.repetidos.length ? { erro: mensagem } : { ok: mensagem };
+  const recusados = plano.repetidos.length + plano.gruposComMesmoNome.length;
+  return !vinculados && recusados ? { erro: mensagem } : { ok: mensagem };
 }
 
 /**
@@ -239,10 +244,11 @@ async function guardarLidDoCorretor(
       return;
     }
     const achado = lidDoCorretor(leitura.participantes, corretor.whatsapp);
-    if (achado.achou === "nao") return;
+    // Sem o par número↔lid na lista, o que já estava guardado fica como está.
+    if (achado.achou !== "lid") return;
     const { error } = await servico
       .from("corretores")
-      .update({ whatsapp_lid: achado.achou === "lid" ? achado.lid : null })
+      .update({ whatsapp_lid: achado.lid })
       .eq("id", corretor.id)
       .eq("grupo_id", grupoId);
     if (error) {

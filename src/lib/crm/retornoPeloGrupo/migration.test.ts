@@ -72,6 +72,20 @@ describe("migration 0218: retorno da ligação pelo grupo", () => {
     expect(carimbo).toBeTruthy();
     expect(maes("create trigger retornos_de_ligacao_zz_grupo_insert")).toBe(carimbo);
     expect(maes("create trigger retornos_de_ligacao_zz_grupo_update")).toBe(carimbo);
+    // Toda FK para tabela com grupo entra no carimbo (convenção da 0191),
+    // inclusive a que aponta para a própria tabela.
+    for (const mae of [
+      "'lead_id', 'leads', 'id'",
+      "'corretor_id', 'corretores', 'id'",
+      "'envio_id', 'lead_envios_grupo', 'id'",
+      "'corrige_id', 'retornos_de_ligacao', 'id'",
+    ]) {
+      expect(carimbo).toContain(mae);
+    }
+    expect(sql).toMatch(
+      /before insert or update of grupo_id, lead_id, corretor_id, envio_id, corrige_id on public\.retornos_de_ligacao/,
+    );
+    expect(sql).toMatch(/new\.corrige_id is distinct from old\.corrige_id/);
     const carimboListas = maes("create trigger listas_de_retorno_enviadas_00_grupo");
     expect(carimboListas).toBeTruthy();
     expect(maes("create trigger listas_de_retorno_enviadas_zz_grupo_insert")).toBe(carimboListas);

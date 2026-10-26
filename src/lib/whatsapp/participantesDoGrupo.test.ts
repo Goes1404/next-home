@@ -33,12 +33,12 @@ describe("participantesDaResposta", () => {
     const r = participantesDaResposta({
       participants: [{ id: "5511987654321@s.whatsapp.net", admin: null }],
     });
-    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }]);
   });
 
   it("lê a lista quando a resposta é o array puro", () => {
     const r = participantesDaResposta([{ id: "5511987654321@s.whatsapp.net" }]);
-    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }]);
   });
 
   it("id @lid com phoneNumber traz o número do par", () => {
@@ -47,24 +47,24 @@ describe("participantesDaResposta", () => {
         { id: "123456789012345@lid", phoneNumber: "5511987654321@s.whatsapp.net", admin: "admin" },
       ],
     });
-    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321", lid: "123456789012345@lid" }]);
   });
 
   it("id @lid com jid alternativo traz o número do par", () => {
     const r = participantesDaResposta([
       { id: "123456789012345@lid", jid: "5511987654321@s.whatsapp.net" },
     ]);
-    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321", lid: "123456789012345@lid" }]);
   });
 
   it("phoneNumber só com dígitos também vale", () => {
     const r = participantesDaResposta([{ id: "123456789012345@lid", phoneNumber: "5511987654321" }]);
-    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "123456789012345@lid", numero: "5511987654321", lid: "123456789012345@lid" }]);
   });
 
   it("@lid sem número fica com numero null", () => {
     expect(participantesDaResposta([{ id: "123456789012345@lid" }])).toEqual([
-      { id: "123456789012345@lid", numero: null },
+      { id: "123456789012345@lid", numero: null, lid: "123456789012345@lid" },
     ]);
   });
 
@@ -72,14 +72,30 @@ describe("participantesDaResposta", () => {
     const r = participantesDaResposta([
       { id: "123456789012345@lid", phoneNumber: "123456789012345@lid", jid: "120363000000000000@g.us" },
     ]);
-    expect(r).toEqual([{ id: "123456789012345@lid", numero: null }]);
+    expect(r).toEqual([{ id: "123456789012345@lid", numero: null, lid: "123456789012345@lid" }]);
   });
 
   it("id com número ganha de campo alternativo divergente", () => {
     const r = participantesDaResposta([
       { id: "5511987654321@s.whatsapp.net", phoneNumber: "5521999999999@s.whatsapp.net" },
     ]);
-    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }]);
+  });
+
+  it("id com número e campo lid (Baileys) expõe o par número↔lid", () => {
+    const r = participantesDaResposta([
+      { id: "5511987654321@s.whatsapp.net", lid: "123456789012345@lid", admin: null },
+    ]);
+    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: "123456789012345@lid" }]);
+  });
+
+  it("campo lid sem o sufixo @lid não vale", () => {
+    const r = participantesDaResposta([
+      { id: "5511987654321@s.whatsapp.net", lid: "123456789012345" },
+      { id: "5511911112222@s.whatsapp.net", lid: 42 },
+      { id: "5511933334444@s.whatsapp.net", lid: "5511933334444@s.whatsapp.net" },
+    ]);
+    expect(r.map((p) => p.lid)).toEqual([null, null, null]);
   });
 
   it("ignora lixo sem quebrar", () => {
@@ -97,7 +113,7 @@ describe("participantesDaResposta", () => {
         { id: "5511987654321@s.whatsapp.net" },
       ],
     });
-    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }]);
+    expect(r).toEqual([{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }]);
   });
 
   it("resposta que não é lista vira lista vazia", () => {

@@ -12,6 +12,11 @@ export type ParticipanteDoGrupo = {
   id: string;
   /** Só dígitos; `null` quando a Evolution não entregou o número. */
   numero: string | null;
+  /**
+   * O `@lid` da pessoa, quando conhecido: o próprio `id` se ele for `@lid`,
+   * ou o campo `lid` que a Baileys manda junto de um id com número.
+   */
+  lid: string | null;
 };
 
 /**
@@ -23,6 +28,13 @@ export function numeroDoJid(jid: string | null | undefined): string | null {
   if (typeof jid !== "string") return null;
   const achou = /^(\d+)(?::\d+)?@(?:s\.whatsapp\.net|c\.us)$/.exec(jid.trim());
   return achou ? achou[1] : null;
+}
+
+/** O `@lid` só vale com o sufixo; qualquer outra coisa não é um par confiável. */
+function lidDoCampo(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const texto = valor.trim();
+  return /^\d+@lid$/.test(texto) ? texto : null;
 }
 
 /** Campos em que a Evolution põe o número quando o `id` é `@lid`. */
@@ -39,7 +51,8 @@ function numeroDoCampo(valor: unknown): string | null {
  * Lista de participantes a partir do corpo da resposta: `{ participants: [] }`
  * ou o array puro. Item que não for objeto com `id` no formato de JID é
  * ignorado. O número vem do próprio `id` quando ele é de pessoa; senão de
- * `phoneNumber`/`jid`; senão `null` (nunca se adivinha o número).
+ * `phoneNumber`/`jid`; senão `null` (nunca se adivinha o número). O `lid`
+ * vem do `id` (se for `@lid`) ou do campo `lid` que acompanha um id com número.
  */
 export function participantesDaResposta(corpo: unknown): ParticipanteDoGrupo[] {
   const itens = Array.isArray(corpo)
@@ -61,7 +74,8 @@ export function participantesDaResposta(corpo: unknown): ParticipanteDoGrupo[] {
         if (numero !== null) break;
       }
     }
-    return [{ id, numero }];
+    const lid = lidDoCampo(id) ?? lidDoCampo(dado.lid);
+    return [{ id, numero, lid }];
   });
 }
 

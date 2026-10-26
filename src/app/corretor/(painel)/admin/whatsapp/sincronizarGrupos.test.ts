@@ -74,10 +74,10 @@ describe("sincronizarGruposDeLeadsDaAretz", () => {
       participantes:
         jid === "1@g.us"
           ? [
-              { id: "10@lid", numero: "5511987654321" },
-              { id: "11@lid", numero: "5511955554444" }, // um gestor
+              { id: "10@lid", numero: "5511987654321", lid: "10@lid" },
+              { id: "11@lid", numero: "5511955554444", lid: "11@lid" }, // um gestor
             ]
-          : [{ id: "20@lid", numero: "5511911112222" }],
+          : [{ id: "20@lid", numero: "5511911112222", lid: "20@lid" }],
     }));
 
     const r = await sincronizarGruposDeLeadsDaAretz();
@@ -108,14 +108,31 @@ describe("sincronizarGruposDeLeadsDaAretz", () => {
 
   it("participante que só tem o número não grava @lid", async () => {
     listarParticipantesDoGrupo.mockResolvedValue({
-      participantes: [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }],
+      participantes: [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }],
     });
     await sincronizarGruposDeLeadsDaAretz();
     expect(linha("ana").whatsapp_lid).toBeNull();
   });
 
+  it("participante só com o número NÃO apaga o @lid que já estava guardado", async () => {
+    linha("ana").whatsapp_lid = "10@lid";
+    listarParticipantesDoGrupo.mockResolvedValue({
+      participantes: [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }],
+    });
+    await sincronizarGruposDeLeadsDaAretz();
+    expect(linha("ana").whatsapp_lid).toBe("10@lid");
+  });
+
+  it("id com número e campo lid (Baileys) guarda o par", async () => {
+    listarParticipantesDoGrupo.mockResolvedValue({
+      participantes: [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: "10@lid" }],
+    });
+    await sincronizarGruposDeLeadsDaAretz();
+    expect(linha("ana").whatsapp_lid).toBe("10@lid");
+  });
+
   it("@lid sem número na lista não é atribuído a ninguém", async () => {
-    listarParticipantesDoGrupo.mockResolvedValue({ participantes: [{ id: "77@lid", numero: null }] });
+    listarParticipantesDoGrupo.mockResolvedValue({ participantes: [{ id: "77@lid", numero: null, lid: "77@lid" }] });
     await sincronizarGruposDeLeadsDaAretz();
     expect(linha("ana").whatsapp_lid).toBeNull();
     expect(linha("beto").whatsapp_lid).toBeNull();
@@ -161,6 +178,26 @@ describe("sincronizarGruposDeLeadsDaAretz", () => {
     // Os participantes só são lidos do grupo que ficou vinculado.
     expect(listarParticipantesDoGrupo).toHaveBeenCalledTimes(1);
     expect(listarParticipantesDoGrupo).toHaveBeenCalledWith("central", "2@g.us");
+  });
+
+  it("dois grupos do WhatsApp com o mesmo nome: nenhum é vinculado e a tela avisa", async () => {
+    linha("ana").whatsapp_grupo_leads_jid = "velho@g.us";
+    listarGruposWhatsapp.mockResolvedValue({
+      grupos: [
+        { jid: "1@g.us", nome: "Ana Souza & Aretz" },
+        { jid: "8@g.us", nome: "ANA SOUZA & ARETZ 🟢" },
+        { jid: "2@g.us", nome: "Beto Lima & Aretz" },
+      ],
+    });
+    listarParticipantesDoGrupo.mockResolvedValue({ participantes: [] });
+
+    const r = await sincronizarGruposDeLeadsDaAretz();
+
+    expect(linha("ana").whatsapp_grupo_leads_jid).toBeNull();
+    expect(linha("beto").whatsapp_grupo_leads_jid).toBe("2@g.us");
+    expect(r.ok).toContain("1 grupo(s) vinculado(s).");
+    expect(r.ok).toContain("Há mais de um grupo chamado Ana Souza & Aretz");
+    expect(listarParticipantesDoGrupo).toHaveBeenCalledTimes(1);
   });
 
   it("se TODOS os grupos caíram em repetido, a resposta é erro", async () => {

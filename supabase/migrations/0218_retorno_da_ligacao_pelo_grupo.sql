@@ -120,11 +120,12 @@ create policy isolamento_por_grupo on public.retornos_de_ligacao as restrictive 
 
 drop trigger if exists retornos_de_ligacao_00_grupo on public.retornos_de_ligacao;
 create trigger retornos_de_ligacao_00_grupo
-  before insert or update of grupo_id, lead_id, corretor_id, envio_id on public.retornos_de_ligacao
+  before insert or update of grupo_id, lead_id, corretor_id, envio_id, corrige_id on public.retornos_de_ligacao
   for each row execute function public.carimbar_grupo(
     'lead_id', 'leads', 'id',
     'corretor_id', 'corretores', 'id',
-    'envio_id', 'lead_envios_grupo', 'id'
+    'envio_id', 'lead_envios_grupo', 'id',
+    'corrige_id', 'retornos_de_ligacao', 'id'
   );
 
 drop trigger if exists retornos_de_ligacao_zz_grupo_update on public.retornos_de_ligacao;
@@ -135,11 +136,13 @@ create trigger retornos_de_ligacao_zz_grupo_update
     or new.lead_id is distinct from old.lead_id
     or new.corretor_id is distinct from old.corretor_id
     or new.envio_id is distinct from old.envio_id
+    or new.corrige_id is distinct from old.corrige_id
   )
   execute function public.conferir_grupo_final(
     'lead_id', 'leads', 'id',
     'corretor_id', 'corretores', 'id',
-    'envio_id', 'lead_envios_grupo', 'id'
+    'envio_id', 'lead_envios_grupo', 'id',
+    'corrige_id', 'retornos_de_ligacao', 'id'
   );
 
 drop trigger if exists retornos_de_ligacao_zz_grupo_insert on public.retornos_de_ligacao;
@@ -148,7 +151,8 @@ create trigger retornos_de_ligacao_zz_grupo_insert
   execute function public.conferir_grupo_final(
     'lead_id', 'leads', 'id',
     'corretor_id', 'corretores', 'id',
-    'envio_id', 'lead_envios_grupo', 'id'
+    'envio_id', 'lead_envios_grupo', 'id',
+    'corrige_id', 'retornos_de_ligacao', 'id'
   );
 
 -- ---------------------------------------------------------------------------

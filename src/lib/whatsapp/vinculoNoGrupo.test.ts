@@ -2,48 +2,45 @@ import { describe, expect, it } from "vitest";
 import { lidDoCorretor, mensagemDaSincronizacao, planejarVinculos } from "./vinculoNoGrupo";
 
 const chave = (nome: string) => nome.trim().toUpperCase();
-const grupoDaAna = { jid: "1@g.us", nome: "Ana & Aretz" };
-const grupoDoBeto = { jid: "2@g.us", nome: "Beto & Aretz" };
+const grupoDaAna = { jid: "1@g.us", nome: "ANA" };
+const grupoDoBeto = { jid: "2@g.us", nome: "BETO" };
 
 describe("planejarVinculos", () => {
   it("um corretor, um grupo", () => {
     const ana = { id: "a", nome: "Ana", whatsapp: "11987654321" };
     const beto = { id: "b", nome: "Beto", whatsapp: "11911112222" };
-    const plano = planejarVinculos(
-      [ana, beto],
-      new Map([
-        ["ANA", grupoDaAna],
-        ["BETO", grupoDoBeto],
-      ]),
-      chave,
-    );
+    const plano = planejarVinculos([ana, beto], [grupoDaAna, grupoDoBeto], chave, chave);
     expect(plano.vinculos).toEqual([
       { corretor: ana, grupo: grupoDaAna },
       { corretor: beto, grupo: grupoDoBeto },
     ]);
     expect(plano.semGrupo).toEqual([]);
     expect(plano.repetidos).toEqual([]);
+    expect(plano.gruposComMesmoNome).toEqual([]);
   });
 
   it("grupo que serve a dois corretores não vincula nenhum dos dois", () => {
     const ana1 = { id: "a1", nome: "Ana", whatsapp: "11987654321" };
     const ana2 = { id: "a2", nome: " ana ", whatsapp: "11922223333" };
     const beto = { id: "b", nome: "Beto", whatsapp: "11911112222" };
-    const plano = planejarVinculos(
-      [ana1, ana2, beto],
-      new Map([
-        ["ANA", grupoDaAna],
-        ["BETO", grupoDoBeto],
-      ]),
-      chave,
-    );
+    const plano = planejarVinculos([ana1, ana2, beto], [grupoDaAna, grupoDoBeto], chave, chave);
     expect(plano.vinculos).toEqual([{ corretor: beto, grupo: grupoDoBeto }]);
     expect(plano.repetidos).toEqual([{ grupo: grupoDaAna, corretores: [ana1, ana2] }]);
   });
 
+  it("dois grupos com o mesmo nome: não vincula a nenhum e avisa", () => {
+    const ana = { id: "a", nome: "Ana", whatsapp: "11987654321" };
+    const beto = { id: "b", nome: "Beto", whatsapp: "11911112222" };
+    const outroGrupoDaAna = { jid: "9@g.us", nome: "ana" };
+    const plano = planejarVinculos([ana, beto], [grupoDaAna, outroGrupoDaAna, grupoDoBeto], chave, chave);
+    expect(plano.vinculos).toEqual([{ corretor: beto, grupo: grupoDoBeto }]);
+    expect(plano.gruposComMesmoNome).toEqual([{ grupos: [grupoDaAna, outroGrupoDaAna], corretores: [ana] }]);
+    expect(plano.semGrupo).toEqual([]);
+  });
+
   it("corretor sem grupo no padrão vai para semGrupo", () => {
     const caio = { id: "c", nome: "Caio", whatsapp: null };
-    const plano = planejarVinculos([caio], new Map(), chave);
+    const plano = planejarVinculos([caio], [], chave, chave);
     expect(plano.semGrupo).toEqual([caio]);
     expect(plano.vinculos).toEqual([]);
   });
@@ -52,31 +49,36 @@ describe("planejarVinculos", () => {
 describe("lidDoCorretor", () => {
   it("acha o @lid pelo número do corretor, com ou sem 55 e 9", () => {
     const lista = [
-      { id: "111@lid", numero: "5511911112222" },
-      { id: "222@lid", numero: "5511987654321" },
+      { id: "111@lid", numero: "5511911112222", lid: "111@lid" },
+      { id: "222@lid", numero: "5511987654321", lid: "222@lid" },
     ];
     expect(lidDoCorretor(lista, "(11) 98765-4321")).toEqual({ achou: "lid", lid: "222@lid" });
     expect(lidDoCorretor(lista, "551187654321")).toEqual({ achou: "lid", lid: "222@lid" });
   });
 
-  it("participante com o próprio número no id não tem @lid a guardar", () => {
-    const lista = [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321" }];
+  it("id com número e campo lid do mesmo participante é um par legítimo", () => {
+    const lista = [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: "222@lid" }];
+    expect(lidDoCorretor(lista, "11987654321")).toEqual({ achou: "lid", lid: "222@lid" });
+  });
+
+  it("participante com o próprio número no id e sem lid não tem o que guardar", () => {
+    const lista = [{ id: "5511987654321@s.whatsapp.net", numero: "5511987654321", lid: null }];
     expect(lidDoCorretor(lista, "11987654321")).toEqual({ achou: "sem_lid" });
   });
 
   it("@lid sem número na lista nunca é atribuído (sem o par, não grava)", () => {
-    const lista = [{ id: "333@lid", numero: null }];
+    const lista = [{ id: "333@lid", numero: null, lid: "333@lid" }];
     expect(lidDoCorretor(lista, "11987654321")).toEqual({ achou: "nao" });
   });
 
   it("corretor fora do grupo, sem número ou ambíguo: não grava", () => {
-    const lista = [{ id: "111@lid", numero: "5511911112222" }];
+    const lista = [{ id: "111@lid", numero: "5511911112222", lid: "111@lid" }];
     expect(lidDoCorretor(lista, "11987654321")).toEqual({ achou: "nao" });
     expect(lidDoCorretor(lista, null)).toEqual({ achou: "nao" });
     expect(lidDoCorretor(lista, "")).toEqual({ achou: "nao" });
     const ambiguo = [
-      { id: "111@lid", numero: "5511987654321" },
-      { id: "222@lid", numero: "5511987654321" },
+      { id: "111@lid", numero: "5511987654321", lid: "111@lid" },
+      { id: "222@lid", numero: "5511987654321", lid: "222@lid" },
     ];
     expect(lidDoCorretor(ambiguo, "11987654321")).toEqual({ achou: "nao" });
   });
@@ -100,5 +102,15 @@ describe("mensagemDaSincronizacao", () => {
       "O grupo Ana & Aretz serve a mais de um corretor; renomeie para ter um grupo por corretor.",
     );
     expect(m).not.toMatch(/jid|lid/i);
+  });
+
+  it("avisa em português simples os grupos com o mesmo nome", () => {
+    const m = mensagemDaSincronizacao({
+      vinculados: 0,
+      semGrupo: 0,
+      repetidos: [],
+      gruposComMesmoNome: [{ grupoNome: "Ana & Aretz" }],
+    });
+    expect(m).toBe("Há mais de um grupo chamado Ana & Aretz; deixe um só por corretor para ele ser vinculado.");
   });
 });

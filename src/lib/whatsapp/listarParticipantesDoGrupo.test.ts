@@ -30,7 +30,7 @@ describe("listarParticipantesDoGrupo", () => {
 
     const r = await listarParticipantesDoGrupo("central", GRUPO);
 
-    expect(r).toEqual({ participantes: [{ id: "123456789012345@lid", numero: "5511987654321" }] });
+    expect(r).toEqual({ participantes: [{ id: "123456789012345@lid", numero: "5511987654321", lid: "123456789012345@lid" }] });
     expect(chamadas).toHaveLength(1);
     expect(chamadas[0].url).toBe(
       `https://evolution.exemplo.test/group/participants/central?groupJid=${encodeURIComponent(GRUPO)}`,

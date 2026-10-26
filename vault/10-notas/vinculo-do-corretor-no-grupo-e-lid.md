@@ -29,6 +29,13 @@ mensagem de gestor viraria "retorno de ligação".
   (dígitos, com e sem 55, com e sem o 9 do celular; fixo nunca vira celular).
   Nunca por adivinhação ("o primeiro que falou"). Participante só com número no
   id: nada a guardar. Número batendo com dois ids: não grava.
+- Par número↔lid aceito: id `@lid` com `phoneNumber`/`jid` ao lado, ou id com
+  número e campo `lid` (Baileys). Participante só com número não apaga o `@lid`
+  já guardado.
+- Dois grupos do WhatsApp com o mesmo nome normalizado: nenhum é vinculado e a
+  tela avisa ("Há mais de um grupo chamado X...").
+- Todas as FKs de `retornos_de_ligacao` (lead, corretor, envio e `corrige_id`)
+  entram no carimbo de grupo, como manda a 0191.
 - Falha ao ler os participantes não desfaz o vínculo do grupo (só log), e não
   apaga o `@lid` que já estava guardado.
 - Dois corretores no mesmo grupo: nenhum dos dois é vinculado e a tela diz
