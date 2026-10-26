@@ -71,7 +71,7 @@ export function destinoDoAviso(
   }
   if (!donoAtual.ativo) return { acao: "cancelar", motivo: "O corretor responsável não está mais ativo." };
   const grupoJid = donoAtual.whatsapp_grupo_leads_jid?.trim();
-  if (!grupoJid) return { acao: "cancelar", motivo: "O lead mudou para quem não tem grupo." };
+  if (!grupoJid) return { acao: "cancelar", motivo: "O corretor responsável não tem grupo de WhatsApp cadastrado." };
   return { acao: "enviar", corretorId: donoAtual.id, grupoJid };
 }
 
@@ -114,7 +114,7 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
       .maybeSingle();
     if (erroReserva || !reservado) continue;
 
-    const [{ data: lead }, { data: instancia }] = await Promise.all([
+    const [{ data: lead, error: erroLead }, { data: instancia }] = await Promise.all([
       supabase
         .from("leads")
         .select("nome, telefone, origem, anuncio_origem, empreendimento_id, corretor_id, trazido_por, etapa")
@@ -129,15 +129,28 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
         .maybeSingle(),
     ]);
 
+    // Falha de leitura não é "lead sumiu": cancelar aqui descartaria o aviso
+    // para sempre. Volta para a fila e tenta de novo (até 3 vezes).
+    if (erroLead) {
+      console.error("[grupos de leads] falha ao ler lead:", erroLead.message);
+      await registrarFalha(supabase, candidato, "Não foi possível consultar o lead agora.", agora);
+      continue;
+    }
+
     // O dono é o de agora, não o da linha da fila: a roleta pode ter trocado.
     let dono: { id: string; nome: string; ativo: boolean; whatsapp_grupo_leads_jid: string | null; whatsapp_grupo_leads_nome: string | null } | null = null;
     if (lead?.corretor_id) {
-      const { data } = await supabase
+      const { data, error: erroDono } = await supabase
         .from("corretores")
         .select("id, nome, ativo, whatsapp_grupo_leads_jid, whatsapp_grupo_leads_nome")
         .eq("id", lead.corretor_id)
         .eq("grupo_id", candidato.grupo_id)
         .maybeSingle();
+      if (erroDono) {
+        console.error("[grupos de leads] falha ao ler corretor:", erroDono.message);
+        await registrarFalha(supabase, candidato, "Não foi possível consultar o corretor agora.", agora);
+        continue;
+      }
       dono = data ?? null;
     }
 

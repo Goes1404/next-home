@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { destinoDoAviso, textoDoLeadDistribuido } from "./enviosDeLeadParaGrupo";
+import { destinoDoAviso, enviarLeadsDistribuidosParaGrupos, textoDoLeadDistribuido } from "./enviosDeLeadParaGrupo";
+
+const enviarMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/whatsapp/provider", () => ({ enviarMensagemWhatsappParaGrupo: enviarMock }));
 
 describe("aviso de lead distribuÃ­do no grupo", () => {
   it("traz o essencial para o corretor agir, em vez de expor a ficha inteira", () => {
@@ -72,5 +75,65 @@ describe("para quem o aviso do lead realmente vai", () => {
 
   it("sem a ficha do lead, cancela", () => {
     expect(destinoDoAviso(item, null, dono).acao).toBe("cancelar");
+  });
+});
+
+describe("falha de leitura no worker", () => {
+  type Linha = Record<string, unknown>;
+  // Cliente falso: cada tabela devolve o que o teste mandar; os updates da
+  // fila ficam registrados para conferir o que foi gravado.
+  function clienteFalso(leitura: { leads: { data: Linha | null; error: { message: string } | null }; corretores: { data: Linha | null; error: { message: string } | null } }) {
+    const updates: Linha[] = [];
+    const fila = { id: "f1", lead_id: "L", corretor_id: "A", grupo_id: "G", instance_name: "central", grupo_jid: "1@g.us", tentativas: 0 };
+    const cliente = {
+      from(tabela: string) {
+        let eUpdate = false;
+        const cadeia: Record<string, unknown> = {
+          select: () => cadeia,
+          update: (valores: Linha) => {
+            eUpdate = true;
+            updates.push(valores);
+            return cadeia;
+          },
+          in: () => cadeia,
+          lte: () => cadeia,
+          lt: () => cadeia,
+          eq: () => cadeia,
+          order: () => cadeia,
+          limit: () => Promise.resolve({ data: [fila], error: null }),
+          maybeSingle: () => {
+            if (tabela === "lead_envios_grupo") return Promise.resolve({ data: eUpdate ? { id: "f1" } : null, error: null });
+            if (tabela === "leads") return Promise.resolve(leitura.leads);
+            if (tabela === "corretores") return Promise.resolve(leitura.corretores);
+            return Promise.resolve({ data: { instance_name: "central", status_conexao: "conectado", conectado_em: "2026-10-01" }, error: null });
+          },
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
+        };
+        return cadeia;
+      },
+    };
+    return { cliente: cliente as never, updates };
+  }
+  const leadOk = { nome: "M", telefone: "1", origem: null, anuncio_origem: null, empreendimento_id: null, corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo" };
+
+  it("erro ao ler o lead volta para nova tentativa, não cancela", async () => {
+    const { cliente, updates } = clienteFalso({ leads: { data: null, error: { message: "timeout" } }, corretores: { data: null, error: null } });
+    await enviarLeadsDistribuidosParaGrupos(cliente);
+    const final = updates.at(-1);
+    expect(final).toMatchObject({ status: "erro", ultimo_erro: "Não foi possível consultar o lead agora." });
+    expect(updates.some((u) => u.status === "cancelado")).toBe(false);
+  });
+
+  it("erro ao ler o corretor volta para nova tentativa, não cancela", async () => {
+    const { cliente, updates } = clienteFalso({ leads: { data: leadOk, error: null }, corretores: { data: null, error: { message: "5xx" } } });
+    await enviarLeadsDistribuidosParaGrupos(cliente);
+    expect(updates.at(-1)).toMatchObject({ status: "erro" });
+    expect(updates.some((u) => u.status === "cancelado")).toBe(false);
+  });
+
+  it("lead que a consulta confirma que não existe continua cancelando", async () => {
+    const { cliente, updates } = clienteFalso({ leads: { data: null, error: null }, corretores: { data: null, error: null } });
+    await enviarLeadsDistribuidosParaGrupos(cliente);
+    expect(updates.at(-1)).toMatchObject({ status: "cancelado", ultimo_erro: "Lead não encontrado." });
   });
 });
