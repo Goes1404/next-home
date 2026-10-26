@@ -137,3 +137,14 @@ describe("falha de leitura no worker", () => {
     expect(updates.at(-1)).toMatchObject({ status: "cancelado", ultimo_erro: "Lead não encontrado." });
   });
 });
+
+describe("0221: a fila dos avisos tem o isolamento por grupo", () => {
+  const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "0221_isolamento_dos_avisos_nos_grupos.sql"), "utf8");
+  it("policy restritiva e os três gatilhos do grupo com as mesmas mães", () => {
+    expect(sql).toMatch(/create policy isolamento_por_grupo on public\.lead_envios_grupo as restrictive/);
+    for (const nome of ["lead_envios_grupo_00_grupo", "lead_envios_grupo_zz_grupo_update", "lead_envios_grupo_zz_grupo_insert"]) {
+      expect(sql).toContain(`create trigger ${nome}`);
+    }
+    expect(sql.match(/'lead_id', 'leads', 'id',\s+'corretor_id', 'corretores', 'id'/g)).toHaveLength(3);
+  });
+});

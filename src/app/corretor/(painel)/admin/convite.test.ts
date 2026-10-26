@@ -378,6 +378,7 @@ describe("trocar e-mail", () => {
 describe("guarda de credencial derivada", () => {
   const RAIZ = process.cwd();
   const PERMITIDO = join("src", "lib", "corretores", "credenciaisIniciais.ts");
+  const PLATAFORMA = join("src", "app", "plataforma", "acoes.ts");
 
   function arquivosDe(dir: string): string[] {
     const saida: string[] = [];
@@ -405,6 +406,16 @@ describe("guarda de credencial derivada", () => {
       for (const { nome, re } of PROIBIDOS) {
         // O módulo que RECONHECE o endereço antigo pode nomear o domínio.
         if (relativo === PERMITIDO && nome !== "senha derivada" && nome !== "login nascido com senha") continue;
+        // Decisão do dono (23/10/2026): o administrador da plataforma cria o
+        // acesso com e-mail real e uma senha provisória que ELE digita, e a
+        // pessoa troca no primeiro login. Só vale com a troca obrigatória.
+        if (
+          relativo === PLATAFORMA &&
+          nome === "login nascido com senha" &&
+          /deve_trocar_senha:\s*true/.test(codigo)
+        ) {
+          continue;
+        }
         if (re.test(codigo)) achados.push(`${relativo}: ${nome}`);
       }
     }

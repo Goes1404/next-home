@@ -65,8 +65,6 @@ const EXCECOES_NOME: Record<string, string> = {
   "src/app/corretor/(painel)/_componentes/NomeDaCasa.tsx": "marca padrão do contexto, sem provedor: a da instalação (Next Home)",
   "src/app/corretor/(painel)/_componentes/CartaoLead.tsx": "valor padrão do parâmetro; os chamadores passam o nome da casa do grupo",
   "src/app/corretor/(painel)/importar/GmailLeadsExtractor.tsx": "compara com o nome da instalação para manter a grafia 'NextHome' da Next Home",
-  "src/app/corretor/(painel)/admin/marca/page.tsx": "visão da Next Home da tela de marca (a das outras imobiliárias é outra: logo e nome do grupo)",
-  "src/app/corretor/entrar/page.tsx": "a tela de login, antes de existir sessão: a marca vem do ENDEREÇO (AstroImob x Next Home)",
   "src/lib/admin/relatorioSemanal.ts": "valor padrão do parâmetro; o cron passa o nome do grupo que recebe",
   "src/lib/crm/avisoAoCorretor.ts": "valor padrão do parâmetro; avisarCorretor passa o nome da casa do corretor",
   "src/lib/auth/pedidoDeLinkDeSenha.ts": "reserva quando a linha do grupo não existe; o nome vem de grupos.nome",

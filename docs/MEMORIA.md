@@ -11950,3 +11950,19 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
   grupo da disputa dos outros corretores.
 - A 0220 entra ANTES do deploy: a tela lê as colunas novas.
 
+
+## CI verde de novo: guardas desatualizadas e isolamento da fila dos grupos (0221, 27/10/2026)
+
+- A suíte estava vermelha em produção desde 22–23/10 por guardas que não
+  acompanharam mudanças de produto: telas Meu site/Marca removidas (entradas
+  velhas em `servicoComGrupo` e `semMarcaFixaNoCrm`), login sempre ASTROimob
+  (exceção do `entrar/page.tsx` sem uso), favicon da Aretz reescrito (o teste
+  do layout procurava a frase antiga) e a criação de acesso com senha
+  provisória pela plataforma (decisão de 23/10: a guarda de credencial agora a
+  aceita só com `deve_trocar_senha: true`). Arquivos novos com a chave
+  (`actions.ts`, `completar-cadastro`, `enviosDeLeadParaGrupo`) entraram no MAPA.
+- A guarda "equipe" passou a aceitar a linha de `grupos` lida pelo próprio id.
+- 0221: `lead_envios_grupo` (0215) ganhou policy restritiva e os gatilhos
+  `_00_grupo`/`_zz_grupo_*` — era o que deixava a suíte de isolamento vermelha.
+- Guarda vermelha esconde a falha nova: quem mudar produto e quebrar uma guarda
+  ajusta a guarda no mesmo commit.

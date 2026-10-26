@@ -88,6 +88,9 @@ const MAPA: Record<string, Entrada> = {
   "src/app/s/[site]/(institucional)/proposta/[token]/page.tsx": { categoria: "por-id", validadoPor: "lerLinkPublico", motivo: "token do link do cliente; lê os eventos do link" },
   "src/app/s/[site]/(institucional)/selecao/[token]/ir/[slug]/route.ts": { categoria: "por-id", validadoPor: '.eq("token", token)', motivo: "a leitura do link pelo token decide; o imóvel só conta se estiver na seleção dele" },
   "src/app/api/agenda/[token]/route.ts": { categoria: "por-id", validadoPor: '.eq("token", token)', motivo: "token da agenda .ics; lê as visitas do corretor dono do token" },
+  "src/app/corretor/actions.ts": { categoria: "por-id", validadoPor: "exigirSessao", motivo: "a chave só grava a ficha do próprio usuário da sessão (filtro por user_id da sessão)" },
+  "src/app/corretor/completar-cadastro/acoes.ts": { categoria: "por-id", validadoPor: "supabase.auth.getUser()", motivo: "primeiro acesso: a chave grava só a ficha do user_id da sessão verificada" },
+  "src/lib/crm/enviosDeLeadParaGrupo.ts": { categoria: "plataforma", motivo: "fila dos avisos nos grupos, lida pelo cron; cada linha carrega o grupo e toda leitura filtra por ele" },
   "src/lib/crm/linkPublico.ts": { categoria: "por-id", validadoPor: '.eq("token", token)', motivo: "é a leitura do link pelo token: devolve o grupo do link a quem chama" },
   "src/lib/financeiro/acessoContador.ts": { categoria: "por-id", validadoPor: "tokenComFormatoValido", motivo: "token do contador; devolve o grupo do link a quem chama" },
   "src/lib/crm/eventosDoLink.ts": { categoria: "helper", motivo: "grava o evento do link cujo token quem chama acabou de validar" },
@@ -165,8 +168,6 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/imovelPublico/ler.ts": { categoria: "helper", motivo: "slug do grupo, grupo pelo slug da URL (a ficha pública) e base do link do imóvel do grupo que quem chama validou; lê UMA linha de grupos" },
   "src/lib/sites/siteDoGrupo.ts": { categoria: "helper", motivo: "lê o site editável do grupo que quem chama provou (gestor da sessão ou o grupo que o endereço resolveu); UMA linha pelo id" },
   "src/lib/marcaDoCrm/gravarLogo.ts": { categoria: "helper", motivo: "grava a logo do grupo que quem chama provou (gestor da sessão ou operador da plataforma); só toca a linha e a pasta desse grupo" },
-  "src/app/corretor/(painel)/admin/site/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o grupo é o do gestor da sessão; a chave só grava o site dele (colunas site_*, capa no Storage) e o evento" },
-  "src/app/corretor/(painel)/admin/marca/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "o grupo é o do gestor da sessão; a chave só grava a logo dele e o evento" },
   "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
   "src/lib/planos/cobrancaDoGrupo.ts": { categoria: "helper", motivo: "cobrança do grupo que quem chama validou (instância do webhook ou do disparador, sessão do painel); toda leitura filtra o grupo (fase 2C)" },
   "src/lib/planos/usoDaIa.ts": { categoria: "helper", motivo: "cota da IA do grupo que quem chama validou (instância do webhook, sessão, guarda da plataforma); toda leitura filtra o grupo" },
@@ -320,8 +321,6 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/app/api/cron/limpar-artes-ia/route.ts": { validadoPor: "requisicaoAutenticada", motivo: "cron com segredo; apaga mensagens barradas antigas linha a linha e roda a rotina dos grupos cancelados (0202)" },
   "src/app/api/webhooks/email-lead/route.ts": { validadoPor: "token !== segredo", motivo: "segredo do webhook dos portais; o grupo é o fixo da Next Home" },
   "src/app/corretor/(painel)/campanhas/acoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; agenda e conversas dele" },
-  "src/app/corretor/(painel)/admin/marca/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; lê o nome e a logo do grupo dele" },
-  "src/app/corretor/(painel)/admin/site/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; lê o site do grupo dele" },
   "src/app/corretor/(painel)/admin/parceiros/page.tsx": { validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; o endereço do link é o do grupo dele" },
   "src/app/corretor/(painel)/imoveis/[slug]/carrossel/page.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link do carrossel é o do grupo dele" },
   "src/app/corretor/(painel)/imoveis/[slug]/carrossel/slide/[indice]/route.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; o link do slide é o do grupo dele" },
@@ -544,6 +543,8 @@ const FILTRA_GRUPO = /\.(eq|in)\(\s*["']grupo_id["']/;
 function leiturasSemGrupo(codigo: string, ignorar: string[] = []): string[] {
   return leiturasDe(codigo)
     .filter((l) => !ignorar.includes(l.tabela))
+    // A linha da própria imobiliária em `grupos` é recortada pelo id dela.
+    .filter((l) => !(l.tabela === "grupos" && /\.eq\(\s*["']id["']/.test(l.cadeia)))
     .filter((l) => !FILTRA_GRUPO.test(l.cadeia) && !dentroDaLeituraRecortada(codigo, l))
     .map((l) => l.cadeia.replace(/\s+/g, " ").slice(0, 120));
 }
