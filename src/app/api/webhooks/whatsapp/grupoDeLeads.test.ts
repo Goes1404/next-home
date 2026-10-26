@@ -19,8 +19,21 @@ describe("webhook: retorno da ligação pelo grupo do corretor", () => {
     expect(inicio).toBeGreaterThan(-1);
     expect(fim).toBeGreaterThan(inicio);
     expect(fonte).toMatch(/import \{ tratarMensagemDoGrupoDeLeads \} from "@\/lib\/crm\/retornoPeloGrupo"/);
-    expect(blocoDoGrupo).toContain("await tratarMensagemDoGrupoDeLeads({ payload, instanceName, jidBruto })");
+    expect(blocoDoGrupo).toMatch(/await tratarMensagemDoGrupoDeLeads\(\{\s*payload,\s*instanceName,\s*jidBruto,/);
     expect(fonte.match(/tratarMensagemDoGrupoDeLeads\(/g)).toHaveLength(1);
+  });
+
+  it("autentica o webhook antes de tratar o grupo (o tratamento grava e gasta IA)", () => {
+    const chamada = blocoDoGrupo.indexOf("tratarMensagemDoGrupoDeLeads(");
+    const antes = blocoDoGrupo.slice(0, chamada);
+    expect(antes).toContain("resolverInstancia(instanceName)");
+    expect(antes).toContain("requisicaoAutenticada(req, instanciaDoGrupo)");
+    expect(antes).toContain("mensagemDoNumeroPodeSeguir(instanciaDoGrupo)");
+  });
+
+  it("só mensagem nova entra, e o processamento roda depois da resposta", () => {
+    expect(blocoDoGrupo).toMatch(/\(!eventoDoGrupo \|\| eventoDoGrupo === "messages\.upsert"\)/);
+    expect(blocoDoGrupo).toContain("agendar: (tarefa) => after(tarefa)");
   });
 
   it("o que não é do grupo de leads continua descartado como sempre", () => {
@@ -30,7 +43,8 @@ describe("webhook: retorno da ligação pelo grupo do corretor", () => {
 
   it("a confirmação do próprio número central (fromMe) e a transmissão não chegam ao tratamento", () => {
     const chamada = blocoDoGrupo.indexOf("tratarMensagemDoGrupoDeLeads(");
-    const guarda = blocoDoGrupo.lastIndexOf("if (", chamada);
+    const guarda = blocoDoGrupo.indexOf("const eventoDoGrupo");
+    expect(guarda).toBeGreaterThan(-1);
     expect(blocoDoGrupo.slice(guarda, chamada)).toMatch(/@g\\\.us\$\/i\.test\(jidBruto\)/);
     expect(blocoDoGrupo.slice(guarda, chamada)).toMatch(/!\(payload\.data\?\.key\?\.fromMe \|\| payload\.fromMe\)/);
   });

@@ -18,6 +18,13 @@ export async function tratarMensagemDoGrupoDeLeads(p: {
   payload: unknown;
   instanceName: string;
   jidBruto: string;
+  /**
+   * Como rodar o processamento (download e transcrição do áudio, leitura pela
+   * IA, gravação e resposta no grupo). O webhook passa `after()`: a conferência
+   * do grupo é síncrona e barata, e o resto roda depois da resposta, para a
+   * Evolution não ficar esperando segundos. Sem ele, espera aqui mesmo.
+   */
+  agendar?: (tarefa: () => Promise<void>) => void;
 }): Promise<{ tratada: boolean }> {
   const jid = p.jidBruto?.trim();
   if (!p.instanceName || !jid || !/@g\.us$/i.test(jid)) return { tratada: false };
@@ -33,17 +40,22 @@ export async function tratarMensagemDoGrupoDeLeads(p: {
   }
   if (!alvo) return { tratada: false };
 
-  try {
-    await processarRetornoDoCorretor({
-      supabase,
-      grupoId: alvo.grupoId,
-      instanceName: p.instanceName,
-      corretor: alvo.corretor,
-      payload: p.payload,
-    });
-  } catch (erro) {
-    console.error("[retorno] falha ao processar o retorno do corretor:", erro);
-  }
+  const conferido = alvo;
+  const processar = async () => {
+    try {
+      await processarRetornoDoCorretor({
+        supabase,
+        grupoId: conferido.grupoId,
+        instanceName: p.instanceName,
+        corretor: conferido.corretor,
+        payload: p.payload,
+      });
+    } catch (erro) {
+      console.error("[retorno] falha ao processar o retorno do corretor:", erro);
+    }
+  };
+  if (p.agendar) p.agendar(processar);
+  else await processar();
   return { tratada: true };
 }
 

@@ -97,6 +97,7 @@ import { BOAS_VINDAS_DE_CAMPANHA, calarIaNaConversaDeCampanha, registrarLeadDeIm
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { lerModoDaRoleta, repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { tratarMensagemDoGrupoDeLeads } from "@/lib/crm/retornoPeloGrupo";
+import { avisarMensagemDoClienteNoGrupo } from "@/lib/crm/retornoPeloGrupo/mensagemDoCliente";
 import type { ModoDaRoleta } from "@/lib/whatsapp/planoDaRoleta";
 import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
@@ -286,8 +287,23 @@ export async function POST(req: NextRequest) {
         (!eventoDoGrupo || eventoDoGrupo === "messages.upsert") &&
         !(payload.data?.key?.fromMe || payload.fromMe)
       ) {
-        const { tratada } = await tratarMensagemDoGrupoDeLeads({ payload, instanceName, jidBruto });
-        if (tratada) return NextResponse.json({ ok: true, action: "retorno_do_grupo" });
+        // A autenticação do webhook vale aqui também: o que vem a seguir grava
+        // na ficha, gasta transcrição e IA e responde no grupo. Sem ela, cai
+        // no descarte de sempre (nunca 401: mensagem de grupo sempre foi 200).
+        const instanciaDoGrupo = await resolverInstancia(instanceName);
+        if (
+          instanciaDoGrupo &&
+          requisicaoAutenticada(req, instanciaDoGrupo) &&
+          (await mensagemDoNumeroPodeSeguir(instanciaDoGrupo))
+        ) {
+          const { tratada } = await tratarMensagemDoGrupoDeLeads({
+            payload,
+            instanceName,
+            jidBruto,
+            agendar: (tarefa) => after(tarefa),
+          });
+          if (tratada) return NextResponse.json({ ok: true, action: "retorno_do_grupo" });
+        }
       }
       return NextResponse.json({ ok: true, ignored: "Mensagem de grupo ou transmissão" });
     }
@@ -833,6 +849,24 @@ export async function POST(req: NextRequest) {
         await preencherNomeContato({ conversaId: conversa.id, nome: String(payload.senderName) });
       }
       return NextResponse.json({ ok: true, action: "mensagem_registrada_sem_lead", sender });
+    }
+
+    /*
+     * Lead que está com outro corretor (repassado pela roleta ou pelo gestor):
+     * a conversa ficou neste número e a IA está calada nela. O dono do lead é
+     * avisado no grupo dele de que o cliente escreveu (spec 6.8). Depois da
+     * resposta, e só se o lead foi avisado no grupo; a função confere o resto.
+     */
+    if (conversa.leadDeOutroCorretor && gravacao.id) {
+      const avisoDoGrupo = {
+        grupoId: instancia.grupoId,
+        leadId: conversa.leadId,
+        conversaId: conversa.id,
+        mensagemId: gravacao.id,
+      };
+      after(() =>
+        avisarMensagemDoClienteNoGrupo(avisoDoGrupo),
+      );
     }
 
     /*
