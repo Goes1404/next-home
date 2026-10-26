@@ -78,12 +78,15 @@ async function garantirInstancia(
   config: { baseUrl: string; apiKey: string },
   instanceName: string,
   numero?: string | null,
-): Promise<void> {
+): Promise<unknown | null> {
   const urlWebhook = process.env.WHATSAPP_WEBHOOK_URL;
   const segredo = process.env.WHATSAPP_WEBHOOK_SECRET;
 
   try {
-    await fetch(`${config.baseUrl}/instance/create`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const res = await fetch(`${config.baseUrl}/instance/create`, {
+      signal: controller.signal,
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: config.apiKey },
       body: JSON.stringify({
@@ -107,9 +110,58 @@ async function garantirInstancia(
           : {}),
       }),
     });
-  } catch {
+    clearTimeout(timeoutId);
+    // Instância nova: a resposta do `create` JÁ traz o pareamento (QR ou
+    // `pairingCode`). Quem chama usa isto e não repete o pedido no connect.
+    // Instância que já existia: a Evolution recusa (403/400) e seguimos.
+    return res.ok ? await res.json().catch(() => null) : null;
+  } catch (err) {
     // Falha aqui não impede tentar o connect — o erro real aparece lá.
+    console.warn(`[whatsapp] instance/create falhou em ${instanceName}: ${descreverFalhaDeRede(err)}`);
+    return null;
   }
+}
+
+/**
+ * O "fetch failed" do Node esconde o motivo em `err.cause` (ECONNRESET,
+ * ECONNREFUSED, ENOTFOUND, UND_ERR_SOCKET…). Sem ele, o corretor da Aretz
+ * viu só "fetch failed" na tela (26/10/2026) e o log não tinha uma linha.
+ */
+export function descreverFalhaDeRede(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  if (err.name === "AbortError") return "tempo esgotado";
+  const causa = (err as { cause?: { code?: unknown; message?: unknown } }).cause;
+  const codigo = typeof causa?.code === "string" ? causa.code : null;
+  const detalhe = typeof causa?.message === "string" ? causa.message : null;
+  return [err.message, codigo, detalhe].filter(Boolean).join(" — ");
+}
+
+/** Frase para o corretor quando o servidor do WhatsApp nem respondeu. */
+export const FRASE_PROVEDOR_FORA =
+  "O servidor do WhatsApp não respondeu agora. Espere alguns segundos e toque de novo em gerar o código.";
+
+/** Lê o pareamento de uma resposta da Evolution (`create` ou `connect`). */
+export function pareamentoDaResposta(json: unknown): {
+  base64: string | null;
+  codigo: string | null;
+  jaConectado: boolean;
+} {
+  const j = (json ?? {}) as {
+    base64?: unknown;
+    pairingCode?: unknown;
+    code?: unknown;
+    state?: unknown;
+    qrcode?: { base64?: unknown; pairingCode?: unknown };
+    instance?: { state?: unknown; status?: unknown };
+  };
+  const texto = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const base64 = texto(j.base64) ?? texto(j.qrcode?.base64);
+  const codigoCru = texto(j.pairingCode) ?? texto(j.qrcode?.pairingCode) ?? texto(j.code);
+  // O `code` cru da Evolution às vezes é a string do QR (longa); só vale
+  // como código digitável se tiver a cara de um: 8 caracteres.
+  const codigo = codigoCru && codigoCru.replace(/-/g, "").length <= 10 ? codigoCru : null;
+  const jaConectado = j.instance?.state === "open" || j.state === "open";
+  return { base64, codigo, jaConectado };
 }
 
 /**
@@ -268,71 +320,91 @@ export async function obterQrCodeInstancia(
   // Evolution — `/instance/connect` sozinho devolveria 404. Criar é
   // idempotente na prática: se já existe, o provedor recusa e seguimos
   // direto para o connect.
-  await garantirInstancia(config, instanceName, numero || null);
+  const criada = await garantirInstancia(config, instanceName, numero || null);
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    // `?number=` é o que faz a Evolution devolver `pairingCode` no lugar do QR.
-    const url = new URL(`${config.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`);
-    if (numero) url.searchParams.set("number", numero);
-
-    const res = await fetch(url.toString(), {
-      method: "GET",
-      headers: { apikey: config.apiKey },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const corpo = await res.text().catch(() => "");
-      return { ok: false, motivo: "erro_provedor", detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+  /*
+   * Instância recém-criada: o pareamento já veio na resposta do `create`.
+   * Pedir de novo no `/instance/connect` logo em seguida, com o socket do
+   * Baileys ainda abrindo, foi a suspeita do "fetch failed" da primeira
+   * conexão na Aretz (26/10/2026): o provedor derrubava a conexão HTTP.
+   */
+  if (criada) {
+    const p = pareamentoDaResposta(criada);
+    if (numero ? p.codigo : p.base64) {
+      return {
+        ok: true,
+        qrcodeBase64: p.base64,
+        codigoPareamento: p.codigo,
+        jaConectado: p.jaConectado,
+        desfecho: p.jaConectado ? "ja_conectado" : p.codigo ? "codigo" : "qr",
+      };
     }
-
-    const json = await res.json();
-    const base64: string | null = json?.base64 || json?.qrcode?.base64 || null;
-    const codigo: string | null =
-      json?.pairingCode || json?.qrcode?.pairingCode || json?.code || null;
-    const jaConectado = json?.instance?.state === "open" || json?.state === "open";
-
-    // O `code` cru da Evolution às vezes é a string do QR (longa); só vale
-    // como código digitável se tiver a cara de um: 8 caracteres.
-    const codigoDigitavel = codigo && codigo.replace(/-/g, "").length <= 10 ? codigo : null;
-
-    // Um pedido por número que volta sem código é o sintoma exato do bug
-    // antigo. Registrar é o que faltou para diagnosticá-lo: nos logs de
-    // produção não havia uma linha sequer sobre este caminho.
-    if (numero && !codigoDigitavel && !jaConectado) {
-      console.warn(
-        `[whatsapp] pareamento por número sem pairingCode em ${instanceName} —` +
-          ` estado=${json?.instance?.state ?? "?"} temQr=${Boolean(base64)}`,
-      );
-    }
-
-    const desfecho: DesfechoPareamento = jaConectado
-      ? "ja_conectado"
-      : codigoDigitavel
-        ? "codigo"
-        : base64
-          ? "qr"
-          : "sem_codigo";
-
-    return {
-      ok: true,
-      qrcodeBase64: base64,
-      codigoPareamento: codigoDigitavel,
-      jaConectado,
-      desfecho,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      motivo: "erro_provedor",
-      detalhe: err instanceof Error ? err.message : String(err),
-    };
   }
+
+  // `?number=` é o que faz a Evolution devolver `pairingCode` no lugar do QR.
+  const url = new URL(`${config.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`);
+  if (numero) url.searchParams.set("number", numero);
+
+  // Uma segunda tentativa só para falha de REDE (nem houve resposta HTTP):
+  // é o caso do provedor ainda abrindo a sessão que acabou de criar.
+  for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: { apikey: config.apiKey },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const corpo = await res.text().catch(() => "");
+        return { ok: false, motivo: "erro_provedor", detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+      }
+
+      const json = await res.json();
+      const { base64, codigo: codigoDigitavel, jaConectado } = pareamentoDaResposta(json);
+
+      // Um pedido por número que volta sem código é o sintoma exato do bug
+      // antigo. Registrar é o que faltou para diagnosticá-lo: nos logs de
+      // produção não havia uma linha sequer sobre este caminho.
+      if (numero && !codigoDigitavel && !jaConectado) {
+        console.warn(
+          `[whatsapp] pareamento por número sem pairingCode em ${instanceName} —` +
+            ` estado=${json?.instance?.state ?? "?"} temQr=${Boolean(base64)}`,
+        );
+      }
+
+      const desfecho: DesfechoPareamento = jaConectado
+        ? "ja_conectado"
+        : codigoDigitavel
+          ? "codigo"
+          : base64
+            ? "qr"
+            : "sem_codigo";
+
+      return {
+        ok: true,
+        qrcodeBase64: base64,
+        codigoPareamento: codigoDigitavel,
+        jaConectado,
+        desfecho,
+      };
+    } catch (err) {
+      console.error(
+        `[whatsapp] instance/connect falhou em ${instanceName} (tentativa ${tentativa}): ${descreverFalhaDeRede(err)}`,
+      );
+      if (tentativa < 2) {
+        await new Promise((r) => setTimeout(r, 2500));
+        continue;
+      }
+      return { ok: false, motivo: "erro_provedor", detalhe: FRASE_PROVEDOR_FORA };
+    }
+  }
+  return { ok: false, motivo: "erro_provedor", detalhe: FRASE_PROVEDOR_FORA };
 }
 
 /**

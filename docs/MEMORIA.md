@@ -11853,3 +11853,8 @@ Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
   `administradores_da_plataforma`), sem ficha de corretor: o login leva a
   `/plataforma`. Um login = um grupo (`corretores.user_id` é UNIQUE): "acesso em
   todos os CRMs" com o mesmo e-mail não existe; o dono escolheu admin da plataforma.
+- **"fetch failed" ao gerar o código do WhatsApp (26/10, Aretz):** erro de rede
+  cru na tela, sem log. Agora o pareamento da primeira conexão vem da resposta
+  do `instance/create` (sem repetir o connect logo em seguida), o connect tenta
+  2x em falha de rede e o motivo (`err.cause`) vai ao log `[whatsapp] instance/…`.
+  Nota: [[pareamento-fetch-failed-na-primeira-conexao]].
