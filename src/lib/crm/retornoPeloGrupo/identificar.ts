@@ -71,6 +71,30 @@ function citacaoDaMensagem(data: Obj, mensagem: Obj): string | null {
   return null;
 }
 
+/**
+ * Com "mensagens temporárias" ligadas (ou visualização única, ou documento com
+ * legenda) o WhatsApp embrulha a mensagem de verdade em outra, no campo
+ * `.message`. Sem desembrulhar, o texto do corretor sumiria em silêncio.
+ */
+const EMBRULHOS = [
+  "ephemeralMessage",
+  "viewOnceMessage",
+  "viewOnceMessageV2",
+  "documentWithCaptionMessage",
+] as const;
+
+function desembrulhar(mensagem: unknown): Obj | null {
+  let atual = ehObjeto(mensagem) ? mensagem : null;
+  for (let nivel = 0; atual && nivel < 3; nivel++) {
+    const embrulho = EMBRULHOS.map((nome) => atual![nome]).find(
+      (valor): valor is Obj => ehObjeto(valor) && ehObjeto(valor.message),
+    );
+    if (!embrulho) break;
+    atual = embrulho.message as Obj;
+  }
+  return atual;
+}
+
 function dataDoPayload(valor: unknown): Date {
   const n = typeof valor === "number" ? valor : typeof valor === "string" ? Number(valor) : NaN;
   if (!Number.isFinite(n) || n <= 0) return new Date();
@@ -96,7 +120,7 @@ export function lerMensagemDoGrupo(payload: unknown): MensagemDoGrupo | null {
   const mensagemId = textoNaoVazio(key.id);
   if (!mensagemId) return null;
 
-  const mensagem = ehObjeto(data.message) ? data.message : null;
+  const mensagem = desembrulhar(data.message);
   if (!mensagem) return null;
 
   const extendida = ehObjeto(mensagem.extendedTextMessage) ? mensagem.extendedTextMessage : null;
@@ -149,6 +173,25 @@ export type Aguardando = {
   corretorAtualId: string;
 };
 
+/**
+ * Todo aviso que o grupo do corretor recebeu, respondido ou não. Serve para
+ * reconhecer a citação de um lead que já tem retorno (ex.: a 2ª ligação para a
+ * Ana) sem aplicar o relato a outro lead que ainda aguarda.
+ */
+export type AvisoDoGrupo = {
+  envioId: string;
+  leadId: string;
+  avisoMensagemId: string | null;
+  corretorAtualId: string;
+};
+
+/**
+ * Decisão sobre de qual lead é o relato.
+ * - `escolha.indice` é 0-based sobre `opcoes` da pergunta citada (ids de lead
+ *   na ordem em que a pergunta foi exibida).
+ * - `perguntar.opcoes` já está na ordem em que a pergunta deve ser exibida; é
+ *   essa ordem que quem chama deve guardar como `opcoes` da pergunta.
+ */
 export type DecisaoDoRetorno =
   | { tipo: "lead"; leadId: string; envioId: string | null }
   | { tipo: "correcao"; retornoId: string; leadId: string }
@@ -173,6 +216,13 @@ function indiceEscolhido(texto: string): number | null {
   return achou ? Number(achou[1]) - 1 : null;
 }
 
+/** O nome inteiro do lead aparece como palavra(s) inteira(s) no texto? */
+function citaONomeCompleto(textoNormalizado: string, nome: string | null): boolean {
+  if (!nome) return false;
+  const completo = normalizar(nome);
+  return completo.length >= 2 && ` ${textoNormalizado} `.includes(` ${completo} `);
+}
+
 /** O primeiro nome (ou o nome inteiro) do lead aparece como palavra inteira no texto? */
 function citaONome(textoNormalizado: string, nome: string | null): boolean {
   if (!nome) return false;
@@ -183,17 +233,29 @@ function citaONome(textoNormalizado: string, nome: string | null): boolean {
   return [...alvos].some((alvo) => noTexto.includes(` ${alvo} `));
 }
 
+/**
+ * Decide de qual lead é o relato do corretor (spec 6.3), na ordem: aviso
+ * citado, confirmação citada (correção), resposta à pergunta, único aguardando,
+ * nome único no texto, pergunta. Nunca adivinha.
+ *
+ * `avisos` (opcional) são todos os avisos do corretor, respondidos ou não; a
+ * citação procura primeiro neles e depois em `aguardando`.
+ */
 export function escolherLeadDoRetorno(p: {
   corretorId: string;
   citadaId: string | null;
   texto: string;
   aguardando: Aguardando[];
+  avisos?: AvisoDoGrupo[];
   confirmacoes: Array<{ retornoId: string; mensagemId: string; leadId: string }>;
   perguntas: Array<{ retornoId: string; mensagemId: string; opcoes: string[] }>;
 }): DecisaoDoRetorno {
   if (p.citadaId) {
-    // 1. Em cima de um aviso: o lead daquele aviso, se ainda for do autor.
-    const aviso = p.aguardando.find((a) => a.avisoMensagemId === p.citadaId);
+    // 1. Em cima de um aviso (respondido ou não): o lead daquele aviso, se
+    // ainda for do autor.
+    const aviso =
+      p.avisos?.find((a) => a.avisoMensagemId === p.citadaId) ??
+      p.aguardando.find((a) => a.avisoMensagemId === p.citadaId);
     if (aviso) {
       return aviso.corretorAtualId === p.corretorId
         ? { tipo: "lead", leadId: aviso.leadId, envioId: aviso.envioId }
@@ -235,6 +297,14 @@ export function escolherLeadDoRetorno(p: {
   const texto = normalizar(p.texto);
   const citados = dele.filter((a) => citaONome(texto, a.nome));
   if (citados.length === 1) return { tipo: "lead", leadId: citados[0].leadId, envioId: citados[0].envioId };
+  // Mesmo primeiro nome em dois leads ("Ana Souza" e "Ana Costa"): o nome
+  // completo no relato desempata.
+  if (citados.length > 1) {
+    const completos = citados.filter((a) => citaONomeCompleto(texto, a.nome));
+    if (completos.length === 1) {
+      return { tipo: "lead", leadId: completos[0].leadId, envioId: completos[0].envioId };
+    }
+  }
 
   // 5. Ambíguo: pergunta, nunca adivinha.
   return { tipo: "perguntar", opcoes: dele };

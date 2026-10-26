@@ -58,6 +58,32 @@ describe("lerMensagemDoGrupo", () => {
     expect(audio?.citadaId).toBe("NOAUDIO");
   });
 
+  it("desembrulha mensagem temporária, visualização única e documento com legenda", () => {
+    const temporaria = lerMensagemDoGrupo(
+      payloadDoGrupo({
+        message: {
+          ephemeralMessage: {
+            message: { extendedTextMessage: { text: "liguei pra Ana", contextInfo: { stanzaId: "AV1" } } },
+          },
+        },
+      }),
+    );
+    expect(temporaria?.texto).toBe("liguei pra Ana");
+    expect(temporaria?.citadaId).toBe("AV1");
+
+    const aninhada = lerMensagemDoGrupo(
+      payloadDoGrupo({
+        message: { ephemeralMessage: { message: { viewOnceMessageV2: { message: { audioMessage: {} } } } } },
+      }),
+    );
+    expect(aninhada?.ehAudio).toBe(true);
+
+    for (const embrulho of ["viewOnceMessage", "viewOnceMessageV2", "documentWithCaptionMessage"]) {
+      const m = lerMensagemDoGrupo(payloadDoGrupo({ message: { [embrulho]: { message: { conversation: "oi" } } } }));
+      expect(m?.texto).toBe("oi");
+    }
+  });
+
   it("junta todos os ids de participante, sem repetir e sem lixo", () => {
     const m = lerMensagemDoGrupo({
       data: {
@@ -204,6 +230,27 @@ describe("escolherLeadDoRetorno", () => {
   it("citou o aviso de um lead que já não é do autor: nao_e_mais_seu", () => {
     const deOutro: Aguardando = { ...ana, corretorAtualId: "c2" };
     const r = escolherLeadDoRetorno({ ...base, citadaId: "AV-ANA", aguardando: [deOutro, paulo] });
+    expect(r).toEqual({ tipo: "nao_e_mais_seu", leadId: "l-ana" });
+  });
+
+  it("regra 4: mesmo primeiro nome em dois leads, o nome completo no texto desempata", () => {
+    const ana2: Aguardando = { ...paulo, leadId: "l-ana2", envioId: "e-ana2", nome: "Ana Costa" };
+    const r = escolherLeadDoRetorno({ ...base, texto: "falei com a Ana Souza, atendeu", aguardando: [ana, ana2] });
+    expect(r).toEqual({ tipo: "lead", leadId: "l-ana", envioId: "e-ana" });
+  });
+
+  it("citou o aviso de lead já respondido (fora de aguardando): é esse lead, não outro que aguarda", () => {
+    const avisos = [
+      { envioId: "e-ana", leadId: "l-ana", avisoMensagemId: "AV-ANA", corretorAtualId: "c1" },
+      { envioId: "e-paulo", leadId: "l-paulo", avisoMensagemId: "AV-PAULO", corretorAtualId: "c1" },
+    ];
+    const r = escolherLeadDoRetorno({ ...base, citadaId: "AV-ANA", texto: "2ª ligação, marcou visita", aguardando: [paulo], avisos });
+    expect(r).toEqual({ tipo: "lead", leadId: "l-ana", envioId: "e-ana" });
+  });
+
+  it("citou o aviso (em avisos) de lead que passou para outro corretor: nao_e_mais_seu", () => {
+    const avisos = [{ envioId: "e-ana", leadId: "l-ana", avisoMensagemId: "AV-ANA", corretorAtualId: "c2" }];
+    const r = escolherLeadDoRetorno({ ...base, citadaId: "AV-ANA", aguardando: [paulo], avisos });
     expect(r).toEqual({ tipo: "nao_e_mais_seu", leadId: "l-ana" });
   });
 
