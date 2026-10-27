@@ -32,8 +32,8 @@ export const ABAS: DefDaAba[] = [
   {
     id: "roleta",
     rotulo: "Roleta",
-    titulo: "Roleta",
-    descricao: "Para quem vai cada lead que chega pelo anúncio, um de cada vez.",
+    titulo: "Roleta e distribuição",
+    descricao: "Para quem vai cada lead novo, quem está na escala e onde o corretor recebe o aviso.",
     icone: Shuffle,
   },
   {

@@ -11990,3 +11990,6 @@ Nota: [[anuncios-pagos-em-abas]]
   de `servicoComGrupo.test.ts` como `equipe`.
 - Rodar a suíte com `npx vitest run --dir src`: sem isso o vitest pega uma
   cópia velha em `.claude/worktrees/` e acusa falhas que não são do código.
+- (mesmo dia) Aba Roleta redesenhada no canvas e aprovada: cartões-resumo,
+  uma tabela só para ordem da roleta + escala (pausa) + WhatsApp + grupo, e os
+  grupos em passos. Ordem/quem recebe valem ao salvar; pausa e regra, na hora.

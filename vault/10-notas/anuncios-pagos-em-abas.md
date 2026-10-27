@@ -9,6 +9,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/AbasDosAnuncios.tsx
   - src/app/globals.css
   - src/app/corretor/(painel)/marketing/impulsionamentos/DistribuicaoDaEquipe.tsx
+  - src/app/corretor/(painel)/marketing/impulsionamentos/EditorDaRoleta.tsx
 fonte: docs/MEMORIA.md — Anúncios pagos em abas (26/10/2026)
 created: 2026-10-26
 updated: 2026-10-26
@@ -36,19 +37,23 @@ botões não pareciam botões. A tela tinha cinco blocos empilhados.
 
 ## A aba Roleta reúne toda a distribuição
 
-Pedido do dono: tudo da distribuição de leads num lugar só. Para o gestor, a
-aba Roleta mostra, além da roleta dos anúncios:
+Pedido do dono: tudo da distribuição de leads num lugar só, e depois que
+"quem entra na distribuição" e "quem recebe na ordem" ficassem juntos.
+Desenho aprovado no canvas (quadro "Aba Roleta — redesenho"). Para o gestor:
 
-- **Quem entra na distribuição:** a regra "só entrega lead a quem está com o
-  WhatsApp conectado" (`pular_corretor_whatsapp_desconectado`) e a escala
-  com pausa por corretor (`TogglePausa`, a mesma de Leads da equipe).
-- **Grupos de WhatsApp dos corretores:** número central, nome dos grupos,
-  sincronizar e vínculo à mão (`ConfigurarGruposDeLeads`).
+- **Três cartões-resumo** no topo (roleta, escala, grupos), cada um leva à
+  sua parte. Mostram o que está salvo, não o rascunho.
+- **Uma tabela de corretores** dentro do cartão da roleta: ordem (setas),
+  WhatsApp, grupo, "Recebe/Incluir" (roleta dos anúncios) e "Na escala/Em
+  pausa" (escala geral, só gestor). Quem está fora da roleta aparece embaixo,
+  tracejado. Ordem e quem recebe só valem ao **salvar**; pausa e a regra do
+  WhatsApp conectado salvam **na hora** — a barra de baixo diz isso.
+- **Grupos de WhatsApp** em passos: 1 número central, 2 nome dos grupos, e
+  "Sincronizar grupos" em destaque.
 
-Saiu de WhatsApp & IA, que agora tem só um cartão com link para a aba. O
-componente e as ações continuam em `admin/whatsapp/` (as ações têm teste
-lá); as ações revalidam as duas telas. A pausa continua também em Leads da
-equipe.
+WhatsApp & IA ficou com um cartão-link. `ConfigurarGruposDeLeads` e as
+ações continuam em `admin/whatsapp/` (as ações têm teste lá) e revalidam as
+duas telas. `naEscala: null` = sem `slug`: a distribuição (0011) pula.
 
 ## Por que estilos novos
 
