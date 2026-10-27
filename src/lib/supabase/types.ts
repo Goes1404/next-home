@@ -3711,6 +3711,8 @@ export type Database = {
           fim: string
           status: string
           datas_anteriores: string[]
+          passada_em: string | null
+          passada_por_usuario: string | null
           criada_por_usuario: string | null
           created_at: string
           atualizado_em: string
@@ -3724,6 +3726,8 @@ export type Database = {
           fim: string
           status?: string
           datas_anteriores?: string[]
+          passada_em?: string | null
+          passada_por_usuario?: string | null
           criada_por_usuario?: string | null
           created_at?: string
           atualizado_em?: string
@@ -3737,6 +3741,8 @@ export type Database = {
           fim?: string
           status?: string
           datas_anteriores?: string[]
+          passada_em?: string | null
+          passada_por_usuario?: string | null
           criada_por_usuario?: string | null
           created_at?: string
           atualizado_em?: string
@@ -4427,6 +4433,17 @@ export type Database = {
       configurar_disparo_automatico: {
         Args: { p_token: string; p_url: string }
         Returns: string
+      }
+      numeros_da_agenda: {
+        Args: { p_grupo: string; p_corretor: string | null; p_de: string; p_ate: string }
+        Returns: {
+          mes: string
+          marcadas: number
+          realizadas: number
+          faltas: number
+          sem_confirmacao: number
+          negocios: number
+        }[]
       }
       reservar_horario_visita: {
         Args: { p_lead_id: string; p_quando: string }
