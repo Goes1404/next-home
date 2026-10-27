@@ -22,6 +22,9 @@ let eventos: Evento[];
 let fila: string[];
 /** Instâncias cujo envio falha. */
 let instanciasQueFalham: Set<string>;
+/** Primeiros contatos que cada corretor já fez hoje e na semana (0222). */
+let primeirosContatosFeitos: Record<string, number>;
+const CONECTADO_HA_MESES = "2026-01-01T12:00:00Z";
 
 const gravarMensagem = vi.fn();
 const obterOuCriarConversa = vi.fn();
@@ -70,13 +73,16 @@ function semear(modo: "mensagem" | "grupo") {
       { id: "caio", grupo_id: G, nome: "Caio Reis" },
     ],
     corretor_whatsapp_instancias: [
-      { corretor_id: "beto", instance_name: "inst-beto", status_conexao: "conectado" },
-      { corretor_id: "caio", instance_name: "inst-caio", status_conexao: "conectado" },
+      { corretor_id: "beto", instance_name: "inst-beto", status_conexao: "conectado", conectado_em: CONECTADO_HA_MESES },
+      { corretor_id: "caio", instance_name: "inst-caio", status_conexao: "conectado", conectado_em: CONECTADO_HA_MESES },
     ],
     whatsapp_conversas: [{ id: "conv-nova", bot_ativo: true }],
     lead_interacoes: [],
   });
   banco.cliente.rpc = async (nome: string, args: Record<string, unknown>) => {
+    if (nome === "primeiros_contatos_do_corretor") {
+      return { data: primeirosContatosFeitos[args.p_corretor as string] ?? 0, error: null };
+    }
     if (nome === "proximo_da_roleta") {
       eventos.push({ tipo: "rpc", nome, args });
       const excluidos = (args.p_excluir as string[]) ?? [];
@@ -108,6 +114,7 @@ beforeEach(() => {
   eventos = [];
   fila = ["beto", "caio"];
   instanciasQueFalham = new Set();
+  primeirosContatosFeitos = {};
   gravarMensagem.mockReset().mockResolvedValue(undefined);
   obterOuCriarConversa.mockReset().mockResolvedValue({ id: "conv-nova" });
   registrarInteracao.mockReset().mockResolvedValue(undefined);
@@ -156,6 +163,14 @@ describe("roleta no modo mensagem", () => {
     expect(enfileirados()).toHaveLength(1);
     // Só a passagem e a abertura de Caio, depois das duas tentativas com Beto.
     expect(whatsapps().every((w) => !w.texto.includes("Recebemos sua mensagem"))).toBe(true);
+  });
+
+  it("o escolhido já fez os 10 primeiros contatos do dia: é pulado sem abrir conversa, e o seguinte recebe", async () => {
+    semear("mensagem");
+    primeirosContatosFeitos = { beto: 10 };
+    expect(await repassar({ modo: "mensagem" })).toBe("caio");
+    expect(whatsapps().some((w) => w.instancia === "inst-beto")).toBe(false);
+    expect(lead().corretor_id).toBe("caio");
   });
 
   it("a ficha não muda de dono (update sem linha): ninguém é avisado e devolve null", async () => {

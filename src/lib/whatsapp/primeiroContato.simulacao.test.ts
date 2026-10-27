@@ -129,13 +129,6 @@ class Consulta implements PromiseLike<{ data: unknown; error: unknown; count: nu
   }
 
   private executar() {
-    if (
-      estado.falharContagemDePrimeiroContato &&
-      this.tabela === "whatsapp_campanhas_fila" &&
-      this.filtros.some((f) => f.col === "primeiro_contato")
-    ) {
-      return { data: null, error: { message: "simulado" }, count: null };
-    }
     const linhas = (this.banco[this.tabela] ??= []);
     const casam = linhas.filter((l) => this.filtros.every((f) => comparar(normalizar(l[f.col]), f.op, f.alvo)));
     if (this.mudanca) {
@@ -162,9 +155,38 @@ class Consulta implements PromiseLike<{ data: unknown; error: unknown; count: nu
   }
 }
 
+/**
+ * A 0222 em memória: conversas do corretor que receberam, no dia (São Paulo),
+ * mensagem nossa sem o cliente ter escrito antes. Mesma regra do SQL.
+ */
+function primeirosContatosDoCorretor(corretor: string, desde: string): number {
+  const conversas = new Set(
+    estado.banco.whatsapp_conversas.filter((c) => c.corretor_id === corretor).map((c) => c.id),
+  );
+  const mensagens = estado.banco.whatsapp_mensagens;
+  const pares = new Set<string>();
+  for (const m of mensagens) {
+    if (!conversas.has(m.conversa_id)) continue;
+    if (m.remetente !== "bot" && m.remetente !== "corretor") continue;
+    if (String(m.created_at) < new Date(desde).toISOString()) continue;
+    const clienteAntes = mensagens.some(
+      (a) => a.conversa_id === m.conversa_id && a.remetente === "cliente" && String(a.created_at) < String(m.created_at),
+    );
+    if (clienteAntes) continue;
+    const dia = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(String(m.created_at)));
+    pares.add(`${m.conversa_id}|${dia}`);
+  }
+  return pares.size;
+}
+
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     from: (tabela: string) => new Consulta(tabela, estado.banco),
+    rpc: async (nome: string, args: { p_corretor: string; p_desde: string }) => {
+      if (nome !== "primeiros_contatos_do_corretor") throw new Error(`rpc não simulada: ${nome}`);
+      if (estado.falharContagemDePrimeiroContato) return { data: null, error: { message: "simulado" } };
+      return { data: primeirosContatosDoCorretor(args.p_corretor, args.p_desde), error: null };
+    },
   }),
 }));
 
@@ -207,8 +229,23 @@ vi.mock("./repositorio", () => ({
   destravarDisparo: async () => {},
   registrarTentativaDeContato: async () => {},
   ativarIaNaConversa: async () => {},
-  gravarMensagem: async () => ({ inedita: true }),
-  obterOuCriarConversa: async ({ telefoneCliente }: { telefoneCliente: string }) => ({ id: `conv-${telefoneCliente}` }),
+  gravarMensagem: async ({ conversaId, remetente }: { conversaId: string; remetente: string }) => {
+    estado.banco.whatsapp_mensagens.push({
+      id: `msg-${estado.banco.whatsapp_mensagens.length}`,
+      conversa_id: conversaId,
+      remetente,
+      created_at: new Date().toISOString(),
+    });
+    return { inedita: true };
+  },
+  obterOuCriarConversa: async ({ corretorId, telefoneCliente }: { corretorId: string; telefoneCliente: string }) => {
+    const conversas = estado.banco.whatsapp_conversas;
+    const achada = conversas.find((c) => c.corretor_id === corretorId && c.telefone_cliente === telefoneCliente);
+    if (achada) return { id: achada.id };
+    const nova = { id: `conv-${telefoneCliente}`, corretor_id: corretorId, telefone_cliente: telefoneCliente, lead_id: null };
+    conversas.push(nova);
+    return { id: nova.id };
+  },
   devolverCotaCampanha: async () => {},
   liberarFilaDaSessao: async () => {},
   marcarSessaoCaida: async () => {},
@@ -291,7 +328,7 @@ function montarBanco(opcoes: {
       telefone_e164: telefone,
     });
     if (quente) {
-      banco.whatsapp_conversas.push({ id: `conv-${lead}`, lead_id: lead });
+      banco.whatsapp_conversas.push({ id: `conv-${lead}`, lead_id: lead, corretor_id: CORRETOR, telefone_cliente: telefone });
       banco.whatsapp_mensagens.push({
         id: `msg-${lead}`,
         conversa_id: `conv-${lead}`,
@@ -319,13 +356,16 @@ function montarBanco(opcoes: {
     });
   }
 
+  // Primeiros contatos que já saíram por qualquer caminho (lista, botão ✨,
+  // aviso, roleta, Live Chat): conversa de outra pessoa com mensagem nossa e
+  // nenhuma fala do cliente. É o que a 0222 conta.
   for (const [n, anterior] of (opcoes.primeirosContatosAnteriores ?? []).entries()) {
-    banco.whatsapp_campanhas_fila.push({
-      id: `antigo-${n}`,
-      campanha_id: "lista-antiga",
-      status: "enviado",
-      enviado_em: anterior.enviadoEm,
-      primeiro_contato: true,
+    banco.whatsapp_conversas.push({ id: `conv-antiga-${n}`, corretor_id: CORRETOR, telefone_cliente: `5511800${n}`, lead_id: null });
+    banco.whatsapp_mensagens.push({
+      id: `msg-antiga-${n}`,
+      conversa_id: `conv-antiga-${n}`,
+      remetente: n % 2 ? "corretor" : "bot",
+      created_at: anterior.enviadoEm,
     });
   }
   return banco;
@@ -486,6 +526,25 @@ describe("simulação: a lista do Ramos depois da 0217", () => {
     await rodarAteParar();
 
     expect(estado.enviados.map((e) => e.telefone)).toEqual([telefoneDoLead(0)]);
+  });
+
+  it("fora do horário nada sai, nem lista marcada para 'qualquer hora' pela API", async () => {
+    estado.banco = montarBanco({
+      conectadoEm: "2026-09-01T12:00:00Z",
+      aquecimentoDesde: null,
+      frios: 3,
+      quentes: 3,
+    });
+    // As duas colunas que o corretor consegue gravar pela API.
+    Object.assign(estado.banco.whatsapp_campanhas[0], {
+      ignorar_janela: true,
+      janela_liberada_ate: "2026-10-28T12:00:00Z",
+    });
+    vi.setSystemTime(new Date("2026-10-28T02:00:00Z")); // 23h em São Paulo
+
+    for (let i = 0; i < 5; i++) await processarFilaCampanhas({ orcamentoMs: 60_000 });
+
+    expect(estado.enviados).toHaveLength(0);
   });
 
   it("número recém-conectado (2 dias): nenhum desconhecido", async () => {

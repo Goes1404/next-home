@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { linkPublicoDoImovel } from "@/lib/imovelPublico/ler";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
+import { liberarPrimeiroContato, nuncaFalouComOCorretor } from "@/lib/whatsapp/primeiroContatoNoEnvio";
 import { obterOuCriarConversa, situacaoDaConversa } from "@/lib/whatsapp/repositorio";
 import { silencioDaConversa } from "@/lib/whatsapp/quandoAIaResponde";
 import {
@@ -73,6 +74,13 @@ export async function avisarQuemPediuAlerta(limite = 2): Promise<number> {
     if (!alerta.ativo) continue;
     const imovel = imovelParaAvisar(lead, novosPorGrupo.get(lead.grupo_id) ?? [], alerta.avisados);
     if (!imovel) continue;
+
+    // Quem pediu o aviso pelo site e nunca escreveu no WhatsApp recebe um
+    // primeiro contato (0217/0222). Sem vaga hoje, o aviso espera o próximo
+    // tique ANTES de marcar o imóvel como avisado, para não se perder.
+    if (await nuncaFalouComOCorretor(supabase, [lead.id])) {
+      if (!(await liberarPrimeiroContato(supabase, lead.corretor_id!)).pode) continue;
+    }
 
     const detalhes = { ...(lead.detalhes as Record<string, unknown>), avisados: [...alerta.avisados, imovel.id] };
     const { error } = await supabase.from("leads").update({ detalhes }).eq("id", lead.id);

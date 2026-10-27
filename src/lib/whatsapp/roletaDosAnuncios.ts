@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
+import { liberarPrimeiroContato } from "./primeiroContatoNoEnvio";
 import { gravarMensagem, obterOuCriarConversa } from "@/lib/whatsapp/repositorio";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { registrarInteracao } from "@/lib/crm/interacoes";
@@ -133,6 +134,17 @@ async function repassar(supabase: Supa, p: Parametros, modo: ModoLigado): Promis
       supabase.from("corretores").select("nome").eq("id", destino).eq("grupo_id", lead.grupo_id).maybeSingle(),
     ]);
     if (!novo || (modo === "mensagem" && !inst?.instance_name)) {
+      excluidos.push(destino);
+      continue;
+    }
+
+    /*
+     * No modo mensagem, o número de B escreve primeiro para quem nunca falou
+     * com ele: para o WhatsApp é primeiro contato, com o teto e a quarentena
+     * de número novo ou recém-caído (0217/0222). Sem vaga, B é pulado; se
+     * ninguém tiver, o lead fica com quem pagou o anúncio.
+     */
+    if (modo === "mensagem" && !(await liberarPrimeiroContato(supabase, destino)).pode) {
       excluidos.push(destino);
       continue;
     }

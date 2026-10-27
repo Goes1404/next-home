@@ -12077,3 +12077,31 @@ Nota: [[lead-da-campanha-do-corretor-sem-ia]].
   conversa estava com `bot_ativo` ligado no momento. Não é o caminho do
   cliente que clica no anúncio do corretor.
 
+## Primeiro contato: um contador só em todo caminho, e as brechas fechadas (0222/0223, 27/10/2026)
+
+Nota: [[primeiro-contato-tem-teto-proprio]].
+
+- **A régua de 10 por dia, 30 por semana e quarentena de 7 dias valia só para
+  a lista.** Roleta (modo mensagem), aviso de imóvel novo e o botão ✨ também
+  abrem conversa com quem nunca escreveu. Hoje os quatro passam por
+  `liberarPrimeiroContato` (`primeiroContatoNoEnvio.ts`) e contam no mesmo
+  `primeiros_contatos_do_corretor` (0222), calculado pelas mensagens que
+  saíram (conversa por dia sem fala anterior do cliente). Ramos: 48 desde
+  20/10, batendo com a queda.
+- **O disparador ainda obedecia `ignorar_janela`/`janela_liberada_ate`**, que
+  o corretor consegue gravar na própria lista pela API. Não lê mais; a lista
+  viva agenda sempre dentro da janela.
+- **0223: `authenticated` não grava nem apaga em `whatsapp_mensagens`, nem
+  apaga conversa.** Uma "fala do cliente" forjada liberaria o primeiro
+  contato. Toda gravação de mensagem já era pela chave de serviço; o painel só
+  lê e escuta o Realtime. Testar grant com `set local role authenticated` num
+  `do $$ ... raise exception` (cuidado: `set local` dentro de bloco com
+  exceção capturada é desfeito junto, e o bloco seguinte roda como postgres).
+- **Resíduo**: listas e fila ainda são gravadas pela sessão (29 pontos). Não
+  fura régua nem janela; mudar é trabalho separado.
+- **Créditos da OpenAI acabaram em 27/10** (429 "You have no credits
+  remaining"): dossiê, transcrição de áudio e a reescrita do texto da lista
+  falham. Lista sem texto conferido não sai (lado seguro). Recarregar a conta.
+- Teste de banco falso que não conhece `rpc` quebra quando um caminho passa a
+  consultar a régua: `portas.test.ts` e `roletaDosAnuncios.fluxo.test.ts`
+  ganharam o `rpc` e instância com `conectado_em` antigo.

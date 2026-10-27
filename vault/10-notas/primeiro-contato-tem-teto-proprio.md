@@ -1,6 +1,6 @@
 ---
 title: Primeiro contato tem teto próprio, e vai sem foto
-aliases: [primeiro contato, lista fria, primeiro_contato, 0217, WhatsApp do Ramos]
+aliases: [primeiro contato, lista fria, primeiro_contato, 0217, 0222, 0223, WhatsApp do Ramos]
 tags: [anti-ban, incidente]
 type: incidente
 status: growing
@@ -11,10 +11,14 @@ codigo:
   - src/lib/whatsapp/primeiroContato.simulacao.test.ts
   - src/lib/whatsapp/campaignDispatcher.ts
   - supabase/migrations/0217_primeiro_contato_da_lista.sql
+  - src/lib/whatsapp/primeiroContatoNoEnvio.ts
+  - src/lib/whatsapp/primeiroContatoNoEnvio.test.ts
+  - supabase/migrations/0222_contador_de_primeiro_contato.sql
+  - supabase/migrations/0223_mensagens_so_pela_chave_de_servico.sql
 created: 2026-10-26
 updated: 2026-10-27
 fonte: print da conversa com o Ramos ("A IA travou o whats na quarta-feira"), 26/10/2026
-summary: O WhatsApp do Ramos foi desconectado da conta depois de 48 mensagens de lista em dois dias para gente que nunca tinha falado com ele, todas com a mesma foto; primeiro contato passou a ter teto de 10 por dia e 30 por semana, nenhum nos 7 dias depois de o número conectar ou cair, e sai sem foto.
+summary: O WhatsApp do Ramos foi desconectado da conta depois de 48 mensagens de lista em dois dias para gente que nunca tinha falado com ele, todas com a mesma foto; primeiro contato passou a ter teto de 10 por dia e 30 por semana, nenhum nos 7 dias depois de o número conectar ou cair, e sai sem foto. Desde 0222 o teto é um contador só por corretor, contado pelas mensagens, e vale para lista, botão ✨, aviso de imóvel novo e roleta.
 ---
 # Primeiro contato tem teto próprio, e vai sem foto
 
@@ -77,19 +81,48 @@ A cota do número continua valendo por cima.
 - Até 27/10 nenhuma lista tinha rodado desde o deploy: a regra só foi
   exercitada pela simulação.
 
-## Caminhos que mandam primeiro contato sem passar pela trava
+## Um contador só, em todo caminho que abre conversa (0222, 27/10)
 
-Medidos em 27/10, todos sem uso no banco:
+A 0217 contava pela marca da fila de listas, e três caminhos mandavam para
+quem nunca escreveu sem passar pela conta: a **roleta dos anúncios** (modo
+mensagem), o **aviso de imóvel novo** e o **botão ✨ da IA**. Para o WhatsApp
+é o mesmo número falando com desconhecido, venha de onde vier.
 
-- **Roleta dos anúncios, modo mensagem** (`roletaDosAnuncios.ts`): o número
-  de outro corretor abre conversa com o cliente que escreveu para o anúncio.
-  `roleta_anuncios` vazia.
-- **Aviso de imóvel novo** (`avisoDeNovidade.ts`): até 2 por tique para quem
-  pediu alerta pelo site. Nenhum lead com alerta.
-- **Botão ✨ da IA** (`aberturaPelaIA.ts`): um por clique, com cota e
-  espaçamento, mas sem o teto de primeiro contato.
+- `primeiros_contatos_do_corretor(corretor, desde)` (0222) conta pelas
+  **mensagens que saíram**: cada conversa do corretor que recebeu, no dia de
+  São Paulo, mensagem nossa (bot ou corretor) sem fala do cliente antes conta 1.
+  Pega lista, os três caminhos e até mensagem manual do Live Chat para quem
+  nunca respondeu (essa conta, mas não é barrada). EXECUTE só da chave de
+  serviço.
+- `primeiroContatoNoEnvio.ts` (`liberarPrimeiroContato`,
+  `nuncaFalouComOCorretor`, `contarPrimeirosContatos`) é a régua no envio,
+  usada pelos quatro caminhos. Sem vaga: a lista adia para amanhã, o ✨
+  devolve o motivo, o aviso espera o próximo tique **sem** marcar o imóvel
+  como avisado, a roleta pula o sorteado e tenta o seguinte.
+- Conferido no banco: Ramos com 48 desde 20/10 (os 21 + 27 da queda).
 
-Quando algum deles passar a ter uso, ele deve consultar a mesma regra.
+## Brechas fechadas na revisão de segurança (27/10)
+
+- **Lista "de qualquer hora"**: o botão saiu em 09/10, mas o disparador ainda
+  obedecia `ignorar_janela`/`janela_liberada_ate`, e o corretor grava a
+  própria lista pela sessão. Agora o disparador não lê essas colunas e a
+  lista viva agenda sempre com `ignorarJanela: false`. O expediente do
+  corretor só encurta a janela 9h–20h59.
+- **Forjar "o cliente respondeu"** (0223): `authenticated` tinha INSERT,
+  UPDATE e DELETE em `whatsapp_mensagens`, e a régua decide pelas mensagens.
+  Ninguém grava mensagem pela sessão (webhook, disparador, Live Chat e
+  importação usam a chave de serviço; o painel só lê e escuta o Realtime),
+  então a gravação e a exclusão de conversa pela sessão foram revogadas.
+  Testado com `set local role authenticated`: INSERT, UPDATE e DELETE negados,
+  SELECT segue.
+- `conectado_em` e `aquecimento_desde` não são editáveis pelo corretor
+  (UPDATE por coluna só em expediente, tom, palavras-chave).
+- **Resíduo conhecido**: a fila e a lista (`whatsapp_campanhas*`) ainda são
+  gravadas pela sessão; o corretor pode, pela API, mexer na própria lista
+  (texto, agendamento). Nada disso fura a régua nem a janela, que o
+  disparador recalcula; levar as 29 gravações para a chave de serviço é
+  trabalho separado. `anon` tem SELECT nessas tabelas, mas a RLS só tem
+  política para `authenticated`: com `set local role anon` vêm 0 linhas.
 
 ## Para lembrar
 
@@ -100,5 +133,6 @@ Quando algum deles passar a ter uso, ele deve consultar a mesma regra.
 - Os números ficam em `primeiroContato.ts`, e o teste reprova afrouxar.
 
 Ligações: [[espacamento-anti-ban-so-existia-no-papel]],
+[[pareamento-depois-de-401-recomeca-a-instancia]],
 [[texto-da-lista-conferido-antes-de-sair]],
 [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]].
