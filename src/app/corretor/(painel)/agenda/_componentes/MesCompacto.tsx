@@ -14,11 +14,14 @@ export function MesCompacto({
   diaSelecionado,
   hoje,
   marcadores,
+  consulta = "",
 }: {
   mes: Mes;
   diaSelecionado: Dia;
   hoje: Dia;
   marcadores: Record<Dia, number>;
+  /** O resto da consulta a preservar nos links (`&ver=equipe&corretor=…`). */
+  consulta?: string;
 }) {
   const anterior = mesVizinho(mes, -1);
   const seguinte = mesVizinho(mes, 1);
@@ -27,7 +30,7 @@ export function MesCompacto({
     <section className="cartao p-4" aria-label={`Calendário de ${rotuloDoMes(mes)}`}>
       <div className="flex items-center justify-between gap-2">
         <Link
-          href={`?mes=${anterior}`}
+          href={`?mes=${anterior}${consulta}`}
           className="botao-aba min-h-10 min-w-10 justify-center"
           aria-label={`Ir para ${rotuloDoMes(anterior)}`}
         >
@@ -35,7 +38,7 @@ export function MesCompacto({
         </Link>
         <p className="font-display text-lg text-titulo first-letter:uppercase">{rotuloDoMes(mes)}</p>
         <Link
-          href={`?mes=${seguinte}`}
+          href={`?mes=${seguinte}${consulta}`}
           className="botao-aba min-h-10 min-w-10 justify-center"
           aria-label={`Ir para ${rotuloDoMes(seguinte)}`}
         >
@@ -59,7 +62,7 @@ export function MesCompacto({
             return (
               <Link
                 key={dia}
-                href={`?mes=${mes}&dia=${dia}`}
+                href={`?mes=${mes}&dia=${dia}${consulta}`}
                 aria-current={selecionado ? "date" : undefined}
                 aria-label={`${Number(dia.slice(8))}${quantos ? `, ${quantos} compromisso${quantos > 1 ? "s" : ""}` : ""}`}
                 className={cn(

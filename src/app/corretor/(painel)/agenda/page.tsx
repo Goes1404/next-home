@@ -1,40 +1,38 @@
 import type { Metadata } from "next";
-import { getCorretorLogado } from "@/lib/corretorSessao";
+import Link from "next/link";
+import { getCorretorLogado, getEquipeAtiva } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
+import { cn } from "@/lib/utils";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { diaEmSaoPaulo, lerDia, lerMes } from "@/lib/agenda/calendario";
 import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas, lerVisitasSemHorario } from "@/lib/agenda/lerAgenda";
-import Link from "next/link";
-import type { DadosDoPreparo } from "@/lib/crm/preparoDaVisita";
+import { lerDiaDaEquipe, lerMarcadoresDaEquipe, lerNumerosDaAgenda, lerPreparo } from "@/lib/agenda/lerEquipe";
 import { MesCompacto } from "./_componentes/MesCompacto";
 import { ListaDoDia } from "./_componentes/ListaDoDia";
 import { CartaoDaVisita } from "./_componentes/CartaoDaVisita";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
 import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
+import { NumerosDoMes } from "./_componentes/NumerosDoMes";
+import { ListaDaEquipe } from "./_componentes/ListaDaEquipe";
 
 export const metadata: Metadata = { title: "Agenda" };
 
 const um = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-const numero = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+
+type Params = { [key: string]: string | string[] | undefined };
 
 /**
- * A Agenda do corretor (27/10/2026, fase 1): substitui a tela de Visitas.
+ * A Agenda (27/10/2026). Fase 1: a do próprio corretor, que substituiu a
+ * tela de Visitas. Fase 2: o gestor tem a chave "Minha / Equipe"; na da
+ * equipe, os números do mês com seis meses de comparação, o filtro por
+ * corretor e a lista do dia com quem faz cada visita.
  *
- * O mês compacto em cima, a lista do dia escolhido embaixo (visitas, tarefas
- * da ficha e lembretes de anotação) e, quando o dia não tem visita, as
- * próximas — o que a tela de Visitas mostrava. A grade semanal, que é o que
- * a assistente lê para oferecer horário, fica em "Configurar horários".
- *
- * Só a agenda do próprio corretor nesta fase; a visão da equipe para o
- * gestor é a fase 2 (publicadas juntas).
+ * `?ver=equipe` só vale para o gestor: o corretor comum não vê a agenda dos
+ * colegas, e o parâmetro é ignorado para ele.
  */
-export default async function AgendaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+export default async function AgendaPage({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
@@ -42,8 +40,97 @@ export default async function AgendaPage({
   const agora = new Date();
   const mes = lerMes(um(params.mes), agora);
   const dia = lerDia(um(params.dia), mes, agora);
-  const recorte = { corretorId: corretor.id, grupoId: corretor.grupoId };
+  const ehGestor = corretor.papel === "gestor";
+  const daEquipe = ehGestor && um(params.ver) === "equipe";
 
+  return (
+    <div>
+      <CabecalhoDeTela
+        secao="Leads"
+        titulo="Agenda"
+        descricao={daEquipe ? "As visitas da equipe, dia a dia, e os números do mês." : "Suas visitas, tarefas e lembretes, dia a dia."}
+      />
+      {ehGestor && (
+        <nav className="mt-4 flex gap-2" aria-label="De quem é a agenda">
+          <Link href={`?mes=${mes}&dia=${dia}`} aria-current={!daEquipe ? "page" : undefined} className={cn("botao-aba min-h-11", !daEquipe && "bg-elevado font-semibold")}>
+            Minha
+          </Link>
+          <Link href={`?mes=${mes}&dia=${dia}&ver=equipe`} aria-current={daEquipe ? "page" : undefined} className={cn("botao-aba min-h-11", daEquipe && "bg-elevado font-semibold")}>
+            Equipe
+          </Link>
+        </nav>
+      )}
+      {daEquipe ? (
+        <AgendaDaEquipe grupoId={corretor.grupoId} mes={mes} dia={dia} agora={agora} filtro={um(params.corretor) ?? null} />
+      ) : (
+        <MinhaAgenda corretorId={corretor.id} grupoId={corretor.grupoId} mes={mes} dia={dia} agora={agora} />
+      )}
+    </div>
+  );
+}
+
+async function AgendaDaEquipe({
+  grupoId,
+  mes,
+  dia,
+  agora,
+  filtro,
+}: {
+  grupoId: string;
+  mes: string;
+  dia: string;
+  agora: Date;
+  filtro: string | null;
+}) {
+  const equipe = await getEquipeAtiva();
+  // Só filtra por quem é da equipe do gestor: id de fora vira "equipe toda".
+  const corretorId = filtro && equipe.some((c) => c.id === filtro) ? filtro : null;
+  const recorte = { grupoId, corretorId };
+  const [numeros, marcadores, doDia] = await Promise.all([
+    lerNumerosDaAgenda({ ...recorte, mes }),
+    lerMarcadoresDaEquipe({ ...recorte, mes }),
+    lerDiaDaEquipe({ ...recorte, dia }),
+  ]);
+  const consulta = `&ver=equipe${corretorId ? `&corretor=${corretorId}` : ""}`;
+
+  return (
+    <div className="mt-6 space-y-4">
+      <nav className="flex flex-wrap gap-2" aria-label="Filtrar por corretor">
+        <Link href={`?mes=${mes}&dia=${dia}&ver=equipe`} aria-current={!corretorId ? "true" : undefined} className={cn("botao-aba min-h-11 text-sm", !corretorId && "bg-elevado font-semibold")}>
+          Todos
+        </Link>
+        {equipe.map((c) => (
+          <Link
+            key={c.id}
+            href={`?mes=${mes}&dia=${dia}&ver=equipe&corretor=${c.id}`}
+            aria-current={corretorId === c.id ? "true" : undefined}
+            className={cn("botao-aba min-h-11 text-sm", corretorId === c.id && "bg-elevado font-semibold")}
+          >
+            {c.nome.split(" ")[0]}
+          </Link>
+        ))}
+      </nav>
+      <NumerosDoMes serie={numeros.serie} medidaDesde={numeros.medidaDesde} />
+      <MesCompacto mes={mes} diaSelecionado={dia} hoje={diaEmSaoPaulo(agora)} marcadores={marcadores} consulta={consulta} />
+      <ListaDaEquipe itens={doDia.itens} total={doDia.total} equipe={equipe} agora={agora} />
+    </div>
+  );
+}
+
+async function MinhaAgenda({
+  corretorId,
+  grupoId,
+  mes,
+  dia,
+  agora,
+}: {
+  corretorId: string;
+  grupoId: string;
+  mes: string;
+  dia: string;
+  agora: Date;
+}) {
+  const recorte = { corretorId, grupoId };
   const [marcadores, itens, proximas, semHorario] = await Promise.all([
     lerMarcadoresDoMes({ ...recorte, mes }),
     lerItensDoDia({ ...recorte, dia }),
@@ -54,9 +141,9 @@ export default async function AgendaPage({
 
   /*
    * O PREPARO da visita (o que o cliente procura, a objeção aberta), numa
-   * consulta à parte e só para os leads que aparecem: engordar a leitura da
-   * agenda cobraria a coluna em todo marcador do mês. `numeric` chega como
-   * string no supabase-js: sem o `Number`, a moeda sai quebrada sem erro.
+   * consulta à parte e só para os leads que aparecem. Pela chave de serviço:
+   * a visita passada pelo gestor (0223) é de lead de outro corretor, e a RLS
+   * esconderia o preparo de quem a faz.
    */
   const ids = [
     ...new Set([
@@ -64,52 +151,22 @@ export default async function AgendaPage({
       ...(temVisitaNoDia ? [] : proximas.map((v) => v.leadId)),
     ]),
   ];
-  const supabase = await createClient();
-  const [{ data: perfis }, { data: dossies }] = ids.length
-    ? await Promise.all([
-        supabase
-          .from("leads")
-          .select("id, regiao_interesse, dormitorios_min, orcamento_min, orcamento_max, renda_mensal")
-          .in("id", ids),
-        supabase.from("lead_observacoes_ia").select("lead_id, resumo_executivo, objecoes_identificadas").in("lead_id", ids),
-      ])
-    : [{ data: null }, { data: null }];
-  const preparoPorLead = new Map<string, DadosDoPreparo>();
-  for (const p of perfis ?? []) {
-    preparoPorLead.set(p.id, {
-      regiaoInteresse: p.regiao_interesse,
-      dormitoriosMin: numero(p.dormitorios_min),
-      orcamentoMin: numero(p.orcamento_min),
-      orcamentoMax: numero(p.orcamento_max),
-      rendaMensal: numero(p.renda_mensal),
-    });
-  }
-  for (const d of dossies ?? []) {
-    preparoPorLead.set(d.lead_id, {
-      ...(preparoPorLead.get(d.lead_id) ?? {}),
-      resumoExecutivo: d.resumo_executivo,
-      objecoes: Array.isArray(d.objecoes_identificadas)
-        ? d.objecoes_identificadas.filter((o): o is string => typeof o === "string")
-        : null,
-    });
-  }
+  const preparoPorLead = await lerPreparo(grupoId, ids);
 
   // Configuração: o token do feed .ics (0126, tabela fechada ao painel) e a grade semanal.
   const { data: agenda } = await createServiceClient()
     .from("corretor_agenda")
     .select("token")
-    .eq("corretor_id", corretor.id)
+    .eq("corretor_id", corretorId)
     .maybeSingle();
-  const linkDaAgenda = agenda ? `${await lerEnderecoDoCliente(corretor.grupoId)}/api/agenda/${agenda.token}.ics` : null;
-  const { data: grade } = await supabase
+  const linkDaAgenda = agenda ? `${await lerEnderecoDoCliente(grupoId)}/api/agenda/${agenda.token}.ics` : null;
+  const { data: grade } = await (await createClient())
     .from("corretor_disponibilidade")
     .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
-    .eq("corretor_id", corretor.id);
+    .eq("corretor_id", corretorId);
 
   return (
-    <div>
-      <CabecalhoDeTela secao="Leads" titulo="Agenda" descricao="Suas visitas, tarefas e lembretes, dia a dia." />
-
+    <>
       <div className="mt-6 space-y-4">
         {semHorario.length > 0 && (
           <section className="cartao border-alerta/40 p-5" aria-labelledby="visita-sem-horario">
@@ -129,7 +186,7 @@ export default async function AgendaPage({
           </section>
         )}
         <MesCompacto mes={mes} diaSelecionado={dia} hoje={diaEmSaoPaulo(agora)} marcadores={marcadores} />
-        <ListaDoDia itens={itens} preparoPorLead={preparoPorLead} />
+        <ListaDoDia itens={itens} preparoPorLead={preparoPorLead} vistaDe={corretorId} />
       </div>
 
       {!temVisitaNoDia && proximas.length > 0 && (
@@ -137,7 +194,13 @@ export default async function AgendaPage({
           <h2 className="font-display text-lg text-titulo">Próximas visitas</h2>
           <div className="mt-3 space-y-4">
             {proximas.map((visita) => (
-              <CartaoDaVisita key={visita.id} visita={visita} preparo={preparoPorLead.get(visita.leadId) ?? {}} comDia />
+              <CartaoDaVisita
+                key={visita.id}
+                visita={visita}
+                preparo={preparoPorLead.get(visita.leadId) ?? {}}
+                comDia
+                vistaDe={corretorId}
+              />
             ))}
           </div>
         </section>
@@ -157,6 +220,6 @@ export default async function AgendaPage({
           />
         </div>
       </details>
-    </div>
+    </>
   );
 }

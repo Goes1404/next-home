@@ -22,6 +22,7 @@ import { AtivarNotificacoes } from "./_componentes/AtivarNotificacoes";
 import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { HojeNaAgenda } from "./_componentes/HojeNaAgenda";
+import { EquipeHoje } from "./_componentes/EquipeHoje";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { getVendas } from "@/lib/financeiro/dados";
@@ -126,6 +127,13 @@ export default async function PainelInicio({
       <Suspense fallback={null}>
         <HojeNaAgenda corretorId={corretor.id} grupoId={corretor.grupoId} />
       </Suspense>
+
+      {/* O dia da equipe, só para o gestor (Agenda, fase 2). Some quando não há visita. */}
+      {corretor.papel === "gestor" && (
+        <Suspense fallback={null}>
+          <EquipeHoje grupoId={corretor.grupoId} />
+        </Suspense>
+      )}
 
       {/* Pausar a IA e dividir os leads do anúncio (roleta, 0204), sem sair do Início. */}
       <Suspense fallback={null}>
