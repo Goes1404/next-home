@@ -18,8 +18,9 @@ describe("Decisão antes de pedir o código de pareamento", () => {
     expect(decidirPareamentoPorNumero("connecting")).toEqual({ acao: "encerrar_antes" });
   });
 
-  it("em 'close' segue direto", () => {
-    expect(decidirPareamentoPorNumero("close")).toEqual({ acao: "seguir" });
+  it("em 'close' recomeça a instância — sessão velha guardada faz todo código dar 401", () => {
+    // O Ramos (27/10/2026): cinco pedidos seguidos, todos terminando em 401.
+    expect(decidirPareamentoPorNumero("close")).toEqual({ acao: "recomecar" });
   });
 
   it("instância inexistente segue direto — o create é quem vai criá-la", () => {

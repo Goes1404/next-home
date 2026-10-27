@@ -12030,3 +12030,21 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]] e [[conta-oculta]].
 - Na mesma tarefa: seletor manual sempre visível, lista "Grupos neste número"
   com o dono de cada grupo, `fetchAllGroups?getParticipants=false` (a v2 exige)
   e JID de grupo antigo com hífen aceito (antes sumia calado da lista).
+
+## Reconectar depois de 401: a instância recomeça do zero (27/10/2026)
+
+Nota: [[pareamento-depois-de-401-recomeca-a-instancia]].
+
+- **O Ramos tentou cinco vezes e o celular disse "Não foi possível conectar o
+  dispositivo".** Cada pedido terminou com a instância caindo 401; num deles a
+  Evolution não devolveu código e caiu 0,4 s depois. A instância guardava a
+  sessão do aparelho que o WhatsApp tinha desconectado em 21/10.
+- Hoje instância em `close` é apagada e recriada antes do código ou do QR
+  (`recomecar` em `pareamento.ts`). Conectada nunca é apagada.
+- A tela avisa a recusa (queda 401/403 mais de 5 s depois do código) em vez de
+  esperar 2 minutos. Número novo não registra queda, então ali o aviso não
+  aparece.
+- **Diagnóstico**: `get_runtime_logs` com `nexthome-<slug>` mostra cada
+  "caiu com o código N" e "pareamento por número sem pairingCode". O log do
+  Hobby guarda só 1 hora: peça para repetir a tentativa e olhe logo.
+

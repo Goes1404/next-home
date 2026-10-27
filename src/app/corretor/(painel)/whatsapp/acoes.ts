@@ -1,6 +1,7 @@
 "use server";
 
 import { problemasDasPalavrasChave } from "@/lib/whatsapp/palavraChaveDiscreta";
+import { FRASE_RECUSADO_PELO_WHATSAPP, pareamentoRecusado } from "@/lib/whatsapp/pareamentoRecusado";
 import { site } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { sondarProvedor } from "@/lib/whatsapp/sonda";
@@ -282,6 +283,8 @@ export type EstadoConexao = {
    * dizer e devolvia o formulário vazio como se nada tivesse acontecido.
    */
   desfecho?: DesfechoPareamento;
+  /** Quando o código chegou, no relógio do servidor: a tela devolve isto ao perguntar se conectou. */
+  iniciadoEm?: string;
   erro?: string;
 };
 
@@ -377,6 +380,9 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
     codigoPareamento: resultado.codigoPareamento,
     jaConectado: resultado.jaConectado,
     desfecho: resultado.desfecho,
+    // Depois de recomeçar a instância e de o código chegar: o que cair a
+    // partir daqui (com folga) é o WhatsApp recusando o aparelho.
+    iniciadoEm: new Date().toISOString(),
   };
 }
 
@@ -392,12 +398,14 @@ export async function conectarWhatsapp(telefone?: string): Promise<EstadoConexao
  * Reusa `sincronizarConexaoInstancia`, que já carimba `conectado_em` — a
  * coluna de que depende TODO disparo de campanha.
  */
-export async function verificarConexaoWhatsapp(): Promise<{
+export async function verificarConexaoWhatsapp(desde?: string): Promise<{
   conectado: boolean;
   estado: string;
   telefone?: string | null;
   /** O número pareou mas é de outra conta da plataforma (0198): a frase para a tela. */
   recusado?: string;
+  /** O WhatsApp recusou o aparelho depois de o código aparecer: a frase para a tela. */
+  recusadoPeloWhatsapp?: string;
 }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { conectado: false, estado: "sem_sessao" };
@@ -438,6 +446,20 @@ export async function verificarConexaoWhatsapp(): Promise<{
     .select("telefone_conectado")
     .eq("id", instancia.id)
     .maybeSingle();
+
+  // A queda depois do código, pela chave de serviço: o motivo da queda é
+  // estado do número (0175), fora do que a sessão do corretor lê. A linha
+  // é a desta sessão, achada acima.
+  if (!estado.conectado && desde) {
+    const { data: queda } = await createServiceClient()
+      .from("corretor_whatsapp_instancias")
+      .select("motivo_queda_codigo, motivo_queda_em")
+      .eq("id", instancia.id)
+      .maybeSingle();
+    if (pareamentoRecusado({ pedidoEm: desde, quedaCodigo: queda?.motivo_queda_codigo, quedaEm: queda?.motivo_queda_em })) {
+      return { conectado: false, estado: estado.estado, recusadoPeloWhatsapp: FRASE_RECUSADO_PELO_WHATSAPP };
+    }
+  }
 
   return {
     conectado: estado.conectado,
