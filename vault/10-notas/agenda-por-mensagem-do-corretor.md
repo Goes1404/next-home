@@ -3,7 +3,7 @@ title: A agenda por mensagem do corretor é um módulo puro que só devolve um p
 aliases: [comandos da agenda, interpretarPedido, PedidoDoCorretor, lerRespostaCurta, escolherLeadsPorNome]
 tags: [crm, ia, prompt, whatsapp, decisao]
 type: decisao
-status: seedling
+status: growing
 custou: baixo
 codigo: [src/lib/agenda/comandos/tipos.ts, src/lib/agenda/comandos/interpretar.ts, src/lib/agenda/comandos/instante.ts, src/lib/agenda/comandos/respostasCurtas.ts, src/lib/agenda/comandos/escolherLead.ts, src/lib/agenda/comandos/textos.ts]
 fonte: branch agenda-comandos, 27/10/2026
@@ -43,3 +43,10 @@ qualquer dia, passado inclusive. Todo instante sai reescrito em
 reais.
 
 Relacionadas: [[agenda-visitas-com-historico]].
+
+## Integração (27/10/2026, fase 5)
+
+Ligado ao webhook por `comandos/canal.ts` (detecção do canal e envio, com a
+marca 📅) e `comandos/conversa.ts` (a decisão: estado pendente, "sim",
+escolha do cliente, execução). Ver [[agenda-da-equipe-reunioes-e-cobranca]].
+

@@ -12030,3 +12030,31 @@ Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
 - Disco C: chegou a 0 bytes no meio da execução (next dev parou de gravar
   cache): 24 worktrees antigas já publicadas foram removidas (~10 GB); os
   `.relatorio-*.md` delas estão em `nexthome/relatorios-das-worktrees/`.
+
+## Agenda, fases 2–5: equipe, reuniões, cobrança e comandos (0223–0225, 27/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, NÃO publicada.
+
+- Visita passada pelo gestor precisa de `passada_em`: sem a marca, o espelho
+  do lead (0222) devolvia a visita ao dono na troca de dono e na remarcação.
+- Reunião e bloqueio travam a visita por GATILHO com `errcode
+  exclusion_violation` (23P01): o mesmo código da exclusão gist, então
+  `ehConflitoDeHorario` e a reserva da IA (false) já tratam. A IA lê os
+  intervalos de `compromisso_participantes`, a mesma tabela da trava.
+- O gestor nunca recebe o título do bloqueio: ele é apagado no servidor.
+- Postgres.js converte o parâmetro com tipo inferido `timestamp` por `new
+  Date` no fuso da MÁQUINA: em teste, `${'2026-01-31 22:00'}::timestamp`
+  chega deslocado. Use `::text::timestamp`.
+- "Remarcou" da cobrança reescreve a mesma visita e espelha no lead com
+  `set_config('agenda.espelho_pausado','on',true)`, senão o gatilho criava
+  outra visita (a antiga já tinha passado de 60 min).
+- Cobrança: uma pergunta pendente por corretor (`conversa_de_agenda`), senão
+  o "1" não sabe a que visita se refere. Cron frequente só pelo tick de
+  followups (Hobby da Vercel = cron diário).
+- Comandos do WhatsApp entram no webhook ANTES da palavra-chave e do ramo
+  `fromMe`; respostas do sistema começam com 📅 e o eco é ignorado. Formato
+  real da resposta do corretor ainda não medido em produção.
+- Guarda `servicoComGrupo.test.ts`: arquivo que só recebe o cliente da chave
+  (sem importar `createServiceClient`) entra em IMPORTADORES como `repassa`,
+  não no MAPA — os dois juntos reprovam.
+

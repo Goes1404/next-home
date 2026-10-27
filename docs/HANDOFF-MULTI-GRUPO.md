@@ -411,3 +411,17 @@ site público desatualizado; botões do site do grupo com o verde padrão.
   horário de pouco tráfego.
 - Fase 2 precisa marcar a visita delegada (o espelho hoje devolve ao dono
   toda visita com outro corretor; ver a nota).
+
+### Agenda, fases 2–5 (27/10/2026, mesma branch, NÃO publicadas)
+
+- Feito: equipe com números (0223), visita passada (0223), reunião e
+  bloqueio (0224), "a visita aconteceu?" (0225), comandos pelo WhatsApp.
+  Nota [[agenda-da-equipe-reunioes-e-cobranca]].
+- **Aplicar 0222 → 0223 → 0224 → 0225, nessa ordem, ANTES do deploy.** Todas
+  aditivas; 0223 e 0225 redefinem `espelhar_visita_do_lead` (a 0225 é a
+  versão final). Sem cron novo: a cobrança roda no tick de followups que o
+  pg_cron já chama a cada 5 min.
+- Primeiro uso real dos comandos: conferir no log do webhook
+  (`action: conversa_com_o_sistema`) como chega a resposta do corretor —
+  conversa consigo mesmo (`fromMe`) ou número pessoal (entrada). Só foi
+  raciocinado, nunca medido com payload de produção.
