@@ -5,11 +5,12 @@ import { lerItensDoDia } from "@/lib/agenda/lerAgenda";
 import type { ItemDaAgenda } from "@/lib/agenda/itens";
 
 const HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-const TIPO: Record<ItemDaAgenda["tipo"], string> = { visita: "Visita", tarefa: "Tarefa", lembrete: "Lembrete" };
+const TIPO: Record<ItemDaAgenda["tipo"], string> = { visita: "Visita", compromisso: "Compromisso", tarefa: "Tarefa", lembrete: "Lembrete" };
 
 function texto(item: ItemDaAgenda): string {
   if (item.tipo === "visita") return item.nome;
   if (item.tipo === "tarefa") return item.nome ? `${item.titulo} · ${item.nome}` : item.titulo;
+  if (item.tipo === "compromisso") return item.titulo || (item.subtipo === "reuniao" ? "Reunião" : "Horário bloqueado");
   return item.texto;
 }
 

@@ -8,7 +8,14 @@ import { cn } from "@/lib/utils";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { diaEmSaoPaulo, lerDia, lerMes } from "@/lib/agenda/calendario";
 import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas, lerVisitasSemHorario } from "@/lib/agenda/lerAgenda";
-import { lerDiaDaEquipe, lerMarcadoresDaEquipe, lerNumerosDaAgenda, lerPreparo } from "@/lib/agenda/lerEquipe";
+import {
+  lerCompromissosDoDiaDaEquipe,
+  lerDiaDaEquipe,
+  lerMarcadoresDaEquipe,
+  lerNumerosDaAgenda,
+  lerPreparo,
+} from "@/lib/agenda/lerEquipe";
+import { BloquearHorario, MarcarReuniao } from "./_componentes/FormulariosDeCompromisso";
 import { MesCompacto } from "./_componentes/MesCompacto";
 import { ListaDoDia } from "./_componentes/ListaDoDia";
 import { CartaoDaVisita } from "./_componentes/CartaoDaVisita";
@@ -86,10 +93,11 @@ async function AgendaDaEquipe({
   // Só filtra por quem é da equipe do gestor: id de fora vira "equipe toda".
   const corretorId = filtro && equipe.some((c) => c.id === filtro) ? filtro : null;
   const recorte = { grupoId, corretorId };
-  const [numeros, marcadores, doDia] = await Promise.all([
+  const [numeros, marcadores, doDia, compromissos] = await Promise.all([
     lerNumerosDaAgenda({ ...recorte, mes }),
     lerMarcadoresDaEquipe({ ...recorte, mes }),
     lerDiaDaEquipe({ ...recorte, dia }),
+    lerCompromissosDoDiaDaEquipe({ ...recorte, dia }),
   ]);
   const consulta = `&ver=equipe${corretorId ? `&corretor=${corretorId}` : ""}`;
 
@@ -112,7 +120,8 @@ async function AgendaDaEquipe({
       </nav>
       <NumerosDoMes serie={numeros.serie} medidaDesde={numeros.medidaDesde} />
       <MesCompacto mes={mes} diaSelecionado={dia} hoje={diaEmSaoPaulo(agora)} marcadores={marcadores} consulta={consulta} />
-      <ListaDaEquipe itens={doDia.itens} total={doDia.total} equipe={equipe} agora={agora} />
+      <ListaDaEquipe itens={doDia.itens} total={doDia.total} compromissos={compromissos} equipe={equipe} agora={agora} />
+      <MarcarReuniao dia={dia} equipe={equipe} />
     </div>
   );
 }
@@ -187,6 +196,7 @@ async function MinhaAgenda({
         )}
         <MesCompacto mes={mes} diaSelecionado={dia} hoje={diaEmSaoPaulo(agora)} marcadores={marcadores} />
         <ListaDoDia itens={itens} preparoPorLead={preparoPorLead} vistaDe={corretorId} />
+        <BloquearHorario dia={dia} />
       </div>
 
       {!temVisitaNoDia && proximas.length > 0 && (

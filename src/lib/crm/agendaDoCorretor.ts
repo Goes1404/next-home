@@ -28,7 +28,7 @@ export async function horariosDeVisita(
 ): Promise<HorarioDeVisita[]> {
   const supabase = createServiceClient();
 
-  const [{ data: grade }, { data: marcadas }] = await Promise.all([
+  const [{ data: grade }, { data: marcadas }, { data: compromissos }] = await Promise.all([
     supabase
       .from("corretor_disponibilidade")
       .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
@@ -45,6 +45,13 @@ export async function horariosDeVisita(
       .eq("corretor_id", corretorId)
       .eq("status", "marcada")
       .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString()),
+    // Reuniões e bloqueios (0224): a mesma tabela que a trava lê.
+    supabase
+      .from("compromisso_participantes")
+      .select("inicio, fim")
+      .eq("corretor_id", corretorId)
+      .eq("ativo", true)
+      .gt("fim", agora.toISOString()),
   ]);
 
   const faixas: FaixaDisponivel[] = (grade ?? []).map((f) => ({
@@ -56,7 +63,9 @@ export async function horariosDeVisita(
 
   const ocupados = (marcadas ?? []).map((v) => new Date(v.inicio));
 
-  return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, agora, quantos: 6 });
+  const bloqueios = (compromissos ?? []).map((c) => ({ inicio: new Date(c.inicio), fim: new Date(c.fim) }));
+
+  return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, bloqueios, agora, quantos: 6 });
 }
 
 /**

@@ -16,6 +16,7 @@ function consulta(tabela: string, dados: unknown[]) {
     select: () => cadeia,
     eq: (c: string, v: unknown) => (registro.filtros.push(["eq", c, v]), cadeia),
     gte: (c: string, v: unknown) => (registro.filtros.push(["gte", c, v]), cadeia),
+    gt: (c: string, v: unknown) => (registro.filtros.push(["gt", c, v]), cadeia),
     not: () => cadeia,
     then: (resolver: (r: { data: unknown[]; error: null }) => unknown) => resolver({ data: dados, error: null }),
   };
@@ -28,7 +29,9 @@ vi.mock("@/lib/supabase/service", () => ({
     from: (tabela: string) =>
       tabela === "visitas"
         ? consulta(tabela, [{ inicio: "2026-09-05T13:30:00Z" }]) // sábado 10h30 em SP
-        : consulta(tabela, [{ dia_semana: 6, hora_inicio: 9, hora_fim: 12, horas_preferidas: [] }]),
+        : tabela === "compromisso_participantes"
+          ? consulta(tabela, [])
+          : consulta(tabela, [{ dia_semana: 6, hora_inicio: 9, hora_fim: 12, horas_preferidas: [] }]),
   }),
 }));
 

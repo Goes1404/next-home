@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ItemDaAgenda } from "@/lib/agenda/itens";
 import type { DadosDoPreparo } from "@/lib/crm/preparoDaVisita";
 import { CartaoDaVisita } from "./CartaoDaVisita";
+import { LinhaDoCompromisso } from "./LinhaDoCompromisso";
 
 const HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -33,6 +34,8 @@ export function ListaDoDia({
         <li key={`${item.tipo}-${item.id}`}>
           {item.tipo === "visita" ? (
             <CartaoDaVisita visita={item} preparo={preparoPorLead.get(item.leadId) ?? {}} vistaDe={vistaDe} />
+          ) : item.tipo === "compromisso" ? (
+            <LinhaDoCompromisso item={item} />
           ) : (
             <Link
               href={item.leadId ? `/corretor/leads/${item.leadId}` : "/corretor/anotacoes"}

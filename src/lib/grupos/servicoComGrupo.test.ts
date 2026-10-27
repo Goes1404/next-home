@@ -177,6 +177,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/agenda/lerAgenda.ts": { categoria: "equipe", motivo: "agenda do próprio corretor; toda leitura filtra grupo e corretor da sessão" },
   "src/app/corretor/(painel)/agenda/acoesDaEquipe.ts": { categoria: "equipe", motivo: "gestor passa visita; visita e destino lidos no grupo da sessão" },
   "src/lib/agenda/lerVisitaRecebida.ts": { categoria: "equipe", motivo: "visita do corretor da sessão, no grupo dele, ainda marcada" },
+  "src/lib/agenda/compromissos.ts": { categoria: "equipe", motivo: "reuniões e bloqueios; toda consulta filtra o grupo passado pela sessão ou pelo número do corretor" },
   "src/lib/agenda/lerEquipe.ts": { categoria: "equipe", motivo: "agenda da equipe para o gestor; toda leitura filtra o grupo da sessão" },
   "src/lib/financeiro/primeirasRespostas.ts": { categoria: "equipe", motivo: "horários da primeira resposta da equipe, só do grupo do gestor" },
   "src/app/corretor/(painel)/admin/page.tsx": { categoria: "equipe", motivo: "Visão geral do gestor (L17)" },

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { VisitaDoItem } from "@/lib/agenda/linhaDaVisita";
 import { PassarVisita } from "./PassarVisita";
+import { LinhaDoCompromisso } from "./LinhaDoCompromisso";
+import type { ItemCompromisso } from "@/lib/agenda/compromissos";
 
 const HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -19,24 +21,35 @@ const STATUS: Record<string, string> = {
 export function ListaDaEquipe({
   itens,
   total,
+  compromissos,
   equipe,
   agora,
 }: {
   itens: VisitaDoItem[];
+  compromissos: ItemCompromisso[];
   total: number;
   equipe: { id: string; nome: string }[];
   agora: Date;
 }) {
-  if (itens.length === 0) {
+  if (itens.length === 0 && compromissos.length === 0) {
     return (
       <div className="cartao p-5">
-        <p className="text-fluid-sm text-corpo">Nenhuma visita da equipe neste dia.</p>
+        <p className="text-fluid-sm text-corpo">Nada marcado na equipe neste dia.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {compromissos.length > 0 && (
+        <ul className="space-y-3" aria-label="Reuniões e horários ocupados">
+          {compromissos.map((c) => (
+            <li key={c.id}>
+              <LinhaDoCompromisso item={c} />
+            </li>
+          ))}
+        </ul>
+      )}
       <ul className="space-y-3">
         {itens.map((v) => (
           <li key={v.id} className="cartao px-5 py-3">

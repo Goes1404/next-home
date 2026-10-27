@@ -56,6 +56,9 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
 
   // Gatilhos que tocam só a linha-mãe ou filhas da própria linha: o grupo
   // de todas elas é o mesmo, conferido pelo carimbo da 0191.
+  "visita_nao_cruza_compromisso()": "trava da Agenda (0224): lê só linhas do MESMO corretor da visita, que é de um grupo só",
+  "bloqueio_nao_cruza_visita()": "trava da Agenda (0224): lê só visitas do MESMO corretor do bloqueio",
+  "compromisso_cancelado_libera()": "desliga só os participantes do próprio compromisso (filhas da linha)",
   "contar_mensagem_nao_lida()": "gatilho: soma na conversa da própria mensagem (mesmo grupo pela 0191)",
   "conversa_sem_lead_so_em_conta_so_whatsapp()": "gatilho: lê o corretor da própria conversa",
   "iniciar_sla_lead()": "gatilho: cria o SLA do próprio lead (o grupo vem da mãe, 0191)",

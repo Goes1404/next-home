@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { limitesDoDia, limitesDoMes, type Dia, type Mes } from "./calendario";
 import { MAXIMO_POR_DIA, contarPorDia, ordenarItens, type ItemDaAgenda } from "./itens";
 import { SELECT_VISITA, SELECT_VISITA_PELO_DONO, itemDaVisita, type LinhaVisita } from "./linhaDaVisita";
+import { lerCompromissos } from "./compromissos";
 
 /**
  * A Agenda do próprio corretor: visitas (0222), tarefas da ficha (0032) e
@@ -65,8 +66,9 @@ async function visitasEntre(r: Recorte, inicio: Date, fim: Date, limite: number)
 export async function lerMarcadoresDoMes(p: Recorte & { mes: Mes }): Promise<Record<Dia, number>> {
   const { inicio, fim } = limitesDoMes(p.mes);
   const supabase = createServiceClient();
-  const [visitas, tarefas, lembretes] = await Promise.all([
+  const [visitas, compromissos, tarefas, lembretes] = await Promise.all([
     visitasEntre(p, inicio, fim, TETO_DO_MES),
+    lerCompromissos({ grupoId: p.grupoId, corretorId: p.corretorId, inicio, fim, limite: TETO_DO_MES }),
     supabase
       .from("lead_tarefas")
       .select("prazo")
@@ -92,6 +94,7 @@ export async function lerMarcadoresDoMes(p: Recorte & { mes: Mes }): Promise<Rec
 
   return contarPorDia([
     ...visitas.map((v) => v.inicio),
+    ...compromissos.map((c) => c.inicio),
     ...(tarefas.data ?? []).map((t) => t.prazo),
     ...(lembretes.data ?? []).flatMap((l) => (l.lembrete_em ? [l.lembrete_em] : [])),
   ]);
@@ -100,8 +103,9 @@ export async function lerMarcadoresDoMes(p: Recorte & { mes: Mes }): Promise<Rec
 export async function lerItensDoDia(p: Recorte & { dia: Dia }): Promise<ItemDaAgenda[]> {
   const { inicio, fim } = limitesDoDia(p.dia);
   const supabase = createServiceClient();
-  const [visitas, tarefas, lembretes] = await Promise.all([
+  const [visitas, compromissos, tarefas, lembretes] = await Promise.all([
     visitasEntre(p, inicio, fim, MAXIMO_POR_DIA),
+    lerCompromissos({ grupoId: p.grupoId, corretorId: p.corretorId, inicio, fim, limite: MAXIMO_POR_DIA }),
     supabase
       .from("lead_tarefas")
       .select("id, titulo, prazo, lead_id, lead:leads(nome)")
@@ -128,6 +132,7 @@ export async function lerItensDoDia(p: Recorte & { dia: Dia }): Promise<ItemDaAg
 
   const itens: ItemDaAgenda[] = [
     ...visitas,
+    ...compromissos,
     ...((tarefas.data ?? []) as unknown as {
       id: string;
       titulo: string;

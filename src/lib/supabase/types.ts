@@ -587,6 +587,106 @@ export type Database = {
         }
         Relationships: []
       }
+      compromisso_participantes: {
+        Row: {
+          ativo: boolean
+          compromisso_id: string
+          corretor_id: string
+          fim: string
+          grupo_id: string
+          inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          compromisso_id: string
+          corretor_id: string
+          fim: string
+          grupo_id?: string
+          inicio: string
+        }
+        Update: {
+          ativo?: boolean
+          compromisso_id?: string
+          corretor_id?: string
+          fim?: string
+          grupo_id?: string
+          inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compromisso_participantes_compromisso_id_fkey"
+            columns: ["compromisso_id"]
+            isOneToOne: false
+            referencedRelation: "compromissos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromisso_participantes_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromisso_participantes_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compromissos: {
+        Row: {
+          cancelado_em: string | null
+          created_at: string
+          criado_por: string
+          fim: string
+          grupo_id: string
+          id: string
+          inicio: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          cancelado_em?: string | null
+          created_at?: string
+          criado_por: string
+          fim: string
+          grupo_id?: string
+          id?: string
+          inicio: string
+          tipo: string
+          titulo?: string
+        }
+        Update: {
+          cancelado_em?: string | null
+          created_at?: string
+          criado_por?: string
+          fim?: string
+          grupo_id?: string
+          id?: string
+          inicio?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compromissos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromissos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corretor_agenda: {
         Row: {
           grupo_id: string

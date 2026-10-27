@@ -17,7 +17,7 @@ describe("ehConflitoDeHorario", () => {
   });
 
   it("a mensagem do painel é a combinada", () => {
-    expect(MENSAGEM_CONFLITO).toBe("Você já tem outra visita nesse horário.");
+    expect(MENSAGEM_CONFLITO).toBe("Você já tem outro compromisso nesse horário.");
   });
 });
 

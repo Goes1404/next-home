@@ -19,6 +19,18 @@ export type ItemDaAgenda =
       passada?: boolean;
       status?: string;
     }
+  | {
+      /** Reunião do gestor ou bloqueio pessoal (0224). */
+      tipo: "compromisso";
+      id: string;
+      inicio: string;
+      fim: string;
+      subtipo: "reuniao" | "bloqueio";
+      /** Vazio no bloqueio visto pelo gestor: ele vê só "ocupado". */
+      titulo: string;
+      corretorNome?: string | null;
+      podeCancelar: boolean;
+    }
   | { tipo: "tarefa"; id: string; inicio: string; titulo: string; leadId: string | null; nome: string | null }
   | { tipo: "lembrete"; id: string; inicio: string; texto: string; leadId: string | null };
 
@@ -26,7 +38,7 @@ export type ItemDaAgenda =
 export const MAXIMO_POR_DIA = 30;
 
 /** No mesmo horário, o compromisso com cliente vem primeiro. */
-const PESO: Record<ItemDaAgenda["tipo"], number> = { visita: 0, tarefa: 1, lembrete: 2 };
+const PESO: Record<ItemDaAgenda["tipo"], number> = { visita: 0, compromisso: 1, tarefa: 2, lembrete: 3 };
 
 export function ordenarItens(itens: ItemDaAgenda[]): ItemDaAgenda[] {
   return [...itens].sort(

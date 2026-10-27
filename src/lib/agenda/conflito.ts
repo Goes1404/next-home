@@ -9,4 +9,4 @@ export function ehConflitoDeHorario(erro: { code?: string } | null | undefined):
   return erro?.code === "23P01" || erro?.code === "23505";
 }
 
-export const MENSAGEM_CONFLITO = "Você já tem outra visita nesse horário.";
+export const MENSAGEM_CONFLITO = "Você já tem outro compromisso nesse horário.";

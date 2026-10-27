@@ -4,6 +4,7 @@ import type { DadosDoPreparo } from "@/lib/crm/preparoDaVisita";
 import { limitesDoDia, limitesDoMes, mesDoDia, diaEmSaoPaulo, type Dia, type Mes } from "./calendario";
 import { MAXIMO_POR_DIA, contarPorDia } from "./itens";
 import { SELECT_VISITA, itemDaVisita, type LinhaVisita, type VisitaDoItem } from "./linhaDaVisita";
+import { lerCompromissos, type ItemCompromisso } from "./compromissos";
 import { MESES_DA_SERIE, mesesAteh, montarSerie, type MesDaSerie } from "./numeros";
 
 /**
@@ -31,13 +32,27 @@ function visitasDaEquipe(r: RecorteDaEquipe, inicio: Date, fim: Date) {
   return consulta.order("inicio", { ascending: true });
 }
 
-export async function lerMarcadoresDaEquipe(p: RecorteDaEquipe & { mes: Mes }): Promise<Record<Dia, number>> {
+export async function lerMarcadoresDaEquipe(
+  p: RecorteDaEquipe & { mes: Mes },
+): Promise<Record<Dia, number>> {
   const { inicio, fim } = limitesDoMes(p.mes);
-  const { data, error } = await visitasDaEquipe(p, inicio, fim).limit(TETO_DO_MES);
+  const [{ data, error }, compromissos] = await Promise.all([
+    visitasDaEquipe(p, inicio, fim).limit(TETO_DO_MES),
+    lerCompromissos({ grupoId: p.grupoId, equipe: true, corretorId: p.corretorId, inicio, fim, limite: TETO_DO_MES }),
+  ]);
   if (error) throw new Error(`Falha ao ler o mês da equipe: ${error.message}`);
-  return contarPorDia(
-    ((data ?? []) as unknown as LinhaVisita[]).flatMap((v) => (itemDaVisita(v) ? [v.inicio] : [])),
-  );
+  return contarPorDia([
+    ...((data ?? []) as unknown as LinhaVisita[]).flatMap((v) => (itemDaVisita(v) ? [v.inicio] : [])),
+    ...compromissos.map((c) => c.inicio),
+  ]);
+}
+
+/** Reuniões e bloqueios ("ocupado") da equipe no dia. */
+export async function lerCompromissosDoDiaDaEquipe(
+  p: RecorteDaEquipe & { dia: Dia },
+): Promise<ItemCompromisso[]> {
+  const { inicio, fim } = limitesDoDia(p.dia);
+  return lerCompromissos({ grupoId: p.grupoId, equipe: true, corretorId: p.corretorId, inicio, fim, limite: MAXIMO_POR_DIA });
 }
 
 export async function lerDiaDaEquipe(

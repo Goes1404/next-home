@@ -171,6 +171,8 @@ export function proximosHorarios(params: {
   grade: readonly FaixaDisponivel[];
   /** Visitas já marcadas deste corretor (qualquer status). */
   ocupados: readonly Date[];
+  /** Reuniões e bloqueios do corretor (0224): intervalos com a duração deles. */
+  bloqueios?: readonly { inicio: Date; fim: Date }[];
   agora: Date;
   /** Quantos devolver. A IA oferece dois ou três, nunca uma lista. */
   quantos?: number;
@@ -186,8 +188,11 @@ export function proximosHorarios(params: {
    * aceitar um horário que não existe.
    */
   const ocupadosMs = params.ocupados.map((o) => o.getTime());
+  const bloqueiosMs = (params.bloqueios ?? []).map((b) => [b.inicio.getTime(), b.fim.getTime()] as const);
   const cruza = (quando: Date) =>
-    ocupadosMs.some((o) => Math.abs(quando.getTime() - o) < DURACAO_DA_VISITA_MS);
+    ocupadosMs.some((o) => Math.abs(quando.getTime() - o) < DURACAO_DA_VISITA_MS) ||
+    // A visita [q, q + 60) cruza o compromisso [i, f) — a mesma conta da trava da 0224.
+    bloqueiosMs.some(([i, f]) => quando.getTime() < f && quando.getTime() + DURACAO_DA_VISITA_MS > i);
   const porDia = new Map(params.grade.map((f) => [f.diaSemana, f]));
 
   const horarios: HorarioDeVisita[] = [];

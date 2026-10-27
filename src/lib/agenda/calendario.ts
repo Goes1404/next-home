@@ -105,3 +105,15 @@ export function semanasDoMes(mes: Mes): (Dia | null)[][] {
 export function rotuloDoMes(mes: Mes): string {
   return NOME_DO_MES.format(meioDia(`${mes}-01`));
 }
+
+const PADRAO_HORA = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/**
+ * O instante de "dia, às HH:MM" em São Paulo (formulário de bloqueio e
+ * reunião). Null para dia ou hora inválidos. SP não tem horário de verão
+ * desde 2019: o deslocamento é fixo.
+ */
+export function instanteEmSaoPaulo(dia: string, hora: string): Date | null {
+  if (!diaReal(dia) || !PADRAO_HORA.test(hora)) return null;
+  return new Date(`${dia}T${hora}:00${DESLOCAMENTO_SP}`);
+}
