@@ -12004,3 +12004,20 @@ Nota: [[movimento-curto-nos-sites-dos-grupos]]
 - Banco: paleta escura de 22/10 nas colunas do claro, `_escuro` nulas.
 - As cores do claro de antes não existiam em registro nenhum: quem mudar cor
   por SQL anota os valores antigos antes (o banco não guarda histórico).
+
+## Número central da conta oculta não aparecia na Roleta (27/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]] e [[conta-oculta]].
+
+- Sintoma na Aretz: "não consigo conectar o grupo ao corretor". Banco:
+  `envio_grupo_leads_ativo = false`, instância nula, nenhum corretor com grupo.
+- Sem número central salvo, "Sincronizar grupos" fica apagado e o vínculo à
+  mão some: o problema não está no casamento de nomes.
+- O único número conectado era o da conta oculta de administração
+  (`nexthome-administracao-aretz`, conectado em 27/10 19h23 UTC), e
+  `DistribuicaoDaEquipe` tirava conta oculta das opções do número central.
+- Correção: `opcoesDoNumeroCentral` (`marketing/impulsionamentos/numeroCentral.ts`)
+  oferece o número com "(conta oculta)"; a lista de corretores segue recortada.
+- O padrão gravado da Aretz é `{corretor} & ARETZ🟢`; o emoji não atrapalha
+  (`chaveDoNome` tira tudo que não é letra/número).
+

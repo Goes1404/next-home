@@ -5,6 +5,7 @@ import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOcul
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { listarGruposWhatsapp } from "@/lib/whatsapp/provider";
 import { ConfigurarGruposDeLeads } from "@/app/corretor/(painel)/admin/whatsapp/ConfigurarGruposDeLeads";
+import { opcoesDoNumeroCentral } from "./numeroCentral";
 
 /**
  * Os grupos de WhatsApp dos corretores na aba Roleta (26/10/2026): número
@@ -39,9 +40,9 @@ export async function DistribuicaoDaEquipe() {
       .maybeSingle(),
   ]);
 
-  const instancias = semContasOcultas(todasInstancias ?? [], ocultas, (i) => i.corretor_id);
+  // A conta oculta fica fora da lista de corretores, mas o número dela pode
+  // ser o central (é o da imobiliária): ver `opcoesDoNumeroCentral`.
   const visiveis = semContasOcultas(pessoas ?? [], ocultas, (p) => p.id);
-  const nomePor = new Map(visiveis.map((p) => [p.id, p.nome]));
   // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
   // número central enxerga. Sem número central, ou se a leitura falhar, a
   // lista fica vazia e a sincronização pelo nome continua valendo.
@@ -54,11 +55,7 @@ export async function DistribuicaoDaEquipe() {
   return (
     <ConfigurarGruposDeLeads
       instanciaAtual={central}
-      instancias={instancias.map((i) => ({
-        instanceName: i.instance_name,
-        nome: nomePor.get(i.corretor_id) ?? i.instance_name,
-        conectada: i.status_conexao === "conectado" && i.conectado_em !== null && i.sessao_caida_em === null,
-      }))}
+      instancias={opcoesDoNumeroCentral(todasInstancias ?? [], pessoas ?? [], ocultas)}
       corretores={visiveis
         .filter((p) => p.papel === "corretor")
         .map((p) => ({
