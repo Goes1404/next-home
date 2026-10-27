@@ -355,6 +355,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "scripts/eval/rodarConversa.ts": { naoPassa: "fewShot", motivo: "eval offline: chama o turno sem fewShot, então nada vai ao banco" },
   "scripts/eval/rodarEval.ts": { naoPassa: "fewShot", motivo: "eval offline: chama o turno sem fewShot, então nada vai ao banco" },
   "src/lib/crm/retornoPeloGrupo/aplicarAoLead.ts": { repassa: true, motivo: "aplica no lead que o processamento do grupo já conferiu (grupo e corretor dono)" },
+  "src/lib/agenda/comandos/canal.ts": { repassa: true, motivo: "recebe a instância que o webhook resolveu e autenticou (resolverInstancia)" },
   "src/lib/crm/retornoPeloGrupo/aplicar.ts": { repassa: true, motivo: "recebe o grupo e o corretor conferidos por tratarMensagemDoGrupoDeLeads" },
   "src/lib/whatsapp/midiasDaLista.ts": { repassa: true, motivo: "manda as mídias da lista na conversa que o disparador recebeu" },
   "src/lib/whatsapp/turnoDeAtendimento.ts": { repassa: true, motivo: "o turno recebe a identidade (corretor, conversa) de quem atende" },

@@ -6,6 +6,7 @@ import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { conversaEhAtendimento, guardaOTextoDaConversa } from "@/lib/whatsapp/privacidadeDaConversa";
 import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
 import { horariosDeVisitaSeguros, quemFazAVisitaDoLead } from "@/lib/crm/agendaDoCorretor";
+import { tratarConversaComOSistema } from "@/lib/agenda/comandos/canal";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -479,6 +480,17 @@ export async function POST(req: NextRequest) {
      */
     if (!sender || (!text && !ehAudio)) {
       return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
+    }
+
+    /*
+     * O corretor (ou o gestor) falando com o SISTEMA (Agenda, fase 5): a
+     * resposta "1/2/3" à cobrança da visita e os pedidos de agenda ("visita
+     * com a Ana sábado 10h"). Precisa ser separado AQUI, antes da palavra-
+     * chave e da fala do corretor: lida como conversa, a mensagem criaria
+     * lead do próprio corretor ou desligaria a IA (anti-objetivo 5).
+     */
+    if (await tratarConversaComOSistema({ instancia, sender, fromMe, texto: text, ehAudio, supabase: createServiceClient() })) {
+      return NextResponse.json({ ok: true, action: "conversa_com_o_sistema" });
     }
 
     /*
