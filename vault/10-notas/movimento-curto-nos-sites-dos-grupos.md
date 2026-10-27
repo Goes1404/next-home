@@ -121,6 +121,14 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
   histórico de `grupos`): antes de mudar cor por SQL, anote os valores velhos.
 - Os `.whl` do Python que entraram em `d61b6576` (49 MB) saíram do repositório.
 
+## Capa da Aretz (26/10/2026, 23h)
+
+- Foto noturna de prédios no topo do site: `grupos.site_capa_url` aponta para
+  `empreendimentos/grupos/<grupo>/capa-<hash>.webp` (bucket público, mesmo
+  lugar da logo). Sem editor de capa desde 22/10: subir pelo Storage com a
+  chave de serviço e gravar a URL por SQL; aparece no próximo deploy ou em até
+  1 h (cache de rota). Antes era nula.
+
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]
 - [[MOC — Front Público]]
