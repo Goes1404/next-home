@@ -70,7 +70,7 @@ export async function salvarDisponibilidade(
     if (error) return { erro: "Não foi possível salvar agora. Tente de novo." };
   }
 
-  revalidatePath("/corretor/visitas");
+  revalidatePath("/corretor/agenda");
 
   return {
     ok:
@@ -96,6 +96,6 @@ export async function gerarLinkDaAgenda(): Promise<{ link?: string; erro?: strin
     .from("corretor_agenda")
     .upsert({ corretor_id: corretor.id, token, created_at: new Date().toISOString() });
   if (error) return { erro: "Não consegui gerar o link agora. Tente de novo." };
-  revalidatePath("/corretor/visitas");
+  revalidatePath("/corretor/agenda");
   return { link: `${await lerEnderecoDoCliente(corretor.grupoId)}/api/agenda/${token}.ics` };
 }
