@@ -38,6 +38,12 @@ begin;
 
 set local lock_timeout = '5s';
 
+-- O lock de leads de uma vez, no começo: a tabela nova (FK) pede SHARE ROW
+-- EXCLUSIVE e o drop do índice da 0074, ACCESS EXCLUSIVE. Escalar no meio
+-- daria deadlock com uma reserva da IA em curso; assim, no pior caso, é um
+-- timeout limpo que se repete.
+lock table public.leads in access exclusive mode;
+
 create extension if not exists btree_gist with schema extensions;
 
 create table if not exists public.visitas (
@@ -122,20 +128,24 @@ as $$
 declare
   v_antes timestamptz := case when tg_op = 'UPDATE' then old.visita_agendada_em end;
   v_depois timestamptz := new.visita_agendada_em;
+  -- Visita que começou há menos de 60 min ainda está "em curso": ajustar a
+  -- hora dela é remarcação, não visita nova (que bateria consigo mesma).
+  v_corte timestamptz := now() - interval '60 minutes';
   v_linha uuid;
   v_visita record;
 begin
-  -- Dono trocado: as visitas futuras do dono antigo vão para o novo, uma a
-  -- uma, e a que bater com outra do novo dono fica com o antigo. O update
-  -- do lead não pode falhar por causa da agenda.
   if tg_op = 'UPDATE'
      and new.corretor_id is distinct from old.corretor_id
-     and old.corretor_id is not null
      and new.corretor_id is not null then
+    -- Dono trocado: as visitas futuras do lead vão para o novo dono, uma a
+    -- uma. Nesta fase quem faz a visita é sempre o dono, então isso inclui
+    -- a que tinha ficado com um dono anterior por conflito. A que bater com
+    -- outra do novo dono fica onde está, e a linha do tempo do lead diz por
+    -- quê: o update do lead não pode falhar por causa da agenda.
     for v_visita in
-      select id from public.visitas
+      select id, corretor_id, inicio from public.visitas
        where lead_id = new.id
-         and corretor_id = old.corretor_id
+         and corretor_id <> new.corretor_id
          and status = 'marcada'
          and inicio >= now()
     loop
@@ -145,29 +155,62 @@ begin
          where id = v_visita.id;
       exception
         when exclusion_violation then
-          raise warning 'visita % do lead % ficou com o corretor anterior: bate com outra do novo dono',
-            v_visita.id, new.id;
+          insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+          values (
+            new.id, null, 'sistema',
+            'A visita de ' || to_char(v_visita.inicio at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
+              || ' ficou na agenda do corretor anterior: o novo responsável já tem outra visita nesse horário.',
+            jsonb_build_object('visita_id', v_visita.id, 'visita_ficou_com', v_visita.corretor_id)
+          );
       end;
     end loop;
+
+    -- O lead não tinha dono quando a visita foi marcada (nada foi espelhado):
+    -- ganhando dono, a visita futura entra na agenda dele.
+    if old.corretor_id is null
+       and v_depois is not distinct from v_antes
+       and v_depois >= now()
+       and not exists (
+         select 1 from public.visitas
+          where lead_id = new.id and status = 'marcada' and inicio = v_depois
+       ) then
+      begin
+        insert into public.visitas (grupo_id, lead_id, corretor_id, inicio, fim, criada_por_usuario)
+        values (new.grupo_id, new.id, new.corretor_id, v_depois, v_depois + interval '60 minutes', auth.uid());
+      exception
+        when exclusion_violation then
+          insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+          values (
+            new.id, null, 'sistema',
+            'A visita de ' || to_char(v_depois at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
+              || ' não entrou na agenda do novo responsável: ele já tem outra visita nesse horário.',
+            jsonb_build_object('visita_em', v_depois, 'visita_ficou_com', null)
+          );
+      end;
+    end if;
   end if;
 
   if v_depois is not distinct from v_antes then
     return null;
   end if;
 
-  -- Desmarcou.
+  -- Desmarcou. Visita que já passou fica como está (o resultado dela é da fase 4).
   if v_depois is null then
-    update public.visitas
-       set status = 'cancelada', atualizado_em = now()
-     where lead_id = new.id and status = 'marcada' and inicio = v_antes;
+    if v_antes >= v_corte then
+      update public.visitas
+         set status = 'cancelada', atualizado_em = now()
+       where lead_id = new.id and status = 'marcada' and inicio = v_antes;
+    end if;
     return null;
   end if;
 
-  -- Remarcou uma visita que ainda não aconteceu: a mesma linha.
-  if v_antes is not null and v_antes >= now() then
+  -- Remarcou uma visita que ainda não aconteceu (ou em curso): a mesma linha,
+  -- com quem é o dono agora.
+  if v_antes is not null and v_antes >= v_corte then
     update public.visitas
        set inicio = v_depois,
            fim = v_depois + interval '60 minutes',
+           corretor_id = coalesce(new.corretor_id, corretor_id),
            datas_anteriores = datas_anteriores || v_antes,
            atualizado_em = now()
      where id = (

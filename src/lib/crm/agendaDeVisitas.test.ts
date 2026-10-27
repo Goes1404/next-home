@@ -51,6 +51,26 @@ describe("proximosHorarios", () => {
     expect(h[0].rotulo).toBe("terça-feira, 08/09 às 14h");
   });
 
+  it("pula horário que cruza a hora de uma visita marcada fora da hora cheia (trava de 60 min da 0222)", () => {
+    const h = proximosHorarios({
+      grade: GRADE,
+      ocupados: [new Date("2026-09-05T13:30:00Z")], // sábado 10h30 em SP: ocupa até 11h30
+      agora: SABADO_8H,
+      quantos: 1,
+    });
+    expect(h[0].rotulo).toBe("terça-feira, 08/09 às 14h");
+  });
+
+  it("visita que termina na hora cheia não tira a vaga seguinte", () => {
+    const h = proximosHorarios({
+      grade: GRADE,
+      ocupados: [new Date("2026-09-05T13:00:00Z")], // sábado 10h em SP: termina às 11h
+      agora: SABADO_8H,
+      quantos: 1,
+    });
+    expect(h[0].rotulo).toBe("sábado, 05/09 às 11h");
+  });
+
   it("o instante gravado é o horário local certo", () => {
     const [primeiro] = proximosHorarios({
       grade: GRADE,

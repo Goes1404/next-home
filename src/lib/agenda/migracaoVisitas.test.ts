@@ -23,6 +23,18 @@ describe("0222: visitas com histórico", () => {
   it("a trava de conflito é declarativa: exclusão de intervalo por corretor", () => {
     expect(sql).toContain("create extension if not exists btree_gist");
     expect(sql).toMatch(/exclude using gist \(corretor_id with =, tstzrange\(inicio, fim, '\[\)'\) with &&\)/);
+    expect(sql).toMatch(/with &&\)\s+where \(status = 'marcada'\)/);
+  });
+
+  it("pega o lock de leads de uma vez no começo (sem escalada com a IA)", () => {
+    const lock = sql.indexOf("lock table public.leads in access exclusive mode;");
+    expect(lock).toBeGreaterThan(sql.indexOf("set local lock_timeout = '5s';"));
+    expect(lock).toBeLessThan(sql.indexOf("create table if not exists public.visitas"));
+  });
+
+  it("a troca de dono captura o conflito em vez de derrubar o update do lead", () => {
+    const espelho = sql.slice(sql.indexOf("function public.espelhar_visita_do_lead"), sql.indexOf("function public.reservar_horario_visita"));
+    expect(espelho.match(/when exclusion_violation then/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
   it("o índice da 0074 sai: a exclusão o substitui e ele travava a troca de dono", () => {

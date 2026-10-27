@@ -34,16 +34,17 @@ export async function horariosDeVisita(
       .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
       .eq("corretor_id", corretorId),
     /*
-     * Só o que ainda vai acontecer: visita de ontem não ocupa vaga nenhuma.
-     * O `gte` usa o instante de agora, não o dia — visita das 9h não
-     * bloqueia a vaga das 15h do mesmo dia.
+     * Só o que ainda vai acontecer (ou está acontecendo): visita de ontem
+     * não ocupa vaga nenhuma, e a que começou há menos de uma hora ainda
+     * ocupa a seguinte. Lido de `visitas` (0222), que é onde a trava de
+     * conflito mora: por QUEM FAZ a visita e só entre as marcadas.
      */
     supabase
-      .from("leads")
-      .select("visita_agendada_em")
+      .from("visitas")
+      .select("inicio")
       .eq("corretor_id", corretorId)
-      .not("visita_agendada_em", "is", null)
-      .gte("visita_agendada_em", agora.toISOString()),
+      .eq("status", "marcada")
+      .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString()),
   ]);
 
   const faixas: FaixaDisponivel[] = (grade ?? []).map((f) => ({
@@ -53,10 +54,7 @@ export async function horariosDeVisita(
     horasPreferidas: f.horas_preferidas ?? [],
   }));
 
-  const ocupados = (marcadas ?? [])
-    .map((l) => l.visita_agendada_em)
-    .filter((v): v is string => Boolean(v))
-    .map((v) => new Date(v));
+  const ocupados = (marcadas ?? []).map((v) => new Date(v.inicio));
 
   return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, agora, quantos: 6 });
 }
