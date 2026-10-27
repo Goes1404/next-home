@@ -48,4 +48,26 @@ describe("listarGruposWhatsapp", () => {
     expect(r.grupos).toEqual([]);
     expect(r.erro).toMatch(/400/);
   });
+
+  it("a mensagem da Evolution vai junto do HTTP: sem ela não há como saber o motivo na tela", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ status: 500, error: "Internal Server Error", response: { message: ["Connection Closed"] } }),
+          { status: 500 },
+        ),
+    ) as typeof fetch;
+    const r = await listarGruposWhatsapp("central");
+    expect(r.erro).toBe("Não foi possível ler os grupos (HTTP 500): Connection Closed");
+  });
+
+  it("tempo esgotado vira mensagem clara", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    globalThis.fetch = vi.fn(async () => {
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    }) as typeof fetch;
+    const r = await listarGruposWhatsapp("central");
+    expect(r.erro).toMatch(/demorou demais/);
+  });
 });

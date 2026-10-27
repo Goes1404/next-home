@@ -88,3 +88,11 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   chamada sem esse parâmetro. Nunca tinha rodado contra a Evolution real.
 - `ehJidDeGrupoWhatsapp` aceita o JID de grupo antigo
   (`<número>-<instante>@g.us`); antes esses grupos sumiam calados da lista.
+- Depois do deploy a Aretz viu "Grupos não lidos" sem motivo. Agora o erro
+  traz a mensagem da Evolution (`response.message`) e vai ao log da Vercel
+  (`[grupos] a Evolution recusou...` / `[grupos] falha ao pedir...`). A
+  leitura tem limite de 90 s: a Evolution 2.3.7 busca a foto de cada grupo,
+  um por um, dentro do `fetchAllGroups`.
+- O campo "Nome dos grupos" salvo vazio volta ao padrão de fábrica
+  (`{corretor} & Aretz Imobi`), que não casa com `NOME & ARETZ🟢`. Em 27/10
+  apareceu nulo e foi restaurado para `{corretor} & ARETZ` por SQL.

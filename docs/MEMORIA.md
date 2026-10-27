@@ -12030,3 +12030,8 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]] e [[conta-oculta]].
 - Na mesma tarefa: seletor manual sempre visível, lista "Grupos neste número"
   com o dono de cada grupo, `fetchAllGroups?getParticipants=false` (a v2 exige)
   e JID de grupo antigo com hífen aceito (antes sumia calado da lista).
+- Ainda em 27/10: "Grupos não lidos" sem motivo na tela. O erro passou a
+  trazer a mensagem da Evolution e a ir ao log (`[grupos]`); leitura limitada
+  a 90 s (a 2.3.7 busca a foto de cada grupo no `fetchAllGroups`). O padrão
+  do nome da Aretz apareceu nulo e foi restaurado para `{corretor} & ARETZ`.
+

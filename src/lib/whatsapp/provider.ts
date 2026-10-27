@@ -842,8 +842,15 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
     const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}?getParticipants=false`, {
       headers: { apikey: config.apiKey },
       cache: "no-store",
+      // A Evolution busca a foto de cada grupo, um por um: número em muitos
+      // grupos demora. Sem limite, a aba Roleta ficaria presa esperando.
+      signal: AbortSignal.timeout(90_000),
     });
-    if (!res.ok) return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status}).` };
+    if (!res.ok) {
+      const motivo = motivoDaEvolution(await res.text().catch(() => ""));
+      console.error("[grupos] a Evolution recusou a lista de grupos", { instanceName, status: res.status, motivo });
+      return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status})${motivo ? `: ${motivo}` : "."}` };
+    }
     const json: unknown = await res.json();
     const itens = Array.isArray(json)
       ? json
@@ -859,8 +866,29 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
     });
     return { grupos };
   } catch (err) {
-    return { grupos: [], erro: err instanceof Error ? err.message : "Falha ao consultar os grupos." };
+    console.error("[grupos] falha ao pedir a lista de grupos", { instanceName, erro: descreverFalhaDeRede(err) });
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return { grupos: [], erro: "A lista de grupos demorou demais para chegar. Recarregue a página em alguns minutos." };
+    }
+    return { grupos: [], erro: descreverFalhaDeRede(err) || "Falha ao consultar os grupos." };
   }
+}
+
+/**
+ * O motivo que a Evolution põe no corpo do erro (`response.message`, lista ou
+ * texto; ou `message`/`error`), curto para caber na tela. Corpo que não é
+ * JSON vai cortado como veio.
+ */
+function motivoDaEvolution(corpo: string): string {
+  let motivo: unknown = corpo;
+  try {
+    const json = JSON.parse(corpo) as { response?: { message?: unknown }; message?: unknown; error?: unknown };
+    motivo = json.response?.message ?? json.message ?? json.error ?? "";
+  } catch {
+    // não é JSON: o texto cru serve
+  }
+  const texto = Array.isArray(motivo) ? motivo.map(String).join("; ") : typeof motivo === "string" ? motivo : JSON.stringify(motivo);
+  return texto.trim().slice(0, 200);
 }
 
 /**
