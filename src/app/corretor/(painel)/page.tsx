@@ -21,6 +21,7 @@ import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
 import { AtivarNotificacoes } from "./_componentes/AtivarNotificacoes";
 import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
+import { HojeNaAgenda } from "./_componentes/HojeNaAgenda";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { getVendas } from "@/lib/financeiro/dados";
@@ -119,6 +120,11 @@ export default async function PainelInicio({
           ninguém espera; sem esqueleto para não empurrar a tela à toa. */}
       <Suspense fallback={null}>
         <QuemEstaEsperando corretorId={corretor.id} />
+      </Suspense>
+
+      {/* Os próximos compromissos de hoje (Agenda, 27/10/2026). Some quando não há nada. */}
+      <Suspense fallback={null}>
+        <HojeNaAgenda corretorId={corretor.id} grupoId={corretor.grupoId} />
       </Suspense>
 
       {/* Pausar a IA e dividir os leads do anúncio (roleta, 0204), sem sair do Início. */}
