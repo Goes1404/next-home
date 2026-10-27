@@ -12020,4 +12020,6 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]] e [[conta-oculta]].
   oferece o número com "(conta oculta)"; a lista de corretores segue recortada.
 - O padrão gravado da Aretz é `{corretor} & ARETZ🟢`; o emoji não atrapalha
   (`chaveDoNome` tira tudo que não é letra/número).
-
+- Na mesma tarefa: seletor manual sempre visível, lista "Grupos neste número"
+  com o dono de cada grupo, `fetchAllGroups?getParticipants=false` (a v2 exige)
+  e JID de grupo antigo com hífen aceito (antes sumia calado da lista).

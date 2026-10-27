@@ -770,7 +770,8 @@ export async function enviarMensagemWhatsapp(params: {
 
 /** Identificador estável que a Evolution usa para grupos do WhatsApp. */
 export function ehJidDeGrupoWhatsapp(valor: string | null | undefined): valor is string {
-  return /^\d{10,24}@g\.us$/i.test((valor ?? "").trim());
+  // Grupo antigo tem o JID `<número de quem criou>-<instante>@g.us`.
+  return /^\d{10,24}(-\d{9,12})?@g\.us$/i.test((valor ?? "").trim());
 }
 
 /**
@@ -836,7 +837,9 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
   if (!instanceName) return { grupos: [], erro: "Escolha o número central." };
 
   try {
-    const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}`, {
+    // A v2 recusa a chamada sem `getParticipants`; os participantes vêm à
+    // parte (`listarParticipantesDoGrupo`), só do grupo vinculado.
+    const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}?getParticipants=false`, {
       headers: { apikey: config.apiKey },
       cache: "no-store",
     });

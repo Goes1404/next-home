@@ -44,8 +44,8 @@ export async function DistribuicaoDaEquipe() {
   // ser o central (é o da imobiliária): ver `opcoesDoNumeroCentral`.
   const visiveis = semContasOcultas(pessoas ?? [], ocultas, (p) => p.id);
   // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
-  // número central enxerga. Sem número central, ou se a leitura falhar, a
-  // lista fica vazia e a sincronização pelo nome continua valendo.
+  // número central enxerga, também listados na tela. Se a leitura falhar, a
+  // tela mostra o erro e a sincronização pelo nome continua valendo.
   const central = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
   const [gruposDoCentral, marca] = await Promise.all([
     central ? listarGruposWhatsapp(central) : Promise.resolve({ grupos: [] }),
@@ -67,7 +67,8 @@ export async function DistribuicaoDaEquipe() {
         }))}
       padraoDoNome={configuracao?.padrao_nome_grupo_leads ?? null}
       nomeDaImobiliaria={marca.nome}
-      gruposDoCentral={gruposDoCentral.grupos}
+      gruposDoCentral={[...gruposDoCentral.grupos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
+      erroDosGrupos={"erro" in gruposDoCentral ? gruposDoCentral.erro : undefined}
     />
   );
 }

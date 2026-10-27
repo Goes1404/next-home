@@ -81,3 +81,10 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   `corretor_whatsapp_instancias` + `corretores.oculta` do grupo.
 - Só `papel = 'corretor'` entra na sincronização e no vínculo à mão: gestor
   na roleta não ganha grupo.
+- A tela mostra sempre o seletor "Escolher à mão" (apagado, dizendo o motivo,
+  quando não há grupo para escolher) e a lista "Grupos neste número", com o
+  corretor de cada grupo ou "livre". Erro ao ler os grupos aparece na tela.
+- `fetchAllGroups` vai com `?getParticipants=false`: a Evolution v2 recusa a
+  chamada sem esse parâmetro. Nunca tinha rodado contra a Evolution real.
+- `ehJidDeGrupoWhatsapp` aceita o JID de grupo antigo
+  (`<número>-<instante>@g.us`); antes esses grupos sumiam calados da lista.
