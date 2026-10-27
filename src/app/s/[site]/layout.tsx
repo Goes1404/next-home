@@ -83,35 +83,12 @@ export default async function SiteLayout({
       {site && <Footer marca={site.marca} />}
     </>
   );
-  // Movimento mais curto nos sites dos outros grupos (pedido da Aretz,
-  // 26/10/2026: "deixe o site mais rápido, as transições"). A Next Home
-  // segue byte a byte igual: nenhuma tag a mais no HTML dela.
-  const movimento = marca && !marca.ehNextHome ? CSS_DO_MOVIMENTO_RAPIDO : null;
-  if (!css && !movimento) return conteudo;
+  if (!css) return conteudo;
   return (
     <>
       {/* Só hex calculado em `cssDasCoresDoSite`: nada digitado chega aqui. */}
-      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
-      {movimento && <style dangerouslySetInnerHTML={{ __html: movimento }} />}
+      <style dangerouslySetInnerHTML={{ __html: css }} />
       {conteudo}
     </>
   );
 }
-
-/**
- * O movimento curto dos sites de outros grupos: as mesmas animações da casa,
- * em menos tempo. Fora de `@layer` (como as cores), vence as regras do
- * `globals.css` sem `!important` — e o `!important` do movimento reduzido,
- * que está em camada, continua vencendo este.
- *
- * - A onda entre páginas passa em 360 ms (era 640 ms), com as cores do grupo.
- * - A página nova entra em 220 ms (era 380 ms), mantendo a cascata curta.
- * - A travessia home → catálogo (`nav-forward`) leva 240 ms, sem atraso.
- * - `--ritmo-do-movimento` encurta as entradas do GSAP para 60% do tempo
- *   (`Reveal`, `TituloEditorial`, via `ritmoDoMovimento`).
- */
-const CSS_DO_MOVIMENTO_RAPIDO =
-  ":root{--ritmo-do-movimento:0.6}" +
-  ".onda-transicao{animation-duration:360ms}" +
-  ":root[data-entrando] main>*{animation-duration:220ms}" +
-  "::view-transition-old(.nav-forward),::view-transition-new(.nav-forward){animation-duration:240ms;animation-delay:0s}";

@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { estaNaTela } from "./estaNaTela";
-import { ritmoDoMovimento } from "./ritmo";
 
 type Direcao = "cima" | "baixo" | "esquerda" | "direita" | "nenhuma";
 
@@ -64,7 +63,6 @@ export function Reveal({
     gsap.registerPlugin(ScrollTrigger);
 
     const alvos = stagger ? Array.from(el.children) : [el];
-    const ritmo = ritmoDoMovimento();
     const contexto = gsap.context(() => {
       gsap.set(alvos, { opacity: 0, ...DESLOCAMENTO[from] });
 
@@ -72,9 +70,9 @@ export function Reveal({
         opacity: 1,
         x: 0,
         y: 0,
-        duration: duration * ritmo,
-        delay: delay * ritmo,
-        stagger: (stagger ?? 0) * ritmo,
+        duration,
+        delay,
+        stagger: stagger ?? 0,
         ease: "power3.out",
         scrollTrigger: {
           trigger: el,

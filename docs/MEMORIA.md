@@ -11885,10 +11885,9 @@ NÃO publicada; 0218 e 0219 entram ANTES do deploy e nunca rodaram em Postgres
 ## Aretz escura e com movimento curto (26/10/2026)
 
 - Nota: [[movimento-curto-nos-sites-dos-grupos]]. Site de grupo ≠ 1 recebe um
-  `<style>` de movimento curto no layout `s/[site]`: as mesmas animações,
-  encurtadas (onda 360 ms, entrada 220 ms, `nav-forward` 240 ms,
-  `--ritmo-do-movimento:0.6` lido por `Reveal` e `TituloEditorial`). Next
-  Home intacta.
+  `<style>` de movimento curto no layout `s/[site]` (onda 1 ms, entrada
+  160 ms, `nav-forward` 200 ms, `--ritmo-do-movimento:0.5` lido por `Reveal`
+  e `TituloEditorial`). Next Home intacta.
 - Aretz travada no tema escuro só por dados: paleta escura (`#0e1a10`,
   `#c49c4e`, `#e2c584`, `#f9fbf8`) nas colunas do CLARO e as `_escuro` nulas;
   o seletor de tema some sozinho.

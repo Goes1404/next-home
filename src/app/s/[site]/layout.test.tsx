@@ -43,18 +43,9 @@ describe("SiteLayout", () => {
     expect(sem).not.toContain("--color-");
   });
 
-  it("outro grupo sem cor nenhuma: só o movimento curto, nenhuma cor", async () => {
+  it("outro grupo sem cor nenhuma: nenhuma tag de estilo", async () => {
     const entrada = { grupoId: "g-2", nome: "Sol", url: "https://sol.com.br" };
-    const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: SITE_EM_BRANCO }));
-    expect(saida).toContain("--ritmo-do-movimento:0.6");
-    expect(saida).toContain(".onda-transicao{animation-duration:360ms");
-    expect(saida).not.toContain("--color-");
-  });
-
-  it("grupo 1: sem o movimento curto (ritmo de sempre)", async () => {
-    const saida = await html(marcaDoGrupo({ grupoId: GRUPO_NEXT_HOME_ID, nome: "Next Home", url: "https://x.com.br" }));
-    expect(saida).not.toContain("--ritmo-do-movimento");
-    expect(saida).not.toContain("onda-transicao");
+    expect(await html(marcaDoGrupo({ ...entrada, personalizacao: SITE_EM_BRANCO }))).not.toContain("<style");
   });
 
   it("outro grupo com cores: o CSS vai em :root, com acento, realce, fundo e texto", async () => {
