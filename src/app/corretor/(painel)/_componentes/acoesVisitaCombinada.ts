@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { rotuloDaVisita } from "@/lib/whatsapp/mudancaDeVisita";
+import { MENSAGEM_CONFLITO, ehConflitoDeHorario } from "@/lib/agenda/conflito";
 
 /**
  * A visita que o corretor combinou no chat (A2, 0163): registrar ou
@@ -67,9 +68,9 @@ export async function registrarVisitaCombinada(conversaId: string): Promise<Resu
     })
     .eq("id", conversa.lead_id);
   if (error) {
-    // O índice da 0074: um corretor não recebe duas pessoas no mesmo instante.
-    return error.code === "23505"
-      ? { erro: "Você já tem outra visita nesse horário." }
+    // A trava de 60 min da 0222: um corretor não recebe duas pessoas ao mesmo tempo.
+    return ehConflitoDeHorario(error)
+      ? { erro: MENSAGEM_CONFLITO }
       : { erro: "Não foi possível registrar agora. Tente novamente." };
   }
 
@@ -84,7 +85,7 @@ export async function registrarVisitaCombinada(conversaId: string): Promise<Resu
 
   revalidatePath("/corretor");
   revalidatePath(`/corretor/leads/${conversa.lead_id}`);
-  revalidatePath("/corretor/visitas");
+  revalidatePath("/corretor/agenda");
   return { ok: "Visita registrada." };
 }
 

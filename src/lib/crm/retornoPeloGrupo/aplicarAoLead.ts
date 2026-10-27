@@ -238,7 +238,7 @@ export async function aplicarRetornoAoLead(
    * função é a trava do horário que a IA OFERECE ao cliente (recusa fora da
    * grade do corretor e move a etapa sem histórico, sem grupo nem dono no
    * filtro). Aqui quem marcou foi o próprio corretor, ao telefone. O choque
-   * de horário continua barrado pelo índice único da 0074.
+   * de horário é barrado pela trava de 60 min da 0222 (exclusão em visitas).
    */
   let visitaGravada = true;
   if (efeitos.visita) {
@@ -249,7 +249,7 @@ export async function aplicarRetornoAoLead(
       .eq("grupo_id", grupoId)
       .eq("corretor_id", corretorId);
     if (erroVisita) {
-      // O índice da 0074 recusa duas visitas do corretor no mesmo instante.
+      // A trava de 60 min da 0222 recusa duas visitas do corretor ao mesmo tempo.
       console.error(`[retorno] visita do lead ${leadId} não gravada: ${erroVisita.message}`);
       visitaGravada = false;
     }
