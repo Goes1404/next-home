@@ -93,7 +93,7 @@ import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
-import { BOAS_VINDAS_DE_CAMPANHA, calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
+import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { lerModoDaRoleta, repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { tratarMensagemDoGrupoDeLeads } from "@/lib/crm/retornoPeloGrupo";
@@ -930,7 +930,7 @@ export async function POST(req: NextRequest) {
      */
     let iaCaladaPelaCampanha = false;
     // Lido uma vez por mensagem, e só quando é lead de anúncio da Meta: o modo
-    // decide quem responde o cliente (webhook ou roleta) e se a roleta age.
+    // decide se a roleta age.
     let modoDaRoleta: ModoDaRoleta = "desligada";
     if (anuncioMeta && !nomeDoAnuncio) {
       modoDaRoleta = await lerModoDaRoleta(instancia.corretorId);
@@ -942,36 +942,13 @@ export async function POST(req: NextRequest) {
         });
       }
       /*
-       * Lead da campanha do PRÓPRIO corretor: recebe UMA boas-vindas curta
-       * e depois a IA fica desligada. Assim o cliente sabe que chegou, sem
-       * o bot iniciar uma qualificação que deveria ser do corretor que pagou
-       * o anúncio. O resumo da ficha continua no caminho do silêncio.
+       * Lead da campanha do PRÓPRIO corretor: a IA fica desligada e nada
+       * automático sai para o cliente — nem a boas-vindas fixa, que o dono
+       * mandou tirar em 27/10/2026 (lida como "a IA respondendo o lead do
+       * impulsionamento"). Quem fala é o corretor, avisado no celular. O
+       * resumo da ficha continua no caminho do silêncio.
        */
       if (conversa.botAtivo) {
-        // Roleta no modo mensagem, lead novo: quem responde é ela (passagem,
-        // abertura ou a mesma boas-vindas se não houver repasse). Mandar aqui
-        // também faria o cliente receber a boas-vindas antes da passagem.
-        const roletaResponde = modoDaRoleta === "mensagem" && conversa.leadCriadoAgora;
-        if (!roletaResponde) {
-          const boasVindas = await enviarMensagemWhatsapp({
-            instanceName: instancia.instanceName,
-            telefone: sender,
-            texto: BOAS_VINDAS_DE_CAMPANHA,
-          });
-          if (boasVindas.enviado) {
-            await gravarMensagem({
-              conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
-              conversaId: conversa.id,
-              remetente: "bot",
-              conteudo: BOAS_VINDAS_DE_CAMPANHA,
-              providerMessageId: boasVindas.messageId ?? null,
-              statusEntrega: boasVindas.messageId ? "enviada" : null,
-            });
-          } else {
-            console.warn("[impulsionamento] boas-vindas não saiu:", boasVindas.motivo, boasVindas.detalhe);
-          }
-        }
-        // A IA fica calada em todo lead de anúncio, com ou sem boas-vindas aqui.
         if (await calarIaNaConversaDeCampanha(conversa.id)) iaCaladaPelaCampanha = true;
       }
     }
@@ -995,7 +972,6 @@ export async function POST(req: NextRequest) {
         anuncioMeta && !nomeDoAnuncio && conversa.leadCriadoAgora && modoDaRoleta !== "desligada",
       );
       const conversaDoDono = conversa.id;
-      const boasVindasPermitida = conversa.botAtivo;
       after(async () => {
         const repassado = vaiParaARoleta
           ? await repassarPelaRoleta({
@@ -1006,7 +982,6 @@ export async function POST(req: NextRequest) {
               telefoneCliente: sender,
               nomeCliente: payload.senderName || null,
               modo: modoDaRoleta,
-              boasVindasPermitida,
             })
           : null;
         if (!repassado) await avisarLeadsNovos(createServiceClient(), new Date(), leadParaAviso).catch(() => 0);

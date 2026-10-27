@@ -12053,3 +12053,27 @@ Nota: [[pareamento-depois-de-401-recomeca-a-instancia]].
   "caiu com o código N" e "pareamento por número sem pairingCode". O log do
   Hobby guarda só 1 hora: peça para repetir a tentativa e olhe logo.
 
+
+## Lead do impulsionamento não recebe mais nada automático (27/10/2026)
+
+Nota: [[lead-da-campanha-do-corretor-sem-ia]].
+
+- **Pedido do dono:** "a IA está respondendo os leads vindos de campanhas"
+  (impulsionamento pelo Instagram). Medido antes de mexer: desde 20/10 a IA já
+  ficava calada nesses leads (`meta/ctwa`); a única fala `bot` era a
+  boas-vindas fixa "Olá! Recebemos sua mensagem. Em breve, um corretor entrará
+  em contato…". Era ela que o dono lia como IA.
+- Tirada do webhook e do caminho sem repasse da roleta (`planoDeMensagens`
+  sem repasse agora é vazio; `BOAS_VINDAS_DE_CAMPANHA` e `boasVindasPermitida`
+  deixaram de existir). Passagem e abertura de um repasse da roleta seguem
+  (textos do corretor, roleta desligada em todas as contas hoje).
+- **"A IA respondeu" pode ser qualquer fala `bot`:** boas-vindas fixa,
+  passagem da roleta, mensagem de lista. `ia_interacoes.acao = 'respondida'`
+  é o que prova IA de verdade; comece por ela.
+- As listas de disparo continuam com a IA respondendo quem responde (decisão
+  de 01/09); o dono confirmou que o pedido era só o impulsionamento.
+- Caso da Grazi (22/10, conversa `ad82fec7`): lead `meta/ctwa` respondido uma
+  vez pela IA. Era a própria corretora clicando no anúncio de uma clínica; a
+  conversa estava com `bot_ativo` ligado no momento. Não é o caminho do
+  cliente que clica no anúncio do corretor.
+

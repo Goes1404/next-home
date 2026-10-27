@@ -8,11 +8,11 @@ describe("planoDeMensagens: o que a ROLETA manda ao cliente", () => {
     expect(planoDeMensagens("mensagem", true)).toEqual(["passagem", "abertura"]);
   });
 
-  it("modo mensagem sem repasse: o dono manda a boas-vindas, o cliente nunca fica sem resposta", () => {
-    expect(planoDeMensagens("mensagem", false)).toEqual(["boas_vindas"]);
+  it("modo mensagem sem repasse: nada sai (a boas-vindas fixa foi tirada em 27/10/2026)", () => {
+    expect(planoDeMensagens("mensagem", false)).toEqual([]);
   });
 
-  it("modo grupo: a boas-vindas já saiu pelo webhook; a roleta não manda nada, com ou sem repasse", () => {
+  it("modo grupo: a roleta não manda nada, com ou sem repasse", () => {
     expect(planoDeMensagens("grupo", true)).toEqual([]);
     expect(planoDeMensagens("grupo", false)).toEqual([]);
   });
@@ -53,9 +53,9 @@ describe("roletaDosAnuncios.ts", () => {
     expect(instancia).toBeGreaterThan(grupo);
   });
 
-  it("sem repasse, no modo mensagem, o dono manda a boas-vindas fixa", () => {
-    expect(codigo).toContain("BOAS_VINDAS_DE_CAMPANHA");
-    expect(codigo).toContain('planoDeMensagens(modo, false)');
+  it("sem repasse, o número do dono não manda nada ao cliente", () => {
+    expect(codigo).not.toContain("BOAS_VINDAS_DE_CAMPANHA");
+    expect(codigo).not.toMatch(/boasVindas/i);
   });
 
   it("lerModoDaRoleta existe e cai em desligada", () => {
@@ -66,10 +66,5 @@ describe("roletaDosAnuncios.ts", () => {
   it("usa o modo que o webhook já leu, sem ler de novo", () => {
     expect(codigo).toMatch(/modo\?: ModoDaRoleta/);
     expect(codigo).toContain("params.modo ?? (await lerModoDaRoleta(params.corretorId))");
-  });
-
-  it("o webhook pode proibir a boas-vindas do dono (IA desligada na conversa)", () => {
-    expect(codigo).toMatch(/boasVindasPermitida\?: boolean/);
-    expect(codigo).toMatch(/!destino && !estado\.respondido && params\.boasVindasPermitida !== false/);
   });
 });

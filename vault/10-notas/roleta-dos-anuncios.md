@@ -49,8 +49,9 @@ Pedido do dono (20/10/2026). Desenho:
   grupo `NOME & ARETZ`; no modo grupo nenhuma mensagem sai do número do
   escolhido e a roleta exige grupo mapeado, não WhatsApp conectado. Nos dois
   modos `proximo_da_roleta` pula `em_pausa` e `oculta`. No modo mensagem a
-  passagem sai ANTES da abertura e a boas-vindas genérica só sai quando o lead
-  fica com quem pagou; o webhook passa o modo já lido para a roleta (ler duas
+  passagem sai ANTES da abertura; quando o lead fica com quem pagou, nada sai
+  (a boas-vindas genérica foi tirada em 27/10, ver
+  [[lead-da-campanha-do-corretor-sem-ia]]); o webhook passa o modo já lido para a roleta (ler duas
   vezes deixava o cliente sem resposta). Troca de dono que falha não avisa
   ninguém. Ver [[retorno-da-ligacao-pelo-grupo]].
 
