@@ -11,6 +11,13 @@ export type ItemDaAgenda =
       telefone: string | null;
       imovel: { nome: string; endereco: string | null } | null;
       confirmadaPeloCliente: boolean;
+      /** Quem FAZ a visita (0223: pode não ser o dono do lead). */
+      corretorId?: string;
+      corretorNome?: string | null;
+      donoDoLeadId?: string | null;
+      /** O gestor passou a visita do dono do lead para quem a faz. */
+      passada?: boolean;
+      status?: string;
     }
   | { tipo: "tarefa"; id: string; inicio: string; titulo: string; leadId: string | null; nome: string | null }
   | { tipo: "lembrete"; id: string; inicio: string; texto: string; leadId: string | null };

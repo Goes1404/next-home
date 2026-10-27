@@ -175,6 +175,7 @@ const MAPA: Record<string, Entrada> = {
   // ── Telas da equipe: toda leitura filtra o grupo do gestor ────────────────
   "src/lib/admin/numerosDaEquipe.ts": { categoria: "equipe", motivo: "fonte da leitura recortada: só expõe consultas com o grupo aplicado" },
   "src/lib/agenda/lerAgenda.ts": { categoria: "equipe", motivo: "agenda do próprio corretor; toda leitura filtra grupo e corretor da sessão" },
+  "src/lib/agenda/lerEquipe.ts": { categoria: "equipe", motivo: "agenda da equipe para o gestor; toda leitura filtra o grupo da sessão" },
   "src/lib/financeiro/primeirasRespostas.ts": { categoria: "equipe", motivo: "horários da primeira resposta da equipe, só do grupo do gestor" },
   "src/app/corretor/(painel)/admin/page.tsx": { categoria: "equipe", motivo: "Visão geral do gestor (L17)" },
   "src/app/corretor/(painel)/admin/whatsapp/page.tsx": { categoria: "equipe", motivo: "WhatsApp da equipe (L17)" },

@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { limitesDoDia, limitesDoMes, type Dia, type Mes } from "./calendario";
 import { MAXIMO_POR_DIA, contarPorDia, ordenarItens, type ItemDaAgenda } from "./itens";
+import { SELECT_VISITA, SELECT_VISITA_PELO_DONO, itemDaVisita, type LinhaVisita } from "./linhaDaVisita";
 
 /**
  * A Agenda do próprio corretor: visitas (0222), tarefas da ficha (0032) e
@@ -21,68 +22,51 @@ const STATUS_NA_AGENDA = ["marcada", "realizada", "sem_confirmacao"];
 /** Teto de cada fonte no mês: os marcadores só precisam do instante. */
 const TETO_DO_MES = 1000;
 
-type LinhaVisita = {
-  id: string;
-  inicio: string;
-  lead_id: string;
-  lead: {
-    nome: string;
-    telefone: string | null;
-    arquivado_em: string | null;
-    visita_agendada_em: string | null;
-    visita_confirmada_em: string | null;
-    empreendimento: { nome: string; endereco: string | null } | null;
-  } | null;
-};
-
-const SELECT_VISITA = `id, inicio, lead_id,
-  lead:leads!visitas_lead_id_fkey(nome, telefone, arquivado_em, visita_agendada_em, visita_confirmada_em,
-    empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, endereco))`;
-
-function itemDaVisita(v: LinhaVisita): Extract<ItemDaAgenda, { tipo: "visita" }> | null {
-  if (!v.lead || v.lead.arquivado_em) return null;
-  // O "confirmo" do cliente (0123) é do lead: vale só para a visita que é a atual dele.
-  const ehAtual = v.lead.visita_agendada_em !== null && Date.parse(v.lead.visita_agendada_em) === Date.parse(v.inicio);
-  return {
-    tipo: "visita",
-    id: v.id,
-    inicio: v.inicio,
-    leadId: v.lead_id,
-    nome: v.lead.nome,
-    telefone: v.lead.telefone,
-    imovel: v.lead.empreendimento,
-    confirmadaPeloCliente: ehAtual && v.lead.visita_confirmada_em !== null,
-  };
-}
-
+/**
+ * As visitas do corretor no intervalo: as que ELE faz e as dos leads dele que
+ * o gestor passou a outro (0223) — o dono continua vendo, com "feita por".
+ */
 async function visitasEntre(r: Recorte, inicio: Date, fim: Date, limite: number) {
-  const { data, error } = await createServiceClient()
-    .from("visitas")
-    .select(SELECT_VISITA)
-    .eq("grupo_id", r.grupoId)
-    .eq("corretor_id", r.corretorId)
-    .in("status", STATUS_NA_AGENDA)
-    .gte("inicio", inicio.toISOString())
-    .lt("inicio", fim.toISOString())
-    .order("inicio", { ascending: true })
-    .limit(limite);
-  if (error) throw new Error(`Falha ao ler as visitas da agenda: ${error.message}`);
-  return ((data ?? []) as unknown as LinhaVisita[]).map(itemDaVisita).filter((v) => v !== null);
+  const supabase = createServiceClient();
+  const [minhas, passadas] = await Promise.all([
+    supabase
+      .from("visitas")
+      .select(SELECT_VISITA)
+      .eq("grupo_id", r.grupoId)
+      .eq("corretor_id", r.corretorId)
+      .in("status", STATUS_NA_AGENDA)
+      .gte("inicio", inicio.toISOString())
+      .lt("inicio", fim.toISOString())
+      .order("inicio", { ascending: true })
+      .limit(limite),
+    supabase
+      .from("visitas")
+      .select(SELECT_VISITA_PELO_DONO)
+      .eq("grupo_id", r.grupoId)
+      .eq("lead.corretor_id", r.corretorId)
+      .neq("corretor_id", r.corretorId)
+      .not("passada_em", "is", null)
+      .in("status", STATUS_NA_AGENDA)
+      .gte("inicio", inicio.toISOString())
+      .lt("inicio", fim.toISOString())
+      .order("inicio", { ascending: true })
+      .limit(limite),
+  ]);
+  for (const res of [minhas, passadas]) {
+    if (res.error) throw new Error(`Falha ao ler as visitas da agenda: ${res.error.message}`);
+  }
+  return ([...(minhas.data ?? []), ...(passadas.data ?? [])] as unknown as LinhaVisita[])
+    .map(itemDaVisita)
+    .filter((v) => v !== null)
+    .sort((x, y) => Date.parse(x.inicio) - Date.parse(y.inicio))
+    .slice(0, limite);
 }
 
 export async function lerMarcadoresDoMes(p: Recorte & { mes: Mes }): Promise<Record<Dia, number>> {
   const { inicio, fim } = limitesDoMes(p.mes);
   const supabase = createServiceClient();
   const [visitas, tarefas, lembretes] = await Promise.all([
-    supabase
-      .from("visitas")
-      .select("inicio, lead:leads!visitas_lead_id_fkey(arquivado_em)")
-      .eq("grupo_id", p.grupoId)
-      .eq("corretor_id", p.corretorId)
-      .in("status", STATUS_NA_AGENDA)
-      .gte("inicio", inicio.toISOString())
-      .lt("inicio", fim.toISOString())
-      .limit(TETO_DO_MES),
+    visitasEntre(p, inicio, fim, TETO_DO_MES),
     supabase
       .from("lead_tarefas")
       .select("prazo")
@@ -102,13 +86,12 @@ export async function lerMarcadoresDoMes(p: Recorte & { mes: Mes }): Promise<Rec
       .lt("lembrete_em", fim.toISOString())
       .limit(TETO_DO_MES),
   ]);
-  for (const r of [visitas, tarefas, lembretes]) {
+  for (const r of [tarefas, lembretes]) {
     if (r.error) throw new Error(`Falha ao ler os marcadores da agenda: ${r.error.message}`);
   }
 
-  const daVisita = (visitas.data ?? []) as unknown as { inicio: string; lead: { arquivado_em: string | null } | null }[];
   return contarPorDia([
-    ...daVisita.filter((v) => v.lead && !v.lead.arquivado_em).map((v) => v.inicio),
+    ...visitas.map((v) => v.inicio),
     ...(tarefas.data ?? []).map((t) => t.prazo),
     ...(lembretes.data ?? []).flatMap((l) => (l.lembrete_em ? [l.lembrete_em] : [])),
   ]);
