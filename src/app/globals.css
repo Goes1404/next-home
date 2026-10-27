@@ -2585,6 +2585,67 @@
 }
 
 /*
+ * Botão de fundo SÓLIDO (26/10/2026, Anúncios pagos). O `botao-secundario`
+ * tinge o fundo com 6% da cor do texto: sobre o cartão de vidro ele ainda lia
+ * como "texto com moldura". Este tem a superfície cheia, contorno na cor do
+ * texto e sombra: destaca do cartão sem competir com o `bg-acento`. A cor vem
+ * de quem usa (`text-acento`, `text-perigo`), como nos outros quatro.
+ */
+@utility botao-solido {
+  background-color: var(--color-superficie);
+  border: 1px solid color-mix(in oklab, currentColor 45%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sombra-tinta, rgb(0 0 0 / 0.2)) 45%, transparent);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+  &:hover:not(:disabled) {
+    border-color: currentColor;
+    background-color: color-mix(in oklab, currentColor 8%, var(--color-superficie));
+  }
+}
+
+/*
+ * Aba que é botão (26/10/2026, Anúncios pagos): cada destino tem contorno,
+ * fundo e sombra parado; o aberto (`aria-current="page"`) fica cheio na cor
+ * do módulo, a mesma forma do botão principal.
+ */
+@utility botao-aba {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding-inline: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-linha-forte);
+  background-color: var(--color-superficie);
+  color: var(--color-corpo);
+  font-weight: 500;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--sombra-tinta, rgb(0 0 0 / 0.2)) 35%, transparent),
+    0 2px 6px -2px color-mix(in srgb, var(--sombra-tinta, rgb(0 0 0 / 0.2)) 55%, transparent);
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background-color 0.18s ease;
+  &:hover {
+    border-color: color-mix(in oklab, var(--color-acento) 60%, transparent);
+    color: var(--color-acento);
+  }
+  &[aria-current="page"] {
+    border-color: color-mix(in oklab, var(--color-acento) 75%, black);
+    background-color: var(--color-acento);
+    color: var(--color-sobre-cor);
+    font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 4px 10px -4px color-mix(in oklab, var(--color-acento) 75%, transparent);
+  }
+}
+
+/*
  * Reação ao toque em todo controle do painel: escurece enquanto o dedo está
  * em cima. O realce nativo está desligado (`-webkit-tap-highlight-color`), e
  * sem isto o toque no celular não dá sinal de que pegou. Sombra interna, e

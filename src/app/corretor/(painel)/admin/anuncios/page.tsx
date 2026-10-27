@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
  * leva direto à seção.
  */
 export default function AnunciosAntigo() {
-  redirect("/corretor/marketing/impulsionamentos#conta-da-meta");
+  redirect("/corretor/marketing/impulsionamentos?aba=meta");
 }

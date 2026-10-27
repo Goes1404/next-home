@@ -36,16 +36,25 @@ export async function DoCliqueAConversa() {
 
   const nomes = Object.fromEntries(catalogo.map((i) => [i.slug, i.nome]));
   const funil = montarFunilDoLink({ cliques: cliques ?? [], barrados: barrados ?? [], nomes, dias: DIAS });
-  if (funil.total.cliques === 0) return null;
+  // Desde as abas (26/10/2026) a seção é a tela inteira da aba: sumir deixaria
+  // a aba em branco.
+  if (funil.total.cliques === 0) {
+    return (
+      <p className="cartao p-4 text-fluid-sm text-corpo">
+        Nenhum clique no link do anúncio nos últimos {DIAS} dias. Os números aparecem aqui quando alguém tocar no
+        botão do anúncio.
+      </p>
+    );
+  }
 
   return (
     <section className="cartao space-y-4 p-4" aria-labelledby="do-clique-a-conversa">
       <div className="space-y-1">
-        <h2 id="do-clique-a-conversa" className="text-fluid-base font-semibold text-titulo">
-          Do clique à conversa
-        </h2>
+        <h3 id="do-clique-a-conversa" className="text-fluid-base font-semibold text-titulo">
+          Últimos {DIAS} dias
+        </h3>
         <p className="text-fluid-xs text-corpo">
-          Últimos {DIAS} dias, só cliques de pessoas (robôs ficam de fora, inclusive o da Meta). Mostra se quem
+          Só cliques de pessoas (robôs ficam de fora, inclusive o da Meta). Mostra se quem
           clica chega a escrever, e se escreve a mensagem pronta ou outra coisa.
         </p>
       </div>

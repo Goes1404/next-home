@@ -17,6 +17,11 @@ import {
   type Temperatura,
 } from "@/lib/crm/impulsionamentosCalculo";
 import { Suspense } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { Esqueleto } from "@/app/corretor/(painel)/_componentes/Esqueleto";
+import { AbasDosAnuncios, CabecalhoDaAba, abaDoEndereco } from "./AbasDosAnuncios";
+import { CustoAoLongoDoTempo } from "./CustoAoLongoDoTempo";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
 import { DoCliqueAConversa } from "./DoCliqueAConversa";
@@ -45,7 +50,53 @@ export const dynamic = "force-dynamic";
  * inteira, inclusive as da imobiliária que ele mesmo cadastra (só o dono
  * edita).
  */
-export default async function PaginaImpulsionamentos() {
+export default async function PaginaImpulsionamentos({
+  searchParams,
+}: {
+  searchParams: Promise<{ aba?: string; nova?: string }>;
+}) {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return null;
+  const { aba: pedida, nova } = await searchParams;
+  const gestor = corretor.papel === "gestor";
+  const aba = abaDoEndereco(pedida, gestor);
+
+  return (
+    <div className="space-y-6">
+      <CabecalhoDeTela
+        secao="Marketing"
+        titulo="Anúncios pagos"
+        descricao="Quanto cada campanha trouxe de clientes, se eles valem a conversa e quanto custou cada um."
+        acao={
+          <Link
+            href="?aba=campanhas&nova=1"
+            scroll={false}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor"
+          >
+            <Plus aria-hidden className="size-5" />
+            Nova campanha
+          </Link>
+        }
+      />
+      <AbasDosAnuncios atual={aba} gestor={gestor} />
+      <CabecalhoDaAba aba={aba} />
+      {/* Só Resumo e Campanhas leem campanhas, clientes e conversas; as outras
+          abas carregam o que é delas e abrem sem esperar essa leitura. */}
+      <Suspense key={aba} fallback={<Esqueleto className="h-72 w-full rounded-[1.25rem]" />}>
+        {(aba === "resumo" || aba === "campanhas") && <DadosDasCampanhas aba={aba} abrirNova={nova === "1"} />}
+        {/* Roleta dos anúncios (0204): para quem vão os leads do anúncio. */}
+        {aba === "roleta" && <RoletaDosAnuncios />}
+        {/* Onde o clique no link do anúncio se perde (0159). */}
+        {aba === "clique" && <DoCliqueAConversa />}
+        {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de
+            anúncios da imobiliária, só para o ADM. */}
+        {aba === "meta" && <ContaDaMeta />}
+      </Suspense>
+    </div>
+  );
+}
+
+async function DadosDasCampanhas({ aba, abrirNova }: { aba: "resumo" | "campanhas"; abrirNova: boolean }) {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
 
@@ -234,42 +285,46 @@ export default async function PaginaImpulsionamentos() {
     (ligados[l.impulsionamento_id] ??= []).push({ id: l.id, nome: nomeParaExibir(l) });
   }
 
+  if (aba === "resumo") {
+    if (error || resumos.length === 0) {
+      return (
+        <div className="cartao space-y-3 p-5">
+          <p className="text-fluid-sm text-corpo">
+            Ainda não há anúncio nem campanha para resumir. O anúncio com botão de WhatsApp aparece sozinho no primeiro
+            cliente; a campanha de outro canal você cadastra.
+          </p>
+          <Link
+            href="?aba=campanhas&nova=1"
+            scroll={false}
+            className="inline-flex min-h-11 items-center rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor"
+          >
+            Cadastrar campanha
+          </Link>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-6">
+        <PainelDeIndicadores dados={montarDadosDoPainel(resumos, leadsDeAnuncio, pontos, hoje)} />
+        {series.length > 0 && <CustoAoLongoDoTempo opcoes={series} />}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <CabecalhoDeTela
-        titulo="Anúncios pagos"
-        descricao="Quanto cada campanha trouxe de clientes, se eles valem a conversa e quanto custou cada um."
-      />
-      {!error && <PainelDeIndicadores dados={montarDadosDoPainel(resumos, leadsDeAnuncio, pontos, hoje)} />}
-      <ListaDeImpulsionamentos
-        resumos={resumos}
-        totais={totaisDosImpulsionamentos(resumos)}
-        meuId={corretor.id}
-        verEquipe={corretor.papel === "gestor"}
-        nomes={nomes}
-        imoveis={catalogo.filter((i) => i.id).map((i) => ({ id: i.id as string, nome: i.nome }))}
-        ligados={ligados}
-        listasPorCartao={listasPorCartao}
-        candidatos={(candidatos ?? []).map((c) => ({ id: c.id, nome: nomeParaExibir(c) }))}
-        series={series}
-        hoje={hoje}
-        indisponivel={Boolean(error)}
-      />
-      {/* Roleta dos anúncios (0204): para quem vão os leads do anúncio. */}
-      <Suspense fallback={null}>
-        <RoletaDosAnuncios />
-      </Suspense>
-      {/* Onde o clique no link do anúncio se perde (0159). */}
-      <Suspense fallback={null}>
-        <DoCliqueAConversa />
-      </Suspense>
-      {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de
-          anúncios da imobiliária, só para o ADM. */}
-      {corretor.papel === "gestor" && (
-        <Suspense fallback={null}>
-          <ContaDaMeta />
-        </Suspense>
-      )}
-    </div>
+    <ListaDeImpulsionamentos
+      resumos={resumos}
+      totais={totaisDosImpulsionamentos(resumos)}
+      meuId={corretor.id}
+      verEquipe={corretor.papel === "gestor"}
+      nomes={nomes}
+      imoveis={catalogo.filter((i) => i.id).map((i) => ({ id: i.id as string, nome: i.nome }))}
+      ligados={ligados}
+      listasPorCartao={listasPorCartao}
+      candidatos={(candidatos ?? []).map((c) => ({ id: c.id, nome: nomeParaExibir(c) }))}
+      hoje={hoje}
+      indisponivel={Boolean(error)}
+      abrirNova={abrirNova}
+    />
   );
 }

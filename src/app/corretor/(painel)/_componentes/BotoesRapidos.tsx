@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { alternarRoleta, pausarIa } from "./acoesRapidas";
 
-const CONFIGURAR_ROLETA = "/corretor/marketing/impulsionamentos";
+const CONFIGURAR_ROLETA = "/corretor/marketing/impulsionamentos?aba=roleta";
 
 export function BotoesRapidos({
   iaPausada,

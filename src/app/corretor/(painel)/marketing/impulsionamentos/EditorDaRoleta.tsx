@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { salvarRoleta, type ModoAviso } from "./roletaAcoes";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "@/lib/whatsapp/roletaTextos";
@@ -18,7 +19,11 @@ export type ConfigDaRoleta = {
 /** `temGrupo`: tem grupo de leads mapeado, que é o que importa no aviso no grupo (o WhatsApp dele não entra). */
 type Membro = { id: string; nome: string; conectado: boolean; temGrupo: boolean };
 
-const AVISO_ENVIO_DESLIGADO = "O envio de leads para os grupos está desligado; peça ao gestor para ligar.";
+/** Subir, descer, tirar: quadrado de 44px com contorno, nunca ícone solto (26/10/2026). */
+const BOTAO_QUADRADO =
+  "botao-solido inline-flex h-11 w-11 shrink-0 items-center justify-center text-acento disabled:cursor-not-allowed disabled:opacity-40";
+
+const AVISO_ENVIO_DESLIGADO ="O envio de leads para os grupos está desligado; peça ao gestor para ligar.";
 
 /**
  * Editor da roleta dos anúncios (0204). O corretor edita a do próprio
@@ -185,20 +190,20 @@ export function EditorDaRoleta({
                   {m && noGrupo && !m.temGrupo && <span className="block text-alerta sm:ml-2 sm:inline">· sem grupo, é pulado</span>}
                   {m && !noGrupo && !m.conectado && <span className="block text-alerta sm:ml-2 sm:inline">· WhatsApp fora do ar, é pulado</span>}
                 </span>
-                <button type="button" onClick={() => mover(id, -1)} disabled={i === 0} aria-label="Subir" className="botao-icone h-11 w-11 shrink-0 disabled:opacity-40">
-                  ↑
+                <button type="button" onClick={() => mover(id, -1)} disabled={i === 0} aria-label="Subir" className={BOTAO_QUADRADO}>
+                  <ArrowUp aria-hidden className="size-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => mover(id, 1)}
                   disabled={i === c.destinos.length - 1}
                   aria-label="Descer"
-                  className="botao-icone h-11 w-11 shrink-0 disabled:opacity-40"
+                  className={BOTAO_QUADRADO}
                 >
-                  ↓
+                  <ArrowDown aria-hidden className="size-4" />
                 </button>
-                <button type="button" onClick={() => alternar(id)} aria-label="Tirar da lista" className="botao-icone h-11 w-11 shrink-0">
-                  ✕
+                <button type="button" onClick={() => alternar(id)} aria-label="Tirar da lista" className={`${BOTAO_QUADRADO} text-perigo`}>
+                  <X aria-hidden className="size-4" />
                 </button>
               </li>
             );
@@ -207,7 +212,7 @@ export function EditorDaRoleta({
         {foraDaLista.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {foraDaLista.map((m) => (
-              <button key={m.id} type="button" onClick={() => alternar(m.id)} className="botao-secundario min-h-11 rounded-full px-4 text-fluid-sm">
+              <button key={m.id} type="button" onClick={() => alternar(m.id)} className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento">
                 + {m.nome}
                 {m.id === donoId ? " (eu)" : ""}
               </button>

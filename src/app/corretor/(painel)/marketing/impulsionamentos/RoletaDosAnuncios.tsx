@@ -34,7 +34,7 @@ export async function RoletaDosAnuncios() {
   // Erro na leitura da roleta: antes da 0204 a tabela não existe e, antes da
   // 0218, a coluna `modo_aviso` não existe. Nos dois casos a seção some em vez
   // de quebrar a tela.
-  if (error) return null;
+  if (error) return <SemRoleta />;
 
   const conectados = new Set(
     (instancias ?? []).filter((i) => i.status_conexao === "conectado" && !i.sessao_caida_em).map((i) => i.corretor_id),
@@ -61,7 +61,12 @@ export async function RoletaDosAnuncios() {
       modoAviso: l?.modo_aviso === "grupo" ? ("grupo" as const) : ("mensagem" as const),
     };
   });
-  if (configs.length === 0) return null;
+  if (configs.length === 0) return <SemRoleta />;
 
   return <EditorDaRoleta configs={configs} equipe={equipe} meuId={quem.id} gestor={gestor} grupoTemEnvio={grupo?.envio_grupo_leads_ativo === true} />;
+}
+
+/** Desde as abas (26/10/2026) a roleta é a aba inteira: sumir deixaria a tela em branco. */
+function SemRoleta() {
+  return <p className="cartao p-4 text-fluid-sm text-corpo">A roleta dos anúncios ainda não está disponível para você.</p>;
 }

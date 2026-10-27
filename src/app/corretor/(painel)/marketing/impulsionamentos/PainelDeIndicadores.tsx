@@ -49,9 +49,11 @@ const diaCurto = (dia: string) =>
   new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(`${dia}T00:00:00Z`));
 
 const CHIP =
-  "min-h-10 rounded-full border px-3.5 text-fluid-xs font-semibold transition-colors inline-flex items-center gap-2";
+  "min-h-11 rounded-full border px-4 text-fluid-xs font-semibold transition-colors inline-flex items-center gap-2";
 const CHIP_ATIVO = "border-acento bg-acento text-sobre-cor";
-const CHIP_INATIVO = "border-linha-forte text-titulo hover:bg-vidro";
+// Fundo sólido e sombra também no chip parado: sobre o cartão de vidro, só o
+// contorno lia como etiqueta, não como botão (26/10/2026).
+const CHIP_INATIVO = "border-linha-forte bg-superficie text-titulo shadow-sm hover:border-acento hover:text-acento";
 
 export function PainelDeIndicadores({ dados }: { dados: DadosDoPainel }) {
   const [periodo, setPeriodo] = useState<Periodo>(30);

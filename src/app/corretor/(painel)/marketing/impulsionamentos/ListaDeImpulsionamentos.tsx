@@ -17,7 +17,6 @@ import {
 import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { CartaoDeGrafico } from "@/app/corretor/(painel)/_componentes/graficos/Moldura";
-import { CustoAoLongoDoTempo, type OpcaoDeSerie } from "./CustoAoLongoDoTempo";
 import {
   agruparAnuncio,
   apagarCampanha,
@@ -37,7 +36,7 @@ const CAMPO =
 const BOTAO =
   "min-h-11 rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor disabled:opacity-60";
 const BOTAO_SECUNDARIO =
-  "min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-sm font-semibold text-titulo hover:bg-vidro disabled:opacity-60";
+  "botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento disabled:opacity-60";
 
 const reais = (v: number | null) =>
   v === null
@@ -107,9 +106,9 @@ export function ListaDeImpulsionamentos({
   ligados,
   listasPorCartao = {},
   candidatos,
-  series,
   hoje,
   indisponivel,
+  abrirNova = false,
 }: {
   resumos: ResumoImpulsionamento[];
   totais: Totais;
@@ -121,9 +120,10 @@ export function ListaDeImpulsionamentos({
   /** Quantos clientes de cada cartão receberam e responderam lista de transmissão. */
   listasPorCartao?: Record<string, { receberam: number; responderam: number }>;
   candidatos: ClienteDaLista[];
-  series: OpcaoDeSerie[];
   hoje: string;
   indisponivel: boolean;
+  /** Vem do botão "Nova campanha" do cabeçalho (`?nova=1`): o formulário já abre. */
+  abrirNova?: boolean;
 }) {
   const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
   const qualidade = useMemo(() => compararQualidade(resumos, nomeDoResumo), [resumos]);
@@ -141,14 +141,13 @@ export function ListaDeImpulsionamentos({
 
   return (
     <div className="space-y-6">
-      <NovaCampanha imoveis={imoveis} />
+      <NovaCampanha imoveis={imoveis} abertoDeInicio={abrirNova} />
       <ComoFunciona aberto={resumos.length === 0} />
 
       {resumos.length > 0 && <Totais totais={totais} />}
 
       <Comparativo comparativo={comparativo} />
       <QualidadeLadoALado linhas={qualidade} />
-      {series.length > 0 && <CustoAoLongoDoTempo opcoes={series} />}
 
       <ul className="space-y-3">
         {resumos.map((r) => (
@@ -224,8 +223,8 @@ function Totais({ totais }: { totais: Totais }) {
   );
 }
 
-function NovaCampanha({ imoveis }: { imoveis: { id: string; nome: string }[] }) {
-  const [aberto, setAberto] = useState(false);
+function NovaCampanha({ imoveis, abertoDeInicio }: { imoveis: { id: string; nome: string }[]; abertoDeInicio: boolean }) {
+  const [aberto, setAberto] = useState(abertoDeInicio);
   const [form, setForm] = useState({ nome: "", canal: "instagram", valor: "", imovel: "", inicio: "", fim: "" });
   const { msg, pendente, rodar } = useAcao();
   const campo = (k: keyof typeof form) => (e: { target: { value: string } }) =>
@@ -649,7 +648,7 @@ function Cartao({
                     type="button"
                     disabled={pendente}
                     onClick={() => rodar(() => agruparAnuncio({ anuncioId: a.id, campanhaId: null }))}
-                    className="min-h-11 px-2 text-fluid-xs font-semibold text-acento-forte botao-secundario"
+                    className="botao-solido min-h-11 px-3 text-fluid-xs font-semibold text-perigo"
                   >
                     Tirar
                   </button>
@@ -860,7 +859,7 @@ function ApagarCampanha({ rodar, pendente }: { rodar: () => void; pendente: bool
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        className="min-h-11 text-fluid-xs font-semibold text-corpo hover:text-perigo px-3 botao-secundario"
+        className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-perigo"
       >
         Apagar campanha
       </button>

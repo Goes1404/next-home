@@ -11966,3 +11966,20 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
   `_00_grupo`/`_zz_grupo_*` — era o que deixava a suíte de isolamento vermelha.
 - Guarda vermelha esconde a falha nova: quem mudar produto e quebrar uma guarda
   ajusta a guarda no mesmo commit.
+
+## Anúncios pagos em abas (26/10/2026)
+
+Nota: [[anuncios-pagos-em-abas]]
+
+- A tela virou cinco abas por `?aba=` (resumo, campanhas, roleta, clique, meta;
+  meta só gestor). Desenho aprovado antes num mockup do Claude Design.
+- Só Resumo e Campanhas fazem a leitura pesada (campanhas, leads, conversas);
+  as outras abas abrem sem ela.
+- `botao-solido` e `botao-aba` novos no globals.css: o `botao-secundario` (6%
+  de tinta) lia como texto sobre o cartão de vidro. Nome de estilo de botão
+  começa com `botao-`, senão `botoesComPista.test.ts` não reconhece a pista.
+- Abas quebram linha em vez de rolar de lado (`naoRolaDeLado.test.ts`).
+- `/admin/anuncios` agora redireciona para `?aba=meta`; o atalho da roleta,
+  para `?aba=roleta`.
+- Mockup fiel ao painel precisa do fundo inteiro (tinta no topo, aurora,
+  bolhas, grão), não só da paleta.
