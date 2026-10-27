@@ -5,7 +5,7 @@ import { normalizarHost } from "@/lib/sites/endereco";
 import { metadadosDoSite, metadadosSemSite } from "@/lib/sites/metadados";
 import { type ParamsDoSite } from "@/lib/sites/pagina";
 import { resolverSite } from "@/lib/sites/resolver";
-import { cssDasCoresDoSite, scriptDoTemaFixo, temaFixoDoSite } from "@/lib/sites/coresDoSite";
+import { cssDasCoresDoSite } from "@/lib/sites/coresDoSite";
 
 /**
  * O site público de cada grupo, pelo endereço (fase 3, 20/10/2026).
@@ -63,8 +63,8 @@ export default async function SiteLayout({
   // porque o fundo pinta o `<body>` e o menu do celular é um portal. SEMPRE
   // nulo na Next Home (a marca dela vem zerada): nenhuma tag a mais no HTML.
   const marca = site?.marca;
-  const cores = marca && !marca.ehNextHome
-    ? {
+  const css = marca && !marca.ehNextHome
+    ? cssDasCoresDoSite({
         principal: marca.cor,
         secundaria: marca.corSecundaria,
         fundo: marca.corFundo,
@@ -75,13 +75,8 @@ export default async function SiteLayout({
           fundo: marca.corFundoEscuro,
           texto: marca.corTextoEscuro,
         },
-      }
+      })
     : null;
-  const css = cores ? cssDasCoresDoSite(cores) : null;
-  // Fundo fixo escuro: o `<html>` vai para o tema escuro antes da pintura,
-  // senão as superfícies do claro (vidro, faixas) pintam por cima das cores
-  // do grupo — o "no celular está tudo feio" da Aretz (26/10/2026).
-  const temaFixo = cores ? temaFixoDoSite(cores) : null;
   const conteudo = (
     <>
       {children}
@@ -96,7 +91,6 @@ export default async function SiteLayout({
   return (
     <>
       {/* Só hex calculado em `cssDasCoresDoSite`: nada digitado chega aqui. */}
-      {temaFixo && <script dangerouslySetInnerHTML={{ __html: scriptDoTemaFixo(temaFixo) }} />}
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
       {movimento && <style dangerouslySetInnerHTML={{ __html: movimento }} />}
       {conteudo}

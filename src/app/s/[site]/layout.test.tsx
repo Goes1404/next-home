@@ -102,28 +102,3 @@ describe("SiteLayout: modo escuro (0212)", () => {
     expect(saida).not.toContain("radiogroup");
   });
 });
-
-describe("SiteLayout: fundo fixo escuro trava o tema escuro (Aretz, 26/10/2026)", () => {
-  const entrada = { grupoId: "g-2", nome: "Aretz", url: "https://aretz.com.br" };
-  const ESCURO_FIXO = { ...SITE_EM_BRANCO, cor: "#c49c4e", corSecundaria: "#e2c584", corFundo: "#0e1a10", corTexto: "#f9fbf8" };
-
-  it("fundo escuro fixo: script põe data-tema escuro e a barra na cor do fundo", async () => {
-    const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: ESCURO_FIXO }));
-    expect(saida).toContain('h.setAttribute("data-tema","escuro")');
-    expect(saida).toContain('setAttribute("content","#0e1a10")');
-  });
-
-  it("fundo claro fixo: nada de script", async () => {
-    expect(await html(marcaDoGrupo({ ...entrada, personalizacao: CORES }))).not.toContain("<script");
-  });
-
-  it("com cores do modo escuro: o visitante escolhe, nada de script", async () => {
-    const saida = await html(marcaDoGrupo({ ...entrada, personalizacao: { ...ESCURO_FIXO, corFundoEscuro: "#0e1a10" } }));
-    expect(saida).not.toContain("<script");
-  });
-
-  it("grupo 1: nunca", async () => {
-    const g1 = { grupoId: GRUPO_NEXT_HOME_ID, nome: "Next Home", url: "https://x.com.br" };
-    expect(await html(marcaDoGrupo({ ...g1, personalizacao: ESCURO_FIXO }))).not.toContain("<script");
-  });
-});
