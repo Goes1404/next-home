@@ -36,6 +36,7 @@ import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTexto";
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
+import { cobrarVisitas } from "@/lib/agenda/confirmacao";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
@@ -675,12 +676,18 @@ export async function GET(req: NextRequest) {
     console.error("[lembrete de tarefa]", e);
     return 0;
   });
+  // "A visita aconteceu?" (Agenda, 0225): aviso ao CORRETOR, na janela dele
+  // (7h–21h59), por isso antes da janela comercial do cliente.
+  const visitasCobradas = await cobrarVisitas(supabase).catch((e) => {
+    console.error("[visita aconteceu]", e);
+    return 0;
+  });
 
   // Fora do horário comercial nada sai — e nada é descartado: o item
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -722,7 +729,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }

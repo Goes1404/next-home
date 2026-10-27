@@ -186,3 +186,24 @@ export async function lerVisitasSemHorario(
   if (error) throw new Error(`Falha ao ler as visitas sem horário: ${error.message}`);
   return data ?? [];
 }
+
+/** Para o Início: as visitas do corretor que já passaram e ainda esperam resposta. */
+export async function lerVisitasParaConfirmar(
+  p: { corretorId: string; grupoId: string },
+  agora = new Date(),
+): Promise<{ id: string; inicio: string; nome: string; status: string }[]> {
+  const { data, error } = await createServiceClient()
+    .from("visitas")
+    .select("id, inicio, status, lead:leads!visitas_lead_id_fkey(nome, arquivado_em)")
+    .eq("grupo_id", p.grupoId)
+    .eq("corretor_id", p.corretorId)
+    .in("status", ["marcada", "sem_confirmacao"])
+    .lte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString())
+    .gte("inicio", new Date(agora.getTime() - 14 * 86_400_000).toISOString())
+    .order("inicio", { ascending: false })
+    .limit(5);
+  if (error) throw new Error(`Falha ao ler as visitas para confirmar: ${error.message}`);
+  return ((data ?? []) as unknown as { id: string; inicio: string; status: string; lead: { nome: string; arquivado_em: string | null } | null }[])
+    .filter((v) => v.lead && !v.lead.arquivado_em)
+    .map((v) => ({ id: v.id, inicio: v.inicio, status: v.status, nome: v.lead!.nome }));
+}

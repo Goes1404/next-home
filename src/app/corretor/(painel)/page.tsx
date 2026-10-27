@@ -23,6 +23,7 @@ import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { HojeNaAgenda } from "./_componentes/HojeNaAgenda";
 import { EquipeHoje } from "./_componentes/EquipeHoje";
+import { VisitasParaConfirmar } from "./_componentes/VisitasParaConfirmar";
 import { CartaoMeta } from "./financeiro/CartaoMeta";
 import { getRitmoDoCorretor } from "@/lib/financeiro/ritmoDoCorretor";
 import { getVendas } from "@/lib/financeiro/dados";
@@ -121,6 +122,11 @@ export default async function PainelInicio({
           ninguém espera; sem esqueleto para não empurrar a tela à toa. */}
       <Suspense fallback={null}>
         <QuemEstaEsperando corretorId={corretor.id} />
+      </Suspense>
+
+      {/* "A visita aconteceu?" (Agenda, fase 4). Some quando não há visita esperando resposta. */}
+      <Suspense fallback={null}>
+        <VisitasParaConfirmar corretorId={corretor.id} grupoId={corretor.grupoId} />
       </Suspense>
 
       {/* Os próximos compromissos de hoje (Agenda, 27/10/2026). Some quando não há nada. */}

@@ -687,6 +687,38 @@ export type Database = {
           },
         ]
       }
+      conversa_de_agenda: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          estado: Json
+          expira_em: string
+          grupo_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          estado: Json
+          expira_em: string
+          grupo_id?: string
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          estado?: Json
+          expira_em?: string
+          grupo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversa_de_agenda_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: true
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corretor_agenda: {
         Row: {
           grupo_id: string
@@ -3812,6 +3844,8 @@ export type Database = {
           status: string
           datas_anteriores: string[]
           passada_em: string | null
+          cobrada_em: string | null
+          respondida_em: string | null
           passada_por: string | null
           criada_por_usuario: string | null
           created_at: string
@@ -3827,6 +3861,8 @@ export type Database = {
           status?: string
           datas_anteriores?: string[]
           passada_em?: string | null
+          cobrada_em?: string | null
+          respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
           created_at?: string
@@ -3842,6 +3878,8 @@ export type Database = {
           status?: string
           datas_anteriores?: string[]
           passada_em?: string | null
+          cobrada_em?: string | null
+          respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
           created_at?: string
@@ -4534,6 +4572,10 @@ export type Database = {
         Args: { p_token: string; p_url: string }
         Returns: string
       }
+      marcar_visitas_sem_confirmacao: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       numeros_da_agenda: {
         Args: { p_grupo: string; p_corretor: string | null; p_de: string; p_ate: string }
         Returns: {
@@ -4544,6 +4586,10 @@ export type Database = {
           sem_confirmacao: number
           negocios: number
         }[]
+      }
+      responder_visita: {
+        Args: { p_visita: string; p_corretor: string; p_resposta: string; p_nova?: string | null }
+        Returns: string
       }
       reservar_horario_visita: {
         Args: { p_lead_id: string; p_quando: string }
