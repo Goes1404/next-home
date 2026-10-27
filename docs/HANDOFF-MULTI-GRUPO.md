@@ -392,3 +392,22 @@ site público desatualizado; botões do site do grupo com o verde padrão.
   número central, ligar o envio e "Sincronizar grupos" (o sincronizador nunca
   casava antes desta branch).
 - Nada muda para quem não liga o envio para grupos nem escolhe o modo grupo na roleta.
+
+### Agenda, fase 1 (27/10/2026, branch `agenda-fase-1`, worktree `../next-home-agenda`, NÃO publicada)
+
+- Spec `docs/superpowers/specs/2026-10-27-agenda-do-corretor-e-da-equipe-design.md`;
+  plano `docs/superpowers/plans/2026-10-27-agenda-fase-1-visitas-e-agenda-do-corretor.md`;
+  nota [[agenda-visitas-com-historico]].
+- **Publicar JUNTO com a fase 2** (visão da equipe para o gestor): a tela
+  antiga de Visitas mostrava a equipe ao gestor; a Agenda da fase 1 mostra só
+  a do próprio usuário.
+- **Antes de aplicar a 0222** (ANTES do deploy, migration aditiva com um
+  `drop index`): rodar em produção, só leitura, a lista de visitas futuras do
+  mesmo corretor a menos de 60 min uma da outra
+  (`select a.corretor_id, a.id, a.visita_agendada_em, b.id, b.visita_agendada_em from leads a join leads b on a.corretor_id = b.corretor_id and a.id < b.id and abs(extract(epoch from a.visita_agendada_em - b.visita_agendada_em)) < 3600 where a.visita_agendada_em >= now() and b.visita_agendada_em >= now();`).
+  O backfill pula esses pares com `notice`; resolver à mão antes. Essa
+  consulta foi bloqueada pela permissão automática nesta sessão e NÃO rodou.
+- A 0222 pega `lock table public.leads in access exclusive mode`: aplicar em
+  horário de pouco tráfego.
+- Fase 2 precisa marcar a visita delegada (o espelho hoje devolve ao dono
+  toda visita com outro corretor; ver a nota).

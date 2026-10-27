@@ -12004,3 +12004,29 @@ Nota: [[movimento-curto-nos-sites-dos-grupos]]
 - Banco: paleta escura de 22/10 nas colunas do claro, `_escuro` nulas.
 - As cores do claro de antes não existiam em registro nenhum: quem mudar cor
   por SQL anota os valores antigos antes (o banco não guarda histórico).
+
+## Agenda, fase 1: visitas com histórico e tela Agenda (0222, 27/10/2026)
+
+Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
+
+- `public.visitas` é espelho de `leads.visita_agendada_em` por gatilho
+  (`leads_zz_espelha_visita`): os escritores da IA, do chat, do painel e do
+  retorno pelo grupo não mudaram. Remarcar visita futura = mesma linha com
+  `datas_anteriores`; data nova depois de visita passada = visita nova.
+- A trava virou exclusão gist de 60 min por quem faz a visita (`23P01`); o
+  índice da 0074 saiu porque recusava trocar o dono do lead quando o novo já
+  tinha visita no mesmo minuto (a saída do corretor caía).
+- A IA lê os ocupados de `visitas` e descarta vaga que cruza [h, h+60):
+  disponibilidade oferecida e trava leem a MESMA fonte.
+- Retorno marcado até 60 min depois da visita só é remarcação se a hora nova
+  fica a menos de 3h; senão é visita nova (a feita não some da Agenda).
+- `/corretor/visitas` redireciona para `/corretor/agenda` (mês compacto, lista
+  do dia, próximas visitas, "Configurar horários"); cartão "Hoje na agenda" no
+  Início. Visitas passadas não foram migradas: os números começam do zero.
+- `npm run db:teste` não sobe no Windows quando a porta 54321 cai na faixa
+  reservada do winnat (`netsh interface ipv4 show excludedportrange
+  protocol=tcp`): subir com `supabase start -x ...,kong,realtime,postgrest`
+  para os testes de banco, ou trocar `[api] port` no `config.toml` só local.
+- Disco C: chegou a 0 bytes no meio da execução (next dev parou de gravar
+  cache): 24 worktrees antigas já publicadas foram removidas (~10 GB); os
+  `.relatorio-*.md` delas estão em `nexthome/relatorios-das-worktrees/`.
