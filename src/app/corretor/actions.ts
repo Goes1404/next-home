@@ -623,10 +623,11 @@ export async function alternarPausa(
   }
 
   // Onde a pausa aparece: a tabela de carga (admin/leads), o "(pausa)" da
-  // visão geral e o dropdown de contas.
+  // visão geral, o dropdown de contas e a escala da aba Roleta.
   revalidatePath("/corretor/admin/leads");
   revalidatePath("/corretor/admin");
   revalidatePath("/corretor/admin/contas");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return {};
 }
 

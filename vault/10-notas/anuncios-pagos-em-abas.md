@@ -8,6 +8,7 @@ codigo:
   - src/app/corretor/(painel)/marketing/impulsionamentos/page.tsx
   - src/app/corretor/(painel)/marketing/impulsionamentos/AbasDosAnuncios.tsx
   - src/app/globals.css
+  - src/app/corretor/(painel)/marketing/impulsionamentos/DistribuicaoDaEquipe.tsx
 fonte: docs/MEMORIA.md — Anúncios pagos em abas (26/10/2026)
 created: 2026-10-26
 updated: 2026-10-26
@@ -32,6 +33,22 @@ botões não pareciam botões. A tela tinha cinco blocos empilhados.
   âncora `#conta-da-meta`) e o atalho "configurar roleta" vai para `?aba=roleta`.
 - Roleta e "Do clique à conversa" deixaram de sumir quando vazias: agora são a
   aba inteira e mostram uma frase.
+
+## A aba Roleta reúne toda a distribuição
+
+Pedido do dono: tudo da distribuição de leads num lugar só. Para o gestor, a
+aba Roleta mostra, além da roleta dos anúncios:
+
+- **Quem entra na distribuição:** a regra "só entrega lead a quem está com o
+  WhatsApp conectado" (`pular_corretor_whatsapp_desconectado`) e a escala
+  com pausa por corretor (`TogglePausa`, a mesma de Leads da equipe).
+- **Grupos de WhatsApp dos corretores:** número central, nome dos grupos,
+  sincronizar e vínculo à mão (`ConfigurarGruposDeLeads`).
+
+Saiu de WhatsApp & IA, que agora tem só um cartão com link para a aba. O
+componente e as ações continuam em `admin/whatsapp/` (as ações têm teste
+lá); as ações revalidam as duas telas. A pausa continua também em Leads da
+equipe.
 
 ## Por que estilos novos
 

@@ -8,9 +8,7 @@ import { BotaoDesconectar } from "./BotaoDesconectar";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { motivoDaQueda } from "@/lib/whatsapp/motivoDaQueda";
 import { quandoEmSaoPaulo } from "@/lib/whatsapp/saudeDaConexao";
-import { ConfigurarGruposDeLeads } from "./ConfigurarGruposDeLeads";
-import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
-import { listarGruposWhatsapp } from "@/lib/whatsapp/provider";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 
@@ -63,7 +61,7 @@ function Selo({ ok, texto }: { ok: boolean; texto: string }) {
 }
 
 export default async function AdminWhatsappPage() {
-  const gestor = await exigirGestorNaPagina();
+  await exigirGestorNaPagina();
   const supabase = await createClient();
   // Status dos números e desempenho da IA: só colunas de status e contagem
   // (0134). O tom de voz e as conversas de cada corretor ficam com ele.
@@ -80,7 +78,6 @@ export default async function AdminWhatsappPage() {
     { data: pessoas },
     { data: todasListas },
     ocultas,
-    { data: configuracaoDoGrupo },
   ] = await Promise.all([
     equipe.ler((c) =>
       c
@@ -99,7 +96,7 @@ export default async function AdminWhatsappPage() {
       .eq("grupo_id", equipe.grupoId)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("corretores").select("id, nome, papel, whatsapp_grupo_leads_jid, whatsapp_grupo_leads_nome, whatsapp_grupo_leads_manual").eq("grupo_id", equipe.grupoId),
+    supabase.from("corretores").select("id, nome, papel").eq("grupo_id", equipe.grupoId),
     /*
      * As listas de transmissão da equipe nos últimos 30 dias (roadmap das
      * listas, Fase 3): só contagens, nunca o texto que foi mandado (0134).
@@ -112,21 +109,8 @@ export default async function AdminWhatsappPage() {
     // fora da tela da equipe. A sessão do gestor lê a marca; a chave de
     // serviço acima não recorta nada sozinha.
     idsDeContasOcultas(supabase),
-    supabase
-      .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, pular_corretor_whatsapp_desconectado, padrao_nome_grupo_leads")
-      .eq("id", gestor.grupoId)
-      .maybeSingle(),
   ]);
   const instancias = semContasOcultas(todasInstancias ?? [], ocultas, (i) => i.corretor_id);
-  // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
-  // número central enxerga. Sem número central, ou se a leitura falhar, a
-  // lista fica vazia e a sincronização pelo nome continua valendo.
-  const centralDoGrupo = configuracaoDoGrupo?.envio_grupo_leads_ativo ? configuracaoDoGrupo.envio_grupo_leads_instancia : null;
-  const [gruposDoCentral, marcaDoGrupo] = await Promise.all([
-    centralDoGrupo ? listarGruposWhatsapp(centralDoGrupo) : Promise.resolve({ grupos: [] }),
-    lerMarcaDoCrm(gestor.grupoId),
-  ]);
   const interacoes = semContasOcultas(todasInteracoes ?? [], ocultas, (i) => i.corretor_id);
   const listas = semContasOcultas(todasListas ?? [], ocultas, (l) => l.corretor_id);
   const eventos = semContasOcultas(
@@ -246,27 +230,23 @@ export default async function AdminWhatsappPage() {
         )}
       </section>
 
-      <ConfigurarGruposDeLeads
-        instanciaAtual={configuracaoDoGrupo?.envio_grupo_leads_ativo ? configuracaoDoGrupo.envio_grupo_leads_instancia : null}
-        pularDesconectados={configuracaoDoGrupo?.pular_corretor_whatsapp_desconectado ?? false}
-        instancias={(instancias ?? []).map((i) => ({
-          instanceName: i.instance_name,
-          nome: nomePor.get(i.corretor_id) ?? i.instance_name,
-          conectada: i.status_conexao === "conectado" && i.conectado_em !== null && i.sessao_caida_em === null,
-        }))}
-        corretores={(pessoas ?? [])
-          .filter((p) => p.papel === "corretor")
-          .map((p) => ({
-            id: p.id,
-            nome: p.nome,
-            grupoJid: p.whatsapp_grupo_leads_jid,
-            grupoNome: p.whatsapp_grupo_leads_nome,
-            manual: p.whatsapp_grupo_leads_manual,
-          }))}
-        padraoDoNome={configuracaoDoGrupo?.padrao_nome_grupo_leads ?? null}
-        nomeDaImobiliaria={marcaDoGrupo.nome}
-        gruposDoCentral={gruposDoCentral.grupos}
-      />
+      {/* Os grupos de leads e a regra do número conectado foram para a aba
+          Roleta de Anúncios pagos (26/10/2026): tudo da distribuição num lugar. */}
+      <section className="cartao flex flex-wrap items-center justify-between gap-3 p-5">
+        <div className="min-w-0">
+          <h2 className="text-fluid-base font-bold text-titulo">Leads nos grupos de WhatsApp</h2>
+          <p className="text-fluid-xs text-apoio mt-1">
+            Número central, nome dos grupos, vínculo de cada corretor e a regra do WhatsApp conectado agora ficam junto
+            da roleta.
+          </p>
+        </div>
+        <Link
+          href="/corretor/marketing/impulsionamentos?aba=roleta"
+          className="botao-solido text-acento text-fluid-sm inline-flex min-h-11 items-center px-4 font-semibold"
+        >
+          Abrir a distribuição de leads
+        </Link>
+      </section>
 
       <section className="cartao p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Qualidade da IA</h2>

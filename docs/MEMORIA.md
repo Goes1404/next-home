@@ -11983,3 +11983,10 @@ Nota: [[anuncios-pagos-em-abas]]
   para `?aba=roleta`.
 - Mockup fiel ao painel precisa do fundo inteiro (tinta no topo, aurora,
   bolhas, grão), não só da paleta.
+- (mesmo dia) A aba Roleta virou o lugar de toda a distribuição para o
+  gestor: regra do WhatsApp conectado, escala com pausa e os grupos de
+  WhatsApp dos corretores (`DistribuicaoDaEquipe.tsx`). WhatsApp & IA ficou
+  só com um link para lá. Arquivo novo com a leitura da equipe entra no MAPA
+  de `servicoComGrupo.test.ts` como `equipe`.
+- Rodar a suíte com `npx vitest run --dir src`: sem isso o vitest pega uma
+  cópia velha em `.claude/worktrees/` e acusa falhas que não são do código.

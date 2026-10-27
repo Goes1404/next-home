@@ -22,6 +22,7 @@ import { Plus } from "lucide-react";
 import { Esqueleto } from "@/app/corretor/(painel)/_componentes/Esqueleto";
 import { AbasDosAnuncios, CabecalhoDaAba, abaDoEndereco } from "./AbasDosAnuncios";
 import { CustoAoLongoDoTempo } from "./CustoAoLongoDoTempo";
+import { DistribuicaoDaEquipe } from "./DistribuicaoDaEquipe";
 import { ContaDaMeta } from "@/app/corretor/(painel)/admin/anuncios/ContaDaMeta";
 import { ListaDeImpulsionamentos, type ClienteDaLista } from "./ListaDeImpulsionamentos";
 import { DoCliqueAConversa } from "./DoCliqueAConversa";
@@ -84,8 +85,14 @@ export default async function PaginaImpulsionamentos({
           abas carregam o que é delas e abrem sem esperar essa leitura. */}
       <Suspense key={aba} fallback={<Esqueleto className="h-72 w-full rounded-[1.25rem]" />}>
         {(aba === "resumo" || aba === "campanhas") && <DadosDasCampanhas aba={aba} abrirNova={nova === "1"} />}
-        {/* Roleta dos anúncios (0204): para quem vão os leads do anúncio. */}
-        {aba === "roleta" && <RoletaDosAnuncios />}
+        {/* Roleta dos anúncios (0204) e, para o gestor, o resto da
+            distribuição: escala, regra do WhatsApp conectado e grupos. */}
+        {aba === "roleta" && (
+          <div className="space-y-6">
+            <RoletaDosAnuncios />
+            {gestor && <DistribuicaoDaEquipe />}
+          </div>
+        )}
         {/* Onde o clique no link do anúncio se perde (0159). */}
         {aba === "clique" && <DoCliqueAConversa />}
         {/* A antiga tela "Anúncios" da Administração (30/09/2026): a conta de

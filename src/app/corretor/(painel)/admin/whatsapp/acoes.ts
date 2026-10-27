@@ -66,6 +66,7 @@ export async function desconectarNumeroDoCorretor(
   });
 
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: "Número desconectado. A IA desse corretor para até ele conectar de novo." };
 }
 
@@ -85,6 +86,7 @@ export async function configurarEnvioDeLeadsNosGrupos(
       .eq("id", guarda.corretor.grupoId);
     if (error) return { erro: "Não foi possível desativar agora." };
     revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
     return { ok: "Envio para grupos desativado." };
   }
 
@@ -104,6 +106,7 @@ export async function configurarEnvioDeLeadsNosGrupos(
     .eq("id", guarda.corretor.grupoId);
   if (error) return { erro: "Não foi possível salvar o número central." };
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: "Número central salvo. Agora sincronize os grupos dos corretores." };
 }
 
@@ -121,6 +124,7 @@ export async function configurarPuloDeCorretorDesconectado(
   if (error) return { erro: "Nao foi possivel salvar esta regra agora." };
 
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return {
     ok: ativado
       ? "A roleta vai pular corretores com WhatsApp desconectado."
@@ -208,6 +212,7 @@ export async function sincronizarGruposDeLeads(): Promise<{ ok?: string; erro?: 
   }
 
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   const mensagem = mensagemDaSincronizacao({
     vinculados,
     semGrupo,
@@ -274,6 +279,7 @@ export async function configurarNomeDosGrupos(entrada: string): Promise<{ ok?: s
     .eq("id", guarda.corretor.grupoId);
   if (error) return { erro: "Não foi possível salvar o nome dos grupos agora." };
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: "Nome dos grupos salvo. Agora sincronize os grupos dos corretores." };
 }
 
@@ -310,6 +316,7 @@ export async function vincularGrupoDoCorretor(
       .eq("grupo_id", grupoId);
     if (error) return { erro: "Não foi possível desfazer agora." };
     revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
     return { ok: "Escolha desfeita. A sincronização volta a procurar o grupo pelo nome." };
   }
 
@@ -344,5 +351,6 @@ export async function vincularGrupoDoCorretor(
   if (error) return { erro: "Não foi possível vincular agora." };
   await guardarLidDoCorretor(servico, grupoId, configuracao.envio_grupo_leads_instancia, corretor, grupo.jid);
   revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: `Grupo "${grupo.nome}" vinculado.` };
 }

@@ -6,7 +6,6 @@ import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGru
 import {
   configurarEnvioDeLeadsNosGrupos,
   configurarNomeDosGrupos,
-  configurarPuloDeCorretorDesconectado,
   sincronizarGruposDeLeads,
   vincularGrupoDoCorretor,
 } from "./acoes";
@@ -17,7 +16,6 @@ type GrupoDoCentral = { jid: string; nome: string };
 
 export function ConfigurarGruposDeLeads({
   instanciaAtual,
-  pularDesconectados,
   instancias,
   corretores,
   padraoDoNome,
@@ -25,7 +23,6 @@ export function ConfigurarGruposDeLeads({
   gruposDoCentral,
 }: {
   instanciaAtual: string | null;
-  pularDesconectados: boolean;
   instancias: Instancia[];
   corretores: Corretor[];
   padraoDoNome: string | null;
@@ -54,21 +51,8 @@ export function ConfigurarGruposDeLeads({
   const jidsEmUso = new Map(corretores.filter((c) => c.grupoJid).map((c) => [c.grupoJid as string, c.id]));
 
   return (
-    <section className="cartao p-5">
-      <label className="border-linha mb-4 flex cursor-pointer items-start gap-3 rounded-xl border p-3">
-        <input
-          type="checkbox"
-          checked={pularDesconectados}
-          disabled={pendente}
-          onChange={(e) => executar(() => configurarPuloDeCorretorDesconectado(e.target.checked))}
-          className="mt-1 size-4 accent-[var(--color-acento)]"
-        />
-        <span className="grid gap-0.5">
-          <span className="text-fluid-sm font-medium text-titulo">Pular corretor com WhatsApp desconectado</span>
-          <span className="text-fluid-xs text-apoio">Ligado: o lead só vai para quem estiver conectado. Desligado: conectados seguem na frente, mas a roleta não deixa o lead sem responsável.</span>
-        </span>
-      </label>
-      <h2 className="text-fluid-base font-bold text-titulo">Leads nos grupos de WhatsApp dos corretores</h2>
+    <section className="cartao p-5 sm:p-6">
+      <h3 className="text-fluid-lg font-semibold text-titulo">Grupos de WhatsApp dos corretores</h3>
       <p className="text-fluid-xs text-apoio mt-1">
         Ao distribuir um lead, o CRM avisa o grupo do corretor. O número central precisa participar de todos os grupos.
       </p>
@@ -101,7 +85,7 @@ export function ConfigurarGruposDeLeads({
           Use {"{corretor}"} no lugar do nome do corretor e {"{imobiliaria}"} no lugar de &quot;{nomeDaImobiliaria}&quot;. Maiúsculas, acentos e emoji não importam. Exemplo: o grupo de {exemplo} deve se chamar <strong className="text-titulo">{nomeDeExemplo}</strong>.
         </p>
         <div className="flex flex-wrap gap-3">
-          <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className="border-linha-forte text-corpo text-fluid-sm min-h-11 rounded-xl border px-4 disabled:opacity-60">
+          <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className="botao-solido text-acento text-fluid-sm min-h-11 px-4 font-semibold disabled:opacity-60">
             Salvar nome
           </button>
           <button type="button" disabled={pendente || !instanciaAtual} onClick={() => executar(sincronizarGruposDeLeads)} className="bg-acento text-sobre-acento text-fluid-sm min-h-11 rounded-xl px-4 font-medium disabled:opacity-60">

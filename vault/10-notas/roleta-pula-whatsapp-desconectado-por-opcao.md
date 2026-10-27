@@ -6,10 +6,10 @@ status: evergreen
 custou: baixo
 codigo:
   - supabase/migrations/0216_pular_corretor_desconectado_na_roleta.sql
-  - src/app/corretor/(painel)/admin/whatsapp/ConfigurarGruposDeLeads.tsx
+  - src/app/corretor/(painel)/marketing/impulsionamentos/RegraDoNumeroConectado.tsx
   - src/app/corretor/(painel)/admin/whatsapp/acoes.ts
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-26
 summary: O gestor pode transformar a preferencia por WhatsApp conectado em filtro da roleta, sem mudar o padrao seguro dos demais grupos.
 ---
 
