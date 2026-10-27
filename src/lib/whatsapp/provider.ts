@@ -296,32 +296,41 @@ export async function obterQrCodeInstancia(
    * descarta o `?number=` sem avisar e devolve o mesmo QR de novo, então o
    * código de 8 caracteres nunca chegava à tela.
    */
-  if (numero) {
-    const estadoAtual = await consultarEstadoConexao(instanceName);
-    const decisao = decidirPareamentoPorNumero(estadoAtual.ok ? estadoAtual.estado : null);
+  const estadoAtual = await consultarEstadoConexao(instanceName);
+  const decisao = decidirPareamentoPorNumero(estadoAtual.ok ? estadoAtual.estado : null);
 
-    if (decisao.acao === "recusar") {
-      return {
-        ok: true,
-        qrcodeBase64: null,
-        codigoPareamento: null,
-        jaConectado: true,
-        desfecho: "ja_conectado",
-      };
-    }
-
-    // Derruba só a sessão PENDENTE (nunca uma conectada — `recusar` já
-    // saiu acima). `logout` preserva instância, webhook e tom de voz.
-    if (decisao.acao === "encerrar_antes") {
-      await desconectarInstancia(instanceName);
-    }
+  if (numero && decisao.acao === "recusar") {
+    return {
+      ok: true,
+      qrcodeBase64: null,
+      codigoPareamento: null,
+      jaConectado: true,
+      desfecho: "ja_conectado",
+    };
   }
 
-  // Na primeira conexão do corretor a instância ainda não existe na
-  // Evolution — `/instance/connect` sozinho devolveria 404. Criar é
-  // idempotente na prática: se já existe, o provedor recusa e seguimos
-  // direto para o connect.
-  const criada = await garantirInstancia(config, instanceName, numero || null);
+  // Derruba só a sessão PENDENTE (nunca uma conectada — `recusar` já
+  // saiu acima). `logout` preserva instância, webhook e tom de voz. No QR
+  // não precisa: o QR pendente é justamente o que ele quer.
+  if (numero && decisao.acao === "encerrar_antes") {
+    await desconectarInstancia(instanceName);
+  }
+
+  /*
+   * Instância sem sessão no ar recomeça do zero, nos dois métodos
+   * (`pareamento.ts`): a sessão que o WhatsApp derrubou com 401 fica
+   * guardada na instância e faz todo pedido novo cair na hora. O `create`
+   * logo abaixo a recria com o mesmo nome e o mesmo webhook.
+   */
+  const recomecou = decisao.acao === "recomecar" && (await apagarInstancia(instanceName));
+
+  let criada = await garantirInstancia(config, instanceName, numero || null);
+  // A Evolution termina de apagar em segundo plano: o primeiro `create` logo
+  // depois pode ser recusado como "nome em uso".
+  if (recomecou && !criada) {
+    await new Promise((r) => setTimeout(r, 2000));
+    criada = await garantirInstancia(config, instanceName, numero || null);
+  }
 
   /*
    * Instância recém-criada: o pareamento já veio na resposta do `create`.
@@ -406,6 +415,41 @@ export async function obterQrCodeInstancia(
     }
   }
   return { ok: false, motivo: "erro_provedor", detalhe: FRASE_PROVEDOR_FORA };
+}
+
+/**
+ * Apaga a instância na Evolution, com a sessão guardada nela (27/10/2026).
+ *
+ * Só para instância SEM sessão no ar (`close`): é o que tira dela as
+ * credenciais do aparelho que o WhatsApp já desconectou. Quem chama recria
+ * em seguida com o mesmo nome e o mesmo webhook (`garantirInstancia`).
+ * Devolve `true` quando a instância não existe mais (404 incluído).
+ */
+async function apagarInstancia(instanceName: string): Promise<boolean> {
+  const config = configDoProvedor();
+  if (!config || !instanceName) return false;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${config.baseUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
+      method: "DELETE",
+      headers: { apikey: config.apiKey },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok && res.status !== 404) {
+      const corpo = await res.text().catch(() => "");
+      console.warn(
+        `[whatsapp] não consegui recomeçar ${instanceName}: HTTP ${res.status}${corpo ? ` ${corpo.slice(0, 200)}` : ""}`,
+      );
+      return false;
+    }
+    console.warn(`[whatsapp] ${instanceName} recomeçada do zero antes do pareamento.`);
+    return true;
+  } catch (err) {
+    console.warn(`[whatsapp] não consegui recomeçar ${instanceName}: ${descreverFalhaDeRede(err)}`);
+    return false;
+  }
 }
 
 /**

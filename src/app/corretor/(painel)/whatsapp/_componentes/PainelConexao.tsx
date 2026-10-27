@@ -53,6 +53,9 @@ export function PainelConexao({
   const [desconectando, setDesconectando] = useState(false);
   const [erro, setErro] = useState<string | null>(avisoInicial ?? null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Quando o código chegou (relógio do servidor): o que cair depois disso é
+  // o WhatsApp recusando o aparelho, e a tela diz isso em vez de esperar.
+  const codigoChegouEmRef = useRef<string | null>(null);
 
   /**
    * Pareamento. Sem telefone, vem o QR de sempre; com telefone, vem o código
@@ -79,6 +82,7 @@ export function PainelConexao({
       return;
     }
 
+    codigoChegouEmRef.current = resultado.iniciadoEm ?? null;
     setQrCodeBase64(resultado.qrcodeBase64 ?? null);
     setCodigoPareamento(resultado.codigoPareamento ?? null);
     setStatus(resultado.jaConectado ? "conectado" : "conectando");
@@ -104,7 +108,16 @@ export function PainelConexao({
   }
 
   const confirmarConexao = useCallback(async () => {
-    const estado = await verificarConexaoWhatsapp();
+    const estado = await verificarConexaoWhatsapp(codigoChegouEmRef.current ?? undefined);
+    // O WhatsApp recusou o aparelho (401/403 depois do código): o código na
+    // tela já não vale, e esperar 2 minutos só esconderia isso.
+    if (estado.recusadoPeloWhatsapp) {
+      setStatus("desconectado");
+      setCodigoPareamento(null);
+      setQrCodeBase64(null);
+      setErro(estado.recusadoPeloWhatsapp);
+      return true;
+    }
     // Pareou, mas o número é de outra conta da plataforma (0198): o servidor
     // já derrubou a conexão. Para de perguntar e diz o porquê.
     if (estado.recusado) {

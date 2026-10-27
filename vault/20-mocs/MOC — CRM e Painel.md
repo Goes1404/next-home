@@ -140,3 +140,4 @@ F0–F6.
 - [[icone-e-manifesto-por-grupo]] — ícone da aba e manifesto PWA por grupo
 
 - [[pareamento-fetch-failed-na-primeira-conexao]] — "fetch failed" ao gerar o código do WhatsApp; pareamento pela resposta do create, 2 tentativas e motivo no log
+- [[pareamento-depois-de-401-recomeca-a-instancia]] ⚠️ número tirado da conta pelo WhatsApp: toda reconexão dava 401; instância em close é apagada e recriada antes do código, e a tela avisa a recusa (27/10)
