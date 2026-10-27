@@ -12004,6 +12004,13 @@ Nota: [[movimento-curto-nos-sites-dos-grupos]]
 - Banco: paleta escura de 22/10 nas colunas do claro, `_escuro` nulas.
 - As cores do claro de antes não existiam em registro nenhum: quem mudar cor
   por SQL anota os valores antigos antes (o banco não guarda histórico).
+- **Verificado em 27/10 por simulação** (`primeiroContato.simulacao.test.ts`,
+  disparador de produção com banco em memória): 10/10/10/0/0 em cinco dias,
+  nada no número recém-conectado ou recém-caído, foto só para quem já
+  conversou. Um tique pode só adiar 25 itens e parar; o pg_cron segue no
+  minuto seguinte. Roleta dos anúncios, aviso de imóvel novo e botão ✨ mandam
+  primeiro contato sem esta trava; hoje nenhum tem uso.
+
 
 ## Número central da conta oculta não aparecia na Roleta (27/10/2026)
 

@@ -8,10 +8,11 @@ custou: alto
 codigo:
   - src/lib/whatsapp/primeiroContato.ts
   - src/lib/whatsapp/primeiroContato.test.ts
+  - src/lib/whatsapp/primeiroContato.simulacao.test.ts
   - src/lib/whatsapp/campaignDispatcher.ts
   - supabase/migrations/0217_primeiro_contato_da_lista.sql
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-27
 fonte: print da conversa com o Ramos ("A IA travou o whats na quarta-feira"), 26/10/2026
 summary: O WhatsApp do Ramos foi desconectado da conta depois de 48 mensagens de lista em dois dias para gente que nunca tinha falado com ele, todas com a mesma foto; primeiro contato passou a ter teto de 10 por dia e 30 por semana, nenhum nos 7 dias depois de o número conectar ou cair, e sai sem foto.
 ---
@@ -60,6 +61,35 @@ lista nos 3 dias anteriores: não são este caso.
   responder.
 
 A cota do número continua valendo por cima.
+
+## Como foi verificado (27/10)
+
+- `primeiroContato.simulacao.test.ts` roda o `processarFilaCampanhas` de
+  produção com banco em memória e provedor falso, em sete cenários: o número
+  do Ramos (6 dias depois da queda, nada para desconhecidos), número antigo
+  (10 no dia, sem foto), cinco dias seguidos (10, 10, 10, 0, 0), envios de
+  outras listas contando no teto, virada do dia em São Paulo, falha de
+  leitura e número recém-conectado. Quatro mordidas no disparador (tirar a
+  trava, mandar foto, falha de leitura liberar, contagem nula liberar)
+  reprovam a simulação.
+- O disparador para de adiar depois de 25 itens por chamada; o pg_cron segue
+  no minuto seguinte. Um tique sem envio não quer dizer fila parada.
+- Até 27/10 nenhuma lista tinha rodado desde o deploy: a regra só foi
+  exercitada pela simulação.
+
+## Caminhos que mandam primeiro contato sem passar pela trava
+
+Medidos em 27/10, todos sem uso no banco:
+
+- **Roleta dos anúncios, modo mensagem** (`roletaDosAnuncios.ts`): o número
+  de outro corretor abre conversa com o cliente que escreveu para o anúncio.
+  `roleta_anuncios` vazia.
+- **Aviso de imóvel novo** (`avisoDeNovidade.ts`): até 2 por tique para quem
+  pediu alerta pelo site. Nenhum lead com alerta.
+- **Botão ✨ da IA** (`aberturaPelaIA.ts`): um por clique, com cota e
+  espaçamento, mas sem o teto de primeiro contato.
+
+Quando algum deles passar a ter uso, ele deve consultar a mesma regra.
 
 ## Para lembrar
 
