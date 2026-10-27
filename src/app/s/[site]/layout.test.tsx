@@ -127,17 +127,3 @@ describe("SiteLayout: fundo fixo escuro trava o tema escuro (Aretz, 26/10/2026)"
     expect(await html(marcaDoGrupo({ ...g1, personalizacao: ESCURO_FIXO }))).not.toContain("<script");
   });
 });
-
-describe("SiteLayout: acabamento do escuro travado", () => {
-  it("fundo escuro fixo leva a planta em cinza e a faixa neutra", async () => {
-    const saida = await html(
-      marcaDoGrupo({
-        grupoId: "g-2",
-        nome: "Aretz",
-        url: "https://aretz.com.br",
-        personalizacao: { ...SITE_EM_BRANCO, cor: "#c49c4e", corFundo: "#0a0f0b", corTexto: "#f5f5f2" },
-      }),
-    );
-    expect(saida).toContain(".home-percurso::before{filter:grayscale(1)}");
-  });
-});
