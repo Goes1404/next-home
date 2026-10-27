@@ -6,6 +6,7 @@ vi.mock("@/lib/whatsapp/provider", () => ({ enviarMensagemWhatsapp: async () => 
 vi.mock("@/lib/whatsapp/repositorio", () => ({ agendarVisitaLead: async () => true }));
 
 const { canalDaMensagem, ehMensagemDoSistema } = await import("./canal");
+const { MARCA_INVISIVEL_DO_SISTEMA } = await import("@/lib/crm/avisoAoCorretor");
 
 /*
  * Quem fala com o sistema: o corretor na conversa consigo mesmo (mesmo
@@ -32,6 +33,13 @@ describe("canalDaMensagem", () => {
     ).toBe("do_corretor");
   });
 
+  it("fala do celular da instância para o número pessoal (outro número) não é do canal", () => {
+    // O corretor testa a IA do número pessoal e digita a palavra de teste no celular da instância.
+    expect(
+      canalDaMensagem({ fromMe: true, sender: "5511977776666", whatsappCorretor: "5511977776666", telefoneConectado: "5511988887777" }),
+    ).toBeNull();
+  });
+
   it("sem 9 ou sem 55 ainda é o mesmo número", () => {
     expect(canalDaMensagem({ ...base, fromMe: true, sender: "551188887777" })).toBe("propria");
   });
@@ -42,5 +50,9 @@ describe("ehMensagemDoSistema", () => {
     expect(ehMensagemDoSistema("📅 Pronto: visita marcada")).toBe(true);
     expect(ehMensagemDoSistema("A visita com Ana (sáb 31/10 às 10h) aconteceu?\n1 · Aconteceu")).toBe(true);
     expect(ehMensagemDoSistema("visita com a Ana sábado 10h")).toBe(false);
+  });
+
+  it("reconhece o eco de qualquer aviso ao corretor pela marca invisível", () => {
+    expect(ehMensagemDoSistema(`Reunião: Metas, seg 03/11 09:00 às 10:00. Já está na sua Agenda.${MARCA_INVISIVEL_DO_SISTEMA}`)).toBe(true);
   });
 });

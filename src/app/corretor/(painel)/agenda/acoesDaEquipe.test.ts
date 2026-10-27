@@ -5,6 +5,7 @@ const estado = {
   visita: null as Record<string, unknown> | null,
   destino: null as Record<string, unknown> | null,
   erroUpdate: null as { code: string; message: string } | null,
+  linhasAtualizadas: 1,
   updates: [] as Record<string, unknown>[],
   avisos: [] as [string, string][],
   filtros: [] as [string, unknown][],
@@ -29,7 +30,8 @@ vi.mock("@/lib/supabase/service", () => ({
         update: (dados: Record<string, unknown>) => (estado.updates.push(dados), cadeia),
         eq: (c: string, v: unknown) => (estado.filtros.push([`${tabela}.${c}`, v]), cadeia),
         maybeSingle: async () => ({ data: tabela === "visitas" ? estado.visita : estado.destino, error: null }),
-        then: (r: (x: { error: unknown }) => unknown) => r({ error: estado.erroUpdate }),
+        then: (r: (x: { data: unknown; error: unknown }) => unknown) =>
+          r({ data: Array.from({ length: estado.linhasAtualizadas }, () => ({ id: "v1" })), error: estado.erroUpdate }),
       };
       return cadeia;
     },
@@ -53,6 +55,7 @@ describe("passarVisita", () => {
     };
     estado.destino = { id: "b", nome: "Bruno", ativo: true };
     estado.erroUpdate = null;
+    estado.linhasAtualizadas = 1;
     estado.updates = [];
     estado.avisos = [];
     estado.filtros = [];
@@ -93,6 +96,12 @@ describe("passarVisita", () => {
   it("conflito na agenda de quem recebe vira mensagem clara e ninguém é avisado", async () => {
     estado.erroUpdate = { code: "23P01", message: "conflicting key value violates exclusion constraint" };
     expect((await passarVisita("v1", "b")).erro).toBe("Esse corretor já tem outra visita nesse horário.");
+    expect(estado.avisos).toEqual([]);
+  });
+
+  it("visita que mudou no meio do caminho não é dada como passada nem avisada", async () => {
+    estado.linhasAtualizadas = 0;
+    expect((await passarVisita("v1", "b")).erro).toBe("Essa visita não pode mais ser passada.");
     expect(estado.avisos).toEqual([]);
   });
 

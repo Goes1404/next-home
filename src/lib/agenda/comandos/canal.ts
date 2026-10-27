@@ -16,6 +16,7 @@ import { responderAoCorretor, type Dependencias } from "./conversa";
 type Supa = Parameters<typeof lerEstado>[0];
 import { interpretarPedido } from "./interpretar";
 import { lerRespostaCurta } from "./respostasCurtas";
+import { MARCA_INVISIVEL_DO_SISTEMA } from "@/lib/crm/avisoAoCorretor";
 
 /**
  * O canal do corretor com o sistema pelo WhatsApp (Agenda, fase 5).
@@ -45,14 +46,22 @@ export function canalDaMensagem(p: {
 }): "propria" | "do_corretor" | null {
   const doCorretor = Boolean(p.whatsappCorretor) && mesmoNumero(p.sender, p.whatsappCorretor!);
   const daInstancia = Boolean(p.telefoneConectado) && mesmoNumero(p.sender, p.telefoneConectado!);
-  if (p.fromMe) return doCorretor || daInstancia ? "propria" : null;
+  // O número pessoal é o da instância (ou a instância não diz o dela).
+  const mesmoAparelho =
+    !p.telefoneConectado || (Boolean(p.whatsappCorretor) && mesmoNumero(p.whatsappCorretor!, p.telefoneConectado));
+  /*
+   * `fromMe` só é canal na conversa CONSIGO MESMO. Do celular da instância
+   * para o número pessoal (outro número) é o corretor falando no chat de
+   * teste da IA, e a palavra de teste tem de chegar ao webhook.
+   */
+  if (p.fromMe) return daInstancia || (doCorretor && mesmoAparelho) ? "propria" : null;
   return doCorretor && !daInstancia ? "do_corretor" : null;
 }
 
 /** As mensagens que o próprio sistema manda ao corretor (eco, se houver). */
 export function ehMensagemDoSistema(texto: string): boolean {
   const t = texto.trim();
-  return t.startsWith(MARCA_DO_SISTEMA) || /^A visita com .+\) aconteceu\?/.test(t);
+  return t.includes(MARCA_INVISIVEL_DO_SISTEMA) || t.startsWith(MARCA_DO_SISTEMA) || /^A visita com .+\) aconteceu\?/.test(t);
 }
 
 function descricao(item: ItemDaAgenda): string {
@@ -101,6 +110,10 @@ export async function tratarConversaComOSistema(p: {
   const { corretorId, grupoId } = p.instancia;
 
   if (canal === "do_corretor") {
+    // A palavra de ativação ou de teste é do fluxo de teste da IA, não da Agenda.
+    const minusculo = p.texto.toLowerCase();
+    const palavras = [p.instancia.palavraChaveAtivacao, p.instancia.palavraChaveTeste].filter((x): x is string => Boolean(x?.trim()));
+    if (palavras.some((palavra) => minusculo.includes(palavra.toLowerCase().trim()))) return false;
     const { data: conversaDeTeste } = await supabase
       .from("whatsapp_conversas")
       .select("id")
@@ -116,7 +129,7 @@ export async function tratarConversaComOSistema(p: {
   if (await grupoSuspenso(grupoId, agora).catch(() => false)) return true;
 
   const enviar = (texto: string) =>
-    enviarMensagemWhatsapp({ instanceName: p.instancia.instanceName, telefone: p.sender, texto: `${MARCA_DO_SISTEMA} ${texto}` });
+    enviarMensagemWhatsapp({ instanceName: p.instancia.instanceName, telefone: p.sender, texto: `${MARCA_DO_SISTEMA} ${texto}${MARCA_INVISIVEL_DO_SISTEMA}` });
 
   if (p.ehAudio && !p.texto.trim()) {
     await enviar("Por enquanto eu só entendo mensagem escrita. Mande o pedido em texto.");

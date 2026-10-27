@@ -69,6 +69,8 @@ describe("lerVisitaRecebida", () => {
     const r = await lerVisitaRecebida({ visitaId: "v1", corretorId: "b", grupoId: "g1" });
     expect(r?.visita.nome).toBe("Ana");
     expect(tabelas).toContain("anotacoes");
+    // Só as anotações do dono para ele mesmo: lembrete de outro ou recado do gestor ao dono não vazam.
+    expect(filtros).toEqual(expect.arrayContaining([["anotacoes.corretor_id", "a"], ["anotacoes.destinatario_id", "a"]]));
     expect(tabelas.some((t) => t.startsWith("whatsapp"))).toBe(false);
   });
 });

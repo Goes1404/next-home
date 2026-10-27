@@ -38,15 +38,25 @@ export async function lerVisitaRecebida(p: {
   const visita = data ? itemDaVisita(data as unknown as LinhaVisita) : null;
   if (!visita) return null;
 
+  const dono = visita.donoDoLeadId;
   const [preparo, { data: anotacoes }] = await Promise.all([
     lerPreparo(p.grupoId, [visita.leadId]),
-    supabase
-      .from("anotacoes")
-      .select("id, texto, created_at")
-      .eq("grupo_id", p.grupoId)
-      .eq("lead_id", visita.leadId)
-      .order("created_at", { ascending: false })
-      .limit(5),
+    /*
+     * Só as anotações do dono do lead PARA ELE MESMO: a RLS de `anotacoes`
+     * (0100) mostra cada uma só ao autor, ao destinatário e ao gestor, e um
+     * lembrete de outra pessoa ou o recado do gestor ao dono não são de B.
+     */
+    dono
+      ? supabase
+          .from("anotacoes")
+          .select("id, texto, created_at")
+          .eq("grupo_id", p.grupoId)
+          .eq("lead_id", visita.leadId)
+          .eq("corretor_id", dono)
+          .eq("destinatario_id", dono)
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: [] as { id: string; texto: string; created_at: string }[] }),
   ]);
   return {
     visita,

@@ -62,7 +62,7 @@ export async function passarVisita(visitaId: string, paraCorretorId: string): Pr
   if (!destino || !destino.ativo) return { erro: "Escolha um corretor ativo da equipe." };
 
   const devolvida = paraCorretorId === v.lead?.corretor_id;
-  const { error } = await supabase
+  const { data: passada, error } = await supabase
     .from("visitas")
     .update({
       corretor_id: paraCorretorId,
@@ -72,7 +72,8 @@ export async function passarVisita(visitaId: string, paraCorretorId: string): Pr
     })
     .eq("id", v.id)
     .eq("grupo_id", gestor.grupoId)
-    .eq("status", "marcada");
+    .eq("status", "marcada")
+    .select("id");
   if (error) {
     return {
       erro: ehConflitoDeHorario(error)
@@ -80,6 +81,8 @@ export async function passarVisita(visitaId: string, paraCorretorId: string): Pr
         : "Não foi possível passar a visita agora. Tente de novo.",
     };
   }
+  // Mudou entre a leitura e a gravação (desmarcada, respondida): nada foi passado.
+  if (!passada?.length) return { erro: "Essa visita não pode mais ser passada." };
 
   const quando = QUANDO.format(new Date(v.inicio));
   const nome = v.lead?.nome ?? "o cliente";
