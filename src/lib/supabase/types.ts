@@ -3701,6 +3701,70 @@ export type Database = {
           },
         ]
       }
+      visitas: {
+        Row: {
+          id: string
+          grupo_id: string
+          lead_id: string
+          corretor_id: string
+          inicio: string
+          fim: string
+          status: string
+          datas_anteriores: string[]
+          criada_por_usuario: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          lead_id: string
+          corretor_id: string
+          inicio: string
+          fim: string
+          status?: string
+          datas_anteriores?: string[]
+          criada_por_usuario?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          lead_id?: string
+          corretor_id?: string
+          inicio?: string
+          fim?: string
+          status?: string
+          datas_anteriores?: string[]
+          criada_por_usuario?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitas_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_diagnosticos: {
         Row: {
           created_at: string
