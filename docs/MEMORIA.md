@@ -11992,3 +11992,15 @@ Nota: [[anuncios-pagos-em-abas]]
 - (mesmo dia) Aba Roleta redesenhada no canvas e aprovada: cartões-resumo,
   uma tabela só para ordem da roleta + escala (pausa) + WhatsApp + grupo, e os
   grupos em passos. Ordem/quem recebe valem ao salvar; pausa e regra, na hora.
+
+## Front da Aretz revertido para antes das 12h (26/10/2026, noite)
+
+Nota: [[movimento-curto-nos-sites-dos-grupos]]
+
+- Revertidos `35bca500`, `e51fee7b`, `ca52daf6` e a parte visual de `d61b6576`
+  (transições curtas, destaques do herói, escuro neutro, preto e branco).
+- Mantidos: trava do tema escuro para fundo fixo (o dono quer o escuro como
+  padrão), CRECI provisório escondido, nomes/slugs corrigidos, cache v6.
+- Banco: paleta escura de 22/10 nas colunas do claro, `_escuro` nulas.
+- As cores do claro de antes não existiam em registro nenhum: quem mudar cor
+  por SQL anota os valores antigos antes (o banco não guarda histórico).

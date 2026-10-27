@@ -106,6 +106,21 @@ Pedido (26/10/2026, Aretz): "deixe o site mais rápido, as transições".
   só mudam por `/plataforma` (administrador da plataforma) ou SQL. Decisão
   do dono: o cliente depende da manutenção da Astro.
 
+## Revertido na mesma noite (26/10/2026, 22h40)
+
+- Pedido do dono: o front da Aretz volta a como estava antes das 12h. Saíram
+  as transições curtas, os destaques do herói no celular e o escuro "menos
+  marrom" / preto e branco (`35bca500`, `e51fee7b`, `ca52daf6` revertidos).
+- Ficaram: a trava do tema escuro para fundo fixo escuro (`temaFixoDoSite` +
+  `scriptDoTemaFixo`, de `d61b6576`), porque o dono quer o escuro como padrão
+  e sem ela o celular abre claro; o CRECI provisório fora do site; os nomes e
+  slugs corrigidos.
+- Cores no banco: a paleta escura de 22/10 nas colunas do CLARO (`#d4a64b`,
+  `#e8c77e`, `#0e1a10`, `#f3ebd6`) e as `_escuro` nulas. As cores do claro
+  de antes de hoje não tinham registro em lugar nenhum (o banco não guarda
+  histórico de `grupos`): antes de mudar cor por SQL, anote os valores velhos.
+- Os `.whl` do Python que entraram em `d61b6576` (49 MB) saíram do repositório.
+
 ## Relacionadas
 - [[meu-site-da-imobiliaria]]
 - [[MOC — Front Público]]
