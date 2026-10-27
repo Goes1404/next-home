@@ -5,7 +5,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { diaEmSaoPaulo, lerDia, lerMes } from "@/lib/agenda/calendario";
-import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas } from "@/lib/agenda/lerAgenda";
+import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas, lerVisitasSemHorario } from "@/lib/agenda/lerAgenda";
+import Link from "next/link";
 import type { DadosDoPreparo } from "@/lib/crm/preparoDaVisita";
 import { MesCompacto } from "./_componentes/MesCompacto";
 import { ListaDoDia } from "./_componentes/ListaDoDia";
@@ -43,10 +44,11 @@ export default async function AgendaPage({
   const dia = lerDia(um(params.dia), mes, agora);
   const recorte = { corretorId: corretor.id, grupoId: corretor.grupoId };
 
-  const [marcadores, itens, proximas] = await Promise.all([
+  const [marcadores, itens, proximas, semHorario] = await Promise.all([
     lerMarcadoresDoMes({ ...recorte, mes }),
     lerItensDoDia({ ...recorte, dia }),
     lerProximasVisitas({ ...recorte, agora, limite: 10 }),
+    lerVisitasSemHorario(recorte),
   ]);
   const temVisitaNoDia = itens.some((i) => i.tipo === "visita");
 
@@ -109,6 +111,23 @@ export default async function AgendaPage({
       <CabecalhoDeTela secao="Leads" titulo="Agenda" descricao="Suas visitas, tarefas e lembretes, dia a dia." />
 
       <div className="mt-6 space-y-4">
+        {semHorario.length > 0 && (
+          <section className="cartao border-alerta/40 p-5" aria-labelledby="visita-sem-horario">
+            <h2 id="visita-sem-horario" className="font-medium text-titulo">
+              Visita sem horário ({semHorario.length})
+            </h2>
+            <p className="text-fluid-xs mt-1 text-apoio">Estão na etapa Visita, mas sem dia marcado. Marque na ficha.</p>
+            <ul className="mt-3 space-y-2">
+              {semHorario.map((lead) => (
+                <li key={lead.id}>
+                  <Link href={`/corretor/leads/${lead.id}`} className="botao-aba min-h-11 w-full justify-start text-sm">
+                    {lead.nome}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <MesCompacto mes={mes} diaSelecionado={dia} hoje={diaEmSaoPaulo(agora)} marcadores={marcadores} />
         <ListaDoDia itens={itens} preparoPorLead={preparoPorLead} />
       </div>

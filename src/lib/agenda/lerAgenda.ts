@@ -173,3 +173,28 @@ export async function lerProximasVisitas(
   const ate = new Date(p.agora.getTime() + 183 * 86_400_000);
   return visitasEntre(p, p.agora, ate, p.limite);
 }
+
+/** Teto do aviso de lead em Visita sem data: é cobrança, não lista. */
+const MAXIMO_SEM_HORARIO = 5;
+
+/**
+ * Leads do corretor na etapa Visita SEM data marcada. A tela antiga de
+ * Visitas os mostrava no topo ("Sem horário"): era a cobrança de marcar a
+ * data, e a Agenda, que é por dia, os perderia.
+ */
+export async function lerVisitasSemHorario(
+  r: Recorte,
+): Promise<{ id: string; nome: string; telefone: string | null }[]> {
+  const { data, error } = await createServiceClient()
+    .from("leads")
+    .select("id, nome, telefone")
+    .eq("grupo_id", r.grupoId)
+    .eq("corretor_id", r.corretorId)
+    .eq("etapa", "visita_agendada")
+    .is("visita_agendada_em", null)
+    .is("arquivado_em", null)
+    .order("etapa_alterada_em", { ascending: true })
+    .limit(MAXIMO_SEM_HORARIO);
+  if (error) throw new Error(`Falha ao ler as visitas sem horário: ${error.message}`);
+  return data ?? [];
+}

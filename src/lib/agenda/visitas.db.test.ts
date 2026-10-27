@@ -355,6 +355,29 @@ describe.skipIf(!process.env.DB_TESTE_URL)("visitas com histórico (0222)", () =
       expect(notas).toHaveLength(0);
     }));
 
+  it("arquivar o lead cancela a visita futura e libera o horário", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "vis-arquivar" });
+      const lead = await novoLead(tx, g.corretorId);
+      const outro = await novoLead(tx, g.corretorId, "Outro");
+      const amanha = await daqui(tx, 24);
+      await marcar(tx, lead, amanha);
+      await tx`update public.leads set arquivado_em = now() where id = ${lead}`;
+      expect((await visitasDo(tx, lead)).map((v) => v.status)).toEqual(["cancelada"]);
+      await marcar(tx, outro, await daqui(tx, 24.5));
+      expect((await visitasDo(tx, outro)).map((v) => v.status)).toEqual(["marcada"]);
+    }));
+
+  it("desarquivar o lead com data futura devolve a visita à agenda", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "vis-desarquivar" });
+      const lead = await novoLead(tx, g.corretorId);
+      await marcar(tx, lead, await daqui(tx, 24));
+      await tx`update public.leads set arquivado_em = now() where id = ${lead}`;
+      await tx`update public.leads set arquivado_em = null where id = ${lead}`;
+      expect((await visitasDo(tx, lead)).map((v) => v.status).sort()).toEqual(["cancelada", "marcada"]);
+    }));
+
   it("o grupo da visita é o do lead", () =>
     emTransacaoDesfeita(sql, async (tx) => {
       const g = await criarGrupo(tx, { slug: "vis-grupo" });

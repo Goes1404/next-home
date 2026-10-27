@@ -45,6 +45,11 @@ tstzrange(inicio, fim, '[)') with &&) where (status = 'marcada')`. Recusa com
   atual.
 - **Retorno marcado logo depois da visita é visita NOVA.** Sem a janela de 3h,
   a visita que acabou de acontecer era "remarcada" e sumia da Agenda.
+- **Arquivar o lead cancela as visitas futuras** (e desarquivar com data
+  futura as devolve): senão o horário seguia recusado pela trava sem aparecer
+  em tela nenhuma — o arquivar nunca limpou `visita_agendada_em`.
+- **Lead em Visita sem data** aparece num aviso curto no topo da Agenda
+  (`lerVisitasSemHorario`), como a tela antiga fazia.
 - **Fase 2 vai precisar marcar a visita delegada**: hoje o espelho puxa para
   o dono do lead toda visita com `corretor_id <> dono` e a remarcação faz
   `coalesce` para o dono.

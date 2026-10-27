@@ -134,6 +134,39 @@ declare
   v_linha uuid;
   v_visita record;
 begin
+  -- Arquivar o lead tira as visitas futuras da agenda: senão o horário
+  -- continuaria recusado pela trava sem aparecer em tela nenhuma.
+  if tg_op = 'UPDATE' and old.arquivado_em is null and new.arquivado_em is not null then
+    update public.visitas
+       set status = 'cancelada', atualizado_em = now()
+     where lead_id = new.id and status = 'marcada' and inicio >= now();
+    return null;
+  end if;
+
+  -- Desarquivar com data futura devolve a visita à agenda do dono.
+  if tg_op = 'UPDATE' and old.arquivado_em is not null and new.arquivado_em is null
+     and new.corretor_id is not null
+     and v_depois >= now()
+     and not exists (
+       select 1 from public.visitas
+        where lead_id = new.id and status = 'marcada' and inicio = v_depois
+     ) then
+    begin
+      insert into public.visitas (grupo_id, lead_id, corretor_id, inicio, fim, criada_por_usuario)
+      values (new.grupo_id, new.id, new.corretor_id, v_depois, v_depois + interval '60 minutes', auth.uid());
+    exception
+      when exclusion_violation then
+        insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+        values (
+          new.id, null, 'sistema',
+          'A visita de ' || to_char(v_depois at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
+            || ' não voltou à agenda ao desarquivar: já há outra visita nesse horário.',
+          jsonb_build_object('visita_em', v_depois, 'visita_ficou_com', null)
+        );
+    end;
+    return null;
+  end if;
+
   if tg_op = 'UPDATE'
      and new.corretor_id is distinct from old.corretor_id
      and new.corretor_id is not null then
@@ -253,7 +286,7 @@ drop index if exists public.leads_visita_sem_conflito_idx;
 
 drop trigger if exists leads_zz_espelha_visita on public.leads;
 create trigger leads_zz_espelha_visita
-  after insert or update of visita_agendada_em, corretor_id on public.leads
+  after insert or update of visita_agendada_em, corretor_id, arquivado_em on public.leads
   for each row execute function public.espelhar_visita_do_lead();
 
 -- ---------------------------------------------------------------------------

@@ -16,11 +16,18 @@ function texto(item: ItemDaAgenda): string {
 /**
  * "Hoje na agenda" no Início (27/10/2026): os próximos compromissos do dia,
  * no máximo três. Some quando não há nada — seção que vive vazia ensina a
- * pular a seção.
+ * pular a seção. Falha na leitura também some, com log: é acessório.
  */
 export async function HojeNaAgenda({ corretorId, grupoId }: { corretorId: string; grupoId: string }) {
   const agora = new Date();
-  const itens = proximosDeHoje(await lerItensDoDia({ corretorId, grupoId, dia: diaEmSaoPaulo(agora) }), agora);
+  let itens: ItemDaAgenda[];
+  try {
+    itens = proximosDeHoje(await lerItensDoDia({ corretorId, grupoId, dia: diaEmSaoPaulo(agora) }), agora);
+  } catch (err) {
+    // Cartão acessório: falhar aqui não pode derrubar o Início (error.tsx do painel).
+    console.error("[início] agenda de hoje não lida:", err);
+    return null;
+  }
   if (itens.length === 0) return null;
 
   return (
