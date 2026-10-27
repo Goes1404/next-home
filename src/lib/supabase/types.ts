@@ -3712,7 +3712,7 @@ export type Database = {
           status: string
           datas_anteriores: string[]
           passada_em: string | null
-          passada_por_usuario: string | null
+          passada_por: string | null
           criada_por_usuario: string | null
           created_at: string
           atualizado_em: string
@@ -3727,7 +3727,7 @@ export type Database = {
           status?: string
           datas_anteriores?: string[]
           passada_em?: string | null
-          passada_por_usuario?: string | null
+          passada_por?: string | null
           criada_por_usuario?: string | null
           created_at?: string
           atualizado_em?: string
@@ -3742,7 +3742,7 @@ export type Database = {
           status?: string
           datas_anteriores?: string[]
           passada_em?: string | null
-          passada_por_usuario?: string | null
+          passada_por?: string | null
           criada_por_usuario?: string | null
           created_at?: string
           atualizado_em?: string

@@ -13,9 +13,11 @@ const HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", h
 export function ListaDoDia({
   itens,
   preparoPorLead,
+  vistaDe,
 }: {
   itens: ItemDaAgenda[];
   preparoPorLead: Map<string, DadosDoPreparo>;
+  vistaDe?: string;
 }) {
   if (itens.length === 0) {
     return (
@@ -30,7 +32,7 @@ export function ListaDoDia({
       {itens.map((item) => (
         <li key={`${item.tipo}-${item.id}`}>
           {item.tipo === "visita" ? (
-            <CartaoDaVisita visita={item} preparo={preparoPorLead.get(item.leadId) ?? {}} />
+            <CartaoDaVisita visita={item} preparo={preparoPorLead.get(item.leadId) ?? {}} vistaDe={vistaDe} />
           ) : (
             <Link
               href={item.leadId ? `/corretor/leads/${item.leadId}` : "/corretor/anotacoes"}

@@ -5,7 +5,7 @@ import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { conversaEhAtendimento, guardaOTextoDaConversa } from "@/lib/whatsapp/privacidadeDaConversa";
 import { rotuloDaVisita, visitaCombinadaNoChat } from "@/lib/whatsapp/mudancaDeVisita";
-import { horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
+import { horariosDeVisitaSeguros, quemFazAVisitaDoLead } from "@/lib/crm/agendaDoCorretor";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
@@ -1326,7 +1326,10 @@ export async function POST(req: NextRequest) {
        * turno, que é onde o histórico está. Montar o bloco aqui faria a
        * mesma conta em dois lugares.
        */
-      horariosReais: await horariosDeVisitaSeguros(instancia.corretorId),
+      // Visita passada pelo gestor (0223): vale a agenda de quem a faz.
+      horariosReais: await horariosDeVisitaSeguros(
+        conversa.leadId ? await quemFazAVisitaDoLead(conversa.leadId, instancia.corretorId) : instancia.corretorId,
+      ),
       // A renda do cliente vira teto de compra pela mesma conta do site
       // (`capacidadeDeCompra.ts`); a leitura já cai no seed se o banco falhar.
       // As taxas são as do grupo do NÚMERO que recebeu a mensagem (0191), e

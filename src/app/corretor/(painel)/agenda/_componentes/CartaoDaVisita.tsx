@@ -33,10 +33,16 @@ export function CartaoDaVisita({
   visita,
   preparo,
   comDia = false,
+  vistaDe,
+  semFicha = false,
 }: {
   visita: VisitaDaAgenda;
   preparo: DadosDoPreparo;
   comDia?: boolean;
+  /** Quem olha (corretor da sessão): decide o "feita por" e para onde vai a ficha (0223). */
+  vistaDe?: string;
+  /** Na própria página da visita recebida, sem o atalho da ficha. */
+  semFicha?: boolean;
 }) {
   const quando = new Date(visita.inicio);
   const hora = HORA.format(quando);
@@ -45,6 +51,10 @@ export function CartaoDaVisita({
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`
     : null;
   const etiquetas = etiquetasDoPreparo(preparo);
+  // Visita passada pelo gestor: o dono vê quem faz; quem recebeu abre a ficha DA VISITA (sem a conversa).
+  const feitaPorOutro = vistaDe !== undefined && visita.corretorId !== undefined && visita.corretorId !== vistaDe;
+  const leadDeOutro = vistaDe !== undefined && Boolean(visita.donoDoLeadId) && visita.donoDoLeadId !== vistaDe;
+  const linkDaFicha = leadDeOutro ? `/corretor/agenda/visita/${visita.id}` : `/corretor/leads/${visita.leadId}`;
 
   return (
     <article className="cartao p-5">
@@ -55,6 +65,12 @@ export function CartaoDaVisita({
             {hora} — {visita.nome}
           </p>
           <p className="text-fluid-sm mt-0.5 text-apoio">{visita.imovel?.nome ?? "Imóvel não informado"}</p>
+          {feitaPorOutro && visita.corretorNome && (
+            <p className="text-fluid-xs mt-0.5 font-medium text-alerta">Feita por {visita.corretorNome}</p>
+          )}
+          {leadDeOutro && !feitaPorOutro && (
+            <p className="text-fluid-xs mt-0.5 font-medium text-acento">Visita recebida do gestor</p>
+          )}
         </div>
         {visita.confirmadaPeloCliente ? (
           <span className="text-fluid-xs rounded-full bg-ok-lavado px-2.5 py-1 font-semibold text-ok">
@@ -115,9 +131,11 @@ export function CartaoDaVisita({
             Ligar
           </a>
         )}
-        <Link href={`/corretor/leads/${visita.leadId}`} className={BOTAO}>
-          Abrir ficha
-        </Link>
+        {!semFicha && (
+          <Link href={linkDaFicha} className={BOTAO}>
+            Abrir ficha
+          </Link>
+        )}
       </div>
     </article>
   );

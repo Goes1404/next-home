@@ -82,3 +82,28 @@ export async function horariosDeVisitaSeguros(
   }
 }
 
+
+/**
+ * De quem é a agenda que vale para o lead (0223): se o gestor passou a visita
+ * atual do lead a outro corretor, é a de quem FAZ a visita — a IA, que fala
+ * pelo número do dono, oferece a remarcação na disponibilidade dele. Sem
+ * visita passada (ou na falha da leitura), a do dono.
+ */
+export async function quemFazAVisitaDoLead(leadId: string, donoId: string, agora: Date = new Date()): Promise<string> {
+  try {
+    const { data } = await createServiceClient()
+      .from("visitas")
+      .select("corretor_id")
+      .eq("lead_id", leadId)
+      .eq("status", "marcada")
+      .not("passada_em", "is", null)
+      .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString())
+      .order("inicio", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data?.corretor_id ?? donoId;
+  } catch (e) {
+    console.error("[agenda] não foi possível ler quem faz a visita:", e);
+    return donoId;
+  }
+}

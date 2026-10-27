@@ -19,10 +19,12 @@ set local lock_timeout = '5s';
 
 alter table public.visitas
   add column if not exists passada_em timestamptz,
-  add column if not exists passada_por_usuario uuid;
+  add column if not exists passada_por uuid;
 
 comment on column public.visitas.passada_em is
   'Quando o gestor passou a visita para quem a faz (corretor_id ≠ dono do lead). Nulo = visita do dono (0223).';
+comment on column public.visitas.passada_por is
+  'O gestor (corretores.id) que passou a visita. Sem FK de propósito: uma segunda FK para corretores tornaria ambíguo o embed de quem faz a visita.';
 
 create or replace function public.espelhar_visita_do_lead()
 returns trigger
