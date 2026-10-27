@@ -155,13 +155,18 @@ begin
          where id = v_visita.id;
       exception
         when exclusion_violation then
-          insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
-          values (
-            new.id, null, 'sistema',
-            'A visita de ' || to_char(v_visita.inicio at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
-              || ' ficou na agenda do corretor anterior: o novo responsável já tem outra visita nesse horário.',
-            jsonb_build_object('visita_id', v_visita.id, 'visita_ficou_com', v_visita.corretor_id)
-          );
+          -- Se a data também mudou neste update, a remarcação abaixo leva a
+          -- linha ao novo dono na data nova (ou recusa o update): a nota
+          -- só vale quando a visita fica mesmo para trás.
+          if v_depois is not distinct from v_antes then
+            insert into public.lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes)
+            values (
+              new.id, null, 'sistema',
+              'A visita de ' || to_char(v_visita.inicio at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
+                || ' ficou na agenda do corretor anterior: o novo responsável já tem outra visita nesse horário.',
+              jsonb_build_object('visita_id', v_visita.id, 'visita_ficou_com', v_visita.corretor_id)
+            );
+          end if;
       end;
     end loop;
 
@@ -194,9 +199,9 @@ begin
     return null;
   end if;
 
-  -- Desmarcou. Visita que já passou fica como está (o resultado dela é da fase 4).
+  -- Desmarcou. Visita que já começou fica como está (o resultado dela é da fase 4).
   if v_depois is null then
-    if v_antes >= v_corte then
+    if v_antes >= now() then
       update public.visitas
          set status = 'cancelada', atualizado_em = now()
        where lead_id = new.id and status = 'marcada' and inicio = v_antes;
@@ -204,9 +209,13 @@ begin
     return null;
   end if;
 
-  -- Remarcou uma visita que ainda não aconteceu (ou em curso): a mesma linha,
-  -- com quem é o dono agora.
-  if v_antes is not null and v_antes >= v_corte then
+  -- Remarcou uma visita que ainda não aconteceu: a mesma linha, com quem é o
+  -- dono agora. A que está em curso só é remarcação se a hora nova é perto
+  -- (ajuste de horário); o retorno marcado logo depois da visita é visita
+  -- NOVA, senão a que aconteceu sumiria da agenda e dos números.
+  if v_antes is not null
+     and (v_antes >= now()
+          or (v_antes >= v_corte and abs(extract(epoch from v_depois - v_antes)) < 3 * 3600)) then
     update public.visitas
        set inicio = v_depois,
            fim = v_depois + interval '60 minutes',

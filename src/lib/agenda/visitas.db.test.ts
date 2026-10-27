@@ -311,6 +311,50 @@ describe.skipIf(!process.env.DB_TESTE_URL)("visitas com histórico (0222)", () =
       expect((await visitasDo(tx, lead)).map((v) => v.status)).toEqual(["marcada"]);
     }));
 
+  it("marcar o retorno logo depois da visita cria visita nova e não apaga a que aconteceu", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "vis-retorno" });
+      const lead = await novoLead(tx, g.corretorId);
+      const [{ comecou, sabado }] = await tx<{ comecou: Date; sabado: Date }[]>`
+        select now() - interval '50 minutes' as comecou, date_trunc('hour', now()) + interval '4 days' as sabado
+      `;
+      await marcar(tx, lead, comecou);
+      await marcar(tx, lead, sabado);
+      const visitas = await visitasDo(tx, lead);
+      expect(visitas.map((v) => [v.status, v.inicio.getTime()])).toEqual([
+        ["marcada", comecou.getTime()],
+        ["marcada", sabado.getTime()],
+      ]);
+    }));
+
+  it("limpar a data de uma visita que já começou não a cancela", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "vis-limpa-em-curso" });
+      const lead = await novoLead(tx, g.corretorId);
+      const [{ comecou }] = await tx<{ comecou: Date }[]>`select now() - interval '50 minutes' as comecou`;
+      await marcar(tx, lead, comecou);
+      await marcar(tx, lead, null);
+      expect((await visitasDo(tx, lead)).map((v) => v.status)).toEqual(["marcada"]);
+    }));
+
+  it("trocar dono e data juntos sem conflito na data nova não deixa nota de conflito", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "vis-dono-data-nota" });
+      const doGestor = await novoLead(tx, g.gestorId, "Do gestor");
+      const doCorretor = await novoLead(tx, g.corretorId, "Do corretor");
+      await marcar(tx, doGestor, await daqui(tx, 24));
+      await marcar(tx, doCorretor, await daqui(tx, 24));
+      const livre = await daqui(tx, 30);
+      await tx`update public.leads set corretor_id = ${g.gestorId}, visita_agendada_em = ${livre} where id = ${doCorretor}`;
+
+      const [v] = await visitasDo(tx, doCorretor);
+      expect([v.corretor_id, v.inicio.getTime()]).toEqual([g.gestorId, livre.getTime()]);
+      const notas = await tx`
+        select 1 from public.lead_interacoes where lead_id = ${doCorretor} and detalhes ? 'visita_ficou_com'
+      `;
+      expect(notas).toHaveLength(0);
+    }));
+
   it("o grupo da visita é o do lead", () =>
     emTransacaoDesfeita(sql, async (tx) => {
       const g = await criarGrupo(tx, { slug: "vis-grupo" });
