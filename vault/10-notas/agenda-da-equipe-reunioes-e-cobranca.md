@@ -1,6 +1,6 @@
 ---
 title: A Agenda da equipe conta no banco, a visita passada é marcada para o espelho não desfazer, e reunião/bloqueio travam a IA pelo mesmo código 23P01
-aliases: [Agenda fase 2, Agenda fase 3, Agenda fase 4, Agenda fase 5, 0225, 0226, 0227, numeros_da_agenda, passada_em, compromissos, responder_visita, conversa_de_agenda]
+aliases: [0228, agenda_mensagens_tratadas, Agenda fase 2, Agenda fase 3, Agenda fase 4, Agenda fase 5, 0225, 0226, 0227, numeros_da_agenda, passada_em, compromissos, responder_visita, conversa_de_agenda]
 tags: [banco, crm, painel, ia, whatsapp, decisao, armadilha]
 type: decisao
 status: seedling
@@ -74,6 +74,24 @@ a trava de 60 min já vale. Nenhuma visita futura existia, então a carga migrou
   como chega a resposta do corretor (conversa consigo mesmo, `@lid`).
 - Nada grava sem "sim"; nome ambíguo pergunta qual; nome que não existe
   não cria lead; grupo suspenso não responde; sem créditos da IA avisa.
+
+## Pendências fechadas (0228, 28/10/2026)
+
+- **Reentrega do provedor:** o canal grava `(corretor_id, provider_message_id)`
+  em `agenda_mensagens_tratadas` antes de responder; a mesma mensagem de novo
+  bate na chave e é ignorada. Chave por corretor (a guarda de isolamento
+  recusa chave única global em tabela com grupo). Limpa no tick (2 dias).
+- **Fila da cobrança:** quem já tem pergunta pendente fica fora da BUSCA
+  (`not corretor_id in`), não só do laço — senão 20 visitas de um corretor
+  ocupado tapavam a fila dos outros.
+- **Pedido novo no meio da cobrança:** a pergunta nova toma o lugar da
+  pendente; a visita volta à fila (`cobrada_em = null`) e é perguntada de
+  novo quando a conversa terminar. Consulta não mexe na cobrança.
+- **Livres sugeridos ao gestor:** `agendaQueValeParaOLead` (quem faz a
+  visita passada, senão o DONO do lead), nunca a agenda do gestor que pediu.
+- **Lead arquivado:** a varredura encerra (`cancelada`) a visita passada
+  sem resposta em vez de contá-la como `sem_confirmacao` — o lead arquivado
+  some da cobrança e do Início, o corretor não tinha como responder.
 
 ## Como diagnosticar
 

@@ -116,3 +116,14 @@ export async function quemFazAVisitaDoLead(leadId: string, donoId: string, agora
     return donoId;
   }
 }
+
+/**
+ * A agenda que vale para o lead quando quem pede não é necessariamente o
+ * dono (o gestor, pelo WhatsApp): a de quem faz a visita passada, senão a do
+ * dono do lead. Null se o lead não tem dono.
+ */
+export async function agendaQueValeParaOLead(leadId: string, agora: Date = new Date()): Promise<string | null> {
+  const { data } = await createServiceClient().from("leads").select("corretor_id").eq("id", leadId).maybeSingle();
+  if (!data?.corretor_id) return null;
+  return quemFazAVisitaDoLead(leadId, data.corretor_id, agora);
+}

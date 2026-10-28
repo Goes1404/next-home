@@ -12224,3 +12224,14 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
 - O salvo não troca pelo de quem clicou: a Aretz tem três gestores e o
   número dos grupos é o da conta oculta de administração. Trocar = SQL em
   `grupos.envio_grupo_leads_instancia`.
+
+## Agenda: pendências da revisão fechadas (0228, 28/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
+
+- Reentrega do WhatsApp no canal de comandos: `agenda_mensagens_tratadas`, chave (corretor_id, provider_message_id). Chave única só por `provider_message_id` reprova `isolamento.db.test` ("toda chave única de tabela com grupo inclui o grupo ou uma linha-mãe").
+- Cobrança: excluir da busca quem já tem pergunta pendente; filtrar só no laço deixava o `limit 20` cheio de visitas que nunca seriam cobradas.
+- Pedido novo no meio da cobrança devolve a visita à fila (`cobrada_em = null`).
+- Livres sugeridos ao gestor pelo WhatsApp vêm da agenda do dono do lead (`agendaQueValeParaOLead`).
+- Lead arquivado: visita passada sem resposta vira `cancelada` na varredura, não `sem_confirmacao`.
+- Armadilha do teste de banco: duas `visitaPassada` do mesmo corretor no mesmo horário batem na trava de 60 min (23P01) antes do que se quer medir.

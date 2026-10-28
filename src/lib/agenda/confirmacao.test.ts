@@ -9,6 +9,7 @@ const avisos: [string, string][] = [];
 const estados: Record<string, unknown> = {};
 let visitas: unknown[] = [];
 let reivindica = true;
+let comPergunta: string[] = [];
 let rpcResposta: { data: unknown; error: unknown } = { data: "ok", error: null };
 
 vi.mock("server-only", () => ({}));
@@ -20,6 +21,8 @@ vi.mock("./conversaDeAgenda", () => ({
   gravarEstado: async (_s: unknown, p: { corretorId: string; estado: unknown }) => {
     estados[p.corretorId] = p.estado;
   },
+  corretoresComPergunta: async () => comPergunta,
+  limparMensagensTratadas: async () => {},
 }));
 
 function cliente() {
@@ -27,6 +30,8 @@ function cliente() {
     rpc: async () => rpcResposta,
     from: () => {
       let atualizando = false;
+      let fora: string[] = [];
+      let limite = Infinity;
       const cadeia = {
         select: () => cadeia,
         update: () => ((atualizando = true), cadeia),
@@ -35,9 +40,17 @@ function cliente() {
         lte: () => cadeia,
         gte: () => cadeia,
         order: () => cadeia,
-        limit: () => cadeia,
+        not: (c: string, op: string, v: string) => (
+          c === "corretor_id" && op === "in" && (fora = v.replace(/[()"]/g, "").split(",")), cadeia
+        ),
+        limit: (n: number) => ((limite = n), cadeia),
         then: (r: (x: { data: unknown; error: null }) => unknown) =>
-          r({ data: atualizando ? (reivindica ? [{ id: "x" }] : []) : visitas, error: null }),
+          r({
+            data: atualizando
+              ? reivindica ? [{ id: "x" }] : []
+              : (visitas as { corretor_id: string }[]).filter((v) => !fora.includes(v.corretor_id)).slice(0, limite),
+            error: null,
+          }),
       };
       return cadeia;
     },
@@ -67,6 +80,7 @@ describe("cobrarVisitas", () => {
     for (const k of Object.keys(estados)) delete estados[k];
     visitas = [];
     reivindica = true;
+    comPergunta = [];
     rpcResposta = { data: 0, error: null };
   });
 
@@ -87,6 +101,15 @@ describe("cobrarVisitas", () => {
     estados.a = { tipo: "confirmar" };
     visitas = [visita("v1", "a")];
     expect(await cobrarVisitas(cliente(), TARDE)).toBe(0);
+  });
+
+  it("a fila não trava: visitas de quem já tem pergunta pendente ficam fora da busca", async () => {
+    // 30 visitas do corretor "a", que já está respondendo outra coisa, antes da única de "b".
+    comPergunta = ["a"];
+    estados.a = { tipo: "confirmar" };
+    visitas = [...Array.from({ length: 30 }, (_, i) => visita(`va${i}`, "a")), visita("vb", "b")];
+    expect(await cobrarVisitas(cliente(), TARDE)).toBe(1);
+    expect(avisos.map((x) => x[0])).toEqual(["b"]);
   });
 
   it("visita que outro tick já reivindicou não é cobrada de novo", async () => {

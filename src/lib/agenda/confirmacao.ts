@@ -4,7 +4,7 @@ import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { dentroDoHorarioDeAviso } from "@/lib/crm/clienteSemResposta";
 import { MENSAGEM_CONFLITO } from "./conflito";
 import { formatarQuando } from "./comandos/textos";
-import { gravarEstado, lerEstado } from "./conversaDeAgenda";
+import { corretoresComPergunta, gravarEstado, lerEstado, limparMensagensTratadas } from "./conversaDeAgenda";
 
 type Supa = ReturnType<typeof createServiceClient>;
 
@@ -53,6 +53,17 @@ export async function responderVisita(
   }
 }
 
+/** A visita volta a esperar a cobrança (pedido novo tomou o lugar da pergunta). */
+export async function devolverCobranca(supabase: Supa, p: { visitaId: string; corretorId: string }): Promise<void> {
+  const { error } = await supabase
+    .from("visitas")
+    .update({ cobrada_em: null })
+    .eq("id", p.visitaId)
+    .eq("corretor_id", p.corretorId)
+    .eq("status", "marcada");
+  if (error) console.error("[agenda] cobrança não devolvida à fila:", error.message);
+}
+
 export function textoDaCobranca(nome: string, inicio: string): string {
   return [
     `A visita com ${nome} (${formatarQuando(inicio)}) aconteceu?`,
@@ -78,13 +89,18 @@ type VisitaACobrar = {
  * resposta "1" tem de saber a que visita se refere, então a próxima espera
  * a anterior ser respondida ou vencer. Reivindica antes de mandar (o tick
  * pode rodar duas vezes): `cobrada_em` só é gravado por quem o achou nulo.
+ *
+ * Quem já tem pergunta pendente fica fora da BUSCA, não só do laço: senão
+ * as 20 primeiras visitas de um corretor ocupado tapariam a fila dos outros.
  */
 export async function cobrarVisitas(supabase: Supa = createServiceClient(), agora = new Date()): Promise<number> {
   const { error: erroVarredura } = await supabase.rpc("marcar_visitas_sem_confirmacao");
   if (erroVarredura) console.error("[agenda] varredura de sem confirmação:", erroVarredura.message);
+  await limparMensagensTratadas(supabase, agora);
   if (!dentroDoHorarioDeAviso(agora)) return 0;
 
-  const { data, error } = await supabase
+  const ocupados = await corretoresComPergunta(supabase, agora);
+  let busca = supabase
     .from("visitas")
     .select("id, inicio, corretor_id, grupo_id, lead:leads!visitas_lead_id_fkey(nome, arquivado_em)")
     .eq("status", "marcada")
@@ -93,6 +109,8 @@ export async function cobrarVisitas(supabase: Supa = createServiceClient(), agor
     .gte("inicio", new Date(agora.getTime() - COBRAR_ATE_H * 3_600_000).toISOString())
     .order("inicio", { ascending: true })
     .limit(20);
+  if (ocupados.length) busca = busca.not("corretor_id", "in", `(${ocupados.join(",")})`);
+  const { data, error } = await busca;
   if (error) throw new Error(`Falha ao ler as visitas a cobrar: ${error.message}`);
 
   const jaCobrados = new Set<string>();

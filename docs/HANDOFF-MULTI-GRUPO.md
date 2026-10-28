@@ -425,3 +425,5 @@ site público desatualizado; botões do site do grupo com o verde padrão.
   (`action: conversa_com_o_sistema`) como chega a resposta do corretor —
   conversa consigo mesmo (`fromMe`) ou número pessoal (entrada). Só foi
   raciocinado, nunca medido com payload de produção.
+
+- **Pendências da revisão (28/10, branch `agenda-pendencias`, migration 0228):** reentrega do provedor ignorada, fila da cobrança sem trava, cobrança devolvida à fila em pedido novo, livres do gestor da agenda do dono, lead arquivado não conta como sem confirmação.

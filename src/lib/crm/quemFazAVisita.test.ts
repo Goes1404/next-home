@@ -7,11 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 let resposta: { data: { corretor_id: string } | null } | Error = { data: null };
 const filtros: [string, unknown][] = [];
+let donoDoLead: { data: { corretor_id: string | null } | null } = { data: null };
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
-    from: () => {
+    from: (tabela: string) => {
       const cadeia = {
         select: () => cadeia,
         eq: (c: string, v: unknown) => (filtros.push([c, v]), cadeia),
@@ -20,6 +21,7 @@ vi.mock("@/lib/supabase/service", () => ({
         order: () => cadeia,
         limit: () => cadeia,
         maybeSingle: async () => {
+          if (tabela === "leads") return donoDoLead;
           if (resposta instanceof Error) throw resposta;
           return resposta;
         },
@@ -29,7 +31,7 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
-const { quemFazAVisitaDoLead } = await import("./agendaDoCorretor");
+const { quemFazAVisitaDoLead, agendaQueValeParaOLead } = await import("./agendaDoCorretor");
 
 describe("quemFazAVisitaDoLead", () => {
   beforeEach(() => {
@@ -56,5 +58,34 @@ describe("quemFazAVisitaDoLead", () => {
   it("na falha da leitura, o dono (a resposta ao cliente não pode cair)", async () => {
     resposta = new Error("rede");
     expect(await quemFazAVisitaDoLead("l1", "a")).toBe("a");
+  });
+});
+
+/*
+ * O gestor marca pelo WhatsApp a visita de um lead de outro corretor e o
+ * horário está ocupado: os livres sugeridos são da agenda de quem faz a
+ * visita (o dono, ou quem a recebeu), nunca da do gestor que pediu.
+ */
+describe("agendaQueValeParaOLead", () => {
+  beforeEach(() => {
+    filtros.length = 0;
+  });
+
+  it("sem visita passada, a do dono do lead (não a de quem pediu)", async () => {
+    resposta = { data: null };
+    donoDoLead = { data: { corretor_id: "dono" } };
+    expect(await agendaQueValeParaOLead("l1")).toBe("dono");
+  });
+
+  it("com visita passada, a de quem a recebeu", async () => {
+    resposta = { data: { corretor_id: "b" } };
+    donoDoLead = { data: { corretor_id: "dono" } };
+    expect(await agendaQueValeParaOLead("l1")).toBe("b");
+  });
+
+  it("lead sem dono: nenhuma agenda", async () => {
+    resposta = { data: null };
+    donoDoLead = { data: { corretor_id: null } };
+    expect(await agendaQueValeParaOLead("l1")).toBeNull();
   });
 });
