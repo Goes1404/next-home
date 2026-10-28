@@ -1,4 +1,4 @@
-// Agenda da equipe (0223), medida no banco local (`npm run db:teste`).
+// Agenda da equipe (0225), medida no banco local (`npm run db:teste`).
 //
 // A visita passada pelo gestor a outro corretor (B) continua com B quando o
 // lead muda de dono ou a visita é remarcada, e a reserva da IA usa a grade de
@@ -62,7 +62,7 @@ async function numeros(sql: Conexao, grupoId: string, corretorId: string | null,
   return linhas.map((l) => ({ ...l }));
 }
 
-describe.skipIf(!process.env.DB_TESTE_URL)("agenda da equipe (0223)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("agenda da equipe (0225)", () => {
   let sql: Sql;
 
   beforeAll(async () => {

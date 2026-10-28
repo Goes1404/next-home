@@ -234,7 +234,7 @@ Regras:
   entrar nas listas de `src/lib/grupos/` (`tabelasDoGrupo.ts`,
   `servicoComGrupo.test.ts`).
 - Migration aditiva, aplicada ANTES do deploy; número livre a partir da
-  **0222** (conferir contra `origin/*` e `RESERVADOS` em
+  **0224** (conferir contra `origin/*` e `RESERVADOS` em
   `migrations.test.ts`). As 0218–0219 da branch
   `ligacao-e-retorno-pelo-grupo` ainda não estão publicadas.
 - Segunda FK entre as mesmas tabelas (ex.: visita → corretor original e

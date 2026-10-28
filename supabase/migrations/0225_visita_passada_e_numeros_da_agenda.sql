@@ -1,8 +1,8 @@
--- 0223 — Agenda da equipe: visita passada e números do mês (27/10/2026).
+-- 0225 — Agenda da equipe: visita passada e números do mês (27/10/2026).
 --
 -- 1. O gestor passa uma visita de um corretor (A, dono do lead) para outro
 --    (B). Só a visita muda; o lead continua de A. `passada_em` marca a
---    passagem para o espelho do lead (0222) NÃO desfazer: a troca de dono
+--    passagem para o espelho do lead (0224) NÃO desfazer: a troca de dono
 --    do lead só leva as visitas não passadas, e a remarcação mantém B.
 -- 2. A reserva da IA (`reservar_horario_visita`) confere a grade de quem
 --    faz a visita passada, não a do dono do lead.
@@ -22,7 +22,7 @@ alter table public.visitas
   add column if not exists passada_por uuid;
 
 comment on column public.visitas.passada_em is
-  'Quando o gestor passou a visita para quem a faz (corretor_id ≠ dono do lead). Nulo = visita do dono (0223).';
+  'Quando o gestor passou a visita para quem a faz (corretor_id ≠ dono do lead). Nulo = visita do dono (0225).';
 comment on column public.visitas.passada_por is
   'O gestor (corretores.id) que passou a visita. Sem FK de propósito: uma segunda FK para corretores tornaria ambíguo o embed de quem faz a visita.';
 
@@ -186,7 +186,7 @@ end;
 $$;
 
 comment on function public.espelhar_visita_do_lead() is
-  'Espelha leads.visita_agendada_em (e a troca de dono) em public.visitas (0222). Visita passada (passada_em) fica com quem a faz (0223).';
+  'Espelha leads.visita_agendada_em (e a troca de dono) em public.visitas (0224). Visita passada (passada_em) fica com quem a faz (0225).';
 revoke all on function public.espelhar_visita_do_lead() from public, anon, authenticated;
 
 create or replace function public.reservar_horario_visita(p_lead_id uuid, p_quando timestamp with time zone)
@@ -207,7 +207,7 @@ begin
     return false;
   end if;
 
-  -- Visita passada pelo gestor (0223): a grade é a de quem FAZ a visita.
+  -- Visita passada pelo gestor (0225): a grade é a de quem FAZ a visita.
   select coalesce((
     select v.corretor_id from public.visitas v
      where v.lead_id = p_lead_id
@@ -251,7 +251,7 @@ begin
                                     then etapa_alterada_em else now() end
      where id = p_lead_id;
   exception
-    -- unique: o índice da 0074 (mesmo instante); exclusion: a trava de 60 min da 0222.
+    -- unique: o índice da 0074 (mesmo instante); exclusion: a trava de 60 min da 0224.
     when unique_violation or exclusion_violation then
       return false;
   end;
@@ -332,7 +332,7 @@ as $$
 $$;
 
 comment on function public.numeros_da_agenda(uuid, uuid, date, date) is
-  'Números da Agenda por mês de São Paulo (0223). Só o servidor chama, com o grupo da sessão.';
+  'Números da Agenda por mês de São Paulo (0225). Só o servidor chama, com o grupo da sessão.';
 revoke all on function public.numeros_da_agenda(uuid, uuid, date, date) from public, anon, authenticated;
 grant execute on function public.numeros_da_agenda(uuid, uuid, date, date) to service_role;
 

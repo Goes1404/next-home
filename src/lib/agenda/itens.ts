@@ -11,7 +11,7 @@ export type ItemDaAgenda =
       telefone: string | null;
       imovel: { nome: string; endereco: string | null } | null;
       confirmadaPeloCliente: boolean;
-      /** Quem FAZ a visita (0223: pode não ser o dono do lead). */
+      /** Quem FAZ a visita (0225: pode não ser o dono do lead). */
       corretorId?: string;
       corretorNome?: string | null;
       donoDoLeadId?: string | null;
@@ -20,7 +20,7 @@ export type ItemDaAgenda =
       status?: string;
     }
   | {
-      /** Reunião do gestor ou bloqueio pessoal (0224). */
+      /** Reunião do gestor ou bloqueio pessoal (0226). */
       tipo: "compromisso";
       id: string;
       inicio: string;

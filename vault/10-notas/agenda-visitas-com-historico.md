@@ -1,6 +1,6 @@
 ---
 title: A visita ganhou linha própria espelhada do lead, e a trava passou a ser de 60 minutos
-aliases: [visitas, 0222, Agenda fase 1, espelhar_visita_do_lead, visitas_sem_conflito]
+aliases: [visitas, 0224, Agenda fase 1, espelhar_visita_do_lead, visitas_sem_conflito]
 tags: [banco, crm, painel, ia, decisao, armadilha]
 type: decisao
 status: growing
@@ -13,7 +13,7 @@ summary: Cada mudança de leads.visita_agendada_em vira linha em visitas por gat
 ---
 # A visita ganhou linha própria espelhada do lead
 
-**O que mudou (0222, não publicada em 27/10/2026).** Uma visita era só a
+**O que mudou (0224, não publicada em 27/10/2026).** Uma visita era só a
 coluna `leads.visita_agendada_em`: uma por lead, sem histórico, e a trava da
 0074 barrava só o MESMO minuto (10h e 10h30 passavam). Agora existe
 `public.visitas`, uma linha por visita, com status e `datas_anteriores`.
@@ -34,7 +34,7 @@ tstzrange(inicio, fim, '[)') with &&) where (status = 'marcada')`. Recusa com
 
 - **O índice da 0074 derrubava a troca de dono.** Ele é do DONO do lead:
   passar um lead para quem já tinha visita no mesmo minuto falhava com 23505,
-  e a saída do corretor caía por isso. A 0222 tira o índice.
+  e a saída do corretor caía por isso. A 0224 tira o índice.
 - **A IA oferecia o que a trava recusa.** `proximosHorarios` comparava
   instante exato contra ocupados lidos de `leads`. Agora descarta a vaga que
   cruza [início, início + 60) e `agendaDoCorretor` lê de `visitas`. Regra: a
@@ -58,7 +58,7 @@ tstzrange(inicio, fim, '[)') with &&) where (status = 'marcada')`. Recusa com
 
 - Visita do lead não aparece na Agenda: `select * from visitas where lead_id = …`;
   se vazio e o lead tem data futura, ver nota `visita_ficou_com` na linha do
-  tempo ou o `notice` do backfill da 0222 (pares legados a menos de 60 min).
+  tempo ou o `notice` do backfill da 0224 (pares legados a menos de 60 min).
 - IA recusando horário que ela mesma ofereceu: conferir `visitas` marcadas do
   corretor no intervalo de 60 min.
 

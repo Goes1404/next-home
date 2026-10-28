@@ -68,7 +68,7 @@ export async function registrarVisitaCombinada(conversaId: string): Promise<Resu
     })
     .eq("id", conversa.lead_id);
   if (error) {
-    // A trava de 60 min da 0222: um corretor não recebe duas pessoas ao mesmo tempo.
+    // A trava de 60 min da 0224: um corretor não recebe duas pessoas ao mesmo tempo.
     return ehConflitoDeHorario(error)
       ? { erro: MENSAGEM_CONFLITO }
       : { erro: "Não foi possível registrar agora. Tente novamente." };

@@ -676,7 +676,7 @@ export async function GET(req: NextRequest) {
     console.error("[lembrete de tarefa]", e);
     return 0;
   });
-  // "A visita aconteceu?" (Agenda, 0225): aviso ao CORRETOR, na janela dele
+  // "A visita aconteceu?" (Agenda, 0227): aviso ao CORRETOR, na janela dele
   // (7h–21h59), por isso antes da janela comercial do cliente.
   const visitasCobradas = await cobrarVisitas(supabase).catch((e) => {
     console.error("[visita aconteceu]", e);

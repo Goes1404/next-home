@@ -30,6 +30,7 @@ export function ConfigurarGruposDeLeads({
   padraoDoNome,
   nomeDaImobiliaria,
   gruposDoCentral,
+  erroDosGrupos,
 }: {
   instanciaAtual: string | null;
   instancias: Instancia[];
@@ -37,6 +38,7 @@ export function ConfigurarGruposDeLeads({
   padraoDoNome: string | null;
   nomeDaImobiliaria: string;
   gruposDoCentral: GrupoDoCentral[];
+  erroDosGrupos?: string;
 }) {
   const [escolhida, setEscolhida] = useState(instanciaAtual ?? "");
   const [padrao, setPadrao] = useState(padraoDoNome ?? "");
@@ -58,6 +60,15 @@ export function ConfigurarGruposDeLeads({
   const exemplo = corretores[0]?.nome ?? "Fernando";
   const nomeDeExemplo = nomeEsperadoDoGrupo(padrao.trim() || null, exemplo, nomeDaImobiliaria);
   const jidsEmUso = new Map(corretores.filter((c) => c.grupoJid).map((c) => [c.grupoJid as string, c.id]));
+  const nomeDoCorretor = new Map(corretores.map((c) => [c.id, c.nome]));
+  // O seletor à mão fica sempre à vista; sem grupos para escolher, ele diz o porquê.
+  const semEscolha = !instanciaAtual
+    ? "Salve o número central"
+    : erroDosGrupos
+      ? "Grupos não lidos"
+      : gruposDoCentral.length === 0
+        ? "Nenhum grupo no número"
+        : null;
 
   return (
     <section id="grupos" className="cartao scroll-mt-28 space-y-5 p-5 sm:p-6">
@@ -138,7 +149,7 @@ export function ConfigurarGruposDeLeads({
         <div aria-hidden className="hidden px-3 text-fluid-xs font-semibold tracking-wider text-apoio uppercase md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_17rem] md:gap-3">
           <span>Corretor</span>
           <span>Grupo</span>
-          {gruposDoCentral.length > 0 && <span>Escolher à mão</span>}
+          <span>Escolher à mão</span>
         </div>
         <ul className="space-y-2">
           {corretores.map((c) => (
@@ -159,29 +170,64 @@ export function ConfigurarGruposDeLeads({
                 </span>
                 {c.manual && <span className="text-fluid-xs text-apoio">escolhido à mão</span>}
               </span>
-              {gruposDoCentral.length > 0 && (
-                <select
-                  aria-label={`Grupo de ${c.nome}`}
-                  value={c.manual && c.grupoJid ? c.grupoJid : ""}
-                  disabled={pendente}
-                  onChange={(e) => executar(() => vincularGrupoDoCorretor(c.id, e.target.value || null))}
-                  className={CAMPO}
-                >
-                  <option value="">Achar pelo nome</option>
-                  {gruposDoCentral.map((g) => {
-                    const deOutro = jidsEmUso.has(g.jid) && jidsEmUso.get(g.jid) !== c.id;
-                    return (
-                      <option key={g.jid} value={g.jid} disabled={deOutro}>
-                        {g.nome}
-                        {deOutro ? " (de outro corretor)" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              )}
+              <select
+                aria-label={`Grupo de ${c.nome}`}
+                value={c.manual && c.grupoJid ? c.grupoJid : ""}
+                disabled={pendente || semEscolha !== null}
+                onChange={(e) => executar(() => vincularGrupoDoCorretor(c.id, e.target.value || null))}
+                className={`${CAMPO} disabled:opacity-60`}
+              >
+                <option value="">{semEscolha ?? "Achar pelo nome"}</option>
+                {gruposDoCentral.map((g) => {
+                  const deOutro = jidsEmUso.has(g.jid) && jidsEmUso.get(g.jid) !== c.id;
+                  return (
+                    <option key={g.jid} value={g.jid} disabled={deOutro}>
+                      {g.nome}
+                      {deOutro ? " (de outro corretor)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-fluid-sm font-semibold text-titulo">
+          Grupos neste número{instanciaAtual && !erroDosGrupos ? ` (${gruposDoCentral.length})` : ""}
+        </p>
+        {!instanciaAtual ? (
+          <p className="text-fluid-xs text-apoio">Salve o número central para ver os grupos de que ele participa.</p>
+        ) : erroDosGrupos ? (
+          <p className="rounded-xl border border-alerta-linha bg-alerta-lavado px-3 py-2 text-fluid-xs text-alerta">
+            Não foi possível ler os grupos do número central: {erroDosGrupos}
+          </p>
+        ) : gruposDoCentral.length === 0 ? (
+          <p className="text-fluid-xs text-apoio">
+            O número central não participa de nenhum grupo. Adicione-o aos grupos dos corretores e recarregue a página.
+          </p>
+        ) : (
+          <ul className="max-h-80 space-y-1.5 overflow-y-auto rounded-2xl border border-linha bg-vidro p-2">
+            {gruposDoCentral.map((g) => {
+              const dono = jidsEmUso.get(g.jid);
+              return (
+                <li key={g.jid} className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+                  <span className="min-w-0 break-words text-fluid-sm text-titulo">{g.nome}</span>
+                  <span
+                    className={
+                      dono
+                        ? "rounded-full bg-ok-lavado px-2.5 py-0.5 text-fluid-xs font-semibold text-ok"
+                        : "rounded-full border border-linha px-2.5 py-0.5 text-fluid-xs text-apoio"
+                    }
+                  >
+                    {dono ? nomeDoCorretor.get(dono) : "livre"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </section>
   );

@@ -38,7 +38,7 @@ export async function alimentarListasVivas(agora: Date = new Date()): Promise<nu
   const { data: vivas } = await supabase
     .from("whatsapp_campanhas")
     .select(
-      "id, corretor_id, grupo_id, criterio, mensagem_base, mensagem_base_b, variante_vencedora, ignorar_janela, contexto_template, status, total_leads, empreendimento:empreendimentos(nome)",
+      "id, corretor_id, grupo_id, criterio, mensagem_base, mensagem_base_b, variante_vencedora, contexto_template, status, total_leads, empreendimento:empreendimentos(nome)",
     )
     .eq("viva", true)
     .gt("viva_ate", agora.toISOString())
@@ -109,7 +109,9 @@ export async function alimentarListasVivas(agora: Date = new Date()): Promise<nu
         contexto: c.contexto_template as ContextoTemplate | null,
         // A reserva de {imovel} com a região do grupo da lista, nunca a de outro.
         regiaoDaCasa: (await lerCasaDoGrupo(c.grupo_id)).regiao,
-        ignorarJanela: c.ignorar_janela,
+        // Lista "de qualquer hora" não existe mais (27/10/2026): a marca
+        // antiga na linha não muda o agendamento, e o disparador nem a lê.
+        ignorarJanela: false,
         iniciarEm: ultimo?.agendado_para ?? agora,
       });
 

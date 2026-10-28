@@ -18,7 +18,7 @@
 
 - Dia, hora e mês SEMPRE em `America/Sao_Paulo`: no TS por `Intl.DateTimeFormat` com `timeZone`, no SQL por `at time zone 'America/Sao_Paulo'`. Nunca `Date.getDay()`/`getDate()`/`getMonth()` sobre instante.
 - Tabela nova: `grupo_id`, gatilhos `<tabela>_00_grupo` / `<tabela>_zz_grupo_update` / `<tabela>_zz_grupo_insert`, policy restritiva `isolamento_por_grupo`, `revoke all` de `anon` e `authenticated` — copiar o bloco de `supabase/migrations/0204_roleta_dos_anuncios.sql:41-66`.
-- Migration nova: `supabase/migrations/0222_visitas_com_historico.sql` (conferir que 0222 está livre em `origin/*` e fora de `RESERVADOS` em `src/lib/migrations.test.ts`). Aditiva; aplicada em produção ANTES do deploy.
+- Migration nova: `supabase/migrations/0222_visitas_com_historico.sql` (conferir que 0224 está livre em `origin/*` e fora de `RESERVADOS` em `src/lib/migrations.test.ts`). Aditiva; aplicada em produção ANTES do deploy.
 - Duração da visita: 60 min (`DURACAO_VISITA_MIN` em `src/lib/crm/agendaIcs.ts`).
 - Mensagem de conflito no painel, exata: `Você já tem outra visita nesse horário.`
 - Régua do Painel de Bolso: nenhuma lista na tela recebe mais que 30 itens; contagens do mês vêm agregadas.
@@ -85,10 +85,10 @@ Backfill no fim da migration: um bloco `do $$ … $$` insere uma `marcada` para 
   - `trocar o dono sem conflito leva a visita futura junto` → `corretor_id` da visita = B.
   - `grupo da visita é o do lead` → `grupo_id` igual ao do lead.
 - [ ] **Step 3: Rodar e ver falhar.** `npx vitest run --dir src src/lib/agenda/migracaoVisitas.test.ts` → FAIL (arquivo não existe). `npm run db:teste` e o comando de banco das Global Constraints → FAIL (`relation "visitas" does not exist`).
-- [ ] **Step 4: Escrever a migration** conforme Interfaces e a tabela de regras. Também `comment on table public.visitas is 'Uma linha por visita, com histórico (0222). Espelho de leads.visita_agendada_em pelo gatilho leads_zz_espelha_visita. Só o servidor lê e grava.'`.
+- [ ] **Step 4: Escrever a migration** conforme Interfaces e a tabela de regras. Também `comment on table public.visitas is 'Uma linha por visita, com histórico (0224). Espelho de leads.visita_agendada_em pelo gatilho leads_zz_espelha_visita. Só o servidor lê e grava.'`.
 - [ ] **Step 5: Subir o banco de novo e rodar.** `npm run db:teste` (aplica TODAS as migrations do zero) + testes de banco desta task + `src/lib/grupos/isolamento.db.test.ts` → PASS (a suíte de isolamento confere grupo, gatilhos e policy de toda tabela).
 - [ ] **Step 6: Tipos.** Acrescentar `visitas` em `src/lib/supabase/types.ts` (ou gerar contra o banco local e copiar só o bloco novo). `npx tsc --noEmit -p .` → só os 4 erros conhecidos do PixelMeta.
-- [ ] **Step 7: Commit.** `git add supabase/migrations/0222_visitas_com_historico.sql src/lib/agenda/ src/lib/supabase/types.ts && git commit -m "feat(agenda): visitas com histórico espelhadas do lead (0222)"`
+- [ ] **Step 7: Commit.** `git add supabase/migrations/0222_visitas_com_historico.sql src/lib/agenda/ src/lib/supabase/types.ts && git commit -m "feat(agenda): visitas com histórico espelhadas do lead (0224)"`
 
 ### Task 2: Conflito de 60 min com mensagem certa nos escritores
 
@@ -96,10 +96,10 @@ Backfill no fim da migration: um bloco `do $$ … $$` insere uma `marcada` para 
 - Create: `src/lib/agenda/conflito.ts`, `src/lib/agenda/conflito.test.ts`
 - Modify: `src/app/corretor/actions.ts:648-668` (`definirVisitaEm`)
 - Modify: `src/app/corretor/(painel)/_componentes/acoesVisitaCombinada.ts:66-71` (`registrarVisitaCombinada`)
-- Modify: `src/lib/crm/retornoPeloGrupo/aplicarAoLead.ts:250-255` (só o comentário: a trava agora é a exclusão de 60 min da 0222)
+- Modify: `src/lib/crm/retornoPeloGrupo/aplicarAoLead.ts:250-255` (só o comentário: a trava agora é a exclusão de 60 min da 0224)
 
 **Interfaces:**
-- Produces: `export function ehConflitoDeHorario(erro: { code?: string } | null | undefined): boolean` — `true` para `"23505"` (índice da 0074) e `"23P01"` (exclusão da 0222).
+- Produces: `export function ehConflitoDeHorario(erro: { code?: string } | null | undefined): boolean` — `true` para `"23505"` (índice da 0074) e `"23P01"` (exclusão da 0224).
 - Produces: `export const MENSAGEM_CONFLITO = "Você já tem outra visita nesse horário."`
 
 - [ ] **Step 1: Teste.** `conflito.test.ts`: `ehConflitoDeHorario({ code: "23P01" })` e `({ code: "23505" })` → `true`; `({ code: "42501" })`, `null`, `undefined` → `false`.
@@ -219,5 +219,5 @@ Ordem da página (celular primeiro): cabeçalho `CabecalhoDeTela secao="Leads" t
 
 - [ ] **Step 1:** `npx tsc --noEmit -p .` (só PixelMeta), `npx vitest run --dir src` (verde), `npm run db:teste` + suíte de banco (verde), `npx next build` até "Compiled" sem erro de import de servidor em cliente. Skill `superpowers:verification-before-completion`.
 - [ ] **Step 2: Conferência de produção, só leitura** (skill `aplicar-migration-producao`, sem aplicar): `select l.corretor_id, l.visita_agendada_em, count(*) over (partition by l.corretor_id) from leads l where l.visita_agendada_em >= now() order by 1, 2;` — listar pares do mesmo corretor a menos de 60 min; anotar no handoff (o backfill pula esses com `notice`).
-- [ ] **Step 3: Registro** (skill `fechar-tarefa`): nota `vault/10-notas/agenda-visitas-com-historico.md` (frontmatter completo; tags do `vocabulario-de-tags.md`), link no `MOC — CRM e Painel`, seção curta no fim de `docs/MEMORIA.md` (o espelho lead→visitas e por quê; a exclusão de 60 min; passado não migrado), e `docs/HANDOFF-MULTI-GRUPO.md` com a branch, a 0222 "aplicar ANTES" e "publicar junto com a Fase 2".
+- [ ] **Step 3: Registro** (skill `fechar-tarefa`): nota `vault/10-notas/agenda-visitas-com-historico.md` (frontmatter completo; tags do `vocabulario-de-tags.md`), link no `MOC — CRM e Painel`, seção curta no fim de `docs/MEMORIA.md` (o espelho lead→visitas e por quê; a exclusão de 60 min; passado não migrado), e `docs/HANDOFF-MULTI-GRUPO.md` com a branch, a 0224 "aplicar ANTES" e "publicar junto com a Fase 2".
 - [ ] **Step 4: Commit.** `git commit -m "docs(agenda): fase 1 no vault, na memória e no handoff"`

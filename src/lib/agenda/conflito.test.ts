@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MENSAGEM_CONFLITO, ehConflitoDeHorario } from "./conflito";
 
 describe("ehConflitoDeHorario", () => {
-  it("reconhece a exclusão de 60 min (0222) e o índice único antigo (0074)", () => {
+  it("reconhece a exclusão de 60 min (0224) e o índice único antigo (0074)", () => {
     expect(ehConflitoDeHorario({ code: "23P01" })).toBe(true);
     expect(ehConflitoDeHorario({ code: "23505" })).toBe(true);
   });
@@ -23,7 +23,7 @@ describe("ehConflitoDeHorario", () => {
 
 /*
  * Os escritores do painel que gravam a visita respondem ao conflito com a
- * mensagem certa. Antes da 0222 só o `23505` existia; com a exclusão de 60 min
+ * mensagem certa. Antes da 0224 só o `23505` existia; com a exclusão de 60 min
  * o banco recusa com `23P01`, e um `=== "23505"` solto mostraria "Não foi
  * possível salvar" para um horário simplesmente ocupado.
  */

@@ -163,6 +163,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/impulsionamentos.ts": { categoria: "helper", motivo: "lead e corretor da mensagem que o webhook validou" },
   "src/lib/whatsapp/midiaRecebida.ts": { categoria: "helper", motivo: "mídia da mensagem que o webhook validou, guardada na pasta do lead" },
   "src/lib/whatsapp/respostaAosFollowups.ts": { categoria: "helper", motivo: "conversa em atendimento, validada por quem chama" },
+  "src/lib/whatsapp/primeiroContatoNoEnvio.ts": { categoria: "helper", motivo: "conta e libera o primeiro contato do corretor que quem chama já resolveu (instância, dono da lista, sorteado da roleta)" },
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
   "src/lib/marcaDoCrm/ler.ts": { categoria: "helper", motivo: "nome, logo e endereço principal do grupo que quem chama validou (sessão, ficha lida pelo cron, instância do webhook); lê UMA linha pelo id" },
   "src/lib/imovelPublico/ler.ts": { categoria: "helper", motivo: "slug do grupo, grupo pelo slug da URL (a ficha pública) e base do link do imóvel do grupo que quem chama validou; lê UMA linha de grupos" },

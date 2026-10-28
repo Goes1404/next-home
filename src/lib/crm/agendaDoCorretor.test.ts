@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
  * A IA oferece horários a partir das visitas OCUPADAS do corretor. Desde a
- * 0222 a trava de conflito mora em `visitas` (por quem faz a visita, 60 min);
+ * 0224 a trava de conflito mora em `visitas` (por quem faz a visita, 60 min);
  * ler os ocupados de `leads` deixaria a IA oferecer o que a trava recusa
  * (revisão da fase 1 da Agenda, 27/10/2026).
  */

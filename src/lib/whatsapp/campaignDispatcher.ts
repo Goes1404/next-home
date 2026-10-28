@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { inicioDoDiaEmSaoPaulo } from "@/lib/imagens/imagensTipos";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { dentroDaJanela, dentroDaJanelaDoCorretor } from "./antiBan";
 import { varrerQuedasDeNumero } from "./avisoDeQueda";
@@ -46,6 +45,7 @@ import {
   motivoDoPrimeiroContato,
   vagasDePrimeiroContato,
 } from "./primeiroContato";
+import { contarPrimeirosContatos, nuncaFalouComOCorretor } from "./primeiroContatoNoEnvio";
 import { alimentarListasVivas } from "./listasVivas";
 import { MOTIVO_SEM_WHATSAPP, motivoDePausaAutomatica, sinaisDesdeABase } from "./pausaAutomatica";
 import { lerSinaisDaLista } from "./sinaisDaLista";
@@ -220,12 +220,12 @@ export async function processarFilaCampanhas(params?: {
   // regra que rege o preview em antiBan.ts. Mensagem de campanha às 3h é a
   // assinatura mais clara de robô que existe.
   //
-  // A exceção é a campanha marcada com `ignorar_janela` (0058), pedida
-  // explicitamente pelo corretor. Fora da janela o disparador não para: ele
-  // ESTREITA o escopo para essas campanhas e só desiste quando não existe
-  // nenhuma. Estreitar em vez de sair é o que impede o pior desfecho — um
-  // disparo urgente ficar parado porque outra campanha comum estava na
-  // fila do mesmo número.
+  // Sem exceção desde 27/10/2026. A marca `ignorar_janela` (0058) e a
+  // liberação `janela_liberada_ate` (0155) não têm mais tela que as grave
+  // (saíram em 09/10), mas continuavam valendo aqui — e as duas colunas são
+  // graváveis pela sessão do próprio corretor, pela API. Uma chamada direta
+  // bastava para a lista sair de madrugada, a assinatura mais clara de robô.
+  // Quem decide o horário é só o relógio.
   /*
    * O aviso de queda vem ANTES de tudo, e é deliberado.
    *
@@ -255,23 +255,10 @@ export async function processarFilaCampanhas(params?: {
   const janelaAberta = dentroDaJanela(new Date());
   if (!janelaAberta) {
     resultado.dentroDaJanela = false;
-
-    const { count: urgentes } = await supabase
-      .from("whatsapp_campanhas")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "em_andamento")
-      .or(filtroForaDaJanela());
-
-    if (!urgentes) {
-      resultado.diagnostico.push(
-        "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.",
-      );
-      return resultado;
-    }
-
     resultado.diagnostico.push(
-      "Fora do horário comercial: só as listas marcadas para enviar a qualquer hora estão saindo agora.",
+      "Fora do horário comercial (9h às 20h59, de segunda a sábado). A fila retoma sozinha na próxima janela.",
     );
+    return resultado;
   }
 
   let query = supabase
@@ -305,8 +292,9 @@ export async function processarFilaCampanhas(params?: {
       fimDoOrcamento,
       margemMs,
       vagas: Math.min(ITENS_POR_INSTANCIA_POR_CHAMADA, limiteTotal - resultado.processados),
-      // O expediente do corretor (0148) encurta a janela segura dele: fora
-      // do expediente, só as listas marcadas para "qualquer hora" saem.
+      // O expediente do corretor (0148) só encurta a janela segura: fora
+      // dela ou do expediente, nenhuma lista sai (desde 27/10/2026 não há
+      // mais lista "de qualquer hora").
       somenteUrgentes:
         !janelaAberta ||
         !dentroDaJanelaDoCorretor(new Date(), {
@@ -364,7 +352,7 @@ async function processarInstancia(ctx: {
   fimDoOrcamento: number;
   margemMs: number;
   vagas: number;
-  /** Fora da janela: só campanhas marcadas com `ignorar_janela` entram. */
+  /** Fora do expediente do corretor: nada sai nesta instância. */
   somenteUrgentes: boolean;
 }): Promise<ResultadoInstancia> {
   const { supabase, instancia, dono, fimDoOrcamento, margemMs } = ctx;
@@ -412,17 +400,18 @@ async function processarInstancia(ctx: {
     conectadoEm = estado.conectadoEm.toISOString();
   }
 
-  let queryCampanhas = supabase
+  // Fora do expediente do corretor (0148) nada sai: a exceção para listas
+  // "de qualquer hora" saiu em 27/10/2026 (ver o começo de
+  // `processarFilaCampanhas`).
+  if (ctx.somenteUrgentes) {
+    return vazio("aguardando_horario", "Fora do expediente deste número. A fila retoma sozinha no horário dele.");
+  }
+
+  const { data: campanhasAtivas } = await supabase
     .from("whatsapp_campanhas")
     .select("id")
     .eq("corretor_id", instancia.corretor_id)
     .eq("status", "em_andamento");
-
-  // Fora da janela só sai a lista marcada para "qualquer hora" ou liberada
-  // UMA vez pelo corretor (`janela_liberada_ate`, 0155).
-  if (ctx.somenteUrgentes) queryCampanhas = queryCampanhas.or(filtroForaDaJanela());
-
-  const { data: campanhasAtivas } = await queryCampanhas;
 
   const idsCampanhas = (campanhasAtivas ?? []).map((c) => c.id);
   if (idsCampanhas.length === 0) return vazio("sem_campanha_ativa");
@@ -632,7 +621,7 @@ async function processarInstancia(ctx: {
        * com o motivo à vista, e quem já conversou continua saindo. Antes da
        * cota: o que não sai não gasta a cota do número.
        */
-      const primeiroContato = await nuncaFalouComOCorretor(supabase, item.lead_id, outrosCadastros);
+      const primeiroContato = await nuncaFalouComOCorretor(supabase, [item.lead_id, ...outrosCadastros]);
       if (primeiroContato) {
         primeirosContatos ??= await contarPrimeirosContatos(supabase, instancia.corretor_id);
         const diasDesdeInicio = diasDesde(
@@ -1201,15 +1190,6 @@ async function midiasDoCatalogo(
   return midias.filter((m) => validas.has(m.url) && (m.tipo === "foto" || m.tipo === "planta"));
 }
 
-/**
- * O filtro das listas que podem sair FORA da janela: marcadas para "qualquer
- * hora" (0058) ou liberadas uma vez pelo corretor e ainda dentro do prazo
- * (`janela_liberada_ate`, 0155).
- */
-function filtroForaDaJanela(): string {
-  return `ignorar_janela.eq.true,janela_liberada_ate.gt.${new Date().toISOString()}`;
-}
-
 async function contarPendentes(
   supabase: ReturnType<typeof createServiceClient>,
   idsCampanhas: string[],
@@ -1276,64 +1256,6 @@ async function atualizarProgressoCampanhas(
 
 /** Quantos itens sem vaga de primeiro contato uma chamada adia antes de parar. */
 const ADIADOS_POR_CHAMADA = 25;
-
-/**
- * A pessoa nunca escreveu ao corretor, em nenhum cadastro do mesmo telefone?
- * Em dúvida (sem lead, erro de leitura), trata como primeiro contato: é o
- * lado que protege o número.
- */
-async function nuncaFalouComOCorretor(
-  supabase: ReturnType<typeof createServiceClient>,
-  leadId: string | null,
-  outrosCadastros: string[] = [],
-): Promise<boolean> {
-  if (!leadId) return true;
-  const { data: conversas, error } = await supabase
-    .from("whatsapp_conversas")
-    .select("id")
-    .in("lead_id", [leadId, ...outrosCadastros]);
-  if (error) return true;
-  const ids = (conversas ?? []).map((c) => c.id);
-  if (ids.length === 0) return true;
-  const { count, error: erroDaContagem } = await supabase
-    .from("whatsapp_mensagens")
-    .select("id", { count: "exact", head: true })
-    .in("conversa_id", ids)
-    .eq("remetente", "cliente");
-  if (erroDaContagem) return true;
-  return (count ?? 0) === 0;
-}
-
-/**
- * Os primeiros contatos que o corretor já fez hoje (dia de São Paulo) e nos
- * últimos 7 dias. `null` quando não deu para ler: aí não sai nenhum.
- */
-async function contarPrimeirosContatos(
-  supabase: ReturnType<typeof createServiceClient>,
-  corretorId: string,
-): Promise<{ hoje: number; semana: number } | null> {
-  const { data: listas, error } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id")
-    .eq("corretor_id", corretorId);
-  if (error) return null;
-  const ids = (listas ?? []).map((l) => l.id);
-  if (ids.length === 0) return { hoje: 0, semana: 0 };
-  const agora = new Date();
-  const contar = async (desde: string) => {
-    const { count, error: erroDaContagem } = await supabase
-      .from("whatsapp_campanhas_fila")
-      .select("id", { count: "exact", head: true })
-      .in("campanha_id", ids)
-      .eq("primeiro_contato", true)
-      .gte("enviado_em", desde);
-    return erroDaContagem ? null : (count ?? 0);
-  };
-  const hoje = await contar(inicioDoDiaEmSaoPaulo(agora));
-  const semana = await contar(new Date(agora.getTime() - 7 * 86_400_000).toISOString());
-  if (hoje === null || semana === null) return null;
-  return { hoje, semana };
-}
 
 /** O corretor mandou mensagem a este lead nas últimas `HORAS_DA_GUARDA_HUMANA`? */
 async function corretorFalouComOLead(

@@ -1,7 +1,7 @@
 import type { ItemDaAgenda } from "./itens";
 
 /**
- * A linha de `visitas` como a Agenda lê (0222/0223) e o item que ela vira.
+ * A linha de `visitas` como a Agenda lê (0224/0223) e o item que ela vira.
  * Compartilhado pela agenda do corretor (`lerAgenda.ts`) e pela da equipe
  * (`lerEquipe.ts`): o mesmo select, o mesmo item.
  */

@@ -1,4 +1,4 @@
-// Apoio dos testes de banco da Agenda (0222, 0223…): lead, corretor e
+// Apoio dos testes de banco da Agenda (0224, 0225…): lead, corretor e
 // visitas escritos como a IA, o chat e o painel escrevem. Só para testes.
 
 import type { Conexao } from "@/lib/grupos/apoioDoBanco";

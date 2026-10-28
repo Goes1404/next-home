@@ -51,7 +51,7 @@ describe("proximosHorarios", () => {
     expect(h[0].rotulo).toBe("terça-feira, 08/09 às 14h");
   });
 
-  it("pula horário que cruza a hora de uma visita marcada fora da hora cheia (trava de 60 min da 0222)", () => {
+  it("pula horário que cruza a hora de uma visita marcada fora da hora cheia (trava de 60 min da 0224)", () => {
     const h = proximosHorarios({
       grade: GRADE,
       ocupados: [new Date("2026-09-05T13:30:00Z")], // sábado 10h30 em SP: ocupa até 11h30
@@ -72,7 +72,7 @@ describe("proximosHorarios", () => {
   });
 
   /*
-   * Reunião e bloqueio (0224) têm a duração deles: a IA não oferece vaga que
+   * Reunião e bloqueio (0226) têm a duração deles: a IA não oferece vaga que
    * cruze o compromisso, e a que começa no fim dele fica livre — a mesma
    * conta da trava do banco.
    */

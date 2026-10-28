@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-16
+updated: 2026-10-27
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -44,12 +44,17 @@ Cada envio passa por:
 
 1. `travar_disparo` por instância ([[travar-disparo-e-por-instancia]]);
 2. `conectado_em` + sincronização ativa ([[fila-parada-tres-causas]]);
-3. janela 9h-20h59, exceto `ignorar_janela`
+3. janela 9h-20h59 e expediente do corretor, **sem exceção** desde
+   27/10/2026 (`ignorar_janela`/`janela_liberada_ate` não são mais lidos)
    ([[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]);
 4. a lista do item ainda `em_andamento` (pausar/cancelar valem no meio da
    corrente) e o corretor sem mensagem ao lead nas últimas 24h — senão o
    item vira `erro` sem gastar cota
    ([[lista-de-transmissao-visivel-e-controlavel]]);
+   depois, **primeiro contato** (quem nunca escreveu): 10/dia, 30/semana,
+   nada nos 7 dias depois de conectar ou cair, sem foto, contado por
+   `primeiros_contatos_do_corretor` (0222), a mesma régua do ✨, do aviso de
+   imóvel novo e da roleta ([[primeiro-contato-tem-teto-proprio]]);
 5. cota + espaçamento no MESMO update atômico
    ([[espacamento-anti-ban-so-existia-no-papel]]); o limite do dia sai do
    uso da última semana e o envio entra em `whatsapp_envios_por_dia` no
@@ -115,8 +120,7 @@ pendentes da perdedora com o texto da vencedora. Ver
 Roadmap das listas (0155, 03/10/2026) — a ordem de cada tique agora é:
 `varrerQuedasDeNumero` → `protegerNumerosQueCairam` (0174: motivo da queda, e queda de 30+ min pausa as listas; 0176: só 3 dias seguidos sem conectar recomeçam o aquecimento; [[queda-do-numero-pausa-a-lista-e-diz-o-motivo]]) → `alimentarListasVivas` (só no tique geral, 1x/hora
 por lista) → instância a instância: bloqueio → conexão → listas
-`em_andamento` (fora da janela, só `ignorar_janela` OU `janela_liberada_ate`
-no futuro) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
+`em_andamento` (fora da janela ou do expediente, nenhuma desde 27/10/2026) → trava → `aplicarVencedoras` → por item: lista ainda ativa →
 pausa automática (0172) → **`motivoParaNaoEnviar`** (pediu para sair,
 arquivado, perdido, transferido, comprou) → **mesmo telefone em outro cadastro** (a lista já saiu para ele ou ele pediu parada; [[pedir-um-tempo-nao-e-aceitar-a-visita]]) → guarda de 24h (em qualquer cadastro do telefone) → **texto conferido**
 (`variarSemRepetir`, até 3 tentativas por ciclo; no A/B mantém só o tipo de

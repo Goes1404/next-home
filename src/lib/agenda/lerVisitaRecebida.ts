@@ -11,7 +11,7 @@ export type VisitaRecebida = {
 };
 
 /**
- * A ficha da visita para quem a RECEBEU do gestor (0223): o lead não é dele,
+ * A ficha da visita para quem a RECEBEU do gestor (0225): o lead não é dele,
  * então a ficha normal (`/corretor/leads/[id]`, RLS de `leads`) não abre.
  * Aqui vai o que a visita pede — dados, preferências, preparo e as últimas
  * anotações — e NUNCA a conversa do WhatsApp (decisão do dono).

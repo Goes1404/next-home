@@ -2,6 +2,7 @@ import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 import { site } from "@/lib/site";
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { liberarPrimeiroContato, nuncaFalouComOCorretor } from "./primeiroContatoNoEnvio";
 import { getEmpreendimentos } from "@/lib/queries";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
 import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
@@ -134,6 +135,10 @@ export async function gerarEEnviarPelaIA(params: {
     if (ehAbertura && params.somenteResposta) return { enviou: false };
 
     if (ehAbertura) {
+      // Abrir conversa com quem nunca escreveu tem teto próprio (0217/0222):
+      // é o envio que o WhatsApp restringe. Antes da cota, que não é gasta.
+      const primeiro = await travaDePrimeiroContato(createServiceClient(), instancia.corretor_id, conversa.leadId);
+      if (primeiro) return { enviou: false, erro: primeiro };
       const cota = await reservarCotaCampanha(
         instancia.id,
         instancia.conectado_em ? new Date(instancia.conectado_em) : null,
@@ -369,6 +374,10 @@ export async function enviarRascunhoDaIA(params: {
   try {
     const ehAbertura = separarRajada(await historicoRecente(conversa.id)).pendentes.length === 0;
     if (ehAbertura) {
+      // Abrir conversa com quem nunca escreveu tem teto próprio (0217/0222):
+      // é o envio que o WhatsApp restringe. Antes da cota, que não é gasta.
+      const primeiro = await travaDePrimeiroContato(createServiceClient(), instancia.corretor_id, conversa.leadId);
+      if (primeiro) return { enviou: false, erro: primeiro };
       const cota = await reservarCotaCampanha(
         instancia.id,
         instancia.conectado_em ? new Date(instancia.conectado_em) : null,
@@ -469,4 +478,18 @@ async function regrasDaIaDaInstancia(instanciaId: string): Promise<string | null
     .eq("id", instanciaId)
     .maybeSingle();
   return data?.regras_da_ia ?? null;
+}
+
+/**
+ * `null` quando pode abrir; a frase da tela quando não pode. Quem já
+ * escreveu ao corretor não passa por aqui (é conversa, não primeiro contato).
+ */
+async function travaDePrimeiroContato(
+  supabase: ReturnType<typeof createServiceClient>,
+  corretorId: string,
+  leadId: string | null,
+): Promise<string | null> {
+  if (!(await nuncaFalouComOCorretor(supabase, [leadId]))) return null;
+  const liberado = await liberarPrimeiroContato(supabase, corretorId);
+  return liberado.pode ? null : liberado.motivo;
 }

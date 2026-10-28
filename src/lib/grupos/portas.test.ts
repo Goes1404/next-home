@@ -131,7 +131,11 @@ function consulta(tabela: string) {
 }
 
 vi.mock("@/lib/supabase/service", () => ({
-  createServiceClient: () => ({ from: (tabela: string) => consulta(tabela) }),
+  createServiceClient: () => ({
+    from: (tabela: string) => consulta(tabela),
+    // Contagem de primeiro contato (0222): o corretor ainda não abriu nenhuma conversa.
+    rpc: async () => ({ data: 0, error: null }),
+  }),
 }));
 
 const extrairVariosLeadsComIA = vi.fn();
@@ -263,6 +267,14 @@ describe("avisarQuemPediuAlerta", () => {
     created_at: new Date().toISOString(),
   });
 
+  // Número conectado há meses, sem queda recente: tem vaga de primeiro contato.
+  const numeroAntigo = {
+    corretor_id: "corretor-1",
+    status_conexao: "desconectado",
+    conectado_em: "2026-01-01T12:00:00.000Z",
+    aquecimento_desde: null,
+  };
+
   it("avisarQuemPediuAlerta não casa grupos diferentes", async () => {
     limparBanco({ empreendimentos: [imovelNovo(GRUPO_B)], leads: [leadComAlerta(GRUPO_NEXT_HOME_ID)] });
     expect(await avisarQuemPediuAlerta()).toBe(0);
@@ -272,9 +284,24 @@ describe("avisarQuemPediuAlerta", () => {
   });
 
   it("no mesmo grupo o imóvel novo casa (o teste acima não passa por acaso)", async () => {
-    limparBanco({ empreendimentos: [imovelNovo(GRUPO_B)], leads: [leadComAlerta(GRUPO_B)], corretor_whatsapp_instancias: [] });
+    limparBanco({
+      empreendimentos: [imovelNovo(GRUPO_B)],
+      leads: [leadComAlerta(GRUPO_B)],
+      corretor_whatsapp_instancias: [numeroAntigo],
+    });
     await avisarQuemPediuAlerta();
     expect(consultas.filter((c) => c.tabela === "leads" && c.operacao === "update")).toHaveLength(1);
+  });
+
+  it("número em quarentena: o aviso a quem nunca escreveu espera, sem marcar o imóvel como avisado", async () => {
+    limparBanco({
+      empreendimentos: [imovelNovo(GRUPO_B)],
+      leads: [leadComAlerta(GRUPO_B)],
+      corretor_whatsapp_instancias: [{ ...numeroAntigo, aquecimento_desde: new Date().toISOString() }],
+    });
+    await avisarQuemPediuAlerta();
+    expect(consultas.filter((c) => c.tabela === "leads" && c.operacao === "update")).toEqual([]);
+    expect(gerarEEnviarPelaIA).not.toHaveBeenCalled();
   });
 });
 

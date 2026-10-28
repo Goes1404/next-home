@@ -28,7 +28,7 @@ type VisitaParaPassar = {
  * O gestor passa uma visita de um corretor para outro (27/10/2026, fase 2).
  *
  * Só a visita muda: o lead continua do dono ("o lead é de quem pagou o
- * anúncio", 0206). `passada_em` diz ao espelho do lead (0223) que a troca é
+ * anúncio", 0206). `passada_em` diz ao espelho do lead (0225) que a troca é
  * de propósito; devolver ao dono do lead a zera. O cliente NÃO é avisado (o
  * corretor avisa); quem recebe e quem perde a visita são.
  *

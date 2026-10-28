@@ -5,7 +5,7 @@ import { ehConflitoDeHorario } from "./conflito";
 import type { ItemDaAgenda } from "./itens";
 
 /**
- * Reuniões e bloqueios da Agenda (0224, fase 3). Um caminho só para o painel
+ * Reuniões e bloqueios da Agenda (0226, fase 3). Um caminho só para o painel
  * e para o WhatsApp (fase 5): quem chama passa ids já conferidos pela sessão
  * (ou pelo número do corretor), e tudo aqui filtra o grupo.
  *
@@ -161,7 +161,7 @@ export async function criarReuniao(
 
 /**
  * Cancela: o bloqueio só quem o criou; a reunião só o gestor do grupo. O
- * gatilho da 0224 libera os participantes; a reunião cancelada avisa quem ia.
+ * gatilho da 0226 libera os participantes; a reunião cancelada avisa quem ia.
  */
 export async function cancelarCompromisso(
   p: { grupoId: string; corretorId: string; ehGestor: boolean; compromissoId: string },

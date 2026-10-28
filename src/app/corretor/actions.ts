@@ -657,7 +657,7 @@ export async function definirVisitaEm(
     .select("id");
 
   if (error) {
-    // A trava de 60 min da 0222: outra visita sua já ocupa esse horário.
+    // A trava de 60 min da 0224: outra visita sua já ocupa esse horário.
     if (ehConflitoDeHorario(error)) return { erro: MENSAGEM_CONFLITO };
     return { erro: "Não foi possível salvar agora. Tente novamente." };
   }

@@ -6,7 +6,7 @@ import { SELECT_VISITA, SELECT_VISITA_PELO_DONO, itemDaVisita, type LinhaVisita 
 import { lerCompromissos } from "./compromissos";
 
 /**
- * A Agenda do próprio corretor: visitas (0222), tarefas da ficha (0032) e
+ * A Agenda do próprio corretor: visitas (0224), tarefas da ficha (0032) e
  * lembretes de anotação (0100).
  *
  * `visitas` é fechada ao painel (só a chave de serviço), então tudo aqui lê
@@ -25,7 +25,7 @@ const TETO_DO_MES = 1000;
 
 /**
  * As visitas do corretor no intervalo: as que ELE faz e as dos leads dele que
- * o gestor passou a outro (0223) — o dono continua vendo, com "feita por".
+ * o gestor passou a outro (0225) — o dono continua vendo, com "feita por".
  */
 async function visitasEntre(r: Recorte, inicio: Date, fim: Date, limite: number) {
   const supabase = createServiceClient();

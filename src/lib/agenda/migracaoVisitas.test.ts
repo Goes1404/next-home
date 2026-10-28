@@ -3,12 +3,12 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * O texto da 0222 (visitas com histórico). A suíte de banco confere o efeito;
+ * O texto da 0224 (visitas com histórico). A suíte de banco confere o efeito;
  * esta guarda pega, sem Docker, o bloco de isolamento esquecido e a reserva
  * que voltaria a lançar exceção quando a trava de 60 min recusa.
  */
-describe("0222: visitas com histórico", () => {
-  const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "0222_visitas_com_historico.sql"), "utf8");
+describe("0224: visitas com histórico", () => {
+  const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "0224_visitas_com_historico.sql"), "utf8");
 
   it("tem o isolamento por grupo com as duas mães (lead e corretor)", () => {
     expect(sql).toMatch(/create policy isolamento_por_grupo on public\.visitas as restrictive/);

@@ -401,24 +401,24 @@ site público desatualizado; botões do site do grupo com o verde padrão.
 - **Publicar JUNTO com a fase 2** (visão da equipe para o gestor): a tela
   antiga de Visitas mostrava a equipe ao gestor; a Agenda da fase 1 mostra só
   a do próprio usuário.
-- **Antes de aplicar a 0222** (ANTES do deploy, migration aditiva com um
+- **Antes de aplicar a 0224** (ANTES do deploy, migration aditiva com um
   `drop index`): rodar em produção, só leitura, a lista de visitas futuras do
   mesmo corretor a menos de 60 min uma da outra
   (`select a.corretor_id, a.id, a.visita_agendada_em, b.id, b.visita_agendada_em from leads a join leads b on a.corretor_id = b.corretor_id and a.id < b.id and abs(extract(epoch from a.visita_agendada_em - b.visita_agendada_em)) < 3600 where a.visita_agendada_em >= now() and b.visita_agendada_em >= now();`).
   O backfill pula esses pares com `notice`; resolver à mão antes. Essa
   consulta foi bloqueada pela permissão automática nesta sessão e NÃO rodou.
-- A 0222 pega `lock table public.leads in access exclusive mode`: aplicar em
+- A 0224 pega `lock table public.leads in access exclusive mode`: aplicar em
   horário de pouco tráfego.
 - Fase 2 precisa marcar a visita delegada (o espelho hoje devolve ao dono
   toda visita com outro corretor; ver a nota).
 
 ### Agenda, fases 2–5 (27/10/2026, mesma branch, NÃO publicadas)
 
-- Feito: equipe com números (0223), visita passada (0223), reunião e
-  bloqueio (0224), "a visita aconteceu?" (0225), comandos pelo WhatsApp.
+- Feito: equipe com números (0225), visita passada (0225), reunião e
+  bloqueio (0226), "a visita aconteceu?" (0227), comandos pelo WhatsApp.
   Nota [[agenda-da-equipe-reunioes-e-cobranca]].
-- **Aplicar 0222 → 0223 → 0224 → 0225, nessa ordem, ANTES do deploy.** Todas
-  aditivas; 0223 e 0225 redefinem `espelhar_visita_do_lead` (a 0225 é a
+- **Aplicar 0224 → 0225 → 0226 → 0227, nessa ordem, ANTES do deploy.** Todas
+  aditivas; 0225 e 0227 redefinem `espelhar_visita_do_lead` (a 0227 é a
   versão final). Sem cron novo: a cobrança roda no tick de followups que o
   pg_cron já chama a cada 5 min.
 - Primeiro uso real dos comandos: conferir no log do webhook

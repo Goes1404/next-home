@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
+import { liberarPrimeiroContato } from "./primeiroContatoNoEnvio";
 import { gravarMensagem, obterOuCriarConversa } from "@/lib/whatsapp/repositorio";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { registrarInteracao } from "@/lib/crm/interacoes";
@@ -8,7 +9,6 @@ import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { primeiroNome } from "@/lib/format";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
-import { BOAS_VINDAS_DE_CAMPANHA } from "./impulsionamentos";
 import { planoDeMensagens, type ModoDaRoleta } from "./planoDaRoleta";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "./roletaTextos";
 
@@ -26,12 +26,6 @@ type Parametros = {
    * roleta desligada no meio) deixaria o cliente sem resposta.
    */
   modo?: ModoDaRoleta;
-  /**
-   * `false` quando o webhook não pode falar pelo número do dono (IA desligada
-   * na conversa): o caminho sem repasse não manda a boas-vindas. Passagem e
-   * abertura de um repasse não dependem disso. Padrão: `true`.
-   */
-  boasVindasPermitida?: boolean;
 };
 type ModoLigado = Exclude<ModoDaRoleta, "desligada">;
 
@@ -62,20 +56,19 @@ export async function lerModoDaRoleta(corretorId: string): Promise<ModoDaRoleta>
  * - `mensagem`: o número de A manda a passagem e logo depois o número de B
  *   manda a abertura. Falhou a abertura? B entra na lista de excluídos e a
  *   roleta tenta o seguinte.
- * - `grupo`: nenhuma mensagem sai do número de B (nem do de A; a boas-vindas
- *   já saiu pelo webhook). B é avisado no grupo e no celular para ligar.
+ * - `grupo`: nenhuma mensagem sai do número de B nem do de A. B é avisado no
+ *   grupo e no celular para ligar.
  *
  * Em qualquer modo `proximo_da_roleta` escolhe B e avança a vez (atômico no
  * banco), e só DEPOIS de a ficha trocar de dono o aviso do grupo é
  * enfileirado: ele vai para o dono atual, nunca para quem pagou. Se a troca
  * falhar o repasse para ali e ninguém é avisado como se o lead fosse dele.
  *
- * No modo `mensagem`, todo caminho que termina sem repasse manda a
- * boas-vindas fixa do número de A (o webhook não manda mais nesse modo): o
- * cliente nunca fica sem resposta. Limite diário e intervalo das listas não
- * valem aqui (decisão do dono): é resposta a quem acabou de pedir contato. A
- * IA não responde lead de anúncio (20/10/2026): a conversa nova de B nasce
- * desligada. Nunca lança.
+ * Sem repasse nada sai para o cliente: a boas-vindas fixa do número de A foi
+ * tirada a pedido do dono (27/10/2026) e o lead fica com A, avisado pelo aviso
+ * de lead novo. Limite diário e intervalo das listas não valem aqui (decisão
+ * do dono): é resposta a quem acabou de pedir contato. A IA não responde lead
+ * de anúncio (20/10/2026): a conversa nova de B nasce desligada. Nunca lança.
  *
  * Devolve o id de B quando houve repasse; `null` quando o lead fica com A.
  */
@@ -83,53 +76,15 @@ export async function repassarPelaRoleta(params: Parametros): Promise<string | n
   const modo = params.modo ?? (await lerModoDaRoleta(params.corretorId));
   if (modo === "desligada") return null;
 
-  // `respondido`: o cliente já leu a abertura de quem vai atendê-lo. Sem
-  // isso, o caminho sem repasse manda a boas-vindas do dono.
-  const estado = { respondido: false };
-  let destino: string | null = null;
   try {
-    destino = await repassar(createServiceClient(), params, modo, estado);
+    return await repassar(createServiceClient(), params, modo);
   } catch (erro) {
     console.error("[roleta] falhou:", erro instanceof Error ? erro.message : erro);
-  }
-  if (!destino && !estado.respondido && params.boasVindasPermitida !== false) {
-    await mandarBoasVindasDoDono(modo, params);
-  }
-  return destino;
-}
-
-/** Sem repasse no modo mensagem: o número do dono responde o cliente. */
-async function mandarBoasVindasDoDono(modo: ModoLigado, p: Parametros): Promise<void> {
-  if (!planoDeMensagens(modo, false).includes("boas_vindas")) return;
-  try {
-    const envio = await enviarMensagemWhatsapp({
-      instanceName: p.instanceNameDoDono,
-      telefone: p.telefoneCliente,
-      texto: BOAS_VINDAS_DE_CAMPANHA,
-    });
-    if (!envio.enviado) {
-      console.warn("[roleta] boas-vindas não saiu:", envio.motivo);
-      return;
-    }
-    await gravarMensagem({
-      conversaId: p.conversaDoDonoId,
-      remetente: "bot",
-      conteudo: BOAS_VINDAS_DE_CAMPANHA,
-      conversaLiberada: true,
-      providerMessageId: envio.messageId ?? null,
-      statusEntrega: "enviada",
-    });
-  } catch (erro) {
-    console.error("[roleta] boas-vindas falhou:", erro instanceof Error ? erro.message : erro);
+    return null;
   }
 }
 
-async function repassar(
-  supabase: Supa,
-  p: Parametros,
-  modo: ModoLigado,
-  estado: { respondido: boolean },
-): Promise<string | null> {
+async function repassar(supabase: Supa, p: Parametros, modo: ModoLigado): Promise<string | null> {
   const { data: roleta } = await supabase
     .from("roleta_anuncios")
     .select("texto_passagem, texto_abertura")
@@ -183,6 +138,17 @@ async function repassar(
       continue;
     }
 
+    /*
+     * No modo mensagem, o número de B escreve primeiro para quem nunca falou
+     * com ele: para o WhatsApp é primeiro contato, com o teto e a quarentena
+     * de número novo ou recém-caído (0217/0222). Sem vaga, B é pulado; se
+     * ninguém tiver, o lead fica com quem pagou o anúncio.
+     */
+    if (modo === "mensagem" && !(await liberarPrimeiroContato(supabase, destino)).pode) {
+      excluidos.push(destino);
+      continue;
+    }
+
     const vars = {
       corretor: primeiroNome(novo.nome),
       cliente,
@@ -228,7 +194,6 @@ async function repassar(
         excluidos.push(destino);
         continue;
       }
-      estado.respondido = true;
     }
 
     // Trocar o dono é o que torna o repasse real. Falhou? O lead fica com

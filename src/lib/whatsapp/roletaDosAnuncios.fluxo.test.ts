@@ -22,6 +22,9 @@ let eventos: Evento[];
 let fila: string[];
 /** Instâncias cujo envio falha. */
 let instanciasQueFalham: Set<string>;
+/** Primeiros contatos que cada corretor já fez hoje e na semana (0222). */
+let primeirosContatosFeitos: Record<string, number>;
+const CONECTADO_HA_MESES = "2026-01-01T12:00:00Z";
 
 const gravarMensagem = vi.fn();
 const obterOuCriarConversa = vi.fn();
@@ -51,7 +54,6 @@ vi.mock("@/lib/marcaDoCrm/ler", () => ({ lerMarcaDoCrm: async () => ({ nome: "Ar
 vi.mock("@/lib/marcaDoCrm/marca", () => ({ linkDoPainel: (_g: string, caminho: string) => `https://painel${caminho}` }));
 
 const { repassarPelaRoleta } = await import("./roletaDosAnuncios");
-const { BOAS_VINDAS_DE_CAMPANHA } = await import("./impulsionamentos");
 
 function semear(modo: "mensagem" | "grupo") {
   banco = bancoFalso({
@@ -71,13 +73,16 @@ function semear(modo: "mensagem" | "grupo") {
       { id: "caio", grupo_id: G, nome: "Caio Reis" },
     ],
     corretor_whatsapp_instancias: [
-      { corretor_id: "beto", instance_name: "inst-beto", status_conexao: "conectado" },
-      { corretor_id: "caio", instance_name: "inst-caio", status_conexao: "conectado" },
+      { corretor_id: "beto", instance_name: "inst-beto", status_conexao: "conectado", conectado_em: CONECTADO_HA_MESES },
+      { corretor_id: "caio", instance_name: "inst-caio", status_conexao: "conectado", conectado_em: CONECTADO_HA_MESES },
     ],
     whatsapp_conversas: [{ id: "conv-nova", bot_ativo: true }],
     lead_interacoes: [],
   });
   banco.cliente.rpc = async (nome: string, args: Record<string, unknown>) => {
+    if (nome === "primeiros_contatos_do_corretor") {
+      return { data: primeirosContatosFeitos[args.p_corretor as string] ?? 0, error: null };
+    }
     if (nome === "proximo_da_roleta") {
       eventos.push({ tipo: "rpc", nome, args });
       const excluidos = (args.p_excluir as string[]) ?? [];
@@ -109,6 +114,7 @@ beforeEach(() => {
   eventos = [];
   fila = ["beto", "caio"];
   instanciasQueFalham = new Set();
+  primeirosContatosFeitos = {};
   gravarMensagem.mockReset().mockResolvedValue(undefined);
   obterOuCriarConversa.mockReset().mockResolvedValue({ id: "conv-nova" });
   registrarInteracao.mockReset().mockResolvedValue(undefined);
@@ -155,8 +161,16 @@ describe("roleta no modo mensagem", () => {
     expect(lead().corretor_id).toBe("caio");
     expect(avisos().map((a) => a.corretorId)).toEqual(["caio"]);
     expect(enfileirados()).toHaveLength(1);
-    // Ninguém pediu a boas-vindas: o cliente já leu a abertura de quem vai atendê-lo.
-    expect(whatsapps().some((w) => w.texto === BOAS_VINDAS_DE_CAMPANHA)).toBe(false);
+    // Só a passagem e a abertura de Caio, depois das duas tentativas com Beto.
+    expect(whatsapps().every((w) => !w.texto.includes("Recebemos sua mensagem"))).toBe(true);
+  });
+
+  it("o escolhido já fez os 10 primeiros contatos do dia: é pulado sem abrir conversa, e o seguinte recebe", async () => {
+    semear("mensagem");
+    primeirosContatosFeitos = { beto: 10 };
+    expect(await repassar({ modo: "mensagem" })).toBe("caio");
+    expect(whatsapps().some((w) => w.instancia === "inst-beto")).toBe(false);
+    expect(lead().corretor_id).toBe("caio");
   });
 
   it("a ficha não muda de dono (update sem linha): ninguém é avisado e devolve null", async () => {
@@ -186,22 +200,14 @@ describe("roleta no modo mensagem", () => {
     expect(registrarInteracao).not.toHaveBeenCalled();
   });
 
-  it("ninguém disponível: o número do dono manda a boas-vindas e grava na conversa dele", async () => {
+  it("ninguém disponível: o lead fica com o dono e nada sai para o cliente", async () => {
     semear("mensagem");
     fila = [];
     expect(await repassar({ modo: "mensagem" })).toBeNull();
-    expect(whatsapps()).toEqual([{ tipo: "whatsapp", instancia: "inst-dona", texto: BOAS_VINDAS_DE_CAMPANHA }]);
-    expect(gravarMensagem).toHaveBeenCalledWith(expect.objectContaining({ conversaId: "conv-dona", conteudo: BOAS_VINDAS_DE_CAMPANHA }));
-    expect(lead().corretor_id).toBe(DONO);
-    expect(avisos()).toEqual([]);
-  });
-
-  it("ninguém disponível e a boas-vindas não é permitida (IA desligada na conversa): nada sai", async () => {
-    semear("mensagem");
-    fila = [];
-    expect(await repassar({ modo: "mensagem", boasVindasPermitida: false })).toBeNull();
     expect(whatsapps()).toEqual([]);
     expect(gravarMensagem).not.toHaveBeenCalled();
+    expect(lead().corretor_id).toBe(DONO);
+    expect(avisos()).toEqual([]);
   });
 });
 

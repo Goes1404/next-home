@@ -1,4 +1,4 @@
--- 0224 — Reuniões e bloqueios na Agenda (27/10/2026, fase 3).
+-- 0226 — Reuniões e bloqueios na Agenda (27/10/2026, fase 3).
 --
 -- Compromisso que não é visita (reunião/treinamento do gestor, bloqueio
 -- pessoal do corretor) não existia para o sistema, e a IA oferecia ao
@@ -9,7 +9,7 @@
 --   ocupa, com o intervalo copiado (a trava lê só esta tabela) e `ativo`
 --   (cancelar o compromisso desliga as linhas por gatilho).
 -- * A trava visita × compromisso é por gatilho (a de visita × visita
---   continua declarativa, 0222): visita marcada que cruza compromisso ativo
+--   continua declarativa, 0224): visita marcada que cruza compromisso ativo
 --   do mesmo corretor é recusada com o MESMO código da exclusão (23P01),
 --   então todo escritor que já trata `ehConflitoDeHorario` — e a reserva da
 --   IA, que devolve false — trata este também sem mudar. Bloqueio que cruza
@@ -38,7 +38,7 @@ create table if not exists public.compromissos (
 );
 
 comment on table public.compromissos is
-  'Reunião (gestor) ou bloqueio pessoal (corretor) da Agenda (0224). Só o servidor lê e grava.';
+  'Reunião (gestor) ou bloqueio pessoal (corretor) da Agenda (0226). Só o servidor lê e grava.';
 
 create table if not exists public.compromisso_participantes (
   compromisso_id uuid not null references public.compromissos(id) on delete cascade,
@@ -51,7 +51,7 @@ create table if not exists public.compromisso_participantes (
 );
 
 comment on table public.compromisso_participantes is
-  'Quem o compromisso ocupa, com o intervalo copiado: é o que a trava e a disponibilidade da IA leem (0224).';
+  'Quem o compromisso ocupa, com o intervalo copiado: é o que a trava e a disponibilidade da IA leem (0226).';
 
 create index if not exists compromissos_grupo_inicio_idx on public.compromissos (grupo_id, inicio);
 create index if not exists compromisso_participantes_corretor_idx

@@ -4,7 +4,7 @@ import { CancelarCompromisso } from "./FormulariosDeCompromisso";
 const HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
 /**
- * Reunião ou bloqueio na lista do dia (0224). O bloqueio visto pelo gestor
+ * Reunião ou bloqueio na lista do dia (0226). O bloqueio visto pelo gestor
  * chega sem título (só "ocupado" e de quem); o do próprio corretor tem o
  * motivo e o botão de cancelar.
  */

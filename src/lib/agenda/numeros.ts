@@ -1,7 +1,7 @@
 import { mesVizinho, type Mes } from "./calendario";
 
 /**
- * Os números da Agenda do gestor (0223): por mês de São Paulo, contados no
+ * Os números da Agenda do gestor (0225): por mês de São Paulo, contados no
  * banco (`numeros_da_agenda`). Aqui só a montagem da série de 6 meses.
  *
  * Os números começam do zero no mês em que a Agenda entrou no ar: mês antes

@@ -6,7 +6,7 @@ type Supa = ReturnType<typeof createServiceClient>;
 
 /**
  * A pergunta pendente na conversa do corretor com o sistema pelo WhatsApp
- * (0225): a cobrança "a visita aconteceu?" esperando 1/2/3, a nova data do
+ * (0227): a cobrança "a visita aconteceu?" esperando 1/2/3, a nova data do
  * "remarcou", o pedido esperando "sim", ou a escolha entre clientes com o
  * mesmo nome. Uma por corretor; vencida, é como se não existisse.
  */

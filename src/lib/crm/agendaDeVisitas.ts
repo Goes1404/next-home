@@ -136,7 +136,7 @@ const DIAS_DE_HORIZONTE = 14;
  */
 const POR_DIA = 2;
 
-/** Duração da visita na trava de conflito da 0222 (e no feed .ics). */
+/** Duração da visita na trava de conflito da 0224 (e no feed .ics). */
 const DURACAO_DA_VISITA_MS = 60 * 60_000;
 
 /**
@@ -171,7 +171,7 @@ export function proximosHorarios(params: {
   grade: readonly FaixaDisponivel[];
   /** Visitas já marcadas deste corretor (qualquer status). */
   ocupados: readonly Date[];
-  /** Reuniões e bloqueios do corretor (0224): intervalos com a duração deles. */
+  /** Reuniões e bloqueios do corretor (0226): intervalos com a duração deles. */
   bloqueios?: readonly { inicio: Date; fim: Date }[];
   agora: Date;
   /** Quantos devolver. A IA oferece dois ou três, nunca uma lista. */
@@ -181,7 +181,7 @@ export function proximosHorarios(params: {
 
   const limite = new Date(params.agora.getTime() + HORAS_DE_ANTECEDENCIA * 3600_000);
   /*
-   * Ocupado é INTERVALO, não instante (0222): a visita dura 60 min, e o
+   * Ocupado é INTERVALO, não instante (0224): a visita dura 60 min, e o
    * banco recusa outra do mesmo corretor que cruze [início, início + 60).
    * Uma visita marcada às 10h30 tira as vagas das 10h e das 11h; a das 10h
    * deixa a das 11h livre. Oferecer o que a trava recusa faria o cliente
@@ -191,7 +191,7 @@ export function proximosHorarios(params: {
   const bloqueiosMs = (params.bloqueios ?? []).map((b) => [b.inicio.getTime(), b.fim.getTime()] as const);
   const cruza = (quando: Date) =>
     ocupadosMs.some((o) => Math.abs(quando.getTime() - o) < DURACAO_DA_VISITA_MS) ||
-    // A visita [q, q + 60) cruza o compromisso [i, f) — a mesma conta da trava da 0224.
+    // A visita [q, q + 60) cruza o compromisso [i, f) — a mesma conta da trava da 0226.
     bloqueiosMs.some(([i, f]) => quando.getTime() < f && quando.getTime() + DURACAO_DA_VISITA_MS > i);
   const porDia = new Map(params.grade.map((f) => [f.diaSemana, f]));
 

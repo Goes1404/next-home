@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Visita" };
 const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" });
 
 /**
- * A visita que o gestor passou para este corretor (0223). O lead é de outro:
+ * A visita que o gestor passou para este corretor (0225). O lead é de outro:
  * a ficha normal não abre para ele, e a conversa do WhatsApp ele não vê.
  * Aqui vai o que a visita pede. Some quando a visita deixa de ser dele.
  */

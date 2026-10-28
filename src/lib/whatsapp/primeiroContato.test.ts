@@ -101,9 +101,10 @@ describe("o disparador aplica a regra", () => {
   });
 
   it("em dúvida, trata como primeiro contato", () => {
-    const funcao = codigo.slice(codigo.indexOf("async function nuncaFalouComOCorretor"));
+    const modulo = readFileSync("src/lib/whatsapp/primeiroContatoNoEnvio.ts", "utf8");
+    const funcao = modulo.slice(modulo.indexOf("export async function nuncaFalouComOCorretor"));
     const corpo = funcao.slice(0, funcao.indexOf("\n}\n"));
-    expect(corpo).toMatch(/if \(!leadId\) return true/);
+    expect(corpo).toMatch(/if \(ids\.length === 0\) return true/);
     expect(corpo).toMatch(/if \(error\) return true/);
     expect(corpo).toMatch(/if \(erroDaContagem\) return true/);
   });

@@ -9,7 +9,7 @@ import { gravarEstado, lerEstado } from "./conversaDeAgenda";
 type Supa = ReturnType<typeof createServiceClient>;
 
 /**
- * "A visita aconteceu?" (0225, fase 4). Duas horas depois do horário, quem
+ * "A visita aconteceu?" (0227, fase 4). Duas horas depois do horário, quem
  * FEZ a visita é cobrado no WhatsApp (e no Início do painel, que lê direto).
  * A resposta inteira é `responder_visita`, numa transação no banco.
  */

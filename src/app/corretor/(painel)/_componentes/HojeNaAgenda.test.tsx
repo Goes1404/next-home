@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 /*
  * O cartão do Início é acessório: se a leitura da agenda falhar (deploy antes
- * da 0222, cache de schema, rede), ele some — nunca derruba o Início inteiro
+ * da 0224, cache de schema, rede), ele some — nunca derruba o Início inteiro
  * pelo error.tsx do painel (revisão final da Agenda, 27/10/2026).
  */
 vi.mock("@/lib/agenda/lerAgenda", () => ({

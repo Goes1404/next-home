@@ -1,11 +1,11 @@
--- 0225 — "A visita aconteceu?" (27/10/2026, fase 4).
+-- 0227 — "A visita aconteceu?" (27/10/2026, fase 4).
 --
 -- Duas horas depois do horário, o corretor que FEZ a visita é cobrado no
 -- Início do painel e no WhatsApp (1 aconteceu · 2 cliente faltou · 3
 -- remarcou). Sem resposta em 24h depois da cobrança, a visita vira
 -- `sem_confirmacao` para o gestor. A resposta move o funil só se o lead
 -- ainda está em `visita_agendada` (nunca recua quem avançou) e grava o
--- histórico de etapa — é dele que "virou negócio" (0223) depende.
+-- histórico de etapa — é dele que "virou negócio" (0225) depende.
 --
 -- * `visitas.cobrada_em` / `respondida_em`.
 -- * `conversa_de_agenda`: a pergunta pendente na conversa do corretor com o
@@ -35,7 +35,7 @@ create table if not exists public.conversa_de_agenda (
 );
 
 comment on table public.conversa_de_agenda is
-  'A pergunta pendente na conversa do corretor com o sistema pelo WhatsApp (0225): cobrança da visita, pedido aguardando confirmação. Uma por corretor.';
+  'A pergunta pendente na conversa do corretor com o sistema pelo WhatsApp (0227): cobrança da visita, pedido aguardando confirmação. Uma por corretor.';
 
 alter table public.conversa_de_agenda enable row level security;
 revoke all on public.conversa_de_agenda from anon;
@@ -74,7 +74,7 @@ declare
   v_linha uuid;
   v_visita record;
 begin
-  -- A resposta "remarcou" da cobrança (0225) já moveu a linha da visita e
+  -- A resposta "remarcou" da cobrança (0227) já moveu a linha da visita e
   -- escreve no lead só para a IA e o .ics: o espelho não repete o trabalho.
   if coalesce(current_setting('agenda.espelho_pausado', true), '') = 'on' then
     return null;
@@ -307,7 +307,7 @@ end;
 $$;
 
 comment on function public.responder_visita(uuid, uuid, text, timestamptz) is
-  'Resposta do corretor à cobrança "a visita aconteceu?" (0225): aconteceu, faltou ou remarcou. Só o servidor chama.';
+  'Resposta do corretor à cobrança "a visita aconteceu?" (0227): aconteceu, faltou ou remarcou. Só o servidor chama.';
 revoke all on function public.responder_visita(uuid, uuid, text, timestamptz) from public, anon, authenticated;
 grant execute on function public.responder_visita(uuid, uuid, text, timestamptz) to service_role;
 
@@ -328,7 +328,7 @@ as $$
 $$;
 
 comment on function public.marcar_visitas_sem_confirmacao() is
-  'Varredura das 24h sem resposta à cobrança (0225), no tick de followups.';
+  'Varredura das 24h sem resposta à cobrança (0227), no tick de followups.';
 revoke all on function public.marcar_visitas_sem_confirmacao() from public, anon, authenticated;
 grant execute on function public.marcar_visitas_sem_confirmacao() to service_role;
 

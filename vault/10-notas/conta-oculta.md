@@ -5,10 +5,10 @@ tags: [banco, crm, painel, admin, decisao, armadilha]
 type: decisao
 status: growing
 custou: medio
-codigo: [supabase/migrations/0189_conta_oculta.sql, supabase/migrations/0192_funcoes_respeitam_grupo.sql, src/lib/corretores/contaOculta.ts, src/lib/corretores/contaOculta.test.ts, src/lib/corretorSessao.ts, src/app/corretor/(painel)/admin/acoes.ts, src/app/corretor/(painel)/admin/contas/ContasManager.tsx]
+codigo: [supabase/migrations/0189_conta_oculta.sql, supabase/migrations/0192_funcoes_respeitam_grupo.sql, src/lib/corretores/contaOculta.ts, src/lib/corretores/contaOculta.test.ts, src/lib/corretorSessao.ts, src/app/corretor/(painel)/admin/acoes.ts, src/app/corretor/(painel)/admin/contas/ContasManager.tsx, src/app/corretor/(painel)/marketing/impulsionamentos/numeroCentral.ts]
 fonte: docs/MEMORIA.md — Conta oculta (19/10/2026)
 created: 2026-10-19
-updated: 2026-10-20
+updated: 2026-10-27
 summary: Pedido do dono: a conta só WhatsApp de uma pessoa não pode aparecer para ninguém. `corretores.oculta` (0189) tira a conta do site, da roleta, do sorteio do anúncio, do ranking e de todas as telas da equipe; só o gestor a vê, numa seção recolhida "Contas ocultas" da tela de Contas. A RLS esconde a linha de anon e do corretor comum; para o gestor e a chave de serviço, o recorte é do código, num ponto único com guarda.
 ---
 # Conta oculta
@@ -44,6 +44,12 @@ desativar, reativar ou mostrar de novo.
   `admin_eventos.acao` não tem valor para isto, então o registro é o log.
 - **Tolerante a migration ausente:** sem a 0189, `idsDeContasOcultas` devolve
   vazio e tudo segue como antes.
+- **O número central dos grupos de leads é exceção (27/10/2026).** A Aretz
+  conectou o WhatsApp da conta oculta de administração para ser o número
+  central; o seletor tirava as instâncias de conta oculta e ficava só com
+  "Desativado", então nada se vinculava. O seletor agora mostra o número com
+  "(conta oculta)" (`opcoesDoNumeroCentral`); a conta segue fora da lista de
+  corretores e da roleta. Ver [[vinculo-do-corretor-no-grupo-e-lid]].
 - **Coluna citada só em policy não exige SELECT na coluna**: a 0196 (fase 2,
   ex-0187, tira colunas da chave pública) não quebra o filtro do `anon`.
 

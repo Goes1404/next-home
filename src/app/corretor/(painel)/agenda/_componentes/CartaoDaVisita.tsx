@@ -39,7 +39,7 @@ export function CartaoDaVisita({
   visita: VisitaDaAgenda;
   preparo: DadosDoPreparo;
   comDia?: boolean;
-  /** Quem olha (corretor da sessão): decide o "feita por" e para onde vai a ficha (0223). */
+  /** Quem olha (corretor da sessão): decide o "feita por" e para onde vai a ficha (0225). */
   vistaDe?: string;
   /** Na própria página da visita recebida, sem o atalho da ficha. */
   semFicha?: boolean;

@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Lead da campanha do PRÓPRIO corretor (etiqueta de anúncio da Meta na linha
- * dele) recebe uma única boas-vindas, depois não é atendido pela IA: é
+ * dele) não é atendido pela IA nem recebe mensagem automática nenhuma: é
  * cadastrado, o resumo da ficha segue sendo feito, e quem conversa é o
- * corretor (pedido do dono, 20/10/2026).
+ * corretor (pedido do dono, 20/10/2026; a boas-vindas fixa saiu em 27/10/2026).
  *
  * A regressão seria calada: a IA voltaria a responder o cliente do anúncio
  * pago sem nada quebrar. Esta guarda lê o webhook.
@@ -16,14 +16,14 @@ const codigo = readFileSync(join(process.cwd(), "src/app/api/webhooks/whatsapp/r
   "",
 );
 
-describe("lead da campanha do próprio corretor recebe boas-vindas e não é atendido pela IA", () => {
-  it("o bloco do impulsionamento manda uma boas-vindas antes de desligar a IA", () => {
+describe("lead da campanha do próprio corretor não recebe nada automático", () => {
+  it("o bloco do impulsionamento desliga a IA e não manda mensagem ao cliente", () => {
     const inicio = codigo.indexOf("if (anuncioMeta && !nomeDoAnuncio)");
     expect(inicio).toBeGreaterThan(-1);
     const bloco = codigo.slice(inicio, codigo.indexOf("const decisaoIA", inicio));
     expect(bloco).toContain("registrarLeadDeImpulsionamento(");
-    expect(bloco).toContain("BOAS_VINDAS_DE_CAMPANHA");
-    expect(bloco.indexOf("enviarMensagemWhatsapp(")).toBeLessThan(bloco.indexOf("calarIaNaConversaDeCampanha(conversa.id)"));
+    expect(bloco).not.toContain("BOAS_VINDAS_DE_CAMPANHA");
+    expect(bloco).not.toContain("enviarMensagemWhatsapp(");
     expect(bloco).toContain("calarIaNaConversaDeCampanha(conversa.id)");
     expect(bloco).toContain("iaCaladaPelaCampanha = true");
   });

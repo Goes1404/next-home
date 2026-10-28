@@ -133,9 +133,9 @@ F0–F6.
 - [[tabela-de-precos-lida-pela-ia]] — a tabela da construtora (unidades) é lida pela IA; o menor valor só entra se estiver escrito no arquivo; PDF e prints (o tabelão da RSF) desde 13/10
 - [[a-ia-so-responde]] — listas sugeridas no Início, resumo do lead na ficha, estado da IA em uma frase, nova paleta do funil (03/10)
 - [[visita-remarcada-e-desmarcada-pela-conversa]] — visita combinada pelo corretor no chat vira sugestão de registro na fila do Início (0163, 06/10)
-- [[agenda-visitas-com-historico]] — visita com linha própria espelhada do lead, trava de 60 min, IA lê ocupados de visitas, tela Visitas virou Agenda (0222, 27/10, não publicada)
+- [[agenda-visitas-com-historico]] — visita com linha própria espelhada do lead, trava de 60 min, IA lê ocupados de visitas, tela Visitas virou Agenda (0224, 27/10, não publicada)
 - [[agenda-por-mensagem-do-corretor]] — módulo puro que lê "visita com a Ana sábado 10h" do corretor/gestor e devolve o pedido peneirado em -03:00; sim/não sem IA; textos de confirmação (27/10, sem integração)
-- [[agenda-da-equipe-reunioes-e-cobranca]] — gestor vê a equipe com números do mês, visita passada a outro corretor, reunião/bloqueio que travam a IA, cobrança "aconteceu?" e comandos pelo WhatsApp (0223–0225, 27/10, não publicada)
+- [[agenda-da-equipe-reunioes-e-cobranca]] — gestor vê a equipe com números do mês, visita passada a outro corretor, reunião/bloqueio que travam a IA, cobrança "aconteceu?" e comandos pelo WhatsApp (0225–0227, 27/10, não publicada)
 - [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)
 - [[aviso-ao-corretor-diz-o-que-fazer]] — alertas do atendimento e resumo do dia: o que fazer primeiro, ficha numa linha, carência por motivo (20/10)
 - [[metragem-da-planta-nao-tinha-campo]] — editor do imóvel sem campo de metragem; planta nova nascia com 80 m² inventados (20/10)
@@ -143,3 +143,4 @@ F0–F6.
 - [[icone-e-manifesto-por-grupo]] — ícone da aba e manifesto PWA por grupo
 
 - [[pareamento-fetch-failed-na-primeira-conexao]] — "fetch failed" ao gerar o código do WhatsApp; pareamento pela resposta do create, 2 tentativas e motivo no log
+- [[pareamento-depois-de-401-recomeca-a-instancia]] ⚠️ número tirado da conta pelo WhatsApp: toda reconexão dava 401; instância em close é apagada e recriada antes do código, e a tela avisa a recusa (27/10)

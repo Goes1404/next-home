@@ -1,4 +1,4 @@
-// "A visita aconteceu?" (0225), medido no banco local (`npm run db:teste`).
+// "A visita aconteceu?" (0227), medido no banco local (`npm run db:teste`).
 //
 // A resposta move o funil só de quem está em Visita marcada e grava o
 // histórico de etapa; "remarcou" é a mesma visita com a data nova; 24h sem
@@ -40,7 +40,7 @@ async function etapa(sql: Conexao, lead: string) {
   return e;
 }
 
-describe.skipIf(!process.env.DB_TESTE_URL)("a visita aconteceu? (0225)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("a visita aconteceu? (0227)", () => {
   let sql: Sql;
 
   beforeAll(async () => {

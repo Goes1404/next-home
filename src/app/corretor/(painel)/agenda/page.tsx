@@ -151,7 +151,7 @@ async function MinhaAgenda({
   /*
    * O PREPARO da visita (o que o cliente procura, a objeção aberta), numa
    * consulta à parte e só para os leads que aparecem. Pela chave de serviço:
-   * a visita passada pelo gestor (0223) é de lead de outro corretor, e a RLS
+   * a visita passada pelo gestor (0225) é de lead de outro corretor, e a RLS
    * esconderia o preparo de quem a faz.
    */
   const ids = [

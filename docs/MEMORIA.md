@@ -12004,8 +12004,109 @@ Nota: [[movimento-curto-nos-sites-dos-grupos]]
 - Banco: paleta escura de 22/10 nas colunas do claro, `_escuro` nulas.
 - As cores do claro de antes não existiam em registro nenhum: quem mudar cor
   por SQL anota os valores antigos antes (o banco não guarda histórico).
+- **Verificado em 27/10 por simulação** (`primeiroContato.simulacao.test.ts`,
+  disparador de produção com banco em memória): 10/10/10/0/0 em cinco dias,
+  nada no número recém-conectado ou recém-caído, foto só para quem já
+  conversou. Um tique pode só adiar 25 itens e parar; o pg_cron segue no
+  minuto seguinte. Roleta dos anúncios, aviso de imóvel novo e botão ✨ mandam
+  primeiro contato sem esta trava; hoje nenhum tem uso.
 
-## Agenda, fase 1: visitas com histórico e tela Agenda (0222, 27/10/2026)
+
+## Número central da conta oculta não aparecia na Roleta (27/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]] e [[conta-oculta]].
+
+- Sintoma na Aretz: "não consigo conectar o grupo ao corretor". Banco:
+  `envio_grupo_leads_ativo = false`, instância nula, nenhum corretor com grupo.
+- Sem número central salvo, "Sincronizar grupos" fica apagado e o vínculo à
+  mão some: o problema não está no casamento de nomes.
+- O único número conectado era o da conta oculta de administração
+  (`nexthome-administracao-aretz`, conectado em 27/10 19h23 UTC), e
+  `DistribuicaoDaEquipe` tirava conta oculta das opções do número central.
+- Correção: `opcoesDoNumeroCentral` (`marketing/impulsionamentos/numeroCentral.ts`)
+  oferece o número com "(conta oculta)"; a lista de corretores segue recortada.
+- O padrão gravado da Aretz é `{corretor} & ARETZ🟢`; o emoji não atrapalha
+  (`chaveDoNome` tira tudo que não é letra/número).
+- Na mesma tarefa: seletor manual sempre visível, lista "Grupos neste número"
+  com o dono de cada grupo, `fetchAllGroups?getParticipants=false` (a v2 exige)
+  e JID de grupo antigo com hífen aceito (antes sumia calado da lista).
+- Ainda em 27/10: "Grupos não lidos" sem motivo na tela. O erro passou a
+  trazer a mensagem da Evolution e a ir ao log (`[grupos]`); leitura limitada
+  a 90 s (a 2.3.7 busca a foto de cada grupo no `fetchAllGroups`). O padrão
+  do nome da Aretz apareceu nulo e foi restaurado para `{corretor} & ARETZ`.
+
+
+## Reconectar depois de 401: a instância recomeça do zero (27/10/2026)
+
+Nota: [[pareamento-depois-de-401-recomeca-a-instancia]].
+
+- **O Ramos tentou cinco vezes e o celular disse "Não foi possível conectar o
+  dispositivo".** Cada pedido terminou com a instância caindo 401; num deles a
+  Evolution não devolveu código e caiu 0,4 s depois. A instância guardava a
+  sessão do aparelho que o WhatsApp tinha desconectado em 21/10.
+- Hoje instância em `close` é apagada e recriada antes do código ou do QR
+  (`recomecar` em `pareamento.ts`). Conectada nunca é apagada.
+- A tela avisa a recusa (queda 401/403 mais de 5 s depois do código) em vez de
+  esperar 2 minutos. Número novo não registra queda, então ali o aviso não
+  aparece.
+- **Diagnóstico**: `get_runtime_logs` com `nexthome-<slug>` mostra cada
+  "caiu com o código N" e "pareamento por número sem pairingCode". O log do
+  Hobby guarda só 1 hora: peça para repetir a tentativa e olhe logo.
+
+
+## Lead do impulsionamento não recebe mais nada automático (27/10/2026)
+
+Nota: [[lead-da-campanha-do-corretor-sem-ia]].
+
+- **Pedido do dono:** "a IA está respondendo os leads vindos de campanhas"
+  (impulsionamento pelo Instagram). Medido antes de mexer: desde 20/10 a IA já
+  ficava calada nesses leads (`meta/ctwa`); a única fala `bot` era a
+  boas-vindas fixa "Olá! Recebemos sua mensagem. Em breve, um corretor entrará
+  em contato…". Era ela que o dono lia como IA.
+- Tirada do webhook e do caminho sem repasse da roleta (`planoDeMensagens`
+  sem repasse agora é vazio; `BOAS_VINDAS_DE_CAMPANHA` e `boasVindasPermitida`
+  deixaram de existir). Passagem e abertura de um repasse da roleta seguem
+  (textos do corretor, roleta desligada em todas as contas hoje).
+- **"A IA respondeu" pode ser qualquer fala `bot`:** boas-vindas fixa,
+  passagem da roleta, mensagem de lista. `ia_interacoes.acao = 'respondida'`
+  é o que prova IA de verdade; comece por ela.
+- As listas de disparo continuam com a IA respondendo quem responde (decisão
+  de 01/09); o dono confirmou que o pedido era só o impulsionamento.
+- Caso da Grazi (22/10, conversa `ad82fec7`): lead `meta/ctwa` respondido uma
+  vez pela IA. Era a própria corretora clicando no anúncio de uma clínica; a
+  conversa estava com `bot_ativo` ligado no momento. Não é o caminho do
+  cliente que clica no anúncio do corretor.
+
+## Primeiro contato: um contador só em todo caminho, e as brechas fechadas (0222/0223, 27/10/2026)
+
+Nota: [[primeiro-contato-tem-teto-proprio]].
+
+- **A régua de 10 por dia, 30 por semana e quarentena de 7 dias valia só para
+  a lista.** Roleta (modo mensagem), aviso de imóvel novo e o botão ✨ também
+  abrem conversa com quem nunca escreveu. Hoje os quatro passam por
+  `liberarPrimeiroContato` (`primeiroContatoNoEnvio.ts`) e contam no mesmo
+  `primeiros_contatos_do_corretor` (0222), calculado pelas mensagens que
+  saíram (conversa por dia sem fala anterior do cliente). Ramos: 48 desde
+  20/10, batendo com a queda.
+- **O disparador ainda obedecia `ignorar_janela`/`janela_liberada_ate`**, que
+  o corretor consegue gravar na própria lista pela API. Não lê mais; a lista
+  viva agenda sempre dentro da janela.
+- **0223: `authenticated` não grava nem apaga em `whatsapp_mensagens`, nem
+  apaga conversa.** Uma "fala do cliente" forjada liberaria o primeiro
+  contato. Toda gravação de mensagem já era pela chave de serviço; o painel só
+  lê e escuta o Realtime. Testar grant com `set local role authenticated` num
+  `do $$ ... raise exception` (cuidado: `set local` dentro de bloco com
+  exceção capturada é desfeito junto, e o bloco seguinte roda como postgres).
+- **Resíduo**: listas e fila ainda são gravadas pela sessão (29 pontos). Não
+  fura régua nem janela; mudar é trabalho separado.
+- **Créditos da OpenAI acabaram em 27/10** (429 "You have no credits
+  remaining"): dossiê, transcrição de áudio e a reescrita do texto da lista
+  falham. Lista sem texto conferido não sai (lado seguro). Recarregar a conta.
+- Teste de banco falso que não conhece `rpc` quebra quando um caminho passa a
+  consultar a régua: `portas.test.ts` e `roletaDosAnuncios.fluxo.test.ts`
+  ganharam o `rpc` e instância com `conectado_em` antigo.
+
+## Agenda, fase 1: visitas com histórico e tela Agenda (0224, 27/10/2026)
 
 Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
 
@@ -12031,12 +12132,12 @@ Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
   cache): 24 worktrees antigas já publicadas foram removidas (~10 GB); os
   `.relatorio-*.md` delas estão em `nexthome/relatorios-das-worktrees/`.
 
-## Agenda, fases 2–5: equipe, reuniões, cobrança e comandos (0223–0225, 27/10/2026)
+## Agenda, fases 2–5: equipe, reuniões, cobrança e comandos (0225–0227, 27/10/2026)
 
 Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, NÃO publicada.
 
 - Visita passada pelo gestor precisa de `passada_em`: sem a marca, o espelho
-  do lead (0222) devolvia a visita ao dono na troca de dono e na remarcação.
+  do lead (0224) devolvia a visita ao dono na troca de dono e na remarcação.
 - Reunião e bloqueio travam a visita por GATILHO com `errcode
   exclusion_violation` (23P01): o mesmo código da exclusão gist, então
   `ehConflitoDeHorario` e a reserva da IA (false) já tratam. A IA lê os
@@ -12058,3 +12159,5 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, N�
   (sem importar `createServiceClient`) entra em IMPORTADORES como `repassa`,
   não no MAPA — os dois juntos reprovam.
 
+
+- Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.

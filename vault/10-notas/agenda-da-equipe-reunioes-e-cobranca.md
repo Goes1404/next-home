@@ -1,6 +1,6 @@
 ---
 title: A Agenda da equipe conta no banco, a visita passada é marcada para o espelho não desfazer, e reunião/bloqueio travam a IA pelo mesmo código 23P01
-aliases: [Agenda fase 2, Agenda fase 3, Agenda fase 4, Agenda fase 5, 0223, 0224, 0225, numeros_da_agenda, passada_em, compromissos, responder_visita, conversa_de_agenda]
+aliases: [Agenda fase 2, Agenda fase 3, Agenda fase 4, Agenda fase 5, 0225, 0226, 0227, numeros_da_agenda, passada_em, compromissos, responder_visita, conversa_de_agenda]
 tags: [banco, crm, painel, ia, whatsapp, decisao, armadilha]
 type: decisao
 status: seedling
@@ -14,9 +14,9 @@ summary: Gestor vê a equipe (?ver=equipe) com números do mês no banco; visita
 # Agenda da equipe, reuniões, cobrança e comandos (fases 2–5)
 
 Nada publicado em 27/10/2026. Sobe junto com a fase 1 ([[agenda-visitas-com-historico]]),
-migrations 0222 → 0225 nessa ordem, antes do deploy.
+migrations 0224 → 0227 nessa ordem, antes do deploy.
 
-## Fase 2 — equipe e visita passada (0223)
+## Fase 2 — equipe e visita passada (0225)
 
 - `/corretor/agenda?ver=equipe` só vale para `papel = gestor`; o corretor
   comum tem o parâmetro ignorado (não vê agenda de colega).
@@ -26,7 +26,7 @@ migrations 0222 → 0225 nessa ordem, antes do deploy.
   realizada, atribuído à última realizada antes dele. Começa a contar no mês
   da primeira visita do grupo em `visitas` ("não medido" antes disso).
 - **Visita passada:** só a visita muda (`corretor_id` de quem faz +
-  `passada_em`). O espelho do lead (0222) foi redefinido para NÃO levar a
+  `passada_em`). O espelho do lead (0224) foi redefinido para NÃO levar a
   visita passada ao novo dono nem devolvê-la ao dono na remarcação. A reserva
   da IA usa a grade de quem faz; o webhook oferece a agenda dele
   (`quemFazAVisitaDoLead`).
@@ -34,7 +34,7 @@ migrations 0222 → 0225 nessa ordem, antes do deploy.
   `/corretor/agenda/visita/[id]`, pela chave de serviço, só enquanto a visita
   é dele e marcada, sem a conversa.
 
-## Fase 3 — reunião e bloqueio (0224)
+## Fase 3 — reunião e bloqueio (0226)
 
 - `compromisso_participantes` copia o intervalo: é a ÚNICA tabela que a
   trava e a disponibilidade da IA leem. Visita que cruza compromisso ativo
@@ -46,7 +46,7 @@ migrations 0222 → 0225 nessa ordem, antes do deploy.
   (`lerCompromissos` modo equipe), nunca chega ao navegador.
 - `MENSAGEM_CONFLITO` virou "Você já tem outro compromisso nesse horário."
 
-## Fase 4 — "a visita aconteceu?" (0225)
+## Fase 4 — "a visita aconteceu?" (0227)
 
 - Passo `cobrarVisitas` no tick de followups (pg_cron, 5 min; cron da Vercel
   é diário no Hobby). Janela de aviso ao corretor 7h–21h59. Reivindica

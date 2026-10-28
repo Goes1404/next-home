@@ -4704,6 +4704,10 @@ export type Database = {
         Args: { p_corretor: string; p_excluir?: string[]; p_modo?: string }
         Returns: string | null
       }
+      primeiros_contatos_do_corretor: {
+        Args: { p_corretor: string; p_desde: string }
+        Returns: number
+      }
     }
     Enums: {
       finalidade_imovel: "lancamento" | "venda"

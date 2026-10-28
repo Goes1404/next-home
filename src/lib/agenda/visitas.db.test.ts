@@ -1,4 +1,4 @@
-// Visitas com histórico (0222), medido no banco local (`npm run db:teste`).
+// Visitas com histórico (0224), medido no banco local (`npm run db:teste`).
 //
 // `leads.visita_agendada_em` continua sendo a porta de escrita; o gatilho
 // `leads_zz_espelha_visita` espelha cada mudança em `visitas`. Estes testes
@@ -18,7 +18,7 @@ import {
 } from "@/lib/grupos/apoioDoBanco";
 import { daqui, marcar, novoCorretor, novoLead, visitasDo } from "./apoioDaAgendaNoBanco";
 
-describe.skipIf(!process.env.DB_TESTE_URL)("visitas com histórico (0222)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("visitas com histórico (0224)", () => {
   let sql: Sql;
 
   beforeAll(async () => {

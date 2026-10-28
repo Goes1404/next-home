@@ -10,7 +10,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 const RESPOSTAS: RespostaDaVisita[] = ["aconteceu", "faltou", "remarcou"];
 
 /**
- * A resposta à cobrança "a visita aconteceu?" pelo Início (0225). A mesma
+ * A resposta à cobrança "a visita aconteceu?" pelo Início (0227). A mesma
  * função do WhatsApp; respondida aqui, a pergunta pendente no WhatsApp
  * dessa visita é apagada para o "1" de depois não cair em outra.
  */

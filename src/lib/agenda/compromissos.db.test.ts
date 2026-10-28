@@ -1,4 +1,4 @@
-// Reuniões e bloqueios (0224), medidos no banco local (`npm run db:teste`).
+// Reuniões e bloqueios (0226), medidos no banco local (`npm run db:teste`).
 //
 // A IA não pode oferecer horário ocupado por compromisso que só a tela
 // conhece: a visita que cruza reunião ou bloqueio é recusada com o mesmo
@@ -43,7 +43,7 @@ async function codigoDoErro(f: () => Promise<unknown>): Promise<string | null> {
   }
 }
 
-describe.skipIf(!process.env.DB_TESTE_URL)("reuniões e bloqueios (0224)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("reuniões e bloqueios (0226)", () => {
   let sql: Sql;
 
   beforeAll(async () => {

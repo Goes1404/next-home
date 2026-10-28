@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 /*
- * Visita passada pelo gestor (0223): o dono do lead (A) continua vendo a
+ * Visita passada pelo gestor (0225): o dono do lead (A) continua vendo a
  * visita na agenda dele, com quem a faz. A segunda leitura filtra pelo dono
  * do lead (embed obrigatório) e só pega as passadas feitas por outro.
  */

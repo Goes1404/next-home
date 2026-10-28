@@ -4,7 +4,7 @@
 
 **Goal:** O gestor vê a Agenda da equipe (mês + dia + números do mês com 6 meses de comparação, filtro por corretor) e passa uma visita de um corretor para outro sem mexer no dono do lead.
 
-**Architecture:** Migration 0223 marca a visita passada (`passada_em`) para o espelho do lead não desfazer a passagem, faz a reserva da IA usar a grade de quem faz a visita e cria `numeros_da_agenda` (contagem no banco, mês de SP). Leitores novos em `src/lib/agenda/lerEquipe.ts` (chave de serviço, sempre filtrando o grupo da sessão). A tela `/corretor/agenda` ganha `?ver=equipe&corretor=` para o gestor.
+**Architecture:** Migration 0225 marca a visita passada (`passada_em`) para o espelho do lead não desfazer a passagem, faz a reserva da IA usar a grade de quem faz a visita e cria `numeros_da_agenda` (contagem no banco, mês de SP). Leitores novos em `src/lib/agenda/lerEquipe.ts` (chave de serviço, sempre filtrando o grupo da sessão). A tela `/corretor/agenda` ganha `?ver=equipe&corretor=` para o gestor.
 
 **Tech Stack:** Next.js App Router (searchParams é Promise), Supabase Postgres, Vitest (`npx vitest run --dir src`; banco: `DB_TESTE_URL`).
 
@@ -30,7 +30,7 @@
 
 ---
 
-### Task 1: Migration 0223 (visita passada, reserva por quem faz, números)
+### Task 1: Migration 0225 (visita passada, reserva por quem faz, números)
 
 **Files:**
 - Create: `supabase/migrations/0223_visita_passada_e_numeros_da_agenda.sql`
@@ -54,9 +54,9 @@
   - `"negócio conta uma vez por lead, na última visita realizada antes da proposta"`
   - `"filtro por corretor conta pelo corretor que fez a visita"`
 - [ ] **Step 2:** `DB_TESTE_URL=… npx vitest run src/lib/agenda/agendaDaEquipe.db.test.ts` → FAIL (coluna/função não existe).
-- [ ] **Step 3:** Escrever a 0223 (begin; lock_timeout 5s; `create or replace` do espelho a partir da 0222; reserva; função; grants; commit). Aplicar no banco local.
+- [ ] **Step 3:** Escrever a 0225 (begin; lock_timeout 5s; `create or replace` do espelho a partir da 0224; reserva; função; grants; commit). Aplicar no banco local.
 - [ ] **Step 4:** Rodar os testes de banco das duas suítes → PASS.
-- [ ] **Step 5:** Commit `feat(agenda): visita passada e números da agenda no banco (0223)`.
+- [ ] **Step 5:** Commit `feat(agenda): visita passada e números da agenda no banco (0225)`.
 
 ### Task 2: Leitores da equipe e da visita passada
 
@@ -116,4 +116,4 @@
 
 ### Task 5: Registro
 
-- [ ] Nota `vault/10-notas/agenda-da-equipe-e-visita-passada.md` + MOC CRM e Painel; seção no fim da `docs/MEMORIA.md`; handoff (0223 antes do deploy). Commit `docs(agenda): fase 2 no vault e na memória`.
+- [ ] Nota `vault/10-notas/agenda-da-equipe-e-visita-passada.md` + MOC CRM e Painel; seção no fim da `docs/MEMORIA.md`; handoff (0225 antes do deploy). Commit `docs(agenda): fase 2 no vault e na memória`.

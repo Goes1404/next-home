@@ -56,8 +56,8 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
 
   // Gatilhos que tocam só a linha-mãe ou filhas da própria linha: o grupo
   // de todas elas é o mesmo, conferido pelo carimbo da 0191.
-  "visita_nao_cruza_compromisso()": "trava da Agenda (0224): lê só linhas do MESMO corretor da visita, que é de um grupo só",
-  "bloqueio_nao_cruza_visita()": "trava da Agenda (0224): lê só visitas do MESMO corretor do bloqueio",
+  "visita_nao_cruza_compromisso()": "trava da Agenda (0226): lê só linhas do MESMO corretor da visita, que é de um grupo só",
+  "bloqueio_nao_cruza_visita()": "trava da Agenda (0226): lê só visitas do MESMO corretor do bloqueio",
   "marcar_visitas_sem_confirmacao()": "varredura do cron sobre todas as visitas (cada uma no próprio grupo); só muda o status; só service_role",
   "compromisso_cancelado_libera()": "desliga só os participantes do próprio compromisso (filhas da linha)",
   "contar_mensagem_nao_lida()": "gatilho: soma na conversa da própria mensagem (mesmo grupo pela 0191)",

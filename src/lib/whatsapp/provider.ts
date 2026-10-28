@@ -296,32 +296,41 @@ export async function obterQrCodeInstancia(
    * descarta o `?number=` sem avisar e devolve o mesmo QR de novo, então o
    * código de 8 caracteres nunca chegava à tela.
    */
-  if (numero) {
-    const estadoAtual = await consultarEstadoConexao(instanceName);
-    const decisao = decidirPareamentoPorNumero(estadoAtual.ok ? estadoAtual.estado : null);
+  const estadoAtual = await consultarEstadoConexao(instanceName);
+  const decisao = decidirPareamentoPorNumero(estadoAtual.ok ? estadoAtual.estado : null);
 
-    if (decisao.acao === "recusar") {
-      return {
-        ok: true,
-        qrcodeBase64: null,
-        codigoPareamento: null,
-        jaConectado: true,
-        desfecho: "ja_conectado",
-      };
-    }
-
-    // Derruba só a sessão PENDENTE (nunca uma conectada — `recusar` já
-    // saiu acima). `logout` preserva instância, webhook e tom de voz.
-    if (decisao.acao === "encerrar_antes") {
-      await desconectarInstancia(instanceName);
-    }
+  if (numero && decisao.acao === "recusar") {
+    return {
+      ok: true,
+      qrcodeBase64: null,
+      codigoPareamento: null,
+      jaConectado: true,
+      desfecho: "ja_conectado",
+    };
   }
 
-  // Na primeira conexão do corretor a instância ainda não existe na
-  // Evolution — `/instance/connect` sozinho devolveria 404. Criar é
-  // idempotente na prática: se já existe, o provedor recusa e seguimos
-  // direto para o connect.
-  const criada = await garantirInstancia(config, instanceName, numero || null);
+  // Derruba só a sessão PENDENTE (nunca uma conectada — `recusar` já
+  // saiu acima). `logout` preserva instância, webhook e tom de voz. No QR
+  // não precisa: o QR pendente é justamente o que ele quer.
+  if (numero && decisao.acao === "encerrar_antes") {
+    await desconectarInstancia(instanceName);
+  }
+
+  /*
+   * Instância sem sessão no ar recomeça do zero, nos dois métodos
+   * (`pareamento.ts`): a sessão que o WhatsApp derrubou com 401 fica
+   * guardada na instância e faz todo pedido novo cair na hora. O `create`
+   * logo abaixo a recria com o mesmo nome e o mesmo webhook.
+   */
+  const recomecou = decisao.acao === "recomecar" && (await apagarInstancia(instanceName));
+
+  let criada = await garantirInstancia(config, instanceName, numero || null);
+  // A Evolution termina de apagar em segundo plano: o primeiro `create` logo
+  // depois pode ser recusado como "nome em uso".
+  if (recomecou && !criada) {
+    await new Promise((r) => setTimeout(r, 2000));
+    criada = await garantirInstancia(config, instanceName, numero || null);
+  }
 
   /*
    * Instância recém-criada: o pareamento já veio na resposta do `create`.
@@ -406,6 +415,41 @@ export async function obterQrCodeInstancia(
     }
   }
   return { ok: false, motivo: "erro_provedor", detalhe: FRASE_PROVEDOR_FORA };
+}
+
+/**
+ * Apaga a instância na Evolution, com a sessão guardada nela (27/10/2026).
+ *
+ * Só para instância SEM sessão no ar (`close`): é o que tira dela as
+ * credenciais do aparelho que o WhatsApp já desconectou. Quem chama recria
+ * em seguida com o mesmo nome e o mesmo webhook (`garantirInstancia`).
+ * Devolve `true` quando a instância não existe mais (404 incluído).
+ */
+async function apagarInstancia(instanceName: string): Promise<boolean> {
+  const config = configDoProvedor();
+  if (!config || !instanceName) return false;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${config.baseUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
+      method: "DELETE",
+      headers: { apikey: config.apiKey },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok && res.status !== 404) {
+      const corpo = await res.text().catch(() => "");
+      console.warn(
+        `[whatsapp] não consegui recomeçar ${instanceName}: HTTP ${res.status}${corpo ? ` ${corpo.slice(0, 200)}` : ""}`,
+      );
+      return false;
+    }
+    console.warn(`[whatsapp] ${instanceName} recomeçada do zero antes do pareamento.`);
+    return true;
+  } catch (err) {
+    console.warn(`[whatsapp] não consegui recomeçar ${instanceName}: ${descreverFalhaDeRede(err)}`);
+    return false;
+  }
 }
 
 /**
@@ -770,7 +814,8 @@ export async function enviarMensagemWhatsapp(params: {
 
 /** Identificador estável que a Evolution usa para grupos do WhatsApp. */
 export function ehJidDeGrupoWhatsapp(valor: string | null | undefined): valor is string {
-  return /^\d{10,24}@g\.us$/i.test((valor ?? "").trim());
+  // Grupo antigo tem o JID `<número de quem criou>-<instante>@g.us`.
+  return /^\d{10,24}(-\d{9,12})?@g\.us$/i.test((valor ?? "").trim());
 }
 
 /**
@@ -836,11 +881,20 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
   if (!instanceName) return { grupos: [], erro: "Escolha o número central." };
 
   try {
-    const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}`, {
+    // A v2 recusa a chamada sem `getParticipants`; os participantes vêm à
+    // parte (`listarParticipantesDoGrupo`), só do grupo vinculado.
+    const res = await fetch(`${config.baseUrl}/group/fetchAllGroups/${encodeURIComponent(instanceName)}?getParticipants=false`, {
       headers: { apikey: config.apiKey },
       cache: "no-store",
+      // A Evolution busca a foto de cada grupo, um por um: número em muitos
+      // grupos demora. Sem limite, a aba Roleta ficaria presa esperando.
+      signal: AbortSignal.timeout(90_000),
     });
-    if (!res.ok) return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status}).` };
+    if (!res.ok) {
+      const motivo = motivoDaEvolution(await res.text().catch(() => ""));
+      console.error("[grupos] a Evolution recusou a lista de grupos", { instanceName, status: res.status, motivo });
+      return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status})${motivo ? `: ${motivo}` : "."}` };
+    }
     const json: unknown = await res.json();
     const itens = Array.isArray(json)
       ? json
@@ -856,8 +910,29 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
     });
     return { grupos };
   } catch (err) {
-    return { grupos: [], erro: err instanceof Error ? err.message : "Falha ao consultar os grupos." };
+    console.error("[grupos] falha ao pedir a lista de grupos", { instanceName, erro: descreverFalhaDeRede(err) });
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return { grupos: [], erro: "A lista de grupos demorou demais para chegar. Recarregue a página em alguns minutos." };
+    }
+    return { grupos: [], erro: descreverFalhaDeRede(err) || "Falha ao consultar os grupos." };
   }
+}
+
+/**
+ * O motivo que a Evolution põe no corpo do erro (`response.message`, lista ou
+ * texto; ou `message`/`error`), curto para caber na tela. Corpo que não é
+ * JSON vai cortado como veio.
+ */
+function motivoDaEvolution(corpo: string): string {
+  let motivo: unknown = corpo;
+  try {
+    const json = JSON.parse(corpo) as { response?: { message?: unknown }; message?: unknown; error?: unknown };
+    motivo = json.response?.message ?? json.message ?? json.error ?? "";
+  } catch {
+    // não é JSON: o texto cru serve
+  }
+  const texto = Array.isArray(motivo) ? motivo.map(String).join("; ") : typeof motivo === "string" ? motivo : JSON.stringify(motivo);
+  return texto.trim().slice(0, 200);
 }
 
 /**

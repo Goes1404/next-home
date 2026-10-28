@@ -1,4 +1,4 @@
--- 0222 — Visitas com histórico (Agenda, fase 1, 27/10/2026).
+-- 0224 — Visitas com histórico (Agenda, fase 1, 27/10/2026).
 --
 -- Até aqui a visita era uma coluna no lead (`leads.visita_agendada_em`,
 -- 0009): no máximo UMA por lead, sem histórico, e a trava de conflito
@@ -69,7 +69,7 @@ create table if not exists public.visitas (
 );
 
 comment on table public.visitas is
-  'Uma linha por visita, com histórico (0222). Espelho de leads.visita_agendada_em pelo gatilho leads_zz_espelha_visita. Só o servidor lê e grava.';
+  'Uma linha por visita, com histórico (0224). Espelho de leads.visita_agendada_em pelo gatilho leads_zz_espelha_visita. Só o servidor lê e grava.';
 comment on column public.visitas.datas_anteriores is
   'Datas de antes de cada remarcação, na ordem.';
 
@@ -278,7 +278,7 @@ end;
 $$;
 
 comment on function public.espelhar_visita_do_lead() is
-  'Espelha leads.visita_agendada_em (e a troca de dono) em public.visitas (0222). A recusa da exclusão ao marcar/remarcar sobe para quem escreveu no lead.';
+  'Espelha leads.visita_agendada_em (e a troca de dono) em public.visitas (0224). A recusa da exclusão ao marcar/remarcar sobe para quem escreveu no lead.';
 
 revoke all on function public.espelhar_visita_do_lead() from public, anon, authenticated;
 
@@ -343,7 +343,7 @@ begin
                                     then etapa_alterada_em else now() end
      where id = p_lead_id;
   exception
-    -- unique: o índice da 0074 (mesmo instante); exclusion: a trava de 60 min da 0222.
+    -- unique: o índice da 0074 (mesmo instante); exclusion: a trava de 60 min da 0224.
     when unique_violation or exclusion_violation then
       return false;
   end;

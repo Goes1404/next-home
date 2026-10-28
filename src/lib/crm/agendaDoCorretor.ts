@@ -36,7 +36,7 @@ export async function horariosDeVisita(
     /*
      * Só o que ainda vai acontecer (ou está acontecendo): visita de ontem
      * não ocupa vaga nenhuma, e a que começou há menos de uma hora ainda
-     * ocupa a seguinte. Lido de `visitas` (0222), que é onde a trava de
+     * ocupa a seguinte. Lido de `visitas` (0224), que é onde a trava de
      * conflito mora: por QUEM FAZ a visita e só entre as marcadas.
      */
     supabase
@@ -45,7 +45,7 @@ export async function horariosDeVisita(
       .eq("corretor_id", corretorId)
       .eq("status", "marcada")
       .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString()),
-    // Reuniões e bloqueios (0224): a mesma tabela que a trava lê.
+    // Reuniões e bloqueios (0226): a mesma tabela que a trava lê.
     supabase
       .from("compromisso_participantes")
       .select("inicio, fim")
@@ -93,7 +93,7 @@ export async function horariosDeVisitaSeguros(
 
 
 /**
- * De quem é a agenda que vale para o lead (0223): se o gestor passou a visita
+ * De quem é a agenda que vale para o lead (0225): se o gestor passou a visita
  * atual do lead a outro corretor, é a de quem FAZ a visita — a IA, que fala
  * pelo número do dono, oferece a remarcação na disponibilidade dele. Sem
  * visita passada (ou na falha da leitura), a do dono.

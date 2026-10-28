@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
- * Visita passada pelo gestor (0223): quando o cliente pede para remarcar, a
+ * Visita passada pelo gestor (0225): quando o cliente pede para remarcar, a
  * IA fala pelo número do dono do lead mas oferece a agenda de quem FAZ a
  * visita. Sem visita passada, ou se a leitura falhar, vale o dono.
  */

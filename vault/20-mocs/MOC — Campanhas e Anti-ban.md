@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-10
+updated: 2026-10-27
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -24,7 +24,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[o-lado-certo-de-errar-numa-trava]]
 - [[trocar-numero-zera-reputacao]]
 - [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]] ⚠️ o WhatsApp restringiu um número por lista fria; a lista agora tira número sem WhatsApp e para sozinha (0171-0172, 07/10)
-- [[primeiro-contato-tem-teto-proprio]] ⚠️ o WhatsApp do Ramos caiu após 48 primeiros contatos com a mesma foto; primeiro contato tem teto de 10/dia e 30/semana, nada nos 7 dias depois de conectar ou cair, e vai sem foto (0217, 26/10)
+- [[primeiro-contato-tem-teto-proprio]] ⚠️ o WhatsApp do Ramos caiu após 48 primeiros contatos com a mesma foto; primeiro contato tem teto de 10/dia e 30/semana, nada nos 7 dias depois de conectar ou cair, e vai sem foto (0217, 26/10); desde 0222 um contador só por corretor em lista, ✨, aviso de imóvel novo e roleta; 0223 tira do corretor a gravação de mensagens (27/10)
 - [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10); desde 09/10 os limites só podem ser apertados, nunca afrouxados
 - [[texto-da-lista-conferido-antes-de-sair]] ⚠️ cada mensagem só sai abaixo de 0,70 de semelhança com as do número; o A/B também é reescrito (0173, 08/10)
 - [[sessao-caida-com-o-numero-conectado]] ⚠️ "Connection Closed" com o número "conectado": o painel pede para reconectar, e reconectar levanta a pausa de 12h (09/10)
@@ -48,7 +48,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[aprimoramentos-das-oito-funcionalidades]] — A/B que decide sozinho e reescreve a fila, vencedoras como exemplo, pós-visita que puxa o próximo passo, lead pago sem contato em 30 min (26/09)
 - [[fechar-o-ciclo-e-ligar-a-plataforma]] — público compradores, reengajamento descartado para quem fechou, pedido de indicação no tique (26/09)
 - [[impulsionamento-do-corretor-pela-etiqueta-da-meta]] — lead do impulsionamento do corretor era descartado pela 0111; etiqueta da Meta abre a porta, gasto digitado em Marketing → Impulsionamentos (27/09)
-- [[lead-da-campanha-do-corretor-sem-ia]] — lead da campanha do próprio corretor: a IA não responde, só cadastra e resume (20/10)
+- [[lead-da-campanha-do-corretor-sem-ia]] — lead da campanha do próprio corretor: a IA não responde, só cadastra e resume (20/10); sem boas-vindas automática (27/10)
 - [[campanha-cadastrada-pelo-corretor]] · [[lead-do-link-do-anuncio-cai-na-campanha-do-imovel]] · [[clique-no-link-cadastra-quem-escreve]] · [[anuncio-da-etiqueta-cai-sozinho-na-campanha]] — o corretor cadastra campanha com valor, agrupa anúncios, liga clientes; qualidade pela temperatura da IA e comparação pela melhor por visita (0132, 30/09)
 - [[onde-o-clique-do-anuncio-se-perde]] — pessoas por clique e quem escreveu sem a mensagem pronta, só contagem (0159, 05/10)
 - [[qualidade-do-lead-pelo-que-ele-fez]] — qualidade por degraus de comportamento (conversou, se qualificou, visitou, fechou), contagem abaixo de 5 clientes, comparativo entre campanhas (30/09)

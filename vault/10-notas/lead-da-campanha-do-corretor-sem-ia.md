@@ -8,8 +8,10 @@ codigo:
   - src/app/api/webhooks/whatsapp/route.ts
   - src/lib/whatsapp/impulsionamentos.ts
   - src/lib/whatsapp/campanhaDoCorretorSemIA.test.ts
-summary: Lead que chega com a etiqueta de anúncio da Meta na linha do corretor é cadastrado e resumido, mas a IA fica calada; quem conversa é o corretor.
-updated: 2026-10-20
+  - src/app/api/webhooks/whatsapp/anuncioSemMensagemAutomatica.test.ts
+  - src/lib/whatsapp/roletaDosAnuncios.ts
+summary: Lead que chega com a etiqueta de anúncio da Meta na linha do corretor é cadastrado e resumido, mas a IA fica calada e nada automático sai (a boas-vindas fixa saiu em 27/10); quem conversa é o corretor.
+updated: 2026-10-27
 ---
 
 # Lead da campanha do próprio corretor não é atendido pela IA
@@ -21,6 +23,16 @@ com quem clicou. A IA só **cadastra** o lead e faz o **resumo** da ficha.
   (`reconhecerAnuncioMeta`) e não é o link `/wa` da imobiliária
   (`!nomeDoAnuncio`). É o mesmo bloco que registra o lead em
   `impulsionamentos` ([[impulsionamento-do-corretor-pela-etiqueta-da-meta]]).
+- **Nada automático sai para o cliente (27/10/2026).** Até então ia uma
+  boas-vindas fixa ("Olá! Recebemos sua mensagem. Em breve, um corretor
+  entrará em contato…") pelo webhook e, sem repasse, pela roleta. O dono lia
+  isso como "a IA respondendo o lead do impulsionamento" e mandou tirar. Medido
+  antes de mexer: dos 41 leads `meta/ctwa` de 30 dias, desde 20/10 a única fala
+  `bot` era essa frase. Guarda: `anuncioSemMensagemAutomatica.test.ts`.
+- **Quando o dono diz "a IA respondeu", primeiro descubra QUAL fala.** No
+  painel toda fala `remetente = 'bot'` parece IA: boas-vindas fixa, passagem da
+  roleta e lista de disparo inclusive. `ia_interacoes.acao = 'respondida'` é o
+  que separa a IA de verdade.
 - **O que acontece:** `calarIaNaConversaDeCampanha` grava `bot_ativo = false`
   na conversa ANTES da decisão de responder; a decisão já recebe a conversa
   calada (`iaCaladaPelaCampanha`). O resumo segue pelo caminho do silêncio
