@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TEXTO_BOAS_VINDAS_PADRAO } from "@/lib/whatsapp/roletaTextos";
 
 /**
  * A roleta dos anúncios escolhe COMO o corretor sorteado fica sabendo do
@@ -61,7 +62,8 @@ const base = {
   destinos: ["ana", "beto"],
   textoPassagem: "",
   textoAbertura: "",
-  textoBoasVindas: "",
+  textoBoasVindas: null as string | null,
+  textoPassagemGrupo: null as string | null,
 };
 
 function semear(envioAtivo: boolean, roletaSalva?: Linha) {
@@ -94,11 +96,11 @@ describe("salvarRoleta: modo do aviso", () => {
     expect(gravacoes[0].valores).toMatchObject({ corretor_id: "ana", grupo_id: GRUPO, modo_aviso: "grupo" });
   });
 
-  it("grava a boas-vindas do modo grupo; em branco vira nulo (nada sai)", async () => {
-    await salvarRoleta({ ...base, modoAviso: "grupo", textoBoasVindas: "  Oi! {corretor} vai te ligar.  " });
-    expect(gravacoes[0].valores).toMatchObject({ texto_boas_vindas: "Oi! {corretor} vai te ligar." });
-    await salvarRoleta({ ...base, modoAviso: "grupo", textoBoasVindas: "   " });
-    expect(gravacoes[1].valores).toMatchObject({ texto_boas_vindas: null });
+  it("mensagens do modo grupo: texto próprio fica, vazio desliga, igual ao padrão vira nulo", async () => {
+    await salvarRoleta({ ...base, modoAviso: "grupo", textoBoasVindas: "  Oi! {corretor} vai te ligar.  ", textoPassagemGrupo: "   " });
+    expect(gravacoes[0].valores).toMatchObject({ texto_boas_vindas: "Oi! {corretor} vai te ligar.", texto_passagem_grupo: "" });
+    await salvarRoleta({ ...base, modoAviso: "grupo", textoBoasVindas: TEXTO_BOAS_VINDAS_PADRAO, textoPassagemGrupo: null });
+    expect(gravacoes[1].valores).toMatchObject({ texto_boas_vindas: null, texto_passagem_grupo: null });
   });
 
   it("sem o envio para grupos, recusa 'grupo' e não grava nada", async () => {

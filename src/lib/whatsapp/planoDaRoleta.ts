@@ -1,3 +1,5 @@
+import { TEXTO_BOAS_VINDAS_PADRAO, TEXTO_PASSAGEM_GRUPO_PADRAO } from "./roletaTextos";
+
 /**
  * Como o escolhido fica sabendo (0218): `mensagem` é a roleta de sempre (o
  * número dele abre a conversa) e `grupo` só avisa no grupo para ele ligar.
@@ -29,15 +31,17 @@ export function planoDeMensagens(
 }
 
 /**
- * Modo grupo (0229, 28/10/2026): o número do anúncio pode dar as boas-vindas
- * ao cliente, com o texto que o dono escreveu, DEPOIS de a ficha trocar de
- * dono (a mensagem diz quem vai ligar). Sem texto, nada sai, como desde
- * 27/10; sem repasse, também nada.
+ * Modo grupo (0229/0230, 28/10/2026): o número do anúncio manda a boas-vindas
+ * e depois diz quem vai atender, DEPOIS de a ficha trocar de dono. Texto nulo
+ * = o padrão; vazio = aquela mensagem não sai. Sem repasse, nada.
  */
-export function mandaBoasVindas(
+export function mensagensDoModoGrupo(
   modo: Exclude<ModoDaRoleta, "desligada">,
   repassou: boolean,
-  texto: string | null | undefined,
-): boolean {
-  return modo === "grupo" && repassou && !!texto?.trim();
+  textos: { boasVindas: string | null; passagem: string | null },
+): string[] {
+  if (modo !== "grupo" || !repassou) return [];
+  return [textos.boasVindas ?? TEXTO_BOAS_VINDAS_PADRAO, textos.passagem ?? TEXTO_PASSAGEM_GRUPO_PADRAO].filter((t) =>
+    t.trim(),
+  );
 }

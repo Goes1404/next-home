@@ -2300,6 +2300,7 @@ export type Database = {
           ultimo_indice: number
           texto_boas_vindas: string | null
           texto_passagem: string | null
+          texto_passagem_grupo: string | null
           texto_abertura: string | null
           modo_aviso: string
           atualizado_em: string
@@ -2313,6 +2314,7 @@ export type Database = {
           ultimo_indice?: number
           texto_boas_vindas?: string | null
           texto_passagem?: string | null
+          texto_passagem_grupo?: string | null
           texto_abertura?: string | null
           modo_aviso?: string
           atualizado_em?: string
@@ -2326,6 +2328,7 @@ export type Database = {
           ultimo_indice?: number
           texto_boas_vindas?: string | null
           texto_passagem?: string | null
+          texto_passagem_grupo?: string | null
           texto_abertura?: string | null
           modo_aviso?: string
           atualizado_em?: string

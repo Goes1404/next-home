@@ -12251,3 +12251,21 @@ Nota: [[roleta-dos-anuncios]]
   virou "só depois de `if (!trocou) return null;`, uma chamada".
 - Migration aditiva: aplicar ANTES do deploy (o código seleciona as colunas
   novas; sem elas a aba Roleta e a config dos grupos quebram).
+
+## Modelo do dono como padrão no modo grupo (0230, 28/10/2026)
+
+Nota: [[roleta-dos-anuncios]]
+
+- Pedido do dono: duas mensagens do número do anúncio quando a roleta passa o
+  lead (modo grupo): "Olá, bom ter você por aqui na {imobiliaria}🟢" e "Estou
+  te direcionando para o *Consultor {corretor}*, dentro de instantes te
+  passará todas as informações desse imóvel!".
+- Nulo = padrão LIGADO (inverte a 0229, onde nulo era "nada sai"); vazio =
+  aquela mensagem desligada. `salvarRoleta` grava nulo quando o texto é igual
+  ao padrão.
+- Coluna nova `texto_passagem_grupo` em vez de reaproveitar `texto_passagem`:
+  as roletas existentes gravaram nela o padrão do modo mensagem (a tela
+  preenche o campo e salva), que promete mensagem do número do corretor.
+- Mesma árvore de trabalho com outra sessão: commitar só os próprios
+  arquivos; MEMORIA entrou pelo índice (`git hash-object` + `update-index`)
+  para não levar a seção alheia ainda não commitada.

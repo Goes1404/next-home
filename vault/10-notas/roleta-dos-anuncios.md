@@ -78,3 +78,13 @@ Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-co
   (com `*negrito*`), marcadores como botões que entram no cursor, recolhido
   em `<details>` com o estado no resumo ("Ligada/Desligada", "Texto
   padrão/da imobiliária"). "Nome dos grupos" virou uma faixa só.
+- **Modelo do dono como padrão (28/10, 0230)**: no modo grupo saem DUAS
+  mensagens do número do anúncio depois do repasse — boas-vindas
+  (`TEXTO_BOAS_VINDAS_PADRAO`, "Olá, bom ter você por aqui na
+  {imobiliaria}🟢") e quem vai atender (`texto_passagem_grupo`,
+  `TEXTO_PASSAGEM_GRUPO_PADRAO`, "Estou te direcionando para o *Consultor
+  {corretor}*..."). Coluna nula = padrão (LIGADO); vazia = aquela mensagem
+  desligada. Não reaproveita `texto_passagem`: as roletas salvas já guardam
+  nela o texto do modo mensagem ("já te chama pelo número dele").
+  A Aretz tem a 1ª gravada com o nome longo ("Aretz Imobi - Consultoria
+  Imobiliária🟢"), que não é o `{imobiliaria}` da marca.
