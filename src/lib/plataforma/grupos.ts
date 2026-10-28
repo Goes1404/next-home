@@ -253,3 +253,37 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     ...(await contarDoGrupo(servico, g)),
   };
 }
+
+export type AcessoDoGrupo = {
+  corretorId: string;
+  nome: string;
+  email: string | null;
+  papel: "corretor" | "gestor";
+  ativo: boolean;
+  /** A próxima entrada cai na troca de senha (senha provisória ainda não trocada). */
+  deveTrocarSenha: boolean;
+};
+
+/**
+ * Os logins do grupo (fichas com `user_id`), para o operador redefinir a
+ * senha de quem ficou sem acesso. Só o cadastro do acesso: nome, e-mail,
+ * papel e situação — nada da carteira da pessoa.
+ */
+export async function lerAcessosDoGrupo(_prova: { userId: string }, grupoId: string): Promise<AcessoDoGrupo[]> {
+  const { data, error } = await createServiceClient()
+    .from("corretores")
+    .select("id, nome, email, papel, ativo, deve_trocar_senha")
+    .eq("grupo_id", grupoId)
+    .not("user_id", "is", null)
+    .order("ativo", { ascending: false })
+    .order("nome", { ascending: true });
+  if (error) throw new Error(`Falha ao ler os acessos do grupo: ${error.message}`);
+  return (data ?? []).map((c) => ({
+    corretorId: c.id,
+    nome: c.nome,
+    email: c.email,
+    papel: c.papel === "gestor" ? "gestor" : "corretor",
+    ativo: c.ativo,
+    deveTrocarSenha: c.deve_trocar_senha,
+  }));
+}

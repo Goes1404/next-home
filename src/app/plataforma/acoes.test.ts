@@ -42,6 +42,7 @@ const {
   criarGrupoComPrimeiroAcesso,
   criarImobiliaria,
   editarDadosDoGrupo,
+  redefinirSenhaDoAcesso,
 } = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
 
@@ -726,5 +727,79 @@ describe("criação por tipo de conta (imobiliária e corretor independente)", (
     expect(banco.tabelas.admin_eventos.filter((e) => e.grupo_id === null)).toEqual([
       expect.objectContaining({ detalhes: expect.objectContaining({ passo: "cadastro" }) }),
     ]);
+  });
+});
+
+describe("redefinir a senha de um acesso pela plataforma", () => {
+  const C_BETO = "00000000-0000-4000-8000-0000000000b1";
+  const C_ADMIN = "00000000-0000-4000-8000-0000000000b2";
+  let senhasTrocadas: { userId: string; atributos: Record<string, unknown> }[];
+  let erroDaSenha: { message: string; code?: string } | null;
+
+  beforeEach(() => {
+    senhasTrocadas = [];
+    erroDaSenha = null;
+    banco.tabelas.corretores.push(
+      { id: C_BETO, nome: "Beto", user_id: "usuario-beto-2", email: "beto@aretz.com", grupo_id: G_NH, deve_trocar_senha: false },
+      { id: C_ADMIN, nome: "Dono", user_id: "usuario-dono", email: "dono@x.com", grupo_id: G_NH, deve_trocar_senha: false },
+    );
+    banco.tabelas.administradores_da_plataforma = [{ user_id: "usuario-dono" }];
+    (banco.cliente.auth as { admin: Record<string, unknown> }).admin.updateUserById = async (userId: string, atributos: Record<string, unknown>) => {
+      senhasTrocadas.push({ userId, atributos });
+      return { data: { user: { id: userId } }, error: erroDaSenha };
+    };
+  });
+
+  const formDaSenha = (senha = "provisoria-123") => {
+    const form = new FormData();
+    form.set("senha", senha);
+    return form;
+  };
+  const ficha = (id: string) => banco.tabelas.corretores.find((c) => c.id === id);
+
+  it("troca a senha no Auth, liga a troca obrigatória e audita sem a senha", async () => {
+    const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
+
+    expect(r).toEqual({ ok: true, nome: "Beto" });
+    expect(senhasTrocadas).toEqual([{ userId: "usuario-beto-2", atributos: { password: "provisoria-123" } }]);
+    expect(ficha(C_BETO)?.deve_trocar_senha).toBe(true);
+    const eventos = banco.tabelas.admin_eventos.filter((e) => e.acao === "senha_redefinida");
+    expect(eventos).toEqual([
+      expect.objectContaining({ grupo_id: G_NH, ator_plataforma_user_id: OPERADOR, alvo_corretor_id: C_BETO }),
+    ]);
+    expect(JSON.stringify(banco.tabelas)).not.toContain("provisoria-123");
+  });
+
+  it("recusa quem não administra a plataforma antes do banco", async () => {
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
+    expect(r).toEqual({ ok: false, erro: "Esta ação é restrita a quem administra a plataforma." });
+    expect(banco.consultas).toEqual([]);
+    expect(senhasTrocadas).toEqual([]);
+  });
+
+  it("recusa senha curta e acesso de outro grupo", async () => {
+    expect(await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha("curta"))).toMatchObject({ ok: false });
+    const outroGrupo = "00000000-0000-4000-8000-0000000000cc";
+    expect(await redefinirSenhaDoAcesso(outroGrupo, C_BETO, undefined, formDaSenha())).toEqual({
+      ok: false,
+      erro: "Acesso não encontrado.",
+    });
+    expect(senhasTrocadas).toEqual([]);
+  });
+
+  it("não mexe na senha de outro administrador da plataforma", async () => {
+    const r = await redefinirSenhaDoAcesso(G_NH, C_ADMIN, undefined, formDaSenha());
+    expect(r).toMatchObject({ ok: false });
+    expect(senhasTrocadas).toEqual([]);
+    expect(ficha(C_ADMIN)?.deve_trocar_senha).toBe(false);
+  });
+
+  it("Auth recusando a senha devolve a troca obrigatória ao que era", async () => {
+    erroDaSenha = { message: "Password is too weak", code: "weak_password" };
+    const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
+    expect(r).toEqual({ ok: false, erro: expect.stringMatching(/fraca/) });
+    expect(ficha(C_BETO)?.deve_trocar_senha).toBe(false);
+    expect(banco.tabelas.admin_eventos.filter((e) => e.acao === "senha_redefinida")).toEqual([]);
   });
 });

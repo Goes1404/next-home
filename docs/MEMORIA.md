@@ -12302,3 +12302,19 @@ Nota: [[app-android-da-astro]]. Domínio do app: `astroimob.vercel.app`.
 Pacote `com.astrosolucoes.crm`. `assetlinks.json` lê `ANDROID_SHA256` na
 Vercel. Páginas legais em `/astro/privacidade`, `/astro/termos`,
 `/astro/excluir-conta`. Passo a passo em `android/LEIAME.md`.
+## Plataforma redefine a senha de um acesso (28/10/2026)
+
+Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
+
+- `sq1matheusgsilva@gmail.com` é administrador da plataforma **sem ficha de
+  corretor** (medido em produção): não vê Contas do gestor e não usa o
+  "Esqueci a senha" (que procura `corretores.email`). Reset tinha de nascer em
+  `/plataforma/grupos/<id>`.
+- Seção **Acessos** + `redefinirSenhaDoAcesso`: senha temporária só no Auth,
+  `deve_trocar_senha = true`, evento `senha_redefinida` (já no CHECK; sem
+  migration). Recusa login que administra a plataforma.
+- Exceção consciente à revisão de 20/10 ("ninguém assume o login de outro"),
+  igual ao "Criar acesso" de 23/10. Gestor continua só com link por e-mail.
+- Marca de troca antes da senha; Auth recusando, volta ao valor antigo — ler o
+  valor antes do `update` (o `bancoFalso` devolve a linha viva).
+
