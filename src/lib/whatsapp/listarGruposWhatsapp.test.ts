@@ -42,6 +42,32 @@ describe("listarGruposWhatsapp", () => {
     });
   });
 
+  it("grupo sem nome continua na lista: some e o seletor à mão fica sem opção", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    globalThis.fetch = vi.fn(
+      async () => new Response(JSON.stringify([{ id: "120363012345678901@g.us", subject: "" }]), { status: 200 }),
+    ) as typeof fetch;
+    const r = await listarGruposWhatsapp("central");
+    expect(r).toEqual({ grupos: [{ jid: "120363012345678901@g.us", nome: "Grupo sem nome (…678901)" }] });
+  });
+
+  it("registra no log quantos grupos vieram e quantos ficaram: lista vazia sem erro não deixa rastro", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify([{ id: "120363012345678901@g.us", subject: "A" }, { id: "x@lid", subject: "B" }]), {
+          status: 200,
+        }),
+    ) as typeof fetch;
+    await listarGruposWhatsapp("central");
+    expect(info).toHaveBeenCalledWith("[grupos] lista lida", {
+      instanceName: "central",
+      recebidos: 2,
+      aproveitados: 1,
+      descartados: ["x@lid"],
+    });
+  });
+
   it("HTTP de erro vira mensagem, sem lançar", async () => {
     globalThis.fetch = vi.fn(async () => new Response("x", { status: 400 })) as typeof fetch;
     const r = await listarGruposWhatsapp("central");

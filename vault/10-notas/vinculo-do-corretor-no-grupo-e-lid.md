@@ -12,7 +12,7 @@ codigo:
   - src/app/corretor/(painel)/admin/whatsapp/acoes.ts
   - src/app/corretor/(painel)/marketing/impulsionamentos/numeroCentral.ts
 created: 2026-10-26
-updated: 2026-10-27
+updated: 2026-10-28
 fonte: spec 2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md (6.3, 6.4, 6.6, 7); decisão do dono de não testar na Evolution real
 summary: Para o retorno da ligação pelo grupo só valer quando o CORRETOR fala (os gestores também estão no grupo), a sincronização lê os participantes e guarda o @lid dele pelo par número↔lid; grupo que serve a dois corretores é recusado.
 ---
@@ -96,3 +96,10 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
 - O campo "Nome dos grupos" salvo vazio volta ao padrão de fábrica
   (`{corretor} & Aretz Imobi`), que não casa com `NOME & ARETZ🟢`. Em 27/10
   apareceu nulo e foi restaurado para `{corretor} & ARETZ` por SQL.
+- 28/10: "não dá para apertar no seletor" e nenhum `[grupos]` no log. Leitura
+  bem-sucedida não deixava rastro, e o filtro jogava fora calado grupo sem
+  nome (`subject` vazio) e id fora do padrão: lista vazia = seletor travado
+  em "Nenhum grupo no número". Agora grupo sem nome entra como
+  "Grupo sem nome (…últimos 6 dígitos)" e toda leitura loga
+  `[grupos] lista lida {recebidos, aproveitados, descartados}`. Diagnóstico:
+  procurar `lista lida` no log da Vercel (Hobby guarda 1 h).

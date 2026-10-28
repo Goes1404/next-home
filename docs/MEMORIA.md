@@ -12105,3 +12105,17 @@ Nota: [[primeiro-contato-tem-teto-proprio]].
 - Teste de banco falso que não conhece `rpc` quebra quando um caminho passa a
   consultar a régua: `portas.test.ts` e `roletaDosAnuncios.fluxo.test.ts`
   ganharam o `rpc` e instância com `conectado_em` antigo.
+
+## Seletor "Escolher à mão" travado sem erro no log (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Aretz: seletor do grupo apagado e nenhum `[grupos]` no log da Vercel. Só o
+  caminho de erro logava; leitura que voltava vazia era invisível.
+- `listarGruposWhatsapp` descartava calado grupo sem `subject` e id que não
+  casa `ehJidDeGrupoWhatsapp`. Grupo sem nome agora entra com nome provisório
+  ("Grupo sem nome (…123456)").
+- Toda leitura loga `[grupos] lista lida {recebidos, aproveitados,
+  descartados}`: recebidos 0 = número central fora dos grupos; aproveitados
+  0 com recebidos > 0 = formato do id mudou.
+- Tela: com o seletor travado, uma linha em alerta diz o motivo acima da lista.
