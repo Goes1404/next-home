@@ -12199,3 +12199,16 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, N�
   mostra sempre a roleta do número de quem está logado, gestor inclusive.
   Roleta de outro número só pela conta dele (`salvarRoleta` ainda aceita o
   gestor no servidor).
+
+## Escolher o grupo à mão travava ~10 s (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Medido pelo log `[grupos] lista lida` (o id da requisição na Vercel traz o
+  instante de início em ms): ~5 s por `fetchAllGroups` com só 6 grupos.
+- Uma escolha = duas leituras: `vincularGrupoDoCorretor` confere o grupo e o
+  `revalidatePath` re-renderiza a aba, que lê de novo.
+- `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
+  sucesso); `sincronizarGruposDeLeads` pede `{ fresca: true }`.
+- Seletor com `useOptimistic` e transição própria: mostra a escolha na hora e
+  não desabilita os outros campos nem troca o botão para "Sincronizando…".

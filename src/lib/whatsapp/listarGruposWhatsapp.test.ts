@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { listarGruposWhatsapp } from "./provider";
+import { esquecerGruposLidos, listarGruposWhatsapp } from "./provider";
 
 describe("listarGruposWhatsapp", () => {
   const fetchOriginal = globalThis.fetch;
@@ -12,6 +12,31 @@ describe("listarGruposWhatsapp", () => {
   afterEach(() => {
     globalThis.fetch = fetchOriginal;
     vi.unstubAllEnvs();
+    esquecerGruposLidos();
+  });
+
+  it("guarda a lista por um minuto: escolher o grupo não espera a Evolution duas vezes", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const pedido = vi.fn(
+      async () => new Response(JSON.stringify([{ id: "120363012345678901@g.us", subject: "A" }]), { status: 200 }),
+    );
+    globalThis.fetch = pedido as typeof fetch;
+    await listarGruposWhatsapp("central");
+    const r = await listarGruposWhatsapp("central");
+    expect(pedido).toHaveBeenCalledTimes(1);
+    expect(r.grupos).toHaveLength(1);
+    // "Sincronizar grupos" pede a lista nova: o número pode ter entrado num grupo agora.
+    await listarGruposWhatsapp("central", { fresca: true });
+    expect(pedido).toHaveBeenCalledTimes(2);
+  });
+
+  it("erro não fica guardado: a próxima leitura tenta de novo", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const pedido = vi.fn(async () => new Response("x", { status: 500 }));
+    globalThis.fetch = pedido as typeof fetch;
+    await listarGruposWhatsapp("central");
+    await listarGruposWhatsapp("central");
+    expect(pedido).toHaveBeenCalledTimes(2);
   });
 
   it("pede os grupos sem os participantes: a Evolution v2 exige o getParticipants na query", async () => {

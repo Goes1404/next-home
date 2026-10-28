@@ -159,7 +159,8 @@ export async function sincronizarGruposDeLeads(): Promise<{ ok?: string; erro?: 
   }
   const instancia = configuracao.envio_grupo_leads_instancia;
 
-  const lista = await listarGruposWhatsapp(instancia);
+  // Lista nova: o número central pode ter entrado num grupo agora.
+  const lista = await listarGruposWhatsapp(instancia, { fresca: true });
   if (lista.erro) return { erro: lista.erro };
   const { data: corretores, error } = await servico
     .from("corretores")

@@ -111,3 +111,10 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   grupos (por isso nenhum `[grupos]` no log). Agora lê pela chave de serviço,
   recortada pelo grupo do gestor. Regra: coluna de `grupos` fora das
   públicas/IA/logo → chave de serviço.
+- **Travadinha ao escolher o grupo (28/10)**: log mostrou ~5 s por
+  `fetchAllGroups` mesmo com 6 grupos (a Evolution busca a foto de cada um), e
+  escolher à mão lia DUAS vezes (a ação confere o grupo; `revalidatePath`
+  re-renderiza a aba e lê de novo) = ~10 s com tudo desabilitado. Agora
+  `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
+  sucesso); "Sincronizar grupos" pede `{ fresca: true }`. Na tela, a escolha
+  aparece na hora (`useOptimistic`) e não trava os outros campos.

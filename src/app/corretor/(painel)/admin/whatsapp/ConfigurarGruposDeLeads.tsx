@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { MessagesSquare, RefreshCw } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
@@ -43,7 +43,15 @@ export function ConfigurarGruposDeLeads({
   const [escolhida, setEscolhida] = useState(instanciaAtual ?? "");
   const [padrao, setPadrao] = useState(padraoDoNome ?? "");
   const [pendente, iniciar] = useTransition();
+  // À parte: a escolha à mão não trava o resto nem diz "Sincronizando…".
+  const [, iniciarEscolha] = useTransition();
   const { avisar, falhar } = useAvisos();
+  // A escolha à mão aparece na hora; o servidor confirma em segundo plano (a
+  // tela recarregada traz o valor salvo, ou o antigo se der erro).
+  const [escolhas, escolher] = useOptimistic<Record<string, string>, { id: string; jid: string }>(
+    {},
+    (atual, e) => ({ ...atual, [e.id]: e.jid }),
+  );
 
   const executar = (tarefa: () => Promise<{ ok?: string; erro?: string }>) =>
     iniciar(async () => {
@@ -177,9 +185,21 @@ export function ConfigurarGruposDeLeads({
               </span>
               <select
                 aria-label={`Grupo de ${c.nome}`}
-                value={c.manual && c.grupoJid ? c.grupoJid : ""}
-                disabled={pendente || semEscolha !== null}
-                onChange={(e) => executar(() => vincularGrupoDoCorretor(c.id, e.target.value || null))}
+                value={escolhas[c.id] ?? (c.manual && c.grupoJid ? c.grupoJid : "")}
+                disabled={semEscolha !== null}
+                onChange={(e) => {
+                  const jid = e.target.value;
+                  iniciarEscolha(async () => {
+                    escolher({ id: c.id, jid });
+                    try {
+                      const r = await vincularGrupoDoCorretor(c.id, jid || null);
+                      if (r.erro) falhar(r.erro);
+                      else if (r.ok) avisar(r.ok);
+                    } catch {
+                      falhar("Não foi possível concluir agora. Tente novamente.");
+                    }
+                  });
+                }}
                 className={`${CAMPO} disabled:opacity-60`}
               >
                 <option value="">{semEscolha ?? "Achar pelo nome"}</option>
