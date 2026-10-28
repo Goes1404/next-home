@@ -1,5 +1,6 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
@@ -33,11 +34,18 @@ export async function DistribuicaoDaEquipe() {
       .eq("grupo_id", equipe.grupoId),
     // Conta oculta (0189): o número e o grupo dela ficam fora da tela da equipe.
     idsDeContasOcultas(supabase),
-    supabase
+    // Pela chave de serviço: o logado só tem SELECT nas colunas públicas de
+    // `grupos` (0196); pela sessão esta leitura falhava calada e a tela pedia
+    // "Salve o número central" com ele já salvo.
+    createServiceClient()
       .from("grupos")
       .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads")
       .eq("id", gestor.grupoId)
-      .maybeSingle(),
+      .maybeSingle()
+      .then((r) => {
+        if (r.error) console.error("[grupos] falha ao ler a configuração do grupo", r.error.message);
+        return r;
+      }),
   ]);
 
   // A conta oculta fica fora da lista de corretores, mas o número dela pode

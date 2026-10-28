@@ -151,6 +151,11 @@ export function ConfigurarGruposDeLeads({
           <span>Grupo</span>
           <span>Escolher à mão</span>
         </div>
+        {semEscolha && (
+          <p className="px-3 text-fluid-xs text-alerta">
+            Escolher à mão fica travado até o número central mostrar os grupos: {semEscolha.toLowerCase()}. Veja abaixo.
+          </p>
+        )}
         <ul className="space-y-2">
           {corretores.map((c) => (
             <li

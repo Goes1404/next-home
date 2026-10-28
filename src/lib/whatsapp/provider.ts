@@ -901,12 +901,25 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
       : typeof json === "object" && json !== null && Array.isArray((json as { groups?: unknown }).groups)
         ? (json as { groups: unknown[] }).groups
         : [];
+    const descartados: string[] = [];
     const grupos = itens.flatMap((item): GrupoWhatsapp[] => {
       if (typeof item !== "object" || item === null) return [];
       const dado = item as { id?: unknown; subject?: unknown; name?: unknown };
       const jid = typeof dado.id === "string" ? dado.id : "";
+      if (!ehJidDeGrupoWhatsapp(jid)) {
+        descartados.push(jid || JSON.stringify(Object.keys(dado)));
+        return [];
+      }
       const nome = typeof dado.subject === "string" ? dado.subject : typeof dado.name === "string" ? dado.name : "";
-      return ehJidDeGrupoWhatsapp(jid) && nome.trim() ? [{ jid, nome: nome.trim() }] : [];
+      // Grupo sem nome segue na lista: sem ele o gestor não tem o que escolher à mão.
+      return [{ jid, nome: nome.trim() || `Grupo sem nome (…${jid.split("@")[0].slice(-6)})` }];
+    });
+    // Sucesso não deixava rastro: lista vazia (ou toda descartada) parecia "não leu".
+    console.info("[grupos] lista lida", {
+      instanceName,
+      recebidos: itens.length,
+      aproveitados: grupos.length,
+      descartados: descartados.slice(0, 5),
     });
     return { grupos };
   } catch (err) {
