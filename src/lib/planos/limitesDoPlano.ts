@@ -115,7 +115,7 @@ export function situacaoLivre(recurso: Recurso, usados = 0): SituacaoDoRecurso {
 
 const NUMERO = new Intl.NumberFormat("pt-BR");
 
-const COMO_PEDIR_MAIS = "Para pedir mais, fale com o gestor da sua equipe ou com o suporte da AstroImob.";
+const COMO_PEDIR_MAIS = "Para pedir mais, fale com o gestor da sua equipe ou com o suporte da Astro Soluções.";
 
 /**
  * Pedir `pedido` unidades cabe no que resta? Sem teto, sempre. Com teto, o

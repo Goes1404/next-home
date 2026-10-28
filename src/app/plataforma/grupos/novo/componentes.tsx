@@ -59,7 +59,7 @@ export type Criado = {
 
 /** A mensagem pronta para o WhatsApp do convidado (o e-mail pode não estar configurado). */
 export function mensagemDoConvite(nome: string, url: string): string {
-  return `Olá! Seu acesso ao AstroImob (${nome}) está pronto. Crie sua senha por este link (vale por 24 horas): ${url}`;
+  return `Olá! Seu acesso ao CRM da Astro Soluções (${nome}) está pronto. Crie sua senha por este link (vale por 24 horas): ${url}`;
 }
 
 /** O link do WhatsApp com a mensagem pronta; sem número válido, abre a escolha de contato. */

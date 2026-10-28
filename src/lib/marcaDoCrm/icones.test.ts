@@ -17,13 +17,13 @@ describe("ícone do painel por grupo", () => {
     expect(iconesDoGrupo({ logoUrl: LOGO })).toEqual({ icon: [{ url: LOGO }], apple: [{ url: LOGO }] });
   });
 
-  it("grupo sem logo: o ícone da AstroImob, nunca o da Next Home", () => {
+  it("grupo sem logo: o ícone da Astro Soluções, nunca o da Next Home", () => {
     const icones = iconesDoGrupo({ logoUrl: null });
     expect(icones).toBe(ICONES_ASTROIMOB);
     expect(JSON.stringify(icones)).not.toMatch(/\/icon\.png|apple-icon|favicon/);
   });
 
-  it("os arquivos do ícone da AstroImob existem, com o tamanho declarado", async () => {
+  it("os arquivos do ícone da Astro Soluções existem, com o tamanho declarado", async () => {
     const arquivos = [
       ["astroimob-180.png", "180x180"],
       ["astroimob-192.png", "192x192"],
@@ -73,7 +73,7 @@ describe("manifesto do painel por grupo", () => {
     expect(m.icons).toEqual([{ src: LOGO, sizes: "any", purpose: "any" }]);
   });
 
-  it("sem logo: ícones da AstroImob (com mascarável); sem cor ou cor inválida: a da AstroImob", () => {
+  it("sem logo: ícones da Astro Soluções (com mascarável); sem cor ou cor inválida: a da Astro Soluções", () => {
     const m = manifestoDoPainel({ nome: "Casa Azul Empreendimentos Ltda", logoUrl: null, cor: "azul" });
     expect(m.theme_color).toBe(COR_DA_ASTROIMOB);
     expect(m.short_name).toBe("Casa Azul Em");

@@ -10,8 +10,8 @@ import nextHome from "@/app/manifest";
  * para cá (`(painel)/layout.tsx`); a Next Home segue com `src/app/manifest.ts`.
  *
  * Varia por SESSÃO (cookie), então nunca vai ao cache compartilhado: `private,
- * no-store` e `Vary: Cookie`. Sem sessão devolve o da AstroImob (nunca o da
- * Next Home); a leitura da cor que falha cai na cor da AstroImob.
+ * no-store` e `Vary: Cookie`. Sem sessão devolve o da Astro Soluções (nunca o da
+ * Next Home); a leitura da cor que falha cai na cor da Astro Soluções.
  */
 export const dynamic = "force-dynamic";
 

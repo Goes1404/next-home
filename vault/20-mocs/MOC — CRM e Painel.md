@@ -21,6 +21,7 @@ F0–F6.
 
 ## Telas
 - [[marca-do-grupo-no-crm]] — nome, logo e endereços do painel por imobiliária; a Next Home não muda (21/10)
+- [[plataforma-astro-solucoes-e-barra-da-empresa]] — plataforma vira Astro Soluções; topo mostra Astro | imobiliária, como TOTVS/SAP (28/10)
 - [[ficha-publica-do-imovel]] — /imovel/<grupo>/<slug> para imobiliária sem site e o montador único do link do imóvel (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[anuncios-pagos-em-abas]] — Anúncios pagos em cinco abas por `?aba=`; `botao-solido` e `botao-aba` (26/10)

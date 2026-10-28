@@ -22,7 +22,7 @@ const TOLERADOS: Record<string, { n: number; motivo: string }> = {
   "GavetaLateral.tsx": { n: 4, motivo: "itens de menu: a própria gaveta é a pista" },
   "NavPainel.tsx": { n: 2, motivo: "itens de menu e o botão de recolher, na lateral" },
   "BalaoConsultor.tsx": { n: 1, motivo: "o mascote é o botão" },
-  "layout.tsx": { n: 2, motivo: "logotipo e pular para o conteúdo" },
+  "layout.tsx": { n: 3, motivo: "selo da Astro, logotipo da imobiliária na barra da empresa e pular para o conteúdo" },
   "_componentes/Avisos.tsx": { n: 1, motivo: "fechar o aviso, dentro do próprio aviso" },
   "_componentes/FunilVisual.tsx": { n: 1, motivo: "texto auxiliar abaixo do funil, que já é clicável" },
   "_componentes/graficos/QuemEstaEsperando.tsx": { n: 1, motivo: "linha com seta → própria" },

@@ -12105,3 +12105,17 @@ Nota: [[primeiro-contato-tem-teto-proprio]].
 - Teste de banco falso que não conhece `rpc` quebra quando um caminho passa a
   consultar a régua: `portas.test.ts` e `roletaDosAnuncios.fluxo.test.ts`
   ganharam o `rpc` e instância com `conectado_em` antigo.
+
+## Plataforma Astro Soluções e barra da empresa (28/10/2026)
+
+Nota: [[plataforma-astro-solucoes-e-barra-da-empresa]].
+
+- O CRM é o produto da Astro Soluções para imobiliárias e corretores
+  autônomos. **Não copiar o CRM para outro projeto**: o multi-grupo já resolve,
+  e um segundo projeto da Vercel rodaria crons e webhooks em dobro.
+- A marca da plataforma (antes AstroImob) mora em `src/lib/marcaDaPlataforma.ts`.
+  O login é sempre Astro Soluções; o topo do painel mostra "Astro Soluções |
+  <grupo>" com o selo "Imobiliária" ou "Corretor autônomo" (todos os grupos,
+  Next Home inclusive).
+- Ícone regenerado por `scripts/marca/gerarIconeAstroimob.mjs` (nomes de
+  arquivo antigos mantidos). Endereço `astroimob.vercel.app` não mudou.

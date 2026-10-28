@@ -11,7 +11,7 @@ import type { MarcaDoCrm } from "./marca";
  * - Grupo com logo (`grupos.logo_url`): a logo dele, no endereço dela mesma
  *   (Storage, uma URL por grupo: não há rota de ícone compartilhada para o CDN
  *   misturar).
- * - Grupo sem logo, o login e a plataforma: o ícone da AstroImob
+ * - Grupo sem logo, o login e a plataforma: o ícone da Astro Soluções
  *   (`scripts/marca/gerarIconeAstroimob.mjs`).
  * - Next Home: nada daqui (`ICONES_DA_NEXT_HOME` e o manifesto de arquivo).
  */
@@ -32,14 +32,15 @@ export function iconesDoGrupo(marca: Pick<MarcaDoCrm, "logoUrl">): NonNullable<M
 /** Onde o painel de outro grupo busca o manifesto (`src/app/api/painel/manifest`). */
 export const CAMINHO_DO_MANIFESTO_DO_PAINEL = "/api/painel/manifest";
 
-export const COR_DA_ASTROIMOB = "#6d5dfc";
+/** Azul-marinho da Astro Soluções (28/10/2026; antes o violeta da AstroImob). */
+export const COR_DA_ASTROIMOB = "#0f2547";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 type DadosDoManifesto = { nome: string; logoUrl: string | null; cor: string | null };
 
 /**
- * O manifesto do app de um grupo (ou da AstroImob, sem grupo): nome, ícones,
+ * O manifesto do app de um grupo (ou da Astro Soluções, sem grupo): nome, ícones,
  * cor do grupo (`site_cor`) e `start_url` no painel. Abre como app
  * (`standalone`): o corretor que instala quer o painel, não uma aba. A Next
  * Home segue com o manifesto dela, `src/app/manifest.ts`.
