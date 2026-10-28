@@ -12251,3 +12251,12 @@ Nota: [[roleta-dos-anuncios]]
   virou "só depois de `if (!trocou) return null;`, uma chamada".
 - Migration aditiva: aplicar ANTES do deploy (o código seleciona as colunas
   novas; sem elas a aba Roleta e a config dos grupos quebram).
+
+## Agenda: visual novo no celular e no computador (28/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
+
+- Gaveta `fixed` dentro do conteúdo do painel fica abaixo do mascote da assistente (z-55): o conteúdo cria contexto de empilhamento. Portal para o `<body>` e repetir `data-rota="painel"` + `data-modulo` na raiz, senão a gaveta perde a paleta (fica verde/sem tema).
+- `naoRolaDeLado.test.ts` reprova chip com `overflow-x-auto`: use `flex-wrap`.
+- Seed de visita confirmada: gravar `visita_confirmada_em` no MESMO update de `visita_agendada_em` não fica (o gatilho da marcação zera); confirmar num update depois.
+- Conta de teste em produção: grupo `teste-agenda` ("Teste Agenda (apagar)"), corretores ocultos (não entram em site, roleta nem `getEquipeAtiva`), login `teste.agenda@example.com`.

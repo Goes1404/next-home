@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { bloquearHorario, cancelarDoFormulario, marcarReuniao } from "../acoesCompromissos";
 
-const CAMPO = "min-h-11 w-full rounded-xl bg-elevado px-3 text-sm text-corpo";
+const CAMPO = "min-h-11 w-full rounded-xl border border-linha bg-campo px-3 text-sm text-corpo";
 
 function Retorno({ estado }: { estado: { erro?: string; ok?: string } | null }) {
   if (estado?.erro)
@@ -14,6 +14,27 @@ function Retorno({ estado }: { estado: { erro?: string; ok?: string } | null }) 
     );
   if (estado?.ok) return <p className="text-fluid-xs mt-2 text-ok">{estado.ok}</p>;
   return null;
+}
+
+/**
+ * Dentro da gaveta "Novo" da Agenda (visual de 28/10/2026) o formulário vem
+ * aberto, com um título; solto na página, segue recolhido num <details>.
+ */
+function Moldura({ titulo, aberto, children }: { titulo: string; aberto: boolean; children: React.ReactNode }) {
+  if (aberto) {
+    return (
+      <section className="rounded-2xl bg-elevado/50 p-4">
+        <h3 className="font-medium text-titulo">{titulo}</h3>
+        {children}
+      </section>
+    );
+  }
+  return (
+    <details className="cartao p-5">
+      <summary className="min-h-11 cursor-pointer font-medium text-titulo">{titulo}</summary>
+      {children}
+    </details>
+  );
 }
 
 function CamposDoHorario({ dia }: { dia: string }) {
@@ -36,11 +57,10 @@ function CamposDoHorario({ dia }: { dia: string }) {
 }
 
 /** "Bloquear horário": médico, folga. A assistente deixa de oferecer o horário. */
-export function BloquearHorario({ dia }: { dia: string }) {
+export function BloquearHorario({ dia, aberto = false }: { dia: string; aberto?: boolean }) {
   const [estado, enviar, enviando] = useActionState(bloquearHorario, null);
   return (
-    <details className="cartao p-5">
-      <summary className="min-h-11 cursor-pointer font-medium text-titulo">Bloquear horário</summary>
+    <Moldura titulo="Bloquear horário" aberto={aberto}>
       <form action={enviar} className="mt-3 space-y-3">
         <CamposDoHorario dia={dia} />
         <label className="text-fluid-xs block text-apoio">
@@ -52,17 +72,24 @@ export function BloquearHorario({ dia }: { dia: string }) {
         </button>
       </form>
       <Retorno estado={estado} />
-    </details>
+    </Moldura>
   );
 }
 
 /** "Marcar reunião", só para o gestor: a equipe toda ou algumas pessoas. */
-export function MarcarReuniao({ dia, equipe }: { dia: string; equipe: { id: string; nome: string }[] }) {
+export function MarcarReuniao({
+  dia,
+  equipe,
+  aberto = false,
+}: {
+  dia: string;
+  equipe: { id: string; nome: string }[];
+  aberto?: boolean;
+}) {
   const [estado, enviar, enviando] = useActionState(marcarReuniao, null);
   const [quem, setQuem] = useState<"equipe" | "alguns">("equipe");
   return (
-    <details className="cartao p-5">
-      <summary className="min-h-11 cursor-pointer font-medium text-titulo">Marcar reunião</summary>
+    <Moldura titulo="Marcar reunião" aberto={aberto}>
       <form action={enviar} className="mt-3 space-y-3">
         <label className="text-fluid-xs block text-apoio">
           Assunto
@@ -95,7 +122,7 @@ export function MarcarReuniao({ dia, equipe }: { dia: string; equipe: { id: stri
         </button>
       </form>
       <Retorno estado={estado} />
-    </details>
+    </Moldura>
   );
 }
 

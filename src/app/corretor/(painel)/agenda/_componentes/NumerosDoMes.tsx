@@ -22,6 +22,9 @@ const NUMEROS: { chave: Chave; rotulo: string }[] = [
 export function NumerosDoMes({ serie, medidaDesde }: { serie: MesDaSerie[]; medidaDesde: Mes | null }) {
   const atual = serie[serie.length - 1];
   const anterior = serie.length > 1 ? serie[serie.length - 2] : null;
+  // Mês antes de a Agenda contar não ganha linha de "não medido" uma a uma: some da tabela e é dito embaixo.
+  const medidos = serie.filter((m): m is Extract<MesDaSerie, { medido: true }> => m.medido);
+  const naoMedidos = serie.filter((m) => !m.medido);
 
   return (
     <section className="cartao p-5" aria-labelledby="numeros-do-mes">
@@ -49,38 +52,32 @@ export function NumerosDoMes({ serie, medidaDesde }: { serie: MesDaSerie[]; medi
         </dl>
       )}
 
-      <table className="text-fluid-xs mt-4 w-full text-left">
-        <caption className="sr-only">Últimos seis meses</caption>
-        <thead className="text-apoio">
-          <tr>
-            <th className="py-1 font-medium">Mês</th>
-            <th className="py-1 text-right font-medium">Visitas</th>
-            <th className="py-1 text-right font-medium">Aconteceram</th>
-            <th className="py-1 text-right font-medium">Negócios</th>
-          </tr>
-        </thead>
-        <tbody className="text-corpo">
-          {serie.map((m) => (
-            <tr key={m.mes} className="border-t border-linha">
-              <td className="py-1 capitalize">{curto(m.mes)}</td>
-              {m.medido ? (
-                <>
-                  <td className="py-1 text-right">{m.marcadas}</td>
-                  <td className="py-1 text-right">{m.realizadas}</td>
-                  <td className="py-1 text-right">{m.negocios}</td>
-                </>
-              ) : (
-                <td colSpan={3} className="py-1 text-right text-apoio">
-                  não medido
-                </td>
-              )}
+      {medidos.length > 1 && (
+        <table className="text-fluid-xs mt-4 w-full text-left">
+          <caption className="sr-only">Meses medidos</caption>
+          <thead className="text-apoio">
+            <tr>
+              <th className="py-1 font-medium">Mês</th>
+              <th className="py-1 text-right font-medium">Visitas</th>
+              <th className="py-1 text-right font-medium">Aconteceram</th>
+              <th className="py-1 text-right font-medium">Negócios</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="text-corpo">
+            {medidos.map((m) => (
+              <tr key={m.mes} className="border-t border-linha">
+                <td className="py-1 capitalize">{curto(m.mes)}</td>
+                <td className="py-1 text-right">{m.marcadas}</td>
+                <td className="py-1 text-right">{m.realizadas}</td>
+                <td className="py-1 text-right">{m.negocios}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <p className="text-fluid-xs mt-3 text-apoio">
         {medidaDesde
-          ? `A Agenda começou a contar em ${rotuloDoMes(medidaDesde)}. Antes disso, não há números.`
+          ? `A Agenda começou a contar em ${rotuloDoMes(medidaDesde)}.${naoMedidos.length ? ` ${curto(naoMedidos[0].mes)}–${curto(naoMedidos[naoMedidos.length - 1].mes)}: não medido.` : ""}`
           : "A Agenda ainda não tem visitas para contar."}
       </p>
     </section>

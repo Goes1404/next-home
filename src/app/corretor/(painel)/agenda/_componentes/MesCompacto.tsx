@@ -15,6 +15,8 @@ export function MesCompacto({
   hoje,
   marcadores,
   consulta = "",
+  compacto = false,
+  soGrade = false,
 }: {
   mes: Mes;
   diaSelecionado: Dia;
@@ -22,31 +24,17 @@ export function MesCompacto({
   marcadores: Record<Dia, number>;
   /** O resto da consulta a preservar nos links (`&ver=equipe&corretor=…`). */
   consulta?: string;
+  /** Na coluna estreita do computador: casas menores. */
+  compacto?: boolean;
+  /** Dentro do calendário do celular, que já tem o título e as setas. */
+  soGrade?: boolean;
 }) {
   const anterior = mesVizinho(mes, -1);
   const seguinte = mesVizinho(mes, 1);
 
-  return (
-    <section className="cartao p-4" aria-label={`Calendário de ${rotuloDoMes(mes)}`}>
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          href={`?mes=${anterior}${consulta}`}
-          className="botao-aba min-h-10 min-w-10 justify-center"
-          aria-label={`Ir para ${rotuloDoMes(anterior)}`}
-        >
-          ‹
-        </Link>
-        <p className="font-display text-lg text-titulo first-letter:uppercase">{rotuloDoMes(mes)}</p>
-        <Link
-          href={`?mes=${seguinte}${consulta}`}
-          className="botao-aba min-h-10 min-w-10 justify-center"
-          aria-label={`Ir para ${rotuloDoMes(seguinte)}`}
-        >
-          ›
-        </Link>
-      </div>
-
-      <div className="mt-3 grid grid-cols-7 text-center text-fluid-xs font-medium text-apoio" aria-hidden>
+  const grade = (
+    <>
+      <div className={cn("grid grid-cols-7 text-center text-fluid-xs font-medium text-apoio", soGrade ? "mt-1" : "mt-3")} aria-hidden>
         {INICIAIS.map((inicial, i) => (
           <span key={i}>{inicial}</span>
         ))}
@@ -66,7 +54,8 @@ export function MesCompacto({
                 aria-current={selecionado ? "date" : undefined}
                 aria-label={`${Number(dia.slice(8))}${quantos ? `, ${quantos} compromisso${quantos > 1 ? "s" : ""}` : ""}`}
                 className={cn(
-                  "mx-auto flex h-10 w-10 flex-col items-center justify-center rounded-full text-sm transition-colors",
+                  "mx-auto flex flex-col items-center justify-center rounded-full transition-colors",
+                  compacto ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm",
                   selecionado ? "bg-acento font-semibold text-sobre-cor" : "text-corpo hover:bg-elevado",
                   !selecionado && dia === hoje && "font-semibold text-acento ring-1 ring-acento-linha",
                 )}
@@ -79,6 +68,32 @@ export function MesCompacto({
             );
           })}
       </div>
+    </>
+  );
+
+  if (soGrade) return <div aria-label={`Calendário de ${rotuloDoMes(mes)}`}>{grade}</div>;
+
+  return (
+    <section className={cn("cartao", compacto ? "p-3" : "p-4")} aria-label={`Calendário de ${rotuloDoMes(mes)}`}>
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          href={`?mes=${anterior}${consulta}`}
+          className="botao-aba min-h-10 min-w-10 justify-center"
+          aria-label={`Ir para ${rotuloDoMes(anterior)}`}
+        >
+          ‹
+        </Link>
+        <p className={cn("font-display text-titulo first-letter:uppercase", compacto ? "text-base" : "text-lg")}>{rotuloDoMes(mes)}</p>
+        <Link
+          href={`?mes=${seguinte}${consulta}`}
+          className="botao-aba min-h-10 min-w-10 justify-center"
+          aria-label={`Ir para ${rotuloDoMes(seguinte)}`}
+        >
+          ›
+        </Link>
+      </div>
+
+      {grade}
     </section>
   );
 }
