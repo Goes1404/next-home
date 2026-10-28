@@ -103,3 +103,11 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   "Grupo sem nome (…últimos 6 dígitos)" e toda leitura loga
   `[grupos] lista lida {recebidos, aproveitados, descartados}`. Diagnóstico:
   procurar `lista lida` no log da Vercel (Hobby guarda 1 h).
+- **Causa real do seletor travado (28/10)**: a aba Roleta lia
+  `envio_grupo_leads_*` e `padrao_nome_grupo_leads` de `grupos` PELA SESSÃO.
+  Desde a 0196 o logado só tem SELECT nas colunas públicas de `grupos`; a
+  leitura dava "permission denied", o erro era ignorado e a tela dizia
+  "Salve o número central" com ele salvo no banco. Fora isso, nada lia os
+  grupos (por isso nenhum `[grupos]` no log). Agora lê pela chave de serviço,
+  recortada pelo grupo do gestor. Regra: coluna de `grupos` fora das
+  públicas/IA/logo → chave de serviço.

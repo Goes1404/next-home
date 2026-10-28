@@ -12119,3 +12119,9 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
   descartados}`: recebidos 0 = número central fora dos grupos; aproveitados
   0 com recebidos > 0 = formato do id mudou.
 - Tela: com o seletor travado, uma linha em alerta diz o motivo acima da lista.
+- **Causa real**: `DistribuicaoDaEquipe` lia a configuração de `grupos` pela
+  sessão; o logado não tem SELECT em `envio_grupo_leads_*` nem
+  `padrao_nome_grupo_leads` (0196 recortou as colunas). Erro engolido →
+  "Salve o número central" com o número salvo, e a Evolution nem era
+  chamada. Conferir grant: `information_schema.column_privileges` de
+  `grupos` para `authenticated`. Agora pela chave de serviço.
