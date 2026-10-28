@@ -67,8 +67,8 @@ export function EditorDaRoleta({
   /** A regra do grupo: só entrega lead a quem está com o WhatsApp conectado. */
   soConectados: boolean;
 }) {
-  const inicial = configs.find((c) => c.corretorId === meuId) ?? configs[0];
-  const [donoId, setDonoId] = useState(inicial.corretorId);
+  // Sempre a roleta do próprio número (28/10/2026): o seletor de dono saiu.
+  const donoId = (configs.find((c) => c.corretorId === meuId) ?? configs[0]).corretorId;
   const [rascunhos, setRascunhos] = useState<Record<string, ConfigDaRoleta>>(
     () => Object.fromEntries(configs.map((c) => [c.corretorId, c])),
   );
@@ -84,7 +84,6 @@ export function EditorDaRoleta({
   const c = rascunhos[donoId];
   const salvo = configs.find((cfg) => cfg.corretorId === donoId);
   const nomeDe = useMemo(() => new Map(equipe.map((m) => [m.id, m])), [equipe]);
-  const dono = nomeDe.get(donoId);
   // O que o servidor tem salvo (e o webhook usa) para este número. Com o envio
   // para grupos desligado, "grupo" só aparece se já estava salvo: aí o corretor
   // precisa poder voltar para "mensagem". Nunca se troca o valor sozinho.
@@ -272,7 +271,6 @@ export function EditorDaRoleta({
         <div className="flex items-center gap-3 rounded-2xl border border-linha bg-vidro px-4 py-2.5">
           <span className="text-fluid-sm font-semibold text-titulo">
             {c.ligada ? "Ligada" : "Desligada"}
-            {dono && donoId !== meuId ? ` no número de ${primeiroNome(dono.nome)}` : ""}
           </span>
           <Interruptor ligado={c.ligada} aoMudar={(v) => mudar({ ligada: v })} rotulo="Roleta ligada" />
         </div>
@@ -282,27 +280,6 @@ export function EditorDaRoleta({
         <p role="note" className="rounded-xl border border-alerta-linha bg-alerta-lavado p-3 text-fluid-sm text-alerta">
           {AVISO_ENVIO_DESLIGADO}
         </p>
-      )}
-
-      {gestor && configs.length > 1 && (
-        <label className="flex flex-wrap items-center gap-3 text-fluid-sm">
-          <span className="text-apoio">Roleta do número de</span>
-          <select
-            value={donoId}
-            onChange={(e) => {
-              setAviso(null);
-              setDonoId(e.target.value);
-            }}
-            className="select-seta block min-h-11 min-w-60 rounded-xl border border-linha-forte bg-superficie px-3 text-titulo shadow-sm"
-          >
-            {configs.map((cfg) => (
-              <option key={cfg.corretorId} value={cfg.corretorId}>
-                {nomeDe.get(cfg.corretorId)?.nome ?? "Corretor"}
-                {cfg.ligada ? " (ligada)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
       )}
 
       {mostraEscolha && (

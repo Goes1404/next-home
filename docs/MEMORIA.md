@@ -12126,6 +12126,19 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
   chamada. Conferir grant: `information_schema.column_privileges` de
   `grupos` para `authenticated`. Agora pela chave de serviço.
 
+## Roleta do próprio número da conta oculta (28/10/2026)
+
+Nota: [[conta-oculta]]
+
+- A roleta é do número para onde o anúncio manda o cliente (dono =
+  `roleta_anuncios.corretor_id`). O seletor "Roleta do número de" listava só
+  a equipe visível; logado na conta oculta da Aretz, o próprio número sumia e
+  a tela abria na roleta do André.
+- `RoletaDosAnuncios` agora põe o próprio número da conta oculta primeiro
+  ("(meu número)"). Como destino ela segue fora: tela e `proximo_da_roleta`.
+- Banco e webhook já aceitavam conta oculta como DONO da roleta
+  (`lerModoDaRoleta` lê pelo dono da instância, sem filtro de oculta).
+
 ## Agenda, fase 1: visitas com histórico e tela Agenda (0224, 27/10/2026)
 
 Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
@@ -12182,6 +12195,23 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, N�
 
 - Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.
 - **0224–0227 aplicadas em produção em 28/10/2026** (antes do deploy, como manda a ordem: são aditivas). Carga migrou 0 visitas (nenhuma futura). Sessão de corretor recebe `permission denied` em `visitas`/`compromissos`: é o desenho (só a chave de serviço lê).
+- Mesmo dia, pedido do dono: o seletor "Roleta do número de" saiu. A aba
+  mostra sempre a roleta do número de quem está logado, gestor inclusive.
+  Roleta de outro número só pela conta dele (`salvarRoleta` ainda aceita o
+  gestor no servidor).
+
+## Escolher o grupo à mão travava ~10 s (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Medido pelo log `[grupos] lista lida` (o id da requisição na Vercel traz o
+  instante de início em ms): ~5 s por `fetchAllGroups` com só 6 grupos.
+- Uma escolha = duas leituras: `vincularGrupoDoCorretor` confere o grupo e o
+  `revalidatePath` re-renderiza a aba, que lê de novo.
+- `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
+  sucesso); `sincronizarGruposDeLeads` pede `{ fresca: true }`.
+- Seletor com `useOptimistic` e transição própria: mostra a escolha na hora e
+  não desabilita os outros campos nem troca o botão para "Sincronizando…".
 
 ## Agenda: pendências da revisão fechadas (0228, 28/10/2026)
 
