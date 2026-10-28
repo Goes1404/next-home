@@ -12125,3 +12125,16 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
   "Salve o número central" com o número salvo, e a Evolution nem era
   chamada. Conferir grant: `information_schema.column_privileges` de
   `grupos` para `authenticated`. Agora pela chave de serviço.
+
+## Roleta do próprio número da conta oculta (28/10/2026)
+
+Nota: [[conta-oculta]]
+
+- A roleta é do número para onde o anúncio manda o cliente (dono =
+  `roleta_anuncios.corretor_id`). O seletor "Roleta do número de" listava só
+  a equipe visível; logado na conta oculta da Aretz, o próprio número sumia e
+  a tela abria na roleta do André.
+- `RoletaDosAnuncios` agora põe o próprio número da conta oculta primeiro
+  ("(meu número)"). Como destino ela segue fora: tela e `proximo_da_roleta`.
+- Banco e webhook já aceitavam conta oculta como DONO da roleta
+  (`lerModoDaRoleta` lê pelo dono da instância, sem filtro de oculta).

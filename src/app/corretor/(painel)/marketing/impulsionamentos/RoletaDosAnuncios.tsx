@@ -64,7 +64,15 @@ export async function RoletaDosAnuncios() {
   }));
 
   const porCorretor = new Map((linhas ?? []).map((l) => [l.corretor_id, l]));
-  const donos = gestor ? equipe : equipe.filter((c) => c.id === quem.id);
+  // A roleta é do número de quem a cria (28/10/2026): a conta oculta (0189)
+  // fica fora da equipe e da lista de quem recebe, mas a roleta do PRÓPRIO
+  // número dela entra, primeiro. Era o número do anúncio da Aretz e o seletor
+  // abria no de outro corretor.
+  const euOculto = ocultas.has(quem.id) && (corretores ?? []).some((c) => c.id === quem.id);
+  const donos = [
+    ...(euOculto ? [{ id: quem.id }] : []),
+    ...(gestor ? equipe : equipe.filter((c) => c.id === quem.id)),
+  ];
   const configs: ConfigDaRoleta[] = donos.map((c) => {
     const l = porCorretor.get(c.id);
     return {
@@ -84,6 +92,7 @@ export async function RoletaDosAnuncios() {
       configs={configs}
       equipe={equipe}
       meuId={quem.id}
+      meuNome={(corretores ?? []).find((c) => c.id === quem.id)?.nome ?? quem.nome}
       gestor={gestor}
       grupoTemEnvio={grupo?.envio_grupo_leads_ativo === true}
       soConectados={regra}

@@ -8,7 +8,7 @@ custou: medio
 codigo: [supabase/migrations/0189_conta_oculta.sql, supabase/migrations/0192_funcoes_respeitam_grupo.sql, src/lib/corretores/contaOculta.ts, src/lib/corretores/contaOculta.test.ts, src/lib/corretorSessao.ts, src/app/corretor/(painel)/admin/acoes.ts, src/app/corretor/(painel)/admin/contas/ContasManager.tsx, src/app/corretor/(painel)/marketing/impulsionamentos/numeroCentral.ts]
 fonte: docs/MEMORIA.md — Conta oculta (19/10/2026)
 created: 2026-10-19
-updated: 2026-10-27
+updated: 2026-10-28
 summary: Pedido do dono: a conta só WhatsApp de uma pessoa não pode aparecer para ninguém. `corretores.oculta` (0189) tira a conta do site, da roleta, do sorteio do anúncio, do ranking e de todas as telas da equipe; só o gestor a vê, numa seção recolhida "Contas ocultas" da tela de Contas. A RLS esconde a linha de anon e do corretor comum; para o gestor e a chave de serviço, o recorte é do código, num ponto único com guarda.
 ---
 # Conta oculta
@@ -52,6 +52,12 @@ desativar, reativar ou mostrar de novo.
   corretores e da roleta. Ver [[vinculo-do-corretor-no-grupo-e-lid]].
 - **Coluna citada só em policy não exige SELECT na coluna**: a 0196 (fase 2,
   ex-0187, tira colunas da chave pública) não quebra o filtro do `anon`.
+- **A roleta do PRÓPRIO número da conta oculta também é exceção
+  (28/10/2026).** A roleta pertence ao número do anúncio; o da Aretz é o da
+  conta oculta de administração. O seletor "Roleta do número de" listava só a
+  equipe visível e abria no primeiro corretor (André). Agora, logado na conta
+  oculta, o próprio número aparece primeiro, "(meu número)". Como DESTINO a
+  conta oculta segue fora (lista na tela e `proximo_da_roleta`, 0218).
 
 ## A fusão com a fase multi-grupo (renumerada para 0190–0194 em 20/10/2026)
 

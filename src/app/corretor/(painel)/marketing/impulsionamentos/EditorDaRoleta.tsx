@@ -55,6 +55,7 @@ export function EditorDaRoleta({
   configs,
   equipe,
   meuId,
+  meuNome,
   gestor,
   grupoTemEnvio,
   soConectados,
@@ -62,6 +63,8 @@ export function EditorDaRoleta({
   configs: ConfigDaRoleta[];
   equipe: Membro[];
   meuId: string;
+  /** Rótulo do próprio número no seletor: a conta oculta não está na `equipe`. */
+  meuNome: string;
   gestor: boolean;
   grupoTemEnvio: boolean;
   /** A regra do grupo: só entrega lead a quem está com o WhatsApp conectado. */
@@ -297,7 +300,7 @@ export function EditorDaRoleta({
           >
             {configs.map((cfg) => (
               <option key={cfg.corretorId} value={cfg.corretorId}>
-                {nomeDe.get(cfg.corretorId)?.nome ?? "Corretor"}
+                {cfg.corretorId === meuId ? `${meuNome} (meu número)` : (nomeDe.get(cfg.corretorId)?.nome ?? "Corretor")}
                 {cfg.ligada ? " (ligada)" : ""}
               </option>
             ))}
