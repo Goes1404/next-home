@@ -62,7 +62,7 @@ export function CabecalhoDeTela({
   compacto?: boolean;
 }) {
   return (
-    <section className={cn("cartao-heroi", compacto ? "px-5 py-3 md:p-6" : "p-5 md:p-6")}>
+    <section data-compacto={compacto || undefined} className="cartao-heroi p-5 max-md:data-compacto:py-3 md:p-6">
       {/* Os brilhos de acento, o fio de luz e a varredura vêm de `cartao-heroi`
           (globals.css) — gradientes, não divs desfocados. */}
 
