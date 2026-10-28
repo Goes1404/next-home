@@ -2,13 +2,13 @@ import "server-only";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import { mesmoNumero } from "@/lib/whatsapp/participantesDoGrupo";
 import { agendarVisitaLead, type InstanciaResolvida } from "@/lib/whatsapp/repositorio";
-import { horariosDeVisitaSeguros, quemFazAVisitaDoLead } from "@/lib/crm/agendaDoCorretor";
+import { agendaQueValeParaOLead, horariosDeVisitaSeguros } from "@/lib/crm/agendaDoCorretor";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerItensDoDia } from "@/lib/agenda/lerAgenda";
 import { criarBloqueio, criarReuniao } from "@/lib/agenda/compromissos";
-import { responderVisita } from "@/lib/agenda/confirmacao";
-import { gravarEstado, lerEstado, limparEstado } from "@/lib/agenda/conversaDeAgenda";
+import { devolverCobranca, responderVisita } from "@/lib/agenda/confirmacao";
+import { gravarEstado, lerEstado, limparEstado, registrarMensagem } from "@/lib/agenda/conversaDeAgenda";
 import type { ItemDaAgenda } from "@/lib/agenda/itens";
 import { responderAoCorretor, type Dependencias } from "./conversa";
 
@@ -94,6 +94,8 @@ export async function tratarConversaComOSistema(p: {
   ehAudio: boolean;
   /** O cliente da chave de serviço do webhook, que já validou a instância. */
   supabase: Supa;
+  /** Id da mensagem no provedor: a reentrega da mesma é ignorada (0228). */
+  providerMessageId?: string | null;
   agora?: Date;
 }): Promise<boolean> {
   const canal = canalDaMensagem({
@@ -124,6 +126,9 @@ export async function tratarConversaComOSistema(p: {
       .maybeSingle();
     if (conversaDeTeste && !(lerRespostaCurta(p.texto) && (await lerEstado(supabase, corretorId, agora)))) return false;
   }
+
+  // Reentrega do provedor: a mensagem já foi tratada (e respondida).
+  if (p.providerMessageId && !(await registrarMensagem(supabase, corretorId, p.providerMessageId))) return true;
 
   // Grupo suspenso: o sistema não responde (como a IA dos clientes).
   if (await grupoSuspenso(grupoId, agora).catch(() => false)) return true;
@@ -192,7 +197,9 @@ function montarDependencias(p: {
       (await lerItensDoDia({ corretorId, grupoId, dia })).map((item) => ({ inicio: item.inicio, descricao: descricao(item) })),
     marcarVisita: async (leadId, quando) => {
       if (await agendarVisitaLead(leadId, quando)) return {};
-      const livres = await horariosDeVisitaSeguros(await quemFazAVisitaDoLead(leadId, corretorId, agora), agora);
+      // Os livres são da agenda de quem faz a visita: o gestor que pede pode não ser o dono.
+      const dono = await agendaQueValeParaOLead(leadId, agora).catch(() => null);
+      const livres = dono ? await horariosDeVisitaSeguros(dono, agora) : [];
       const sugestao = livres.slice(0, 3).map((h) => h.rotulo).join("; ");
       return {
         erro: sugestao
@@ -218,5 +225,6 @@ function montarDependencias(p: {
         ? criarReuniao({ grupoId, gestorId: corretorId, titulo, inicio, fim, participantes }, supabase, agora)
         : Promise.resolve({ erro: "Só o gestor marca reunião." }),
     responderVisita: (visitaId, resposta, nova) => responderVisita({ visitaId, corretorId, resposta, nova }, supabase),
+    devolverCobranca: (visitaId) => devolverCobranca(supabase, { visitaId, corretorId }),
   };
 }

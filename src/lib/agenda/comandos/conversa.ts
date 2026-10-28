@@ -36,6 +36,8 @@ export type Dependencias = {
   lembrete(leadId: string | null, texto: string, quando: Date): Promise<{ erro?: string }>;
   reuniao(titulo: string, inicio: Date, fim: Date, participantes: "equipe" | string[]): Promise<{ erro?: string; comVisita?: string[] }>;
   responderVisita(visitaId: string, resposta: "aconteceu" | "faltou" | "remarcou", nova?: Date): Promise<{ erro?: string; ok?: string }>;
+  /** Devolve a visita à fila da cobrança: o próximo tick pergunta de novo. */
+  devolverCobranca(visitaId: string): Promise<void>;
 };
 
 const SEM_IA =
@@ -53,7 +55,23 @@ export async function responderAoCorretor(texto: string, d: Dependencias): Promi
   // Sem pergunta pendente, "sim" ou "2" sozinho não diz nada: sem gastar IA.
   if (curta) return textoNaoEntendi(d.ehGestor);
   if (!(await d.podeUsarIa())) return SEM_IA;
-  return comecarPedido(await d.interpretar(texto), d);
+  /*
+   * Pedido novo no meio da cobrança: a pergunta nova ocupa o lugar da
+   * pendente (uma por corretor), então a visita volta à fila e é perguntada
+   * de novo quando esta conversa terminar. Só se o pedido gravar estado: uma
+   * consulta não mexe na cobrança.
+   */
+  const cobranca = estado?.tipo === "cobranca" ? estado.visitaId : null;
+  const dd: Dependencias = cobranca
+    ? {
+        ...d,
+        gravarEstado: async (novo) => {
+          await d.devolverCobranca(cobranca);
+          await d.gravarEstado(novo);
+        },
+      }
+    : d;
+  return comecarPedido(await d.interpretar(texto), dd);
 }
 
 /** Responde à pergunta pendente; null = a mensagem é outra coisa (pedido novo). */

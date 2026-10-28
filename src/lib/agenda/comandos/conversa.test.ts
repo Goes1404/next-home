@@ -33,6 +33,7 @@ function deps(p: { estado?: EstadoDaConversa | null; pedido?: PedidoDoCorretor; 
     lembrete: vi.fn(async () => ({})),
     reuniao: vi.fn(async () => ({})),
     responderVisita: vi.fn(async () => ({ ok: "Anotado: a visita aconteceu." })),
+    devolverCobranca: vi.fn(async () => {}),
   } satisfies Dependencias;
   return { d, estadoAtual: () => estado };
 }
@@ -111,6 +112,24 @@ describe("responderAoCorretor", () => {
     d.responderVisita.mockResolvedValueOnce({ ok: "Anotado: visita remarcada para seg 02/11 às 10h." });
     expect(await responderAoCorretor("segunda 10h", d)).toMatch(/remarcada/);
     expect(d.responderVisita).toHaveBeenLastCalledWith("v1", "remarcou", new Date("2026-11-02T10:00:00-03:00"));
+  });
+
+  it("pedido novo no meio da cobrança devolve a pergunta à fila, sem perdê-la", async () => {
+    const { d, estadoAtual } = deps({
+      estado: { tipo: "cobranca", visitaId: "v1", nome: "Ana" },
+      pedido: VISITA,
+      leads: [{ id: "l1", nome: "Ana Souza" }],
+    });
+    expect(await responderAoCorretor("visita com a Ana sábado 10h", d)).toMatch(/Confirma?/);
+    expect(d.devolverCobranca).toHaveBeenCalledWith("v1");
+    expect(estadoAtual()).toMatchObject({ tipo: "confirmar" });
+  });
+
+  it("consulta no meio da cobrança não mexe na pergunta pendente", async () => {
+    const { d, estadoAtual } = deps({ estado: { tipo: "cobranca", visitaId: "v1", nome: "Ana" }, pedido: { tipo: "consultar", dia: "2026-10-31" } });
+    await responderAoCorretor("o que eu tenho amanhã?", d);
+    expect(d.devolverCobranca).not.toHaveBeenCalled();
+    expect(estadoAtual()).toMatchObject({ tipo: "cobranca", visitaId: "v1" });
   });
 
   it("consulta lista o dia", async () => {

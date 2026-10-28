@@ -687,6 +687,35 @@ export type Database = {
           },
         ]
       }
+      agenda_mensagens_tratadas: {
+        Row: {
+          corretor_id: string
+          criada_em: string
+          grupo_id: string
+          provider_message_id: string
+        }
+        Insert: {
+          corretor_id: string
+          criada_em?: string
+          grupo_id?: string
+          provider_message_id: string
+        }
+        Update: {
+          corretor_id?: string
+          criada_em?: string
+          grupo_id?: string
+          provider_message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_mensagens_tratadas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversa_de_agenda: {
         Row: {
           atualizado_em: string

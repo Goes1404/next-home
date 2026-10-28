@@ -34,6 +34,16 @@ export async function lerEstado(supabase: Supa, corretorId: string, agora = new 
   return data.estado as unknown as EstadoDaConversa;
 }
 
+/** Quem está no meio de uma pergunta agora: a cobrança espera esses corretores. */
+export async function corretoresComPergunta(supabase: Supa, agora = new Date()): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("conversa_de_agenda")
+    .select("corretor_id")
+    .gt("expira_em", agora.toISOString());
+  if (error) throw new Error(`Falha ao ler as perguntas pendentes: ${error.message}`);
+  return (data ?? []).map((l) => l.corretor_id);
+}
+
 export async function gravarEstado(
   supabase: Supa,
   p: { corretorId: string; grupoId: string; estado: EstadoDaConversa },
@@ -51,4 +61,28 @@ export async function gravarEstado(
 
 export async function limparEstado(supabase: Supa, corretorId: string): Promise<void> {
   await supabase.from("conversa_de_agenda").delete().eq("corretor_id", corretorId);
+}
+
+/**
+ * Marca a mensagem do WhatsApp como tratada pelo canal (0228). Devolve false
+ * se ela já tinha sido: é a reentrega do provedor e não se responde de novo.
+ * Na falha da gravação, trata (melhor responder duas vezes que nenhuma).
+ */
+export async function registrarMensagem(supabase: Supa, corretorId: string, providerMessageId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("agenda_mensagens_tratadas")
+    .insert({ corretor_id: corretorId, provider_message_id: providerMessageId });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  console.error("[agenda] mensagem tratada não registrada:", error.message);
+  return true;
+}
+
+/** As marcas de reentrega só servem por minutos; o tick apaga as de 2 dias. */
+export async function limparMensagensTratadas(supabase: Supa, agora = new Date()): Promise<void> {
+  const { error } = await supabase
+    .from("agenda_mensagens_tratadas")
+    .delete()
+    .lt("criada_em", new Date(agora.getTime() - 2 * 86_400_000).toISOString());
+  if (error) console.error("[agenda] limpeza das mensagens tratadas:", error.message);
 }

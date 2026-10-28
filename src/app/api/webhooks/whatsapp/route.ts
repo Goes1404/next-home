@@ -489,7 +489,7 @@ export async function POST(req: NextRequest) {
      * chave e da fala do corretor: lida como conversa, a mensagem criaria
      * lead do próprio corretor ou desligaria a IA (anti-objetivo 5).
      */
-    if (await tratarConversaComOSistema({ instancia, sender, fromMe, texto: text, ehAudio, supabase: createServiceClient() })) {
+    if (await tratarConversaComOSistema({ instancia, sender, fromMe, texto: text, ehAudio, supabase: createServiceClient(), providerMessageId })) {
       return NextResponse.json({ ok: true, action: "conversa_com_o_sistema" });
     }
 

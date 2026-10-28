@@ -12182,3 +12182,14 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, N�
 
 - Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.
 - **0224–0227 aplicadas em produção em 28/10/2026** (antes do deploy, como manda a ordem: são aditivas). Carga migrou 0 visitas (nenhuma futura). Sessão de corretor recebe `permission denied` em `visitas`/`compromissos`: é o desenho (só a chave de serviço lê).
+
+## Agenda: pendências da revisão fechadas (0228, 28/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
+
+- Reentrega do WhatsApp no canal de comandos: `agenda_mensagens_tratadas`, chave (corretor_id, provider_message_id). Chave única só por `provider_message_id` reprova `isolamento.db.test` ("toda chave única de tabela com grupo inclui o grupo ou uma linha-mãe").
+- Cobrança: excluir da busca quem já tem pergunta pendente; filtrar só no laço deixava o `limit 20` cheio de visitas que nunca seriam cobradas.
+- Pedido novo no meio da cobrança devolve a visita à fila (`cobrada_em = null`).
+- Livres sugeridos ao gestor pelo WhatsApp vêm da agenda do dono do lead (`agendaQueValeParaOLead`).
+- Lead arquivado: visita passada sem resposta vira `cancelada` na varredura, não `sem_confirmacao`.
+- Armadilha do teste de banco: duas `visitaPassada` do mesmo corretor no mesmo horário batem na trava de 60 min (23P01) antes do que se quer medir.

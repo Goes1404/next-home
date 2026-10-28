@@ -137,4 +137,28 @@ describe.skipIf(!process.env.DB_TESTE_URL)("a visita aconteceu? (0227)", () => {
       expect((await visitasDo(tx, velha))[0].status).toBe("sem_confirmacao");
       expect((await visitasDo(tx, recente))[0].status).toBe("marcada");
     }));
+
+  it("visita passada de lead arquivado é encerrada na varredura, sem pesar como sem confirmação (0228)", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "ac-arquivado" });
+      const lead = await novoLead(tx, g.corretorId, "Arquivado");
+      const ativo = await novoLead(tx, g.corretorId, "Ativo");
+      await visitaPassada(tx, lead, g.corretorId, 30);
+      await visitaPassada(tx, ativo, g.corretorId, 32);
+      await tx`update public.leads set arquivado_em = now() where id = ${lead}`;
+      await tx`select public.marcar_visitas_sem_confirmacao()`;
+      expect((await visitasDo(tx, lead))[0].status).toBe("cancelada");
+      expect((await visitasDo(tx, ativo))[0].status).toBe("sem_confirmacao");
+    }));
+
+  it("a mesma mensagem do WhatsApp só é tratada uma vez pelo canal (0228)", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "ac-reentrega" });
+      await tx`insert into public.agenda_mensagens_tratadas (provider_message_id, corretor_id) values ('ABC', ${g.corretorId})`;
+      const [l] = await tx<{ grupo_id: string }[]>`select grupo_id from public.agenda_mensagens_tratadas where provider_message_id = 'ABC'`;
+      expect(l.grupo_id).toBe(g.grupoId);
+      await expect(
+        tx.savepoint((s) => s`insert into public.agenda_mensagens_tratadas (provider_message_id, corretor_id) values ('ABC', ${g.corretorId})`),
+      ).rejects.toMatchObject({ code: "23505" });
+    }));
 });
