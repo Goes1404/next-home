@@ -58,6 +58,8 @@ desativar, reativar ou mostrar de novo.
   equipe visível e abria no primeiro corretor (André). Agora, logado na conta
   oculta, o próprio número aparece primeiro, "(meu número)". Como DESTINO a
   conta oculta segue fora (lista na tela e `proximo_da_roleta`, 0218).
+  Mesmo dia, pedido do dono: o seletor saiu. A tela mostra SEMPRE a roleta do
+  número de quem está logado, gestor inclusive.
 
 ## A fusão com a fase multi-grupo (renumerada para 0190–0194 em 20/10/2026)
 
