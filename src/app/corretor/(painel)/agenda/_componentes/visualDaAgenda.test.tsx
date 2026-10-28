@@ -9,6 +9,7 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/corretor/agenda" }));
 vi.mock("../acoesCompromissos", () => ({ bloquearHorario: vi.fn(), cancelarDoFormulario: vi.fn(), marcarReuniao: vi.fn() }));
 vi.mock("../acoesDaEquipe", () => ({ passarVisitaDoFormulario: vi.fn() }));
 
@@ -92,5 +93,44 @@ describe("CalendarioDoCelular", () => {
   it("fora de hoje aparece o atalho para hoje", () => {
     const html = renderToStaticMarkup(<CalendarioDoCelular mes="2026-10" dia="2026-10-20" hoje="2026-10-28" marcadores={{}} />);
     expect(html).toContain('href="?mes=2026-10&amp;dia=2026-10-28"');
+  });
+});
+
+describe("retoques do visual (28/10)", () => {
+  it("visita sem imóvel não diz 'Imóvel não informado'", async () => {
+    const { CartaoDaVisita } = await import("./CartaoDaVisita");
+    const html = renderToStaticMarkup(<CartaoDaVisita visita={visita as never} preparo={{}} semMoldura />);
+    expect(html).not.toContain("Imóvel não informado");
+    expect(html).toContain("Mariana Costa");
+  });
+
+  it("o cabeçalho compacto esconde a seção e a descrição no celular", async () => {
+    const { CabecalhoDeTela } = await import("@/app/corretor/(painel)/_componentes/CabecalhoDeTela");
+    const html = renderToStaticMarkup(<CabecalhoDeTela secao="Leads" titulo="Agenda" descricao="Suas visitas" compacto />);
+    expect(html).toMatch(/class="[^"]*hidden[^"]*md:block[^"]*"[^>]*>Leads/);
+    expect(html).toMatch(/class="[^"]*hidden[^"]*md:block[^"]*"[^>]*>Suas visitas/);
+  });
+
+  it("com duas opções, o Novo pergunta antes qual formulário abrir", async () => {
+    const { OpcoesDoNovo } = await import("./AcoesDaAgenda");
+    const html = renderToStaticMarkup(
+      <OpcoesDoNovo
+        opcoes={[
+          { chave: "bloquear", rotulo: "Bloquear horário", descricao: "Médico, folga", conteudo: <p>form-b</p> },
+          { chave: "reuniao", rotulo: "Marcar reunião", descricao: "Avisa a equipe", conteudo: <p>form-r</p> },
+        ]}
+      />,
+    );
+    expect(html).toContain("Bloquear horário");
+    expect(html).toContain("Marcar reunião");
+    expect(html).not.toContain("form-b");
+  });
+
+  it("com uma opção só, o Novo já abre o formulário", async () => {
+    const { OpcoesDoNovo } = await import("./AcoesDaAgenda");
+    const html = renderToStaticMarkup(
+      <OpcoesDoNovo opcoes={[{ chave: "bloquear", rotulo: "Bloquear horário", descricao: "", conteudo: <p>form-b</p> }]} />,
+    );
+    expect(html).toContain("form-b");
   });
 });

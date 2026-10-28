@@ -68,3 +68,17 @@ export function posicaoDoAgora(itens: ItemDaAgenda[], agora: Date, dia: Dia): nu
   if (diaEmSaoPaulo(agora) !== dia) return null;
   return itens.filter((i) => Date.parse(i.inicio) <= agora.getTime()).length;
 }
+
+/** Deslize na faixa da semana: precisa andar 50px e mais de lado que de pé (senão é rolagem). */
+const DESLIZE_MINIMO = 50;
+
+/** 1 = próxima (arrastou para a esquerda), -1 = anterior, 0 = não foi deslize. */
+export function passoDoDeslize(dx: number, dy: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < DESLIZE_MINIMO || Math.abs(dy) > Math.abs(dx)) return 0;
+  return dx < 0 ? 1 : -1;
+}
+
+/** As próximas visitas sem as do dia mostrado, que já estão na lista do meio. */
+export function deOutrosDias<T extends { inicio: string }>(visitas: T[], dia: Dia): T[] {
+  return visitas.filter((v) => diaEmSaoPaulo(new Date(v.inicio)) !== dia);
+}

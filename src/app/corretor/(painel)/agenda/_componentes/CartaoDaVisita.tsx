@@ -67,7 +67,7 @@ export function CartaoDaVisita({
             {comDia ? `${DIA_CURTO.format(quando)} · ` : ""}
             {hora} — {visita.nome}
           </p>
-          <p className="text-fluid-sm mt-0.5 text-apoio">{visita.imovel?.nome ?? "Imóvel não informado"}</p>
+          {visita.imovel?.nome && <p className="text-fluid-sm mt-0.5 text-apoio">{visita.imovel.nome}</p>}
           {feitaPorOutro && visita.corretorNome && (
             <p className="text-fluid-xs mt-0.5 font-medium text-alerta">Feita por {visita.corretorNome}</p>
           )}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ItemDaAgenda } from "./itens";
-import { diaVizinho, posicaoDoAgora, resumoDoDia, rotuloDoDia, semanaDoDia } from "./semana";
+import { deOutrosDias, diaVizinho, passoDoDeslize, posicaoDoAgora, resumoDoDia, rotuloDoDia, semanaDoDia } from "./semana";
 
 /*
  * A faixa da semana e o título do dia da Agenda (visual de 28/10/2026): a
@@ -81,5 +81,24 @@ describe("posicaoDoAgora", () => {
 
   it("só no dia de hoje", () => {
     expect(posicaoDoAgora(itens, new Date("2026-10-29T14:00:00Z"), "2026-10-28")).toBeNull();
+  });
+});
+
+describe("passoDoDeslize", () => {
+  it("arrastar para a esquerda vai para a próxima; para a direita, a anterior", () => {
+    expect(passoDoDeslize(-80, 10)).toBe(1);
+    expect(passoDoDeslize(90, -5)).toBe(-1);
+  });
+
+  it("toque curto ou rolagem vertical não troca a semana", () => {
+    expect(passoDoDeslize(-30, 0)).toBe(0);
+    expect(passoDoDeslize(-70, 120)).toBe(0);
+  });
+});
+
+describe("deOutrosDias", () => {
+  it("tira das próximas as visitas do dia que já está na lista", () => {
+    const vs = [visita("2026-10-28T13:00:00Z"), visita("2026-10-29T12:30:00Z")];
+    expect(deOutrosDias(vs, "2026-10-28").map((v) => v.inicio)).toEqual(["2026-10-29T12:30:00Z"]);
   });
 });

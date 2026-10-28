@@ -12278,3 +12278,4 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
 - `naoRolaDeLado.test.ts` reprova chip com `overflow-x-auto`: use `flex-wrap`.
 - Seed de visita confirmada: gravar `visita_confirmada_em` no MESMO update de `visita_agendada_em` não fica (o gatilho da marcação zera); confirmar num update depois.
 - Conta de teste em produção: grupo `teste-agenda` ("Teste Agenda (apagar)"), corretores ocultos (não entram em site, roleta nem `getEquipeAtiva`), login `teste.agenda@example.com`.
+- Retoques da mesma data: cabeçalho `compacto` (some seção e descrição abaixo de md), "Imóvel não informado" saiu do cartão, "Próximas" sem as do dia mostrado, "Novo" pergunta antes qual formulário (gestor), deslizar a semana com o dedo (`passoDoDeslize`, 50px e mais de lado que de pé). Teste de render de componente com `useRouter` precisa de `vi.mock("next/navigation")`.

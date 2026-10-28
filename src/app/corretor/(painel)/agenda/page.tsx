@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { diaEmSaoPaulo, lerDia, lerMes, mesDoDia, type Dia, type Mes } from "@/lib/agenda/calendario";
 import { ordenarItens, type ItemDaAgenda } from "@/lib/agenda/itens";
-import { resumoDoDia, rotuloDoDia, semanaDoDia } from "@/lib/agenda/semana";
+import { deOutrosDias, resumoDoDia, rotuloDoDia, semanaDoDia } from "@/lib/agenda/semana";
 import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas, lerVisitasSemHorario } from "@/lib/agenda/lerAgenda";
 import {
   lerCompromissosDoDiaDaEquipe,
@@ -21,7 +21,7 @@ import { BloquearHorario, MarcarReuniao } from "./_componentes/FormulariosDeComp
 import { MesCompacto } from "./_componentes/MesCompacto";
 import { CalendarioDoCelular } from "./_componentes/CalendarioDoCelular";
 import { DiaDaAgenda } from "./_componentes/DiaDaAgenda";
-import { AcoesDaAgenda } from "./_componentes/AcoesDaAgenda";
+import { AcoesDaAgenda, type OpcaoDoNovo } from "./_componentes/AcoesDaAgenda";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
 import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
 import { NumerosDoMes } from "./_componentes/NumerosDoMes";
@@ -67,6 +67,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   return (
     <div>
       <CabecalhoDeTela
+        compacto
         secao="Leads"
         titulo="Agenda"
         descricao={daEquipe ? "As visitas da equipe, dia a dia, e os números do mês." : "Suas visitas, tarefas e lembretes, dia a dia."}
@@ -83,6 +84,15 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 /** Os meses que a semana do dia toca além do mês mostrado: a faixa do celular atravessa a virada. */
 function outrosMesesDaSemana(dia: Dia, mes: Mes): Mes[] {
   return [...new Set(semanaDoDia(dia).map(mesDoDia))].filter((m) => m !== mes);
+}
+
+function opcaoDeReuniao(dia: Dia, equipe: { id: string; nome: string }[]): OpcaoDoNovo {
+  return {
+    chave: "reuniao",
+    rotulo: "Marcar reunião",
+    descricao: "A equipe toda ou algumas pessoas, avisadas na hora.",
+    conteudo: <MarcarReuniao dia={dia} equipe={equipe} aberto />,
+  };
 }
 
 function Barra({ abas, acoes }: { abas: React.ReactNode; acoes: React.ReactNode }) {
@@ -170,7 +180,7 @@ async function AgendaDaEquipe({
 
   return (
     <>
-      <Barra abas={abas} acoes={<AcoesDaAgenda novo={<MarcarReuniao dia={dia} equipe={equipe} aberto />} />} />
+      <Barra abas={abas} acoes={<AcoesDaAgenda opcoes={[opcaoDeReuniao(dia, equipe)]} />} />
 
       <nav className="mt-3 flex flex-wrap gap-2" aria-label="Filtrar por corretor">
         <Link href={`?mes=${mes}&dia=${dia}&ver=equipe`} aria-current={!corretorId ? "true" : undefined} className={cn("botao-aba min-h-11 text-sm", !corretorId && "bg-elevado font-semibold")}>
@@ -271,12 +281,10 @@ async function MinhaAgenda({
     .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
     .eq("corretor_id", corretorId);
 
-  const novo = (
-    <>
-      <BloquearHorario dia={dia} aberto />
-      {ehGestor && <MarcarReuniao dia={dia} equipe={equipe} aberto />}
-    </>
-  );
+  const opcoes: OpcaoDoNovo[] = [
+    { chave: "bloquear", rotulo: "Bloquear horário", descricao: "Médico, folga: a assistente não oferece o horário.", conteudo: <BloquearHorario dia={dia} aberto /> },
+    ...(ehGestor ? [opcaoDeReuniao(dia, equipe)] : []),
+  ];
   const ajustes = (
     <>
       <AgendaNoCelular link={linkDaAgenda} />
@@ -290,11 +298,12 @@ async function MinhaAgenda({
       />
     </>
   );
-  const proximasCurtas = proximas.slice(0, 6);
+  // As do dia mostrado já estão na lista do meio.
+  const proximasCurtas = deOutrosDias(proximas, dia).slice(0, 6);
 
   return (
     <>
-      <Barra abas={abas} acoes={<AcoesDaAgenda novo={novo} ajustes={ajustes} />} />
+      <Barra abas={abas} acoes={<AcoesDaAgenda opcoes={opcoes} ajustes={ajustes} />} />
 
       {semHorario.length > 0 && (
         <section className="cartao mt-4 border-alerta/40 p-5" aria-labelledby="visita-sem-horario">
