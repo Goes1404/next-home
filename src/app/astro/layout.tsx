@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
-import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
+import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 
 /**
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   description:
     "O CRM da Astro Soluções responde seus leads no WhatsApp com IA, organiza o funil, distribui os leads dos anúncios e marca as visitas.",
   icons: ICONES_ASTROIMOB,
-  manifest: null,
+  manifest: MANIFESTO_DA_PLATAFORMA,
   openGraph: {
     title: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA para imobiliárias`,
     description: "Seu lead respondido no WhatsApp em segundos, o funil em ordem e a visita na agenda.",

@@ -5,13 +5,13 @@ import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { MarcaAstro } from "@/components/marca/SeloAstro";
-import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
+import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 
 /** Em `astroimob.vercel.app` o ícone é o da Astro Soluções; nos outros endereços, como sempre foi. */
 export async function generateMetadata(): Promise<Metadata> {
   const base: Metadata = { title: { default: "Plataforma · Astro Soluções", template: "%s · Astro Soluções" }, robots: { index: false, follow: false } };
-  return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: null } : base;
+  return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA } : base;
 }
 
 /**

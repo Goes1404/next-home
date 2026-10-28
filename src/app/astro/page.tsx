@@ -4,6 +4,7 @@ import { SeloAstro } from "@/components/marca/SeloAstro";
 import { linkDoWhatsAppDaAstro, MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 import { LIMITES_POR_MES } from "@/lib/planos/limitesDoPlano";
 import { PRECO_ESSENCIAL, PRECO_POR_USUARIO_DA_IMOBILIARIA, PRECO_PROFISSIONAL } from "@/lib/plataforma/tiposDeConta";
+import { RodapeLegal } from "./_componentes/PaginaLegal";
 import s from "./astro.module.css";
 
 /**
@@ -268,14 +269,7 @@ export default function PaginaDaAstro() {
         </div>
       </section>
 
-      <footer className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-[var(--tinta-suave)] md:px-8">
-        <span className="flex items-center gap-2">
-          <SeloAstro className="size-6" />© {new Date().getFullYear()} {MARCA_DA_PLATAFORMA.nome}
-        </span>
-        <Link href="/corretor/entrar" className="underline underline-offset-4 hover:text-[var(--azul)]">
-          Entrar no CRM
-        </Link>
-      </footer>
+      <RodapeLegal />
     </main>
   );
 }

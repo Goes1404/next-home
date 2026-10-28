@@ -29,6 +29,13 @@ export function iconesDoGrupo(marca: Pick<MarcaDoCrm, "logoUrl">): NonNullable<M
   return marca.logoUrl ? { icon: [{ url: marca.logoUrl }], apple: [{ url: marca.logoUrl }] } : ICONES_ASTROIMOB;
 }
 
+/**
+ * O manifesto do APP da plataforma (28/10/2026): nome Astro Soluções, abre em
+ * `/corretor`. É o que o app Android (Trusted Web Activity) e o "instalar"
+ * do navegador usam em `astroimob.vercel.app`. Arquivo estático em `public/`.
+ */
+export const MANIFESTO_DA_PLATAFORMA = "/astro.webmanifest";
+
 /** Onde o painel de outro grupo busca o manifesto (`src/app/api/painel/manifest`). */
 export const CAMINHO_DO_MANIFESTO_DO_PAINEL = "/api/painel/manifest";
 

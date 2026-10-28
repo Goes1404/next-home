@@ -12131,3 +12131,10 @@ Nota: [[plataforma-astro-solucoes-e-barra-da-empresa]].
   na matiz do azul-marinho da Astro. Contraste medido igual.
 - `npm run paleta` local dá 188 "classes mortas" até em produção: comparar só
   as medidas de contraste e matiz.
+
+## App Android da Astro (28/10/2026)
+
+Nota: [[app-android-da-astro]]. Domínio do app: `astroimob.vercel.app`.
+Pacote `com.astrosolucoes.crm`. `assetlinks.json` lê `ANDROID_SHA256` na
+Vercel. Páginas legais em `/astro/privacidade`, `/astro/termos`,
+`/astro/excluir-conta`. Passo a passo em `android/LEIAME.md`.

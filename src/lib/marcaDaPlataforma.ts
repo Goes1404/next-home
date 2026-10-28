@@ -48,5 +48,21 @@ export function linkDoWhatsAppDaAstro(
   return `https://wa.me/${digitos}?text=${encodeURIComponent(texto)}`;
 }
 
+/**
+ * Os dados da empresa nas páginas legais (privacidade, termos, exclusão de
+ * conta). Vêm da Vercel para não ficarem escritos no código antes de
+ * confirmados: `NEXT_PUBLIC_CNPJ_DA_ASTRO`, `NEXT_PUBLIC_RAZAO_SOCIAL_DA_ASTRO`
+ * e `NEXT_PUBLIC_EMAIL_DA_ASTRO`. Linha sem valor simplesmente não aparece.
+ */
+export function dadosDaEmpresa(env: Record<string, string | undefined> = process.env) {
+  const limpo = (v: string | undefined) => (v ?? "").trim() || null;
+  const email = limpo(env.NEXT_PUBLIC_EMAIL_DA_ASTRO);
+  return {
+    razaoSocial: limpo(env.NEXT_PUBLIC_RAZAO_SOCIAL_DA_ASTRO) ?? MARCA_DA_PLATAFORMA.nome,
+    cnpj: limpo(env.NEXT_PUBLIC_CNPJ_DA_ASTRO),
+    email: email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null,
+  };
+}
+
 /** O texto de suporte que aparece nos avisos de limite e cobrança. */
 export const SUPORTE_DA_PLATAFORMA = `o suporte da ${MARCA_DA_PLATAFORMA.nome}`;

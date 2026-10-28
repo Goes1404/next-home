@@ -48,3 +48,4 @@ Vercel (plano Hobby), deploy e runtime.
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]
+- [[app-android-da-astro]] — app da Play Store como Trusted Web Activity; assetlinks pela variável ANDROID_SHA256 (28/10)

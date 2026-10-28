@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
+import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 
 const ARETZ_HOSTS = new Set(["aretzimoveis.com", "www.aretzimoveis.com"]);
@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
   if (!ehEnderecoSoDoPainel(host)) return {};
-  return { icons: ICONES_ASTROIMOB, manifest: null };
+  return { icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA };
 }
 
 export default function CorretorLayout({ children }: { children: React.ReactNode }) {

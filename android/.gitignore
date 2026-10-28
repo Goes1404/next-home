@@ -1,0 +1,18 @@
+# Chave de assinatura e saídas do build: nunca no git.
+*.keystore
+*.jks
+*.aab
+*.apk
+*.idsig
+app/
+build/
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+settings.gradle
+build.gradle
+gradle.properties
+local.properties
+manifest-checksum.txt
+store_icon.png

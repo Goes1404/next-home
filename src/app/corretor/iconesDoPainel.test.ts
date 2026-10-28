@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
-import { ICONES_ASTROIMOB, CAMINHO_DO_MANIFESTO_DO_PAINEL } from "@/lib/marcaDoCrm/icones";
+import { ICONES_ASTROIMOB, CAMINHO_DO_MANIFESTO_DO_PAINEL, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { MARCA_NEXT_HOME, marcaDoCrm } from "@/lib/marcaDoCrm/marca";
 
 /**
@@ -52,10 +52,10 @@ describe("layout do painel", () => {
 });
 
 describe("login e telas de /corretor", () => {
-  it("em astroimob.vercel.app: ícone da Astro Soluções, sem manifesto da Next Home", async () => {
+  it("em astroimob.vercel.app: ícone e manifesto do app da Astro Soluções, nunca o da Next Home", async () => {
     host = "astroimob.vercel.app";
     const { generateMetadata } = await import("./layout");
-    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: null });
+    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA });
   });
 
   it("no endereço da Next Home: nada declarado", async () => {
