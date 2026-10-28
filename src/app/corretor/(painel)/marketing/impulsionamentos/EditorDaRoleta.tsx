@@ -9,7 +9,8 @@ import { alternarPausa } from "@/app/corretor/actions";
 import { salvarRoleta, type ModoAviso } from "./roletaAcoes";
 import {
   TEXTO_ABERTURA_PADRAO,
-  TEXTO_BOAS_VINDAS_SUGERIDO,
+  TEXTO_BOAS_VINDAS_PADRAO,
+  TEXTO_PASSAGEM_GRUPO_PADRAO,
   TEXTO_PASSAGEM_PADRAO,
   preencherTexto,
 } from "@/lib/whatsapp/roletaTextos";
@@ -24,8 +25,9 @@ export type ConfigDaRoleta = {
   destinos: string[];
   textoPassagem: string;
   textoAbertura: string;
-  /** Modo grupo (0229): boas-vindas do número do anúncio. Vazio: nada sai. */
-  textoBoasVindas: string;
+  /** Modo grupo (0229/0230): as duas mensagens do número do anúncio. `null` = padrão; vazio = não sai. */
+  textoBoasVindas: string | null;
+  textoPassagemGrupo: string | null;
   modoAviso: ModoAviso;
 };
 
@@ -164,6 +166,13 @@ export function EditorDaRoleta({
   const foraDaLista = equipe.filter((m) => !c.destinos.includes(m.id));
   const grade = gestor ? GRADE_GESTOR : GRADE_CORRETOR;
   const mudou = salvo !== undefined && JSON.stringify(salvo) !== JSON.stringify(c);
+  // Modo grupo: `null` mostra o padrão no campo; vazio é mensagem desligada.
+  const boasVindas = c.textoBoasVindas ?? TEXTO_BOAS_VINDAS_PADRAO;
+  const passagemGrupo = c.textoPassagemGrupo ?? TEXTO_PASSAGEM_GRUPO_PADRAO;
+  const mensagensAtivas = [boasVindas, passagemGrupo].filter((t) => t.trim()).length;
+  const grupoNoPadrao =
+    (c.textoBoasVindas === null || c.textoBoasVindas === TEXTO_BOAS_VINDAS_PADRAO) &&
+    (c.textoPassagemGrupo === null || c.textoPassagemGrupo === TEXTO_PASSAGEM_GRUPO_PADRAO);
 
   // Função de render, não componente: componente declarado aqui dentro
   // nasceria de novo a cada render e remontaria as linhas.
@@ -395,9 +404,13 @@ export function EditorDaRoleta({
         <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
             <span>
-              <span className="block text-fluid-sm font-semibold text-titulo">Boas-vindas ao cliente</span>
+              <span className="block text-fluid-sm font-semibold text-titulo">Mensagens ao cliente</span>
               <span className="block text-fluid-xs text-apoio">
-                {c.textoBoasVindas.trim() ? "Ligada" : "Desligada"} · sai do seu número quando o lead é passado ao corretor
+                {mensagensAtivas === 0
+                  ? "Desligadas"
+                  : `${mensagensAtivas} ${mensagensAtivas === 1 ? "mensagem" : "mensagens"}`}{" "}
+                · saem do seu número quando o lead é passado ao corretor
+                {grupoNoPadrao ? " · texto padrão" : ""}
               </span>
             </span>
             <span aria-hidden className="text-fluid-xs font-semibold text-acento group-open:hidden">
@@ -407,37 +420,38 @@ export function EditorDaRoleta({
               Fechar
             </span>
           </summary>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-5">
             <EditorDeMensagem
-              rotulo="Mensagem de boas-vindas"
-              valor={c.textoBoasVindas}
+              rotulo="1ª mensagem · boas-vindas"
+              valor={boasVindas}
               aoMudar={(texto) => mudar({ textoBoasVindas: texto })}
               marcadores={MARCADORES_DA_BOAS_VINDAS}
-              previa={c.textoBoasVindas.trim() ? preencherTexto(c.textoBoasVindas, exemplo) : ""}
-              placeholder={TEXTO_BOAS_VINDAS_SUGERIDO}
+              previa={boasVindas.trim() ? preencherTexto(boasVindas, exemplo) : ""}
               limite={600}
-              linhas={4}
-              rodape="em branco, nada é enviado"
+              linhas={3}
+              rodape="apague o texto para não mandar"
             />
-            <div className="flex flex-wrap gap-2">
-              {c.textoBoasVindas.trim() ? (
+            <EditorDeMensagem
+              rotulo="2ª mensagem · quem vai atender"
+              valor={passagemGrupo}
+              aoMudar={(texto) => mudar({ textoPassagemGrupo: texto })}
+              marcadores={MARCADORES_DA_BOAS_VINDAS}
+              previa={passagemGrupo.trim() ? preencherTexto(passagemGrupo, exemplo) : ""}
+              limite={600}
+              linhas={3}
+              rodape="apague o texto para não mandar"
+            />
+            {!grupoNoPadrao && (
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => mudar({ textoBoasVindas: "" })}
+                  onClick={() => mudar({ textoBoasVindas: null, textoPassagemGrupo: null })}
                   className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento"
                 >
-                  Desligar boas-vindas
+                  Voltar ao padrão
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => mudar({ textoBoasVindas: TEXTO_BOAS_VINDAS_SUGERIDO })}
-                  className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento"
-                >
-                  Usar o texto sugerido
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </details>
       )}

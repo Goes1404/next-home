@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { mandaBoasVindas, planoDeMensagens } from "./planoDaRoleta";
+import { mensagensDoModoGrupo, planoDeMensagens } from "./planoDaRoleta";
+import { TEXTO_BOAS_VINDAS_PADRAO, TEXTO_PASSAGEM_GRUPO_PADRAO } from "./roletaTextos";
 
 describe("planoDeMensagens: o que a ROLETA manda ao cliente", () => {
   it("modo mensagem com repasse: a passagem do dono sai ANTES da abertura do escolhido", () => {
@@ -18,13 +19,22 @@ describe("planoDeMensagens: o que a ROLETA manda ao cliente", () => {
   });
 });
 
-describe("mandaBoasVindas: o texto do dono no modo grupo (0229)", () => {
-  it("só no modo grupo, com repasse e com texto escrito", () => {
-    expect(mandaBoasVindas("grupo", true, "Oi! {corretor} vai te ligar.")).toBe(true);
-    expect(mandaBoasVindas("grupo", true, "   ")).toBe(false);
-    expect(mandaBoasVindas("grupo", true, null)).toBe(false);
-    expect(mandaBoasVindas("grupo", false, "Oi!")).toBe(false);
-    expect(mandaBoasVindas("mensagem", true, "Oi!")).toBe(false);
+describe("mensagensDoModoGrupo: o que o número do anúncio manda (0229/0230)", () => {
+  it("sem texto salvo, saem as duas mensagens padrão, na ordem", () => {
+    expect(mensagensDoModoGrupo("grupo", true, { boasVindas: null, passagem: null })).toEqual([
+      TEXTO_BOAS_VINDAS_PADRAO,
+      TEXTO_PASSAGEM_GRUPO_PADRAO,
+    ]);
+  });
+
+  it("texto salvo vale; vazio desliga só aquela mensagem", () => {
+    expect(mensagensDoModoGrupo("grupo", true, { boasVindas: "Oi!", passagem: "  " })).toEqual(["Oi!"]);
+    expect(mensagensDoModoGrupo("grupo", true, { boasVindas: "", passagem: "Vai o {corretor}" })).toEqual(["Vai o {corretor}"]);
+  });
+
+  it("sem repasse ou fora do modo grupo, nada", () => {
+    expect(mensagensDoModoGrupo("grupo", false, { boasVindas: null, passagem: null })).toEqual([]);
+    expect(mensagensDoModoGrupo("mensagem", true, { boasVindas: null, passagem: null })).toEqual([]);
   });
 });
 
@@ -65,11 +75,11 @@ describe("roletaDosAnuncios.ts", () => {
 
   it("sem repasse, o número do dono não manda nada ao cliente", () => {
     expect(codigo).not.toContain("BOAS_VINDAS_DE_CAMPANHA");
-    // A boas-vindas do modo grupo (0229) só sai depois de a ficha trocar.
+    // As mensagens do modo grupo (0229/0230) só saem depois de a ficha trocar.
     const troca = codigo.indexOf("if (!trocou) return null;");
-    const boasVindas = codigo.indexOf("mandaBoasVindas(");
-    expect(boasVindas).toBeGreaterThan(troca);
-    expect(codigo.match(/mandaBoasVindas\(/g)).toHaveLength(1);
+    const doGrupo = codigo.indexOf("mensagensDoModoGrupo(");
+    expect(doGrupo).toBeGreaterThan(troca);
+    expect(codigo.match(/mensagensDoModoGrupo\(/g)).toHaveLength(1);
   });
 
   it("lerModoDaRoleta existe e cai em desligada", () => {
