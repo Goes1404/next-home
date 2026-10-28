@@ -25,6 +25,8 @@ export async function salvarRoleta(entrada: {
   destinos: string[];
   textoPassagem: string;
   textoAbertura: string;
+  /** Modo grupo (0229): o que o número do anúncio manda ao cliente. Vazio: nada. */
+  textoBoasVindas: string;
   modoAviso: ModoAviso;
 }): Promise<{ erro?: string }> {
   const quem = await getCorretorLogado();
@@ -38,6 +40,7 @@ export async function salvarRoleta(entrada: {
   const destinos = [...new Set(entrada.destinos)].slice(0, 30);
   const textoPassagem = entrada.textoPassagem.trim().slice(0, 600);
   const textoAbertura = entrada.textoAbertura.trim().slice(0, 1000);
+  const textoBoasVindas = entrada.textoBoasVindas.trim().slice(0, 600);
   if (entrada.ligada && destinos.length === 0) return { erro: "Escolha pelo menos um corretor para receber." };
 
   const supabase = createServiceClient();
@@ -85,6 +88,7 @@ export async function salvarRoleta(entrada: {
       destinos,
       texto_passagem: textoPassagem || null,
       texto_abertura: textoAbertura || null,
+      texto_boas_vindas: textoBoasVindas || null,
       atualizado_em: new Date().toISOString(),
       atualizado_por: quem.id,
     },

@@ -27,3 +27,17 @@ export function planoDeMensagens(
   if (modo === "grupo" || !repassou) return [];
   return ["passagem", "abertura"];
 }
+
+/**
+ * Modo grupo (0229, 28/10/2026): o número do anúncio pode dar as boas-vindas
+ * ao cliente, com o texto que o dono escreveu, DEPOIS de a ficha trocar de
+ * dono (a mensagem diz quem vai ligar). Sem texto, nada sai, como desde
+ * 27/10; sem repasse, também nada.
+ */
+export function mandaBoasVindas(
+  modo: Exclude<ModoDaRoleta, "desligada">,
+  repassou: boolean,
+  texto: string | null | undefined,
+): boolean {
+  return modo === "grupo" && repassou && !!texto?.trim();
+}

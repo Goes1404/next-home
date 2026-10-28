@@ -8,6 +8,7 @@ import { listarGruposWhatsapp, listarParticipantesDoGrupo } from "@/lib/whatsapp
 import { lidDoCorretor, mensagemDaSincronizacao, planejarVinculos } from "@/lib/whatsapp/vinculoNoGrupo";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { chaveDoNome, nomeEsperadoDoGrupo, validarPadraoDoNome } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
+import { validarModeloDoAviso } from "@/lib/whatsapp/avisoNoGrupoTexto";
 
 /**
  * O ADM derruba o número de um corretor (30/09/2026, 0134).
@@ -275,6 +276,21 @@ export async function configurarNomeDosGrupos(entrada: string): Promise<{ ok?: s
   revalidatePath("/corretor/admin/whatsapp");
   revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: "Nome dos grupos salvo. Agora sincronize os grupos dos corretores." };
+}
+
+/** O relatório que chega no grupo a cada lead (0229). Vazio volta ao padrão. */
+export async function configurarRelatorioNoGrupo(entrada: string): Promise<{ ok?: string; erro?: string }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+  const validado = validarModeloDoAviso(entrada);
+  if (!validado.ok) return { erro: validado.erro };
+  const { error } = await createServiceClient()
+    .from("grupos")
+    .update({ texto_aviso_grupo_leads: validado.modelo })
+    .eq("id", guarda.corretor.grupoId);
+  if (error) return { erro: "Não foi possível salvar o relatório agora." };
+  revalidatePath("/corretor/marketing/impulsionamentos");
+  return { ok: validado.modelo ? "Relatório salvo. Vale para os próximos leads." : "Relatório voltou ao padrão." };
 }
 
 /**

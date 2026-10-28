@@ -55,9 +55,18 @@ vi.mock("@/lib/marcaDoCrm/marca", () => ({ linkDoPainel: (_g: string, caminho: s
 
 const { repassarPelaRoleta } = await import("./roletaDosAnuncios");
 
-function semear(modo: "mensagem" | "grupo") {
+function semear(modo: "mensagem" | "grupo", textoBoasVindas: string | null = null) {
   banco = bancoFalso({
-    roleta_anuncios: [{ corretor_id: DONO, ligada: true, modo_aviso: modo, texto_passagem: null, texto_abertura: null }],
+    roleta_anuncios: [
+      {
+        corretor_id: DONO,
+        ligada: true,
+        modo_aviso: modo,
+        texto_passagem: null,
+        texto_abertura: null,
+        texto_boas_vindas: textoBoasVindas,
+      },
+    ],
     leads: [
       {
         id: "lead-1",
@@ -231,10 +240,30 @@ describe("roleta no modo grupo", () => {
   });
 
   it("ninguém disponível no modo grupo: o lead fica com o dono e nada sai pela roleta", async () => {
-    semear("grupo");
+    semear("grupo", "Oi, {cliente}! {corretor} vai te ligar.");
     fila = [];
     expect(await repassar({ modo: "grupo" })).toBeNull();
     expect(whatsapps()).toEqual([]);
     expect(lead().corretor_id).toBe(DONO);
+  });
+
+  it("com boas-vindas escrita, o número do anúncio manda o texto depois de a ficha trocar", async () => {
+    semear("grupo", "Oi, {cliente}! Aqui é da {imobiliaria}. {corretor} vai te ligar sobre o {imovel}.");
+    expect(await repassar({ modo: "grupo" })).toBe("beto");
+    expect(whatsapps()).toEqual([
+      { tipo: "whatsapp", instancia: "inst-dona", texto: "Oi, Carlos! Aqui é da Aretz. Beto vai te ligar sobre o Residencial Aurora." },
+    ]);
+    expect(gravarMensagem).toHaveBeenCalledWith(
+      expect.objectContaining({ conversaId: "conv-dona", remetente: "bot", conteudo: whatsapps()[0].texto }),
+    );
+    expect(lead().corretor_id).toBe("beto");
+  });
+
+  it("boas-vindas que não sai não desfaz o repasse", async () => {
+    semear("grupo", "Oi! {corretor} vai te ligar.");
+    instanciasQueFalham.add("inst-dona");
+    expect(await repassar({ modo: "grupo" })).toBe("beto");
+    expect(gravarMensagem).not.toHaveBeenCalled();
+    expect(avisos().map((a) => a.corretorId)).toEqual(["beto"]);
   });
 });

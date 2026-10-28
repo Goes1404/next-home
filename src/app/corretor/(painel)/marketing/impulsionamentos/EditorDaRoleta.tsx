@@ -7,7 +7,12 @@ import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { alternarPausa } from "@/app/corretor/actions";
 import { salvarRoleta, type ModoAviso } from "./roletaAcoes";
-import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "@/lib/whatsapp/roletaTextos";
+import {
+  TEXTO_ABERTURA_PADRAO,
+  TEXTO_BOAS_VINDAS_SUGERIDO,
+  TEXTO_PASSAGEM_PADRAO,
+  preencherTexto,
+} from "@/lib/whatsapp/roletaTextos";
 import { primeiroNome } from "@/lib/format";
 import { Interruptor } from "./Interruptor";
 import { RegraDoNumeroConectado } from "./RegraDoNumeroConectado";
@@ -18,6 +23,8 @@ export type ConfigDaRoleta = {
   destinos: string[];
   textoPassagem: string;
   textoAbertura: string;
+  /** Modo grupo (0229): boas-vindas do número do anúncio. Vazio: nada sai. */
+  textoBoasVindas: string;
   modoAviso: ModoAviso;
 };
 
@@ -375,6 +382,41 @@ export function EditorDaRoleta({
           </p>
         )}
       </div>
+
+      {noGrupo && (
+        <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">
+          <summary className="flex min-h-11 cursor-pointer items-center text-fluid-sm font-semibold text-titulo">
+            Boas-vindas ao cliente
+          </summary>
+          <label className="mt-3 block max-w-2xl space-y-2 text-fluid-sm">
+            <span className="text-apoio">
+              Sai do seu número assim que o lead é passado para o corretor. Em branco, nada é enviado.
+            </span>
+            <textarea
+              rows={3}
+              value={c.textoBoasVindas}
+              placeholder={TEXTO_BOAS_VINDAS_SUGERIDO}
+              maxLength={600}
+              onChange={(e) => mudar({ textoBoasVindas: e.target.value })}
+              className="block w-full rounded-xl border border-linha-forte bg-superficie p-3 text-titulo"
+            />
+            {c.textoBoasVindas.trim() ? (
+              <Balao texto={preencherTexto(c.textoBoasVindas, exemplo)} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => mudar({ textoBoasVindas: TEXTO_BOAS_VINDAS_SUGERIDO })}
+                className="link-acao text-fluid-xs text-acento"
+              >
+                Usar o texto sugerido
+              </button>
+            )}
+          </label>
+          <p className="mt-3 text-fluid-xs text-apoio">
+            Use {"{corretor}"}, {"{cliente}"}, {"{imovel}"} e {"{imobiliaria}"}. O que não for conhecido some da frase.
+          </p>
+        </details>
+      )}
 
       {!noGrupo && (
         <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">

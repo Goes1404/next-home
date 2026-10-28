@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { planoDeMensagens } from "./planoDaRoleta";
+import { mandaBoasVindas, planoDeMensagens } from "./planoDaRoleta";
 
 describe("planoDeMensagens: o que a ROLETA manda ao cliente", () => {
   it("modo mensagem com repasse: a passagem do dono sai ANTES da abertura do escolhido", () => {
@@ -15,6 +15,16 @@ describe("planoDeMensagens: o que a ROLETA manda ao cliente", () => {
   it("modo grupo: a roleta não manda nada, com ou sem repasse", () => {
     expect(planoDeMensagens("grupo", true)).toEqual([]);
     expect(planoDeMensagens("grupo", false)).toEqual([]);
+  });
+});
+
+describe("mandaBoasVindas: o texto do dono no modo grupo (0229)", () => {
+  it("só no modo grupo, com repasse e com texto escrito", () => {
+    expect(mandaBoasVindas("grupo", true, "Oi! {corretor} vai te ligar.")).toBe(true);
+    expect(mandaBoasVindas("grupo", true, "   ")).toBe(false);
+    expect(mandaBoasVindas("grupo", true, null)).toBe(false);
+    expect(mandaBoasVindas("grupo", false, "Oi!")).toBe(false);
+    expect(mandaBoasVindas("mensagem", true, "Oi!")).toBe(false);
   });
 });
 
@@ -55,7 +65,11 @@ describe("roletaDosAnuncios.ts", () => {
 
   it("sem repasse, o número do dono não manda nada ao cliente", () => {
     expect(codigo).not.toContain("BOAS_VINDAS_DE_CAMPANHA");
-    expect(codigo).not.toMatch(/boasVindas/i);
+    // A boas-vindas do modo grupo (0229) só sai depois de a ficha trocar.
+    const troca = codigo.indexOf("if (!trocou) return null;");
+    const boasVindas = codigo.indexOf("mandaBoasVindas(");
+    expect(boasVindas).toBeGreaterThan(troca);
+    expect(codigo.match(/mandaBoasVindas\(/g)).toHaveLength(1);
   });
 
   it("lerModoDaRoleta existe e cai em desligada", () => {

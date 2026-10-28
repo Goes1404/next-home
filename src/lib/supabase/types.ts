@@ -1924,6 +1924,7 @@ export type Database = {
           envio_grupo_leads_instancia: string | null
           pular_corretor_whatsapp_desconectado: boolean
           padrao_nome_grupo_leads: string | null
+          texto_aviso_grupo_leads: string | null
           id: string
           mensalidade: number | null
           nome: string
@@ -1987,6 +1988,7 @@ export type Database = {
           envio_grupo_leads_instancia?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
           padrao_nome_grupo_leads?: string | null
+          texto_aviso_grupo_leads?: string | null
           id?: string
           mensalidade?: number | null
           nome: string
@@ -2050,6 +2052,7 @@ export type Database = {
           envio_grupo_leads_instancia?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
           padrao_nome_grupo_leads?: string | null
+          texto_aviso_grupo_leads?: string | null
           id?: string
           mensalidade?: number | null
           nome?: string
@@ -2295,6 +2298,7 @@ export type Database = {
           ligada: boolean
           destinos: string[]
           ultimo_indice: number
+          texto_boas_vindas: string | null
           texto_passagem: string | null
           texto_abertura: string | null
           modo_aviso: string
@@ -2307,6 +2311,7 @@ export type Database = {
           ligada?: boolean
           destinos?: string[]
           ultimo_indice?: number
+          texto_boas_vindas?: string | null
           texto_passagem?: string | null
           texto_abertura?: string | null
           modo_aviso?: string
@@ -2319,6 +2324,7 @@ export type Database = {
           ligada?: boolean
           destinos?: string[]
           ultimo_indice?: number
+          texto_boas_vindas?: string | null
           texto_passagem?: string | null
           texto_abertura?: string | null
           modo_aviso?: string

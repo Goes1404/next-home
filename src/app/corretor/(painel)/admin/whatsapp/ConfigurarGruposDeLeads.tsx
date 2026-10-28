@@ -4,8 +4,10 @@ import { useOptimistic, useState, useTransition } from "react";
 import { MessagesSquare, RefreshCw } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
+import { LIMITE_DO_AVISO_NO_GRUPO, montarAvisoNoGrupo, TEXTO_AVISO_NO_GRUPO_PADRAO } from "@/lib/whatsapp/avisoNoGrupoTexto";
 import {
   configurarNomeDosGrupos,
+  configurarRelatorioNoGrupo,
   sincronizarGruposDeLeads,
   vincularGrupoDoCorretor,
 } from "./acoes";
@@ -26,6 +28,7 @@ export function ConfigurarGruposDeLeads({
   nomeDoCentral,
   corretores,
   padraoDoNome,
+  modeloDoRelatorio,
   nomeDaImobiliaria,
   gruposDoCentral,
   erroDosGrupos,
@@ -35,11 +38,14 @@ export function ConfigurarGruposDeLeads({
   nomeDoCentral: string | null;
   corretores: Corretor[];
   padraoDoNome: string | null;
+  /** O relatório do lead no grupo (0229); `null` é o padrão. */
+  modeloDoRelatorio: string | null;
   nomeDaImobiliaria: string;
   gruposDoCentral: GrupoDoCentral[];
   erroDosGrupos?: string;
 }) {
   const [padrao, setPadrao] = useState(padraoDoNome ?? "");
+  const [relatorio, setRelatorio] = useState(modeloDoRelatorio ?? TEXTO_AVISO_NO_GRUPO_PADRAO);
   const [pendente, iniciar] = useTransition();
   // À parte: a escolha à mão não trava o resto nem diz "Sincronizando…".
   const [, iniciarEscolha] = useTransition();
@@ -104,7 +110,7 @@ export function ConfigurarGruposDeLeads({
         </button>
       </div>
 
-      <div className="max-w-2xl">
+      <div className="grid gap-3 md:grid-cols-2">
         <Passo
           titulo="Nome dos grupos"
           ajuda={
@@ -128,6 +134,50 @@ export function ConfigurarGruposDeLeads({
             </label>
             <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className={BOTAO_SECUNDARIO}>
               Salvar nome
+            </button>
+          </div>
+        </Passo>
+
+        <Passo
+          titulo="Relatório no grupo"
+          ajuda={
+            <>
+              O que chega no grupo do corretor a cada lead. Use {"{corretor}"}, {"{cliente}"}, {"{telefone}"},{" "}
+              {"{origem}"} e {"{imovel}"}; linha com dado que faltar sai inteira.
+            </>
+          }
+        >
+          <label className="block">
+            <span className="sr-only">Relatório no grupo</span>
+            <textarea
+              rows={7}
+              value={relatorio}
+              onChange={(e) => setRelatorio(e.target.value)}
+              maxLength={LIMITE_DO_AVISO_NO_GRUPO}
+              disabled={pendente}
+              className="block w-full rounded-xl border border-linha-forte bg-superficie p-3 text-fluid-sm text-titulo shadow-sm"
+            />
+          </label>
+          <p className="max-w-md rounded-2xl rounded-bl-md border border-linha bg-superficie px-3 py-2 text-fluid-xs break-words whitespace-pre-line text-titulo shadow-sm">
+            {montarAvisoNoGrupo(relatorio, {
+              corretor: exemplo,
+              cliente: "Marina Silva",
+              telefone: "(11) 99999-0000",
+              origem: "anúncio no Instagram",
+              imovel: "Residencial Aurora",
+            })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={pendente} onClick={() => executar(() => configurarRelatorioNoGrupo(relatorio))} className={BOTAO_SECUNDARIO}>
+              Salvar relatório
+            </button>
+            <button
+              type="button"
+              disabled={pendente || relatorio === TEXTO_AVISO_NO_GRUPO_PADRAO}
+              onClick={() => setRelatorio(TEXTO_AVISO_NO_GRUPO_PADRAO)}
+              className="link-acao min-h-11 px-2 text-fluid-sm text-acento disabled:opacity-50"
+            >
+              Voltar ao padrão
             </button>
           </div>
         </Passo>

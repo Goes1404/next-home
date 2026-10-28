@@ -39,7 +39,7 @@ export async function DistribuicaoDaEquipe() {
     // "Salve o número central" com ele já salvo.
     createServiceClient()
       .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads")
+      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads, texto_aviso_grupo_leads")
       .eq("id", gestor.grupoId)
       .maybeSingle()
       .then((r) => {
@@ -79,6 +79,7 @@ export async function DistribuicaoDaEquipe() {
           manual: p.whatsapp_grupo_leads_manual,
         }))}
       padraoDoNome={configuracao?.padrao_nome_grupo_leads ?? null}
+      modeloDoRelatorio={configuracao?.texto_aviso_grupo_leads ?? null}
       nomeDaImobiliaria={marca.nome}
       gruposDoCentral={[...gruposDoCentral.grupos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
       erroDosGrupos={"erro" in gruposDoCentral ? gruposDoCentral.erro : undefined}

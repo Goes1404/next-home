@@ -10,8 +10,10 @@ codigo:
   - src/lib/whatsapp/roletaTextos.ts
   - src/app/corretor/(painel)/marketing/impulsionamentos/EditorDaRoleta.tsx
   - src/app/api/webhooks/whatsapp/route.ts
+  - supabase/migrations/0229_textos_da_roleta_e_do_grupo.sql
+  - src/lib/whatsapp/avisoNoGrupoTexto.ts
 summary: Lead que nasce pela etiqueta de anúncio da Meta no número de um corretor vai para o próximo da lista dele; o número novo manda a primeira mensagem na hora e o do dono avisa quem vai atender.
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Roleta dos anúncios
@@ -54,5 +56,20 @@ Pedido do dono (20/10/2026). Desenho:
   [[lead-da-campanha-do-corretor-sem-ia]]); o webhook passa o modo já lido para a roleta (ler duas
   vezes deixava o cliente sem resposta). Troca de dono que falha não avisa
   ninguém. Ver [[retorno-da-ligacao-pelo-grupo]].
+
+## Textos personalizáveis (0229, 28/10/2026)
+
+- **Boas-vindas no modo grupo** (`roleta_anuncios.texto_boas_vindas`): o
+  número do anúncio manda ao cliente o texto que o dono escreveu, DEPOIS de a
+  ficha trocar de dono (`mandaBoasVindas`). Em branco = nada sai (respeita o
+  pedido de 27/10 de tirar a boas-vindas fixa). Falha no envio não desfaz o
+  repasse. Mesmos marcadores da roleta.
+- **Relatório no grupo** (`grupos.texto_aviso_grupo_leads`): modelo do aviso
+  de lead no grupo do corretor (`montarAvisoNoGrupo`), editado no cartão
+  "Relatório no grupo" da aba Roleta. Marcadores `{corretor} {cliente}
+  {telefone} {origem} {imovel}`; linha com dado vazio sai inteira; nulo = o
+  texto de sempre. Vale para TODO lead distribuído ao grupo, não só roleta.
+- O logado não lê essas colunas (0196 recorta `grupos`; roleta sem grant):
+  tudo pela chave de serviço.
 
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].

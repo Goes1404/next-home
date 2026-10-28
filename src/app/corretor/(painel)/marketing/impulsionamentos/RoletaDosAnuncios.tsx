@@ -22,7 +22,7 @@ export async function RoletaDosAnuncios() {
 
   let roletas = supabase
     .from("roleta_anuncios")
-    .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura")
+    .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura, texto_boas_vindas")
     .eq("grupo_id", quem.grupoId);
   if (!gestor) roletas = roletas.eq("corretor_id", quem.id);
 
@@ -77,6 +77,7 @@ export async function RoletaDosAnuncios() {
       destinos: (l?.destinos ?? []).filter((d) => equipe.some((e) => e.id === d)),
       textoPassagem: l?.texto_passagem || TEXTO_PASSAGEM_PADRAO,
       textoAbertura: l?.texto_abertura || TEXTO_ABERTURA_PADRAO,
+      textoBoasVindas: l?.texto_boas_vindas ?? "",
       modoAviso: l?.modo_aviso === "grupo" ? ("grupo" as const) : ("mensagem" as const),
     };
   });

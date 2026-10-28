@@ -8,6 +8,13 @@ export const TEXTO_PASSAGEM_PADRAO = "Oi! Quem vai te atender é {corretor}, já
 export const TEXTO_ABERTURA_PADRAO =
   "Oi, {cliente}! Aqui é {corretor}, da {imobiliaria}. Vi que você chamou pelo nosso anúncio sobre o {imovel}. Posso te ajudar?";
 
+/**
+ * Sugestão para a boas-vindas do modo grupo (0229). Não é padrão: em branco,
+ * nada sai (a boas-vindas fixa foi tirada a pedido do dono em 27/10/2026).
+ */
+export const TEXTO_BOAS_VINDAS_SUGERIDO =
+  "Oi, {cliente}! Recebemos seu contato pelo anúncio do {imovel}. {corretor}, da {imobiliaria}, vai te ligar em instantes.";
+
 export const MARCADORES_DA_ROLETA = ["corretor", "cliente", "imovel", "imobiliaria"] as const;
 export type VariaveisDaRoleta = Partial<Record<(typeof MARCADORES_DA_ROLETA)[number], string | null>>;
 

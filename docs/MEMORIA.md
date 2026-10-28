@@ -12235,3 +12235,19 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
 - Livres sugeridos ao gestor pelo WhatsApp vêm da agenda do dono do lead (`agendaQueValeParaOLead`).
 - Lead arquivado: visita passada sem resposta vira `cancelada` na varredura, não `sem_confirmacao`.
 - Armadilha do teste de banco: duas `visitaPassada` do mesmo corretor no mesmo horário batem na trava de 60 min (23P01) antes do que se quer medir.
+
+## Boas-vindas da roleta e relatório no grupo personalizáveis (0229, 28/10/2026)
+
+Nota: [[roleta-dos-anuncios]]
+
+- `roleta_anuncios.texto_boas_vindas`: no modo grupo o número do anúncio
+  manda esse texto ao cliente depois de a ficha trocar. Vazio = nada (o dono
+  tirou a boas-vindas fixa em 27/10; só sai o que ele escrever).
+- `grupos.texto_aviso_grupo_leads`: modelo do relatório no grupo
+  (`montarAvisoNoGrupo`, puro, usado na prévia e no worker
+  `enviosDeLeadParaGrupo`). Linha com marcador vazio sai inteira; nulo = texto
+  de sempre (o padrão reproduz byte a byte o antigo).
+- A guarda `planoDaRoleta.test.ts` proibia `boasVindas` no código da roleta;
+  virou "só depois de `if (!trocou) return null;`, uma chamada".
+- Migration aditiva: aplicar ANTES do deploy (o código seleciona as colunas
+  novas; sem elas a aba Roleta e a config dos grupos quebram).
