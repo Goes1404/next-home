@@ -45,8 +45,9 @@ chave do mesmo jeito.
 2. Em Play Console → Configuração → Integridade do app → Assinatura do app,
    copie as duas impressões **SHA-256**: a da chave de assinatura do app (do
    Google) e a da chave de upload.
-3. Na Vercel → Settings → Environment Variables → Production, crie
-   `ANDROID_SHA256` com as duas, separadas por vírgula. Faça o redeploy.
+3. Cole as duas em `IMPRESSOES_DO_APP` (`src/lib/appAndroid.ts`) e publique.
+   Já estão lá desde 28/10/2026. (`ANDROID_SHA256` na Vercel substitui a lista,
+   se um dia for preciso trocar sem commit.)
 4. Confira: `https://astroimob.vercel.app/.well-known/assetlinks.json` deve
    mostrar `com.astrosolucoes.crm` e as duas impressões.
 5. Instale pelo teste interno e abra: não pode aparecer barra de endereço.

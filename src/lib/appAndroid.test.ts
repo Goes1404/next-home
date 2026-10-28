@@ -1,13 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { impressoesDigitais, PACOTE_PADRAO, vinculosDoApp } from "./appAndroid";
+import { IMPRESSOES_DO_APP, impressoesDigitais, PACOTE_PADRAO, vinculosDoApp } from "./appAndroid";
 
 const A = Array.from({ length: 32 }, (_, i) => (i * 7 % 256).toString(16).padStart(2, "0")).join(":");
 const B = Array.from({ length: 32 }, () => "AB").join(":");
 
 describe("assetlinks do app Android", () => {
-  it("sem chave configurada: lista vazia (o app abre, só com a barra do navegador)", () => {
-    expect(vinculosDoApp(undefined)).toEqual([]);
+  it("só lixo: lista vazia (o app abre, só com a barra do navegador)", () => {
+    expect(vinculosDoApp("12:34")).toEqual([]);
     expect(vinculosDoApp("")).toEqual([]);
+  });
+
+  it("sem variável: as duas impressões do app publicado", () => {
+    const antes = process.env.ANDROID_SHA256;
+    delete process.env.ANDROID_SHA256;
+    const r = vinculosDoApp();
+    if (antes !== undefined) process.env.ANDROID_SHA256 = antes;
+    expect(r[0].target.package_name).toBe("com.astrosolucoes.crm");
+    expect(r[0].target.sha256_cert_fingerprints).toEqual(IMPRESSOES_DO_APP.split(","));
+    expect(r[0].target.sha256_cert_fingerprints).toHaveLength(2);
   });
 
   it("aceita uma ou mais impressões, em minúsculas ou com espaços, e descarta as malformadas", () => {

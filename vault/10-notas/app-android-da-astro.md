@@ -30,8 +30,11 @@ cheia. Passo a passo em `android/LEIAME.md`.
   abre em `/corretor`). Login, `/plataforma` e `/astro` no endereço do CRM
   apontam para ele (antes `manifest: null`).
 - `/.well-known/assetlinks.json` é reescrito em `next.config.ts` para
-  `/api/assetlinks`, que lê `ANDROID_SHA256` (vírgula entre impressões). Sem
-  a variável sai `[]` e o app abre com barra do navegador.
+  `/api/assetlinks`. As duas impressões SHA-256 do app publicado (chave do
+  Google + chave de upload) ficam em `IMPRESSOES_DO_APP` no código: a
+  integração da Vercel recebe 403 ao criar variável. `ANDROID_SHA256`, se
+  existir, substitui.
+- 28/10/2026: primeira versão enviada ao teste interno da Play Store.
 - A chave de assinatura nunca entra no git (`android/.gitignore`).
 - Páginas que a Play Store pede: `/astro/privacidade`, `/astro/termos` (o
   mesmo texto de `src/lib/termos/termos.ts`) e `/astro/excluir-conta`. Dados
