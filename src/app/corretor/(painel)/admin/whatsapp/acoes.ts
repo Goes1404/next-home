@@ -70,44 +70,43 @@ export async function desconectarNumeroDoCorretor(
   return { ok: "Número desconectado. A IA desse corretor para até ele conectar de novo." };
 }
 
-/** Define qual número da imobiliária envia os avisos aos grupos dos corretores. */
-export async function configurarEnvioDeLeadsNosGrupos(
-  instanceName: string | null,
-): Promise<{ ok?: string; erro?: string }> {
-  const guarda = await exigirGestorNaAcao();
-  if (guarda.erro !== undefined) return { erro: guarda.erro };
-  const servico = createServiceClient();
-  const escolhida = instanceName?.trim() ?? "";
-
-  if (!escolhida) {
-    const { error } = await servico
-      .from("grupos")
-      .update({ envio_grupo_leads_ativo: false, envio_grupo_leads_instancia: null })
-      .eq("id", guarda.corretor.grupoId);
-    if (error) return { erro: "Não foi possível desativar agora." };
-    revalidatePath("/corretor/admin/whatsapp");
-  revalidatePath("/corretor/marketing/impulsionamentos");
-    return { ok: "Envio para grupos desativado." };
+/**
+ * O número central sem escolha na tela (28/10/2026): vale o salvo; sem ele,
+ * o da conta do gestor que está agindo, se conectado, e fica salvo. O salvo
+ * não troca sozinho: outro gestor sincronizando não tira o número que já está
+ * nos grupos.
+ */
+async function garantirNumeroCentral(
+  servico: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+  gestorId: string,
+): Promise<{ instancia: string; padrao: string | null } | { erro: string }> {
+  const { data: configuracao, error } = await servico
+    .from("grupos")
+    .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (error) return { erro: "Não foi possível ler a configuração agora." };
+  const padrao = configuracao?.padrao_nome_grupo_leads ?? null;
+  if (configuracao?.envio_grupo_leads_ativo && configuracao.envio_grupo_leads_instancia) {
+    return { instancia: configuracao.envio_grupo_leads_instancia, padrao };
   }
 
-  const { data: instancia } = await servico
+  const { data: propria } = await servico
     .from("corretor_whatsapp_instancias")
     .select("instance_name, status_conexao, conectado_em")
-    .eq("grupo_id", guarda.corretor.grupoId)
-    .eq("instance_name", escolhida)
+    .eq("grupo_id", grupoId)
+    .eq("corretor_id", gestorId)
     .maybeSingle();
-  if (!instancia || instancia.status_conexao !== "conectado" || !instancia.conectado_em) {
-    return { erro: "Escolha um número central que esteja conectado." };
+  if (!propria || propria.status_conexao !== "conectado" || !propria.conectado_em) {
+    return { erro: "Conecte o WhatsApp desta conta: é ele que manda os avisos nos grupos." };
   }
-
-  const { error } = await servico
+  const { error: erroSalvar } = await servico
     .from("grupos")
-    .update({ envio_grupo_leads_ativo: true, envio_grupo_leads_instancia: escolhida })
-    .eq("id", guarda.corretor.grupoId);
-  if (error) return { erro: "Não foi possível salvar o número central." };
-  revalidatePath("/corretor/admin/whatsapp");
-  revalidatePath("/corretor/marketing/impulsionamentos");
-  return { ok: "Número central salvo. Agora sincronize os grupos dos corretores." };
+    .update({ envio_grupo_leads_ativo: true, envio_grupo_leads_instancia: propria.instance_name })
+    .eq("id", grupoId);
+  if (erroSalvar) return { erro: "Não foi possível salvar o número central." };
+  return { instancia: propria.instance_name, padrao };
 }
 
 /** Decide se a roleta pode entregar lead a corretor sem WhatsApp conectado. */
@@ -149,15 +148,9 @@ export async function sincronizarGruposDeLeads(): Promise<{ ok?: string; erro?: 
   if (guarda.erro !== undefined) return { erro: guarda.erro };
   const servico = createServiceClient();
   const grupoId = guarda.corretor.grupoId;
-  const { data: configuracao } = await servico
-    .from("grupos")
-    .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads")
-    .eq("id", grupoId)
-    .maybeSingle();
-  if (!configuracao?.envio_grupo_leads_ativo || !configuracao.envio_grupo_leads_instancia) {
-    return { erro: "Escolha e salve primeiro o número central." };
-  }
-  const instancia = configuracao.envio_grupo_leads_instancia;
+  const central = await garantirNumeroCentral(servico, grupoId, guarda.corretor.id);
+  if ("erro" in central) return { erro: central.erro };
+  const instancia = central.instancia;
 
   // Lista nova: o número central pode ter entrado num grupo agora.
   const lista = await listarGruposWhatsapp(instancia, { fresca: true });
@@ -175,7 +168,7 @@ export async function sincronizarGruposDeLeads(): Promise<{ ok?: string; erro?: 
   const daMao = (corretores ?? []).filter((c) => c.whatsapp_grupo_leads_manual);
   const jidsDaMao = new Set(daMao.map((c) => c.whatsapp_grupo_leads_jid).filter(Boolean));
   const imobiliaria = (await lerMarcaDoCrm(grupoId)).nome;
-  const padrao = configuracao.padrao_nome_grupo_leads;
+  const padrao = central.padrao;
   const plano = planejarVinculos(
     (corretores ?? []).filter((c) => !c.whatsapp_grupo_leads_manual),
     lista.grupos.filter((g) => !jidsDaMao.has(g.jid)),
@@ -321,15 +314,9 @@ export async function vincularGrupoDoCorretor(
     return { ok: "Escolha desfeita. A sincronização volta a procurar o grupo pelo nome." };
   }
 
-  const { data: configuracao } = await servico
-    .from("grupos")
-    .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia")
-    .eq("id", grupoId)
-    .maybeSingle();
-  if (!configuracao?.envio_grupo_leads_ativo || !configuracao.envio_grupo_leads_instancia) {
-    return { erro: "Escolha e salve primeiro o número central." };
-  }
-  const lista = await listarGruposWhatsapp(configuracao.envio_grupo_leads_instancia);
+  const central = await garantirNumeroCentral(servico, grupoId, guarda.corretor.id);
+  if ("erro" in central) return { erro: central.erro };
+  const lista = await listarGruposWhatsapp(central.instancia);
   if (lista.erro) return { erro: lista.erro };
   const grupo = lista.grupos.find((g) => g.jid === grupoJid);
   if (!grupo) return { erro: "Esse grupo não está no número central. Confira se o número participa dele." };
@@ -350,7 +337,7 @@ export async function vincularGrupoDoCorretor(
     .eq("id", corretor.id)
     .eq("grupo_id", grupoId);
   if (error) return { erro: "Não foi possível vincular agora." };
-  await guardarLidDoCorretor(servico, grupoId, configuracao.envio_grupo_leads_instancia, corretor, grupo.jid);
+  await guardarLidDoCorretor(servico, grupoId, central.instancia, corretor, grupo.jid);
   revalidatePath("/corretor/admin/whatsapp");
   revalidatePath("/corretor/marketing/impulsionamentos");
   return { ok: `Grupo "${grupo.nome}" vinculado.` };

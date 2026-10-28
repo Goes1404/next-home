@@ -54,7 +54,12 @@ export async function DistribuicaoDaEquipe() {
   // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
   // número central enxerga, também listados na tela. Se a leitura falhar, a
   // tela mostra o erro e a sincronização pelo nome continua valendo.
-  const central = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
+  // Sem escolha na tela (28/10/2026): vale o número salvo; sem ele, o da conta
+  // logada, que a primeira ação (sincronizar ou escolher à mão) salva.
+  const opcoes = opcoesDoNumeroCentral(todasInstancias ?? [], pessoas ?? [], ocultas);
+  const propria = (todasInstancias ?? []).find((i) => i.corretor_id === gestor.id);
+  const salvo = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
+  const central = salvo ?? (propria && opcoes.find((o) => o.instanceName === propria.instance_name)?.conectada ? propria.instance_name : null);
   const [gruposDoCentral, marca] = await Promise.all([
     central ? listarGruposWhatsapp(central) : Promise.resolve({ grupos: [] }),
     lerMarcaDoCrm(gestor.grupoId),
@@ -63,7 +68,7 @@ export async function DistribuicaoDaEquipe() {
   return (
     <ConfigurarGruposDeLeads
       instanciaAtual={central}
-      instancias={opcoesDoNumeroCentral(todasInstancias ?? [], pessoas ?? [], ocultas)}
+      nomeDoCentral={opcoes.find((o) => o.instanceName === central)?.nome.replace(" (conta oculta)", "") ?? null}
       corretores={visiveis
         .filter((p) => p.papel === "corretor")
         .map((p) => ({

@@ -12212,3 +12212,15 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
   sucesso); `sincronizarGruposDeLeads` pede `{ fresca: true }`.
 - Seletor com `useOptimistic` e transição própria: mostra a escolha na hora e
   não desabilita os outros campos nem troca o botão para "Sincronizando…".
+
+## Número central sem escolha na tela (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Cartão "1 Número central" saiu da aba Roleta; o cartão do nome perdeu a
+  bolinha numerada. `configurarEnvioDeLeadsNosGrupos` foi apagada.
+- Regra (`garantirNumeroCentral`): salvo vence; sem salvo, a primeira ação
+  do gestor salva o número da conta dele (precisa estar conectado).
+- O salvo não troca pelo de quem clicou: a Aretz tem três gestores e o
+  número dos grupos é o da conta oculta de administração. Trocar = SQL em
+  `grupos.envio_grupo_leads_instancia`.

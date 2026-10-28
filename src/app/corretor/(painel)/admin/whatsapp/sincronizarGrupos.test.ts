@@ -89,6 +89,35 @@ describe("sincronizarGruposDeLeads", () => {
     expect(listarParticipantesDoGrupo).toHaveBeenCalledWith("central", "1@g.us");
   });
 
+  it("sem número central salvo, usa e salva o da conta do gestor que sincroniza", async () => {
+    banco.tabelas.grupos[0].envio_grupo_leads_ativo = false;
+    banco.tabelas.grupos[0].envio_grupo_leads_instancia = null;
+    banco.tabelas.corretor_whatsapp_instancias = [
+      { corretor_id: "gestor-a", grupo_id: GRUPO_A, instance_name: "do-gestor", status_conexao: "conectado", conectado_em: "2026-10-28T00:00:00Z" },
+    ];
+    listarParticipantesDoGrupo.mockResolvedValue({ participantes: [] });
+    await sincronizarGruposDeLeads();
+    expect(listarGruposWhatsapp).toHaveBeenCalledWith("do-gestor", { fresca: true });
+    expect(banco.tabelas.grupos[0]).toMatchObject({ envio_grupo_leads_ativo: true, envio_grupo_leads_instancia: "do-gestor" });
+  });
+
+  it("número central salvo não troca pelo do gestor que sincroniza", async () => {
+    banco.tabelas.corretor_whatsapp_instancias = [
+      { corretor_id: "gestor-a", grupo_id: GRUPO_A, instance_name: "do-gestor", status_conexao: "conectado", conectado_em: "2026-10-28T00:00:00Z" },
+    ];
+    listarParticipantesDoGrupo.mockResolvedValue({ participantes: [] });
+    await sincronizarGruposDeLeads();
+    expect(banco.tabelas.grupos[0].envio_grupo_leads_instancia).toBe("central");
+  });
+
+  it("sem número central e sem WhatsApp conectado na conta, pede para conectar", async () => {
+    banco.tabelas.grupos[0].envio_grupo_leads_ativo = false;
+    banco.tabelas.grupos[0].envio_grupo_leads_instancia = null;
+    const r = await sincronizarGruposDeLeads();
+    expect(r.erro).toMatch(/Conecte o WhatsApp desta conta/);
+    expect(listarGruposWhatsapp).not.toHaveBeenCalled();
+  });
+
   it("reconhece o nome real do grupo: maiúsculas, acento e emoji", async () => {
     banco.tabelas.corretores.push(corretor("andre", "André", "11933334444"));
     listarGruposWhatsapp.mockResolvedValue({ grupos: [{ jid: "3@g.us", nome: "ANDRÉ & ARETZ🟢" }] });

@@ -5,13 +5,11 @@ import { MessagesSquare, RefreshCw } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
 import {
-  configurarEnvioDeLeadsNosGrupos,
   configurarNomeDosGrupos,
   sincronizarGruposDeLeads,
   vincularGrupoDoCorretor,
 } from "./acoes";
 
-type Instancia = { instanceName: string; nome: string; conectada: boolean };
 type Corretor = { id: string; nome: string; grupoJid: string | null; grupoNome: string | null; manual: boolean };
 type GrupoDoCentral = { jid: string; nome: string };
 
@@ -25,7 +23,7 @@ const BOTAO_SECUNDARIO = "botao-solido min-h-11 shrink-0 px-4 text-fluid-sm font
  */
 export function ConfigurarGruposDeLeads({
   instanciaAtual,
-  instancias,
+  nomeDoCentral,
   corretores,
   padraoDoNome,
   nomeDaImobiliaria,
@@ -33,14 +31,14 @@ export function ConfigurarGruposDeLeads({
   erroDosGrupos,
 }: {
   instanciaAtual: string | null;
-  instancias: Instancia[];
+  /** Quem manda os avisos: o número salvo ou, sem ele, o da conta logada. */
+  nomeDoCentral: string | null;
   corretores: Corretor[];
   padraoDoNome: string | null;
   nomeDaImobiliaria: string;
   gruposDoCentral: GrupoDoCentral[];
   erroDosGrupos?: string;
 }) {
-  const [escolhida, setEscolhida] = useState(instanciaAtual ?? "");
   const [padrao, setPadrao] = useState(padraoDoNome ?? "");
   const [pendente, iniciar] = useTransition();
   // À parte: a escolha à mão não trava o resto nem diz "Sincronizando…".
@@ -71,7 +69,7 @@ export function ConfigurarGruposDeLeads({
   const nomeDoCorretor = new Map(corretores.map((c) => [c.id, c.nome]));
   // O seletor à mão fica sempre à vista; sem grupos para escolher, ele diz o porquê.
   const semEscolha = !instanciaAtual
-    ? "Salve o número central"
+    ? "Conecte o WhatsApp desta conta"
     : erroDosGrupos
       ? "Grupos não lidos"
       : gruposDoCentral.length === 0
@@ -88,7 +86,10 @@ export function ConfigurarGruposDeLeads({
           <div className="min-w-0">
             <h3 className="text-fluid-lg font-semibold text-titulo">Grupos de WhatsApp dos corretores</h3>
             <p className="mt-1 max-w-2xl text-fluid-sm text-apoio">
-              Onde o aviso de cada lead chega. O número central precisa participar de todos os grupos.
+              Onde o aviso de cada lead chega.{" "}
+              {nomeDoCentral
+                ? `Os avisos saem do número de ${nomeDoCentral}, que precisa participar de todos os grupos.`
+                : "Os avisos saem do WhatsApp desta conta, que precisa participar de todos os grupos."}
             </p>
           </div>
         </div>
@@ -103,29 +104,8 @@ export function ConfigurarGruposDeLeads({
         </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Passo numero={1} titulo="Número central" ajuda="O número da imobiliária que manda os avisos nos grupos.">
-          <div className="flex flex-wrap gap-2">
-            <label className="min-w-48 flex-1">
-              <span className="sr-only">Número central</span>
-              <select value={escolhida} onChange={(e) => setEscolhida(e.target.value)} disabled={pendente} className={CAMPO}>
-                <option value="">Desativado</option>
-                {instancias.map((i) => (
-                  <option key={i.instanceName} value={i.instanceName} disabled={!i.conectada}>
-                    {i.nome}
-                    {i.conectada ? "" : " (desconectado)"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="button" disabled={pendente} onClick={() => executar(() => configurarEnvioDeLeadsNosGrupos(escolhida))} className={BOTAO_SECUNDARIO}>
-              Salvar
-            </button>
-          </div>
-        </Passo>
-
+      <div className="max-w-2xl">
         <Passo
-          numero={2}
           titulo="Nome dos grupos"
           ajuda={
             <>
@@ -223,7 +203,7 @@ export function ConfigurarGruposDeLeads({
           Grupos neste número{instanciaAtual && !erroDosGrupos ? ` (${gruposDoCentral.length})` : ""}
         </p>
         {!instanciaAtual ? (
-          <p className="text-fluid-xs text-apoio">Salve o número central para ver os grupos de que ele participa.</p>
+          <p className="text-fluid-xs text-apoio">Conecte o WhatsApp desta conta para ver os grupos de que ele participa.</p>
         ) : erroDosGrupos ? (
           <p className="rounded-xl border border-alerta-linha bg-alerta-lavado px-3 py-2 text-fluid-xs text-alerta">
             Não foi possível ler os grupos do número central: {erroDosGrupos}
@@ -259,21 +239,16 @@ export function ConfigurarGruposDeLeads({
 }
 
 function Passo({
-  numero,
   titulo,
   ajuda,
   children,
 }: {
-  numero: number;
   titulo: string;
   ajuda: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3.5 rounded-2xl border border-linha bg-vidro p-4">
-      <span aria-hidden className="flex size-9 items-center justify-center rounded-full bg-acento font-bold text-sobre-cor">
-        {numero}
-      </span>
+    <div className="rounded-2xl border border-linha bg-vidro p-4">
       <div className="min-w-0 space-y-2.5">
         <div>
           <p className="text-fluid-sm font-semibold text-titulo">{titulo}</p>

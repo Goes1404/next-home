@@ -118,3 +118,10 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
   sucesso); "Sincronizar grupos" pede `{ fresca: true }`. Na tela, a escolha
   aparece na hora (`useOptimistic`) e não trava os outros campos.
+- **Número central sem escolha na tela (28/10)**: o cartão "1 Número central"
+  saiu (pedido do dono, mesma lógica da roleta). `garantirNumeroCentral`
+  (acoes.ts): vale o salvo em `grupos.envio_grupo_leads_instancia`; sem ele,
+  a primeira ação (sincronizar/escolher à mão) usa e SALVA o número da conta
+  do gestor logado, se conectado. O salvo NÃO troca sozinho: na Aretz há três
+  gestores, e trocar pelo de quem clicou tiraria o número que está nos grupos.
+  Trocar o central hoje só por SQL.
