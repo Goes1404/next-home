@@ -393,7 +393,7 @@ site público desatualizado; botões do site do grupo com o verde padrão.
   casava antes desta branch).
 - Nada muda para quem não liga o envio para grupos nem escolhe o modo grupo na roleta.
 
-### Agenda, fase 1 (27/10/2026, branch `agenda-fase-1`, worktree `../next-home-agenda`, NÃO publicada)
+### Agenda, fase 1 (27/10/2026, branch `agenda-fase-1`, worktree `../next-home-agenda`; migrations aplicadas em produção 28/10, código NÃO publicado)
 
 - Spec `docs/superpowers/specs/2026-10-27-agenda-do-corretor-e-da-equipe-design.md`;
   plano `docs/superpowers/plans/2026-10-27-agenda-fase-1-visitas-e-agenda-do-corretor.md`;
@@ -412,7 +412,7 @@ site público desatualizado; botões do site do grupo com o verde padrão.
 - Fase 2 precisa marcar a visita delegada (o espelho hoje devolve ao dono
   toda visita com outro corretor; ver a nota).
 
-### Agenda, fases 2–5 (27/10/2026, mesma branch, NÃO publicadas)
+### Agenda, fases 2–5 (27/10/2026, mesma branch; 0225–0227 aplicadas em produção 28/10, código NÃO publicado)
 
 - Feito: equipe com números (0225), visita passada (0225), reunião e
   bloqueio (0226), "a visita aconteceu?" (0227), comandos pelo WhatsApp.

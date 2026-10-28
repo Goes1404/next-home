@@ -8,12 +8,12 @@ custou: medio
 codigo: [supabase/migrations/0222_visitas_com_historico.sql, src/lib/agenda/lerAgenda.ts, src/lib/agenda/calendario.ts, src/lib/crm/agendaDoCorretor.ts, src/lib/crm/agendaDeVisitas.ts, src/app/corretor/(painel)/agenda/page.tsx]
 fonte: Agenda, fase 1 (branch agenda-fase-1), 27/10/2026
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-28
 summary: Cada mudança de leads.visita_agendada_em vira linha em visitas por gatilho; a trava é uma exclusão gist de 60 min por quem faz a visita; a IA lê os ocupados de visitas. Tela Visitas virou Agenda.
 ---
 # A visita ganhou linha própria espelhada do lead
 
-**O que mudou (0224, não publicada em 27/10/2026).** Uma visita era só a
+**O que mudou (0224, aplicada em produção em 28/10/2026; código ainda não publicado).** Uma visita era só a
 coluna `leads.visita_agendada_em`: uma por lead, sem histórico, e a trava da
 0074 barrava só o MESMO minuto (10h e 10h30 passavam). Agora existe
 `public.visitas`, uma linha por visita, com status e `datas_anteriores`.

@@ -12161,3 +12161,4 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, N�
 
 
 - Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.
+- **0224–0227 aplicadas em produção em 28/10/2026** (antes do deploy, como manda a ordem: são aditivas). Carga migrou 0 visitas (nenhuma futura). Sessão de corretor recebe `permission denied` em `visitas`/`compromissos`: é o desenho (só a chave de serviço lê).

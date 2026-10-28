@@ -8,13 +8,15 @@ custou: medio
 codigo: [supabase/migrations/0223_visita_passada_e_numeros_da_agenda.sql, supabase/migrations/0224_reunioes_e_bloqueios.sql, supabase/migrations/0225_visita_aconteceu.sql, src/lib/agenda/lerEquipe.ts, src/lib/agenda/compromissos.ts, src/lib/agenda/confirmacao.ts, src/lib/agenda/conversaDeAgenda.ts, src/lib/agenda/comandos/canal.ts, src/lib/agenda/comandos/conversa.ts, src/app/corretor/(painel)/agenda/page.tsx]
 fonte: Agenda, fases 2–5 (branch agenda-fase-1), 27/10/2026
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-28
 summary: Gestor vê a equipe (?ver=equipe) com números do mês no banco; visita passada a outro corretor tem passada_em; reunião e bloqueio ocupam por compromisso_participantes e a trava recusa com 23P01; cobrança "aconteceu?" no tick de followups; comandos pelo WhatsApp separados antes da palavra-chave.
 ---
 # Agenda da equipe, reuniões, cobrança e comandos (fases 2–5)
 
-Nada publicado em 27/10/2026. Sobe junto com a fase 1 ([[agenda-visitas-com-historico]]),
-migrations 0224 → 0227 nessa ordem, antes do deploy.
+Migrations 0224 → 0227 APLICADAS em produção em 28/10/2026 (renumeradas: a
+produção ganhou 0222/0223 no dia 27). Código ainda NÃO publicado: até o deploy,
+o código no ar grava `leads.visita_agendada_em` e o gatilho espelha em `visitas`;
+a trava de 60 min já vale. Nenhuma visita futura existia, então a carga migrou 0. Fase 1: [[agenda-visitas-com-historico]].
 
 ## Fase 2 — equipe e visita passada (0225)
 
