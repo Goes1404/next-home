@@ -16,6 +16,7 @@ import {
 import { primeiroNome } from "@/lib/format";
 import { Interruptor } from "./Interruptor";
 import { RegraDoNumeroConectado } from "./RegraDoNumeroConectado";
+import { EditorDeMensagem } from "@/app/corretor/(painel)/_componentes/EditorDeMensagem";
 
 export type ConfigDaRoleta = {
   corretorId: string;
@@ -33,6 +34,13 @@ export type ConfigDaRoleta = {
  * `naEscala`: fora de pausa na distribuição geral; `null` sem cadastro publicável (a distribuição pula).
  */
 export type Membro = { id: string; nome: string; conectado: boolean; temGrupo: boolean; naEscala: boolean | null };
+
+const MARCADORES_DA_BOAS_VINDAS = [
+  { chave: "cliente", nome: "Cliente" },
+  { chave: "corretor", nome: "Corretor" },
+  { chave: "imovel", nome: "Imóvel" },
+  { chave: "imobiliaria", nome: "Imobiliária" },
+] as const;
 
 const AVISO_ENVIO_DESLIGADO = "O envio de leads para os grupos está desligado; peça ao gestor para ligar.";
 
@@ -385,36 +393,52 @@ export function EditorDaRoleta({
 
       {noGrupo && (
         <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">
-          <summary className="flex min-h-11 cursor-pointer items-center text-fluid-sm font-semibold text-titulo">
-            Boas-vindas ao cliente
-          </summary>
-          <label className="mt-3 block max-w-2xl space-y-2 text-fluid-sm">
-            <span className="text-apoio">
-              Sai do seu número assim que o lead é passado para o corretor. Em branco, nada é enviado.
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+            <span>
+              <span className="block text-fluid-sm font-semibold text-titulo">Boas-vindas ao cliente</span>
+              <span className="block text-fluid-xs text-apoio">
+                {c.textoBoasVindas.trim() ? "Ligada" : "Desligada"} · sai do seu número quando o lead é passado ao corretor
+              </span>
             </span>
-            <textarea
-              rows={3}
-              value={c.textoBoasVindas}
+            <span aria-hidden className="text-fluid-xs font-semibold text-acento group-open:hidden">
+              Editar
+            </span>
+            <span aria-hidden className="hidden text-fluid-xs font-semibold text-acento group-open:inline">
+              Fechar
+            </span>
+          </summary>
+          <div className="mt-4 space-y-3">
+            <EditorDeMensagem
+              rotulo="Mensagem de boas-vindas"
+              valor={c.textoBoasVindas}
+              aoMudar={(texto) => mudar({ textoBoasVindas: texto })}
+              marcadores={MARCADORES_DA_BOAS_VINDAS}
+              previa={c.textoBoasVindas.trim() ? preencherTexto(c.textoBoasVindas, exemplo) : ""}
               placeholder={TEXTO_BOAS_VINDAS_SUGERIDO}
-              maxLength={600}
-              onChange={(e) => mudar({ textoBoasVindas: e.target.value })}
-              className="block w-full rounded-xl border border-linha-forte bg-superficie p-3 text-titulo"
+              limite={600}
+              linhas={4}
+              rodape="em branco, nada é enviado"
             />
-            {c.textoBoasVindas.trim() ? (
-              <Balao texto={preencherTexto(c.textoBoasVindas, exemplo)} />
-            ) : (
-              <button
-                type="button"
-                onClick={() => mudar({ textoBoasVindas: TEXTO_BOAS_VINDAS_SUGERIDO })}
-                className="link-acao text-fluid-xs text-acento"
-              >
-                Usar o texto sugerido
-              </button>
-            )}
-          </label>
-          <p className="mt-3 text-fluid-xs text-apoio">
-            Use {"{corretor}"}, {"{cliente}"}, {"{imovel}"} e {"{imobiliaria}"}. O que não for conhecido some da frase.
-          </p>
+            <div className="flex flex-wrap gap-2">
+              {c.textoBoasVindas.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => mudar({ textoBoasVindas: "" })}
+                  className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento"
+                >
+                  Desligar boas-vindas
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => mudar({ textoBoasVindas: TEXTO_BOAS_VINDAS_SUGERIDO })}
+                  className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento"
+                >
+                  Usar o texto sugerido
+                </button>
+              )}
+            </div>
+          </div>
         </details>
       )}
 

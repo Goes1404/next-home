@@ -73,3 +73,8 @@ Pedido do dono (20/10/2026). Desenho:
   tudo pela chave de serviço.
 
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].
+- Tela (28/10, "ficou feio"): os dois textos usam `EditorDeMensagem`
+  (`_componentes/`): campo à esquerda, prévia em balão de WhatsApp à direita
+  (com `*negrito*`), marcadores como botões que entram no cursor, recolhido
+  em `<details>` com o estado no resumo ("Ligada/Desligada", "Texto
+  padrão/da imobiliária"). "Nome dos grupos" virou uma faixa só.

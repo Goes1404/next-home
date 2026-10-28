@@ -5,6 +5,7 @@ import { MessagesSquare, RefreshCw } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { nomeEsperadoDoGrupo, PADRAO_DE_FABRICA } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
 import { LIMITE_DO_AVISO_NO_GRUPO, montarAvisoNoGrupo, TEXTO_AVISO_NO_GRUPO_PADRAO } from "@/lib/whatsapp/avisoNoGrupoTexto";
+import { EditorDeMensagem } from "@/app/corretor/(painel)/_componentes/EditorDeMensagem";
 import {
   configurarNomeDosGrupos,
   configurarRelatorioNoGrupo,
@@ -16,6 +17,13 @@ type Corretor = { id: string; nome: string; grupoJid: string | null; grupoNome: 
 type GrupoDoCentral = { jid: string; nome: string };
 
 const CAMPO = "select-seta min-h-11 w-full rounded-xl border border-linha-forte bg-superficie px-3 text-fluid-sm text-titulo shadow-sm";
+const MARCADORES_DO_RELATORIO = [
+  { chave: "corretor", nome: "Corretor" },
+  { chave: "cliente", nome: "Cliente" },
+  { chave: "telefone", nome: "Telefone" },
+  { chave: "origem", nome: "Origem" },
+  { chave: "imovel", nome: "Imóvel" },
+] as const;
 const BOTAO_SECUNDARIO = "botao-solido min-h-11 shrink-0 px-4 text-fluid-sm font-semibold text-acento disabled:opacity-60";
 
 /**
@@ -110,77 +118,30 @@ export function ConfigurarGruposDeLeads({
         </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Passo
-          titulo="Nome dos grupos"
-          ajuda={
-            <>
-              Use {"{corretor}"} no lugar do nome e {"{imobiliaria}"} no lugar de &quot;{nomeDaImobiliaria}&quot;. O grupo de{" "}
-              {exemplo} deve se chamar <strong className="text-titulo">{nomeDeExemplo}</strong>.
-            </>
-          }
-        >
-          <div className="flex flex-wrap gap-2">
-            <label className="min-w-48 flex-1">
-              <span className="sr-only">Nome dos grupos</span>
-              <input
-                value={padrao}
-                onChange={(e) => setPadrao(e.target.value)}
-                placeholder={PADRAO_DE_FABRICA}
-                maxLength={60}
-                disabled={pendente}
-                className={CAMPO.replace("select-seta ", "")}
-              />
-            </label>
-            <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className={BOTAO_SECUNDARIO}>
-              Salvar nome
-            </button>
-          </div>
-        </Passo>
-
-        <Passo
-          titulo="Relatório no grupo"
-          ajuda={
-            <>
-              O que chega no grupo do corretor a cada lead. Use {"{corretor}"}, {"{cliente}"}, {"{telefone}"},{" "}
-              {"{origem}"} e {"{imovel}"}; linha com dado que faltar sai inteira.
-            </>
-          }
-        >
-          <label className="block">
-            <span className="sr-only">Relatório no grupo</span>
-            <textarea
-              rows={7}
-              value={relatorio}
-              onChange={(e) => setRelatorio(e.target.value)}
-              maxLength={LIMITE_DO_AVISO_NO_GRUPO}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5 rounded-2xl border border-linha bg-vidro p-4">
+        <div className="min-w-56 flex-1">
+          <p className="text-fluid-sm font-semibold text-titulo">Nome dos grupos</p>
+          <p className="mt-0.5 text-fluid-xs text-apoio">
+            O grupo de {exemplo} deve se chamar <strong className="text-titulo">{nomeDeExemplo}</strong>. Use {"{corretor}"} no
+            lugar do nome e {"{imobiliaria}"} no lugar de &quot;{nomeDaImobiliaria}&quot;.
+          </p>
+        </div>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap">
+          <label className="min-w-48 flex-1 sm:w-64">
+            <span className="sr-only">Nome dos grupos</span>
+            <input
+              value={padrao}
+              onChange={(e) => setPadrao(e.target.value)}
+              placeholder={PADRAO_DE_FABRICA}
+              maxLength={60}
               disabled={pendente}
-              className="block w-full rounded-xl border border-linha-forte bg-superficie p-3 text-fluid-sm text-titulo shadow-sm"
+              className={CAMPO.replace("select-seta ", "")}
             />
           </label>
-          <p className="max-w-md rounded-2xl rounded-bl-md border border-linha bg-superficie px-3 py-2 text-fluid-xs break-words whitespace-pre-line text-titulo shadow-sm">
-            {montarAvisoNoGrupo(relatorio, {
-              corretor: exemplo,
-              cliente: "Marina Silva",
-              telefone: "(11) 99999-0000",
-              origem: "anúncio no Instagram",
-              imovel: "Residencial Aurora",
-            })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={pendente} onClick={() => executar(() => configurarRelatorioNoGrupo(relatorio))} className={BOTAO_SECUNDARIO}>
-              Salvar relatório
-            </button>
-            <button
-              type="button"
-              disabled={pendente || relatorio === TEXTO_AVISO_NO_GRUPO_PADRAO}
-              onClick={() => setRelatorio(TEXTO_AVISO_NO_GRUPO_PADRAO)}
-              className="link-acao min-h-11 px-2 text-fluid-sm text-acento disabled:opacity-50"
-            >
-              Voltar ao padrão
-            </button>
-          </div>
-        </Passo>
+          <button type="button" disabled={pendente} onClick={() => executar(() => configurarNomeDosGrupos(padrao))} className={BOTAO_SECUNDARIO}>
+            Salvar nome
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -284,28 +245,60 @@ export function ConfigurarGruposDeLeads({
           </ul>
         )}
       </div>
-    </section>
-  );
-}
 
-function Passo({
-  titulo,
-  ajuda,
-  children,
-}: {
-  titulo: string;
-  ajuda: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-linha bg-vidro p-4">
-      <div className="min-w-0 space-y-2.5">
-        <div>
-          <p className="text-fluid-sm font-semibold text-titulo">{titulo}</p>
-          <p className="mt-0.5 text-fluid-xs text-apoio">{ajuda}</p>
+      <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+          <span>
+            <span className="block text-fluid-sm font-semibold text-titulo">Relatório que chega no grupo</span>
+            <span className="block text-fluid-xs text-apoio">
+              {modeloDoRelatorio ? "Texto da imobiliária" : "Texto padrão"} · mandado a cada lead novo do corretor
+            </span>
+          </span>
+          <span aria-hidden className="text-fluid-xs font-semibold text-acento group-open:hidden">
+            Editar
+          </span>
+          <span aria-hidden className="hidden text-fluid-xs font-semibold text-acento group-open:inline">
+            Fechar
+          </span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <EditorDeMensagem
+            rotulo="Texto do relatório"
+            valor={relatorio}
+            aoMudar={setRelatorio}
+            marcadores={MARCADORES_DO_RELATORIO}
+            previa={montarAvisoNoGrupo(relatorio, {
+              corretor: exemplo,
+              cliente: "Marina Silva",
+              telefone: "(11) 99999-0000",
+              origem: "anúncio no Instagram",
+              imovel: "Residencial Aurora",
+            })}
+            limite={LIMITE_DO_AVISO_NO_GRUPO}
+            linhas={8}
+            desabilitado={pendente}
+            rodape="linha com dado que faltar sai inteira; *texto* fica em negrito"
+          />
+          <div className="flex flex-wrap justify-end gap-2 border-t border-linha pt-3">
+            <button
+              type="button"
+              disabled={pendente || relatorio === TEXTO_AVISO_NO_GRUPO_PADRAO}
+              onClick={() => setRelatorio(TEXTO_AVISO_NO_GRUPO_PADRAO)}
+              className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento disabled:opacity-50"
+            >
+              Voltar ao padrão
+            </button>
+            <button
+              type="button"
+              disabled={pendente || relatorio === (modeloDoRelatorio ?? TEXTO_AVISO_NO_GRUPO_PADRAO)}
+              onClick={() => executar(() => configurarRelatorioNoGrupo(relatorio))}
+              className="inline-flex min-h-11 items-center rounded-xl bg-acento px-5 text-fluid-sm font-semibold text-sobre-cor disabled:opacity-60"
+            >
+              Salvar relatório
+            </button>
+          </div>
         </div>
-        {children}
-      </div>
-    </div>
+      </details>
+    </section>
   );
 }
