@@ -12138,3 +12138,60 @@ Nota: [[conta-oculta]]
   ("(meu número)"). Como destino ela segue fora: tela e `proximo_da_roleta`.
 - Banco e webhook já aceitavam conta oculta como DONO da roleta
   (`lerModoDaRoleta` lê pelo dono da instância, sem filtro de oculta).
+
+## Agenda, fase 1: visitas com histórico e tela Agenda (0224, 27/10/2026)
+
+Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
+
+- `public.visitas` é espelho de `leads.visita_agendada_em` por gatilho
+  (`leads_zz_espelha_visita`): os escritores da IA, do chat, do painel e do
+  retorno pelo grupo não mudaram. Remarcar visita futura = mesma linha com
+  `datas_anteriores`; data nova depois de visita passada = visita nova.
+- A trava virou exclusão gist de 60 min por quem faz a visita (`23P01`); o
+  índice da 0074 saiu porque recusava trocar o dono do lead quando o novo já
+  tinha visita no mesmo minuto (a saída do corretor caía).
+- A IA lê os ocupados de `visitas` e descarta vaga que cruza [h, h+60):
+  disponibilidade oferecida e trava leem a MESMA fonte.
+- Retorno marcado até 60 min depois da visita só é remarcação se a hora nova
+  fica a menos de 3h; senão é visita nova (a feita não some da Agenda).
+- `/corretor/visitas` redireciona para `/corretor/agenda` (mês compacto, lista
+  do dia, próximas visitas, "Configurar horários"); cartão "Hoje na agenda" no
+  Início. Visitas passadas não foram migradas: os números começam do zero.
+- `npm run db:teste` não sobe no Windows quando a porta 54321 cai na faixa
+  reservada do winnat (`netsh interface ipv4 show excludedportrange
+  protocol=tcp`): subir com `supabase start -x ...,kong,realtime,postgrest`
+  para os testes de banco, ou trocar `[api] port` no `config.toml` só local.
+- Disco C: chegou a 0 bytes no meio da execução (next dev parou de gravar
+  cache): 24 worktrees antigas já publicadas foram removidas (~10 GB); os
+  `.relatorio-*.md` delas estão em `nexthome/relatorios-das-worktrees/`.
+
+## Agenda, fases 2–5: equipe, reuniões, cobrança e comandos (0225–0227, 27/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, NÃO publicada.
+
+- Visita passada pelo gestor precisa de `passada_em`: sem a marca, o espelho
+  do lead (0224) devolvia a visita ao dono na troca de dono e na remarcação.
+- Reunião e bloqueio travam a visita por GATILHO com `errcode
+  exclusion_violation` (23P01): o mesmo código da exclusão gist, então
+  `ehConflitoDeHorario` e a reserva da IA (false) já tratam. A IA lê os
+  intervalos de `compromisso_participantes`, a mesma tabela da trava.
+- O gestor nunca recebe o título do bloqueio: ele é apagado no servidor.
+- Postgres.js converte o parâmetro com tipo inferido `timestamp` por `new
+  Date` no fuso da MÁQUINA: em teste, `${'2026-01-31 22:00'}::timestamp`
+  chega deslocado. Use `::text::timestamp`.
+- "Remarcou" da cobrança reescreve a mesma visita e espelha no lead com
+  `set_config('agenda.espelho_pausado','on',true)`, senão o gatilho criava
+  outra visita (a antiga já tinha passado de 60 min).
+- Cobrança: uma pergunta pendente por corretor (`conversa_de_agenda`), senão
+  o "1" não sabe a que visita se refere. Cron frequente só pelo tick de
+  followups (Hobby da Vercel = cron diário).
+- Comandos do WhatsApp entram no webhook ANTES da palavra-chave e do ramo
+  `fromMe`; respostas do sistema começam com 📅 e o eco é ignorado. Formato
+  real da resposta do corretor ainda não medido em produção.
+- Guarda `servicoComGrupo.test.ts`: arquivo que só recebe o cliente da chave
+  (sem importar `createServiceClient`) entra em IMPORTADORES como `repassa`,
+  não no MAPA — os dois juntos reprovam.
+
+
+- Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.
+- **0224–0227 aplicadas em produção em 28/10/2026** (antes do deploy, como manda a ordem: são aditivas). Carga migrou 0 visitas (nenhuma futura). Sessão de corretor recebe `permission denied` em `visitas`/`compromissos`: é o desenho (só a chave de serviço lê).

@@ -133,7 +133,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/pessoas", label: "Conversas", icone: IconeConversas },
           { href: "/corretor/leads", label: "Lista", icone: IconeListaContatos },
           { href: "/corretor/funil", label: "Funil", icone: IconeFunil },
-          { href: "/corretor/visitas", label: "Visitas", icone: IconeVisitas },
+          { href: "/corretor/agenda", label: "Agenda", icone: IconeVisitas },
           // Bloco de notas com lembretes (0100): nota livre, vínculo a lead,
           // direcionável a colega — mora em Pessoas porque é sobre gente.
           { href: "/corretor/anotacoes", label: "Anotações", icone: IconeNota },

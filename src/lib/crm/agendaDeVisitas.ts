@@ -136,6 +136,9 @@ const DIAS_DE_HORIZONTE = 14;
  */
 const POR_DIA = 2;
 
+/** Duração da visita na trava de conflito da 0224 (e no feed .ics). */
+const DURACAO_DA_VISITA_MS = 60 * 60_000;
+
 /**
  * A agenda de quem não preencheu a sua: todos os dias, das 9h às 20h
  * (último horário às 19h).
@@ -168,6 +171,8 @@ export function proximosHorarios(params: {
   grade: readonly FaixaDisponivel[];
   /** Visitas já marcadas deste corretor (qualquer status). */
   ocupados: readonly Date[];
+  /** Reuniões e bloqueios do corretor (0226): intervalos com a duração deles. */
+  bloqueios?: readonly { inicio: Date; fim: Date }[];
   agora: Date;
   /** Quantos devolver. A IA oferece dois ou três, nunca uma lista. */
   quantos?: number;
@@ -175,7 +180,19 @@ export function proximosHorarios(params: {
   if (params.grade.length === 0) return [];
 
   const limite = new Date(params.agora.getTime() + HORAS_DE_ANTECEDENCIA * 3600_000);
-  const tomados = new Set(params.ocupados.map((o) => o.toISOString()));
+  /*
+   * Ocupado é INTERVALO, não instante (0224): a visita dura 60 min, e o
+   * banco recusa outra do mesmo corretor que cruze [início, início + 60).
+   * Uma visita marcada às 10h30 tira as vagas das 10h e das 11h; a das 10h
+   * deixa a das 11h livre. Oferecer o que a trava recusa faria o cliente
+   * aceitar um horário que não existe.
+   */
+  const ocupadosMs = params.ocupados.map((o) => o.getTime());
+  const bloqueiosMs = (params.bloqueios ?? []).map((b) => [b.inicio.getTime(), b.fim.getTime()] as const);
+  const cruza = (quando: Date) =>
+    ocupadosMs.some((o) => Math.abs(quando.getTime() - o) < DURACAO_DA_VISITA_MS) ||
+    // A visita [q, q + 60) cruza o compromisso [i, f) — a mesma conta da trava da 0226.
+    bloqueiosMs.some(([i, f]) => quando.getTime() < f && quando.getTime() + DURACAO_DA_VISITA_MS > i);
   const porDia = new Map(params.grade.map((f) => [f.diaSemana, f]));
 
   const horarios: HorarioDeVisita[] = [];
@@ -206,7 +223,7 @@ export function proximosHorarios(params: {
     for (let hora = faixa.horaInicio; hora < faixa.horaFim; hora++) {
       const quando = instanteEmSaoPaulo(dia, hora);
       if (quando < limite) continue;
-      if (tomados.has(quando.toISOString())) continue;
+      if (cruza(quando)) continue;
       livres.push({ quando, hora });
     }
     if (livres.length === 0) continue;

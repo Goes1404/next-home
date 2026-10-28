@@ -59,7 +59,7 @@ export function marcasDosContadores(c: Contadores | null): Record<string, MarcaD
   if (!c) return {};
   const marcas: Record<string, MarcaDoMenu> = {};
   // Contador que vive em zero ensina a ignorar o contador: só aparece com algo.
-  if (c.visitasHoje > 0) marcas["/corretor/visitas"] = { numero: c.visitasHoje };
+  if (c.visitasHoje > 0) marcas["/corretor/agenda"] = { numero: c.visitasHoje };
   if (c.semRevisao > 0) marcas["/corretor/conversas"] = { numero: c.semRevisao };
   if (c.naFila > 0) marcas["/corretor/campanhas"] = { numero: c.naFila };
   // Sem instância, nenhum ponto: pintar de vermelho um estado que ninguém

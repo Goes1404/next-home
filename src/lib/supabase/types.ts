@@ -587,6 +587,138 @@ export type Database = {
         }
         Relationships: []
       }
+      compromisso_participantes: {
+        Row: {
+          ativo: boolean
+          compromisso_id: string
+          corretor_id: string
+          fim: string
+          grupo_id: string
+          inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          compromisso_id: string
+          corretor_id: string
+          fim: string
+          grupo_id?: string
+          inicio: string
+        }
+        Update: {
+          ativo?: boolean
+          compromisso_id?: string
+          corretor_id?: string
+          fim?: string
+          grupo_id?: string
+          inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compromisso_participantes_compromisso_id_fkey"
+            columns: ["compromisso_id"]
+            isOneToOne: false
+            referencedRelation: "compromissos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromisso_participantes_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromisso_participantes_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compromissos: {
+        Row: {
+          cancelado_em: string | null
+          created_at: string
+          criado_por: string
+          fim: string
+          grupo_id: string
+          id: string
+          inicio: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          cancelado_em?: string | null
+          created_at?: string
+          criado_por: string
+          fim: string
+          grupo_id?: string
+          id?: string
+          inicio: string
+          tipo: string
+          titulo?: string
+        }
+        Update: {
+          cancelado_em?: string | null
+          created_at?: string
+          criado_por?: string
+          fim?: string
+          grupo_id?: string
+          id?: string
+          inicio?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compromissos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compromissos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversa_de_agenda: {
+        Row: {
+          atualizado_em: string
+          corretor_id: string
+          estado: Json
+          expira_em: string
+          grupo_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          corretor_id: string
+          estado: Json
+          expira_em: string
+          grupo_id?: string
+        }
+        Update: {
+          atualizado_em?: string
+          corretor_id?: string
+          estado?: Json
+          expira_em?: string
+          grupo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversa_de_agenda_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: true
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corretor_agenda: {
         Row: {
           grupo_id: string
@@ -3701,6 +3833,82 @@ export type Database = {
           },
         ]
       }
+      visitas: {
+        Row: {
+          id: string
+          grupo_id: string
+          lead_id: string
+          corretor_id: string
+          inicio: string
+          fim: string
+          status: string
+          datas_anteriores: string[]
+          passada_em: string | null
+          cobrada_em: string | null
+          respondida_em: string | null
+          passada_por: string | null
+          criada_por_usuario: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          lead_id: string
+          corretor_id: string
+          inicio: string
+          fim: string
+          status?: string
+          datas_anteriores?: string[]
+          passada_em?: string | null
+          cobrada_em?: string | null
+          respondida_em?: string | null
+          passada_por?: string | null
+          criada_por_usuario?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          lead_id?: string
+          corretor_id?: string
+          inicio?: string
+          fim?: string
+          status?: string
+          datas_anteriores?: string[]
+          passada_em?: string | null
+          cobrada_em?: string | null
+          respondida_em?: string | null
+          passada_por?: string | null
+          criada_por_usuario?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitas_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitas_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_diagnosticos: {
         Row: {
           created_at: string
@@ -4362,6 +4570,25 @@ export type Database = {
       }
       configurar_disparo_automatico: {
         Args: { p_token: string; p_url: string }
+        Returns: string
+      }
+      marcar_visitas_sem_confirmacao: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      numeros_da_agenda: {
+        Args: { p_grupo: string; p_corretor: string | null; p_de: string; p_ate: string }
+        Returns: {
+          mes: string
+          marcadas: number
+          realizadas: number
+          faltas: number
+          sem_confirmacao: number
+          negocios: number
+        }[]
+      }
+      responder_visita: {
+        Args: { p_visita: string; p_corretor: string; p_resposta: string; p_nova?: string | null }
         Returns: string
       }
       reservar_horario_visita: {

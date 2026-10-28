@@ -5,10 +5,10 @@ tags: [ia, whatsapp, decisao]
 type: decisao
 status: evergreen
 custou: baixo
-codigo: [src/lib/crm/agendaDeVisitas.ts, src/lib/crm/agendaDoCorretor.ts, src/app/corretor/(painel)/visitas/_componentes/GradeDaSemana.tsx, src/lib/whatsapp/listaDeTransmissao.ts, src/lib/crm/primeirosPassos.ts]
+codigo: [src/lib/crm/agendaDeVisitas.ts, src/lib/crm/agendaDoCorretor.ts, src/app/corretor/(painel)/agenda/_componentes/GradeDaSemana.tsx, src/lib/whatsapp/listaDeTransmissao.ts, src/lib/crm/primeirosPassos.ts]
 fonte: pedido do dono da conta, 16/10/2026
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-27
 summary: Corretor sem agenda preenchida passa a ter todos os dias abertos, das 9h às 20h (último horário 19h). Antes, agenda vazia deixava a assistente sem horário nenhum para oferecer, e quase ninguém tinha preenchido.
 ---
 # Agenda de visitas aberta por padrão
