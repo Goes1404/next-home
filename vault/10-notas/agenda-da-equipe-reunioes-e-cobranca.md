@@ -93,6 +93,23 @@ a trava de 60 min já vale. Nenhuma visita futura existia, então a carga migrou
   sem resposta em vez de contá-la como `sem_confirmacao` — o lead arquivado
   some da cobrança e do Início, o corretor não tinha como responder.
 
+## Visual (28/10/2026)
+
+- Celular: faixa da semana (`CalendarioDoCelular`) que abre o mês inteiro no
+  nome do mês; o dia é lista fina (`DiaDaAgenda`) e o detalhe sobe numa
+  `Gaveta`. Computador: mês compacto + próximas à esquerda, dia no meio e,
+  em xl (≥1280px), o detalhe à direita, já na primeira visita.
+- "Novo" (bloquear; reunião do gestor) e "Ajustes" (grade + link .ics) são
+  gavetas no topo; as caixas recolhidas do rodapé saíram.
+- **Armadilha:** gaveta `fixed` dentro do conteúdo do painel fica ABAIXO do
+  mascote (z-55), porque o conteúdo cria contexto de empilhamento. Portal
+  para o `<body>` resolve, mas a cor não herda: a raiz do portal repete
+  `data-rota="painel"` e `data-modulo` (mesmo padrão do `BalaoConsultor`).
+- Guarda `naoRolaDeLado`: chips de filtro usam `flex-wrap`, nunca
+  `overflow-x-auto`.
+- Conta de teste para ver a Agenda com dados: grupo "Teste Agenda (apagar)"
+  (`teste-agenda`), login `teste.agenda@example.com`. Apagar quando não servir mais.
+
 ## Como diagnosticar
 
 - IA ofereceu horário de reunião: `select * from compromisso_participantes

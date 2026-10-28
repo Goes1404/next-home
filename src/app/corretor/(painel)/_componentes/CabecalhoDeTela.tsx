@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 /**
  * A abertura de toda tela do painel, com a mesma anatomia sempre.
  *
@@ -38,6 +40,7 @@ export function CabecalhoDeTela({
   descricao,
   acao,
   abaixo,
+  compacto = false,
 }: {
   /** A seção, em versalete acima do título ("Administração"). Opcional. */
   secao?: string;
@@ -52,23 +55,33 @@ export function CabecalhoDeTela({
    * e nasce um degrau de 13px que faz a coluna parecer torta.
    */
   abaixo?: React.ReactNode;
+  /**
+   * Telas de uso rápido no celular (a Agenda): abaixo de md some a seção e a
+   * descrição, e o cartão encolhe — o conteúdo começa uns 80px mais acima.
+   */
+  compacto?: boolean;
 }) {
   return (
-    <section className="cartao-heroi p-5 md:p-6">
+    <section data-compacto={compacto || undefined} className="cartao-heroi p-5 max-md:data-compacto:py-3 md:p-6">
       {/* Os brilhos de acento, o fio de luz e a varredura vêm de `cartao-heroi`
           (globals.css) — gradientes, não divs desfocados. */}
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           {secao && (
-            <p className="text-tenue text-[11px] font-medium tracking-[0.22em] uppercase">{secao}</p>
+            <p className={cn("text-tenue text-[11px] font-medium tracking-[0.22em] uppercase", compacto && "hidden md:block")}>{secao}</p>
           )}
-          <h1 className="font-display text-titulo text-[2rem] leading-[0.95] font-bold tracking-[-0.03em] italic md:text-[2.75rem]">
+          <h1
+            className={cn(
+              "font-display text-titulo leading-[0.95] font-bold tracking-[-0.03em] italic md:text-[2.75rem]",
+              compacto ? "text-[1.6rem]" : "text-[2rem]",
+            )}
+          >
             {titulo}
             <span className="text-acento">.</span>
           </h1>
           {descricao && (
-            <p className="text-fluid-sm text-apoio mt-2 max-w-2xl text-pretty">{descricao}</p>
+            <p className={cn("text-fluid-sm text-apoio mt-2 max-w-2xl text-pretty", compacto && "hidden md:block")}>{descricao}</p>
           )}
           {abaixo}
         </div>

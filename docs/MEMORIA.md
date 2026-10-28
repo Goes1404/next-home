@@ -12334,3 +12334,13 @@ Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
   anterior e delegar, senão o `criar_grupo` falso some.
 - Dev server: `TaskStop` mata o shell, não o `node` do `next dev` —
   `EADDRINUSE` na porta na próxima vez; conferir com `netstat -ano`.
+
+## Agenda: visual novo no celular e no computador (28/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
+
+- Gaveta `fixed` dentro do conteúdo do painel fica abaixo do mascote da assistente (z-55): o conteúdo cria contexto de empilhamento. Portal para o `<body>` e repetir `data-rota="painel"` + `data-modulo` na raiz, senão a gaveta perde a paleta (fica verde/sem tema).
+- `naoRolaDeLado.test.ts` reprova chip com `overflow-x-auto`: use `flex-wrap`.
+- Seed de visita confirmada: gravar `visita_confirmada_em` no MESMO update de `visita_agendada_em` não fica (o gatilho da marcação zera); confirmar num update depois.
+- Conta de teste em produção: grupo `teste-agenda` ("Teste Agenda (apagar)"), corretores ocultos (não entram em site, roleta nem `getEquipeAtiva`), login `teste.agenda@example.com`.
+- Retoques da mesma data: cabeçalho `compacto` (some seção e descrição abaixo de md), "Imóvel não informado" saiu do cartão, "Próximas" sem as do dia mostrado, "Novo" pergunta antes qual formulário (gestor), deslizar a semana com o dedo (`passoDoDeslize`, 50px e mais de lado que de pé). Teste de render de componente com `useRouter` precisa de `vi.mock("next/navigation")`.

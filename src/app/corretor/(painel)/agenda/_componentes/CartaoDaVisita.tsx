@@ -21,7 +21,7 @@ const DIA_CURTO = new Intl.DateTimeFormat("pt-BR", {
 });
 
 const BOTAO =
-  "min-w-32 flex-1 rounded-xl bg-elevado px-4 py-2.5 text-center text-sm font-medium text-corpo transition-colors hover:bg-vidro-forte";
+  "min-w-32 flex-1 rounded-xl border border-linha-forte bg-superficie px-4 py-2.5 text-center text-sm font-medium text-titulo transition-colors hover:bg-elevado";
 
 /**
  * O cartão da visita, extraído da antiga tela de Visitas (27/10/2026) como
@@ -35,6 +35,7 @@ export function CartaoDaVisita({
   comDia = false,
   vistaDe,
   semFicha = false,
+  semMoldura = false,
 }: {
   visita: VisitaDaAgenda;
   preparo: DadosDoPreparo;
@@ -43,6 +44,8 @@ export function CartaoDaVisita({
   vistaDe?: string;
   /** Na própria página da visita recebida, sem o atalho da ficha. */
   semFicha?: boolean;
+  /** Dentro da gaveta ou da coluna de detalhe da Agenda, que já são a moldura. */
+  semMoldura?: boolean;
 }) {
   const quando = new Date(visita.inicio);
   const hora = HORA.format(quando);
@@ -57,14 +60,14 @@ export function CartaoDaVisita({
   const linkDaFicha = leadDeOutro ? `/corretor/agenda/visita/${visita.id}` : `/corretor/leads/${visita.leadId}`;
 
   return (
-    <article className="cartao p-5">
+    <article className={semMoldura ? undefined : "cartao p-5"}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-lg text-titulo">
             {comDia ? `${DIA_CURTO.format(quando)} · ` : ""}
             {hora} — {visita.nome}
           </p>
-          <p className="text-fluid-sm mt-0.5 text-apoio">{visita.imovel?.nome ?? "Imóvel não informado"}</p>
+          {visita.imovel?.nome && <p className="text-fluid-sm mt-0.5 text-apoio">{visita.imovel.nome}</p>}
           {feitaPorOutro && visita.corretorNome && (
             <p className="text-fluid-xs mt-0.5 font-medium text-alerta">Feita por {visita.corretorNome}</p>
           )}
