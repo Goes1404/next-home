@@ -95,7 +95,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
        * porque o subtópico SLA da administração é dele: lá o assunto é
        * mesmo tempo de resposta, e trocar por uma casa mentiria.
        */
-      { href: "/corretor", label: "Home", icone: IconeCasa },
+      { href: "/corretor", label: "Início", icone: IconeCasa },
       {
         /*
          * Pessoas absorve Leads, e é a mudança de fundo desta navegação.

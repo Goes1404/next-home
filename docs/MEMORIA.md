@@ -12119,3 +12119,15 @@ Nota: [[plataforma-astro-solucoes-e-barra-da-empresa]].
   Next Home inclusive).
 - Ícone regenerado por `scripts/marca/gerarIconeAstroimob.mjs` (nomes de
   arquivo antigos mantidos). Endereço `astroimob.vercel.app` não mudou.
+
+## Página de vendas da Astro e cores do painel (28/10/2026)
+
+Nota: [[plataforma-astro-solucoes-e-barra-da-empresa]].
+
+- `/astro` = página de vendas; raiz de `astroimob.vercel.app` reescrita para lá.
+  WhatsApp do botão em `NEXT_PUBLIC_WHATSAPP_DA_ASTRO`. Preços vêm das
+  constantes da cobrança.
+- Início (azul) e Administração (violeta) trocaram de cor; neutros do painel
+  na matiz do azul-marinho da Astro. Contraste medido igual.
+- `npm run paleta` local dá 188 "classes mortas" até em produção: comparar só
+  as medidas de contraste e matiz.

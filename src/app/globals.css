@@ -211,9 +211,9 @@
    * meta em relação aos outros quatro. Cinza ao lado de quatro cores vivas é
    * tão identificável quanto uma quinta cor, e não briga com nenhuma.
    */
-  --color-mod-inicio: light-dark(oklch(0.52 0.19 292), oklch(0.7 0.17 292));
-  --color-mod-inicio-hover: light-dark(oklch(0.45 0.19 292), oklch(0.78 0.16 292));
-  --color-mod-inicio-suave: light-dark(oklch(0.47 0.19 292), oklch(0.84 0.13 292));
+  --color-mod-inicio: light-dark(oklch(0.48 0.155 246.3), oklch(0.72 0.14 250));
+  --color-mod-inicio-hover: light-dark(oklch(0.41 0.155 246.3), oklch(0.8 0.12 250));
+  --color-mod-inicio-suave: light-dark(oklch(0.43 0.155 246.3), oklch(0.85 0.1 250));
 
   --color-mod-leads: light-dark(oklch(0.53 0.2 340), oklch(0.71 0.18 340));
   --color-mod-leads-hover: light-dark(oklch(0.46 0.2 340), oklch(0.79 0.16 340));
@@ -277,9 +277,13 @@
    * `etapa-contato`, o que é aceito: cor de módulo mora no cromo, cor de
    * etapa mora no registro, e as duas não dividem o mesmo lugar.
    */
-  --color-mod-admin: light-dark(oklch(0.48 0.155 246.3), oklch(0.72 0.14 250));
-  --color-mod-admin-hover: light-dark(oklch(0.41 0.155 246.3), oklch(0.8 0.12 250));
-  --color-mod-admin-suave: light-dark(oklch(0.43 0.155 246.3), oklch(0.85 0.1 250));
+  /* 28/10/2026: Início e Administração TROCARAM de cor. O Início, primeira
+     tela de todo mundo, ficou no azul (o da marca Astro Soluções, que vende o
+     CRM); Administração herdou o violeta. Mesmos valores já medidos pela
+     guarda, só trocados de dono. */
+  --color-mod-admin: light-dark(oklch(0.52 0.19 292), oklch(0.7 0.17 292));
+  --color-mod-admin-hover: light-dark(oklch(0.45 0.19 292), oklch(0.78 0.16 292));
+  --color-mod-admin-suave: light-dark(oklch(0.47 0.19 292), oklch(0.84 0.13 292));
 
   /*
    * Conta é o módulo META: não é trabalho, é a ferramenta se configurando
@@ -917,24 +921,26 @@
      * site público já tinha aprendido em 10/09 ("muito branco" era falta de
      * degrau, não de cor), agora no painel.
      */
-    --color-fundo: light-dark(oklch(0.93 0.013 278), oklch(0.155 0.022 278));
-    --color-superficie: light-dark(oklch(1 0 0), oklch(0.245 0.02 278));
-    --color-elevado: light-dark(oklch(1 0 0), oklch(0.3 0.02 278));
-    --color-campo: light-dark(oklch(0.965 0.006 278), oklch(0.135 0.016 278));
+    /* Matiz dos neutros: 278/275 (violeta) -> 260/258 (o azul-marinho da Astro
+       Soluções), 28/10/2026. Luminosidade e croma iguais: contraste igual. */
+    --color-fundo: light-dark(oklch(0.93 0.013 260), oklch(0.155 0.022 260));
+    --color-superficie: light-dark(oklch(1 0 0), oklch(0.245 0.02 260));
+    --color-elevado: light-dark(oklch(1 0 0), oklch(0.3 0.02 260));
+    --color-campo: light-dark(oklch(0.965 0.006 260), oklch(0.135 0.016 260));
 
-    --color-linha: light-dark(oklch(0.25 0.02 275 / 0.14), oklch(1 0 0 / 0.12));
-    --color-linha-forte: light-dark(oklch(0.25 0.02 275 / 0.28), oklch(1 0 0 / 0.24));
-    --color-vidro: light-dark(oklch(0.25 0.02 275 / 0.05), oklch(1 0 0 / 0.06));
-    --color-vidro-forte: light-dark(oklch(0.25 0.02 275 / 0.1), oklch(1 0 0 / 0.13));
+    --color-linha: light-dark(oklch(0.25 0.02 258 / 0.14), oklch(1 0 0 / 0.12));
+    --color-linha-forte: light-dark(oklch(0.25 0.02 258 / 0.28), oklch(1 0 0 / 0.24));
+    --color-vidro: light-dark(oklch(0.25 0.02 258 / 0.05), oklch(1 0 0 / 0.06));
+    --color-vidro-forte: light-dark(oklch(0.25 0.02 258 / 0.1), oklch(1 0 0 / 0.13));
 
-    --color-titulo: light-dark(oklch(0.22 0.02 275), oklch(0.98 0.004 275));
-    --color-corpo: light-dark(oklch(0.34 0.018 275), oklch(0.9 0.007 275));
-    --color-corpo-suave: light-dark(oklch(0.4 0.017 275), oklch(0.84 0.008 275));
+    --color-titulo: light-dark(oklch(0.22 0.02 258), oklch(0.98 0.004 258));
+    --color-corpo: light-dark(oklch(0.34 0.018 258), oklch(0.9 0.007 258));
+    --color-corpo-suave: light-dark(oklch(0.4 0.017 258), oklch(0.84 0.008 258));
     /* Apoio e tênue desceram um degrau: com a página mais escura, texto que
        fica FORA de cartão (a lateral, as descrições) precisa da folga. */
-    --color-apoio: light-dark(oklch(0.46 0.016 275), oklch(0.73 0.011 275));
-    --color-legenda: light-dark(oklch(0.46 0.016 275), oklch(0.73 0.011 275));
-    --color-tenue: light-dark(oklch(0.52 0.014 275), oklch(0.62 0.012 275));
+    --color-apoio: light-dark(oklch(0.46 0.016 258), oklch(0.73 0.011 258));
+    --color-legenda: light-dark(oklch(0.46 0.016 258), oklch(0.73 0.011 258));
+    --color-tenue: light-dark(oklch(0.52 0.014 258), oklch(0.62 0.012 258));
 
     /*
      * O material dos cartões e do vidro-herói. São CORES com alfa, e não
@@ -942,11 +948,11 @@
      * ali, cor cabe. O que é número mesmo (força da aurora, grão) mora no
      * bloco `[data-tema="escuro"]` logo abaixo.
      */
-    --cartao-fundo: light-dark(oklch(1 0 0 / 0.92), oklch(0.245 0.02 278 / 0.9));
+    --cartao-fundo: light-dark(oklch(1 0 0 / 0.92), oklch(0.245 0.02 260 / 0.9));
     --cartao-fio: light-dark(oklch(1 0 0 / 0.9), oklch(1 0 0 / 0.08));
     --heroi-vidro: light-dark(oklch(1 0 0 / 0.66), oklch(1 0 0 / 0.07));
     --heroi-fio: light-dark(oklch(1 0 0 / 0.95), oklch(1 0 0 / 0.42));
-    --sombra-tinta: light-dark(oklch(0.3 0.03 278 / 0.22), oklch(0 0 0 / 0.6));
+    --sombra-tinta: light-dark(oklch(0.3 0.03 260 / 0.22), oklch(0 0 0 / 0.6));
     --shadow-cartao:
       0 1px 2px color-mix(in srgb, var(--sombra-tinta) 30%, transparent),
       0 14px 34px -22px var(--sombra-tinta);

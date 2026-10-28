@@ -34,5 +34,19 @@ export function rotuloDaConta(tipo: "imobiliaria" | "independente"): string {
   return tipo === "independente" ? "Corretor autônomo" : "Imobiliária";
 }
 
+/**
+ * O WhatsApp comercial da Astro, para a página de vendas. Vem de
+ * `NEXT_PUBLIC_WHATSAPP_DA_ASTRO` (só dígitos, com DDI: 5511999999999).
+ * Sem ele a página esconde o botão de conversa e fica só o "Entrar".
+ */
+export function linkDoWhatsAppDaAstro(
+  numero = process.env.NEXT_PUBLIC_WHATSAPP_DA_ASTRO,
+  texto = "Olá! Quero conhecer o CRM da Astro Soluções.",
+): string | null {
+  const digitos = (numero ?? "").replace(/\D/g, "");
+  if (digitos.length < 12 || digitos.length > 13) return null;
+  return `https://wa.me/${digitos}?text=${encodeURIComponent(texto)}`;
+}
+
 /** O texto de suporte que aparece nos avisos de limite e cobrança. */
 export const SUPORTE_DA_PLATAFORMA = `o suporte da ${MARCA_DA_PLATAFORMA.nome}`;

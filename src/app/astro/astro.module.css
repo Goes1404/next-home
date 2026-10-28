@@ -1,0 +1,247 @@
+/*
+ * Página de vendas da Astro (28/10/2026). Cores fixas da marca: a página
+ * não segue o tema claro/escuro do site das imobiliárias.
+ */
+.pagina {
+  --noite: #08132a;
+  --marinho: #0f2547;
+  --azul: #2f5ea8;
+  --azul-hover: #244c8c;
+  --bruma: #a9c1e0;
+  --papel: #f3f6fb;
+  --tinta: #0d1b33;
+  --tinta-suave: #44506a;
+  --linha: #d8e0ec;
+
+  font-family: var(--font-astro-texto), system-ui, sans-serif;
+  background: var(--papel);
+  color: var(--tinta);
+  color-scheme: light;
+}
+
+.titulo {
+  font-family: var(--font-astro-titulo), var(--font-astro-texto), system-ui, sans-serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Topo ---------- */
+
+.topo {
+  background:
+    radial-gradient(70% 90% at 85% 10%, rgb(47 94 168 / 0.45), transparent 60%),
+    radial-gradient(60% 70% at 0% 100%, rgb(91 123 168 / 0.25), transparent 65%),
+    var(--noite);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.botao {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0 1.4rem;
+  font-weight: 600;
+  transition: background-color 160ms, border-color 160ms, color 160ms;
+}
+.botao:focus-visible {
+  outline: 3px solid var(--bruma);
+  outline-offset: 3px;
+}
+.botaoPrincipal {
+  background: var(--azul);
+  color: #fff;
+}
+.botaoPrincipal:hover {
+  background: var(--azul-hover);
+}
+.botaoContorno {
+  border: 1.5px solid rgb(255 255 255 / 0.35);
+  color: #fff;
+}
+.botaoContorno:hover {
+  border-color: #fff;
+}
+.botaoNoClaro {
+  border: 1.5px solid var(--linha);
+  color: var(--tinta);
+  background: #fff;
+}
+.botaoNoClaro:hover {
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+/* ---------- A conversa do topo (o único momento animado) ---------- */
+
+.palco {
+  position: relative;
+  isolation: isolate;
+}
+
+/* A órbita do logo, passando atrás do celular. */
+.orbita {
+  position: absolute;
+  inset: 12% -18% 18% -18%;
+  border: 1.5px solid rgb(169 193 224 / 0.45);
+  border-radius: 50%;
+  transform: rotate(-16deg);
+  z-index: -1;
+}
+.estrela {
+  position: absolute;
+  top: 2%;
+  right: 4%;
+  width: 2.25rem;
+  height: 2.25rem;
+  z-index: -1;
+}
+
+.celular {
+  border-radius: 2rem;
+  background: #0b1a33;
+  border: 1px solid rgb(169 193 224 / 0.25);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.75);
+  overflow: hidden;
+}
+.celularTopo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  background: #10264a;
+  border-bottom: 1px solid rgb(169 193 224 / 0.18);
+}
+.conversa {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.1rem;
+  min-height: 21rem;
+  background:
+    radial-gradient(circle at 1px 1px, rgb(169 193 224 / 0.08) 1px, transparent 0) 0 0 / 18px 18px,
+    #0d1f3d;
+}
+.msg {
+  max-width: 82%;
+  border-radius: 1.1rem;
+  padding: 0.6rem 0.85rem 0.45rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.msgCliente {
+  align-self: flex-start;
+  background: #fff;
+  color: var(--tinta);
+  border-bottom-left-radius: 0.3rem;
+}
+.msgIa {
+  align-self: flex-end;
+  background: #2b5596;
+  color: #fff;
+  border-bottom-right-radius: 0.3rem;
+}
+.hora {
+  display: block;
+  text-align: right;
+  font-size: 0.7rem;
+  opacity: 0.65;
+  margin-top: 0.15rem;
+}
+.etapa {
+  align-self: center;
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgb(169 193 224 / 0.16);
+  color: #dbe7f6;
+  border: 1px solid rgb(169 193 224 / 0.3);
+}
+.pontoVerde {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #4ade80;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .entra {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: entrar 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .orbita {
+    animation: girar 60s linear infinite;
+  }
+}
+@keyframes entrar {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes girar {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(344deg);
+  }
+}
+
+/* ---------- Corpo ---------- */
+
+.passo {
+  border-top: 2px solid var(--marinho);
+  padding-top: 1.1rem;
+}
+.numeroDoPasso {
+  font-family: var(--font-astro-titulo), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--azul);
+}
+
+.recurso {
+  border-top: 1px solid var(--linha);
+  padding: 1.25rem 0;
+}
+
+.plano {
+  border-radius: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--linha);
+}
+.planoDestaque {
+  border-radius: 1.5rem;
+  background: var(--marinho);
+  color: #fff;
+}
+
+.fechamento {
+  background: var(--marinho);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.fechamento::before {
+  content: "";
+  position: absolute;
+  width: 46rem;
+  height: 16rem;
+  right: -14rem;
+  top: 50%;
+  border: 1.5px solid rgb(169 193 224 / 0.3);
+  border-radius: 50%;
+  transform: translateY(-50%) rotate(-14deg);
+}

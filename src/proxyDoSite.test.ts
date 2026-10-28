@@ -112,8 +112,18 @@ describe("proxy e o endereço só do CRM (astroimob.vercel.app)", () => {
     return alvo ? new URL(alvo).pathname : null;
   }
 
+  it("a raiz é a página de vendas da Astro, sem trocar o endereço", async () => {
+    expect(await localizacao("/")).toBeNull();
+    expect(await reescrita("/", CRM)).toBe("/astro");
+  });
+
+  it("/astro abre direto, em qualquer endereço, sem virar página de site", async () => {
+    expect(await reescrita("/astro", CRM)).toBeNull();
+    expect(await localizacao("/astro")).toBeNull();
+    expect(await reescrita("/astro")).toBeNull();
+  });
+
   it("página do site vai para o painel", async () => {
-    expect(await localizacao("/")).toBe("/corretor");
     expect(await localizacao("/sobre")).toBe("/corretor");
     expect(await localizacao("/empreendimentos/dom-barueri")).toBe("/corretor");
   });
