@@ -130,6 +130,105 @@ export async function criarAcessoPendenteDoGrupo(
   return { ok: true, email, papel };
 }
 
+export type ResultadoSenhaRedefinida = { ok: true; nome: string } | { ok: false; erro: string };
+
+/**
+ * Redefine a senha de um acesso do grupo com uma senha temporária, para quem
+ * ficou sem entrar (o "Esqueci a senha" depende do e-mail sair, e a conta
+ * antiga pode nem ter e-mail na ficha). É o mesmo acordo do
+ * `criarAcessoPendenteDoGrupo`: a senha só vai ao Auth, e a próxima entrada
+ * cai na troca obrigatória (`deve_trocar_senha`).
+ *
+ * Outro administrador da plataforma é recusado: a senha dele se troca pela
+ * própria sessão. A marca de troca é gravada ANTES da senha; se o Auth
+ * recusar, ela volta ao que era — senão a pessoa seria mandada trocar uma
+ * senha que não mudou.
+ */
+export async function redefinirSenhaDoAcesso(
+  grupoId: string,
+  corretorId: string,
+  _estadoAnterior: ResultadoSenhaRedefinida | undefined,
+  formData: FormData,
+): Promise<ResultadoSenhaRedefinida> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId) || !ehUuid(corretorId)) return { ok: false, erro: "Acesso não encontrado." };
+
+  const senha = String(formData.get("senha") ?? "");
+  if (senha.length < 8) return { ok: false, erro: "A senha temporária precisa ter pelo menos 8 caracteres." };
+
+  const servico = createServiceClient();
+  const { data: ficha, error: erroFicha } = await servico
+    .from("corretores")
+    .select("id, nome, user_id, deve_trocar_senha")
+    .eq("id", corretorId)
+    .eq("grupo_id", grupoId)
+    .maybeSingle();
+  if (erroFicha) {
+    console.error(`[plataforma] ficha ${corretorId} não lida para redefinir a senha: ${erroFicha.message}`);
+    return { ok: false, erro: "Não foi possível conferir este acesso agora. Tente de novo." };
+  }
+  if (!ficha) return { ok: false, erro: "Acesso não encontrado." };
+  if (!ficha.user_id) return { ok: false, erro: "Este corretor ainda não tem login." };
+
+  const { data: admin, error: erroAdmin } = await servico
+    .from("administradores_da_plataforma")
+    .select("user_id")
+    .eq("user_id", ficha.user_id)
+    .maybeSingle();
+  if (erroAdmin) {
+    console.error(`[plataforma] não conferi se ${corretorId} administra a plataforma: ${erroAdmin.message}`);
+    return { ok: false, erro: "Não foi possível conferir este acesso agora. Tente de novo." };
+  }
+  if (admin) return { ok: false, erro: "Este login administra a plataforma: a senha dele se troca pela própria sessão." };
+
+  const trocaJaPendente = ficha.deve_trocar_senha;
+  const { data: marcadas, error: erroMarca } = await servico
+    .from("corretores")
+    .update({ deve_trocar_senha: true })
+    .eq("id", corretorId)
+    .eq("grupo_id", grupoId)
+    .select("id");
+  if (erroMarca || !marcadas?.length) {
+    console.error(`[plataforma] troca obrigatória não ligada (${corretorId}): ${erroMarca?.message ?? "nenhuma linha"}`);
+    return { ok: false, erro: "Não foi possível redefinir a senha agora. Tente de novo." };
+  }
+
+  // A senha só vai ao Auth; nunca entra na ficha, auditoria, log ou resposta.
+  const { error: erroDoAuth } = await servico.auth.admin.updateUserById(ficha.user_id, { password: senha });
+  if (erroDoAuth) {
+    console.error(`[plataforma] senha do acesso ${corretorId} não redefinida: ${erroDoAuth.message}`);
+    if (!trocaJaPendente) {
+      const { error: erroVolta } = await servico
+        .from("corretores")
+        .update({ deve_trocar_senha: false })
+        .eq("id", corretorId)
+        .eq("grupo_id", grupoId);
+      if (erroVolta) console.error(`[plataforma] troca obrigatória não desligada (${corretorId}): ${erroVolta.message}`);
+    }
+    const fraca = (erroDoAuth as { code?: string }).code === "weak_password";
+    return {
+      ok: false,
+      erro: fraca
+        ? "O Auth recusou essa senha por ser fraca. Use uma mais longa, com letras e números."
+        : "Não foi possível redefinir a senha agora. Tente de novo.",
+    };
+  }
+
+  const { error: erroAuditoria } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    acao: "senha_redefinida",
+    alvo_corretor_id: corretorId,
+    detalhes: { origem: "plataforma" },
+  });
+  if (erroAuditoria) console.error("[plataforma] senha redefinida sem auditoria:", erroAuditoria.message);
+
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true, nome: ficha.nome };
+}
+
 /**
  * O e-mail já é de alguma ficha (de qualquer grupo)? A plataforma não chama
  * `email_de_acesso_livre` (0192), que é do gestor: a mesma pergunta vai pela

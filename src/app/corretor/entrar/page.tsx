@@ -1,4 +1,5 @@
-import { Wordmark } from "@/components/ui/Wordmark";
+import { MarcaAstro } from "@/components/marca/SeloAstro";
+import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -12,53 +13,27 @@ import { FormularioLogin } from "./FormularioLogin";
  * direita, num fundo vivo (orbes de luz que derivam, malha fina e estrelas).
  * No celular, marca em cima e cartão logo abaixo.
  *
- * A marca depende do ENDEREÇO: em `astroimob.vercel.app` (o endereço só do
- * CRM, `enderecosDoPainel.ts`) a tela usa a paleta especial da AstroImob. A
- * marca exibida é AstroImob em qualquer endereço de entrada.
+ * Desde 28/10/2026 a entrada é SEMPRE da plataforma, Astro Soluções
+ * (`marcaDaPlataforma.ts`), em qualquer endereço: a imobiliária aparece
+ * depois do login, na barra do topo do painel (como TOTVS e SAP). O endereço
+ * só muda o rodapé: no site de um cliente (ex.: nexthomeimoveis.com/corretor)
+ * há "Voltar para o site"; no endereço só do CRM, o aviso do convite.
  *
  * O fundo é escuro nos dois temas e o texto sobre ele é branco FIXO; o
- * cartão segue o tema. Movimento só por `transform`/`opacity`, desligado com
- * movimento reduzido (`globals.css`, bloco "Fundo da tela de login").
+ * cartão é claro e neutro. Movimento só por `transform`/`opacity`, desligado
+ * com movimento reduzido (`globals.css`, bloco "Fundo da tela de login").
  */
 
-type Marca = {
-  nome: string;
-  wordmark: readonly [string, string];
-  frase: string;
-  apoio: string;
-  rodape: "convite" | "site";
-  cores: { a: string; b: string; c: string; base: string; acento?: string; acentoHover?: string };
-};
+type Rodape = "convite" | "site";
 
-const ASTROIMOB: Marca = {
-  nome: "AstroImob",
-  wordmark: ["astro", "imob"],
-  frase: "O CRM que atende seus clientes no WhatsApp enquanto você vende.",
-  apoio: "Leads, conversas, visitas e vendas da sua imobiliária num lugar só.",
-  rodape: "convite",
-  cores: { a: "#7c5cff", b: "#22d3ee", c: "#f472b6", base: "#090a1f", acento: "#6d5dfc", acentoHover: "#5a49ec" },
-};
-
-const PAINEL_ASTROIMOB: Marca = {
-  nome: "ASTROimob",
-  wordmark: ["ASTRO", "imob"],
-  frase: "Seus leads, suas conversas e sua agenda de visitas num lugar só.",
-  apoio: "Área do corretor da ASTROimob.",
-  rodape: "site",
-  cores: { a: "#14b8a6", b: "#0ea5e9", c: "#34d399", base: "#03161a" },
-};
-
-async function marcaDoEndereco(): Promise<Marca> {
+async function rodapeDoEndereco(): Promise<Rodape> {
   const host = (await headers()).get("host");
-  // A entrada é da plataforma, mesmo quando chegou pelo domínio público da
-  // Next Home. O host só preserva a paleta especial do endereço do CRM.
-  return ehEnderecoSoDoPainel(host) ? ASTROIMOB : PAINEL_ASTROIMOB;
+  return ehEnderecoSoDoPainel(host) ? "convite" : "site";
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const marca = await marcaDoEndereco();
   return {
-    title: { absolute: `Entrar · ${marca.nome}` },
+    title: { absolute: `Entrar · ${MARCA_DA_PLATAFORMA.nome}` },
     robots: { index: false, follow: false },
   };
 }
@@ -79,7 +54,8 @@ export default async function EntrarPage({
   searchParams: Promise<{ link?: string; next?: string | string[] }>;
 }) {
   const parametros = await searchParams;
-  const marca = await marcaDoEndereco();
+  const rodape = await rodapeDoEndereco();
+  const marca = MARCA_DA_PLATAFORMA;
   // Link do convite ou da recuperação que já foi usado, venceu ou chegou
   // adulterado (`/auth/confirmar`). Explica e aponta a saída, em vez de um
   // erro genérico que faria a pessoa achar que a conta não existe.
@@ -88,26 +64,23 @@ export default async function EntrarPage({
   // abre sem sessão). Só repassado: a action confere com `destinoSeguro`.
   const next = typeof parametros.next === "string" ? parametros.next : undefined;
 
-  const { a, b, c, base, acento, acentoHover } = marca.cores;
+  const { marinho, acinzentado, claro, base, acento, acentoHover } = marca.cores;
+  // O cartão é neutro e claro em todo endereço: a entrada é da Astro, não da
+  // paleta de um cliente.
   const estilo = {
-    "--login-a": a,
-    "--login-b": b,
+    "--login-a": acinzentado,
+    "--login-b": marinho,
     "--login-base": base,
-    ...(acento ? { "--color-acento": acento, "--color-acento-hover": acentoHover } : {}),
-    // A AstroImob não usa a paleta sálvia da Next Home no cartão: neutro e
-    // claro, para combinar com o violeta. A Next Home segue o tema do site.
-    ...(marca.rodape === "convite"
-      ? {
-          "--color-superficie": "#ffffff",
-          "--color-elevado": "#f5f6fb",
-          "--color-linha": "#e6e8f2",
-          "--color-linha-forte": "#d5d8e8",
-          "--color-titulo": "#141631",
-          "--color-corpo": "#3a3e57",
-          "--color-apoio": "#5c6079",
-          "--color-tenue": "#7b7f98",
-        }
-      : {}),
+    "--color-acento": acento,
+    "--color-acento-hover": acentoHover,
+    "--color-superficie": "#ffffff",
+    "--color-elevado": "#f4f6fb",
+    "--color-linha": "#e3e8f1",
+    "--color-linha-forte": "#cfd7e6",
+    "--color-titulo": "#0f1d36",
+    "--color-corpo": "#34405a",
+    "--color-apoio": "#56627b",
+    "--color-tenue": "#77819a",
   } as CSSProperties;
 
   return (
@@ -115,9 +88,9 @@ export default async function EntrarPage({
       {/* O fundo vivo: malha, três orbes e estrelas. Decorativo. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="login-malha absolute inset-0" />
-        <span className="login-orbe -top-24 -left-24 size-[28rem]" style={{ background: a }} />
-        <span className="login-orbe right-[-6rem] bottom-[-8rem] size-[32rem]" style={{ background: b }} />
-        <span className="login-orbe top-1/3 left-1/2 size-[18rem]" style={{ background: c }} />
+        <span className="login-orbe -top-24 -left-24 size-[28rem]" style={{ background: acinzentado }} />
+        <span className="login-orbe right-[-6rem] bottom-[-8rem] size-[32rem]" style={{ background: marinho }} />
+        <span className="login-orbe top-1/3 left-1/2 size-[18rem]" style={{ background: claro }} />
         {ESTRELAS.map((e, i) => (
           <span
             key={i}
@@ -129,10 +102,11 @@ export default async function EntrarPage({
 
       <div className="mx-auto flex min-h-svh w-full max-w-6xl flex-col items-center justify-center gap-10 px-5 pt-[max(2.5rem,env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] lg:flex-row lg:justify-between lg:gap-16 lg:px-10">
         <section className="max-w-xl text-center lg:text-left">
-          <p className="font-display text-[clamp(2.75rem,7vw,5rem)] leading-none font-semibold tracking-tight text-white">
-            <Wordmark
-              nomes={marca.wordmark}
-              destaque="bg-gradient-to-r from-[var(--login-a)] via-[var(--login-b)] to-white bg-clip-text text-transparent"
+          <p className="font-display text-[clamp(2.1rem,6vw,3.75rem)] leading-none font-semibold tracking-tight text-white">
+            <MarcaAstro
+              selo="size-[0.95em]"
+              className="gap-[0.25em]"
+              destaque="bg-gradient-to-r from-[#a9c1e0] to-white bg-clip-text text-transparent"
             />
           </p>
           <h2 className="text-fluid-xl mt-5 font-medium text-balance text-white/90 lg:text-[1.75rem] lg:leading-snug">
@@ -154,7 +128,7 @@ export default async function EntrarPage({
         <div className="w-full max-w-md">
           <div className="login-cartao bg-superficie rounded-3xl p-6 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.6)] ring-1 ring-white/10 sm:p-8">
             <h1 className="text-fluid-xl text-titulo font-semibold">Entrar</h1>
-            <p className="text-fluid-sm text-apoio mt-1 mb-6">Acesse o painel da sua imobiliária.</p>
+            <p className="text-fluid-sm text-apoio mt-1 mb-6">Acesse o CRM da sua imobiliária ou da sua conta de corretor.</p>
 
             {linkExpirado && (
               <p role="alert" className="border-alerta-linha bg-alerta-lavado text-fluid-sm text-titulo -mt-2 mb-5 rounded-xl border px-4 py-3">
@@ -164,7 +138,7 @@ export default async function EntrarPage({
 
             <FormularioLogin next={next} />
 
-            {marca.rodape === "site" && (
+            {rodape === "site" && (
               <>
                 <hr className="border-linha my-6" />
                 <Link
@@ -177,9 +151,9 @@ export default async function EntrarPage({
             )}
           </div>
           <p className="text-fluid-sm mt-6 text-center text-white/60">
-            {marca.rodape === "convite" ? (
+            {rodape === "convite" ? (
               <>
-                O acesso é por convite da sua imobiliária. <span className="text-white/80">© {marca.nome}</span>
+                O acesso é por convite da sua imobiliária ou da Astro. <span className="text-white/80">© {marca.nome}</span>
               </>
             ) : (
               <>© {marca.nome}</>

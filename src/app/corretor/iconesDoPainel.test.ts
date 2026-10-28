@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
-import { ICONES_ASTROIMOB, CAMINHO_DO_MANIFESTO_DO_PAINEL } from "@/lib/marcaDoCrm/icones";
+import { ICONES_ASTROIMOB, CAMINHO_DO_MANIFESTO_DO_PAINEL, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { MARCA_NEXT_HOME, marcaDoCrm } from "@/lib/marcaDoCrm/marca";
 
 /**
@@ -44,7 +44,7 @@ describe("layout do painel", () => {
     expect(m.manifest).toBe(CAMINHO_DO_MANIFESTO_DO_PAINEL);
   });
 
-  it("outro grupo sem logo: o ícone da AstroImob", async () => {
+  it("outro grupo sem logo: o ícone da Astro Soluções", async () => {
     marca = aretz(null);
     const { generateMetadata } = await import("./(painel)/layout");
     expect((await generateMetadata()).icons).toBe(ICONES_ASTROIMOB);
@@ -52,10 +52,10 @@ describe("layout do painel", () => {
 });
 
 describe("login e telas de /corretor", () => {
-  it("em astroimob.vercel.app: ícone da AstroImob, sem manifesto da Next Home", async () => {
+  it("em astroimob.vercel.app: ícone e manifesto do app da Astro Soluções, nunca o da Next Home", async () => {
     host = "astroimob.vercel.app";
     const { generateMetadata } = await import("./layout");
-    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: null });
+    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA });
   });
 
   it("no endereço da Next Home: nada declarado", async () => {
@@ -65,7 +65,7 @@ describe("login e telas de /corretor", () => {
 });
 
 describe("plataforma", () => {
-  it("em astroimob.vercel.app: ícone da AstroImob; na Next Home: sem ícone", async () => {
+  it("em astroimob.vercel.app: ícone da Astro Soluções; na Next Home: sem ícone", async () => {
     const { generateMetadata } = await import("../plataforma/layout");
     host = "astroimob.vercel.app";
     expect((await generateMetadata()).icons).toBe(ICONES_ASTROIMOB);
@@ -87,11 +87,11 @@ describe("GET /api/painel/manifest", () => {
     expect(r.headers.get("vary")).toBe("Cookie");
   });
 
-  it("grupo sem logo e sem cor: ícones e cor da AstroImob", async () => {
+  it("grupo sem logo e sem cor: ícones e cor da Astro Soluções", async () => {
     marca = aretz(null);
     const { GET } = await import("../api/painel/manifest/route");
     const m = await (await GET()).json();
-    expect(m.theme_color).toBe("#6d5dfc");
+    expect(m.theme_color).toBe("#0f2547");
     expect(m.icons[0].src).toBe("/icones/astroimob-192.png");
   });
 

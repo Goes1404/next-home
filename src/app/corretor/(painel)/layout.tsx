@@ -20,6 +20,8 @@ import { CromaDoModulo } from "./CromaDoModulo";
 import { MenuDaConta } from "./MenuDaConta";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
+import { MARCA_DA_PLATAFORMA, rotuloDaConta } from "@/lib/marcaDaPlataforma";
+import { SeloAstro } from "@/components/marca/SeloAstro";
 import { CAMINHO_DO_MANIFESTO_DO_PAINEL, iconesDoGrupo } from "@/lib/marcaDoCrm/icones";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
@@ -30,7 +32,7 @@ import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
  * foi. Outro grupo não herda o nome nem o ícone dela: a aba leva o nome da
- * casa dele, e o ícone é a logo dele ou o da AstroImob, e o manifesto é o dele
+ * casa dele, e o ícone é a logo dele ou o da Astro Soluções, e o manifesto é o dele
  * (`/api/painel/manifest`). O `favicon.ico` mora em `public/` justamente para
  * não vencer o `icons` do grupo.
  */
@@ -109,13 +111,41 @@ export default async function PainelLayout({
           (ver CabecalhoDoPainel); no computador fica. */}
       <CabecalhoDoPainel className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1">
             {/* O hambúrguer só existe no celular e só quando há sessão: sem
                 corretor não há gaveta para abrir. */}
             {corretor && <BotaoGaveta />}
-            <Link href="/" className="font-display text-titulo text-lg">
-              <LogoDoPainel marca={marca} destaque="text-acento-suave" />
+            {/* A barra da empresa (28/10/2026), como TOTVS e SAP: o produto
+                (Astro Soluções) e, ao lado, a imobiliária ou o corretor
+                autônomo da sessão, com a logo ou o nome do grupo. */}
+            <Link
+              href="/corretor"
+              aria-label={`${MARCA_DA_PLATAFORMA.nome}, início do CRM`}
+              className="text-titulo flex shrink-0 items-center gap-2"
+            >
+              <SeloAstro className="size-7" />
+              <span className="text-fluid-sm hidden font-semibold tracking-tight whitespace-nowrap lg:inline">
+                {MARCA_DA_PLATAFORMA.wordmark[0]}
+                <span className="text-apoio font-normal">{MARCA_DA_PLATAFORMA.wordmark[1]}</span>
+              </span>
             </Link>
+            {corretor && (
+              <>
+                <span aria-hidden className="bg-linha-forte mx-1.5 h-6 w-px shrink-0 sm:mx-2.5" />
+                <Link
+                  href="/"
+                  title={`${rotuloDaConta(tipoDoGrupo)}: ${marca.nome}`}
+                  className="flex min-w-0 items-center gap-2.5"
+                >
+                  <span className="font-display text-titulo min-w-0 truncate text-lg">
+                    <LogoDoPainel marca={marca} destaque="text-acento-suave" />
+                  </span>
+                  <span className="border-linha text-apoio hidden shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] tracking-[0.08em] uppercase md:inline">
+                    {rotuloDaConta(tipoDoGrupo)}
+                  </span>
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

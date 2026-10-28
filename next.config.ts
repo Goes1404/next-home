@@ -29,6 +29,15 @@ function versaoDaBuild(): string {
 
 const nextConfig: NextConfig = {
   /*
+   * O app Android da Astro (28/10/2026): o Android lê este endereço fixo para
+   * confirmar que o app é deste site. O conteúdo vem de uma rota que lê a
+   * chave da Vercel (`src/app/api/assetlinks/route.ts`).
+   */
+  async rewrites() {
+    return [{ source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" }];
+  },
+
+  /*
    * Inlinado em tempo de build nos DOIS pacotes (cliente e servidor), que e o
    * que a documentacao do `env` garante: o Next substitui a expressao pelo
    * literal. E isso que impede `/api/versao` e a aba de discordarem dentro da

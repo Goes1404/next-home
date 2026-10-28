@@ -63,6 +63,13 @@ export async function proxy(request: NextRequest) {
     ehPaginaDoSite(pathname) &&
     !ehRotaDeTokenDoCliente(pathname)
   ) {
+    // A raiz é a página de vendas da Astro Soluções (28/10/2026): reescrita,
+    // não redirecionada, para o endereço continuar limpo.
+    if (pathname === "/") {
+      const vendas = request.nextUrl.clone();
+      vendas.pathname = "/astro";
+      return NextResponse.rewrite(vendas);
+    }
     return NextResponse.redirect(new URL("/corretor", request.url));
   }
   let response = NextResponse.next({ request });
@@ -156,6 +163,9 @@ export async function proxy(request: NextRequest) {
  * cache por host. Por o host estar no CAMINHO, o cache de rota (ISR) já sai
  * separado por site, e as páginas continuam estáticas (a F2b não regride).
  *
+ * `/astro` (28/10/2026) é a página de vendas da Astro Soluções, a mesma em
+ * qualquer endereço; nos só do painel ela é a raiz.
+ *
  * `/imovel/<grupo>/<slug>` (21/10/2026) é a ficha pública do imóvel de quem
  * não tem site: abre em qualquer endereço, inclusive nos só do painel, e não
  * é página do site (o grupo vem da URL, não do endereço).
@@ -164,7 +174,7 @@ export async function proxy(request: NextRequest) {
  * não existe): sem isso, `nexthomeimoveis.com/s/outro.com.br/` mostraria o
  * site de outro grupo debaixo do domínio da Next Home.
  */
-const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa", "/imovel"];
+const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa", "/imovel", "/astro"];
 
 function ehPaginaDoSite(pathname: string): boolean {
   return !FORA_DO_SITE.some((raiz) => pathname === raiz || pathname.startsWith(`${raiz}/`));

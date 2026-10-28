@@ -8,7 +8,7 @@ import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
-import { lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
+import { lerAcessosDoGrupo, lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
 import { CustoDaIa } from "../../CustoDaIa";
@@ -25,6 +25,7 @@ import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
+import { AcessosDoGrupo } from "./AcessosDoGrupo";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -49,6 +50,7 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   const limites = await lerLimitesDetalhados(grupo.id, { estrito: true });
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
+  const acessos = await lerAcessosDoGrupo(prova, grupo.id);
 
   return (
     <section className="flex max-w-3xl flex-col gap-6">
@@ -113,6 +115,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
       <p className="text-fluid-xs text-tenue -mt-3">O plano só muda no ciclo seguinte; nesta versão ele não se edita aqui.</p>
 
       <FormularioNovoAcesso grupoId={grupo.id} />
+
+      <AcessosDoGrupo grupoId={grupo.id} acessos={acessos} />
 
       <section className="cartao flex flex-col gap-5 p-5" aria-labelledby="titulo-ia">
         <h2 id="titulo-ia" className="text-fluid-sm text-titulo font-bold">

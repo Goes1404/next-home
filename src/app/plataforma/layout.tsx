@@ -4,14 +4,14 @@ import Link from "next/link";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
 import { SeletorTema } from "@/components/tema/SeletorTema";
-import { Wordmark } from "@/components/ui/Wordmark";
-import { ICONES_ASTROIMOB } from "@/lib/marcaDoCrm/icones";
+import { MarcaAstro } from "@/components/marca/SeloAstro";
+import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 
-/** Em `astroimob.vercel.app` o ícone é o da AstroImob; nos outros endereços, como sempre foi. */
+/** Em `astroimob.vercel.app` o ícone é o da Astro Soluções; nos outros endereços, como sempre foi. */
 export async function generateMetadata(): Promise<Metadata> {
-  const base: Metadata = { title: { default: "Plataforma", template: "%s · Plataforma" }, robots: { index: false, follow: false } };
-  return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: null } : base;
+  const base: Metadata = { title: { default: "Plataforma · Astro Soluções", template: "%s · Astro Soluções" }, robots: { index: false, follow: false } };
+  return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA } : base;
 }
 
 /**
@@ -38,7 +38,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/plataforma" className="font-display text-titulo text-lg">
-              <Wordmark destaque="text-acento-suave" />
+              <MarcaAstro selo="size-7" destaque="text-apoio font-normal" />
             </Link>
             <span className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</span>
           </div>
