@@ -392,3 +392,38 @@ site público desatualizado; botões do site do grupo com o verde padrão.
   número central, ligar o envio e "Sincronizar grupos" (o sincronizador nunca
   casava antes desta branch).
 - Nada muda para quem não liga o envio para grupos nem escolhe o modo grupo na roleta.
+
+### Agenda, fase 1 (27/10/2026, branch `agenda-fase-1`, worktree `../next-home-agenda`; migrations aplicadas em produção 28/10, código NÃO publicado)
+
+- Spec `docs/superpowers/specs/2026-10-27-agenda-do-corretor-e-da-equipe-design.md`;
+  plano `docs/superpowers/plans/2026-10-27-agenda-fase-1-visitas-e-agenda-do-corretor.md`;
+  nota [[agenda-visitas-com-historico]].
+- **Publicar JUNTO com a fase 2** (visão da equipe para o gestor): a tela
+  antiga de Visitas mostrava a equipe ao gestor; a Agenda da fase 1 mostra só
+  a do próprio usuário.
+- **Antes de aplicar a 0224** (ANTES do deploy, migration aditiva com um
+  `drop index`): rodar em produção, só leitura, a lista de visitas futuras do
+  mesmo corretor a menos de 60 min uma da outra
+  (`select a.corretor_id, a.id, a.visita_agendada_em, b.id, b.visita_agendada_em from leads a join leads b on a.corretor_id = b.corretor_id and a.id < b.id and abs(extract(epoch from a.visita_agendada_em - b.visita_agendada_em)) < 3600 where a.visita_agendada_em >= now() and b.visita_agendada_em >= now();`).
+  O backfill pula esses pares com `notice`; resolver à mão antes. Essa
+  consulta foi bloqueada pela permissão automática nesta sessão e NÃO rodou.
+- A 0224 pega `lock table public.leads in access exclusive mode`: aplicar em
+  horário de pouco tráfego.
+- Fase 2 precisa marcar a visita delegada (o espelho hoje devolve ao dono
+  toda visita com outro corretor; ver a nota).
+
+### Agenda, fases 2–5 (27/10/2026, mesma branch; 0225–0227 aplicadas em produção 28/10, código NÃO publicado)
+
+- Feito: equipe com números (0225), visita passada (0225), reunião e
+  bloqueio (0226), "a visita aconteceu?" (0227), comandos pelo WhatsApp.
+  Nota [[agenda-da-equipe-reunioes-e-cobranca]].
+- **Aplicar 0224 → 0225 → 0226 → 0227, nessa ordem, ANTES do deploy.** Todas
+  aditivas; 0225 e 0227 redefinem `espelhar_visita_do_lead` (a 0227 é a
+  versão final). Sem cron novo: a cobrança roda no tick de followups que o
+  pg_cron já chama a cada 5 min.
+- Primeiro uso real dos comandos: conferir no log do webhook
+  (`action: conversa_com_o_sistema`) como chega a resposta do corretor —
+  conversa consigo mesmo (`fromMe`) ou número pessoal (entrada). Só foi
+  raciocinado, nunca medido com payload de produção.
+
+- **Pendências da revisão (28/10, branch `agenda-pendencias`, migration 0228):** reentrega do provedor ignorada, fila da cobrança sem trava, cobrança devolvida à fila em pedido novo, livres do gestor da agenda do dono, lead arquivado não conta como sem confirmação.

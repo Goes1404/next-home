@@ -7,10 +7,17 @@ import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { alternarPausa } from "@/app/corretor/actions";
 import { salvarRoleta, type ModoAviso } from "./roletaAcoes";
-import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "@/lib/whatsapp/roletaTextos";
+import {
+  TEXTO_ABERTURA_PADRAO,
+  TEXTO_BOAS_VINDAS_PADRAO,
+  TEXTO_PASSAGEM_GRUPO_PADRAO,
+  TEXTO_PASSAGEM_PADRAO,
+  preencherTexto,
+} from "@/lib/whatsapp/roletaTextos";
 import { primeiroNome } from "@/lib/format";
 import { Interruptor } from "./Interruptor";
 import { RegraDoNumeroConectado } from "./RegraDoNumeroConectado";
+import { EditorDeMensagem } from "@/app/corretor/(painel)/_componentes/EditorDeMensagem";
 
 export type ConfigDaRoleta = {
   corretorId: string;
@@ -18,6 +25,9 @@ export type ConfigDaRoleta = {
   destinos: string[];
   textoPassagem: string;
   textoAbertura: string;
+  /** Modo grupo (0229/0230): as duas mensagens do número do anúncio. `null` = padrão; vazio = não sai. */
+  textoBoasVindas: string | null;
+  textoPassagemGrupo: string | null;
   modoAviso: ModoAviso;
 };
 
@@ -26,6 +36,13 @@ export type ConfigDaRoleta = {
  * `naEscala`: fora de pausa na distribuição geral; `null` sem cadastro publicável (a distribuição pula).
  */
 export type Membro = { id: string; nome: string; conectado: boolean; temGrupo: boolean; naEscala: boolean | null };
+
+const MARCADORES_DA_BOAS_VINDAS = [
+  { chave: "cliente", nome: "Cliente" },
+  { chave: "corretor", nome: "Corretor" },
+  { chave: "imovel", nome: "Imóvel" },
+  { chave: "imobiliaria", nome: "Imobiliária" },
+] as const;
 
 const AVISO_ENVIO_DESLIGADO = "O envio de leads para os grupos está desligado; peça ao gestor para ligar.";
 
@@ -67,8 +84,8 @@ export function EditorDaRoleta({
   /** A regra do grupo: só entrega lead a quem está com o WhatsApp conectado. */
   soConectados: boolean;
 }) {
-  const inicial = configs.find((c) => c.corretorId === meuId) ?? configs[0];
-  const [donoId, setDonoId] = useState(inicial.corretorId);
+  // Sempre a roleta do próprio número (28/10/2026): o seletor de dono saiu.
+  const donoId = (configs.find((c) => c.corretorId === meuId) ?? configs[0]).corretorId;
   const [rascunhos, setRascunhos] = useState<Record<string, ConfigDaRoleta>>(
     () => Object.fromEntries(configs.map((c) => [c.corretorId, c])),
   );
@@ -84,7 +101,6 @@ export function EditorDaRoleta({
   const c = rascunhos[donoId];
   const salvo = configs.find((cfg) => cfg.corretorId === donoId);
   const nomeDe = useMemo(() => new Map(equipe.map((m) => [m.id, m])), [equipe]);
-  const dono = nomeDe.get(donoId);
   // O que o servidor tem salvo (e o webhook usa) para este número. Com o envio
   // para grupos desligado, "grupo" só aparece se já estava salvo: aí o corretor
   // precisa poder voltar para "mensagem". Nunca se troca o valor sozinho.
@@ -150,6 +166,13 @@ export function EditorDaRoleta({
   const foraDaLista = equipe.filter((m) => !c.destinos.includes(m.id));
   const grade = gestor ? GRADE_GESTOR : GRADE_CORRETOR;
   const mudou = salvo !== undefined && JSON.stringify(salvo) !== JSON.stringify(c);
+  // Modo grupo: `null` mostra o padrão no campo; vazio é mensagem desligada.
+  const boasVindas = c.textoBoasVindas ?? TEXTO_BOAS_VINDAS_PADRAO;
+  const passagemGrupo = c.textoPassagemGrupo ?? TEXTO_PASSAGEM_GRUPO_PADRAO;
+  const mensagensAtivas = [boasVindas, passagemGrupo].filter((t) => t.trim()).length;
+  const grupoNoPadrao =
+    (c.textoBoasVindas === null || c.textoBoasVindas === TEXTO_BOAS_VINDAS_PADRAO) &&
+    (c.textoPassagemGrupo === null || c.textoPassagemGrupo === TEXTO_PASSAGEM_GRUPO_PADRAO);
 
   // Função de render, não componente: componente declarado aqui dentro
   // nasceria de novo a cada render e remontaria as linhas.
@@ -272,7 +295,6 @@ export function EditorDaRoleta({
         <div className="flex items-center gap-3 rounded-2xl border border-linha bg-vidro px-4 py-2.5">
           <span className="text-fluid-sm font-semibold text-titulo">
             {c.ligada ? "Ligada" : "Desligada"}
-            {dono && donoId !== meuId ? ` no número de ${primeiroNome(dono.nome)}` : ""}
           </span>
           <Interruptor ligado={c.ligada} aoMudar={(v) => mudar({ ligada: v })} rotulo="Roleta ligada" />
         </div>
@@ -282,27 +304,6 @@ export function EditorDaRoleta({
         <p role="note" className="rounded-xl border border-alerta-linha bg-alerta-lavado p-3 text-fluid-sm text-alerta">
           {AVISO_ENVIO_DESLIGADO}
         </p>
-      )}
-
-      {gestor && configs.length > 1 && (
-        <label className="flex flex-wrap items-center gap-3 text-fluid-sm">
-          <span className="text-apoio">Roleta do número de</span>
-          <select
-            value={donoId}
-            onChange={(e) => {
-              setAviso(null);
-              setDonoId(e.target.value);
-            }}
-            className="select-seta block min-h-11 min-w-60 rounded-xl border border-linha-forte bg-superficie px-3 text-titulo shadow-sm"
-          >
-            {configs.map((cfg) => (
-              <option key={cfg.corretorId} value={cfg.corretorId}>
-                {nomeDe.get(cfg.corretorId)?.nome ?? "Corretor"}
-                {cfg.ligada ? " (ligada)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
       )}
 
       {mostraEscolha && (
@@ -398,6 +399,62 @@ export function EditorDaRoleta({
           </p>
         )}
       </div>
+
+      {noGrupo && (
+        <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+            <span>
+              <span className="block text-fluid-sm font-semibold text-titulo">Mensagens ao cliente</span>
+              <span className="block text-fluid-xs text-apoio">
+                {mensagensAtivas === 0
+                  ? "Desligadas"
+                  : `${mensagensAtivas} ${mensagensAtivas === 1 ? "mensagem" : "mensagens"}`}{" "}
+                · saem do seu número quando o lead é passado ao corretor
+                {grupoNoPadrao ? " · texto padrão" : ""}
+              </span>
+            </span>
+            <span aria-hidden className="text-fluid-xs font-semibold text-acento group-open:hidden">
+              Editar
+            </span>
+            <span aria-hidden className="hidden text-fluid-xs font-semibold text-acento group-open:inline">
+              Fechar
+            </span>
+          </summary>
+          <div className="mt-4 space-y-5">
+            <EditorDeMensagem
+              rotulo="1ª mensagem · boas-vindas"
+              valor={boasVindas}
+              aoMudar={(texto) => mudar({ textoBoasVindas: texto })}
+              marcadores={MARCADORES_DA_BOAS_VINDAS}
+              previa={boasVindas.trim() ? preencherTexto(boasVindas, exemplo) : ""}
+              limite={600}
+              linhas={3}
+              rodape="apague o texto para não mandar"
+            />
+            <EditorDeMensagem
+              rotulo="2ª mensagem · quem vai atender"
+              valor={passagemGrupo}
+              aoMudar={(texto) => mudar({ textoPassagemGrupo: texto })}
+              marcadores={MARCADORES_DA_BOAS_VINDAS}
+              previa={passagemGrupo.trim() ? preencherTexto(passagemGrupo, exemplo) : ""}
+              limite={600}
+              linhas={3}
+              rodape="apague o texto para não mandar"
+            />
+            {!grupoNoPadrao && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => mudar({ textoBoasVindas: null, textoPassagemGrupo: null })}
+                  className="botao-solido min-h-11 px-4 text-fluid-sm font-semibold text-acento"
+                >
+                  Voltar ao padrão
+                </button>
+              </div>
+            )}
+          </div>
+        </details>
+      )}
 
       {!noGrupo && (
         <details className="group rounded-2xl border border-linha bg-vidro px-4 py-3">

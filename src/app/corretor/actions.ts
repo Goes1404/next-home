@@ -6,6 +6,7 @@ import { exigirGestorNaAcao } from "@/lib/guardas";
 import { destinoSeguro } from "@/lib/auth/links";
 import { redirect } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { MENSAGEM_CONFLITO, ehConflitoDeHorario } from "@/lib/agenda/conflito";
 import { caminhoDoStorage, extensaoPorTipo, validarMidia, type CampoMidia } from "@/lib/midiaCorretor";
 import { registrarInteracao } from "@/lib/crm/interacoes";
 import { textoMudancaEtapa } from "@/lib/crm/timeline";
@@ -656,6 +657,8 @@ export async function definirVisitaEm(
     .select("id");
 
   if (error) {
+    // A trava de 60 min da 0224: outra visita sua já ocupa esse horário.
+    if (ehConflitoDeHorario(error)) return { erro: MENSAGEM_CONFLITO };
     return { erro: "Não foi possível salvar agora. Tente novamente." };
   }
   if (!data || data.length === 0) {
@@ -680,7 +683,7 @@ export async function definirVisitaEm(
   revalidatePath("/corretor/funil");
   revalidatePath("/corretor/leads");
   revalidatePath("/corretor/pessoas");
-  revalidatePath("/corretor/visitas");
+  revalidatePath("/corretor/agenda");
   revalidatePath("/corretor");
   return {};
 }

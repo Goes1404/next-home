@@ -22,7 +22,7 @@ export async function RoletaDosAnuncios() {
 
   let roletas = supabase
     .from("roleta_anuncios")
-    .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura")
+    .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura, texto_boas_vindas, texto_passagem_grupo")
     .eq("grupo_id", quem.grupoId);
   if (!gestor) roletas = roletas.eq("corretor_id", quem.id);
 
@@ -64,7 +64,11 @@ export async function RoletaDosAnuncios() {
   }));
 
   const porCorretor = new Map((linhas ?? []).map((l) => [l.corretor_id, l]));
-  const donos = gestor ? equipe : equipe.filter((c) => c.id === quem.id);
+  // A roleta é sempre a do número de quem está logado (28/10/2026), gestor
+  // inclusive: sem seletor de "Roleta do número de". A conta oculta (0189)
+  // fica fora da equipe e da lista de quem recebe, mas a roleta do PRÓPRIO
+  // número dela vale (era o número do anúncio da Aretz).
+  const donos = (corretores ?? []).some((c) => c.id === quem.id) ? [{ id: quem.id }] : [];
   const configs: ConfigDaRoleta[] = donos.map((c) => {
     const l = porCorretor.get(c.id);
     return {
@@ -73,6 +77,8 @@ export async function RoletaDosAnuncios() {
       destinos: (l?.destinos ?? []).filter((d) => equipe.some((e) => e.id === d)),
       textoPassagem: l?.texto_passagem || TEXTO_PASSAGEM_PADRAO,
       textoAbertura: l?.texto_abertura || TEXTO_ABERTURA_PADRAO,
+      textoBoasVindas: l?.texto_boas_vindas ?? null,
+      textoPassagemGrupo: l?.texto_passagem_grupo ?? null,
       modoAviso: l?.modo_aviso === "grupo" ? ("grupo" as const) : ("mensagem" as const),
     };
   });

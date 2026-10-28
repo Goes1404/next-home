@@ -3,6 +3,7 @@ import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { enviarMensagemWhatsappParaGrupo } from "@/lib/whatsapp/provider";
 import { origemLegivel } from "@/lib/notificacoes/leadNovo";
+import { montarAvisoNoGrupo } from "@/lib/whatsapp/avisoNoGrupoTexto";
 
 type Supa = ReturnType<typeof createServiceClient>;
 
@@ -16,12 +17,11 @@ type ItemDaFila = {
   tentativas: number;
 };
 
-function umaLinha(valor: string | null | undefined, fallback = "—"): string {
-  const limpo = (valor ?? "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-  return limpo ? limpo.slice(0, 180) : fallback;
-}
-
-/** Texto curto para o grupo operacional; a ficha completa segue no CRM. */
+/**
+ * Texto curto para o grupo operacional; a ficha completa segue no CRM. O
+ * modelo é o da imobiliária (`grupos.texto_aviso_grupo_leads`, 0229); sem
+ * ele, o padrão.
+ */
 export function textoDoLeadDistribuido(params: {
   corretor: string;
   nome: string | null;
@@ -29,17 +29,15 @@ export function textoDoLeadDistribuido(params: {
   origem: string | null;
   anuncio: string | null;
   empreendimento: string | null;
+  modelo?: string | null;
 }): string {
-  const origem = origemLegivel(params.origem, params.anuncio);
-  return [
-    "📥 *Novo lead distribuído*",
-    `*Corretor:* ${umaLinha(params.corretor)}`,
-    `*Cliente:* ${umaLinha(params.nome, "Cliente novo")}`,
-    `*WhatsApp:* ${umaLinha(params.telefone, "não informado")}`,
-    ...(origem ? [`*Origem:* ${umaLinha(origem)}`] : []),
-    ...(params.empreendimento ? [`*Imóvel:* ${umaLinha(params.empreendimento)}`] : []),
-    "Abra o CRM para atender e registrar o contato.",
-  ].join("\n");
+  return montarAvisoNoGrupo(params.modelo, {
+    corretor: params.corretor,
+    cliente: params.nome,
+    telefone: params.telefone,
+    origem: origemLegivel(params.origem, params.anuncio),
+    imovel: params.empreendimento,
+  });
 }
 
 type LeadDoAviso = { corretor_id: string | null; trazido_por: string; etapa: string };
@@ -99,6 +97,8 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
   }
 
   let enviados = 0;
+  // O modelo do relatório de cada imobiliária, lido uma vez por rodada.
+  const modelos = new Map<string, string | null>();
   for (const candidato of (candidatos ?? []) as ItemDaFila[]) {
     const { data: reservado, error: erroReserva } = await supabase
       .from("lead_envios_grupo")
@@ -178,6 +178,15 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
       empreendimento = data?.nome ?? null;
     }
 
+    if (!modelos.has(candidato.grupo_id)) {
+      const { data: grupo } = await supabase
+        .from("grupos")
+        .select("texto_aviso_grupo_leads")
+        .eq("id", candidato.grupo_id)
+        .maybeSingle();
+      modelos.set(candidato.grupo_id, grupo?.texto_aviso_grupo_leads ?? null);
+    }
+
     const resultado = await enviarMensagemWhatsappParaGrupo({
       instanceName: candidato.instance_name,
       grupoJid: destino.grupoJid,
@@ -188,6 +197,7 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
         origem: lead.origem,
         anuncio: lead.anuncio_origem,
         empreendimento,
+        modelo: modelos.get(candidato.grupo_id),
       }),
     });
     if (!resultado.enviado) {

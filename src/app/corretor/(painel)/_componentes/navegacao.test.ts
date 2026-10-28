@@ -146,10 +146,10 @@ describe("moduloAtivo — a chave do color coding", () => {
   });
 
   it("rota absorvida herda a cor do destino que a absorveu", () => {
-    // Leads, funil e visitas são Pessoas: mesma cor, porque é a mesma carteira.
+    // Leads, funil e agenda são Pessoas: mesma cor, porque é a mesma carteira.
     expect(moduloAtivo("/corretor/leads")).toBe("leads");
     expect(moduloAtivo("/corretor/funil")).toBe("leads");
-    expect(moduloAtivo("/corretor/visitas")).toBe("leads");
+    expect(moduloAtivo("/corretor/agenda")).toBe("leads");
     // Conversas mudou de dono em 04/09: é o canal, não a carteira.
     expect(moduloAtivo("/corretor/conversas")).toBe("whatsapp");
     // Templates foi junto: é insumo de peça, não de ficha.
@@ -200,10 +200,10 @@ describe("itemAtivo", () => {
     expect(itemAtivo("/corretor/pessoas", leads)).toBe(true);
   });
 
-  it("acende nos próprios subtópicos (lista, funil, visitas, adicionar)", () => {
+  it("acende nos próprios subtópicos (lista, funil, agenda, adicionar)", () => {
     expect(itemAtivo("/corretor/leads", leads)).toBe(true);
     expect(itemAtivo("/corretor/funil", leads)).toBe(true);
-    expect(itemAtivo("/corretor/visitas", leads)).toBe(true);
+    expect(itemAtivo("/corretor/agenda", leads)).toBe(true);
     expect(itemAtivo("/corretor/importar", leads)).toBe(true);
   });
 
@@ -355,7 +355,7 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
       "Conversas",
       "Lista",
       "Funil",
-      "Visitas",
+      "Agenda",
       "Anotações",
     ]);
     // 30/09/2026: Criar arte e Criar vídeo voltaram a Marketing; o Consultor
@@ -543,7 +543,7 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
   it("imobiliária vê tudo como antes", () => {
     expect(mapa(true, "imobiliaria")).toEqual([
       ["/corretor", []],
-      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/visitas", "/corretor/anotacoes"]],
+      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/agenda", "/corretor/anotacoes"]],
       ["/corretor/imoveis", ["/corretor/imoveis", "/corretor/links"]],
       [
         "/corretor/financeiro",
@@ -587,7 +587,7 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
     ]);
     expect(mapa(false, "imobiliaria")).toEqual([
       ["/corretor", []],
-      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/visitas", "/corretor/anotacoes"]],
+      ["/corretor/pessoas", ["/corretor/pessoas", "/corretor/leads", "/corretor/funil", "/corretor/agenda", "/corretor/anotacoes"]],
       ["/corretor/imoveis", ["/corretor/imoveis", "/corretor/links"]],
       ["/corretor/financeiro", ["/corretor/financeiro", "/corretor/financeiro/extrato", "/corretor/financeiro/ranking"]],
       ["/corretor/whatsapp", ["/corretor/whatsapp", "/corretor/conversas", "/corretor/consultor"]],

@@ -66,6 +66,14 @@ async function nomeDaCasaDoCorretor(supabase: Supa, corretorId: string): Promise
   }
 }
 
+/**
+ * Marca invisível no fim de todo aviso ao corretor pelo WhatsApp (Agenda,
+ * fase 5): se o provedor devolver o eco da mensagem na conversa do próprio
+ * corretor, o canal de comandos (`agenda/comandos/canal.ts`) a reconhece e
+ * não a lê como pedido. U+2063 não aparece na tela.
+ */
+export const MARCA_INVISIVEL_DO_SISTEMA = "\u2063";
+
 async function avisarPorWhatsapp(supabase: Supa, corretorId: string, texto: string): Promise<boolean> {
   try {
     const [{ data: inst }, { data: corretor }] = await Promise.all([
@@ -79,7 +87,11 @@ async function avisarPorWhatsapp(supabase: Supa, corretorId: string, texto: stri
       supabase.from("corretores").select("whatsapp, ativo").eq("id", corretorId).maybeSingle(),
     ]);
     if (!inst?.instance_name || !corretor?.ativo || !corretor.whatsapp) return false;
-    const envio = await enviarMensagemWhatsapp({ instanceName: inst.instance_name, telefone: corretor.whatsapp, texto });
+    const envio = await enviarMensagemWhatsapp({
+      instanceName: inst.instance_name,
+      telefone: corretor.whatsapp,
+      texto: `${texto}${MARCA_INVISIVEL_DO_SISTEMA}`,
+    });
     if (!envio.enviado) console.warn("[aviso ao corretor] não saiu:", envio.motivo);
     return envio.enviado;
   } catch (err) {

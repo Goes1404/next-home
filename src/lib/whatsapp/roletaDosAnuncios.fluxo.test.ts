@@ -55,9 +55,23 @@ vi.mock("@/lib/marcaDoCrm/marca", () => ({ linkDoPainel: (_g: string, caminho: s
 
 const { repassarPelaRoleta } = await import("./roletaDosAnuncios");
 
-function semear(modo: "mensagem" | "grupo") {
+function semear(
+  modo: "mensagem" | "grupo",
+  textoBoasVindas: string | null = null,
+  textoPassagemGrupo: string | null = null,
+) {
   banco = bancoFalso({
-    roleta_anuncios: [{ corretor_id: DONO, ligada: true, modo_aviso: modo, texto_passagem: null, texto_abertura: null }],
+    roleta_anuncios: [
+      {
+        corretor_id: DONO,
+        ligada: true,
+        modo_aviso: modo,
+        texto_passagem: null,
+        texto_abertura: null,
+        texto_boas_vindas: textoBoasVindas,
+        texto_passagem_grupo: textoPassagemGrupo,
+      },
+    ],
     leads: [
       {
         id: "lead-1",
@@ -212,8 +226,8 @@ describe("roleta no modo mensagem", () => {
 });
 
 describe("roleta no modo grupo", () => {
-  it("nenhuma mensagem ao cliente; a ficha muda de dono, o aviso do grupo é enfileirado e o escolhido é avisado para ligar", async () => {
-    semear("grupo");
+  it("as duas mensagens desligadas: nada ao cliente; a ficha muda de dono, o aviso do grupo é enfileirado e o escolhido é avisado para ligar", async () => {
+    semear("grupo", "", "");
     expect(await repassar({ modo: "grupo" })).toBe("beto");
     expect(whatsapps()).toEqual([]);
     expect(gravarMensagem).not.toHaveBeenCalled();
@@ -231,10 +245,40 @@ describe("roleta no modo grupo", () => {
   });
 
   it("ninguém disponível no modo grupo: o lead fica com o dono e nada sai pela roleta", async () => {
-    semear("grupo");
+    semear("grupo", "Oi, {cliente}! {corretor} vai te ligar.");
     fila = [];
     expect(await repassar({ modo: "grupo" })).toBeNull();
     expect(whatsapps()).toEqual([]);
     expect(lead().corretor_id).toBe(DONO);
+  });
+
+  it("sem texto salvo, o número do anúncio manda as duas mensagens padrão depois de a ficha trocar", async () => {
+    semear("grupo");
+    expect(await repassar({ modo: "grupo" })).toBe("beto");
+    expect(whatsapps().map((w) => [w.instancia, w.texto])).toEqual([
+      ["inst-dona", "Olá, bom ter você por aqui na Aretz🟢"],
+      ["inst-dona", "Estou te direcionando para o *Consultor Beto*, dentro de instantes te passará todas as informações desse imóvel!"],
+    ]);
+    expect(gravarMensagem).toHaveBeenCalledTimes(2);
+  });
+
+  it("com boas-vindas escrita, o número do anúncio manda o texto depois de a ficha trocar", async () => {
+    semear("grupo", "Oi, {cliente}! Aqui é da {imobiliaria}. {corretor} vai te ligar sobre o {imovel}.", "");
+    expect(await repassar({ modo: "grupo" })).toBe("beto");
+    expect(whatsapps()).toEqual([
+      { tipo: "whatsapp", instancia: "inst-dona", texto: "Oi, Carlos! Aqui é da Aretz. Beto vai te ligar sobre o Residencial Aurora." },
+    ]);
+    expect(gravarMensagem).toHaveBeenCalledWith(
+      expect.objectContaining({ conversaId: "conv-dona", remetente: "bot", conteudo: whatsapps()[0].texto }),
+    );
+    expect(lead().corretor_id).toBe("beto");
+  });
+
+  it("boas-vindas que não sai não desfaz o repasse", async () => {
+    semear("grupo");
+    instanciasQueFalham.add("inst-dona");
+    expect(await repassar({ modo: "grupo" })).toBe("beto");
+    expect(gravarMensagem).not.toHaveBeenCalled();
+    expect(avisos().map((a) => a.corretorId)).toEqual(["beto"]);
   });
 });

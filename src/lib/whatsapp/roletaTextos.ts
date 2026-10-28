@@ -8,6 +8,16 @@ export const TEXTO_PASSAGEM_PADRAO = "Oi! Quem vai te atender é {corretor}, já
 export const TEXTO_ABERTURA_PADRAO =
   "Oi, {cliente}! Aqui é {corretor}, da {imobiliaria}. Vi que você chamou pelo nosso anúncio sobre o {imovel}. Posso te ajudar?";
 
+/**
+ * Modo grupo (0229/0230, modelo do dono em 28/10/2026): duas mensagens do
+ * número do anúncio quando o lead é passado. Coluna nula = este padrão;
+ * vazia = a mensagem não sai.
+ */
+export const TEXTO_BOAS_VINDAS_PADRAO = "Olá, bom ter você por aqui na {imobiliaria}🟢";
+
+export const TEXTO_PASSAGEM_GRUPO_PADRAO =
+  "Estou te direcionando para o *Consultor {corretor}*, dentro de instantes te passará todas as informações desse imóvel!";
+
 export const MARCADORES_DA_ROLETA = ["corretor", "cliente", "imovel", "imobiliaria"] as const;
 export type VariaveisDaRoleta = Partial<Record<(typeof MARCADORES_DA_ROLETA)[number], string | null>>;
 

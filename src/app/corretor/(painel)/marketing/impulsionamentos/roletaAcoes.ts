@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createServiceClient } from "@/lib/supabase/service";
+import { TEXTO_BOAS_VINDAS_PADRAO, TEXTO_PASSAGEM_GRUPO_PADRAO } from "@/lib/whatsapp/roletaTextos";
 
 export type ModoAviso = "mensagem" | "grupo";
 
@@ -25,6 +26,9 @@ export async function salvarRoleta(entrada: {
   destinos: string[];
   textoPassagem: string;
   textoAbertura: string;
+  /** Modo grupo (0229/0230): as duas mensagens do número do anúncio. `null` = padrão; vazio = não sai. */
+  textoBoasVindas: string | null;
+  textoPassagemGrupo: string | null;
   modoAviso: ModoAviso;
 }): Promise<{ erro?: string }> {
   const quem = await getCorretorLogado();
@@ -38,6 +42,8 @@ export async function salvarRoleta(entrada: {
   const destinos = [...new Set(entrada.destinos)].slice(0, 30);
   const textoPassagem = entrada.textoPassagem.trim().slice(0, 600);
   const textoAbertura = entrada.textoAbertura.trim().slice(0, 1000);
+  const textoBoasVindas = textoDoModoGrupo(entrada.textoBoasVindas, TEXTO_BOAS_VINDAS_PADRAO);
+  const textoPassagemGrupo = textoDoModoGrupo(entrada.textoPassagemGrupo, TEXTO_PASSAGEM_GRUPO_PADRAO);
   if (entrada.ligada && destinos.length === 0) return { erro: "Escolha pelo menos um corretor para receber." };
 
   const supabase = createServiceClient();
@@ -85,6 +91,8 @@ export async function salvarRoleta(entrada: {
       destinos,
       texto_passagem: textoPassagem || null,
       texto_abertura: textoAbertura || null,
+      texto_boas_vindas: textoBoasVindas,
+      texto_passagem_grupo: textoPassagemGrupo,
       atualizado_em: new Date().toISOString(),
       atualizado_por: quem.id,
     },
@@ -96,4 +104,11 @@ export async function salvarRoleta(entrada: {
   }
   revalidatePath("/corretor/marketing/impulsionamentos");
   return {};
+}
+
+/** Igual ao padrão vira `null` (segue o padrão se ele mudar); vazio fica vazio (desligada). */
+function textoDoModoGrupo(entrada: string | null, padrao: string): string | null {
+  if (entrada === null) return null;
+  const texto = entrada.trim().slice(0, 600);
+  return texto === padrao ? null : texto;
 }

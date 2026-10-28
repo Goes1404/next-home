@@ -12106,6 +12106,170 @@ Nota: [[primeiro-contato-tem-teto-proprio]].
   consultar a régua: `portas.test.ts` e `roletaDosAnuncios.fluxo.test.ts`
   ganharam o `rpc` e instância com `conectado_em` antigo.
 
+## Seletor "Escolher à mão" travado sem erro no log (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Aretz: seletor do grupo apagado e nenhum `[grupos]` no log da Vercel. Só o
+  caminho de erro logava; leitura que voltava vazia era invisível.
+- `listarGruposWhatsapp` descartava calado grupo sem `subject` e id que não
+  casa `ehJidDeGrupoWhatsapp`. Grupo sem nome agora entra com nome provisório
+  ("Grupo sem nome (…123456)").
+- Toda leitura loga `[grupos] lista lida {recebidos, aproveitados,
+  descartados}`: recebidos 0 = número central fora dos grupos; aproveitados
+  0 com recebidos > 0 = formato do id mudou.
+- Tela: com o seletor travado, uma linha em alerta diz o motivo acima da lista.
+- **Causa real**: `DistribuicaoDaEquipe` lia a configuração de `grupos` pela
+  sessão; o logado não tem SELECT em `envio_grupo_leads_*` nem
+  `padrao_nome_grupo_leads` (0196 recortou as colunas). Erro engolido →
+  "Salve o número central" com o número salvo, e a Evolution nem era
+  chamada. Conferir grant: `information_schema.column_privileges` de
+  `grupos` para `authenticated`. Agora pela chave de serviço.
+
+## Roleta do próprio número da conta oculta (28/10/2026)
+
+Nota: [[conta-oculta]]
+
+- A roleta é do número para onde o anúncio manda o cliente (dono =
+  `roleta_anuncios.corretor_id`). O seletor "Roleta do número de" listava só
+  a equipe visível; logado na conta oculta da Aretz, o próprio número sumia e
+  a tela abria na roleta do André.
+- `RoletaDosAnuncios` agora põe o próprio número da conta oculta primeiro
+  ("(meu número)"). Como destino ela segue fora: tela e `proximo_da_roleta`.
+- Banco e webhook já aceitavam conta oculta como DONO da roleta
+  (`lerModoDaRoleta` lê pelo dono da instância, sem filtro de oculta).
+
+## Agenda, fase 1: visitas com histórico e tela Agenda (0224, 27/10/2026)
+
+Nota: [[agenda-visitas-com-historico]]. Branch `agenda-fase-1`, NÃO publicada.
+
+- `public.visitas` é espelho de `leads.visita_agendada_em` por gatilho
+  (`leads_zz_espelha_visita`): os escritores da IA, do chat, do painel e do
+  retorno pelo grupo não mudaram. Remarcar visita futura = mesma linha com
+  `datas_anteriores`; data nova depois de visita passada = visita nova.
+- A trava virou exclusão gist de 60 min por quem faz a visita (`23P01`); o
+  índice da 0074 saiu porque recusava trocar o dono do lead quando o novo já
+  tinha visita no mesmo minuto (a saída do corretor caía).
+- A IA lê os ocupados de `visitas` e descarta vaga que cruza [h, h+60):
+  disponibilidade oferecida e trava leem a MESMA fonte.
+- Retorno marcado até 60 min depois da visita só é remarcação se a hora nova
+  fica a menos de 3h; senão é visita nova (a feita não some da Agenda).
+- `/corretor/visitas` redireciona para `/corretor/agenda` (mês compacto, lista
+  do dia, próximas visitas, "Configurar horários"); cartão "Hoje na agenda" no
+  Início. Visitas passadas não foram migradas: os números começam do zero.
+- `npm run db:teste` não sobe no Windows quando a porta 54321 cai na faixa
+  reservada do winnat (`netsh interface ipv4 show excludedportrange
+  protocol=tcp`): subir com `supabase start -x ...,kong,realtime,postgrest`
+  para os testes de banco, ou trocar `[api] port` no `config.toml` só local.
+- Disco C: chegou a 0 bytes no meio da execução (next dev parou de gravar
+  cache): 24 worktrees antigas já publicadas foram removidas (~10 GB); os
+  `.relatorio-*.md` delas estão em `nexthome/relatorios-das-worktrees/`.
+
+## Agenda, fases 2–5: equipe, reuniões, cobrança e comandos (0225–0227, 27/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]. Mesma branch `agenda-fase-1`, NÃO publicada.
+
+- Visita passada pelo gestor precisa de `passada_em`: sem a marca, o espelho
+  do lead (0224) devolvia a visita ao dono na troca de dono e na remarcação.
+- Reunião e bloqueio travam a visita por GATILHO com `errcode
+  exclusion_violation` (23P01): o mesmo código da exclusão gist, então
+  `ehConflitoDeHorario` e a reserva da IA (false) já tratam. A IA lê os
+  intervalos de `compromisso_participantes`, a mesma tabela da trava.
+- O gestor nunca recebe o título do bloqueio: ele é apagado no servidor.
+- Postgres.js converte o parâmetro com tipo inferido `timestamp` por `new
+  Date` no fuso da MÁQUINA: em teste, `${'2026-01-31 22:00'}::timestamp`
+  chega deslocado. Use `::text::timestamp`.
+- "Remarcou" da cobrança reescreve a mesma visita e espelha no lead com
+  `set_config('agenda.espelho_pausado','on',true)`, senão o gatilho criava
+  outra visita (a antiga já tinha passado de 60 min).
+- Cobrança: uma pergunta pendente por corretor (`conversa_de_agenda`), senão
+  o "1" não sabe a que visita se refere. Cron frequente só pelo tick de
+  followups (Hobby da Vercel = cron diário).
+- Comandos do WhatsApp entram no webhook ANTES da palavra-chave e do ramo
+  `fromMe`; respostas do sistema começam com 📅 e o eco é ignorado. Formato
+  real da resposta do corretor ainda não medido em produção.
+- Guarda `servicoComGrupo.test.ts`: arquivo que só recebe o cliente da chave
+  (sem importar `createServiceClient`) entra em IMPORTADORES como `repassa`,
+  não no MAPA — os dois juntos reprovam.
+
+
+- Renumeradas em 28/10/2026: a branch de produção ganhou 0222/0223 (primeiro contato) no mesmo dia; as da Agenda viraram 0224–0227.
+- **0224–0227 aplicadas em produção em 28/10/2026** (antes do deploy, como manda a ordem: são aditivas). Carga migrou 0 visitas (nenhuma futura). Sessão de corretor recebe `permission denied` em `visitas`/`compromissos`: é o desenho (só a chave de serviço lê).
+- Mesmo dia, pedido do dono: o seletor "Roleta do número de" saiu. A aba
+  mostra sempre a roleta do número de quem está logado, gestor inclusive.
+  Roleta de outro número só pela conta dele (`salvarRoleta` ainda aceita o
+  gestor no servidor).
+
+## Escolher o grupo à mão travava ~10 s (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Medido pelo log `[grupos] lista lida` (o id da requisição na Vercel traz o
+  instante de início em ms): ~5 s por `fetchAllGroups` com só 6 grupos.
+- Uma escolha = duas leituras: `vincularGrupoDoCorretor` confere o grupo e o
+  `revalidatePath` re-renderiza a aba, que lê de novo.
+- `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
+  sucesso); `sincronizarGruposDeLeads` pede `{ fresca: true }`.
+- Seletor com `useOptimistic` e transição própria: mostra a escolha na hora e
+  não desabilita os outros campos nem troca o botão para "Sincronizando…".
+
+## Número central sem escolha na tela (28/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]]
+
+- Cartão "1 Número central" saiu da aba Roleta; o cartão do nome perdeu a
+  bolinha numerada. `configurarEnvioDeLeadsNosGrupos` foi apagada.
+- Regra (`garantirNumeroCentral`): salvo vence; sem salvo, a primeira ação
+  do gestor salva o número da conta dele (precisa estar conectado).
+- O salvo não troca pelo de quem clicou: a Aretz tem três gestores e o
+  número dos grupos é o da conta oculta de administração. Trocar = SQL em
+  `grupos.envio_grupo_leads_instancia`.
+
+## Agenda: pendências da revisão fechadas (0228, 28/10/2026)
+
+Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
+
+- Reentrega do WhatsApp no canal de comandos: `agenda_mensagens_tratadas`, chave (corretor_id, provider_message_id). Chave única só por `provider_message_id` reprova `isolamento.db.test` ("toda chave única de tabela com grupo inclui o grupo ou uma linha-mãe").
+- Cobrança: excluir da busca quem já tem pergunta pendente; filtrar só no laço deixava o `limit 20` cheio de visitas que nunca seriam cobradas.
+- Pedido novo no meio da cobrança devolve a visita à fila (`cobrada_em = null`).
+- Livres sugeridos ao gestor pelo WhatsApp vêm da agenda do dono do lead (`agendaQueValeParaOLead`).
+- Lead arquivado: visita passada sem resposta vira `cancelada` na varredura, não `sem_confirmacao`.
+- Armadilha do teste de banco: duas `visitaPassada` do mesmo corretor no mesmo horário batem na trava de 60 min (23P01) antes do que se quer medir.
+
+## Boas-vindas da roleta e relatório no grupo personalizáveis (0229, 28/10/2026)
+
+Nota: [[roleta-dos-anuncios]]
+
+- `roleta_anuncios.texto_boas_vindas`: no modo grupo o número do anúncio
+  manda esse texto ao cliente depois de a ficha trocar. Vazio = nada (o dono
+  tirou a boas-vindas fixa em 27/10; só sai o que ele escrever).
+- `grupos.texto_aviso_grupo_leads`: modelo do relatório no grupo
+  (`montarAvisoNoGrupo`, puro, usado na prévia e no worker
+  `enviosDeLeadParaGrupo`). Linha com marcador vazio sai inteira; nulo = texto
+  de sempre (o padrão reproduz byte a byte o antigo).
+- A guarda `planoDaRoleta.test.ts` proibia `boasVindas` no código da roleta;
+  virou "só depois de `if (!trocou) return null;`, uma chamada".
+- Migration aditiva: aplicar ANTES do deploy (o código seleciona as colunas
+  novas; sem elas a aba Roleta e a config dos grupos quebram).
+
+## Modelo do dono como padrão no modo grupo (0230, 28/10/2026)
+
+Nota: [[roleta-dos-anuncios]]
+
+- Pedido do dono: duas mensagens do número do anúncio quando a roleta passa o
+  lead (modo grupo): "Olá, bom ter você por aqui na {imobiliaria}🟢" e "Estou
+  te direcionando para o *Consultor {corretor}*, dentro de instantes te
+  passará todas as informações desse imóvel!".
+- Nulo = padrão LIGADO (inverte a 0229, onde nulo era "nada sai"); vazio =
+  aquela mensagem desligada. `salvarRoleta` grava nulo quando o texto é igual
+  ao padrão.
+- Coluna nova `texto_passagem_grupo` em vez de reaproveitar `texto_passagem`:
+  as roletas existentes gravaram nela o padrão do modo mensagem (a tela
+  preenche o campo e salva), que promete mensagem do número do corretor.
+- Mesma árvore de trabalho com outra sessão: commitar só os próprios
+  arquivos; MEMORIA entrou pelo índice (`git hash-object` + `update-index`)
+  para não levar a seção alheia ainda não commitada.
+
 ## Plataforma Astro Soluções e barra da empresa (28/10/2026)
 
 Nota: [[plataforma-astro-solucoes-e-barra-da-empresa]].

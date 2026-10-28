@@ -1,5 +1,6 @@
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
@@ -33,11 +34,18 @@ export async function DistribuicaoDaEquipe() {
       .eq("grupo_id", equipe.grupoId),
     // Conta oculta (0189): o número e o grupo dela ficam fora da tela da equipe.
     idsDeContasOcultas(supabase),
-    supabase
+    // Pela chave de serviço: o logado só tem SELECT nas colunas públicas de
+    // `grupos` (0196); pela sessão esta leitura falhava calada e a tela pedia
+    // "Salve o número central" com ele já salvo.
+    createServiceClient()
       .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads")
+      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads, texto_aviso_grupo_leads")
       .eq("id", gestor.grupoId)
-      .maybeSingle(),
+      .maybeSingle()
+      .then((r) => {
+        if (r.error) console.error("[grupos] falha ao ler a configuração do grupo", r.error.message);
+        return r;
+      }),
   ]);
 
   // A conta oculta fica fora da lista de corretores, mas o número dela pode
@@ -46,7 +54,12 @@ export async function DistribuicaoDaEquipe() {
   // Para o gestor escolher à mão o grupo de um corretor: os grupos que o
   // número central enxerga, também listados na tela. Se a leitura falhar, a
   // tela mostra o erro e a sincronização pelo nome continua valendo.
-  const central = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
+  // Sem escolha na tela (28/10/2026): vale o número salvo; sem ele, o da conta
+  // logada, que a primeira ação (sincronizar ou escolher à mão) salva.
+  const opcoes = opcoesDoNumeroCentral(todasInstancias ?? [], pessoas ?? [], ocultas);
+  const propria = (todasInstancias ?? []).find((i) => i.corretor_id === gestor.id);
+  const salvo = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
+  const central = salvo ?? (propria && opcoes.find((o) => o.instanceName === propria.instance_name)?.conectada ? propria.instance_name : null);
   const [gruposDoCentral, marca] = await Promise.all([
     central ? listarGruposWhatsapp(central) : Promise.resolve({ grupos: [] }),
     lerMarcaDoCrm(gestor.grupoId),
@@ -55,7 +68,7 @@ export async function DistribuicaoDaEquipe() {
   return (
     <ConfigurarGruposDeLeads
       instanciaAtual={central}
-      instancias={opcoesDoNumeroCentral(todasInstancias ?? [], pessoas ?? [], ocultas)}
+      nomeDoCentral={opcoes.find((o) => o.instanceName === central)?.nome.replace(" (conta oculta)", "") ?? null}
       corretores={visiveis
         .filter((p) => p.papel === "corretor")
         .map((p) => ({
@@ -66,6 +79,7 @@ export async function DistribuicaoDaEquipe() {
           manual: p.whatsapp_grupo_leads_manual,
         }))}
       padraoDoNome={configuracao?.padrao_nome_grupo_leads ?? null}
+      modeloDoRelatorio={configuracao?.texto_aviso_grupo_leads ?? null}
       nomeDaImobiliaria={marca.nome}
       gruposDoCentral={[...gruposDoCentral.grupos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
       erroDosGrupos={"erro" in gruposDoCentral ? gruposDoCentral.erro : undefined}

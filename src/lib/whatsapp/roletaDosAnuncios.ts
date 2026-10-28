@@ -9,7 +9,7 @@ import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { primeiroNome } from "@/lib/format";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
-import { planoDeMensagens, type ModoDaRoleta } from "./planoDaRoleta";
+import { mensagensDoModoGrupo, planoDeMensagens, type ModoDaRoleta } from "./planoDaRoleta";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO, preencherTexto } from "./roletaTextos";
 
 type Supa = ReturnType<typeof createServiceClient>;
@@ -56,8 +56,9 @@ export async function lerModoDaRoleta(corretorId: string): Promise<ModoDaRoleta>
  * - `mensagem`: o número de A manda a passagem e logo depois o número de B
  *   manda a abertura. Falhou a abertura? B entra na lista de excluídos e a
  *   roleta tenta o seguinte.
- * - `grupo`: nenhuma mensagem sai do número de B nem do de A. B é avisado no
- *   grupo e no celular para ligar.
+ * - `grupo`: nada sai do número de B. B é avisado no grupo e no celular para
+ *   ligar. O número de A manda a boas-vindas e diz quem vai atender
+ *   (0229/0230, padrão do dono; vazio desliga) depois de a ficha trocar.
  *
  * Em qualquer modo `proximo_da_roleta` escolhe B e avança a vez (atômico no
  * banco), e só DEPOIS de a ficha trocar de dono o aviso do grupo é
@@ -87,7 +88,7 @@ export async function repassarPelaRoleta(params: Parametros): Promise<string | n
 async function repassar(supabase: Supa, p: Parametros, modo: ModoLigado): Promise<string | null> {
   const { data: roleta } = await supabase
     .from("roleta_anuncios")
-    .select("texto_passagem, texto_abertura")
+    .select("texto_passagem, texto_abertura, texto_boas_vindas, texto_passagem_grupo")
     .eq("corretor_id", p.corretorId)
     .maybeSingle();
   if (!roleta) return null;
@@ -211,6 +212,33 @@ async function repassar(supabase: Supa, p: Parametros, modo: ModoLigado): Promis
     // O aviso do grupo é decidido DEPOIS da troca: sai para o dono atual.
     const { error: erroAviso } = await supabase.rpc("enfileirar_aviso_do_lead", { p_lead: p.leadId });
     if (erroAviso) console.error("[roleta] aviso do grupo não foi enfileirado:", erroAviso.message);
+
+    // Modo grupo (0229/0230): boas-vindas e "estou te direcionando", do
+    // número do anúncio. Falhou uma? As seguintes não saem fora de ordem, e o
+    // repasse continua valendo.
+    for (const modelo of mensagensDoModoGrupo(modo, true, {
+      boasVindas: roleta.texto_boas_vindas,
+      passagem: roleta.texto_passagem_grupo,
+    })) {
+      const texto = preencherTexto(modelo, vars);
+      const envio = await enviarMensagemWhatsapp({
+        instanceName: p.instanceNameDoDono,
+        telefone: p.telefoneCliente,
+        texto,
+      });
+      if (!envio.enviado) {
+        console.warn("[roleta] mensagem do modo grupo não saiu:", envio.motivo);
+        break;
+      }
+      await gravarMensagem({
+        conversaId: p.conversaDoDonoId,
+        remetente: "bot",
+        conteudo: texto,
+        conversaLiberada: true,
+        providerMessageId: envio.messageId ?? null,
+        statusEntrega: "enviada",
+      });
+    }
 
     if (modo === "mensagem" && envioAbertura) {
       // A conversa nova, no painel de B, com a IA desligada (lead de anúncio).

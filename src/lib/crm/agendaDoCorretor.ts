@@ -28,22 +28,30 @@ export async function horariosDeVisita(
 ): Promise<HorarioDeVisita[]> {
   const supabase = createServiceClient();
 
-  const [{ data: grade }, { data: marcadas }] = await Promise.all([
+  const [{ data: grade }, { data: marcadas }, { data: compromissos }] = await Promise.all([
     supabase
       .from("corretor_disponibilidade")
       .select("dia_semana, hora_inicio, hora_fim, horas_preferidas")
       .eq("corretor_id", corretorId),
     /*
-     * Só o que ainda vai acontecer: visita de ontem não ocupa vaga nenhuma.
-     * O `gte` usa o instante de agora, não o dia — visita das 9h não
-     * bloqueia a vaga das 15h do mesmo dia.
+     * Só o que ainda vai acontecer (ou está acontecendo): visita de ontem
+     * não ocupa vaga nenhuma, e a que começou há menos de uma hora ainda
+     * ocupa a seguinte. Lido de `visitas` (0224), que é onde a trava de
+     * conflito mora: por QUEM FAZ a visita e só entre as marcadas.
      */
     supabase
-      .from("leads")
-      .select("visita_agendada_em")
+      .from("visitas")
+      .select("inicio")
       .eq("corretor_id", corretorId)
-      .not("visita_agendada_em", "is", null)
-      .gte("visita_agendada_em", agora.toISOString()),
+      .eq("status", "marcada")
+      .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString()),
+    // Reuniões e bloqueios (0226): a mesma tabela que a trava lê.
+    supabase
+      .from("compromisso_participantes")
+      .select("inicio, fim")
+      .eq("corretor_id", corretorId)
+      .eq("ativo", true)
+      .gt("fim", agora.toISOString()),
   ]);
 
   const faixas: FaixaDisponivel[] = (grade ?? []).map((f) => ({
@@ -53,12 +61,11 @@ export async function horariosDeVisita(
     horasPreferidas: f.horas_preferidas ?? [],
   }));
 
-  const ocupados = (marcadas ?? [])
-    .map((l) => l.visita_agendada_em)
-    .filter((v): v is string => Boolean(v))
-    .map((v) => new Date(v));
+  const ocupados = (marcadas ?? []).map((v) => new Date(v.inicio));
 
-  return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, agora, quantos: 6 });
+  const bloqueios = (compromissos ?? []).map((c) => ({ inicio: new Date(c.inicio), fim: new Date(c.fim) }));
+
+  return proximosHorarios({ grade: gradeEfetiva(faixas), ocupados, bloqueios, agora, quantos: 6 });
 }
 
 /**
@@ -84,3 +91,39 @@ export async function horariosDeVisitaSeguros(
   }
 }
 
+
+/**
+ * De quem é a agenda que vale para o lead (0225): se o gestor passou a visita
+ * atual do lead a outro corretor, é a de quem FAZ a visita — a IA, que fala
+ * pelo número do dono, oferece a remarcação na disponibilidade dele. Sem
+ * visita passada (ou na falha da leitura), a do dono.
+ */
+export async function quemFazAVisitaDoLead(leadId: string, donoId: string, agora: Date = new Date()): Promise<string> {
+  try {
+    const { data } = await createServiceClient()
+      .from("visitas")
+      .select("corretor_id")
+      .eq("lead_id", leadId)
+      .eq("status", "marcada")
+      .not("passada_em", "is", null)
+      .gte("inicio", new Date(agora.getTime() - 60 * 60_000).toISOString())
+      .order("inicio", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data?.corretor_id ?? donoId;
+  } catch (e) {
+    console.error("[agenda] não foi possível ler quem faz a visita:", e);
+    return donoId;
+  }
+}
+
+/**
+ * A agenda que vale para o lead quando quem pede não é necessariamente o
+ * dono (o gestor, pelo WhatsApp): a de quem faz a visita passada, senão a do
+ * dono do lead. Null se o lead não tem dono.
+ */
+export async function agendaQueValeParaOLead(leadId: string, agora: Date = new Date()): Promise<string | null> {
+  const { data } = await createServiceClient().from("leads").select("corretor_id").eq("id", leadId).maybeSingle();
+  if (!data?.corretor_id) return null;
+  return quemFazAVisitaDoLead(leadId, data.corretor_id, agora);
+}

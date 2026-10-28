@@ -135,8 +135,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/leads/[id]/documentacaoAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/gmailAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
-  "src/app/corretor/(painel)/visitas/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
-  "src/app/corretor/(painel)/visitas/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/agenda/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/agenda/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
 
   // ── Helpers: o id chega por parâmetro de quem chama ──────────────────────
@@ -175,6 +175,14 @@ const MAPA: Record<string, Entrada> = {
 
   // ── Telas da equipe: toda leitura filtra o grupo do gestor ────────────────
   "src/lib/admin/numerosDaEquipe.ts": { categoria: "equipe", motivo: "fonte da leitura recortada: só expõe consultas com o grupo aplicado" },
+  "src/lib/agenda/lerAgenda.ts": { categoria: "equipe", motivo: "agenda do próprio corretor; toda leitura filtra grupo e corretor da sessão" },
+  "src/app/corretor/(painel)/agenda/acoesDaEquipe.ts": { categoria: "equipe", motivo: "gestor passa visita; visita e destino lidos no grupo da sessão" },
+  "src/lib/agenda/lerVisitaRecebida.ts": { categoria: "equipe", motivo: "visita do corretor da sessão, no grupo dele, ainda marcada" },
+  "src/lib/agenda/compromissos.ts": { categoria: "equipe", motivo: "reuniões e bloqueios; toda consulta filtra o grupo passado pela sessão ou pelo número do corretor" },
+  "src/lib/agenda/confirmacao.ts": { categoria: "plataforma", motivo: "cobrança por visita, ao corretor que a faz (grupo da própria linha)" },
+  "src/lib/agenda/conversaDeAgenda.ts": { categoria: "helper", motivo: "estado da conversa do corretor que quem chama já resolveu" },
+  "src/app/corretor/(painel)/_componentes/acoesDaVisitaPassada.ts": { categoria: "equipe", motivo: "resposta da visita pelo corretor da sessão (responder_visita confere quem fez)" },
+  "src/lib/agenda/lerEquipe.ts": { categoria: "equipe", motivo: "agenda da equipe para o gestor; toda leitura filtra o grupo da sessão" },
   "src/lib/financeiro/primeirasRespostas.ts": { categoria: "equipe", motivo: "horários da primeira resposta da equipe, só do grupo do gestor" },
   "src/app/corretor/(painel)/admin/page.tsx": { categoria: "equipe", motivo: "Visão geral do gestor (L17)" },
   "src/app/corretor/(painel)/admin/whatsapp/page.tsx": { categoria: "equipe", motivo: "WhatsApp da equipe (L17)" },
@@ -348,6 +356,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "scripts/eval/rodarConversa.ts": { naoPassa: "fewShot", motivo: "eval offline: chama o turno sem fewShot, então nada vai ao banco" },
   "scripts/eval/rodarEval.ts": { naoPassa: "fewShot", motivo: "eval offline: chama o turno sem fewShot, então nada vai ao banco" },
   "src/lib/crm/retornoPeloGrupo/aplicarAoLead.ts": { repassa: true, motivo: "aplica no lead que o processamento do grupo já conferiu (grupo e corretor dono)" },
+  "src/lib/agenda/comandos/canal.ts": { repassa: true, motivo: "recebe a instância que o webhook resolveu e autenticou (resolverInstancia)" },
   "src/lib/crm/retornoPeloGrupo/aplicar.ts": { repassa: true, motivo: "recebe o grupo e o corretor conferidos por tratarMensagemDoGrupoDeLeads" },
   "src/lib/whatsapp/midiasDaLista.ts": { repassa: true, motivo: "manda as mídias da lista na conversa que o disparador recebeu" },
   "src/lib/whatsapp/turnoDeAtendimento.ts": { repassa: true, motivo: "o turno recebe a identidade (corretor, conversa) de quem atende" },

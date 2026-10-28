@@ -875,7 +875,34 @@ export async function enviarMensagemWhatsappParaGrupo(params: {
 export type GrupoWhatsapp = { jid: string; nome: string };
 
 /** Lista os grupos visíveis para uma instância conectada da Evolution. */
-export async function listarGruposWhatsapp(instanceName: string): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
+/**
+ * Lista lida há menos de um minuto, por número (28/10/2026). A Evolution leva
+ * ~5 s por leitura (busca a foto de cada grupo), e escolher um grupo à mão
+ * lia duas vezes: a ação confere o grupo e a tela recarrega. Só guarda
+ * sucesso; é memória do processo, então outra instância lê de novo.
+ */
+const GRUPOS_LIDOS_VALEM_MS = 60_000;
+const gruposLidos = new Map<string, { em: number; grupos: GrupoWhatsapp[] }>();
+
+/** Para os testes: esquece as listas guardadas. */
+export function esquecerGruposLidos(): void {
+  gruposLidos.clear();
+}
+
+export async function listarGruposWhatsapp(
+  instanceName: string,
+  opcoes: { fresca?: boolean } = {},
+): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
+  const guardada = gruposLidos.get(instanceName);
+  if (!opcoes.fresca && guardada && Date.now() - guardada.em < GRUPOS_LIDOS_VALEM_MS) {
+    return { grupos: guardada.grupos };
+  }
+  const r = await lerGruposDaEvolution(instanceName);
+  if (!r.erro) gruposLidos.set(instanceName, { em: Date.now(), grupos: r.grupos });
+  return r;
+}
+
+async function lerGruposDaEvolution(instanceName: string): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
   const config = configDoProvedor();
   if (!config) return { grupos: [], erro: "Provedor de WhatsApp não configurado." };
   if (!instanceName) return { grupos: [], erro: "Escolha o número central." };
@@ -901,12 +928,25 @@ export async function listarGruposWhatsapp(instanceName: string): Promise<{ grup
       : typeof json === "object" && json !== null && Array.isArray((json as { groups?: unknown }).groups)
         ? (json as { groups: unknown[] }).groups
         : [];
+    const descartados: string[] = [];
     const grupos = itens.flatMap((item): GrupoWhatsapp[] => {
       if (typeof item !== "object" || item === null) return [];
       const dado = item as { id?: unknown; subject?: unknown; name?: unknown };
       const jid = typeof dado.id === "string" ? dado.id : "";
+      if (!ehJidDeGrupoWhatsapp(jid)) {
+        descartados.push(jid || JSON.stringify(Object.keys(dado)));
+        return [];
+      }
       const nome = typeof dado.subject === "string" ? dado.subject : typeof dado.name === "string" ? dado.name : "";
-      return ehJidDeGrupoWhatsapp(jid) && nome.trim() ? [{ jid, nome: nome.trim() }] : [];
+      // Grupo sem nome segue na lista: sem ele o gestor não tem o que escolher à mão.
+      return [{ jid, nome: nome.trim() || `Grupo sem nome (…${jid.split("@")[0].slice(-6)})` }];
+    });
+    // Sucesso não deixava rastro: lista vazia (ou toda descartada) parecia "não leu".
+    console.info("[grupos] lista lida", {
+      instanceName,
+      recebidos: itens.length,
+      aproveitados: grupos.length,
+      descartados: descartados.slice(0, 5),
     });
     return { grupos };
   } catch (err) {

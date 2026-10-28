@@ -12,7 +12,7 @@ codigo:
   - src/app/corretor/(painel)/admin/whatsapp/acoes.ts
   - src/app/corretor/(painel)/marketing/impulsionamentos/numeroCentral.ts
 created: 2026-10-26
-updated: 2026-10-27
+updated: 2026-10-28
 fonte: spec 2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md (6.3, 6.4, 6.6, 7); decisão do dono de não testar na Evolution real
 summary: Para o retorno da ligação pelo grupo só valer quando o CORRETOR fala (os gestores também estão no grupo), a sincronização lê os participantes e guarda o @lid dele pelo par número↔lid; grupo que serve a dois corretores é recusado.
 ---
@@ -96,3 +96,32 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
 - O campo "Nome dos grupos" salvo vazio volta ao padrão de fábrica
   (`{corretor} & Aretz Imobi`), que não casa com `NOME & ARETZ🟢`. Em 27/10
   apareceu nulo e foi restaurado para `{corretor} & ARETZ` por SQL.
+- 28/10: "não dá para apertar no seletor" e nenhum `[grupos]` no log. Leitura
+  bem-sucedida não deixava rastro, e o filtro jogava fora calado grupo sem
+  nome (`subject` vazio) e id fora do padrão: lista vazia = seletor travado
+  em "Nenhum grupo no número". Agora grupo sem nome entra como
+  "Grupo sem nome (…últimos 6 dígitos)" e toda leitura loga
+  `[grupos] lista lida {recebidos, aproveitados, descartados}`. Diagnóstico:
+  procurar `lista lida` no log da Vercel (Hobby guarda 1 h).
+- **Causa real do seletor travado (28/10)**: a aba Roleta lia
+  `envio_grupo_leads_*` e `padrao_nome_grupo_leads` de `grupos` PELA SESSÃO.
+  Desde a 0196 o logado só tem SELECT nas colunas públicas de `grupos`; a
+  leitura dava "permission denied", o erro era ignorado e a tela dizia
+  "Salve o número central" com ele salvo no banco. Fora isso, nada lia os
+  grupos (por isso nenhum `[grupos]` no log). Agora lê pela chave de serviço,
+  recortada pelo grupo do gestor. Regra: coluna de `grupos` fora das
+  públicas/IA/logo → chave de serviço.
+- **Travadinha ao escolher o grupo (28/10)**: log mostrou ~5 s por
+  `fetchAllGroups` mesmo com 6 grupos (a Evolution busca a foto de cada um), e
+  escolher à mão lia DUAS vezes (a ação confere o grupo; `revalidatePath`
+  re-renderiza a aba e lê de novo) = ~10 s com tudo desabilitado. Agora
+  `listarGruposWhatsapp` guarda a lista por 60 s (memória do processo, só
+  sucesso); "Sincronizar grupos" pede `{ fresca: true }`. Na tela, a escolha
+  aparece na hora (`useOptimistic`) e não trava os outros campos.
+- **Número central sem escolha na tela (28/10)**: o cartão "1 Número central"
+  saiu (pedido do dono, mesma lógica da roleta). `garantirNumeroCentral`
+  (acoes.ts): vale o salvo em `grupos.envio_grupo_leads_instancia`; sem ele,
+  a primeira ação (sincronizar/escolher à mão) usa e SALVA o número da conta
+  do gestor logado, se conectado. O salvo NÃO troca sozinho: na Aretz há três
+  gestores, e trocar pelo de quem clicou tiraria o número que está nos grupos.
+  Trocar o central hoje só por SQL.
