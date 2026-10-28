@@ -735,10 +735,20 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
   const C_ADMIN = "00000000-0000-4000-8000-0000000000b2";
   let senhasTrocadas: { userId: string; atributos: Record<string, unknown> }[];
   let erroDaSenha: { message: string; code?: string } | null;
+  let sessoesEncerradas: string[];
+  let erroDasSessoes: { message: string } | null;
 
   beforeEach(() => {
     senhasTrocadas = [];
     erroDaSenha = null;
+    sessoesEncerradas = [];
+    erroDasSessoes = null;
+    const rpcDoGrupo = banco.cliente.rpc as (nome: string, args: Record<string, unknown>) => Promise<unknown>;
+    banco.cliente.rpc = async (nome: string, args: Record<string, unknown>) => {
+      if (nome !== "encerrar_sessoes_do_usuario") return rpcDoGrupo(nome, args);
+      if (!erroDasSessoes) sessoesEncerradas.push(String(args.p_user_id));
+      return { data: erroDasSessoes ? null : 2, error: erroDasSessoes };
+    };
     banco.tabelas.corretores.push(
       { id: C_BETO, nome: "Beto", user_id: "usuario-beto-2", email: "beto@aretz.com", grupo_id: G_NH, deve_trocar_senha: false },
       { id: C_ADMIN, nome: "Dono", user_id: "usuario-dono", email: "dono@x.com", grupo_id: G_NH, deve_trocar_senha: false },
@@ -760,14 +770,32 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
   it("troca a senha no Auth, liga a troca obrigatória e audita sem a senha", async () => {
     const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
 
-    expect(r).toEqual({ ok: true, nome: "Beto" });
+    expect(r).toEqual({ ok: true, nome: "Beto", sessoesEncerradas: true });
     expect(senhasTrocadas).toEqual([{ userId: "usuario-beto-2", atributos: { password: "provisoria-123" } }]);
+    expect(sessoesEncerradas).toEqual(["usuario-beto-2"]);
     expect(ficha(C_BETO)?.deve_trocar_senha).toBe(true);
     const eventos = banco.tabelas.admin_eventos.filter((e) => e.acao === "senha_redefinida");
     expect(eventos).toEqual([
       expect.objectContaining({ grupo_id: G_NH, ator_plataforma_user_id: OPERADOR, alvo_corretor_id: C_BETO }),
     ]);
     expect(JSON.stringify(banco.tabelas)).not.toContain("provisoria-123");
+  });
+
+  it("sessões que não se encerram não desfazem a senha; a tela fica sabendo", async () => {
+    erroDasSessoes = { message: "permission denied" };
+    const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
+    expect(r).toEqual({ ok: true, nome: "Beto", sessoesEncerradas: false });
+    expect(senhasTrocadas).toHaveLength(1);
+    expect(banco.tabelas.admin_eventos.find((e) => e.acao === "senha_redefinida")?.detalhes).toEqual({
+      origem: "plataforma",
+      sessoes_encerradas: false,
+    });
+  });
+
+  it("senha recusada pelo Auth não encerra as sessões de ninguém", async () => {
+    erroDaSenha = { message: "boom" };
+    await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
+    expect(sessoesEncerradas).toEqual([]);
   });
 
   it("recusa quem não administra a plataforma antes do banco", async () => {

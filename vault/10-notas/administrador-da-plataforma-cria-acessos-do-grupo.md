@@ -11,6 +11,9 @@ codigo:
   - src/app/plataforma/grupos/[id]/page.tsx
   - src/app/plataforma/grupos/[id]/AcessosDoGrupo.tsx
   - src/lib/plataforma/grupos.ts
+  - src/lib/plataforma/senhaTemporaria.ts
+  - src/app/plataforma/acessos/page.tsx
+  - supabase/migrations/0231_encerrar_sessoes_do_usuario.sql
 created: 2026-10-23
 updated: 2026-10-28
 fonte: requisito do administrador da plataforma
@@ -58,6 +61,24 @@ senha pelo "Esqueci a senha". A porta tinha de ficar em `/plataforma`.
   20/10): o operador conhece a senha temporária até a pessoa trocar. É o mesmo
   acordo do "Criar acesso", pedido pelo dono. O gestor continua só com o link
   por e-mail.
-- Não derruba sessões abertas da pessoa (o SDK não tem logout por user id).
+- ~~Não derruba sessões abertas~~ — resolvido no mesmo dia, ver abaixo.
+
+## Melhorias de 28/10: senha gerada, busca entre grupos, sessões encerradas
+
+- **Gerar senha forte** (`gerarSenhaTemporaria`, no navegador): 12
+  caracteres sem 0/O/1/l/I, com minúscula, maiúscula e dígito; botão
+  **Copiar** usa a área de transferência. Campo com olho, nasce oculto.
+- **`/plataforma/acessos?busca=`** (link "Buscar acesso e redefinir senha"
+  em Contas): e-mail OU nome em todos os grupos (`buscarAcessos`, mínimo 3
+  letras, 20 resultados). Duas consultas em vez de `.or()`: vírgula ou
+  parêntese digitados quebrariam a sintaxe do filtro do PostgREST.
+- **Sessões**: o SDK só faz logout pelo JWT da própria pessoa. A 0231 cria
+  `encerrar_sessoes_do_usuario(uuid)` (security definer, só `service_role`)
+  que apaga `auth.sessions` (refresh_tokens saem por cascade). O token de
+  acesso que já está no navegador vale até vencer (`jwt_expiry` 3600):
+  `getClaims` confere a assinatura localmente, sem perguntar ao Auth se a
+  sessão existe. A tela diz "sai em até 1 hora". Falha aqui não desfaz a
+  senha; o evento grava `sessoes_encerradas`.
+- `postgres` tem DELETE em `auth.sessions` em produção (conferido antes).
 
 Relacionadas: [[convite-por-link-no-nosso-dominio]] · [[plataforma-multi-grupo]] · [[primeiro-acesso-completa-ficha-administrativa]] · [[MOC — CRM e Painel]]

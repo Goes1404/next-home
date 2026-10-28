@@ -130,7 +130,9 @@ export async function criarAcessoPendenteDoGrupo(
   return { ok: true, email, papel };
 }
 
-export type ResultadoSenhaRedefinida = { ok: true; nome: string } | { ok: false; erro: string };
+export type ResultadoSenhaRedefinida =
+  | { ok: true; nome: string; sessoesEncerradas: boolean }
+  | { ok: false; erro: string };
 
 /**
  * Redefine a senha de um acesso do grupo com uma senha temporária, para quem
@@ -143,6 +145,11 @@ export type ResultadoSenhaRedefinida = { ok: true; nome: string } | { ok: false;
  * própria sessão. A marca de troca é gravada ANTES da senha; se o Auth
  * recusar, ela volta ao que era — senão a pessoa seria mandada trocar uma
  * senha que não mudou.
+ *
+ * Depois da senha, as sessões abertas da pessoa são apagadas
+ * (`encerrar_sessoes_do_usuario`, 0231): quem estava logado com a senha
+ * antiga sai quando o token atual vencer (até 1 h). Falhar aqui não desfaz a
+ * senha — ela já mudou —, só volta `sessoesEncerradas: false` para a tela.
  */
 export async function redefinirSenhaDoAcesso(
   grupoId: string,
@@ -215,18 +222,22 @@ export async function redefinirSenhaDoAcesso(
     };
   }
 
+  const { error: erroSessoes } = await servico.rpc("encerrar_sessoes_do_usuario", { p_user_id: ficha.user_id });
+  if (erroSessoes) console.error(`[plataforma] sessões do acesso ${corretorId} não encerradas: ${erroSessoes.message}`);
+
   const { error: erroAuditoria } = await servico.from("admin_eventos").insert({
     grupo_id: grupoId,
     ator_id: null,
     ator_plataforma_user_id: guarda.userId,
     acao: "senha_redefinida",
     alvo_corretor_id: corretorId,
-    detalhes: { origem: "plataforma" },
+    detalhes: { origem: "plataforma", sessoes_encerradas: !erroSessoes },
   });
   if (erroAuditoria) console.error("[plataforma] senha redefinida sem auditoria:", erroAuditoria.message);
 
   revalidatePath(`/plataforma/grupos/${grupoId}`);
-  return { ok: true, nome: ficha.nome };
+  revalidatePath("/plataforma/acessos");
+  return { ok: true, nome: ficha.nome, sessoesEncerradas: !erroSessoes };
 }
 
 /**

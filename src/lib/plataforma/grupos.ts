@@ -1,5 +1,6 @@
 import "server-only";
 
+import { padraoDoEmail } from "@/lib/plataforma/dadosDoGrupo";
 import { situacaoDaCobranca, type SituacaoDaCobranca } from "@/lib/planos/cobranca";
 import { mesEmSaoPaulo, situacaoDaCota, tetoDeRespostasDaIa, type SituacaoDaCota } from "@/lib/planos/cotaDaIa";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -256,6 +257,9 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
 
 export type AcessoDoGrupo = {
   corretorId: string;
+  grupoId: string;
+  /** Preenchido na busca entre grupos; na tela do grupo o nome já está no título. */
+  grupoNome?: string;
   nome: string;
   email: string | null;
   papel: "corretor" | "gestor";
@@ -272,18 +276,78 @@ export type AcessoDoGrupo = {
 export async function lerAcessosDoGrupo(_prova: { userId: string }, grupoId: string): Promise<AcessoDoGrupo[]> {
   const { data, error } = await createServiceClient()
     .from("corretores")
-    .select("id, nome, email, papel, ativo, deve_trocar_senha")
+    .select(COLUNAS_DO_ACESSO)
     .eq("grupo_id", grupoId)
     .not("user_id", "is", null)
     .order("ativo", { ascending: false })
     .order("nome", { ascending: true });
   if (error) throw new Error(`Falha ao ler os acessos do grupo: ${error.message}`);
-  return (data ?? []).map((c) => ({
+  return (data ?? []).map(paraAcesso);
+}
+
+const COLUNAS_DO_ACESSO = "id, grupo_id, nome, email, papel, ativo, deve_trocar_senha";
+
+function paraAcesso(c: {
+  id: string;
+  grupo_id: string;
+  nome: string;
+  email: string | null;
+  papel: string;
+  ativo: boolean;
+  deve_trocar_senha: boolean;
+}): AcessoDoGrupo {
+  return {
     corretorId: c.id,
+    grupoId: c.grupo_id,
     nome: c.nome,
     email: c.email,
     papel: c.papel === "gestor" ? "gestor" : "corretor",
     ativo: c.ativo,
     deveTrocarSenha: c.deve_trocar_senha,
-  }));
+  };
+}
+
+/** Menos que isto casaria meia plataforma ("a", "co"). */
+export const MINIMO_DA_BUSCA = 3;
+const RESULTADOS_DA_BUSCA = 20;
+
+/**
+ * Logins de TODOS os grupos cujo e-mail ou nome contém o termo, para achar
+ * a pessoa sem saber em que imobiliária ela está. Duas consultas (e-mail e
+ * nome) em vez de `.or()`: o termo vem digitado, e vírgula ou parêntese nele
+ * quebrariam a sintaxe do filtro do PostgREST.
+ */
+export async function buscarAcessos(_prova: { userId: string }, termoDigitado: string): Promise<AcessoDoGrupo[]> {
+  const termo = termoDigitado.trim();
+  if (termo.length < MINIMO_DA_BUSCA) return [];
+  // O escape do `padraoDoEmail` serve a qualquer texto: `%`, `_` e a barra viram literais.
+  const padrao = `%${padraoDoEmail(termo)}%`;
+
+  const servico = createServiceClient();
+  const [porEmail, porNome] = await Promise.all(
+    (["email", "nome"] as const).map((coluna) =>
+      servico
+        .from("corretores")
+        .select(COLUNAS_DO_ACESSO)
+        .ilike(coluna, padrao)
+        .not("user_id", "is", null)
+        .order("nome", { ascending: true })
+        .limit(RESULTADOS_DA_BUSCA),
+    ),
+  );
+  if (porEmail.error) throw new Error(`Falha ao buscar acessos: ${porEmail.error.message}`);
+  if (porNome.error) throw new Error(`Falha ao buscar acessos: ${porNome.error.message}`);
+
+  const unicos = new Map<string, AcessoDoGrupo>();
+  for (const c of [...(porEmail.data ?? []), ...(porNome.data ?? [])]) unicos.set(c.id, paraAcesso(c));
+  const acessos = [...unicos.values()].slice(0, RESULTADOS_DA_BUSCA);
+  if (acessos.length === 0) return [];
+
+  const { data: grupos, error } = await servico
+    .from("grupos")
+    .select("id, nome")
+    .in("id", [...new Set(acessos.map((a) => a.grupoId))]);
+  if (error) throw new Error(`Falha ao ler os grupos da busca: ${error.message}`);
+  const nomes = new Map((grupos ?? []).map((g) => [g.id, g.nome]));
+  return acessos.map((a) => ({ ...a, grupoNome: nomes.get(a.grupoId) ?? "grupo sem nome" }));
 }

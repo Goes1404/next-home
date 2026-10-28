@@ -4709,6 +4709,7 @@ export type Database = {
       email_de_acesso_livre: { Args: { p_email: string }; Returns: boolean }
       grupo_atual: { Args: never; Returns: string | null }
       eh_admin_da_plataforma: { Args: never; Returns: boolean }
+      encerrar_sessoes_do_usuario: { Args: { p_user_id: string }; Returns: number }
       slug_de_grupo_reservado: { Args: { p_slug: string }; Returns: boolean }
       criar_grupo: {
         Args: {

@@ -116,7 +116,7 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
 
       <FormularioNovoAcesso grupoId={grupo.id} />
 
-      <AcessosDoGrupo grupoId={grupo.id} acessos={acessos} />
+      <AcessosDoGrupo acessos={acessos} />
 
       <section className="cartao flex flex-col gap-5 p-5" aria-labelledby="titulo-ia">
         <h2 id="titulo-ia" className="text-fluid-sm text-titulo font-bold">

@@ -12252,6 +12252,22 @@ Nota: [[roleta-dos-anuncios]]
 - Migration aditiva: aplicar ANTES do deploy (o código seleciona as colunas
   novas; sem elas a aba Roleta e a config dos grupos quebram).
 
+## Plataforma redefine a senha de um acesso (28/10/2026)
+
+Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
+
+- `sq1matheusgsilva@gmail.com` é administrador da plataforma **sem ficha de
+  corretor** (medido em produção): não vê Contas do gestor e não usa o
+  "Esqueci a senha" (que procura `corretores.email`). Reset tinha de nascer em
+  `/plataforma/grupos/<id>`.
+- Seção **Acessos** + `redefinirSenhaDoAcesso`: senha temporária só no Auth,
+  `deve_trocar_senha = true`, evento `senha_redefinida` (já no CHECK; sem
+  migration). Recusa login que administra a plataforma.
+- Exceção consciente à revisão de 20/10 ("ninguém assume o login de outro"),
+  igual ao "Criar acesso" de 23/10. Gestor continua só com link por e-mail.
+- Marca de troca antes da senha; Auth recusando, volta ao valor antigo — ler o
+  valor antes do `update` (o `bancoFalso` devolve a linha viva).
+
 ## Modelo do dono como padrão no modo grupo (0230, 28/10/2026)
 
 Nota: [[roleta-dos-anuncios]]
@@ -12302,19 +12318,19 @@ Nota: [[app-android-da-astro]]. Domínio do app: `astroimob.vercel.app`.
 Pacote `com.astrosolucoes.crm`. `assetlinks.json` lê `ANDROID_SHA256` na
 Vercel. Páginas legais em `/astro/privacidade`, `/astro/termos`,
 `/astro/excluir-conta`. Passo a passo em `android/LEIAME.md`.
-## Plataforma redefine a senha de um acesso (28/10/2026)
+
+## Reset de senha pela plataforma: senha gerada, busca e sessões (0231, 28/10/2026)
 
 Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
 
-- `sq1matheusgsilva@gmail.com` é administrador da plataforma **sem ficha de
-  corretor** (medido em produção): não vê Contas do gestor e não usa o
-  "Esqueci a senha" (que procura `corretores.email`). Reset tinha de nascer em
-  `/plataforma/grupos/<id>`.
-- Seção **Acessos** + `redefinirSenhaDoAcesso`: senha temporária só no Auth,
-  `deve_trocar_senha = true`, evento `senha_redefinida` (já no CHECK; sem
-  migration). Recusa login que administra a plataforma.
-- Exceção consciente à revisão de 20/10 ("ninguém assume o login de outro"),
-  igual ao "Criar acesso" de 23/10. Gestor continua só com link por e-mail.
-- Marca de troca antes da senha; Auth recusando, volta ao valor antigo — ler o
-  valor antes do `update` (o `bancoFalso` devolve a linha viva).
-
+- Logout de OUTRA pessoa não existe no SDK (`auth.admin.signOut` pede o JWT
+  dela). Saída: função `encerrar_sessoes_do_usuario` (0231, só
+  `service_role`) apagando `auth.sessions`; `refresh_tokens` caem por FK.
+- Apagar a sessão não derruba na hora: `getClaims` valida o JWT localmente
+  (JWKS), então o token atual vale até `jwt_expiry` (1 h). Dizer isso na tela.
+- Busca de texto livre no PostgREST: não usar `.or()` com termo digitado
+  (vírgula/parêntese quebram); duas consultas e juntar por id.
+- No `bancoFalso`, `rpc` do teste é substituído por cliente: guardar o
+  anterior e delegar, senão o `criar_grupo` falso some.
+- Dev server: `TaskStop` mata o shell, não o `node` do `next dev` —
+  `EADDRINUSE` na porta na próxima vez; conferir com `netstat -ano`.

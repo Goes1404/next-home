@@ -186,6 +186,12 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
         >
           Novo corretor independente
         </Link>
+        <Link
+          href="/plataforma/acessos"
+          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
+        >
+          Buscar acesso e redefinir senha
+        </Link>
       </div>
 
       <nav aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">

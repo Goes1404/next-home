@@ -82,6 +82,7 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "desligar_disparo_automatico()": "desagenda o cron da plataforma; só postgres",
   "desligar_followups_automaticos()": "desagenda o cron da plataforma; só postgres",
   "desligar_relatorio_semanal()": "desagenda o cron da plataforma; só postgres",
+  "encerrar_sessoes_do_usuario(uuid)": "o Auth é global (um login na plataforma); só a chave de serviço, depois da guarda da plataforma",
 };
 
 /**
