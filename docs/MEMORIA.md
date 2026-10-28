@@ -12344,3 +12344,11 @@ Nota: [[agenda-da-equipe-reunioes-e-cobranca]]
 - Seed de visita confirmada: gravar `visita_confirmada_em` no MESMO update de `visita_agendada_em` não fica (o gatilho da marcação zera); confirmar num update depois.
 - Conta de teste em produção: grupo `teste-agenda` ("Teste Agenda (apagar)"), corretores ocultos (não entram em site, roleta nem `getEquipeAtiva`), login `teste.agenda@example.com`.
 - Retoques da mesma data: cabeçalho `compacto` (some seção e descrição abaixo de md), "Imóvel não informado" saiu do cartão, "Próximas" sem as do dia mostrado, "Novo" pergunta antes qual formulário (gestor), deslizar a semana com o dedo (`passoDoDeslize`, 50px e mais de lado que de pé). Teste de render de componente com `useRouter` precisa de `vi.mock("next/navigation")`.
+
+## Redefinir senha na plataforma × guarda de credencial (28/10/2026)
+
+Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
+
+- O commit 7352780c subiu com `convite.test.ts` vermelho: a guarda proíbe `updateUserById(...password...)` e o identificador `senhaTemporaria` (fábrica antiga de senha derivada do telefone).
+- Correção: exceção da guarda para `src/app/plataforma/acoes.ts` cobre também "senha trocada pelo administrador", com a mesma condição (`deve_trocar_senha: true` no arquivo); módulo do sorteio virou `src/lib/plataforma/senhaProvisoria.ts` (`gerarSenhaProvisoria`).
+- Migration 0231 (`encerrar_sessoes_do_usuario`) conferida em produção: existe, execute só para `service_role`.

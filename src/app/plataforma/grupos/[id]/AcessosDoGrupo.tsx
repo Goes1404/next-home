@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Check, Copy, Eye, EyeOff, KeyRound, Sparkles } from "lucide-react";
 import type { AcessoDoGrupo } from "@/lib/plataforma/grupos";
-import { gerarSenhaTemporaria } from "@/lib/plataforma/senhaTemporaria";
+import { gerarSenhaProvisoria } from "@/lib/plataforma/senhaProvisoria";
 import { redefinirSenhaDoAcesso, type ResultadoSenhaRedefinida } from "../../acoes";
 
 const CAMPO =
@@ -57,7 +57,7 @@ function LinhaDoAcesso({ acesso, mostrarGrupo }: { acesso: AcessoDoGrupo; mostra
   const campo = `senha-${acesso.corretorId}`;
 
   function gerar() {
-    setSenha(gerarSenhaTemporaria());
+    setSenha(gerarSenhaProvisoria());
     setVisivel(true);
     setCopiada(false);
   }

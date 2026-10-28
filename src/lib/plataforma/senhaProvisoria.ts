@@ -1,5 +1,5 @@
 /**
- * Senha temporária que o administrador da plataforma passa para a pessoa
+ * Senha provisória que o administrador da plataforma passa para a pessoa
  * (por WhatsApp, telefone, ao lado). Roda no navegador, para a senha não
  * precisar ir e voltar do servidor só para nascer.
  *
@@ -13,7 +13,7 @@ const MINUSCULAS = "abcdefghijkmnpqrstuvwxyz";
 const MAIUSCULAS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 const DIGITOS = "23456789";
 const TODOS = MINUSCULAS + MAIUSCULAS + DIGITOS;
-export const TAMANHO_DA_SENHA_TEMPORARIA = 12;
+export const TAMANHO_DA_SENHA_PROVISORIA = 12;
 
 type Sorteio = (bytes: Uint8Array) => Uint8Array;
 
@@ -27,10 +27,10 @@ function sortearIndice(limite: number, sortear: Sorteio): number {
   }
 }
 
-export function gerarSenhaTemporaria(sortear: Sorteio = sorteioDoNavegador): string {
+export function gerarSenhaProvisoria(sortear: Sorteio = sorteioDoNavegador): string {
   const escolher = (alfabeto: string) => alfabeto[sortearIndice(alfabeto.length, sortear)];
   const letras = [escolher(MINUSCULAS), escolher(MAIUSCULAS), escolher(DIGITOS)];
-  while (letras.length < TAMANHO_DA_SENHA_TEMPORARIA) letras.push(escolher(TODOS));
+  while (letras.length < TAMANHO_DA_SENHA_PROVISORIA) letras.push(escolher(TODOS));
   // Embaralha (Fisher–Yates), senão as três obrigatórias ficariam sempre no começo.
   for (let i = letras.length - 1; i > 0; i--) {
     const j = sortearIndice(i + 1, sortear);

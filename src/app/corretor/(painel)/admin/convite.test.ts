@@ -409,9 +409,11 @@ describe("guarda de credencial derivada", () => {
         // Decisão do dono (23/10/2026): o administrador da plataforma cria o
         // acesso com e-mail real e uma senha provisória que ELE digita, e a
         // pessoa troca no primeiro login. Só vale com a troca obrigatória.
+        // A redefinição de senha (28/10/2026) segue o mesmo acordo: senha
+        // sorteada no navegador (senhaProvisoria.ts) e troca obrigatória.
         if (
           relativo === PLATAFORMA &&
-          nome === "login nascido com senha" &&
+          (nome === "login nascido com senha" || nome === "senha trocada pelo administrador") &&
           /deve_trocar_senha:\s*true/.test(codigo)
         ) {
           continue;

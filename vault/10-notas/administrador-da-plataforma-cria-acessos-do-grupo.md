@@ -11,7 +11,7 @@ codigo:
   - src/app/plataforma/grupos/[id]/page.tsx
   - src/app/plataforma/grupos/[id]/AcessosDoGrupo.tsx
   - src/lib/plataforma/grupos.ts
-  - src/lib/plataforma/senhaTemporaria.ts
+  - src/lib/plataforma/senhaProvisoria.ts
   - src/app/plataforma/acessos/page.tsx
   - supabase/migrations/0231_encerrar_sessoes_do_usuario.sql
 created: 2026-10-23
@@ -82,3 +82,16 @@ senha pelo "Esqueci a senha". A porta tinha de ficar em `/plataforma`.
 - `postgres` tem DELETE em `auth.sessions` em produção (conferido antes).
 
 Relacionadas: [[convite-por-link-no-nosso-dominio]] · [[plataforma-multi-grupo]] · [[primeiro-acesso-completa-ficha-administrativa]] · [[MOC — CRM e Painel]]
+
+## Guarda de credencial derivada (28/10/2026)
+
+`convite.test.ts` ("guarda de credencial derivada") lê o código e reprova
+`updateUserById(... password ...)` e o nome `senhaTemporaria` (era a fábrica
+antiga de senha montada com telefone). A redefinição passou porque:
+
+- `src/app/plataforma/acoes.ts` tem exceção para criar **e** trocar senha,
+  só enquanto o arquivo grava `deve_trocar_senha: true`;
+- o sorteio no navegador chama `senhaProvisoria.ts` / `gerarSenhaProvisoria`
+  (o nome antigo batia na lista proibida).
+
+Tela nova que troque senha fora de `plataforma/acoes.ts` volta a reprovar: de propósito.
