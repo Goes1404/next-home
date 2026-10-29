@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSobDemanda } from "@/lib/supabase/clientSobDemanda";
 import s from "../campoDeAcesso.module.css";
 
 /**
@@ -19,7 +19,8 @@ export function EntrarComGoogle({ next }: { next?: string }) {
     setIndo(true);
     const volta = new URL("/auth/google", window.location.origin);
     if (next) volta.searchParams.set("next", next);
-    const { error } = await createClient().auth.signInWithOAuth({
+    const supabase = await createClientSobDemanda();
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: volta.toString(), queryParams: { prompt: "select_account" } },
     });
