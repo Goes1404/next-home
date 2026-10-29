@@ -851,7 +851,9 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       // A venda segue no grupo B com o lead já no A: só a coluna que muda é
       // conferida, e o status não é coluna-mãe.
       const [venda] = await tx<{ status: string; grupo_id: string }[]>`
-        update public.vendas set status = 'distratada', distratada_em = now()
+        update public.vendas
+           set status = 'distratada', distratada_em = now(),
+               distrato_motivo = 'teste', distrato_parcelas = 'cancelar'
          where id = ${vendaDeB}
         returning status, grupo_id
       `;
@@ -993,7 +995,9 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
 
   it("tabelas da plataforma não são lidas pela API", async () => {
     // `grupos` é a exceção: cada logado lê a linha do próprio grupo (0190).
-    const daPlataforma = TABELAS_GLOBAIS.filter((t) => t !== "grupos");
+    // `parametros_fiscais` também: é lei federal (IRRF, INSS), igual para
+    // todo grupo, e o fiscal de cada um lê pela sessão (0232). Escrever, não.
+    const daPlataforma = TABELAS_GLOBAIS.filter((t) => t !== "grupos" && t !== "parametros_fiscais");
     const privilegios = await sql<{ tabela: string; papel: string; le: boolean }[]>`
       select t as tabela, r as papel, has_table_privilege(r, 'public.' || t, 'select') as le
         from unnest(${daPlataforma}::text[]) t,
@@ -1634,17 +1638,20 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
         insert into public.venda_participantes (venda_id, corretor_id, parte_percentual, repasse_valor)
         values (${venda}, ${a.corretorId}, 100, 10000)
       `;
+      const [{ id: parcela }] = await tx<{ id: string }[]>`
+        insert into public.venda_parcelas (venda_id, numero, valor) values (${venda}, 1, 25000) returning id
+      `;
       const [r] = await comoUsuario(tx, b.gestorUserId, (eu) =>
         eu<{ comissao: boolean; repasse: boolean }[]>`
-          select public.marcar_comissao_recebida(${venda}::uuid, date '2026-10-19') as comissao,
+          select public.marcar_parcela_recebida(${parcela}::uuid, date '2026-10-19') as comissao,
                  public.marcar_repasse_pago(${venda}::uuid, ${a.corretorId}::uuid, date '2026-10-19') as repasse
         `,
       );
       expect(r).toEqual({ comissao: false, repasse: false });
       const [linha] = await tx<{ recebida: string | null; pago: string | null }[]>`
-        select v.comissao_recebida_em as recebida, p.repasse_pago_em as pago
-          from vendas v join venda_participantes p on p.venda_id = v.id
-         where v.id = ${venda}
+        select pc.recebida_em as recebida, p.repasse_pago_em as pago
+          from venda_parcelas pc join venda_participantes p on p.venda_id = pc.venda_id
+         where pc.venda_id = ${venda}
       `;
       expect(linha).toEqual({ recebida: null, pago: null });
     });
@@ -1715,7 +1722,7 @@ describe.skipIf(!process.env.DB_TESTE_URL)("isolamento entre grupos", () => {
       ];
       await expect(
         comoUsuario(tx, a.corretorUserId, (eu) =>
-          eu`select public.salvar_venda(null, ${eu.json(dados)}, ${eu.json(participantes)})`,
+          eu`select public.salvar_venda(null, ${eu.json(dados)}, ${eu.json(participantes)}, ${eu.json([{ numero: 1, valor: 25000 }])})`,
         ),
       ).rejects.toThrow(/participante_de_outro_grupo/);
     });

@@ -387,6 +387,33 @@ create trigger venda_participantes_forma_so_gestor
   before insert or update of forma_recebimento on public.venda_participantes
   for each row execute function public.venda_participantes_forma_so_gestor();
 
+-- Apagar e reinserir a linha traria o `repasse` padrão de volta, e a
+-- imobiliária passaria a dever o que o corretor já recebe direto do pagador
+-- (achado da revisão de segurança, 29/10). A linha `direto` só sai pelo
+-- gestor. Excluir a VENDA inteira continua valendo: o cascade roda como o
+-- dono da tabela, não como `authenticated`.
+create or replace function public.venda_participantes_direto_so_gestor_apaga()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.forma_recebimento = 'direto'
+     and current_user = 'authenticated'
+     and not public.eh_gestor() then
+    raise exception 'so_gestor';
+  end if;
+  return old;
+end;
+$$;
+
+revoke all on function public.venda_participantes_direto_so_gestor_apaga() from public, anon, authenticated;
+
+drop trigger if exists venda_participantes_direto_so_gestor_apaga on public.venda_participantes;
+create trigger venda_participantes_direto_so_gestor_apaga
+  before delete on public.venda_participantes
+  for each row execute function public.venda_participantes_direto_so_gestor_apaga();
+
 -- ─────────────────────────────────────────────────────────────────────────
 -- O que só o gestor faz: parcela recebida, distrato e desfazer
 -- ─────────────────────────────────────────────────────────────────────────
@@ -752,6 +779,8 @@ comment on column public.venda_participantes.forma_recebimento is
 --   drop function public.desfazer_distrato(uuid);
 --   drop function public.avisar_distrato(uuid, text);
 --   drop trigger venda_participantes_forma_so_gestor on public.venda_participantes;
+--   drop trigger venda_participantes_direto_so_gestor_apaga on public.venda_participantes;
+--   drop function public.venda_participantes_direto_so_gestor_apaga();
 --   drop function public.venda_participantes_forma_so_gestor();
 --   recriar as policies e os grants da 0114/0116 e marcar_comissao_recebida da 0192
 --   drop table public.venda_parcelas;

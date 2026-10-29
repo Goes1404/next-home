@@ -70,6 +70,11 @@ describe("0232: o que mexe no dinheiro da imobiliária é do gestor", () => {
     expect(sql).toMatch(/before\s+insert\s+or\s+update\s+of\s+forma_recebimento\s+on\s+public\.venda_participantes/i);
   });
 
+  it("a linha `direto` não some pela mão do corretor (apagar e reinserir)", () => {
+    expect(corpo("venda_participantes_direto_so_gestor_apaga")).toMatch(/eh_gestor\(\)/);
+    expect(sql).toMatch(/before\s+delete\s+on\s+public\.venda_participantes/i);
+  });
+
   it("marcar comissão recebida da venda inteira deixa de existir", () => {
     expect(sql).toMatch(/drop\s+function\s+(if\s+exists\s+)?public\.marcar_comissao_recebida/i);
   });

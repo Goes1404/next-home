@@ -23,6 +23,9 @@ export const TABELAS_GLOBAIS = [
   // Diagnóstico do provedor de WhatsApp, por `instance_name`, gravado pela
   // sonda com a chave de serviço.
   "whatsapp_diagnosticos",
+  // Parâmetros fiscais NACIONAIS (IRRF, INSS) com vigência e fonte (0232):
+  // lei federal vale para todo grupo; só leitura pela sessão.
+  "parametros_fiscais",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
