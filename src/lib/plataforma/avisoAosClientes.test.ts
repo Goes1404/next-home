@@ -125,7 +125,7 @@ describe("avisos fechados no navegador", () => {
 });
 
 describe("0242 no banco", () => {
-  const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "0242_avisos_da_plataforma.sql"), "utf8").replace(/--.*$/gm, "");
+  const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "0242_avisos_aos_clientes.sql"), "utf8").replace(/--.*$/gm, "");
 
   it("só a chave de serviço: RLS ligada, sem policy, sem grant para anon e authenticated", () => {
     expect(sql).toMatch(/enable row level security/);

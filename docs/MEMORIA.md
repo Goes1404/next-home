@@ -12544,3 +12544,10 @@ Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)
 aplicada. Site `/astro/contato`, painel `/corretor/suporte`, atendimento em
 `/plataforma/suporte`; todo chamado avisa os ADMs no celular.
 
+## Painel de números, visão de suporte, primeiros passos e avisos (29/10/2026)
+
+Nota: [[painel-de-numeros-visao-de-suporte-e-avisos-aos-clientes]]. 0242
+(`avisos_aos_clientes`) e 0243 (`acessos_de_suporte` + CHECK de
+`admin_eventos`) aplicadas. A 0241 (Asaas + teste grátis) segue reservada.
+- Visão de suporte: só números; acesso registrado antes de ler e visível ao gestor.
+
