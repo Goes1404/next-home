@@ -8,6 +8,8 @@ export default defineConfig({
       // Ver test/stubs/server-only.ts: sem isto, qualquer teste que toque
       // num módulo de servidor quebra na importação.
       "server-only": path.resolve(__dirname, "./test/stubs/server-only.ts"),
+      // Ver test/stubs/next-font-google.ts: a fonte só existe no build do Next.
+      "next/font/google": path.resolve(__dirname, "./test/stubs/next-font-google.ts"),
     },
   },
   test: {

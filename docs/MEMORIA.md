@@ -12383,3 +12383,15 @@ Nota: [[financeiro-fase-a-parcelas-e-distrato]]. Design e plano em `docs/superpo
 - **Migration com `begin;`/`commit;`, `lock_timeout` e `drop policy if exists`** é exigida pela guarda `migracoesAtomicas` desde a 0188.
 - **Migração de dados antigos não cabe em `.db.test`** (o banco já sobe com a migration): conferência pontual subindo até a 0231, gravando no formato velho e aplicando a 0232; soma das parcelas = soma das comissões ao centavo.
 - **Build local no Windows quebra por `PixelMeta.tsx` × `pixelMeta.ts`** (resolução sem caixa); a Vercel compila.
+
+## App no celular: área segura, login e abertura (29/10/2026)
+
+Nota: [[app-no-celular-area-segura-login-e-abertura]].
+
+- No app Android (Android 15) a página vai por baixo da barra de status e da
+  de gestos. Cabeçalho com `pt-safe`, folhas com
+  `pb-[calc(1.5rem+env(safe-area-inset-bottom))]`. NUNCA `pb-safe` junto de
+  `pb-N` (um anula o outro) — `areaSeguraDoApp.test.ts` trava.
+- Login refeito (celular primeiro, fontes da Astro). Abertura animada só no
+  app instalado, 1x por sessão (`AberturaDoApp.tsx`).
+- `next/font/google` nos testes: stub em `test/stubs/next-font-google.ts`.

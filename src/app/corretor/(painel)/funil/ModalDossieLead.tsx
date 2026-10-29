@@ -30,7 +30,7 @@ export function ModalDossieLead({ lead, onFechar }: Props) {
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-acento-linha bg-campo p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-3xl border border-acento-linha bg-campo p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-linha pb-4">
           <div>

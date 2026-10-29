@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 
@@ -11,20 +11,6 @@ import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
  * As fontes são só desta página e não são pré-carregadas no resto do app:
  * Bricolage Grotesque nos títulos, Figtree no texto.
  */
-const titulos = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-astro-titulo",
-  display: "swap",
-});
-
-const texto = Figtree({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-astro-texto",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: { absolute: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA para imobiliárias e corretores` },
   description:
@@ -40,5 +26,5 @@ export const metadata: Metadata = {
 };
 
 export default function AstroLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${titulos.variable} ${texto.variable} astro-pagina flex flex-1 flex-col`}>{children}</div>;
+  return <div className={`${FONTES_DA_ASTRO} astro-pagina flex flex-1 flex-col`}>{children}</div>;
 }

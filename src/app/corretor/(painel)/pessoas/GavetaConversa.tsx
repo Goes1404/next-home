@@ -183,7 +183,7 @@ export function GavetaConversa({
         role="dialog"
         aria-modal="true"
         aria-label={`Conversa com ${conversa.nome ?? conversa.telefone}`}
-        className="bg-wa-lista relative flex h-full w-full flex-col overflow-hidden shadow-2xl md:w-[480px]"
+        className="bg-wa-lista pt-safe relative flex h-full w-full flex-col overflow-hidden shadow-2xl md:w-[480px]"
       >
         {erro && (
           <p role="alert" className="bg-perigo-lavado text-perigo text-fluid-xs px-3 py-2">

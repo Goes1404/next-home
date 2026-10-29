@@ -1,0 +1,127 @@
+/*
+ * Abertura do app (29/10/2026): o selo da Astro se monta — o ladrilho
+ * aparece, o "A" se desenha, a órbita passa em volta e a estrela acende —,
+ * o nome surge embaixo e a tela some. ~2,4 s no total; um toque pula.
+ *
+ * Mesmo fundo do splash nativo do Android (#08132a, `twa-manifest.json`),
+ * para a passagem do ícone para a animação ser contínua.
+ *
+ * Quem decide se ela aparece é o script inline de `AberturaDoApp.tsx`
+ * (antes da primeira pintura), escrevendo `data-abertura` no <html>.
+ */
+.abertura {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background:
+    radial-gradient(60% 45% at 50% 42%, rgb(47 94 168 / 0.45), transparent 70%),
+    #08132a;
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:global(html[data-abertura="sim"]) .abertura {
+  display: flex;
+  animation: sair 0.45s ease-in 2s forwards;
+}
+:global(html[data-abertura="pulou"]) .abertura {
+  display: flex;
+  animation: sair 0.2s ease-in forwards;
+}
+
+.selo {
+  width: 7.5rem;
+  height: 7.5rem;
+  overflow: visible;
+}
+.ladrilho {
+  transform-origin: 32px 32px;
+  animation: crescer 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.letra {
+  opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: desenhar 0.55s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+}
+.orbita {
+  opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: desenhar 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.75s forwards;
+}
+.estrela {
+  transform-origin: 49px 21px;
+  opacity: 0;
+  animation: acender 0.45s cubic-bezier(0.22, 1, 0.36, 1) 1.3s forwards;
+}
+.nome {
+  font-family: var(--font-astro-titulo), system-ui, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  translate: 0 8px;
+  animation: surgir 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.35s forwards;
+}
+.nome span {
+  color: #a9c1e0;
+  font-weight: 600;
+}
+.pular {
+  position: absolute;
+  bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.45);
+  font-family: var(--font-astro-texto), system-ui, sans-serif;
+}
+
+@keyframes crescer {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+/* A opacidade entra no primeiro quadro: antes do atraso o traço não deixa
+   nem o pontinho da ponta. */
+@keyframes desenhar {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes acender {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-45deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.25) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes surgir {
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes sair {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}

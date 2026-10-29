@@ -161,7 +161,7 @@ function JanelaMensagemPelaIA({
         role="dialog"
         aria-modal="true"
         aria-label={`Mensagem da IA para ${nome}`}
-        className="border-linha bg-superficie pb-safe absolute inset-x-0 bottom-0 max-h-[90svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-4 pb-6 sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[32rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:border"
+        className="border-linha bg-superficie absolute inset-x-0 bottom-0 max-h-[90svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[32rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:border"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

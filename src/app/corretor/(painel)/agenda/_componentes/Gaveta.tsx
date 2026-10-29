@@ -62,7 +62,7 @@ export function Gaveta({
         aria-modal="true"
         aria-label={titulo}
         className={cn(
-          "pb-safe absolute inset-x-0 bottom-0 max-h-[88svh] overflow-y-auto rounded-t-3xl border-t border-linha bg-superficie px-5 pt-3 pb-6",
+          "absolute inset-x-0 bottom-0 max-h-[88svh] overflow-y-auto rounded-t-3xl border-t border-linha bg-superficie px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
           "md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:max-h-[85vh] md:w-full md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:border md:p-6",
           larga ? "md:max-w-2xl" : "md:max-w-md",
         )}

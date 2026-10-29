@@ -65,7 +65,7 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
         role="dialog"
         aria-modal="true"
         aria-label={`Ações para ${lead.nome}`}
-        className="border-linha bg-superficie pb-safe absolute inset-x-0 bottom-0 max-h-[85svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-3 pb-6"
+        className="border-linha bg-superficie absolute inset-x-0 bottom-0 max-h-[85svh] overflow-y-auto rounded-t-3xl border-t px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
       >
         <span aria-hidden className="bg-linha-forte mx-auto mb-4 block h-1 w-10 rounded-full" />
 

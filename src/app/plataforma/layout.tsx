@@ -34,7 +34,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
 
   return (
     <main data-rota="painel" className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
-      <header className="border-linha bg-fundo/85 sticky top-0 z-40 border-b">
+      <header className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/plataforma" className="font-display text-titulo text-lg">

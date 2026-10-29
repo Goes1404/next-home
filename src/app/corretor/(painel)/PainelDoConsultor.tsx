@@ -50,7 +50,7 @@ export function PainelDoConsultor({
        * painel inteiro com cara de recorte. Computador: caixa no canto,
        * com teto de altura para nunca encostar no cabeçalho.
        */
-      className="bg-fundo pb-safe pointer-events-auto absolute inset-0 flex flex-col md:inset-auto md:pb-0 md:right-6 md:bottom-6 md:h-[min(34rem,calc(100dvh-7rem))] md:w-[23.75rem] md:rounded-2xl md:shadow-2xl"
+      className="bg-fundo pb-safe pt-safe pointer-events-auto absolute inset-0 flex flex-col md:inset-auto md:pb-0 md:right-6 md:bottom-6 md:h-[min(34rem,calc(100dvh-7rem))] md:w-[23.75rem] md:rounded-2xl md:shadow-2xl"
     >
       <header className="border-linha flex items-center gap-2 border-b px-3 py-2.5">
         <Mascote altura={44} />

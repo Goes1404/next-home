@@ -1590,6 +1590,17 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  /*
+   * Área segura do TOPO (29/10/2026). No app Android (Trusted Web Activity,
+   * Android 15) a página é desenhada por baixo da barra de status, e sem
+   * isto o cabeçalho do painel ficava atrás do relógio. No navegador comum
+   * vale 0. Para fundo de folha que sobe de baixo, use
+   * `pb-[calc(1.5rem+env(safe-area-inset-bottom))]`: `pb-safe` junto de
+   * `pb-6` faz um anular o outro (mesma propriedade).
+   */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
   .h-nav-safe {
     height: calc(var(--nav-mobile-h) + env(safe-area-inset-bottom, 0px));
   }
@@ -2868,7 +2879,25 @@ main[data-rota="painel"] {
 /* O cabeçalho do painel saiu de cena ao rolar no celular: quem gruda logo
    abaixo dele sobe junto (ver CabecalhoDoPainel). */
 main[data-cabecalho="oculto"] {
-  --painel-topo-visivel: 0px;
+  /* A barra de status do app continua ali (pt-safe): quem gruda no topo
+     para logo abaixo dela, não por baixo. */
+  --painel-topo-visivel: env(safe-area-inset-top, 0px);
+}
+
+/*
+ * Faixa atrás da barra de status do app Android (29/10/2026). Quando o
+ * cabeçalho do painel some ao rolar, o conteúdo passaria por baixo do
+ * relógio; esta faixa da cor do fundo cobre só a área segura do topo (0 no
+ * navegador comum, então não existe ali).
+ */
+.faixa-de-status {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--color-fundo);
+  z-index: 41;
+  pointer-events: none;
 }
 
 /*

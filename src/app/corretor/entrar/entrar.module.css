@@ -1,0 +1,314 @@
+/*
+ * Tela de entrada da Astro Soluções (29/10/2026).
+ *
+ * Celular primeiro: a marca no alto, sobre a noite azul, e o formulário numa
+ * folha clara presa ao pé da tela (como num app nativo), com o e-mail
+ * visível sem rolar. No computador, duas colunas: a marca à esquerda e o
+ * cartão à direita. O único movimento é a órbita do logo se desenhando ao
+ * abrir; com menos movimento, ela já nasce desenhada.
+ *
+ * Cores fixas da marca: a tela não segue o tema claro/escuro do painel.
+ */
+.tela {
+  --noite: #08132a;
+  --marinho: #0f2547;
+  --azul: #2f5ea8;
+  --bruma: #a9c1e0;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #fff;
+  font-family: var(--font-astro-texto), system-ui, sans-serif;
+  background:
+    radial-gradient(90% 55% at 100% 0%, rgb(47 94 168 / 0.55), transparent 70%),
+    radial-gradient(70% 45% at 0% 30%, rgb(91 123 168 / 0.22), transparent 70%),
+    var(--noite);
+  color-scheme: light;
+}
+
+.titulo {
+  font-family: var(--font-astro-titulo), var(--font-astro-texto), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+/* ---------- Céu: órbita e estrelas ---------- */
+
+.ceu {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.orbita {
+  position: absolute;
+  width: 170vw;
+  max-width: 1100px;
+  aspect-ratio: 3.2;
+  left: 50%;
+  top: 5.5rem;
+  translate: -50% 0;
+  rotate: -14deg;
+  overflow: visible;
+}
+.orbita ellipse {
+  fill: none;
+  stroke: rgb(169 193 224 / 0.4);
+  stroke-width: 0.6;
+}
+.estrelaGrande {
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  right: 12%;
+  top: 4.25rem;
+}
+.ponto {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.45;
+}
+
+/* ---------- Topo (marca) ---------- */
+
+.topo {
+  padding: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 1.25rem)) 1.5rem 2rem;
+}
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.marca span span {
+  color: var(--bruma);
+  font-weight: 600;
+}
+.chamada {
+  margin-top: 2.75rem;
+  font-size: clamp(2rem, 8.5vw, 2.6rem);
+  line-height: 1.02;
+  font-weight: 800;
+  max-width: 16ch;
+}
+.apoio {
+  margin-top: 0.75rem;
+  max-width: 30ch;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.72);
+}
+.recursos {
+  display: none;
+}
+
+/* Celular baixo: a marca encolhe para o botão "Entrar" caber sem rolar. */
+@media (max-width: 63.99rem) and (max-height: 820px) {
+  .topo {
+    padding-bottom: 1.25rem;
+  }
+  .chamada {
+    margin-top: 1.5rem;
+    font-size: clamp(1.75rem, 7.5vw, 2.1rem);
+  }
+  .apoio {
+    display: none;
+  }
+  .folha {
+    padding-top: 1.5rem;
+  }
+  .folhaApoio {
+    margin-bottom: 1rem;
+  }
+}
+
+/* ---------- Folha do formulário ---------- */
+
+.folha {
+  margin-top: auto;
+  background: #fff;
+  color: #0d1b33;
+  border-radius: 1.75rem 1.75rem 0 0;
+  padding: 1.75rem 1.5rem max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+  box-shadow: 0 -24px 60px -30px rgb(0 0 0 / 0.6);
+}
+.puxador {
+  width: 2.5rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: #d8e0ec;
+  margin: -0.75rem auto 1.25rem;
+}
+.folhaTitulo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.folhaApoio {
+  margin-top: 0.35rem;
+  margin-bottom: 1.5rem;
+  color: #56627b;
+  font-size: 0.95rem;
+}
+.aviso {
+  margin-bottom: 1.25rem;
+  border-radius: 0.9rem;
+  border: 1px solid #f2c97a;
+  background: #fff7e6;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #3d2c06;
+}
+.rodape {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e3e8f1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: #77819a;
+}
+.rodape nav {
+  display: flex;
+  gap: 1rem;
+}
+.rodape a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rodape a:hover {
+  color: var(--azul);
+}
+.voltar {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  border: 1.5px solid #d8e0ec;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #34405a;
+}
+.voltar:hover {
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+/* ---------- Telas largas ---------- */
+
+@media (min-width: 64rem) {
+  .tela {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
+    padding: 3rem max(3rem, calc((100vw - 72rem) / 2));
+  }
+  .orbita {
+    width: 78vw;
+    left: 34%;
+    top: 12%;
+  }
+  .estrelaGrande {
+    right: auto;
+    left: 52%;
+    top: 18%;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .topo {
+    padding: 0;
+    flex: 1;
+    max-width: 34rem;
+  }
+  .marca {
+    font-size: 1.35rem;
+  }
+  .chamada {
+    margin-top: 3.5rem;
+    font-size: clamp(3rem, 4.6vw, 4.25rem);
+  }
+  .apoio {
+    font-size: 1.15rem;
+    max-width: 34ch;
+  }
+  .recursos {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 2.5rem;
+    font-size: 1rem;
+    color: rgb(255 255 255 / 0.82);
+  }
+  .recursos li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .recursos li::before {
+    content: "";
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: var(--bruma);
+    box-shadow: 0 0 0 4px rgb(169 193 224 / 0.18);
+    flex-shrink: 0;
+  }
+  .folha {
+    margin-top: 0;
+    width: 27rem;
+    flex-shrink: 0;
+    border-radius: 1.75rem;
+    padding: 2.25rem 2.25rem 1.75rem;
+    box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.75);
+  }
+  .puxador {
+    display: none;
+  }
+}
+
+/* ---------- O único movimento ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbita ellipse {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: desenhar 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.15s forwards;
+  }
+  .estrelaGrande {
+    opacity: 0;
+    scale: 0.4;
+    animation: acender 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.2s forwards;
+  }
+  .folha {
+    animation: subir 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes desenhar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes acender {
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes subir {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}

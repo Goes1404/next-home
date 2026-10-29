@@ -58,7 +58,7 @@ export function FiltroSheet({
           onClick={() => setAberto(false)}
         >
           <div
-            className="pb-safe max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-linha-forte bg-superficie px-5 pt-5 pb-8"
+            className="max-h-[85svh] w-full overflow-y-auto rounded-t-3xl border-t border-linha-forte bg-superficie px-5 pt-5 pb-[calc(2rem+env(safe-area-inset-bottom))]"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

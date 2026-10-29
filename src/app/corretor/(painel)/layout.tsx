@@ -117,9 +117,10 @@ export default async function PainelLayout({
       */}
       <FundoDoPainel />
       <LuzDosCartoes />
+      <div aria-hidden className="faixa-de-status" />
       {/* No celular ele sai de cena ao rolar para baixo e volta ao subir
           (ver CabecalhoDoPainel); no computador fica. */}
-      <CabecalhoDoPainel className="border-linha bg-fundo/85 sticky top-0 z-40 border-b backdrop-blur-lg">
+      <CabecalhoDoPainel className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-1">
             {/* O hambúrguer só existe no celular e só quando há sessão: sem

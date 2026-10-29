@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
+import { AberturaDoApp } from "./AberturaDoApp";
 
 const ARETZ_HOSTS = new Set(["aretzimoveis.com", "www.aretzimoveis.com"]);
 const ARETZ_FAVICON =
@@ -27,6 +28,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return { icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA };
 }
 
+/**
+ * A abertura animada mora AQUI, e não no layout do painel: o app abre em
+ * `/corretor`, que manda quem não entrou para `/corretor/entrar`, e os dois
+ * passam por este layout. Ela só aparece no app instalado (`AberturaDoApp`).
+ */
 export default function CorretorLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <AberturaDoApp />
+      {children}
+    </>
+  );
 }
