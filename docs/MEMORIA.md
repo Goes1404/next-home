@@ -12558,3 +12558,12 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - Falta o dono criar a conta no Asaas e pôr `ASAAS_AMBIENTE`,
   `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` na Vercel e cadastrar o webhook.
 
+
+## Multi-ramo, portais, gestor, negócio da Astro e app (29/10/2026)
+
+- O CRM atende vários ramos: `grupos.ramo` (0244, padrão `imobiliaria`), fonte única em `src/lib/ramos/ramos.ts` (vocabulário, módulos, contexto da IA). Rotas não mudam; o menu esconde/renomeia. Imobiliária: menu e prompt idênticos (testes deep-equal e byte a byte). Recursos de imóvel perguntam `recursosDeImoveis(ramo)`.
+- 0245: webhook dos portais no formato Grupo OLX; a chave do Grupo OLX é por CRM, então o grupo vem pelo token na URL. Imovelweb não tem webhook público. Vitrine curta `/v/<codigo>`.
+- 0246: `distribuir_lead()` olha regras antes e cai na seleção da 0216 copiada letra a letra. Relatório semanal no WhatsApp ao gestor com padrão ligado.
+- 0247: indicação por cookie `astro_indicacao` (30 dias), crédito de 50% de uma mensalidade no 1º pagamento > 0; termo de adesão bloqueia só gestor/independente; risco de cancelamento às 9h. **O CHECK de `admin_eventos` vigente é o da 0247** (une 0243 + `ramo_do_grupo_alterado` + termo/crédito).
+- `sw-painel.js` agora guarda dados por usuário e apaga ao sair/login/401; nunca conversas.
+- Nota: [[multi-ramo-portais-gestor-e-negocio-da-astro]].
