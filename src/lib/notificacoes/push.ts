@@ -87,3 +87,69 @@ export async function notificarCorretor(supabase: Supa, corretorId: string, n: N
     return 0;
   }
 }
+
+/**
+ * Manda uma notificação para os aparelhos de QUEM ADMINISTRA A PLATAFORMA
+ * (29/10/2026, 0239): pedido de contratação, pedido de suporte, conta nova,
+ * suspensa ou atrasada — os "atendimentos" da Astro.
+ *
+ * O administrador não tem ficha de corretor, então os aparelhos dele moram em
+ * `inscricoes_push_da_plataforma` (dono = usuário do Auth). Só recebe quem
+ * AINDA está em `administradores_da_plataforma`: tirar alguém de ADM corta o
+ * aviso na hora, sem limpar aparelho. O texto nunca leva conversa nem ficha
+ * de lead (o administrador não vê isso). Nunca lança; devolve quantos
+ * aparelhos receberam.
+ */
+export async function notificarAdminsDaPlataforma(supabase: Supa, n: Notificacao): Promise<number> {
+  try {
+    if (!configurar()) return 0;
+    const { data: admins, error: erroAdmins } = await supabase.from("administradores_da_plataforma").select("user_id");
+    if (erroAdmins || !admins?.length) {
+      if (erroAdmins) console.warn("[notificação] falha ao ler administradores:", erroAdmins.message);
+      return 0;
+    }
+    const { data: inscricoes, error } = await supabase
+      .from("inscricoes_push_da_plataforma")
+      .select("id, endpoint, p256dh, auth")
+      .in(
+        "user_id",
+        admins.map((a) => a.user_id),
+      );
+    if (error) {
+      console.warn("[notificação] falha ao ler aparelhos da plataforma:", error.message);
+      return 0;
+    }
+    if (!inscricoes?.length) return 0;
+
+    const carga = JSON.stringify({ titulo: n.titulo, corpo: n.corpo.slice(0, 240), url: n.url, tag: n.tag });
+    let entregues = 0;
+    await Promise.all(
+      inscricoes.map(async (i) => {
+        if (!ehEnderecoDePush(i.endpoint)) return;
+        try {
+          await webpush.sendNotification(
+            { endpoint: i.endpoint, keys: { p256dh: i.p256dh, auth: i.auth } },
+            carga,
+            { TTL: 60 * 60 * 12, urgency: "high" },
+          );
+          entregues++;
+          await supabase
+            .from("inscricoes_push_da_plataforma")
+            .update({ ultimo_envio_em: new Date().toISOString() })
+            .eq("id", i.id);
+        } catch (err) {
+          const status = (err as { statusCode?: number }).statusCode;
+          if (status === 404 || status === 410) {
+            await supabase.from("inscricoes_push_da_plataforma").delete().eq("id", i.id);
+          } else {
+            console.warn("[notificação] não saiu (plataforma):", status ?? err);
+          }
+        }
+      }),
+    );
+    return entregues;
+  } catch (err) {
+    console.warn("[notificação] falhou (plataforma):", err);
+    return 0;
+  }
+}

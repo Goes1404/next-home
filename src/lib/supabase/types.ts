@@ -1225,6 +1225,40 @@ export type Database = {
         Update: { chave?: string; vigente_desde?: string; valor?: Json; fonte?: string; fonte_url?: string | null }
         Relationships: []
       }
+      /** 0239 — aparelhos dos administradores da plataforma com aviso ligado. Global; só a chave de serviço. */
+      inscricoes_push_da_plataforma: {
+        Row: {
+          id: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+          aparelho: string | null
+          created_at: string
+          ultimo_envio_em: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+          aparelho?: string | null
+          created_at?: string
+          ultimo_envio_em?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth?: string
+          aparelho?: string | null
+          created_at?: string
+          ultimo_envio_em?: string | null
+        }
+        Relationships: []
+      }
       /**
        * 0238 — pedidos de contratação do assistente `/astro/contratar`
        * (29/10/2026). Global (sem `grupo_id`); só a chave de serviço.

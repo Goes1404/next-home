@@ -246,6 +246,9 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/pedidosAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status, observação e conta criada de UM pedido (tabela global, 0238); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
 
   // ── Porta pública da página de vendas, sem grupo ─────────────────────────
+  "src/app/api/plataforma/notificacoes/route.ts": { categoria: "plataforma-admin", motivo: "liga/desliga o aviso no aparelho do PRÓPRIO administrador da plataforma (0239); guarda antes da chave, tabela global" },
+  "src/app/plataforma/avisosAcoes.ts": { categoria: "plataforma-admin", motivo: "teste dos avisos da plataforma: guarda antes da chave; manda aos aparelhos dos administradores (0239)" },
+  "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
   "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };
 

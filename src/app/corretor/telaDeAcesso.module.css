@@ -28,7 +28,10 @@
      cima nunca fica menor que a marca (`minmax(min-content, 1fr)`): em tela
      baixa o cartão desce o necessário em vez de cobrir o título. */
   display: grid;
-  grid-template-rows: minmax(min-content, 1fr) auto 1fr;
+  /* 1.6fr em cima e 1fr embaixo (29/10/2026, "traga o card um pouco mais
+     para baixo, para não ficar um vazio embaixo"): o cartão desce para
+     perto do polegar e o céu ganha o espaço de cima. */
+  grid-template-rows: minmax(min-content, 1.6fr) auto 1fr;
   grid-template-columns: minmax(0, 1fr);
   /* Margens laterais curtas (0.75rem) e folha com 1rem por dentro: no
      celular cada pixel de largura é e-mail visível no campo (29/10/2026,

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { avisarSituacaoDaConta } from "@/lib/notificacoes/avisosDaPlataforma";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import {
@@ -208,7 +209,7 @@ async function mudarSituacao(
     .eq("id", grupoId)
     .eq("situacao", de)
     .is("cancelado_em", null)
-    .select("id");
+    .select("id, nome");
   if (error) {
     console.error(`[plataforma] situação do grupo ${grupoId} não mudou para ${para}: ${error.message}`);
     return { ok: false, erro: ERRO_GENERICO };
@@ -217,5 +218,6 @@ async function mudarSituacao(
 
   await registrarEvento(servico, grupoId, guarda.userId, acao, { de, para });
   atualizarTelas(grupoId);
+  avisarSituacaoDaConta(grupoId, data[0].nome ?? "Uma conta", para);
   return { ok: true };
 }

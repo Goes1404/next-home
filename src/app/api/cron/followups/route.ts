@@ -46,6 +46,7 @@ import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { lembrarVisitasDaProximaHora } from "@/lib/notificacoes/lembreteDeVisita";
 import { avisarLeadsParados } from "@/lib/notificacoes/leadParado";
 import { avisarSenhasVencendo } from "@/lib/notificacoes/senhaVencendo";
+import { avisarCobrancasDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
@@ -668,6 +669,11 @@ export async function GET(req: NextRequest) {
   const senhasVencendo = await avisarSenhasVencendo(supabase).catch((e) => {
     console.error("[senha vencendo]", e);
     return 0;
+  });
+  // Resumo diário das mensalidades em aberto para quem administra a
+  // plataforma (29/10/2026, 0239): só às 9h, no primeiro tique da hora.
+  await avisarCobrancasDoDia().catch((e) => {
+    console.error("[cobranças do dia]", e);
   });
   // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.

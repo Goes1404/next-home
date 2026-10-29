@@ -31,6 +31,9 @@ export const TABELAS_GLOBAIS = [
   // `grupo_criado_id` (não `grupo_id`, que traria o carimbo e as regras de
   // tabela do grupo). Só a chave de serviço lê e escreve.
   "pedidos_de_contratacao",
+  // Aparelhos dos administradores da plataforma com aviso ligado (0239,
+  // 29/10/2026): o dono do aparelho é o usuário do Auth, acima dos grupos.
+  "inscricoes_push_da_plataforma",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

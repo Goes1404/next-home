@@ -13,7 +13,7 @@ import { bancoFalso, type BancoFalso } from "../../../../test/bancoFalso";
 let banco: BancoFalso;
 let ip: string;
 let depois: (() => unknown)[];
-let avisos: { corretorId: string; n: { titulo: string; corpo: string; url: string } }[];
+let avisos: { n: { titulo: string; corpo: string; url: string } }[];
 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-forwarded-for": `${ip}, 10.0.0.1` }),
@@ -21,8 +21,8 @@ vi.mock("next/headers", () => ({
 vi.mock("next/server", () => ({ after: (fn: () => unknown) => depois.push(fn) }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => banco.cliente }));
 vi.mock("@/lib/notificacoes/push", () => ({
-  notificarCorretor: async (_s: unknown, corretorId: string, n: { titulo: string; corpo: string; url: string }) => {
-    avisos.push({ corretorId, n });
+  notificarAdminsDaPlataforma: async (_s: unknown, n: { titulo: string; corpo: string; url: string }) => {
+    avisos.push({ n });
     return 1;
   },
 }));
@@ -167,12 +167,12 @@ describe("enviarPedidoDeContratacao", () => {
     log.mockRestore();
   });
 
-  it("avisa depois da resposta só os administradores com ficha, sem nome nem telefone", async () => {
+  it("avisa depois da resposta os administradores da plataforma, sem nome nem telefone", async () => {
     await enviarPedidoDeContratacao(ENVIO);
     expect(avisos).toHaveLength(0);
     expect(depois).toHaveLength(1);
     await depois[0]();
-    expect(avisos.map((a) => a.corretorId)).toEqual(["c-admin"]);
+    expect(avisos).toHaveLength(1);
     const { n } = avisos[0];
     expect(n.url).toBe("/plataforma/pedidos");
     expect(n.corpo).toContain("Barueri/SP");

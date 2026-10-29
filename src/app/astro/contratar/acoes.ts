@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { linkDoWhatsAppDaAstro } from "@/lib/marcaDaPlataforma";
-import { notificarCorretor } from "@/lib/notificacoes/push";
+import { notificarAdminsDaPlataforma } from "@/lib/notificacoes/push";
 import {
   mascararParaLog,
   mensagemDoPedidoParaAstro,
@@ -166,29 +166,19 @@ async function gravarPedido(pedido: PedidoLimpo, agora: number): Promise<"gravad
 }
 
 /**
- * Push para quem administra a plataforma e tem ficha de corretor (é a ficha
- * que tem aparelho inscrito, `inscricoes_push`). Bônus: falha só vai ao log.
+ * Push para quem administra a plataforma (29/10/2026: "todos os atendimentos
+ * caem na conta do ADM"). Os aparelhos do ADM moram em
+ * `inscricoes_push_da_plataforma` (0239). O texto leva só plano e cidade.
+ * Bônus: falha só vai ao log.
  */
 async function avisarAdministradores(pedido: PedidoLimpo): Promise<void> {
   try {
-    const servico = createServiceClient();
-    const { data: admins, error } = await servico.from("administradores_da_plataforma").select("user_id");
-    if (error || !admins?.length) return;
-    const { data: fichas, error: erroDasFichas } = await servico
-      .from("corretores")
-      .select("id")
-      .in(
-        "user_id",
-        admins.map((a) => a.user_id),
-      );
-    if (erroDasFichas || !fichas?.length) return;
-    const aviso = {
+    await notificarAdminsDaPlataforma(createServiceClient(), {
       titulo: "Novo pedido de contratação",
       corpo: `${resumoDoPlano(pedido.plano, pedido.usuarios)} · ${pedido.cidade}/${pedido.uf}`,
       url: "/plataforma/pedidos",
       tag: "pedido-de-contratacao",
-    };
-    await Promise.all(fichas.map((f) => notificarCorretor(servico, f.id, aviso)));
+    });
   } catch (e) {
     console.warn("[contratar] aviso aos administradores não enviado:", e instanceof Error ? e.message : e);
   }

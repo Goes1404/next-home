@@ -7,6 +7,7 @@ import { FILTROS_DE_TIPO, hrefDoFiltro, lerFiltroDeTipo, separarPorTipo } from "
 import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
 import { contarPedidosNovos } from "@/lib/plataforma/pedidos";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
+import { AtivarAvisosDaPlataforma } from "./AtivarAvisosDaPlataforma";
 import { CustoDaIa } from "./CustoDaIa";
 import { SaudeNoCartao } from "./SaudeDoGrupo";
 import { SeloDoTipo } from "./SeloDoTipo";
@@ -213,6 +214,9 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
           Administradores
         </Link>
       </div>
+
+      {/* Os atendimentos da Astro no celular do ADM (29/10/2026, 0239). */}
+      <AtivarAvisosDaPlataforma />
 
       <nav aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">
         {FILTROS_DE_TIPO.map((f) => (

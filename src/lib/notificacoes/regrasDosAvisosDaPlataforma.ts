@@ -1,0 +1,37 @@
+/**
+ * As regras PURAS dos avisos da plataforma (29/10/2026), para testar sem
+ * banco: o que entra no resumo diário das mensalidades.
+ */
+
+export type CobrancaParaAviso = {
+  nome: string;
+  estado: "isento" | "em_dia" | "pendente" | "suspenso";
+  diasDeAtraso: number;
+  /** Tem competência vencida e não paga (distingue suspensão por atraso da manual). */
+  temEmAberto: boolean;
+};
+
+/**
+ * Pendente (venceu e não pagou) e suspensa POR ATRASO entram; em dia, isenta
+ * e suspensa à mão sem débito ficam de fora (a manual já avisou na hora).
+ * Até três nomes no corpo, o resto vira "e mais N".
+ */
+export function resumoDasCobrancas(lista: CobrancaParaAviso[]): { titulo: string; corpo: string } | null {
+  const atrasadas = lista
+    .filter((c) => c.temEmAberto && (c.estado === "pendente" || c.estado === "suspenso"))
+    .sort((a, b) => b.diasDeAtraso - a.diasDeAtraso);
+  if (!atrasadas.length) return null;
+  const itens = atrasadas
+    .slice(0, 3)
+    .map((c) =>
+      c.estado === "suspenso"
+        ? `${c.nome} (suspensa, ${c.diasDeAtraso} dias)`
+        : `${c.nome} (${c.diasDeAtraso === 0 ? "vence hoje" : `${c.diasDeAtraso} ${c.diasDeAtraso === 1 ? "dia" : "dias"}`})`,
+    );
+  const resto = atrasadas.length - itens.length;
+  const n = atrasadas.length;
+  return {
+    titulo: n === 1 ? "1 mensalidade em aberto" : `${n} mensalidades em aberto`,
+    corpo: itens.join(", ") + (resto > 0 ? ` e mais ${resto}` : "") + ".",
+  };
+}

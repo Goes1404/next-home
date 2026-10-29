@@ -6,6 +6,7 @@ import { convidarCorretorDoGrupo, limparEmail } from "@/lib/corretores/convite";
 import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { creciPendenteDoCadastro } from "@/lib/corretores/cadastroPendente";
 import { erroDaSenha } from "@/lib/auth/politicaDeSenha";
+import { avisarContaNova } from "@/lib/notificacoes/avisosDaPlataforma";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { apagarEm, podeCancelar, podeDesfazerCancelamento, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
@@ -503,6 +504,8 @@ async function criarGrupoValidado(d: NovoGrupoValidado, cadastro?: CadastroDoGru
   }
 
   revalidatePath("/plataforma");
+  // Conta nova no celular dos ADMs (29/10/2026, "todos os atendimentos").
+  avisarContaNova(d.nome, d.tipo);
   return {
     ok: true,
     grupoId,
