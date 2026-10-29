@@ -74,7 +74,10 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
   'site_do_grupo_alterado', 'endereco_do_site_ligado', 'endereco_do_site_removido',
   'plano_alterado', 'admin_da_plataforma_adicionado', 'admin_da_plataforma_removido',
   -- A visão de suporte da plataforma aberta para o grupo (0243).
-  'visao_de_suporte_aberta'
+  'visao_de_suporte_aberta',
+  -- Os da 0241 (cobrança Asaas e teste grátis), que vem antes na numeração:
+  -- reconstruir o CHECK sem eles os derrubaria num banco recriado do zero.
+  'teste_gratis_iniciado', 'cobranca_automatica_ligada', 'cobranca_automatica_desligada'
 ));
 
 commit;

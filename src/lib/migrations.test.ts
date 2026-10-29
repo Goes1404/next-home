@@ -55,9 +55,6 @@ const RESERVADOS = new Set<number>([
   // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
   // depois dela.
   213,
-  // 29/10/2026: reservadas para outras frentes de 29/10; tirar na junção.
-  // A 0241 (cobrança Asaas e teste grátis) está reservada para a frente em andamento.
-  241,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {

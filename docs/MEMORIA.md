@@ -12551,3 +12551,10 @@ Nota: [[painel-de-numeros-visao-de-suporte-e-avisos-aos-clientes]]. 0242
 `admin_eventos`) aplicadas. A 0241 (Asaas + teste grátis) segue reservada.
 - Visão de suporte: só números; acesso registrado antes de ler e visível ao gestor.
 
+## Cobrança automática pelo Asaas e teste grátis (29/10/2026)
+
+Nota: [[cobranca-asaas-e-teste-gratis]]. 0241 aplicada (depois da 0243; o
+CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
+- Falta o dono criar a conta no Asaas e pôr `ASAAS_AMBIENTE`,
+  `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` na Vercel e cadastrar o webhook.
+

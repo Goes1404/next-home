@@ -23,6 +23,10 @@ const cobranca = (estado: SituacaoDaCobranca["estado"]): SituacaoDaCobranca => (
   vencimento: null,
   diasDeAtraso: 0,
   suspendeEm: null,
+  fimDoTeste: null,
+  diasDeTesteRestantes: 0,
+  testeTerminouSemPagamento: false,
+  emAberto: [],
   proximoVencimento: "2026-11-10",
 });
 

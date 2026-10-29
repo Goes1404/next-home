@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";

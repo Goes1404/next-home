@@ -41,6 +41,7 @@ const COBRANCA = {
   em_dia: "Em dia",
   pendente: "Vencida",
   suspenso: "Suspensa por atraso",
+  teste: "Em teste grátis",
 } as const;
 
 const SITUACAO = { ativo: "Ativa", suspenso: "Suspensa", encerrado: "Cancelada" } as const;

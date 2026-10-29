@@ -28,6 +28,7 @@ F0–F6.
 - [[contratar-plano-pela-pagina-da-astro]] — clicar no plano leva ao assistente de contratação; pedidos na Plataforma (29/10)
 - [[suporte-e-contato-da-astro]] — Fale com a Astro, Suporte da Astro no painel e /plataforma/suporte (29/10)
 - [[painel-de-numeros-visao-de-suporte-e-avisos-aos-clientes]] — KPIs da Astro, visão de suporte registrada, primeiros passos e avisos aos clientes (29/10)
+- [[cobranca-asaas-e-teste-gratis]] — assinatura no Asaas, webhook de pagamento e teste grátis de 7 dias (29/10)
 - [[ficha-publica-do-imovel]] — /imovel/<grupo>/<slug> para imobiliária sem site e o montador único do link do imóvel (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[anuncios-pagos-em-abas]] — Anúncios pagos em cinco abas por `?aba=`; `botao-solido` e `botao-aba` (26/10)

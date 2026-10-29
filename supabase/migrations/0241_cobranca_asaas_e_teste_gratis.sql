@@ -132,7 +132,10 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
   'site_do_grupo_alterado', 'endereco_do_site_ligado', 'endereco_do_site_removido',
   'plano_alterado', 'admin_da_plataforma_adicionado', 'admin_da_plataforma_removido',
   -- Teste grátis criado pelo assistente e cobrança automática do Asaas (0241).
-  'teste_gratis_iniciado', 'cobranca_automatica_ligada', 'cobranca_automatica_desligada'
+  'teste_gratis_iniciado', 'cobranca_automatica_ligada', 'cobranca_automatica_desligada',
+  -- A 0243 (visão de suporte) chegou à produção ANTES desta (29/10/2026): o
+  -- valor dela fica aqui também, senão aplicar esta depois o derrubaria.
+  'visao_de_suporte_aberta'
 ));
 
 commit;
