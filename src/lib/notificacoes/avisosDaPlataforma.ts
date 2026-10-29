@@ -2,7 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import { lerCobrancaDoGrupo } from "@/lib/planos/cobrancaDoGrupo";
 import { createServiceClient } from "@/lib/supabase/service";
-import { notificarAdminsDaPlataforma } from "./push";
+import { notificarAdminsDaPlataforma, type Notificacao } from "./push";
 import { horaEMinutoEmSP } from "./relogio";
 import { resumoDasCobrancas, type CobrancaParaAviso } from "./regrasDosAvisosDaPlataforma";
 
@@ -26,6 +26,15 @@ function depoisDaResposta(fn: () => Promise<unknown>): void {
   } catch {
     // Sem requisição em curso: não há resposta para esperar; o aviso não sai.
   }
+}
+
+/**
+ * Um atendimento novo (contato pelo site, suporte pelo painel; 0240,
+ * 29/10/2026) no celular dos administradores, depois da resposta. Quem chama
+ * monta o texto; ele nunca leva telefone, e-mail nem dado de lead.
+ */
+export function avisarAtendimento(n: Notificacao): void {
+  depoisDaResposta(() => notificarAdminsDaPlataforma(createServiceClient(), n));
 }
 
 /** Conta criada pela plataforma (avisa o OUTRO ADM; quem criou também recebe). */

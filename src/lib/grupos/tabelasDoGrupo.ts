@@ -34,6 +34,12 @@ export const TABELAS_GLOBAIS = [
   // Aparelhos dos administradores da plataforma com aviso ligado (0239,
   // 29/10/2026): o dono do aparelho é o usuário do Auth, acima dos grupos.
   "inscricoes_push_da_plataforma",
+  // Chamados de suporte e contato com a Astro (0240, 29/10/2026): o contato
+  // do site não tem grupo, e o do painel é conversa da imobiliária COM a
+  // Astro, não dado dela. O grupo de onde veio fica em `grupo_origem_id`
+  // (não `grupo_id`, pelo mesmo motivo dos pedidos). Só a chave de serviço
+  // lê e escreve.
+  "chamados_de_suporte",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

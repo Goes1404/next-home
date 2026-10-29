@@ -1320,6 +1320,62 @@ export type Database = {
         }
         Relationships: []
       }
+      /**
+       * 0240 — chamados de suporte (painel) e contato (site) com a Astro
+       * (29/10/2026). Global (sem `grupo_id`; a origem fica em
+       * `grupo_origem_id`); só a chave de serviço.
+       */
+      chamados_de_suporte: {
+        Row: {
+          id: string
+          criado_em: string
+          origem: "site" | "painel"
+          assunto: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem: string
+          nome: string
+          email: string | null
+          whatsapp: string | null
+          grupo_origem_id: string | null
+          corretor_origem_id: string | null
+          consentimento_em: string | null
+          status: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          origem: "site" | "painel"
+          assunto: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem: string
+          nome: string
+          email?: string | null
+          whatsapp?: string | null
+          grupo_origem_id?: string | null
+          corretor_origem_id?: string | null
+          consentimento_em?: string | null
+          status?: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          origem?: "site" | "painel"
+          assunto?: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem?: string
+          nome?: string
+          email?: string | null
+          whatsapp?: string | null
+          grupo_origem_id?: string | null
+          corretor_origem_id?: string | null
+          consentimento_em?: string | null
+          status?: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
       venda_fiscal: {
         Row: {

@@ -107,7 +107,9 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     const itens = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
     expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
-    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha"]);
+    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha", "/corretor/suporte"]);
+    // O suporte da Astro (29/10/2026) também mora no avatar, fora do menu.
+    expect(itens.some((i) => i.href === "/corretor/suporte")).toBe(false);
   });
 
   it("gestor vê exatamente um destino a mais, e é Administração", () => {
@@ -162,6 +164,7 @@ describe("moduloAtivo — a chave do color coding", () => {
      */
     expect(moduloAtivo("/corretor/links")).toBe("imoveis");
     expect(moduloAtivo("/corretor/senha")).toBe("conta");
+    expect(moduloAtivo("/corretor/suporte")).toBe("conta");
   });
 
   it("sub-rota profunda mantém a cor do módulo", () => {

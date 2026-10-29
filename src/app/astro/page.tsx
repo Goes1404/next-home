@@ -32,6 +32,11 @@ import s from "./astro.module.css";
  * <plano>", com o nome curto do plano (Essencial, Profissional,
  * Imobiliária: o nome inteiro quebrava o botão em duas linhas); o `::before`
  * dele cobre o cartão, então clicar em qualquer ponto do cartão contrata.
+ *
+ * Fale com a Astro (29/10/2026): o fechamento e o rodapé levam a
+ * `/astro/contato`, o formulário de quem quer perguntar antes de contratar.
+ * O contato vira chamado (0240) e avisa no celular quem administra a
+ * plataforma.
  */
 
 const CONVERSA = [
@@ -310,6 +315,9 @@ export default function PaginaDaAstro() {
                 Conversar no WhatsApp
               </a>
             )}
+            <Link href="/astro/contato" className={`${s.botao} ${s.botaoContorno}`}>
+              Fale com a Astro
+            </Link>
             <Link href="/corretor/entrar" className={`${s.botao} ${s.botaoContorno}`}>
               Entrar no CRM
             </Link>

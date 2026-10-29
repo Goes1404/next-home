@@ -1,0 +1,38 @@
+/*
+ * O "Fale com a Astro" (29/10/2026). Usa a folha, os campos e a confirmação
+ * do assistente de contratação (`../contratar/contratar.module.css`); aqui
+ * só o que ele não tem: a caixa da mensagem, mais alta que um campo de uma
+ * linha, com o rótulo flutuante no mesmo lugar.
+ */
+
+.mensagem {
+  height: auto;
+  min-height: 9.5rem;
+  padding-top: 1.55rem;
+  padding-bottom: 0.75rem;
+  resize: vertical;
+  line-height: 1.45rem;
+}
+
+.contagem {
+  margin-top: 0.3rem;
+  padding-right: 0.2rem;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #8a94ab;
+  font-variant-numeric: tabular-nums;
+}
+
+/* O atalho "Prefere o WhatsApp?" abaixo da folha. */
+.atalho {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+.atalho a {
+  font-weight: 600;
+  color: var(--azul);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
