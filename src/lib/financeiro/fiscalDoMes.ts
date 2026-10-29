@@ -16,6 +16,7 @@ import {
   type VendaParaFiscal,
 } from "./fiscal";
 import type { LinhaDeRpa } from "./fiscalPlanilhas";
+import { LINHAS_PADRAO, parametrosNaData } from "./parametrosFiscais";
 
 /**
  * Tudo o que a tela Fiscal e as planilhas do contador precisam de um mês,
@@ -94,7 +95,7 @@ export async function getFiscalDoMes(mes: string): Promise<LeituraFiscalDoMes> {
       continue;
     }
     const antes = jaPago.get(r.corretorId) ?? 0;
-    rpas.push({ corretor: r.corretor, imovel: r.imovel, pagoEm: r.pagoEm, rpa: calcularRpa(r.valor, config, antes) });
+    rpas.push({ corretor: r.corretor, imovel: r.imovel, pagoEm: r.pagoEm, rpa: calcularRpa(r.valor, config, parametrosNaData(LINHAS_PADRAO, r.pagoEm), antes) });
     jaPago.set(r.corretorId, antes + r.valor);
   }
 

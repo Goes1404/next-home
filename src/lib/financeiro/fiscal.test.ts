@@ -13,6 +13,8 @@ import {
   vendasDoAno,
   type VendaParaFiscal,
 } from "./fiscal";
+import { LINHAS_PADRAO, parametrosNaData } from "./parametrosFiscais";
+import { centavos } from "./venda";
 
 const venda = (p: Partial<VendaParaFiscal> = {}): VendaParaFiscal => ({
   id: "v1",
@@ -54,34 +56,65 @@ describe("impostosDoMes", () => {
 });
 
 describe("RPA", () => {
+  const p2026 = parametrosNaData(LINHAS_PADRAO, "2026-02-01");
+  const p2025 = parametrosNaData(LINHAS_PADRAO, "2025-11-01");
+
   it("até R$ 5 mil no mês o IRRF zera (redução de 2026)", () => {
-    const r = calcularRpa(4000, CONFIG_PADRAO);
+    const r = calcularRpa(4000, CONFIG_PADRAO, p2026);
     expect(r.inss).toBe(440);
     expect(r.irrf).toBe(0);
     expect(r.liquido).toBe(3560);
   });
 
-  it("acima de R$ 7.350 vale a tabela cheia, com INSS no teto", () => {
-    const r = calcularRpa(20000, CONFIG_PADRAO);
-    expect(r.inss).toBe(897.32);
-    const base = 20000 - 897.32;
+  it("R$ 4.800 em 2026 também zera o IRRF", () => {
+    expect(calcularRpa(4800, CONFIG_PADRAO, p2026).irrf).toBe(0);
+  });
+
+  it("a mesma quantia em 2025, antes do redutor, paga IRRF", () => {
+    expect(calcularRpa(4800, CONFIG_PADRAO, p2025).irrf).toBeGreaterThan(0);
+  });
+
+  it("2026: INSS no teto de R$ 8.475,55", () => {
+    const r = calcularRpa(10000, CONFIG_PADRAO, p2026);
+    expect(r.inss).toBe(centavos(8475.55 * 0.11));
+  });
+
+  it("2025: INSS no teto antigo de R$ 8.157,41", () => {
+    expect(calcularRpa(10000, CONFIG_PADRAO, p2025).inss).toBe(centavos(8157.41 * 0.11));
+  });
+
+  it("acima de R$ 7.350 vale a tabela cheia", () => {
+    const r = calcularRpa(20000, CONFIG_PADRAO, p2026);
+    const base = 20000 - r.inss;
     expect(r.irrf).toBeCloseTo(base * 0.275 - 908.73, 1);
   });
 
   it("dois repasses no mês não pagam o teto do INSS duas vezes", () => {
-    const primeiro = calcularRpa(8000, CONFIG_PADRAO);
-    const segundo = calcularRpa(8000, CONFIG_PADRAO, 8000);
-    expect(primeiro.inss + segundo.inss).toBeCloseTo(897.32, 1);
+    const primeiro = calcularRpa(8000, CONFIG_PADRAO, p2026);
+    const segundo = calcularRpa(8000, CONFIG_PADRAO, p2026, 8000);
+    expect(primeiro.inss + segundo.inss).toBeCloseTo(8475.55 * 0.11, 1);
+  });
+
+  // `jaPagoNoMes` é do MESMO mês da data dos parâmetros: o mês é a unidade do
+  // IRRF e do teto do INSS, então um RPA de janeiro nunca soma o de dezembro.
+  it("o acumulado do mês não cruza a virada do ano", () => {
+    const janeiro = calcularRpa(3000, CONFIG_PADRAO, p2026, 3000);
+    const isolado = calcularRpa(6000, CONFIG_PADRAO, p2026);
+    expect(janeiro.inss + calcularRpa(3000, CONFIG_PADRAO, p2026).inss).toBeCloseTo(isolado.inss, 2);
   });
 
   it("INSS patronal de 20% só fora do Simples", () => {
-    expect(calcularRpa(1000, CONFIG_PADRAO).inssPatronal).toBe(0);
-    expect(calcularRpa(1000, { ...CONFIG_PADRAO, regime: "presumido" }).inssPatronal).toBe(200);
+    expect(calcularRpa(1000, CONFIG_PADRAO, p2026).inssPatronal).toBe(0);
+    expect(calcularRpa(1000, { ...CONFIG_PADRAO, regime: "presumido" }, p2026).inssPatronal).toBe(200);
   });
 
   it("tabela progressiva", () => {
-    expect(irrfDaTabela(2000)).toBe(0);
-    expect(irrfDaTabela(3000)).toBeCloseTo(3000 * 0.15 - 394.16, 2);
+    expect(irrfDaTabela(2000, p2026)).toBe(0);
+    expect(irrfDaTabela(3000, p2026)).toBeCloseTo(3000 * 0.15 - 394.16, 2);
+  });
+
+  it("a configuração padrão apura por competência", () => {
+    expect(CONFIG_PADRAO.regimeApuracao).toBe("competencia");
   });
 });
 

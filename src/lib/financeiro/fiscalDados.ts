@@ -38,9 +38,9 @@ export async function getFiscal(vendaIds: string[]): Promise<LeituraFiscal> {
   const config: ConfigFiscal = c
     ? {
         regime: c.regime,
+        regimeApuracao: CONFIG_PADRAO.regimeApuracao,
         aliquotaSimples: Number(c.aliquota_simples),
         aliquotaIss: Number(c.aliquota_iss),
-        tetoInss: Number(c.teto_inss),
         cnpj: c.cnpj,
         razaoSocial: c.razao_social,
         conferidoEm: c.conferido_em,

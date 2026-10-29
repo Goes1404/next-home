@@ -1,3 +1,4 @@
+import type { ParametrosFiscais } from "./parametrosFiscais";
 import { centavos } from "./venda";
 
 /**
@@ -11,15 +12,16 @@ import { centavos } from "./venda";
  */
 
 export type Regime = "simples" | "presumido";
+/** Competência é o padrão legal; caixa só se a empresa optou (0232). */
+export type RegimeApuracao = "competencia" | "caixa";
 
 export type ConfigFiscal = {
   regime: Regime;
+  regimeApuracao: RegimeApuracao;
   /** Alíquota EFETIVA do DAS no Simples (fração: 0.06 = 6%). */
   aliquotaSimples: number;
   /** ISS do município no lucro presumido (no Simples ele está dentro do DAS). */
   aliquotaIss: number;
-  /** Teto de contribuição do INSS do mês. */
-  tetoInss: number;
   cnpj: string | null;
   razaoSocial: string | null;
   conferidoEm: string | null;
@@ -27,9 +29,9 @@ export type ConfigFiscal = {
 
 export const CONFIG_PADRAO: ConfigFiscal = {
   regime: "simples",
+  regimeApuracao: "competencia",
   aliquotaSimples: 0.06,
   aliquotaIss: 0.02,
-  tetoInss: 8157.41,
   cnpj: null,
   razaoSocial: null,
   conferidoEm: null,
@@ -102,31 +104,22 @@ export function totalDeImpostos(linhas: LinhaDeImposto[]): number {
 
 // ── RPA do corretor autônomo ─────────────────────────────────────────────
 
-/** Tabela progressiva mensal do IRRF (vigente desde maio de 2025). */
-const FAIXAS_IRRF: { ate: number; aliquota: number; deducao: number }[] = [
-  { ate: 2428.8, aliquota: 0, deducao: 0 },
-  { ate: 2826.65, aliquota: 0.075, deducao: 182.16 },
-  { ate: 3751.05, aliquota: 0.15, deducao: 394.16 },
-  { ate: 4664.68, aliquota: 0.225, deducao: 675.49 },
-  { ate: Infinity, aliquota: 0.275, deducao: 908.73 },
-];
-
-/** Desconto simplificado mensal: substitui as deduções legais quando é maior. */
-export const DESCONTO_SIMPLIFICADO = 607.2;
-
 /**
- * Redução do IRRF de 2026 (Lei 15.270/2025): zera o imposto de quem recebe
- * até R$ 5 mil no mês e diminui aos poucos até R$ 7.350.
+ * Redução do IRRF (Lei 15.270/2025, desde 2026): zera o imposto de quem
+ * recebe até o limite isento no mês e diminui aos poucos até `ate`. Antes de
+ * 2026 `p.redutor` é null e não há redução.
  */
-export function reducaoDoIrrf(rendimento: number, imposto: number): number {
-  if (rendimento <= 5000) return imposto;
-  if (rendimento <= 7350) return Math.min(imposto, Math.max(0, 978.62 - 0.133145 * rendimento));
+export function reducaoDoIrrf(rendimento: number, imposto: number, p: ParametrosFiscais): number {
+  const r = p.redutor;
+  if (!r) return 0;
+  if (rendimento <= r.isentoAte) return imposto;
+  if (rendimento <= r.ate) return Math.min(imposto, Math.max(0, r.a - r.b * rendimento));
   return 0;
 }
 
-export function irrfDaTabela(base: number): number {
+export function irrfDaTabela(base: number, p: ParametrosFiscais): number {
   if (base <= 0) return 0;
-  const faixa = FAIXAS_IRRF.find((f) => base <= f.ate) ?? FAIXAS_IRRF[FAIXAS_IRRF.length - 1];
+  const faixa = p.faixasIrrf.find((f) => base <= f.ate) ?? p.faixasIrrf[p.faixasIrrf.length - 1];
   return Math.max(0, base * faixa.aliquota - faixa.deducao);
 }
 
@@ -136,31 +129,32 @@ export type Rpa = {
   baseIrrf: number;
   irrf: number;
   liquido: number;
-  /** 20% de INSS patronal: só fora do Simples. */
+  /** INSS patronal (20%): só fora do Simples. */
   inssPatronal: number;
   custoTotal: number;
 };
 
 /**
- * Retenções do recibo de pagamento de autônomo. `brutoNoMes` é tudo o que o
+ * Retenções do recibo de pagamento de autônomo. `jaPagoNoMes` é tudo o que o
  * corretor já recebeu da imobiliária por RPA no mesmo mês: o INSS tem teto e
  * o IRRF é mensal, então dois repasses no mês não podem ser calculados como
  * se fossem um só cada. A função devolve o RPA do valor `bruto` descontando o
- * que já foi retido sobre `jaPagoNoMes`.
+ * que já foi retido sobre `jaPagoNoMes`. `p` são os parâmetros vigentes na
+ * data do pagamento (`parametrosNaData`).
  */
-export function calcularRpa(bruto: number, config: ConfigFiscal, jaPagoNoMes = 0): Rpa {
+export function calcularRpa(bruto: number, config: ConfigFiscal, p: ParametrosFiscais, jaPagoNoMes = 0): Rpa {
   const total = (v: number) => {
-    const inss = Math.min(v, config.tetoInss) * 0.11;
-    const base = Math.max(0, v - Math.max(inss, DESCONTO_SIMPLIFICADO));
-    const irBruto = irrfDaTabela(base);
-    const irrf = Math.max(0, irBruto - reducaoDoIrrf(v, irBruto));
+    const inss = Math.min(v, p.tetoInss) * p.inssAutonomo;
+    const base = Math.max(0, v - Math.max(inss, p.descontoSimplificado));
+    const irBruto = irrfDaTabela(base, p);
+    const irrf = Math.max(0, irBruto - reducaoDoIrrf(v, irBruto, p));
     return { inss, base, irrf };
   };
   const antes = total(jaPagoNoMes);
   const depois = total(jaPagoNoMes + bruto);
   const inss = centavos(depois.inss - antes.inss);
   const irrf = centavos(depois.irrf - antes.irrf);
-  const inssPatronal = config.regime === "presumido" ? centavos(bruto * 0.2) : 0;
+  const inssPatronal = config.regime === "presumido" ? centavos(bruto * p.inssPatronal) : 0;
   return {
     bruto: centavos(bruto),
     inss,

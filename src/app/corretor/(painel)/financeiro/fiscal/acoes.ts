@@ -21,7 +21,6 @@ export async function salvarConfigFiscal(c: {
   regime: Regime;
   aliquotaSimples: number;
   aliquotaIss: number;
-  tetoInss: number;
   cnpj: string | null;
   razaoSocial: string | null;
 }): Promise<ResultadoFiscal> {
@@ -31,7 +30,6 @@ export async function salvarConfigFiscal(c: {
   if (c.regime !== "simples" && c.regime !== "presumido") return { erro: "Regime inválido." };
   if (!(c.aliquotaSimples >= 0 && c.aliquotaSimples <= 0.5)) return { erro: "A alíquota do Simples deve ficar entre 0% e 50%." };
   if (!(c.aliquotaIss >= 0 && c.aliquotaIss <= 0.1)) return { erro: "O ISS deve ficar entre 0% e 10%." };
-  if (!(c.tetoInss > 0)) return { erro: "Informe o teto do INSS." };
   const cnpj = docOuNulo(c.cnpj);
   if (cnpj && (cnpj.length !== 14 || !documentoValido(cnpj))) return { erro: "O CNPJ da imobiliária não confere." };
 
@@ -42,7 +40,6 @@ export async function salvarConfigFiscal(c: {
       regime: c.regime,
       aliquota_simples: c.aliquotaSimples,
       aliquota_iss: c.aliquotaIss,
-      teto_inss: c.tetoInss,
       cnpj,
       razao_social: textoOuNulo(c.razaoSocial),
       conferido_em: hojeEmSaoPaulo(),

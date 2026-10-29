@@ -33,13 +33,11 @@ function useAcao() {
 
 const paraPct = (n: number) => String(Math.round(n * 10000) / 100).replace(".", ",");
 const dePct = (s: string) => Number(s.replace(",", ".")) / 100;
-const deReais = (s: string) => Number(s.replace(/\./g, "").replace(",", "."));
 
 export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
   const [regime, setRegime] = useState<Regime>(config.regime);
   const [simples, setSimples] = useState(paraPct(config.aliquotaSimples));
   const [iss, setIss] = useState(paraPct(config.aliquotaIss));
-  const [teto, setTeto] = useState(String(config.tetoInss).replace(".", ","));
   const [cnpj, setCnpj] = useState(formatarDocumento(config.cnpj));
   const [razao, setRazao] = useState(config.razaoSocial ?? "");
   const { pendente, rodar } = useAcao();
@@ -54,7 +52,6 @@ export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
             regime,
             aliquotaSimples: dePct(simples),
             aliquotaIss: dePct(iss),
-            tetoInss: deReais(teto),
             cnpj: cnpj || null,
             razaoSocial: razao || null,
           }),
@@ -79,10 +76,6 @@ export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
           <input className={campo} inputMode="decimal" value={iss} onChange={(e) => setIss(e.target.value)} />
         </label>
       )}
-      <label className="block">
-        <span className={rotulo}>Teto do INSS no mês (R$)</span>
-        <input className={campo} inputMode="decimal" value={teto} onChange={(e) => setTeto(e.target.value)} />
-      </label>
       <label className="block">
         <span className={rotulo}>CNPJ da imobiliária</span>
         <input className={campo} inputMode="numeric" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
