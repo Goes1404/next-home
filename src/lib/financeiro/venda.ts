@@ -221,3 +221,24 @@ export function hojeEmSaoPaulo(agora: Date = new Date()): string {
     day: "2-digit",
   }).format(agora);
 }
+
+/**
+ * As datas que, num mês fechado (0168), impedem mudar a venda: a data dela
+ * (nova e gravada, porque na competência a comissão conta no mês da venda),
+ * as parcelas recebidas ou canceladas e os repasses pagos. O que já foi para
+ * o contador não muda por baixo dele.
+ */
+export function datasQueTravamAVenda(v: {
+  dataVendaNova: string;
+  dataVendaGravada: string | null;
+  parcelas: { recebidaEm: string | null; canceladaEm: string | null }[];
+  repassesPagos: (string | null)[];
+}): string[] {
+  const datas = [
+    v.dataVendaNova,
+    v.dataVendaGravada,
+    ...v.parcelas.flatMap((p) => [p.recebidaEm, p.canceladaEm]),
+    ...v.repassesPagos,
+  ];
+  return [...new Set(datas.filter((d): d is string => !!d))];
+}

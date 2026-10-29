@@ -13,9 +13,16 @@ import {
   problemasDaVenda,
   resolverPar,
   type ModoValor,
-  type StatusVenda,
   type VendaDigitada,
 } from "@/lib/financeiro/venda";
+import {
+  dividirEmParcelas,
+  valorDaImobiliaria,
+  ROTULO_PAGADOR,
+  type FormaRecebimento,
+  type Pagador,
+  type ParcelaNova,
+} from "@/lib/financeiro/parcelas";
 import { buscarLeadsParaVenda, excluirVenda, salvarVenda, type LeadParaVenda } from "./acoes";
 
 export type VendaInicial = {
@@ -29,11 +36,19 @@ export type VendaInicial = {
   valorVenda: number;
   comissaoPercentual: number | null;
   comissaoValor: number;
-  status: StatusVenda;
-  distratadaEm: string | null;
   observacao: string;
-  participantes: { corretorId: string; partePercentual: number; repassePercentual: number | null; repasseValor: number }[];
+  participantes: {
+    corretorId: string;
+    partePercentual: number;
+    repassePercentual: number | null;
+    repasseValor: number;
+    formaRecebimento: FormaRecebimento;
+  }[];
+  parcelas: ParcelaNova[];
 };
+
+/** Uma parcela no formulário: o valor fica em texto enquanto se digita. */
+type LinhaDeParcela = { chave: number; valor: string; venceEm: string; pagador: Pagador };
 
 type Linha = {
   chave: number;
@@ -41,6 +56,7 @@ type Linha = {
   parte: string;
   repasseModo: ModoValor;
   repasse: string;
+  forma: FormaRecebimento;
 };
 
 const campo =
@@ -80,6 +96,7 @@ export function FormularioVenda({
   eu,
   ultimoRepasse,
   podeExcluir,
+  gestor = false,
 }: {
   inicial: VendaInicial | null;
   leadInicial: LeadParaVenda | null;
@@ -88,6 +105,8 @@ export function FormularioVenda({
   eu: { id: string; nome: string };
   ultimoRepasse: number | null;
   podeExcluir: boolean;
+  /** Só o gestor marca "recebe direto" (0232). */
+  gestor?: boolean;
 }) {
   const router = useRouter();
   const { avisar, falhar } = useAvisos();
@@ -115,8 +134,18 @@ export function FormularioVenda({
   const [comissao, setComissao] = useState(
     inicial ? numeroParaCampo(inicial.comissaoPercentual ?? inicial.comissaoValor) : "",
   );
-  const [status, setStatus] = useState<StatusVenda>(inicial?.status ?? "ativa");
-  const [distratadaEm, setDistratadaEm] = useState(inicial?.distratadaEm ?? "");
+  // Parcelas (0232): fechado = uma parcela só, que o servidor monta. Venda já
+  // dividida abre com a lista à mostra.
+  const [dividir, setDividir] = useState((inicial?.parcelas.length ?? 0) > 1);
+  const [parcelas, setParcelas] = useState<LinhaDeParcela[]>(() =>
+    (inicial?.parcelas ?? []).map((p, i) => ({
+      chave: -(i + 1),
+      valor: numeroParaCampo(p.valor),
+      venceEm: p.venceEm ?? "",
+      pagador: p.pagador,
+    })),
+  );
+  const [quantas, setQuantas] = useState("2");
   const [observacao, setObservacao] = useState(inicial?.observacao ?? "");
 
   const [linhas, setLinhas] = useState<Linha[]>(() => {
@@ -127,9 +156,10 @@ export function FormularioVenda({
         parte: numeroParaCampo(p.partePercentual),
         repasseModo: p.repassePercentual === null ? "valor" : "percentual",
         repasse: numeroParaCampo(p.repassePercentual ?? p.repasseValor),
+        forma: p.formaRecebimento,
       }));
     }
-    return [{ chave: 0, corretorId: eu.id, parte: "100", repasseModo: "percentual", repasse: numeroParaCampo(ultimoRepasse) }];
+    return [{ chave: 0, corretorId: eu.id, parte: "100", repasseModo: "percentual", repasse: numeroParaCampo(ultimoRepasse), forma: "repasse" }];
   });
 
   const nomes = useMemo(() => {
@@ -162,8 +192,6 @@ export function FormularioVenda({
     dataVenda,
     valorVenda: valorNumero,
     comissao: comissaoNumero === null ? null : { modo: comissaoModo, numero: comissaoNumero },
-    status,
-    distratadaEm: status === "distratada" ? distratadaEm || null : null,
     observacao,
     participantes: linhas.map((l) => {
       const n = l.repasseModo === "percentual" ? lerPercentual(l.repasse) : lerReais(l.repasse);
@@ -171,8 +199,13 @@ export function FormularioVenda({
         corretorId: l.corretorId,
         partePercentual: lerPercentual(l.parte) ?? 0,
         repasse: { modo: l.repasseModo, numero: n ?? 0 },
+        // Do corretor a forma nem viaja: o banco mantém a gravada.
+        ...(gestor ? { formaRecebimento: l.forma } : {}),
       };
     }),
+    parcelas: dividir
+      ? parcelas.map((p, i) => ({ numero: i + 1, valor: lerReais(p.valor) ?? 0, pagador: p.pagador, venceEm: p.venceEm || null }))
+      : [],
   };
   const problemas = problemasDaVenda(digitada, hojeEmSaoPaulo());
 
@@ -184,7 +217,7 @@ export function FormularioVenda({
     setLinhas((atual) => {
       const novas = [
         ...atual,
-        { chave: proximaChave.current++, corretorId: "", parte: "", repasseModo: "percentual" as ModoValor, repasse: "" },
+        { chave: proximaChave.current++, corretorId: "", parte: "", repasseModo: "percentual" as ModoValor, repasse: "", forma: "repasse" as FormaRecebimento },
       ];
       // Dividir por igual é o ponto de partida mais comum; o corretor ajusta.
       const partes = dividirIgualmente(novas.length);
@@ -265,6 +298,47 @@ export function FormularioVenda({
   }
 
   const somaPartes = digitada.participantes.reduce((s, p) => s + p.partePercentual, 0);
+  const daImobiliaria = comissaoPar
+    ? valorDaImobiliaria(
+        comissaoPar.valor,
+        digitada.participantes.map((p, i) => ({
+          formaRecebimento: linhas[i]?.forma ?? "repasse",
+          repasseValor: resolverPar(comissaoPar.valor, p.repasse).valor,
+        })),
+      )
+    : null;
+  const somaParcelas = digitada.parcelas.reduce((s, p) => s + p.valor, 0);
+
+  function gerarParcelas() {
+    const n = Math.min(24, Math.max(1, Math.round(Number(quantas) || 1)));
+    if (daImobiliaria === null) return;
+    const primeira = parcelas[0]?.venceEm || null;
+    setParcelas(
+      dividirEmParcelas(daImobiliaria, n, primeira, parcelas[0]?.pagador ?? "construtora").map((p) => ({
+        chave: proximaChave.current++,
+        valor: numeroParaCampo(p.valor),
+        venceEm: p.venceEm ?? "",
+        pagador: p.pagador,
+      })),
+    );
+  }
+
+  function abrirParcelas() {
+    setDividir(true);
+    if (parcelas.length === 0 && daImobiliaria !== null) {
+      setParcelas(
+        dividirEmParcelas(daImobiliaria, 2, null, "construtora").map((p) => ({
+          chave: proximaChave.current++,
+          valor: numeroParaCampo(p.valor),
+          venceEm: "",
+          pagador: p.pagador,
+        })),
+      );
+    }
+  }
+
+  const mudarParcela = (chave: number, m: Partial<LinhaDeParcela>) =>
+    setParcelas((ps) => ps.map((p) => (p.chave === chave ? { ...p, ...m } : p)));
 
   return (
     <form
@@ -494,6 +568,27 @@ export function FormularioVenda({
                     )}
                   </div>
                 </div>
+                {gestor && (
+                  <div>
+                    <label className={rotulo} htmlFor={`venda-forma-${l.chave}`}>
+                      Como a parte dele é paga
+                    </label>
+                    <select
+                      id={`venda-forma-${l.chave}`}
+                      value={l.forma}
+                      onChange={(e) => mudarLinha(l.chave, { forma: e.target.value as FormaRecebimento })}
+                      className={campo}
+                    >
+                      <option value="repasse">A imobiliária recebe e repassa</option>
+                      <option value="direto">Recebe direto de quem paga</option>
+                    </select>
+                    {l.forma === "direto" && (
+                      <p className="text-fluid-xs text-apoio mt-1">
+                        A parte dele não passa pelo caixa nem entra na receita da imobiliária. Só vale com contrato de associação.
+                      </p>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -516,37 +611,115 @@ export function FormularioVenda({
       </section>
 
       <section className="cartao space-y-3 p-4 sm:p-5">
-        {inicial && (
-          <div className="grid gap-3 sm:grid-cols-2">
+        {!dividir ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-fluid-xs text-tenue">
+              A comissão entra de uma vez{daImobiliaria !== null ? ` (${formatarReais(daImobiliaria)} para a imobiliária)` : ""}.
+            </p>
+            <button
+              type="button"
+              onClick={abrirParcelas}
+              className="text-fluid-sm min-h-11 px-1 font-medium link-acao"
+            >
+              Dividir em parcelas
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
             <div>
-              <label className={rotulo} htmlFor="venda-status">
-                Situação
-              </label>
-              <select
-                id="venda-status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as StatusVenda)}
-                className={campo}
-              >
-                <option value="ativa">Ativa</option>
-                <option value="distratada">Distratada</option>
-              </select>
+              <h2 className="text-fluid-base text-titulo font-medium">Parcelas da comissão</h2>
+              <p className="text-fluid-xs text-tenue mt-1">
+                O que a imobiliária recebe, parcela por parcela. O sinal do comprador e cada pagamento da construtora.
+              </p>
             </div>
-            {status === "distratada" && (
-              <div>
-                <label className={rotulo} htmlFor="venda-distrato">
-                  Data do distrato
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="w-24">
+                <label className={rotulo} htmlFor="venda-quantas">
+                  Quantas
                 </label>
-                <input
-                  id="venda-distrato"
-                  type="date"
-                  value={distratadaEm}
-                  max={hojeEmSaoPaulo()}
-                  onChange={(e) => setDistratadaEm(e.target.value)}
-                  className={campo}
-                />
+                <input id="venda-quantas" inputMode="numeric" value={quantas} onChange={(e) => setQuantas(e.target.value)} className={campo} />
               </div>
-            )}
+              <button
+                type="button"
+                onClick={gerarParcelas}
+                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha min-h-11 rounded-lg border px-4 font-medium"
+              >
+                Dividir igual
+              </button>
+            </div>
+            <ul className="space-y-3">
+              {parcelas.map((pc, i) => (
+                <li key={pc.chave} className="border-linha grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+                  <div>
+                    <label className={rotulo} htmlFor={`parcela-valor-${pc.chave}`}>
+                      Parcela {i + 1} (R$)
+                    </label>
+                    <input
+                      id={`parcela-valor-${pc.chave}`}
+                      inputMode="decimal"
+                      value={pc.valor}
+                      onChange={(e) => mudarParcela(pc.chave, { valor: e.target.value })}
+                      className={campo}
+                    />
+                  </div>
+                  <div>
+                    <label className={rotulo} htmlFor={`parcela-vence-${pc.chave}`}>
+                      Vencimento
+                    </label>
+                    <input
+                      id={`parcela-vence-${pc.chave}`}
+                      type="date"
+                      value={pc.venceEm}
+                      onChange={(e) => mudarParcela(pc.chave, { venceEm: e.target.value })}
+                      className={campo}
+                    />
+                  </div>
+                  <div>
+                    <label className={rotulo} htmlFor={`parcela-pagador-${pc.chave}`}>
+                      Quem paga
+                    </label>
+                    <select
+                      id={`parcela-pagador-${pc.chave}`}
+                      value={pc.pagador}
+                      onChange={(e) => mudarParcela(pc.chave, { pagador: e.target.value as Pagador })}
+                      className={campo}
+                    >
+                      {(Object.keys(ROTULO_PAGADOR) as Pagador[]).map((k) => (
+                        <option key={k} value={k}>
+                          {ROTULO_PAGADOR[k]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {parcelas.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setParcelas((ps) => ps.filter((x) => x.chave !== pc.chave))}
+                      aria-label={`Tirar a parcela ${i + 1}`}
+                      className="text-apoio hover:text-titulo border-linha-forte min-h-11 min-w-11 rounded-lg border px-3"
+                    >
+                      ×
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setParcelas((ps) => [...ps, { chave: proximaChave.current++, valor: "", venceEm: "", pagador: ps[ps.length - 1]?.pagador ?? "construtora" }])
+                }
+                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha min-h-11 rounded-lg border px-4 font-medium"
+              >
+                + Parcela
+              </button>
+              {daImobiliaria !== null && (
+                <span className={`text-fluid-xs ${Math.abs(somaParcelas - daImobiliaria) > 0.01 ? "text-perigo" : "text-apoio"}`}>
+                  Somam {formatarReais(somaParcelas)} de {formatarReais(daImobiliaria)}
+                </span>
+              )}
+            </div>
           </div>
         )}
         <div>

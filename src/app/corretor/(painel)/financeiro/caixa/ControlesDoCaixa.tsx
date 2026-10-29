@@ -12,7 +12,7 @@ import {
 } from "@/lib/financeiro/caixa";
 import { lerReais } from "@/lib/financeiro/venda";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { criarLancamento, informarSaldo, preverComissao, type ResultadoCaixa } from "./acoes";
+import { criarLancamento, informarSaldo, preverParcela, type ResultadoCaixa } from "./acoes";
 
 const campo =
   "text-fluid-sm border-linha-forte bg-campo text-corpo min-h-11 w-full min-w-0 rounded-lg border px-3 disabled:opacity-50";
@@ -53,6 +53,9 @@ export function NovoLancamento({ hoje }: { hoje: string }) {
   const [vencimento, setVencimento] = useState(hoje);
   const [jaPago, setJaPago] = useState(false);
   const [repetir, setRepetir] = useState("1");
+  // Competência diferente do vencimento (0232): recolhida; o padrão é o mês do vencimento.
+  const [outraCompetencia, setOutraCompetencia] = useState(false);
+  const [competencia, setCompetencia] = useState(hoje.slice(0, 7));
   const { pendente, rodar } = useAcao();
   const { falhar } = useAvisos();
 
@@ -70,6 +73,7 @@ export function NovoLancamento({ hoje }: { hoje: string }) {
       vencimento,
       jaPago,
       repetirMeses: Number(repetir),
+      competencia: outraCompetencia && repetir === "1" ? competencia : null,
     };
     const problemas = problemasDoLancamento(digitado);
     if (problemas.length) {
@@ -83,6 +87,7 @@ export function NovoLancamento({ hoje }: { hoje: string }) {
         setValor("");
         setJaPago(false);
         setRepetir("1");
+        setOutraCompetencia(false);
         setAberto(false);
       },
     );
@@ -178,6 +183,24 @@ export function NovoLancamento({ hoje }: { hoje: string }) {
         </div>
       </div>
 
+      {repetir === "1" &&
+        (outraCompetencia ? (
+          <div className="max-w-xs">
+            <label className={rotulo} htmlFor="caixa-competencia">
+              Mês de competência (a que mês a conta pertence)
+            </label>
+            <input id="caixa-competencia" type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className={campo} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOutraCompetencia(true)}
+            className="text-fluid-xs min-h-11 text-left link-acao"
+          >
+            Esta conta é de outro mês? (competência)
+          </button>
+        ))}
+
       <label className="text-fluid-sm text-corpo flex min-h-11 items-center gap-2">
         <input type="checkbox" checked={jaPago} onChange={(e) => setJaPago(e.target.checked)} className="accent-acento h-4.5 w-4.5" />
         {tipo === "saida" ? "Já foi pago" : "Já foi recebido"}
@@ -252,17 +275,17 @@ export function FormularioSaldo({ temSaldo }: { temSaldo: boolean }) {
   );
 }
 
-/** A data em que a construtora deve pagar a comissão. */
-export function PrevisaoDaComissao({ vendaId, atual }: { vendaId: string; atual: string | null }) {
+/** A data em que quem paga deve pagar UMA parcela da comissão (0232). */
+export function PrevisaoDaComissao({ parcelaId, atual }: { parcelaId: string; atual: string | null }) {
   const [data, setData] = useState(atual ?? "");
   const { pendente, rodar } = useAcao();
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <label className="sr-only" htmlFor={`prev-${vendaId}`}>
+      <label className="sr-only" htmlFor={`prev-${parcelaId}`}>
         Previsão de pagamento da comissão
       </label>
       <input
-        id={`prev-${vendaId}`}
+        id={`prev-${parcelaId}`}
         type="date"
         value={data}
         onChange={(e) => setData(e.target.value)}
@@ -271,7 +294,7 @@ export function PrevisaoDaComissao({ vendaId, atual }: { vendaId: string; atual:
       <button
         type="button"
         disabled={pendente || !data || data === atual}
-        onClick={() => rodar(() => preverComissao(vendaId, data))}
+        onClick={() => rodar(() => preverParcela(parcelaId, data))}
         className="text-fluid-sm border-linha text-corpo hover:border-acento-linha inline-flex min-h-11 items-center rounded-xl border px-3 disabled:opacity-50"
       >
         {pendente ? "Salvando…" : "Salvar data"}

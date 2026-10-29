@@ -694,6 +694,13 @@ begin
     if v_mudou and public.venda_tem_parcela_recebida(p_venda) then
       raise exception 'parcela_ja_recebida';
     end if;
+    -- Parcela cancelada pelo distrato é história: trocar as parcelas a apagaria
+    -- (achado da revisão de segurança, 29/10). Desfaça o distrato antes.
+    if v_mudou and exists (
+      select 1 from public.venda_parcelas where venda_id = p_venda and cancelada_em is not null
+    ) then
+      raise exception 'parcela_cancelada';
+    end if;
 
     update public.vendas set
       lead_id             = nullif(p_dados->>'lead_id', '')::uuid,

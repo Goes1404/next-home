@@ -306,6 +306,25 @@ describe.skipIf(!process.env.DB_TESTE_URL)("financeiro Fase A (0232)", () => {
       expect(p.recebida_em).toBe("2026-10-05");
     }));
 
+  it("trocar as parcelas de venda com parcela cancelada pelo distrato é recusado", () =>
+    emTransacaoDesfeita(sql, async (tx) => {
+      const g = await criarGrupo(tx, { slug: "fa-cancelada-troca" });
+      const { vendaId } = await novaVenda(tx, g, { parcelas: [{ numero: 1, valor: 10000, vence_em: "2026-11-05" }] });
+      expect(
+        await erroDe(() =>
+          comoUsuario(tx, g.gestorUserId, async (eu) => {
+            await eu`select public.distratar_venda(${vendaId}, '2026-10-20', 'cliente desistiu', 'cancelar')`;
+            await eu`select public.salvar_venda(
+              ${vendaId},
+              ${eu.json(dados(10000))},
+              ${eu.json([{ corretor_id: g.corretorId, parte_percentual: 100, repasse_valor: 4000 }])},
+              ${eu.json([{ numero: 1, valor: 5000 }, { numero: 2, valor: 5000 }])}
+            )`;
+          }),
+        ),
+      ).toBe("parcela_cancelada");
+    }));
+
   it("gestor edita a venda sem mexer nas parcelas: passa, mesmo com parcela recebida", () =>
     emTransacaoDesfeita(sql, async (tx) => {
       const g = await criarGrupo(tx, { slug: "fa-edita" });

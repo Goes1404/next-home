@@ -5,6 +5,7 @@ import { moverEtapa } from "@/app/corretor/actions";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createClient } from "@/lib/supabase/server";
 import {
+  datasQueTravamAVenda,
   hojeEmSaoPaulo,
   problemasDaVenda,
   resolverPar,
@@ -80,12 +81,21 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
   let parcelas: ParcelaNova[] = v.parcelas;
   const formaGravada = new Map<string, FormaRecebimento>();
   if (vendaId) {
-    // Venda cujo dinheiro já caiu num mês fechado não muda de valor por baixo do contador.
-    const [{ data: gravadas }, { data: partes }] = await Promise.all([
-      supabase.from("venda_parcelas").select("numero, valor, pagador, vence_em, recebida_em").eq("venda_id", vendaId).order("numero"),
+    // Venda de mês fechado não muda por baixo do contador: nem o dinheiro que
+    // caiu, nem a data e a comissão que contam na competência do mês.
+    const [{ data: gravada }, { data: gravadas }, { data: partes }] = await Promise.all([
+      supabase.from("vendas").select("data_venda").eq("id", vendaId).maybeSingle(),
+      supabase.from("venda_parcelas").select("numero, valor, pagador, vence_em, recebida_em, cancelada_em").eq("venda_id", vendaId).order("numero"),
       supabase.from("venda_participantes").select("corretor_id, repasse_pago_em, forma_recebimento").eq("venda_id", vendaId),
     ]);
-    const fechado = await mesFechadoEntre([...(gravadas ?? []).map((p) => p.recebida_em), ...(partes ?? []).map((p) => p.repasse_pago_em)]);
+    const fechado = await mesFechadoEntre(
+      datasQueTravamAVenda({
+        dataVendaNova: v.dataVenda,
+        dataVendaGravada: gravada?.data_venda ?? null,
+        parcelas: (gravadas ?? []).map((p) => ({ recebidaEm: p.recebida_em, canceladaEm: p.cancelada_em })),
+        repassesPagos: (partes ?? []).map((p) => p.repasse_pago_em),
+      }),
+    );
     if (fechado) return { erro: recusaDeMesFechado(fechado) };
     for (const p of partes ?? []) formaGravada.set(p.corretor_id, p.forma_recebimento);
 
@@ -97,6 +107,11 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
         parcelas = [{ ...parcelas[0], valor: daImobiliaria(comissao.valor, participantes, formaGravada) }];
       }
     }
+  }
+  if (!vendaId) {
+    // Venda nova com data num mês fechado mudaria a receita que o contador recebeu.
+    const fechado = await mesFechadoEntre([v.dataVenda]);
+    if (fechado) return { erro: recusaDeMesFechado(fechado) };
   }
   if (parcelas.length === 0) {
     const esperado = daImobiliaria(comissao.valor, participantes, formaGravada);

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getFiscalDoMes } from "@/lib/financeiro/fiscalDoMes";
-import { ROTULO_REGIME, faltasDaDimob, totalDeImpostos } from "@/lib/financeiro/fiscal";
+import { ROTULO_REGIME, faltasDaDimob, totalDeImpostos, ultimoRecebimento } from "@/lib/financeiro/fiscal";
 import { somarMeses } from "@/lib/financeiro/caixa";
 import { lerMes } from "@/lib/financeiro/resultado";
 import { nomeDoMes } from "@/lib/financeiro/periodo";
@@ -96,15 +96,25 @@ export default async function FiscalPage({ searchParams }: { searchParams: Promi
       {/* Impostos do mês */}
       <section className="cartao space-y-3 p-4 sm:p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-fluid-base text-titulo font-medium">Impostos estimados de {rotuloDoMes(mes)}</h2>
+          <h2 className="text-fluid-base text-titulo font-medium">
+            Impostos estimados de {rotuloDoMes(mes)}
+            {f.config.conferidoEm === null && (
+              <span className="text-fluid-xs text-alerta block font-normal">Estimativa — confira com seu contador</span>
+            )}
+          </h2>
           <p className="text-fluid-xl text-titulo font-bold tabular-nums">{formatarReais(total)}</p>
         </div>
         <p className="text-fluid-xs text-tenue">
-          {ROTULO_REGIME[f.config.regime]} sobre {formatarReais(f.receita)} de receita de corretagem recebida no mês.
+          {ROTULO_REGIME[f.config.regime]} sobre {formatarReais(f.receita)} de receita de corretagem{" "}
+          {f.config.regimeApuracao === "competencia" ? "vendida no mês (competência)" : "recebida no mês (caixa)"}
+          {f.receitaBase.ajustesDeDistrato < 0 ? `, já com ${formatarReais(-f.receitaBase.ajustesDeDistrato)} de distrato abatidos` : ""}.
           {f.impostosPagos > 0 ? ` Lançado como imposto pago no Caixa: ${formatarReais(f.impostosPagos)}.` : ""}
         </p>
         {f.impostos.length === 0 ? (
-          <p className="text-fluid-sm text-corpo">Nenhuma comissão recebida neste mês, então nada a estimar.</p>
+          <p className="text-fluid-sm text-corpo">
+            {f.config.regimeApuracao === "competencia" ? "Nenhuma venda neste mês" : "Nenhuma comissão recebida neste mês"}, então nada a
+            estimar.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="text-fluid-sm w-full min-w-[30rem]">
@@ -155,7 +165,7 @@ export default async function FiscalPage({ searchParams }: { searchParams: Promi
                       <span className="text-corpo min-w-0">
                         {[v.imovel, v.unidade].filter(Boolean).join(" · ")}
                         <span className="text-fluid-xs text-tenue block">
-                          {v.construtora ?? "Construtora não informada"} · recebida em {dataBr(v.comissaoRecebidaEm as string)}
+                          {v.construtora ?? "Construtora não informada"} · recebida em {dataBr(ultimoRecebimento(v) as string)}
                         </span>
                       </span>
                       <span className="text-titulo font-medium tabular-nums">{formatarReais(v.comissaoValor)}</span>
@@ -304,6 +314,35 @@ export default async function FiscalPage({ searchParams }: { searchParams: Promi
           As alíquotas mudam com a faixa do Simples e com a lei. Peça os números ao contador e atualize aqui.
         </p>
         <FormularioDaConfig config={f.config} />
+      </section>
+
+      {/* Parâmetros nacionais (0232): da plataforma, com a fonte de cada um */}
+      <section className="cartao space-y-3 p-4 sm:p-5">
+        <h2 className="text-fluid-base text-titulo font-medium">Parâmetros nacionais de {rotuloDoMes(mes)}</h2>
+        <p className="text-fluid-xs text-tenue">Iguais para todas as imobiliárias e atualizados pela plataforma quando a lei muda.</p>
+        <dl className="grid gap-2 sm:grid-cols-2">
+          {[
+            ["Teto do INSS", formatarReais(f.parametros.tetoInss)],
+            ["INSS retido do autônomo", `${(f.parametros.inssAutonomo * 100).toLocaleString("pt-BR")}%`],
+            ["INSS patronal (fora do Simples)", `${(f.parametros.inssPatronal * 100).toLocaleString("pt-BR")}%`],
+            [
+              "Redução do IRRF",
+              f.parametros.redutor
+                ? `isento até ${formatarReais(f.parametros.redutor.isentoAte)}, reduzido até ${formatarReais(f.parametros.redutor.ate)}`
+                : "sem redução",
+            ],
+          ].map(([r, v]) => (
+            <div key={r} className="flex flex-col-reverse gap-0.5">
+              <dt className="text-fluid-xs text-tenue">{r}</dt>
+              <dd className="text-fluid-sm text-titulo">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <ul className="text-fluid-xs text-tenue space-y-0.5">
+          {[...new Set(f.parametros.origem.map((o) => o.fonte))].map((fonte) => (
+            <li key={fonte}>Fonte: {fonte}</li>
+          ))}
+        </ul>
       </section>
 
       <p className="text-fluid-xs text-tenue">

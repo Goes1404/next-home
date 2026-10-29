@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getVendas } from "@/lib/financeiro/dados";
 import { paraOIndicador } from "@/lib/financeiro/indicadoresDeVendas";
+import { somaDas } from "@/lib/financeiro/parcelas";
 import { formatarPercentual, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { PainelDeVendas } from "./PainelDeVendas";
@@ -111,12 +112,16 @@ export default async function VendasPage() {
                   ) : (
                     <span
                       className={`text-fluid-xs rounded-full border px-2.5 py-1 ${
-                        v.comissaoRecebidaEm
+                        somaDas(v.parcelas, "abertas") === 0
                           ? "border-ok-linha bg-ok-lavado text-titulo"
                           : "border-alerta-linha bg-alerta-lavado text-titulo"
                       }`}
                     >
-                      {v.comissaoRecebidaEm ? "Comissão recebida" : "Comissão a receber"}
+                      {somaDas(v.parcelas, "abertas") === 0
+                        ? "Comissão recebida"
+                        : somaDas(v.parcelas, "recebidas") > 0
+                          ? "Parte da comissão recebida"
+                          : "Comissão a receber"}
                     </span>
                   )}
                   <span className="text-fluid-xs text-apoio py-1">

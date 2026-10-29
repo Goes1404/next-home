@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  datasQueTravamAVenda,
   dividirIgualmente,
   hojeEmSaoPaulo,
   lerPercentual,
@@ -194,5 +195,29 @@ describe("traduzirErroDoBanco", () => {
 describe("hojeEmSaoPaulo", () => {
   it("às 23h30 de Brasília (02h30 UTC do dia seguinte) ainda é hoje", () => {
     expect(hojeEmSaoPaulo(new Date("2026-09-26T02:30:00Z"))).toBe("2026-09-25");
+  });
+});
+
+describe("datasQueTravamAVenda", () => {
+  // Achado da revisão de segurança: na competência, a data da venda conta no
+  // mês dela; mudar a venda de um mês fechado mudaria o que o contador recebeu.
+  it("leva a data nova, a gravada e todas as datas de dinheiro e de cancelamento", () => {
+    expect(
+      datasQueTravamAVenda({
+        dataVendaNova: "2026-10-02",
+        dataVendaGravada: "2026-09-15",
+        parcelas: [
+          { recebidaEm: "2026-09-20", canceladaEm: null },
+          { recebidaEm: null, canceladaEm: "2026-10-01" },
+        ],
+        repassesPagos: ["2026-09-25", null],
+      }).sort(),
+    ).toEqual(["2026-09-15", "2026-09-20", "2026-09-25", "2026-10-01", "2026-10-02"]);
+  });
+
+  it("venda nova: só a data dela", () => {
+    expect(datasQueTravamAVenda({ dataVendaNova: "2026-10-02", dataVendaGravada: null, parcelas: [], repassesPagos: [] })).toEqual([
+      "2026-10-02",
+    ]);
   });
 });

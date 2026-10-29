@@ -16,7 +16,7 @@ import { centavos, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda"
 import { BotaoAcao } from "../../_componentes/BotaoAcao";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { CartaoMeta } from "../CartaoMeta";
-import { marcarComissaoRecebida, marcarRepassePago } from "../acoes";
+import { marcarRepassePago } from "../acoes";
 import { QuandoEntra, QuemDeveMais, RecebidoPorMes } from "./GraficosDoExtrato";
 
 export const metadata: Metadata = { title: "Extrato e meta" };
@@ -26,7 +26,9 @@ const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const COR_SITUACAO: Record<SituacaoDoRepasse, string> = {
   pago: "border-ok-linha bg-ok-lavado",
   pode_pagar: "border-acento-linha bg-acento-lavado",
+  parcial: "border-acento-linha bg-acento-lavado",
   aguardando_construtora: "border-alerta-linha bg-alerta-lavado",
+  recebe_direto: "border-linha bg-campo",
   distratada: "border-perigo-linha bg-perigo-lavado",
 };
 
@@ -221,14 +223,13 @@ export default async function ExtratoPage() {
                         {v.imovel}
                         {v.unidade ? ` · ${v.unidade}` : ""} · {formatarReais(v.valor)} · {v.dias} dias
                       </Link>
-                      <BotaoAcao
-                        acao={marcarComissaoRecebida.bind(null, v.id, hoje)}
-                        sucesso="Comissão marcada como recebida."
-                        rotulopendente="Marcando…"
-                        variante="secundario"
+                      {/* Com parcelas (0232), o recebimento se marca parcela a parcela, na venda. */}
+                      <Link
+                        href={`/corretor/financeiro/${v.id}`}
+                        className="text-fluid-sm border-linha text-corpo hover:border-acento-linha inline-flex min-h-11 items-center rounded-xl border px-3"
                       >
-                        Recebi hoje
-                      </BotaoAcao>
+                        Marcar parcela
+                      </Link>
                     </li>
                   ))}
                 </ul>

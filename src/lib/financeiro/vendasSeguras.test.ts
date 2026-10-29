@@ -47,7 +47,23 @@ describe("Fase A (0232): distrato e parcela recebida são do gestor", () => {
     for (const colunas of vigentes) expect(colunas).not.toMatch(/recebida_em|cancelada_em/);
   });
 
-  it.todo("nenhum código lê as colunas antigas de comissão recebida/prevista (vira `it` no Task 7)");
+  // A 0232 tirou as colunas; um leitor esquecido devolveria undefined calado
+  // (select por string não passa pelo tsc).
+  it("nenhum código lê as colunas antigas de comissão recebida/prevista", () => {
+    const antigas = /comissao_recebida_em|comissao_prevista_em|comissaoRecebidaEm|comissaoPrevistaEm/;
+    const achados: string[] = [];
+    const varrer = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const caminho = join(dir, e.name);
+        if (e.isDirectory()) varrer(caminho);
+        else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !caminho.endsWith(join("supabase", "types.ts"))) {
+          if (antigas.test(readFileSync(caminho, "utf8"))) achados.push(caminho);
+        }
+      }
+    };
+    varrer(join(process.cwd(), "src"));
+    expect(achados).toEqual([]);
+  });
 });
 
 describe("vendas: dinheiro recebido/pago é só do gestor", () => {

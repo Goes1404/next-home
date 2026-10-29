@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAvisos } from "../../_componentes/Avisos";
-import { formatarDocumento, type ConfigFiscal, type DadosFiscaisDaVenda, type Regime } from "@/lib/financeiro/fiscal";
+import { formatarDocumento, type ConfigFiscal, type DadosFiscaisDaVenda, type Regime, type RegimeApuracao } from "@/lib/financeiro/fiscal";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { definirVinculoDoCorretor, salvarConfigFiscal, salvarDadosFiscaisDaVenda, type ResultadoFiscal } from "./acoes";
 
@@ -36,6 +36,7 @@ const dePct = (s: string) => Number(s.replace(",", ".")) / 100;
 
 export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
   const [regime, setRegime] = useState<Regime>(config.regime);
+  const [apuracao, setApuracao] = useState<RegimeApuracao>(config.regimeApuracao);
   const [simples, setSimples] = useState(paraPct(config.aliquotaSimples));
   const [iss, setIss] = useState(paraPct(config.aliquotaIss));
   const [cnpj, setCnpj] = useState(formatarDocumento(config.cnpj));
@@ -50,6 +51,7 @@ export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
         rodar(() =>
           salvarConfigFiscal({
             regime,
+            regimeApuracao: apuracao,
             aliquotaSimples: dePct(simples),
             aliquotaIss: dePct(iss),
             cnpj: cnpj || null,
@@ -76,6 +78,13 @@ export function FormularioDaConfig({ config }: { config: ConfigFiscal }) {
           <input className={campo} inputMode="decimal" value={iss} onChange={(e) => setIss(e.target.value)} />
         </label>
       )}
+      <label className="block">
+        <span className={rotulo}>Apuração</span>
+        <select className={campo} value={apuracao} onChange={(e) => setApuracao(e.target.value as RegimeApuracao)}>
+          <option value="competencia">Competência: conta no mês da venda (padrão)</option>
+          <option value="caixa">Caixa: conta no mês em que recebeu</option>
+        </select>
+      </label>
       <label className="block">
         <span className={rotulo}>CNPJ da imobiliária</span>
         <input className={campo} inputMode="numeric" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />

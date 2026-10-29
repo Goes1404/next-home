@@ -7,7 +7,7 @@ import { fluxoDeCaixa, movimentosDo, proximosPendentes, type Movimento } from "@
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { BotaoAcao } from "../../_componentes/BotaoAcao";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
-import { marcarComissaoRecebida, marcarRepassePago } from "../acoes";
+import { marcarParcelaRecebida, marcarRepassePago } from "../acoes";
 import { excluirLancamento, marcarLancamentoPago } from "./acoes";
 import { FormularioSaldo, NovoLancamento, PrevisaoDaComissao } from "./ControlesDoCaixa";
 
@@ -36,9 +36,9 @@ function Liquidar({ m, hoje }: { m: Movimento; hoje: string }) {
       </BotaoAcao>
     );
   }
-  if (m.origem === "comissao" && m.vendaId) {
+  if (m.origem === "comissao" && m.parcelaId) {
     return (
-      <BotaoAcao acao={marcarComissaoRecebida.bind(null, m.vendaId, hoje)} rotulopendente="Marcando…" variante="secundario">
+      <BotaoAcao acao={marcarParcelaRecebida.bind(null, m.parcelaId, hoje)} rotulopendente="Marcando…" variante="secundario">
         Recebi
       </BotaoAcao>
     );
@@ -262,7 +262,7 @@ export default async function CaixaPage() {
                     {m.detalhe ? ` · ${m.detalhe}` : ""}
                   </span>
                 </span>
-                <PrevisaoDaComissao vendaId={m.vendaId!} atual={null} />
+                <PrevisaoDaComissao parcelaId={m.parcelaId!} atual={null} />
               </li>
             ))}
           </ul>
