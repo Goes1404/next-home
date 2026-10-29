@@ -29,6 +29,7 @@ F0–F6.
 - [[ficha-publica-do-imovel]] — /imovel/<grupo>/<slug> para imobiliária sem site e o montador único do link do imóvel (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[anuncios-pagos-em-abas]] — Anúncios pagos em cinco abas por `?aba=`; `botao-solido` e `botao-aba` (26/10)
+- [[aba-campanhas-virou-uma-lista-so]] — aba Campanhas: uma lista com filtro (Sem gasto) e ordem (Melhor custo), cartão recolhido que pede o gasto; 8.400 → 3.456 px no celular (29/10)
 - [[lateral-recolhe-e-rola-sozinha]] — lateral rola por dentro, recolhe em ícones; cabeçalho do celular some ao rolar (09/10)
 - [[navegacao-do-painel-tem-regua]]
 - [[a-caixa-de-abas-saiu-das-telas]]

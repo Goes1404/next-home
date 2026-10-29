@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   CANAIS_DE_CAMPANHA,
   compararCampanhas,
-  compararQualidade,
   porcentagem,
   MINIMO_PARA_PORCENTAGEM,
   type CriterioDoComparativo,
@@ -14,9 +14,18 @@ import {
   type ResumoImpulsionamento,
   type totaisDosImpulsionamentos,
 } from "@/lib/crm/impulsionamentosCalculo";
+import {
+  contarPorFiltro,
+  ordenarCampanhas,
+  passaNoFiltro,
+  situacaoDaCampanha,
+  visitaramDe,
+  type FiltroDaLista,
+  type OrdemDaLista,
+  type Situacao,
+} from "@/lib/crm/listaDeCampanhas";
 import { TITULO_SEM_ETIQUETA } from "@/lib/whatsapp/anuncioMeta";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
-import { CartaoDeGrafico } from "@/app/corretor/(painel)/_componentes/graficos/Moldura";
 import {
   agruparAnuncio,
   apagarCampanha,
@@ -126,7 +135,18 @@ export function ListaDeImpulsionamentos({
   abrirNova?: boolean;
 }) {
   const comparativo = useMemo(() => compararCampanhas(resumos, nomeDoResumo), [resumos]);
-  const qualidade = useMemo(() => compararQualidade(resumos, nomeDoResumo), [resumos]);
+  const [filtro, setFiltro] = useState<FiltroDaLista>("todas");
+  const [ordem, setOrdem] = useState<OrdemDaLista>("recentes");
+  const contagens = useMemo(() => contarPorFiltro(resumos, hoje), [resumos, hoje]);
+  const visiveis = useMemo(
+    () =>
+      ordenarCampanhas(
+        resumos.filter((r) => passaNoFiltro(r, filtro, hoje)),
+        ordem,
+        comparativo.linhas.map((l) => l.id),
+      ),
+    [resumos, filtro, ordem, hoje, comparativo],
+  );
   const minhasCampanhas = resumos
     .filter((r) => r.criadaPeloCorretor && r.corretorId === meuId)
     .map((r) => ({ id: r.id, nome: nomeDoResumo(r) }));
@@ -139,36 +159,112 @@ export function ListaDeImpulsionamentos({
     );
   }
 
+  const temComparacao = comparativo.linhas.length >= 2;
+
   return (
     <div className="space-y-6">
       <NovaCampanha imoveis={imoveis} abertoDeInicio={abrirNova} />
       <ComoFunciona aberto={resumos.length === 0} />
 
-      {resumos.length > 0 && <Totais totais={totais} />}
+      {resumos.length > 0 && <Totais totais={totais} verSemGasto={() => setFiltro("sem_gasto")} />}
 
-      <Comparativo comparativo={comparativo} />
-      <QualidadeLadoALado linhas={qualidade} />
+      {resumos.length > 0 && (
+        <section className="space-y-3" aria-labelledby="lista-titulo">
+          <div className="cartao space-y-4 p-4">
+            <div className="space-y-1">
+              <h2 id="lista-titulo" className="text-fluid-base font-semibold text-titulo">
+                {verEquipe ? "Campanhas da equipe" : "Suas campanhas"}
+              </h2>
+              {temComparacao && <p className="text-fluid-sm text-pretty text-corpo">{veredito(comparativo)}</p>}
+            </div>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Mostrar">
+                {FILTROS.filter((f) => f.id === "todas" || contagens[f.id] > 0).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    aria-pressed={filtro === f.id}
+                    onClick={() => setFiltro(f.id)}
+                    className={`${CHIP} ${filtro === f.id ? CHIP_ATIVO : CHIP_INATIVO}`}
+                  >
+                    {f.rotulo}
+                    <span className="tabular-nums opacity-80">{contagens[f.id]}</span>
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-fluid-xs text-corpo">
+                <span className="shrink-0">Ordenar por</span>
+                <select
+                  value={ordem}
+                  onChange={(e) => setOrdem(e.target.value as OrdemDaLista)}
+                  className={`${CAMPO} select-seta min-h-11 py-2 lg:w-56`}
+                >
+                  {ORDENS.filter((o) => o.id !== "melhor" || temComparacao).map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
 
-      <ul className="space-y-3">
-        {resumos.map((r) => (
-          <li key={r.id}>
-            <Cartao
-              resumo={r}
-              editavel={r.corretorId === meuId}
-              dono={verEquipe ? (nomes[r.corretorId] ?? null) : null}
-              imoveis={imoveis}
-              campanhas={minhasCampanhas}
-              ligados={ligados[r.id] ?? []}
-              listas={listasPorCartao[r.id]}
-              candidatos={candidatos}
-              hoje={hoje}
-            />
-          </li>
-        ))}
-      </ul>
+          {visiveis.length === 0 ? (
+            <p className="cartao p-4 text-fluid-sm text-corpo">Nenhuma campanha neste filtro.</p>
+          ) : (
+            <ul className="space-y-3">
+              {visiveis.map((r) => (
+                <li key={r.id}>
+                  <Cartao
+                    resumo={r}
+                    melhor={r.id === comparativo.melhor}
+                    situacao={situacaoDaCampanha(r, hoje)}
+                    editavel={r.corretorId === meuId}
+                    dono={verEquipe ? (nomes[r.corretorId] ?? null) : null}
+                    imoveis={imoveis}
+                    campanhas={minhasCampanhas}
+                    ligados={ligados[r.id] ?? []}
+                    listas={listasPorCartao[r.id]}
+                    candidatos={candidatos}
+                    hoje={hoje}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {temComparacao && (
+            <p className="px-1 text-fluid-xs text-pretty text-apoio">
+              &quot;Melhor custo&quot; decide pelo degrau mais fundo que dá para comparar: visita, depois cliente
+              qualificado, depois cliente. Cliente barato que não visita não vende. Campanha com menos de{" "}
+              {MINIMO_PARA_PORCENTAGEM} clientes aparece, mas não disputa.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }
+
+const FILTROS: { id: FiltroDaLista; rotulo: string }[] = [
+  { id: "todas", rotulo: "Todas" },
+  { id: "no_ar", rotulo: "No ar" },
+  { id: "sem_gasto", rotulo: "Sem gasto" },
+  { id: "encerradas", rotulo: "Encerradas" },
+];
+
+const ORDENS: { id: OrdemDaLista; rotulo: string }[] = [
+  { id: "recentes", rotulo: "Cliente mais recente" },
+  { id: "melhor", rotulo: "Melhor custo" },
+  { id: "clientes", rotulo: "Mais clientes" },
+  { id: "investimento", rotulo: "Maior investimento" },
+];
+
+// Os mesmos chips do painel do Resumo (`PainelDeIndicadores`).
+const CHIP =
+  "min-h-11 rounded-full border px-4 text-fluid-xs font-semibold transition-colors inline-flex items-center gap-2";
+const CHIP_ATIVO = "border-acento bg-acento text-sobre-cor";
+const CHIP_INATIVO = "border-linha-forte bg-superficie text-titulo shadow-sm hover:border-acento hover:text-acento";
 
 const DEGRAUS_DO_TOTAL = [
   { rotulo: "Clientes", quantos: (t: Totais) => t.clientes, custo: (t: Totais) => t.custoPorLead },
@@ -182,7 +278,7 @@ const DEGRAUS_DO_TOTAL = [
  * isso trouxe e quanto custou cada um. Contagem e custo são da mesma
  * população (as campanhas com valor informado), então a conta fecha.
  */
-function Totais({ totais }: { totais: Totais }) {
+function Totais({ totais, verSemGasto }: { totais: Totais; verSemGasto: () => void }) {
   const semValor = totais.semGasto > 0;
   return (
     <section className="cartao space-y-4 p-4" aria-labelledby="totais-titulo">
@@ -211,35 +307,53 @@ function Totais({ totais }: { totais: Totais }) {
       </dl>
 
       {semValor && (
-        <p className="rounded-xl bg-alerta-lavado px-3 py-2.5 text-fluid-sm text-titulo">
-          {totais.semGasto === 1 ? "1 campanha está" : `${totais.semGasto} campanhas estão`} sem o valor gasto
-          {totais.clientesSemGasto > 0
-            ? `, e ${totais.clientesSemGasto === 1 ? "o cliente" : `os ${totais.clientesSemGasto} clientes`} ${totais.semGasto === 1 ? "dela" : "delas"} ${totais.clientesSemGasto === 1 ? "fica" : "ficam"} fora destes números`
-            : ""}
-          . Informe o gasto no cartão para entrarem na conta e na comparação.
-        </p>
+        <div className="flex flex-col gap-2 rounded-xl bg-alerta-lavado px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-fluid-sm text-pretty text-titulo">
+            {totais.semGasto === 1 ? "1 campanha está" : `${totais.semGasto} campanhas estão`} sem o valor gasto
+            {totais.clientesSemGasto > 0
+              ? `, e ${totais.clientesSemGasto === 1 ? "o cliente" : `os ${totais.clientesSemGasto} clientes`} ${totais.semGasto === 1 ? "dela" : "delas"} ${totais.clientesSemGasto === 1 ? "fica" : "ficam"} fora destes números`
+              : ""}
+            . Informe o gasto para entrarem na conta e na comparação.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              verSemGasto();
+              document.getElementById("lista-titulo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className={`${BOTAO_SECUNDARIO} shrink-0`}
+          >
+            Ver {totais.semGasto === 1 ? "qual" : "quais"}
+          </button>
+        </div>
       )}
     </section>
   );
 }
 
+/**
+ * O formulário abre pelo botão "Nova campanha" do cabeçalho da página
+ * (`?nova=1`); a aba não repete o botão (29/10/2026). Ao fechar, o `nova=1`
+ * sai do endereço, para o próximo toque no cabeçalho abrir de novo.
+ */
 function NovaCampanha({ imoveis, abertoDeInicio }: { imoveis: { id: string; nome: string }[]; abertoDeInicio: boolean }) {
+  const router = useRouter();
   const [aberto, setAberto] = useState(abertoDeInicio);
+  const [pedidoAnterior, setPedidoAnterior] = useState(abertoDeInicio);
+  if (abertoDeInicio !== pedidoAnterior) {
+    setPedidoAnterior(abertoDeInicio);
+    if (abertoDeInicio) setAberto(true);
+  }
   const [form, setForm] = useState({ nome: "", canal: "instagram", valor: "", imovel: "", inicio: "", fim: "" });
   const { msg, pendente, rodar } = useAcao();
   const campo = (k: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+  const fechar = () => {
+    setAberto(false);
+    router.replace("?aba=campanhas", { scroll: false });
+  };
 
-  if (!aberto) {
-    return (
-      <div className="space-y-2">
-        <button type="button" onClick={() => setAberto(true)} className={BOTAO}>
-          + Nova campanha
-        </button>
-        <Mensagem msg={msg} />
-      </div>
-    );
-  }
+  if (!aberto) return msg ? <Mensagem msg={msg} /> : null;
 
   return (
     <form
@@ -258,7 +372,7 @@ function NovaCampanha({ imoveis, abertoDeInicio }: { imoveis: { id: string; nome
             }),
           () => {
             setForm({ nome: "", canal: "instagram", valor: "", imovel: "", inicio: "", fim: "" });
-            setAberto(false);
+            fechar();
           },
         );
       }}
@@ -312,7 +426,7 @@ function NovaCampanha({ imoveis, abertoDeInicio }: { imoveis: { id: string; nome
         <button type="submit" disabled={pendente} className={BOTAO}>
           {pendente ? "Criando…" : "Criar campanha"}
         </button>
-        <button type="button" onClick={() => setAberto(false)} className={BOTAO_SECUNDARIO}>
+        <button type="button" onClick={fechar} className={BOTAO_SECUNDARIO}>
           Cancelar
         </button>
       </div>
@@ -335,8 +449,8 @@ function ComoFunciona({ aberto }: { aberto: boolean }) {
         </li>
         <li>
           Campanha de outro lugar (Google, portal, panfleto), ou que ainda não trouxe ninguém: crie em{" "}
-          <strong className="text-titulo">+ Nova campanha</strong> e ligue a ela os clientes que vieram
-          dela.
+          <strong className="text-titulo">Nova campanha</strong>, no topo da página, e ligue a ela os
+          clientes que vieram dela.
         </li>
         <li>
           Digite <strong className="text-titulo">quanto gastou</strong>. O custo por cliente e por visita
@@ -376,75 +490,6 @@ function veredito(c: ReturnType<typeof compararCampanhas>): string {
   }
   const coluna = COLUNAS_DO_CUSTO.find((k) => k.criterio === c.criterio)!;
   return `${melhor.nome} traz ${O_QUE_SAI_MAIS_BARATO[c.criterio]}: ${reais(coluna.valor(melhor))}, contra ${reais(coluna.valor(segunda))} de ${segunda.nome}.`;
-}
-
-/**
- * Comparação entre campanhas: quanto custa cada degrau (cliente, qualificado,
- * visita), com a coluna que decide destacada. A ordem e o "melhor" seguem o
- * mesmo critério; campanha pequena aparece sem disputar.
- */
-function Comparativo({ comparativo }: { comparativo: ReturnType<typeof compararCampanhas> }) {
-  const { linhas, criterio, melhor } = comparativo;
-  if (linhas.length < 2) return null;
-  const disputam = linhas.filter((l) => !l.pequena);
-  const maisBarato = Object.fromEntries(
-    COLUNAS_DO_CUSTO.map((k) => {
-      const valores = disputam.map(k.valor).filter((v): v is number => v !== null);
-      return [k.criterio, valores.length >= 2 ? Math.min(...valores) : null];
-    }),
-  ) as Record<CriterioDoComparativo, number | null>;
-
-  return (
-    <CartaoDeGrafico
-      titulo="Qual campanha rende mais?"
-      subtitulo={veredito(comparativo)}
-      rodape={`Decide pelo degrau mais fundo que dá para comparar: visita, depois cliente qualificado, depois cliente. Cliente barato que não visita não vende. Campanha com menos de ${MINIMO_PARA_PORCENTAGEM} clientes aparece, mas não disputa: um cliente só decidiria por sorte.`}
-    >
-      <ol className="space-y-4">
-        {linhas.map((l) => (
-          <li key={l.id} className="space-y-2">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="text-fluid-sm min-w-0 font-semibold break-words text-titulo">{l.nome}</span>
-              {l.id === melhor && (
-                <span className="rounded-full border border-acento-linha bg-acento-lavado px-2 py-0.5 text-fluid-xs text-acento-forte">
-                  Melhor
-                </span>
-              )}
-              <span className="text-fluid-xs text-corpo">
-                {reais(l.gasto)} · {l.leads} {l.leads === 1 ? "cliente" : "clientes"}
-                {l.leads > 0 && l.pequena ? " · poucos para comparar" : ""}
-              </span>
-            </div>
-            {l.leads === 0 ? (
-              <p className="rounded-xl bg-alerta-lavado px-3 py-2 text-fluid-xs text-titulo">
-                Gastou {reais(l.gasto)} e ainda não trouxe nenhum cliente.
-              </p>
-            ) : (
-              <dl className="grid grid-cols-3 gap-2">
-                {COLUNAS_DO_CUSTO.map((k) => {
-                  const v = k.valor(l);
-                  const decide = k.criterio === criterio;
-                  const barato = !l.pequena && v !== null && v === maisBarato[k.criterio];
-                  return (
-                    <div
-                      key={k.criterio}
-                      className={`min-w-0 rounded-xl px-2.5 py-2 ${decide ? "bg-acento-lavado ring-1 ring-acento-linha" : "bg-vidro"}`}
-                    >
-                      <dt className="text-fluid-xs text-corpo">{k.rotulo}</dt>
-                      <dd className={`tabular-nums ${l.pequena ? "text-corpo" : "font-semibold text-titulo"}`}>
-                        {v === null ? "—" : reais(v)}
-                        {barato && <span className="block text-fluid-xs font-normal text-acento-forte">mais barato</span>}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
-            )}
-          </li>
-        ))}
-      </ol>
-    </CartaoDeGrafico>
-  );
 }
 
 const DEGRAUS: { chave: Exclude<keyof Degraus, "chegaram" | "sairam">; rotulo: string }[] = [
@@ -500,59 +545,15 @@ function DegrausDoCliente({ degraus }: { degraus: Degraus }) {
 }
 
 /**
- * A qualidade lado a lado, para toda campanha com cliente (com ou sem gasto).
- * Três colunas fixas, a mesma ordem em toda linha, para o olho descer a coluna.
+ * Uma campanha da lista. Recolhida, mostra o que decide (situação, quanto
+ * custou, quantos chegaram e visitaram, custo por cliente e por visita) e,
+ * sem gasto informado, pede o valor. Os detalhes (degraus, anúncios de
+ * dentro, edição, clientes ligados, apagar) abrem sob demanda (29/10/2026).
  */
-function QualidadeLadoALado({ linhas }: { linhas: ReturnType<typeof compararQualidade> }) {
-  if (linhas.length < 2) return null;
-  const colunas = DEGRAUS.slice(0, 3);
-
-  return (
-    <CartaoDeGrafico
-      titulo="Qual campanha traz cliente melhor?"
-      subtitulo="Dos clientes que chegaram, quantos conversaram, se qualificaram e visitaram."
-      rodape={`Se qualificou: disse renda ou orçamento, ou a IA o leu como quente ou morno. Com menos de ${MINIMO_PARA_PORCENTAGEM} clientes a campanha mostra a contagem, não a porcentagem, e fica no fim da lista.`}
-    >
-      <ol className="space-y-4">
-        {linhas.map((l) => (
-          <li key={l.id} className="space-y-2">
-            <p className="text-fluid-sm font-semibold break-words text-titulo">
-              {l.nome}{" "}
-              <span className="font-normal text-corpo">
-                · {l.degraus.chegaram} {l.degraus.chegaram === 1 ? "cliente" : "clientes"}
-              </span>
-            </p>
-            <dl className="grid grid-cols-3 gap-2">
-              {colunas.map((c) => {
-                const valor = l.degraus[c.chave];
-                const p = porcentagem(valor, l.degraus.chegaram);
-                return (
-                  <div key={c.chave} className="min-w-0 rounded-xl bg-vidro px-2.5 py-2">
-                    <dt className="text-fluid-xs text-corpo">{c.rotulo}</dt>
-                    <dd className="space-y-1.5">
-                      <span className="block font-semibold text-titulo tabular-nums">
-                        {p === null ? `${valor} de ${l.degraus.chegaram}` : `${p}%`}
-                      </span>
-                      <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-vidro-forte">
-                        <span
-                          className={`block h-full rounded-full ${p === null ? "bg-acento/40" : "bg-acento"}`}
-                          style={{ width: `${(valor / l.degraus.chegaram) * 100}%` }}
-                        />
-                      </span>
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </li>
-        ))}
-      </ol>
-    </CartaoDeGrafico>
-  );
-}
-
 function Cartao({
   resumo,
+  melhor,
+  situacao,
   editavel,
   dono,
   imoveis,
@@ -564,6 +565,8 @@ function Cartao({
 }: {
   listas?: { receberam: number; responderam: number };
   resumo: ResumoImpulsionamento;
+  melhor: boolean;
+  situacao: Situacao;
   editavel: boolean;
   dono: string | null;
   imoveis: { id: string; nome: string }[];
@@ -572,26 +575,41 @@ function Cartao({
   candidatos: ClienteDaLista[];
   hoje: string;
 }) {
+  const [aberto, setAberto] = useState(false);
+  const [focarGasto, setFocarGasto] = useState(false);
   const [dia, setDia] = useState(hoje);
   const [valor, setValor] = useState(valorNoCampo(resumo.valorGasto));
   const [imovel, setImovel] = useState(resumo.empreendimentoId ?? "");
   const { msg, pendente, rodar } = useAcao();
+  const idDosDetalhes = useId();
   const manual = Boolean(resumo.criadaPeloCorretor);
   const canal = resumo.canal ? CANAIS_DE_CAMPANHA[resumo.canal] : null;
+  const semGasto = resumo.gastoTotal === null;
 
   const periodo = manual
     ? resumo.inicio
       ? `desde ${dataCurta(resumo.inicio)}${resumo.fim ? ` até ${dataCurta(resumo.fim)}` : ""}`
       : `criada em ${dataCurta(resumo.primeiroLeadEm)}`
-    : `primeiro cliente em ${dataCurta(resumo.primeiroLeadEm)}, último em ${dataCurta(resumo.ultimoLeadEm)}`;
+    : resumo.leads === 0
+      ? `visto em ${dataCurta(resumo.ultimoLeadEm)}`
+      : `primeiro cliente em ${dataCurta(resumo.primeiroLeadEm)}, último em ${dataCurta(resumo.ultimoLeadEm)}`;
 
   return (
     <article className="cartao space-y-4 p-4">
       <header className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-fluid-base min-w-0 font-semibold break-words text-titulo">{nomeDoResumo(resumo)}</h2>
+          <h3 className="text-fluid-base min-w-0 font-semibold break-words text-titulo">{nomeDoResumo(resumo)}</h3>
+          {melhor && (
+            <span className="rounded-full border border-acento-linha bg-acento-lavado px-2 py-0.5 text-fluid-xs font-semibold text-acento-forte">
+              Melhor custo
+            </span>
+          )}
           <span className="rounded-full bg-vidro px-2 py-0.5 text-fluid-xs text-corpo">
             {manual ? `Campanha${canal ? ` · ${canal}` : ""}` : "Anúncio detectado"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-vidro px-2 py-0.5 text-fluid-xs text-corpo">
+            <span aria-hidden className={`size-2 rounded-full ${situacao === "no_ar" ? "bg-ok" : "bg-tenue"}`} />
+            {situacao === "no_ar" ? "No ar" : "Encerrada"}
           </span>
         </div>
         <p className="text-fluid-xs text-corpo">
@@ -613,49 +631,93 @@ function Cartao({
         </p>
       </header>
 
-      <dl className="grid grid-cols-2 gap-2 text-fluid-sm sm:grid-cols-5">
+      {/* Investido em linha própria até caber tudo numa linha só: cinco
+          números em duas colunas deixavam um sozinho no fim. */}
+      <dl className="grid grid-cols-2 gap-2 text-fluid-sm sm:grid-cols-4 lg:grid-cols-5">
+        <Mini rotulo="Investido" valor={reais(resumo.gastoTotal)} className="col-span-2 sm:col-span-4 lg:col-span-1" />
         <Mini rotulo="Clientes" valor={String(resumo.leads)} />
-        <Mini rotulo="Visitas" valor={String(resumo.visitas)} />
+        <Mini rotulo="Visitaram" valor={visitaramDe(resumo)} />
         <Mini rotulo="Por cliente" valor={reais(resumo.custoPorLead)} />
         <Mini rotulo="Por visita" valor={reais(resumo.custoPorVisita)} />
-        <Mini rotulo="Por qualificado" valor={reais(resumo.custoPorQualificado)} />
       </dl>
 
-      <DegrausDoCliente degraus={resumo.degraus} />
-
-      {listas && listas.receberam > 0 && (
-        <p className="text-fluid-xs text-corpo">
-          Lista de transmissão: {listas.receberam} cliente{listas.receberam === 1 ? "" : "s"} desta campanha
-          recebe{listas.receberam === 1 ? "u" : "ram"} uma lista, {listas.responderam} respond
-          {listas.responderam === 1 ? "eu" : "eram"}.
-        </p>
+      {semGasto && (
+        <div className="flex flex-col gap-2 rounded-xl bg-alerta-lavado px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-fluid-sm text-pretty text-titulo">
+            {editavel
+              ? "Sem o valor gasto não dá para saber quanto custou cada cliente."
+              : "O dono ainda não informou o valor gasto."}
+          </p>
+          {editavel && (
+            <button
+              type="button"
+              onClick={() => {
+                setAberto(true);
+                setFocarGasto(true);
+              }}
+              className={`${BOTAO} shrink-0`}
+            >
+              Informar gasto
+            </button>
+          )}
+        </div>
       )}
 
-      {resumo.anuncios.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-fluid-xs text-corpo">Anúncios dentro desta campanha</p>
-          <ul className="space-y-1">
-            {resumo.anuncios.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-vidro px-3 py-2">
-                <span className="text-fluid-sm min-w-0 break-words text-titulo">
-                  {a.titulo ?? "Post impulsionado"} · {reais(a.valorGasto)}
-                  {a.agrupadoSozinho && (
-                    <span className="ml-1 text-fluid-xs text-corpo">· entrou sozinho pela data e pelo canal</span>
-                  )}
-                </span>
-                {editavel && !a.agrupadoSozinho && (
-                  <button
-                    type="button"
-                    disabled={pendente}
-                    onClick={() => rodar(() => agruparAnuncio({ anuncioId: a.id, campanhaId: null }))}
-                    className="botao-solido min-h-11 px-3 text-fluid-xs font-semibold text-perigo"
-                  >
-                    Tirar
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+      <button
+        type="button"
+        aria-expanded={aberto}
+        aria-controls={idDosDetalhes}
+        onClick={() => setAberto((a) => !a)}
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-linha px-5 text-fluid-sm font-semibold text-acento-forte hover:bg-vidro lg:ml-auto lg:w-auto"
+      >
+        {aberto ? "Fechar detalhes" : editavel ? "Detalhes e edição" : "Ver detalhes"}
+        <ChevronDown aria-hidden className={`size-4 transition-transform ${aberto ? "rotate-180" : ""}`} />
+      </button>
+
+      {aberto && (
+        <div id={idDosDetalhes} className="space-y-4 border-t border-linha pt-4">
+          <DegrausDoCliente degraus={resumo.degraus} />
+          {resumo.custoPorQualificado !== null && (
+            <p className="text-fluid-xs text-corpo">
+              Custo por cliente qualificado:{" "}
+              <span className="font-semibold text-titulo tabular-nums">{reais(resumo.custoPorQualificado)}</span>
+            </p>
+          )}
+
+          {listas && listas.receberam > 0 && (
+            <p className="text-fluid-xs text-corpo">
+              Lista de transmissão: {listas.receberam} cliente{listas.receberam === 1 ? "" : "s"} desta campanha
+              recebe{listas.receberam === 1 ? "u" : "ram"} uma lista, {listas.responderam} respond
+              {listas.responderam === 1 ? "eu" : "eram"}.
+            </p>
+          )}
+
+          {resumo.anuncios.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-fluid-xs text-corpo">Anúncios dentro desta campanha</p>
+              <ul className="space-y-1">
+                {resumo.anuncios.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-vidro px-3 py-2">
+                    <span className="text-fluid-sm min-w-0 break-words text-titulo">
+                      {a.titulo ?? "Post impulsionado"}
+                      {a.valorGasto !== null && ` · ${reais(a.valorGasto)}`}
+                      {a.agrupadoSozinho && (
+                        <span className="ml-1 text-fluid-xs text-corpo">· entrou sozinho pela data e pelo canal</span>
+                      )}
+                    </span>
+                    {editavel && !a.agrupadoSozinho && (
+                      <button
+                        type="button"
+                        disabled={pendente}
+                        onClick={() => rodar(() => agruparAnuncio({ anuncioId: a.id, campanhaId: null }))}
+                        className="botao-solido min-h-11 px-3 text-fluid-xs font-semibold text-perigo"
+                      >
+                        Tirar
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
         </div>
       )}
 
@@ -676,6 +738,8 @@ function Cartao({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="Ex.: 50"
+              // "Informar gasto" abre os detalhes já com o cursor aqui.
+              autoFocus={focarGasto}
               className={CAMPO}
             />
           </label>
@@ -736,6 +800,8 @@ function Cartao({
       )}
 
       {editavel && manual && <ApagarCampanha rodar={() => rodar(() => apagarCampanha(resumo.id))} pendente={pendente} />}
+        </div>
+      )}
 
       <Mensagem msg={msg} />
     </article>
@@ -883,9 +949,9 @@ function ApagarCampanha({ rodar, pendente }: { rodar: () => void; pendente: bool
   );
 }
 
-function Mini({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Mini({ rotulo, valor, className = "" }: { rotulo: string; valor: string; className?: string }) {
   return (
-    <div className="flex flex-col-reverse rounded-xl bg-vidro px-3 py-2">
+    <div className={`flex flex-col-reverse rounded-xl bg-vidro px-3 py-2 ${className}`}>
       <dt className="text-fluid-xs text-corpo">{rotulo}</dt>
       <dd className="font-semibold text-titulo tabular-nums">{valor}</dd>
     </div>
