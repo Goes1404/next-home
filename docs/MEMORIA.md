@@ -12521,3 +12521,9 @@ Nota: [[notificacoes-no-celular-e-poderes-do-adm]] (seção do mesmo nome).
 - Pedido de contratação, conta nova, suspensa/reativada e resumo diário das
   mensalidades em aberto (9h) vão para os ADMs.
 
+## Suporte e contato da Astro (29/10/2026)
+
+Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)
+aplicada. Site `/astro/contato`, painel `/corretor/suporte`, atendimento em
+`/plataforma/suporte`; todo chamado avisa os ADMs no celular.
+
