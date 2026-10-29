@@ -55,11 +55,10 @@ const RESERVADOS = new Set<number>([
   // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
   // depois dela.
   213,
-  // 29/10/2026: a 0235 já é de outra branch (a principal) e a 0236 está
-  // reservada para a frente das notificações; a 0237 (eventos do plano e dos
-  // administradores da plataforma) vem depois delas. Tirar as duas daqui na
-  // junção, quando os arquivos chegarem.
-  235, 236,
+  // 29/10/2026: a 0236 está reservada para a frente das notificações; a
+  // 0237 (eventos do plano e dos administradores da plataforma) veio antes.
+  // Tirar daqui quando o arquivo chegar.
+  236,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {

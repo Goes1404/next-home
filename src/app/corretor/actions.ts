@@ -377,17 +377,15 @@ export async function trocarSenha(
     .from("corretores")
     .update({ deve_trocar_senha: false })
     .eq("user_id", user.id);
-  // A do administrador da plataforma sem ficha mora no `app_metadata` (29/10/2026).
-  if (user.app_metadata?.deve_trocar_senha === true) {
-    const { error: erroDaMarca } = await createServiceClient().auth.admin.updateUserById(user.id, {
-      app_metadata: { deve_trocar_senha: false },
-    });
-    if (erroDaMarca) console.error(`[senha] troca obrigatória não desligada (${user.id}): ${erroDaMarca.message}`);
-  }
-
   // Reinicia os 90 dias e renova a sessão: o JWT carrega o `app_metadata`,
-  // e sem renovar o painel ainda leria a data velha e mandaria de volta.
-  await registrarSenhaTrocada(user.id, user.app_metadata as Record<string, unknown> | undefined);
+  // e sem renovar o painel ainda leria a data velha e mandaria de volta. Na
+  // mesma escrita desliga a troca obrigatória do administrador da plataforma
+  // sem ficha (`app_metadata.deve_trocar_senha`, 29/10/2026) — em duas
+  // escritas, a segunda regravaria o `app_metadata` lido antes e religaria
+  // a marca.
+  const meta = { ...((user.app_metadata as Record<string, unknown> | undefined) ?? {}) };
+  if (meta.deve_trocar_senha === true) meta.deve_trocar_senha = false;
+  await registrarSenhaTrocada(user.id, meta);
   await supabase.auth.refreshSession();
 
   redirect("/corretor");
