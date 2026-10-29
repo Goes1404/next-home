@@ -12512,3 +12512,19 @@ Nota: [[contratar-plano-pela-pagina-da-astro]].
 - Vínculo com a conta criada é `grupo_criado_id`: coluna `grupo_id` obrigaria
   carimbo/policy de grupo.
 
+## Aba Campanhas de Anúncios pagos virou uma lista só (29/10/2026)
+
+Nota: [[aba-campanhas-virou-uma-lista-so]].
+
+- **8.409 px de rolagem no celular para 8 campanhas**: três blocos com as
+  mesmas campanhas e todo cartão com o formulário aberto. Agora uma lista com
+  filtro (Todas, No ar, Sem gasto, Encerradas), ordem (recente, melhor custo,
+  clientes, investimento) e cartão recolhido: 3.456 px.
+- **13 de 19 anúncios em produção estavam sem o valor gasto** (Aretz 7 de 7):
+  sem ele não há custo nem comparação. O cartão pede o valor ("Informar
+  gasto" abre com o cursor no campo) e o topo tem "Ver quais". A sincronização
+  com a Meta nunca foi configurada e não cobre o Instagram pessoal do corretor.
+- `ListaDeImpulsionamentos.tsx` não segue o Prettier do repo: `prettier
+  --write` reformata o arquivo inteiro (diff de 900 linhas). Edite à mão.
+- Prévia de componente do painel sem login: página temporária em
+  `src/app/auth/<nome>/` (fora do reescrito de site), `next dev`, Playwright.
