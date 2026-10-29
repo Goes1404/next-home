@@ -1415,6 +1415,7 @@ export type Database = {
           grupo_criado_id: string | null
           atualizado_em: string
           documento: string | null
+          codigo_de_indicacao: string | null
           teste_gratis: boolean
           /** 0244: ramo do negócio escolhido no assistente. */
           ramo: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
@@ -1438,6 +1439,7 @@ export type Database = {
           grupo_criado_id?: string | null
           atualizado_em?: string
           documento?: string | null
+          codigo_de_indicacao?: string | null
           teste_gratis?: boolean
           /** 0244: ramo do negócio escolhido no assistente. */
           ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
@@ -1461,6 +1463,7 @@ export type Database = {
           grupo_criado_id?: string | null
           atualizado_em?: string
           documento?: string | null
+          codigo_de_indicacao?: string | null
           teste_gratis?: boolean
           /** 0244: ramo do negócio escolhido no assistente. */
           ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
@@ -1473,6 +1476,120 @@ export type Database = {
        * (29/10/2026). Global (sem `grupo_id`; a origem fica em
        * `grupo_origem_id`); só a chave de serviço.
        */
+      /** 0247 — indique e ganhe: qual conta indicou qual (global). */
+      indicacoes: {
+        Row: {
+          id: string
+          criado_em: string
+          codigo: string
+          grupo_indicador_id: string
+          grupo_indicado_id: string
+          pedido_id: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          codigo: string
+          grupo_indicador_id: string
+          grupo_indicado_id: string
+          pedido_id?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          codigo?: string
+          grupo_indicador_id?: string
+          grupo_indicado_id?: string
+          pedido_id?: string | null
+        }
+        Relationships: []
+      }
+      /** 0247 — crédito do indique e ganhe (global). */
+      creditos_de_indicacao: {
+        Row: {
+          id: string
+          criado_em: string
+          indicacao_id: string
+          grupo_beneficiado_id: string
+          pagamento_id: string | null
+          percentual: number
+          meses: number
+          valor_estimado: number | null
+          descricao: string
+          aplicado_em: string | null
+          aplicado_por: string | null
+          observacao: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          indicacao_id: string
+          grupo_beneficiado_id: string
+          pagamento_id?: string | null
+          percentual: number
+          meses: number
+          valor_estimado?: number | null
+          descricao: string
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          observacao?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          indicacao_id?: string
+          grupo_beneficiado_id?: string
+          pagamento_id?: string | null
+          percentual?: number
+          meses?: number
+          valor_estimado?: number | null
+          descricao?: string
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          observacao?: string | null
+        }
+        Relationships: []
+      }
+      /** 0247 — aceite do termo de adesão pela conta (do grupo). */
+      aceites_do_termo_de_adesao: {
+        Row: {
+          id: string
+          grupo_id: string
+          corretor_id: string
+          user_id: string
+          versao: string
+          aceito_em: string
+          nome_no_aceite: string
+          email_no_aceite: string | null
+          ip_hash: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          corretor_id: string
+          user_id: string
+          versao: string
+          aceito_em?: string
+          nome_no_aceite: string
+          email_no_aceite?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          corretor_id?: string
+          user_id?: string
+          versao?: string
+          aceito_em?: string
+          nome_no_aceite?: string
+          email_no_aceite?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       acessos_de_suporte: {
         Row: {
           id: string
@@ -2312,6 +2429,7 @@ export type Database = {
           asaas_assinatura_id: string | null
           asaas_cliente_id: string | null
           cancelado_em: string | null
+          codigo_de_indicacao: string | null
           contato_cobranca_email: string | null
           contato_cobranca_nome: string | null
           contato_cobranca_telefone: string | null
@@ -2385,6 +2503,7 @@ export type Database = {
           asaas_assinatura_id?: string | null
           asaas_cliente_id?: string | null
           cancelado_em?: string | null
+          codigo_de_indicacao?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null
@@ -2458,6 +2577,7 @@ export type Database = {
           asaas_assinatura_id?: string | null
           asaas_cliente_id?: string | null
           cancelado_em?: string | null
+          codigo_de_indicacao?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null

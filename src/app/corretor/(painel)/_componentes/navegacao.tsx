@@ -354,8 +354,18 @@ export const ITENS_DA_CONTA: ItemNav[] = [
   { href: "/corretor/senha", label: "Trocar senha", icone: IconeChave },
   // 29/10/2026 (0240): falar com a equipe da Astro é assunto da conta, não
   // do trabalho do dia; mora com perfil e senha, no avatar e no pé da gaveta.
+  // 29/10/2026 (0247): o indique e ganhe é desconto na mensalidade da
+  // CONTA, assunto de quem a administra; a central de ajuda é para todos e
+  // vem antes do suporte (ler um artigo resolve antes de abrir um chamado).
+  { href: "/corretor/indique", label: "Indique e ganhe", icone: IconePresente, gestor: true },
+  { href: "/ajuda", label: "Ajuda", icone: IconeLivro },
   { href: "/corretor/suporte", label: "Suporte da Astro", icone: IconeBoia },
 ];
+
+/** Os itens do menu da conta que esta pessoa vê (o do gestor some para o corretor). */
+export function itensDaConta(ehGestor: boolean): ItemNav[] {
+  return ITENS_DA_CONTA.filter((item) => ehGestor || !item.gestor);
+}
 
 /**
  * Os destinos do polegar, na barra inferior do celular (mais o botão Menu).
@@ -728,6 +738,27 @@ function IconeBoia(p: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="8.5" />
       <circle cx="12" cy="12" r="3.5" />
       <path d="M6 6l3.5 3.5M14.5 14.5 18 18M18 6l-3.5 3.5M9.5 14.5 6 18" />
+    </svg>
+  );
+}
+
+function IconePresente(p: SVGProps<SVGSVGElement>) {
+  // Uma caixa de presente com laço: o "ganhe" do indique e ganhe.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="4" y="9" width="16" height="11" rx="1.5" />
+      <path d="M3 9h18M12 9v11" />
+      <path d="M12 9c-1.5-3.5-5.5-4-5.5-1.5S10 9 12 9Zm0 0c1.5-3.5 5.5-4 5.5-1.5S14 9 12 9Z" />
+    </svg>
+  );
+}
+
+function IconeLivro(p: SVGProps<SVGSVGElement>) {
+  // Livro aberto: a central de ajuda (ler), diferente da boia (falar com alguém).
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z" />
+      <path d="M12 6.5v13" />
     </svg>
   );
 }

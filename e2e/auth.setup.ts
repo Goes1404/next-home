@@ -60,5 +60,13 @@ setup("login do corretor", async ({ page }) => {
     await page.getByRole("button", { name: "Li e aceito os termos" }).click();
     await expect(page).toHaveURL(/\/corretor(?!\/termos|\/entrar)/, { timeout: 15_000 });
   }
+  // Termo de adesão da conta (0247, 29/10/2026): se a conta sintética for de
+  // gestor e a conta ainda não aceitou a versão vigente, o painel cai na
+  // página do termo. Aceita uma vez, como os termos de uso acima.
+  if (/\/corretor\/termo-de-adesao/.test(page.url())) {
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Aceitar o termo de adesão" }).click();
+    await expect(page).toHaveURL(/\/corretor(?!\/termo-de-adesao|\/entrar)/, { timeout: 15_000 });
+  }
   await page.context().storageState({ path: ARQUIVO_SESSAO });
 });

@@ -51,6 +51,17 @@ export const TABELAS_GLOBAIS = [
   // recortado por papel (todos ou só gestores), nunca por grupo. Só a chave
   // de serviço lê e escreve.
   "avisos_aos_clientes",
+  // Indique e ganhe (0247, 29/10/2026): a linha liga DUAS contas (quem
+  // indicou e quem foi indicada), então não cabe num grupo só. Os grupos
+  // ficam em `grupo_indicador_id` e `grupo_indicado_id` (não `grupo_id`,
+  // pelo mesmo motivo dos chamados). Só a chave de serviço lê e escreve; o
+  // gestor vê as do grupo dele pela chave filtrada pela sessão.
+  "indicacoes",
+  // O crédito do indique e ganhe (0247, 29/10/2026): ato da Astro sobre a
+  // conta que indicou (desconto a aplicar), gerado pelo pagamento de OUTRA
+  // conta. A conta beneficiada fica em `grupo_beneficiado_id`. Só a chave de
+  // serviço lê e escreve.
+  "creditos_de_indicacao",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

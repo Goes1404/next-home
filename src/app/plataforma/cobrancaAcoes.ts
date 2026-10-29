@@ -13,6 +13,7 @@ import {
   lerValorDigitado,
 } from "@/lib/planos/pagamentosDigitados";
 import { createServiceClient } from "@/lib/supabase/service";
+import { recompensarIndicacao } from "@/lib/indicacoes/indicacao";
 
 /**
  * A cobrança manual do grupo na plataforma (fase 2C, desenho §11).
@@ -111,6 +112,13 @@ export async function registrarPagamento(grupoId: string, pedido: PagamentoDigit
     valor: valor.valor,
     pago_em: pagoEm.valor,
   });
+  // Indique e ganhe (0247): o primeiro pagamento de verdade da conta indicada
+  // gera o crédito de quem indicou (uma vez só; os seguintes não fazem nada).
+  const recompensa = await recompensarIndicacao(servico, grupoId);
+  if (recompensa.resultado === "falhou") {
+    console.error(`[plataforma] recompensa da indicação (${grupoId}) não gerada: ${recompensa.motivo}`);
+  }
+  if (recompensa.resultado === "gerado") revalidatePath(`/plataforma/grupos/${recompensa.grupoBeneficiadoId}`);
   atualizarTelas(grupoId);
   return { ok: true };
 }

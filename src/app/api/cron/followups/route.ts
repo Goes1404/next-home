@@ -47,7 +47,7 @@ import { avisarLeadsQueCombinam } from "@/lib/notificacoes/leadsQueCombinam";
 import { lembrarVisitasDaProximaHora } from "@/lib/notificacoes/lembreteDeVisita";
 import { avisarLeadsParados } from "@/lib/notificacoes/leadParado";
 import { avisarSenhasVencendo } from "@/lib/notificacoes/senhaVencendo";
-import { avisarCobrancasDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
+import { avisarCobrancasDoDia, avisarRiscosDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
@@ -684,6 +684,11 @@ export async function GET(req: NextRequest) {
   // plataforma (29/10/2026, 0239): só às 9h, no primeiro tique da hora.
   await avisarCobrancasDoDia().catch((e) => {
     console.error("[cobranças do dia]", e);
+  });
+  // Contas em risco de cancelamento (29/10/2026): também às 9h, no primeiro
+  // tique da hora; só contagens por conta (sinaisDeRisco.ts).
+  await avisarRiscosDoDia().catch((e) => {
+    console.error("[riscos do dia]", e);
   });
   // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.

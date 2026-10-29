@@ -122,6 +122,8 @@ export const FILTROS_DE_INDICADOR = {
   "em-aberto": "Mensalidade em aberto",
   "sem-uso": "Sem uso há 7 dias",
   ia: "IA em alerta",
+  // O risco de cancelamento (29/10/2026, `riscoDeCancelamento.ts`): médio ou alto.
+  risco: "Risco de cancelamento",
 } as const;
 
 export type FiltroDeIndicador = keyof typeof FILTROS_DE_INDICADOR;
@@ -144,7 +146,12 @@ export function hrefDaLista(p: { tipo?: string; ver?: FiltroDeIndicador | null }
 export function filtrarPorIndicador<T extends ContaDoPainel>(
   contas: readonly T[],
   filtro: FiltroDeIndicador | null,
-  extras: { semUso: ReadonlySet<string> | null; custos: Record<string, { alerta: boolean } | undefined> },
+  extras: {
+    semUso: ReadonlySet<string> | null;
+    custos: Record<string, { alerta: boolean } | undefined>;
+    /** As contas de risco médio ou alto; `null`/ausente = não medido (lista vazia). */
+    emRisco?: ReadonlySet<string> | null;
+  },
 ): T[] {
   switch (filtro) {
     case null:
@@ -163,6 +170,8 @@ export function filtrarPorIndicador<T extends ContaDoPainel>(
       return contas.filter((g) => g.situacao !== "encerrado" && (extras.semUso?.has(g.id) ?? false));
     case "ia":
       return contas.filter((g) => g.situacao !== "encerrado" && iaEmAlerta(g, extras.custos[g.id]?.alerta ?? false));
+    case "risco":
+      return contas.filter((g) => g.situacao !== "encerrado" && (extras.emRisco?.has(g.id) ?? false));
   }
 }
 

@@ -30,6 +30,9 @@ import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
 import { AcessosDoGrupo } from "./AcessosDoGrupo";
 import { SituacaoEPlanoDoGrupo } from "./SituacaoEPlanoDoGrupo";
 import { RamoDoGrupo } from "./RamoDoGrupo";
+import { NegocioDoGrupo } from "./NegocioDoGrupo";
+import { lerNegocioDoGrupo } from "@/lib/plataforma/indicacoes";
+import { lerRiscoDaConta } from "@/lib/plataforma/sinaisDeRisco";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -55,6 +58,9 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
   const acessos = await lerAcessosDoGrupo(prova, grupo.id);
+  // Relacionamento (0247, 29/10/2026): termo de adesão, indicações e o risco
+  // de cancelamento, em paralelo; falha de cada um só apaga a parte dele.
+  const [negocio, risco] = await Promise.all([lerNegocioDoGrupo(prova, grupo.id), lerRiscoDaConta(grupo.id, agora)]);
   // A cobrança automática (0241): a fatura em aberto vem do Asaas na hora;
   // falha do Asaas só esconde o link (lerFaturaEmAberto devolve null).
   const faltandoNoAsaas = variaveisDoAsaasFaltando();
@@ -83,6 +89,8 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <SaudeNoDetalhe saude={saude} agora={agora} />
+
+      <NegocioDoGrupo grupoId={grupo.id} negocio={negocio} risco={risco} ehContaDaCasa={grupo.id === GRUPO_NEXT_HOME_ID} />
 
       <dl className="cartao text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-3 p-5 sm:grid-cols-3">
         <div>

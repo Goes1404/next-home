@@ -34,6 +34,9 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
 import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 import { createClient } from "@/lib/supabase/server";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { contaAceitouTermoDeAdesao } from "@/lib/termos/aceiteDoTermoDeAdesao";
+import { CAMINHO_DO_TERMO_DE_ADESAO, precisaAceitarTermoDeAdesao } from "@/lib/termos/termoDeAdesao";
 
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
@@ -99,14 +102,24 @@ export default async function PainelLayout({
     const { data: ehAdmin } = await supabase.rpc("eh_admin_da_plataforma");
     if (ehAdmin === true) redirect("/plataforma");
   }
-  // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
-  // O aceite dos termos está temporariamente desativado; a página e a action
-  // continuam preservadas para reativação posterior.
-  // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
-  // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
-  // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
-  // e entrar, recuperar, criar e trocar senha também: nada disso passa por
-  // aqui (trocar a senha provisória não pode esperar o aceite).
+  // Termos de USO no primeiro acesso (fase 2D, 0198): DESLIGADOS desde
+  // 23/10/2026. Pediam aceite de TODA pessoa do painel e travaram a entrada
+  // da equipe recém-criada da Aretz (senha provisória → termos → só depois o
+  // painel). A página e a action continuam preservadas.
+  //
+  // Termo de ADESÃO (0247, 29/10/2026): o contrato da CONTA, só para o
+  // GESTOR (e o profissional independente, gestor do próprio grupo), uma vez
+  // por versão e por conta; corretor nunca é parado, e a conta da casa (Next
+  // Home) fica de fora. A página mora FORA deste grupo (senão seria
+  // redirecionada para si mesma), como as de entrar e trocar senha. Erro ao
+  // ler o aceite NÃO tranca o painel (`contaAceitouTermoDeAdesao`).
+  if (corretor && corretor.papel === "gestor" && corretor.grupoId !== GRUPO_NEXT_HOME_ID) {
+    const sessao = await createClient();
+    const contaJaAceitou = await contaAceitouTermoDeAdesao(sessao, corretor.grupoId);
+    if (precisaAceitarTermoDeAdesao({ papel: corretor.papel, ehContaDaCasa: false, contaJaAceitou })) {
+      redirect(CAMINHO_DO_TERMO_DE_ADESAO);
+    }
+  }
   const marca = await marcaDoPainel();
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
@@ -185,6 +198,7 @@ export default async function PainelLayout({
                 nome={corretor.nome}
                 fotoUrl={corretor.fotoUrl}
                 iniciais={iniciais(corretor.nome)}
+                ehGestor={ehGestor}
                 formularioSair={
                   <form action={sair} data-sair>
                     <button

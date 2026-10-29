@@ -9,6 +9,7 @@ import {
   destinoAtivo,
   gruposVisiveis,
   itemAtivo,
+  itensDaConta,
   moduloAtivo,
   moduloDaSecao,
   rotaAtiva,
@@ -109,9 +110,27 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     const itens = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
     expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
-    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha", "/corretor/suporte"]);
+    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual([
+      "/corretor/perfil",
+      "/corretor/senha",
+      "/corretor/indique",
+      "/ajuda",
+      "/corretor/suporte",
+    ]);
+    // Indique e ganhe (0247) e Ajuda também moram no avatar, fora do menu.
+    expect(itens.some((i) => i.href === "/corretor/indique" || i.href === "/ajuda")).toBe(false);
     // O suporte da Astro (29/10/2026) também mora no avatar, fora do menu.
     expect(itens.some((i) => i.href === "/corretor/suporte")).toBe(false);
+  });
+
+  it("o indique e ganhe (0247) só aparece no menu da conta do gestor; a ajuda, para todos", () => {
+    const doGestor = itensDaConta(true).map((i) => i.href);
+    const doCorretor = itensDaConta(false).map((i) => i.href);
+    expect(doGestor).toContain("/corretor/indique");
+    expect(doCorretor).not.toContain("/corretor/indique");
+    expect(doGestor).toContain("/ajuda");
+    expect(doCorretor).toContain("/ajuda");
+    expect(doCorretor).toContain("/corretor/suporte");
   });
 
   it("gestor vê exatamente um destino a mais, e é Administração", () => {

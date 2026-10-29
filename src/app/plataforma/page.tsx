@@ -16,6 +16,9 @@ import {
 } from "@/lib/plataforma/painelDeNumeros";
 import { contarPedidosNovos } from "@/lib/plataforma/pedidos";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
+import { contasEmRisco, type RiscoDaConta } from "@/lib/plataforma/riscoDeCancelamento";
+import { lerRiscosDasContas } from "@/lib/plataforma/sinaisDeRisco";
+import { SeloDoRisco } from "./SeloDoRisco";
 import { AtivarAvisosDaPlataforma } from "./AtivarAvisosDaPlataforma";
 import { CustoDaIa } from "./CustoDaIa";
 import { PainelDeNumeros } from "./PainelDeNumeros";
@@ -97,14 +100,23 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
     contarChamadosAbertos(prova),
   ]);
   // A saúde (custo da IA) e o "sem uso há 7 dias" partem da lista, juntos.
-  const [saudes, semUso] = await Promise.all([lerSaudeDosGrupos(prova, grupos, agora), lerContasSemUso(prova, grupos, agora)]);
+  // O risco de cancelamento (29/10/2026) entra no mesmo lote: só contagens
+  // por conta, depois da guarda desta página (sinaisDeRisco.ts).
+  const [saudes, semUso, riscos] = await Promise.all([
+    lerSaudeDosGrupos(prova, grupos, agora),
+    lerContasSemUso(prova, grupos, agora),
+    lerRiscosDasContas(agora),
+  ]);
+  const riscoPorConta = new Map<string, RiscoDaConta>((riscos ?? []).map((r) => [r.grupoId, r.risco]));
+  const emRiscoOrdenadas = riscos ? contasEmRisco(riscos) : [];
+  const emRisco = riscos ? new Set(emRiscoOrdenadas.map((r) => r.grupoId)) : null;
   const custos = Object.fromEntries(
     Object.entries(saudes).map(([id, s]) => [id, { custoBrl: s.custo.custoBrl, alerta: s.custo.alerta }]),
   );
   const painel = calcularPainel({ contas: grupos, custos, semUso, agora });
   // O cabeçalho conta todas; as seções mostram só as do indicador escolhido.
   const total = separarPorTipo(grupos);
-  const { imobiliarias, independentes } = separarPorTipo(filtrarPorIndicador(grupos, ver, { semUso, custos }));
+  const { imobiliarias, independentes } = separarPorTipo(filtrarPorIndicador(grupos, ver, { semUso, custos, emRisco }));
 
   const secoes = [
     {
@@ -152,8 +164,17 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
             {cobranca && (
               <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${cobranca.classe}`}>{cobranca.rotulo}</span>
             )}
+            <SeloDoRisco risco={riscoPorConta.get(g.id)} />
           </div>
         </div>
+        {/* Os motivos do risco (29/10/2026), só quando há risco. */}
+        {riscoPorConta.get(g.id) && riscoPorConta.get(g.id)!.nivel !== "baixo" && (
+          <ul className="text-fluid-xs text-corpo -mt-2 list-disc space-y-0.5 pl-5">
+            {riscoPorConta.get(g.id)!.motivos.map((m) => (
+              <li key={m.chave}>{m.texto}</li>
+            ))}
+          </ul>
+        )}
 
         <div className="border-linha border-t pt-4">
           <SaudeNoCartao saude={saude} />
@@ -217,6 +238,38 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
 
       <PainelDeNumeros painel={painel} pedidosNovos={pedidosNovos} chamadosAbertos={chamadosAbertos} />
 
+      {/* Risco de cancelamento (29/10/2026): as contas que pedem uma ligação
+          da Astro, com o motivo principal. O mesmo cálculo do aviso das 9h. */}
+      <section aria-labelledby="titulo-risco" className="cartao flex flex-col gap-3 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="titulo-risco" className="text-fluid-sm text-titulo font-bold">
+            Risco de cancelamento
+          </h2>
+          {emRiscoOrdenadas.length > 0 && (
+            <Link href={hrefDaLista({ tipo: filtro, ver: "risco" })} className="text-fluid-sm text-acento-suave inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+              Ver as {emRiscoOrdenadas.length} na lista
+            </Link>
+          )}
+        </div>
+        {riscos === null ? (
+          <p className="text-fluid-sm text-apoio">Não medido agora (a leitura falhou; tente de novo).</p>
+        ) : emRiscoOrdenadas.length === 0 ? (
+          <p className="text-fluid-sm text-apoio">Nenhuma conta com risco médio ou alto hoje.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {emRiscoOrdenadas.slice(0, 5).map((c) => (
+              <li key={c.grupoId} className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <Link href={`/plataforma/grupos/${c.grupoId}`} className="text-fluid-sm text-titulo min-w-0 break-words underline-offset-4 hover:underline">
+                  {c.nome}
+                  <span className="text-apoio"> · {c.risco.motivos[0]?.texto}</span>
+                </Link>
+                <SeloDoRisco risco={c.risco} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <Link
           href="/plataforma/grupos/novo/imobiliaria"
@@ -251,6 +304,13 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
               {chamadosNovos} {chamadosNovos === 1 ? "novo" : "novos"}
             </span>
           )}
+        </Link>
+        {/* Indique e ganhe (0247, 29/10/2026): indicações e créditos a aplicar. */}
+        <Link
+          href="/plataforma/indicacoes"
+          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
+        >
+          Indicações
         </Link>
         {/* O recado da Astro no painel de todos os clientes (0242, 29/10/2026). */}
         <Link

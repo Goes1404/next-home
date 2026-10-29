@@ -6,6 +6,12 @@ import { COOKIE_CORRETOR_ATIVO } from "@/lib/corretorAtivoCookie";
 import { ehEnderecoSoDoPainel, ehRotaDeTokenDoCliente } from "@/lib/enderecosDoPainel";
 import { normalizarHost } from "@/lib/sites/endereco";
 import { SEGMENTO_SEM_ENDERECO } from "@/lib/sites/segmento";
+import {
+  COOKIE_DE_INDICACAO,
+  normalizarCodigoDeIndicacao,
+  OPCOES_DO_COOKIE_DE_INDICACAO,
+  PARAMETRO_DE_INDICACAO,
+} from "@/lib/indicacoes/codigo";
 
 const TRINTA_DIAS_EM_SEGUNDOS = 60 * 60 * 24 * 30;
 
@@ -68,7 +74,11 @@ export async function proxy(request: NextRequest) {
     if (pathname === "/") {
       const vendas = request.nextUrl.clone();
       vendas.pathname = "/astro";
-      return NextResponse.rewrite(vendas);
+      const paraVendas = NextResponse.rewrite(vendas);
+      // A raiz também aceita `?indicacao=` (0247): é a página de vendas.
+      const codigoNaRaiz = normalizarCodigoDeIndicacao(searchParams.get(PARAMETRO_DE_INDICACAO));
+      if (codigoNaRaiz) paraVendas.cookies.set(COOKIE_DE_INDICACAO, codigoNaRaiz, OPCOES_DO_COOKIE_DE_INDICACAO);
+      return paraVendas;
     }
     return NextResponse.redirect(new URL("/corretor", request.url));
   }
@@ -110,6 +120,16 @@ export async function proxy(request: NextRequest) {
       if (areaDaPlataforma) entrar.searchParams.set("next", pathname + request.nextUrl.search);
       return NextResponse.redirect(entrar);
     }
+  }
+
+  // Indique e ganhe (0247, 29/10/2026): `/astro/contratar?indicacao=<codigo>`
+  // (e qualquer página da Astro) vira o mesmo cookie de 30 dias do link
+  // curto `/i/<codigo>`. Aqui, e não na página de contratação, para a
+  // atribuição valer sem depender do que cada página faz com o parâmetro.
+  // Só o formato é conferido; o código de verdade, no registro da indicação.
+  if (pathname === "/astro" || pathname.startsWith("/astro/")) {
+    const codigoDeIndicacao = normalizarCodigoDeIndicacao(searchParams.get(PARAMETRO_DE_INDICACAO));
+    if (codigoDeIndicacao) response.cookies.set(COOKIE_DE_INDICACAO, codigoDeIndicacao, OPCOES_DO_COOKIE_DE_INDICACAO);
   }
 
   const slugCompartilhado = searchParams.get("corretor");
@@ -174,7 +194,10 @@ export async function proxy(request: NextRequest) {
  * não existe): sem isso, `nexthomeimoveis.com/s/outro.com.br/` mostraria o
  * site de outro grupo debaixo do domínio da Next Home.
  */
-const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa", "/imovel", "/astro"];
+//
+// `/ajuda` (central de ajuda) e `/i` (link curto do indique e ganhe), de
+// 29/10/2026 (0247), são da Astro, iguais em todo endereço, como `/astro`.
+const FORA_DO_SITE = ["/corretor", "/plataforma", "/auth", "/wa", "/imovel", "/astro", "/ajuda", "/i"];
 
 function ehPaginaDoSite(pathname: string): boolean {
   return !FORA_DO_SITE.some((raiz) => pathname === raiz || pathname.startsWith(`${raiz}/`));

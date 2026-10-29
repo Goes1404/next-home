@@ -10,7 +10,7 @@ import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
 import { sair } from "@/app/corretor/actions";
 import {
-  ITENS_DA_CONTA,
+  itensDaConta,
   destinoAtivo,
   gruposVisiveis,
   moduloAtivo,
@@ -262,7 +262,7 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
             de perigo, porque é o único que tira a pessoa daqui. */}
         <div className="border-linha border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           <ul className="space-y-0.5">
-            {ITENS_DA_CONTA.map((item) => {
+            {itensDaConta(ehGestor).map((item) => {
               const Icone = item.icone;
               return (
                 <li key={item.href}>

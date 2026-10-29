@@ -6,6 +6,8 @@ import { validarSlugDoGrupo } from "@/lib/grupos/slugDoGrupo";
 import { avisarAtendimento } from "@/lib/notificacoes/avisosDaPlataforma";
 import { diaDoVencimentoValido, fimDoTesteGratis } from "@/lib/planos/cobranca";
 import { createServiceClient } from "@/lib/supabase/service";
+import { codigoDeIndicacaoDoVisitante } from "@/lib/indicacoes/cookieDoVisitante";
+import { registrarIndicacaoDoPedido } from "@/lib/indicacoes/indicacao";
 import { criarContaComPrimeiroAcesso, emailEmFicha } from "./criarConta";
 import { padraoDoEmail, validarNovoGrupo } from "./dadosDoGrupo";
 import { mascararParaLog, totalMensal, type PedidoLimpo } from "./pedidoDeContratacao";
@@ -172,6 +174,10 @@ export async function iniciarTesteGratis(
     });
     if (!grupo.ok) return { ok: false, erro: grupo.erro };
 
+    // Indique e ganhe (0247, 29/10/2026): o código que o visitante trouxe
+    // (cookie de `/i/<codigo>` ou de `?indicacao=`) fica no pedido.
+    const codigoDeIndicacao = await codigoDeIndicacaoDoVisitante();
+
     // O pedido com a marca do teste: a trava do banco e a prova do núcleo.
     const { data: pedido, error: erroDoPedido } = await servico
       .from("pedidos_de_contratacao")
@@ -190,6 +196,7 @@ export async function iniciarTesteGratis(
         uf: p.uf,
         consentimento_em: consentimentoEm.toISOString(),
         teste_gratis: true,
+        codigo_de_indicacao: codigoDeIndicacao,
       })
       .select("id")
       .single();
@@ -239,6 +246,16 @@ export async function iniciarTesteGratis(
       .update({ status: "convertido", grupo_criado_id: conta.grupoId, atualizado_em: new Date().toISOString() })
       .eq("id", pedido.id);
     if (erroDaConversao) console.error(`[teste grátis] pedido ${pedido.id} não marcado convertido: ${erroDaConversao.message}`);
+
+    // A conta nasceu: liga à conta que indicou (0247). Nunca derruba o teste.
+    const indicacao = await registrarIndicacaoDoPedido(servico, {
+      pedidoId: pedido.id,
+      grupoIndicadoId: conta.grupoId,
+      codigoDoVisitante: codigoDeIndicacao,
+    });
+    if (indicacao.resultado === "falhou") {
+      console.error(`[teste grátis] indicação do grupo ${conta.grupoId} não registrada: ${indicacao.motivo}`);
+    }
 
     const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
       grupo_id: conta.grupoId,

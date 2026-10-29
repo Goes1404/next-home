@@ -3,6 +3,7 @@ import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { competenciaDoVencimento } from "./assinatura";
 import type { PagamentoDoAsaas } from "./asaas";
+import { recompensarIndicacao } from "@/lib/indicacoes/indicacao";
 
 /**
  * O que o webhook do Asaas faz com cada evento (29/10/2026, 0241). A rota
@@ -19,6 +20,12 @@ import type { PagamentoDoAsaas } from "./asaas";
  *   só avisa os administradores.
  * - Qualquer outro evento: ignorado (a rota responde 200 do mesmo jeito,
  *   senão o Asaas repete e pausa a fila depois de 15 falhas).
+ *
+ * Indique e ganhe (0247): depois de registrar (e também no evento repetido,
+ * para uma recompensa que falhou na primeira entrega sair na seguinte), a
+ * conta indicada que paga a primeira mensalidade gera o crédito de quem
+ * indicou (`recompensarIndicacao`, idempotente). Falha dela só vai ao log:
+ * o pagamento já está gravado e o Asaas não deve repetir por causa disso.
  *
  * O grupo sai da ASSINATURA do pagamento (`grupos.asaas_assinatura_id`) e,
  * sem ela (cobrança avulsa, assinatura já desligada), do CLIENTE
@@ -87,6 +94,27 @@ async function acharGrupo(
   return { ok: true, grupo: null };
 }
 
+/** O crédito da indicação depois do pagamento gravado (0247). Nunca lança. */
+async function recompensarDepoisDoPagamento(
+  servico: Servico,
+  grupo: { id: string; nome: string },
+  avisar: (aviso: Aviso) => void,
+): Promise<void> {
+  const r = await recompensarIndicacao(servico, grupo.id);
+  if (r.resultado === "falhou") {
+    console.error(`[asaas] recompensa da indicação (${grupo.id}) não gerada: ${r.motivo}`);
+    return;
+  }
+  if (r.resultado === "gerado") {
+    avisar({
+      titulo: "Crédito de indicação gerado",
+      corpo: `${grupo.nome} pagou a primeira mensalidade: quem indicou ganhou ${r.descricao}. Aplique na cobrança.`,
+      url: `/plataforma/grupos/${r.grupoBeneficiadoId}`,
+      tag: `indicacao-${r.creditoId}`,
+    });
+  }
+}
+
 export async function processarEventoDoAsaas(
   servico: Servico,
   evento: EventoDoAsaas,
@@ -130,7 +158,10 @@ export async function processarEventoDoAsaas(
     .eq("asaas_pagamento_id", pagamento.id)
     .maybeSingle();
   if (erroDaBusca) return { resultado: "falhou", motivo: `pagamento não conferido: ${erroDaBusca.message}` };
-  if (jaRegistrado) return { resultado: "repetido", grupoId: grupo.id };
+  if (jaRegistrado) {
+    await recompensarDepoisDoPagamento(servico, grupo, avisar);
+    return { resultado: "repetido", grupoId: grupo.id };
+  }
 
   const dataDoPagamento = [pagamento.paymentDate, pagamento.clientPaymentDate].find(
     (d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d),
@@ -183,5 +214,6 @@ export async function processarEventoDoAsaas(
     url,
     tag: `asaas-pagamento-${pagamento.id}`,
   });
+  await recompensarDepoisDoPagamento(servico, grupo, avisar);
   return { resultado: "registrado", grupoId: grupo.id, competencia };
 }

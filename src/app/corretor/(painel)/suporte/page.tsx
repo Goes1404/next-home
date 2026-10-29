@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import {
@@ -45,7 +46,16 @@ export default async function SuportePage() {
         descricao="Dúvida, problema ou sugestão sobre o CRM? Escreva aqui; a equipe da Astro responde em até 1 dia útil."
       />
 
-      <div className="cartao mt-8 p-5">
+      {/* A central de ajuda (29/10/2026): o passo a passo resolve antes do chamado. */}
+      <p className="text-fluid-sm text-corpo border-linha mt-8 rounded-xl border px-4 py-3">
+        Antes de escrever, veja se a{" "}
+        <Link href="/ajuda" className="text-acento-suave font-medium underline underline-offset-4">
+          central de ajuda
+        </Link>{" "}
+        já responde: WhatsApp, avisos no celular, importar leads, funil, agenda, equipe, IA e cobrança, passo a passo.
+      </p>
+
+      <div className="cartao mt-6 p-5">
         <FormularioDeSuporte />
         <p className="text-fluid-xs text-apoio mt-4">
           Para não expor seus clientes, não cole dados de leads na mensagem: se precisar, descreva o caso e a Astro chama

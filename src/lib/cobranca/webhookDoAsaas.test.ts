@@ -164,3 +164,27 @@ describe("processarEventoDoAsaas", () => {
     expect(avisos).toHaveLength(0);
   });
 });
+
+describe("indique e ganhe no webhook (0247)", () => {
+  it("a conta indicada que paga a primeira mensalidade gera o crédito de quem indicou, uma vez só", async () => {
+    banco.tabelas.indicacoes = [{ id: "ind-1", codigo: "beto1234", grupo_indicador_id: G2, grupo_indicado_id: G1 }];
+    banco.tabelas.creditos_de_indicacao = [];
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_RECEIVED"), avisar);
+    expect(r.resultado).toBe("registrado");
+    expect(banco.tabelas.creditos_de_indicacao).toEqual([
+      expect.objectContaining({ indicacao_id: "ind-1", grupo_beneficiado_id: G2, percentual: 50, meses: 1 }),
+    ]);
+    expect(avisos.map((a) => a.titulo)).toContain("Crédito de indicação gerado");
+
+    // O CONFIRMED e o RECEIVED do cartão: o segundo não gera outro crédito.
+    const repetido = await processarEventoDoAsaas(servico(), evento("PAYMENT_CONFIRMED"), avisar);
+    expect(repetido.resultado).toBe("repetido");
+    expect(banco.tabelas.creditos_de_indicacao).toHaveLength(1);
+  });
+
+  it("conta sem indicação: o pagamento segue como sempre, sem aviso a mais", async () => {
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_RECEIVED"), avisar);
+    expect(r.resultado).toBe("registrado");
+    expect(avisos.map((a) => a.titulo)).toEqual(["Pagamento recebido"]);
+  });
+});
