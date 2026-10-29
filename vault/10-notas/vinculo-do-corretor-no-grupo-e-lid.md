@@ -12,7 +12,7 @@ codigo:
   - src/app/corretor/(painel)/admin/whatsapp/acoes.ts
   - src/app/corretor/(painel)/marketing/impulsionamentos/numeroCentral.ts
 created: 2026-10-26
-updated: 2026-10-28
+updated: 2026-10-29
 fonte: spec 2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md (6.3, 6.4, 6.6, 7); decisão do dono de não testar na Evolution real
 summary: Para o retorno da ligação pelo grupo só valer quando o CORRETOR fala (os gestores também estão no grupo), a sincronização lê os participantes e guarda o @lid dele pelo par número↔lid; grupo que serve a dois corretores é recusado.
 ---
@@ -125,3 +125,10 @@ Relacionado: [[leads-distribuidos-nos-grupos-da-aretz]] · [[MOC — CRM e Paine
   do gestor logado, se conectado. O salvo NÃO troca sozinho: na Aretz há três
   gestores, e trocar pelo de quem clicou tiraria o número que está nos grupos.
   Trocar o central hoje só por SQL.
+
+**Aba Roleta presa (29/10/2026):** a Evolution passou a estourar os 90 s no
+`fetchAllGroups` de `nexthome-cristal-bruna` (número conectado, mensagens
+chegando), e a aba ficava no esqueleto o tempo todo. A tela agora lê com
+`listarGruposWhatsapp(central, { prazoMs: 15_000 })`; a sincronização segue
+com 90 s. Diagnóstico: `[grupos] falha ao pedir a lista de grupos` com
+"aborted due to timeout" nos erros da Vercel na rota `/corretor/marketing/impulsionamentos`.

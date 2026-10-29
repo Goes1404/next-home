@@ -12420,3 +12420,17 @@ Nota: [[livro-do-consumo-da-ia]].
   numa transação desfeita (script no scratchpad), sem `db:teste`, que
   derrubaria o banco dela.
 - **Aplicada em produção em 29/10/2026**, antes do deploy de `ca35ab93`; objetos, privilégios e carimbo conferidos (insert de prova desfeito, `ia_consumo` com 0 linhas no momento).
+
+## Aba Roleta presa pela lista de grupos da Evolution (29/10/2026)
+
+Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
+
+- Sintoma: "a tela de roleta não carrega". Causa: `fetchAllGroups` do número
+  central (`nexthome-cristal-bruna`) estourando os 90 s em toda leitura,
+  com o número conectado e as mensagens fluindo. Não era deploy.
+- A aba esperava o teto inteiro dentro do `Suspense`. Agora a tela passa
+  `prazoMs: 15_000` (normal ~5 s); a ação de sincronizar mantém 90 s.
+- Achado pelo `get_runtime_errors` da Vercel (logs do Hobby só guardam 1 h).
+- A causa na Evolution ficou em aberto: sem a chave dela na máquina, não deu
+  para medir direto. Reiniciar a instância é o próximo passo.
+
