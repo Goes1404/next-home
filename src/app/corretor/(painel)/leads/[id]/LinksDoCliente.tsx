@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import { BotoesDeLink } from "./BotoesDeLink";
+import { haQuanto, resumirVisualizacoes } from "@/lib/crm/vitrine";
 
 /**
  * Links para o cliente (26/09/2026): seleção, proposta e portal. Os
@@ -8,7 +9,7 @@ import { BotoesDeLink } from "./BotoesDeLink";
  */
 export async function LinksDoCliente({ leadId, telefone }: { leadId: string; telefone: string | null }) {
   const supabase = await createClient();
-  const [{ data: links }, { data: cliques }, { data: lead }] = await Promise.all([
+  const [{ data: links }, { data: cliques }, { data: lead }, { data: visualizacoes }] = await Promise.all([
     supabase
       .from("links_do_cliente")
       .select("token, tipo, aberto_em, created_at, dados")
@@ -27,7 +28,21 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
       .select("empreendimento:empreendimentos!leads_empreendimento_id_fkey(id, nome)")
       .eq("id", leadId)
       .maybeSingle(),
+    // Vitrine (0245): cada abertura e cada imóvel visto, sem dado do
+    // visitante. Sem a 0245 aplicada, lista vazia e a linha antiga continua.
+    supabase
+      .from("vitrine_visualizacoes")
+      .select("empreendimento_id, criado_em")
+      .eq("lead_id", leadId)
+      .order("criado_em", { ascending: false })
+      .limit(200),
   ]);
+  const vitrine = resumirVisualizacoes(visualizacoes ?? []);
+  const idsVistos = vitrine.vistos.map((v) => v.empreendimentoId);
+  const { data: nomesVistos } = idsVistos.length
+    ? await supabase.from("empreendimentos").select("id, nome").in("id", idsVistos)
+    : { data: [] as { id: string; nome: string }[] };
+  const nomeDoImovel = new Map((nomesVistos ?? []).map((e) => [e.id, e.nome]));
   const imovelDoLead = Array.isArray(lead?.empreendimento) ? lead?.empreendimento[0] : lead?.empreendimento;
   // O que ele abriu, do mais recente, sem repetir: é por onde começar a conversa.
   const abertos = [
@@ -75,7 +90,19 @@ export async function LinksDoCliente({ leadId, telefone }: { leadId: string; tel
           {selecao.aberto_em
             ? `aberta pelo cliente em ${dataHora.format(new Date(selecao.aberto_em))}`
             : "ainda não aberta"}
-          {abertos.length > 0 && ` · olhou: ${abertos.join(", ")}`}
+          {abertos.length > 0 && vitrine.vistos.length === 0 && ` · olhou: ${abertos.join(", ")}`}
+        </p>
+      )}
+
+      {vitrine.ultimaAbertura && (
+        <p className="text-fluid-xs text-corpo">
+          <strong>Abriu a vitrine {haQuanto(vitrine.ultimaAbertura)}</strong>
+          {vitrine.aberturas > 1 && ` (${vitrine.aberturas} vezes)`}
+          {vitrine.vistos.length > 0 &&
+            ` · viu ${vitrine.vistos
+              .slice(0, 4)
+              .map((v) => `${nomeDoImovel.get(v.empreendimentoId) ?? "um imóvel"}${v.vezes > 1 ? ` (${v.vezes}x)` : ""}`)
+              .join(", ")}`}
         </p>
       )}
 

@@ -1,6 +1,8 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { after } from "next/server";
+import { headers } from "next/headers";
+import { registrarVisualizacaoDaVitrine } from "@/lib/crm/visualizacoesDaVitrine";
 import { linkValido, type TipoDeLink } from "@/lib/crm/linksDoCliente";
 import { avisarCorretorDoLink, registrarEventoDoLink } from "@/lib/crm/eventosDoLink";
 
@@ -67,6 +69,23 @@ export async function lerLinkPublico(
         }
       });
     }
+  }
+
+  /*
+   * Vitrine (29/10/2026, 0245): TODA abertura da seleção conta, não só a
+   * primeira — é o que diz ao corretor "abriu de novo há 10 min". A mesma
+   * pessoa no mesmo dia conta uma vez; a prévia do corretor não conta.
+   */
+  if (tipo === "selecao" && !opcoes.previa) {
+    const cabecalhos = new Headers(await headers());
+    const visualizacao = {
+      token: link.token,
+      leadId: link.lead_id,
+      corretorId: link.corretor_id,
+      empreendimentoId: null,
+      headers: cabecalhos,
+    };
+    after(() => registrarVisualizacaoDaVitrine(supabase, visualizacao));
   }
 
   return {

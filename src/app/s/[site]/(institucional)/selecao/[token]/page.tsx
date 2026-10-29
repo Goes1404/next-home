@@ -61,6 +61,31 @@ export default async function SelecaoPage({
           titulo={link.primeiroNome ? `${link.primeiroNome}, estes combinam com você` : "Estes imóveis combinam com você"}
           lead="Escolhidos pelo que você contou que procura. Veja as fotos, simule o financiamento e me chame quando quiser visitar."
         />
+        {/* A vitrine (29/10/2026): o rosto e o WhatsApp de quem separou, já
+            no topo — no celular, o botão do fim da página fica a vários
+            dedos de distância. */}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {link.corretor.fotoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- foto do corretor, de qualquer origem do Storage
+            <img
+              src={link.corretor.fotoUrl}
+              alt={`Foto de ${link.corretor.nome}`}
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          )}
+          {whatsapp && (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center rounded-full bg-[#25D366] px-5 text-fluid-sm font-semibold text-white"
+            >
+              Falar com {primeiroCorretor}
+            </a>
+          )}
+        </div>
       </Secao>
 
       <Secao>

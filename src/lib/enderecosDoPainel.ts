@@ -23,7 +23,8 @@ export function ehEnderecoSoDoPainel(host: string | null | undefined, extra = pr
  * site continua indo para o painel. A conferência do token é da própria
  * página (`lerLinkPublico`).
  */
-export const ROTAS_DE_TOKEN_DO_CLIENTE = ["/selecao", "/documentos", "/proposta", "/portal", "/contador", "/parceiro"] as const;
+// `/v` (29/10/2026, 0245): o link curto da vitrine, que leva à seleção.
+export const ROTAS_DE_TOKEN_DO_CLIENTE = ["/selecao", "/documentos", "/proposta", "/portal", "/contador", "/parceiro", "/v"] as const;
 
 export function ehRotaDeTokenDoCliente(pathname: string): boolean {
   return ROTAS_DE_TOKEN_DO_CLIENTE.some((raiz) => pathname.startsWith(`${raiz}/`) && pathname.length > raiz.length + 1);

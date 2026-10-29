@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { IMOVEIS_NA_SELECAO } from "@/lib/crm/linksDoCliente";
+import { LinkCriadoParaEnviar } from "./LinkCriadoParaEnviar";
 import { VALIDADES_DA_PROPOSTA } from "@/lib/crm/proposta";
 import {
   criarPortal,
@@ -43,7 +44,7 @@ export function BotoesDeLink({
     validadeDias: number;
   } | null>(null);
   const [ocupado, iniciar] = useTransition();
-  const { avisar, falhar } = useAvisos();
+  const { falhar } = useAvisos();
 
   function criar(fn: () => Promise<LinkCriado>) {
     iniciar(async () => {
@@ -79,19 +80,6 @@ export function BotoesDeLink({
       return { ...e, marcados: [...e.marcados, id] };
     });
   }
-
-  async function copiar() {
-    if (!criado) return;
-    try {
-      await navigator.clipboard.writeText(criado.mensagem);
-      avisar("Mensagem com o link copiada.");
-    } catch {
-      falhar("Não consegui copiar — selecione o link e copie à mão.");
-    }
-  }
-
-  const digitos = telefone?.replace(/\D/g, "") ?? "";
-  const wa = criado && digitos ? `https://wa.me/${digitos}?text=${encodeURIComponent(criado.mensagem)}` : null;
 
   return (
     <div className="space-y-3">
@@ -258,38 +246,7 @@ export function BotoesDeLink({
         </fieldset>
       )}
 
-      {criado && (
-        <div className="rounded-xl border border-acento-linha bg-acento-lavado p-3 space-y-2">
-          <p className="text-fluid-xs text-corpo break-words">{criado.mensagem}</p>
-          <div className="flex flex-wrap gap-2">
-            {wa && (
-              <a
-                href={wa}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-11 inline-flex items-center rounded-xl bg-[#25D366] px-4 text-fluid-xs font-bold text-white"
-              >
-                Enviar no WhatsApp
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={copiar}
-              className="min-h-11 rounded-xl border border-linha-forte px-4 text-fluid-xs font-semibold text-corpo"
-            >
-              Copiar
-            </button>
-            <a
-              href={`${criado.url}?previa=1`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-h-11 inline-flex items-center rounded-xl px-3 text-fluid-xs text-apoio underline underline-offset-2"
-            >
-              Ver como o cliente vê
-            </a>
-          </div>
-        </div>
-      )}
+      {criado && <LinkCriadoParaEnviar url={criado.url} mensagem={criado.mensagem} telefone={telefone} />}
     </div>
   );
 }

@@ -315,6 +315,7 @@ export type Database = {
         Row: {
           grupo_id: string
           aberto_em: string | null
+          codigo: string | null
           corretor_id: string
           created_at: string
           dados: Json
@@ -326,6 +327,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           aberto_em?: string | null
+          codigo?: string | null
           corretor_id: string
           created_at?: string
           dados?: Json
@@ -337,6 +339,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           aberto_em?: string | null
+          codigo?: string | null
           corretor_id?: string
           created_at?: string
           dados?: Json
@@ -344,6 +347,133 @@ export type Database = {
           lead_id?: string
           tipo?: "documentos" | "selecao" | "proposta" | "portal"
           token?: string
+        }
+        Relationships: []
+      }
+      // 0245 (29/10/2026): portais, aviso de "leads que combinam" e vitrine.
+      integracoes_de_portais: {
+        Row: {
+          id: string
+          grupo_id: string
+          portal: "grupo_olx" | "generico"
+          token: string
+          ativo: boolean
+          criado_em: string
+          token_trocado_em: string | null
+        }
+        Insert: {
+          id?: string
+          grupo_id: string
+          portal: "grupo_olx" | "generico"
+          token: string
+          ativo?: boolean
+          criado_em?: string
+          token_trocado_em?: string | null
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          portal?: "grupo_olx" | "generico"
+          token?: string
+          ativo?: boolean
+          criado_em?: string
+          token_trocado_em?: string | null
+        }
+        Relationships: []
+      }
+      portais_recebimentos: {
+        Row: {
+          id: number
+          grupo_id: string
+          integracao_id: string
+          id_externo: string | null
+          lead_id: string | null
+          status: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe: string | null
+          recebido_em: string
+        }
+        Insert: {
+          id?: never
+          grupo_id?: string
+          integracao_id: string
+          id_externo?: string | null
+          lead_id?: string | null
+          status: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe?: string | null
+          recebido_em?: string
+        }
+        Update: {
+          id?: never
+          grupo_id?: string
+          integracao_id?: string
+          id_externo?: string | null
+          lead_id?: string | null
+          status?: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe?: string | null
+          recebido_em?: string
+        }
+        Relationships: []
+      }
+      avisos_de_match: {
+        Row: {
+          id: string
+          grupo_id: string
+          empreendimento_id: string
+          corretor_id: string
+          leads: number
+          avisado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          empreendimento_id: string
+          corretor_id: string
+          leads: number
+          avisado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          empreendimento_id?: string
+          corretor_id?: string
+          leads?: number
+          avisado_em?: string
+        }
+        Relationships: []
+      }
+      vitrine_visualizacoes: {
+        Row: {
+          id: number
+          grupo_id: string
+          token: string
+          lead_id: string
+          corretor_id: string
+          empreendimento_id: string | null
+          visitante: string | null
+          dia: string
+          criado_em: string
+        }
+        Insert: {
+          id?: never
+          grupo_id?: string
+          token: string
+          lead_id: string
+          corretor_id: string
+          empreendimento_id?: string | null
+          visitante?: string | null
+          dia: string
+          criado_em?: string
+        }
+        Update: {
+          id?: never
+          grupo_id?: string
+          token?: string
+          lead_id?: string
+          corretor_id?: string
+          empreendimento_id?: string | null
+          visitante?: string | null
+          dia?: string
+          criado_em?: string
         }
         Relationships: []
       }

@@ -4,6 +4,7 @@ import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { linkPublicoDoImovel } from "@/lib/imovelPublico/ler";
 import { createServiceClient } from "@/lib/supabase/service";
 import { registrarEventoDoLink } from "@/lib/crm/eventosDoLink";
+import { registrarVisualizacaoDaVitrine } from "@/lib/crm/visualizacoesDaVitrine";
 import { linkValido } from "@/lib/crm/linksDoCliente";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,6 +60,15 @@ export async function GET(
       corretorId: link.corretor_id,
       tipo: "clicou",
       detalhe: imovel.nome,
+    });
+    // Vitrine (29/10/2026, 0245): o imóvel visto, contado por pessoa e dia,
+    // sem guardar quem é.
+    await registrarVisualizacaoDaVitrine(supabase, {
+      token,
+      leadId: link.lead_id,
+      corretorId: link.corretor_id,
+      empreendimentoId: imovel.id,
+      headers: request.headers,
     });
   });
 

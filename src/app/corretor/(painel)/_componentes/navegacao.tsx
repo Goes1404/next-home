@@ -329,6 +329,8 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio", modulo: "parceirosDeImoveis" },
           { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio", modulo: "precosDoCatalogo" },
           { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio", modulo: "creditoImobiliario" },
+          // 29/10/2026 (0245): leads do ZAP, Viva Real e OLX direto no CRM — só de imobiliária.
+          { href: "/corretor/admin/portais", label: "Portais", icone: IconeTomada, secao: "Negócio", modulo: "catalogoDeImoveis" },
           { href: "/corretor/admin/assistente", label: "Assistente", icone: IconeRobo, secao: "Sistema" },
         ],
       },
@@ -990,6 +992,15 @@ function IconeBanco(p: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M3 9l9-5 9 5H3z" />
       <path d="M5 9v8M9.5 9v8M14.5 9v8M19 9v8M3 20h18" />
+    </svg>
+  );
+}
+
+function IconeTomada(p: SVGProps<SVGSVGElement>) {
+  // Plugue: a integração que liga o portal ao CRM.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8zM12 17v4" />
     </svg>
   );
 }

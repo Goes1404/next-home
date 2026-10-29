@@ -14,7 +14,13 @@ const fonte = readFileSync(join(process.cwd(), "src", "app", "api", "cron", "fol
 describe("tique dos follow-ups: notificações no celular", () => {
   const janela = fonte.indexOf("if (!dentroDaJanela(new Date()))");
 
-  for (const chamada of ["lembrarVisitasDaProximaHora(supabase)", "avisarLeadsParados(supabase)", "avisarSenhasVencendo(supabase)"]) {
+  // 29/10/2026: o aviso de "leads que combinam" com imóvel publicado (0245).
+  for (const chamada of [
+    "lembrarVisitasDaProximaHora(supabase)",
+    "avisarLeadsParados(supabase)",
+    "avisarSenhasVencendo(supabase)",
+    "avisarLeadsQueCombinam(supabase)",
+  ]) {
     it(`${chamada} roda antes da janela comercial e não derruba o tique`, () => {
       const pos = fonte.indexOf(chamada);
       expect(pos).toBeGreaterThan(-1);
@@ -24,6 +30,6 @@ describe("tique dos follow-ups: notificações no celular", () => {
   }
 
   it("os três números saem na resposta do tique", () => {
-    expect(fonte.match(/leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo/g)).toHaveLength(2);
+    expect(fonte.match(/leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch/g)).toHaveLength(2);
   });
 });

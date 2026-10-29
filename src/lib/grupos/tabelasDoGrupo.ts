@@ -83,6 +83,11 @@ export const CHAVES_UNICAS_GLOBAIS = {
   links_do_cliente_pkey: "token sorteado do link do cliente",
   corretor_agenda_token_key: "token sorteado da agenda .ics",
   parceiros_token_key: "token sorteado da página do parceiro",
+  // 0245 (29/10/2026): o token da URL do webhook dos portais diz o grupo
+  // (a chave do Grupo OLX é por CRM, não por cliente), e o código curto da
+  // vitrine (`/v/<codigo>`) não tem grupo no caminho.
+  integracoes_de_portais_token_key: "token sorteado do webhook dos portais",
+  links_do_cliente_codigo_key: "código curto sorteado da vitrine (/v/<codigo>)",
   // Ids que a Meta emite: únicos na Meta inteira, e a integração é só do
   // grupo 1 até a fase 7, que escopa a métrica por grupo.
   leads_meta_lead_id_key: "id do lead na Meta; upsert do webhook (fase 7)",

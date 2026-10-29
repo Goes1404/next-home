@@ -463,6 +463,7 @@ export const NOME_DO_PORTAL: Record<string, string> = {
   vivareal: "VivaReal",
   olx: "OLX",
   imovelweb: "Imovelweb",
+  grupo_olx: "ZAP, Viva Real ou OLX",
   meta_ads: "anúncio do Facebook/Instagram",
   site_direto: "site",
   email_outro: "anúncio",

@@ -28,6 +28,7 @@ import { PreferenciasContato } from "./PreferenciasContato";
 import { AdicionarALista } from "./AdicionarALista";
 import { VendaDoLead } from "./VendaDoLead";
 import { LinksDoCliente } from "./LinksDoCliente";
+import { ImoveisQueCombinam } from "./ImoveisQueCombinam";
 import { Documentacao } from "./Documentacao";
 import { Indicacoes } from "./Indicacoes";
 import { PedidoDoSite } from "./PedidoDoSite";
@@ -259,6 +260,8 @@ export default async function FichaLeadPage({
             etapa={lead.etapa}
             corretorDoLead={lead.corretor?.id ?? null}
           />
+          {/* Match de imóveis × lead e a vitrine (29/10/2026). */}
+          <ImoveisQueCombinam leadId={lead.id} telefone={lead.telefone} />
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <Indicacoes leadId={lead.id} />
           <AtalhoDoConsultor lead={lead} />
