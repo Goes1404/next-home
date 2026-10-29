@@ -2098,6 +2098,52 @@ export type Database = {
         Relationships: [
         ]
       }
+      /**
+       * 0242 — avisos da Astro para o painel de todos os clientes
+       * (29/10/2026). Global (sem `grupo_id`); só a chave de serviço.
+       */
+      avisos_aos_clientes: {
+        Row: {
+          id: string
+          criado_em: string
+          criado_por: string | null
+          titulo: string
+          texto: string
+          tipo: "novidade" | "manutencao" | "importante"
+          link: string | null
+          publico: "todos" | "gestores"
+          inicio_em: string
+          fim_em: string | null
+          encerrado_em: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          titulo: string
+          texto: string
+          tipo: "novidade" | "manutencao" | "importante"
+          link?: string | null
+          publico?: "todos" | "gestores"
+          inicio_em?: string
+          fim_em?: string | null
+          encerrado_em?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          titulo?: string
+          texto?: string
+          tipo?: "novidade" | "manutencao" | "importante"
+          link?: string | null
+          publico?: "todos" | "gestores"
+          inicio_em?: string
+          fim_em?: string | null
+          encerrado_em?: string | null
+        }
+        Relationships: []
+      }
       administradores_da_plataforma: {
         Row: {
           criado_em: string

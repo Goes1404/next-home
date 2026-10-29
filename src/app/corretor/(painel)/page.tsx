@@ -114,6 +114,16 @@ export default async function PainelInicio({
         imediato e o cartão chega quando a contagem responde — sem segurar o
         resto da tela.
       */}
+      {/*
+        Os primeiros passos do cliente novo, no TOPO (29/10/2026): até a
+        conta estar pronta, é a coisa mais útil da tela. Uma leva de
+        contagens atrás do próprio Suspense, sem esqueleto: some quando tudo
+        está feito (ou foi ocultado), e aí não há o que reservar.
+      */}
+      <Suspense fallback={null}>
+        <PrimeirosPassos />
+      </Suspense>
+
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
         <BlocoDoHero nome={nomeNaSaudacao} />
       </Suspense>
@@ -148,11 +158,6 @@ export default async function PainelInicio({
 
       {/* Avisos no celular: some quando já estão ligados neste aparelho. */}
       <AtivarNotificacoes />
-
-      {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}
-      <Suspense fallback={null}>
-        <PrimeirosPassos corretorId={corretor.id} />
-      </Suspense>
 
       {/*
         Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a

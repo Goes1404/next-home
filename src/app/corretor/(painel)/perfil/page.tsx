@@ -6,6 +6,7 @@ import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { AjustesDoResumo } from "./AjustesDoResumo";
 import { AtivarNotificacoes } from "../_componentes/AtivarNotificacoes";
+import { ANCORA_DOS_AVISOS } from "@/lib/crm/primeirosPassosDoInicio";
 import { TextoDaPrevia } from "./TextoDaPrevia";
 import { CaixaDoGmail } from "./CaixaDoGmail";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -114,7 +115,9 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
         />
       </div>
 
-      <div className="mt-6">
+      {/* A âncora é o destino do passo "Ligar os avisos no celular" do
+          Início (ANCORA_DOS_AVISOS, 29/10/2026). */}
+      <div id={ANCORA_DOS_AVISOS} className="mt-6 scroll-mt-24">
         <AtivarNotificacoes sempreVisivel />
       </div>
 

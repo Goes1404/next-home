@@ -242,6 +242,13 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
             </span>
           )}
         </Link>
+        {/* O recado da Astro no painel de todos os clientes (0242, 29/10/2026). */}
+        <Link
+          href="/plataforma/avisos"
+          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
+        >
+          Avisos aos clientes
+        </Link>
         <Link
           href="/plataforma/acessos"
           className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"

@@ -141,6 +141,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/agenda/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/agenda/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/lib/crm/estadoDosPrimeirosPassos.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "primeiros passos do Início (29/10/2026): a chave só CONTA os aparelhos com aviso (inscricoes_push, sem grant para a sessão) do corretor da sessão; o resto é contado pela sessão" },
 
   // ── Helpers: o id chega por parâmetro de quem chama ──────────────────────
   // Nada aqui valida: a prova mora em quem importa. A guarda `helper` cobra
@@ -248,6 +249,8 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
   "src/app/plataforma/pedidosAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status, observação e conta criada de UM pedido (tabela global, 0238); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/lib/plataforma/chamados.ts": { categoria: "plataforma-admin", motivo: "lista e conta chamados_de_suporte (tabela global, 0240) e lê o nome das contas de origem para o link; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/lib/plataforma/avisosAosClientes.ts": { categoria: "plataforma-admin", motivo: "lista avisos_aos_clientes (tabela global, 0242) para /plataforma/avisos; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/avisosAosClientesAcoes.ts": { categoria: "plataforma-admin", motivo: "publica e encerra UM aviso da Astro aos clientes (tabela global, 0242, sem dado de grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/suporteAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status e anotação interna de UM chamado (tabela global, 0240); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
 
   // ── Porta pública da página de vendas, sem grupo ─────────────────────────
@@ -258,6 +261,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/visaoDeSuporteAcoes.ts": { categoria: "plataforma-admin", motivo: "registra o acesso à visão de suporte em acessos_de_suporte (tabela global, 0243) e em admin_eventos do grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/avisosAcoes.ts": { categoria: "plataforma-admin", motivo: "teste dos avisos da plataforma: guarda antes da chave; manda aos aparelhos dos administradores (0239)" },
   "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
+  "src/lib/plataforma/avisosVigentes.ts": { categoria: "plataforma", motivo: "faixa do painel (0242, 29/10/2026): lê os avisos da Astro no ar em avisos_aos_clientes, tabela GLOBAL sem dado de grupo nenhum; o público (papel) é filtrado por quem desenha a faixa, com a sessão" },
   "src/app/astro/contato/acoes.ts": { categoria: "plataforma", motivo: "Fale com a Astro /astro/contato (29/10/2026): só INSERE o contato em chamados_de_suporte (tabela global, 0240; quem escreve ainda não tem grupo) e conta contatos do mesmo WhatsApp para o limite; o aviso aos administradores sai por avisarAtendimento, sem ler tabela de grupo nenhum" },
   "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };

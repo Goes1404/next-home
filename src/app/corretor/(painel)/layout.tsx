@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
+import { FaixaAvisosDaAstro } from "./_componentes/FaixaAvisosDaAstro";
 import { FaixaLimitesDoPlano } from "./_componentes/FaixaLimitesDoPlano";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
 import { LuzDosCartoes } from "./_componentes/LuzDosCartoes";
@@ -200,6 +202,12 @@ export default async function PainelLayout({
 
       {corretor ? (
         <>
+          {/* Os avisos da Astro para todos os clientes (0242, 29/10/2026):
+              logo abaixo do cabeçalho, atrás do próprio Suspense para o
+              painel nunca esperar por eles. `null` sem aviso no ar. */}
+          <Suspense fallback={null}>
+            <FaixaAvisosDaAstro papel={corretor.papel} />
+          </Suspense>
           {/*
             Enquanto o número está fora do ar, nada mais no painel está
             acontecendo de verdade — por isso a faixa vem antes do conteúdo,

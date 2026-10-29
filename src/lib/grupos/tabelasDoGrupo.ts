@@ -46,6 +46,11 @@ export const TABELAS_GLOBAIS = [
   // chave de serviço lê e escreve; o gestor vê os do grupo dele pela chave
   // filtrada pela sessão.
   "acessos_de_suporte",
+  // Avisos da Astro para o painel de todos os clientes (0242, 29/10/2026):
+  // o recado é da plataforma e vale para todos os grupos; o público é
+  // recortado por papel (todos ou só gestores), nunca por grupo. Só a chave
+  // de serviço lê e escreve.
+  "avisos_aos_clientes",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
