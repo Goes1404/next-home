@@ -24,6 +24,7 @@ F0–F6.
 - [[plataforma-astro-solucoes-e-barra-da-empresa]] — plataforma vira Astro Soluções; topo mostra Astro | imobiliária, como TOTVS/SAP (28/10)
 - [[app-no-celular-area-segura-login-e-abertura]] — app Android não corta mais (áreas seguras), login novo e abertura animada (29/10)
 - [[login-por-usuario-senha-forte-e-validade]] — login por usuário, senha forte com checklist e troca a cada 90 dias (29/10)
+- [[notificacoes-no-celular-e-poderes-do-adm]] — 4 avisos novos no celular e poderes do ADM da plataforma (29/10)
 - [[ficha-publica-do-imovel]] — /imovel/<grupo>/<slug> para imobiliária sem site e o montador único do link do imóvel (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[anuncios-pagos-em-abas]] — Anúncios pagos em cinco abas por `?aba=`; `botao-solido` e `botao-aba` (26/10)

@@ -12487,3 +12487,18 @@ Notas: [[login-por-usuario-senha-forte-e-validade]] e
 - `entrar` agora usa a chave de serviço (RPC) antes do login; a guarda
   `servicoComGrupo.test.ts` já classificava `actions.ts`.
 
+## Notificações novas e poderes do ADM da plataforma (29/10/2026)
+
+Nota: [[notificacoes-no-celular-e-poderes-do-adm]].
+
+- 0236 (aplicada): avisos de visita em 1h, cliente respondeu, lead parado
+  48h e senha vencendo, no tique dos follow-ups, com claim por coluna antes
+  do envio. Botão de notificação de teste no Perfil.
+- 0237 (aplicada): CHECK de `admin_eventos` ganha `plano_alterado` e
+  `admin_da_plataforma_adicionado/removido`.
+- ADM: plano/suspensão no cartão "Situação e plano", equipe de qualquer
+  grupo, `/plataforma/administradores`. "Entrar no painel da imobiliária"
+  ficou para rodada própria (RLS + regra "ADM nunca lê conversa").
+- `app_metadata` se grava numa escrita só: duas escritas seguidas com o
+  objeto lido antes desfazem a primeira.
+
