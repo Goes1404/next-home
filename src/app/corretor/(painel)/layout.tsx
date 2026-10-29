@@ -231,7 +231,9 @@ export default async function PainelLayout({
 /**
  * A conta autenticou, mas nenhuma linha de `corretores` aponta para ela (ou
  * aponta sem `slug`). Sem isso o painel quebraria em toda página; aqui o
- * corretor recebe uma instrução em vez de um erro.
+ * corretor recebe uma instrução em vez de um erro. O menu da conta só existe
+ * com corretor, então o "Sair" mora aqui: sem ele a pessoa ficava presa na
+ * tela, sem como entrar com outro login (29/10/2026).
  */
 function ContaSemVinculo() {
   return (
@@ -241,6 +243,14 @@ function ContaSemVinculo() {
         Seu acesso está ativo, mas ainda não foi ligado a um cadastro de corretor. Fale com
         quem administra o site para concluir o vínculo — depois disso o painel abre normalmente.
       </p>
+      <form action={sair} className="mt-6">
+        <button
+          type="submit"
+          className="botao-secundario text-fluid-sm text-corpo min-h-11 w-full rounded-full px-7 py-3 sm:w-auto"
+        >
+          Sair e entrar com outra conta
+        </button>
+      </form>
     </div>
   );
 }

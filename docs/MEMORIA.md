@@ -12352,3 +12352,18 @@ Nota: [[administrador-da-plataforma-cria-acessos-do-grupo]]
 - O commit 7352780c subiu com `convite.test.ts` vermelho: a guarda proíbe `updateUserById(...password...)` e o identificador `senhaTemporaria` (fábrica antiga de senha derivada do telefone).
 - Correção: exceção da guarda para `src/app/plataforma/acoes.ts` cobre também "senha trocada pelo administrador", com a mesma condição (`deve_trocar_senha: true` no arquivo); módulo do sorteio virou `src/lib/plataforma/senhaProvisoria.ts` (`gerarSenhaProvisoria`).
 - Migration 0231 (`encerrar_sessoes_do_usuario`) conferida em produção: existe, execute só para `service_role`.
+
+## "Conta ainda não vinculada" sem saída e a suíte vermelha na main (29/10/2026)
+
+Nota: [[conta-sem-vinculo-tem-botao-de-sair]].
+
+- **Login sem corretor ficava preso na tela "Conta ainda não vinculada"**: o
+  "Sair" mora no menu da conta, que só aparece com corretor. O cartão ganhou
+  o próprio botão de sair. Quem cai ali precisa do vínculo no cadastro
+  (`corretores.user_id` + `slug`).
+- **A `main` estava vermelha por duas coisas que vieram de outras sessões**:
+  a 0231 sem `set local lock_timeout` (guarda `migracoesAtomicas.test.ts`) e
+  `DiaDaAgenda.tsx` com `useCallback(..., [])` que o React Compiler recusa
+  (`preserve-manual-memoization`: o setter tem de estar nas dependências).
+  Depois de `git pull`, rode a suíte, o `lintTeto` e o build antes de achar
+  que a produção está verde.

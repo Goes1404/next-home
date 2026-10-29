@@ -91,7 +91,7 @@ export function DiaDaAgenda({
   const inicial = itens.find((i) => i.tipo === "visita") ?? itens[0];
   const [escolhido, setEscolhido] = useState<string | null>(inicial ? chave(inicial) : null);
   const [gavetaAberta, setGavetaAberta] = useState(false);
-  const fechar = useCallback(() => setGavetaAberta(false), []);
+  const fechar = useCallback(() => setGavetaAberta(false), [setGavetaAberta]);
 
   if (itens.length === 0) {
     return (
