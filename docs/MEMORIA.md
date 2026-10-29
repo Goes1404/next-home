@@ -12502,3 +12502,13 @@ Nota: [[notificacoes-no-celular-e-poderes-do-adm]].
 - `app_metadata` se grava numa escrita só: duas escritas seguidas com o
   objeto lido antes desfazem a primeira.
 
+## Contratar plano pela página da Astro (29/10/2026)
+
+Nota: [[contratar-plano-pela-pagina-da-astro]].
+
+- Cartões de plano em /astro levam a /astro/contratar (3 passos). Pedido em
+  `pedidos_de_contratacao` (0238, aplicada; global, só service_role) e em
+  /plataforma/pedidos, com "Criar conta" pré-preenchido por `?pedido=<id>`.
+- Vínculo com a conta criada é `grupo_criado_id`: coluna `grupo_id` obrigaria
+  carimbo/policy de grupo.
+
