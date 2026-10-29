@@ -14,7 +14,8 @@ type Busca = Promise<{ busca?: string | string[] }>;
 
 /**
  * Busca de login por e-mail ou nome em TODOS os grupos, para redefinir a
- * senha sem saber em que imobiliária a pessoa está. O formulário é GET
+ * senha (e, desde 29/10/2026, desativar ou trocar o papel) sem saber em que
+ * imobiliária a pessoa está. O formulário é GET
  * (`?busca=`): funciona sem JS e o endereço pode ser recarregado.
  */
 export default async function AcessosPage({ searchParams }: { searchParams: Busca }) {
@@ -32,7 +33,7 @@ export default async function AcessosPage({ searchParams }: { searchParams: Busc
         </Link>
         <h1 className="font-display text-titulo text-fluid-2xl mt-1">Acessos</h1>
         <p className="text-fluid-sm text-apoio mt-2">
-          Procure a pessoa pelo e-mail ou pelo nome, em todas as imobiliárias, e redefina a senha dela.
+          Procure a pessoa pelo e-mail ou pelo nome, em todas as imobiliárias, para redefinir a senha, desativar ou reativar o login e trocar o papel dela.
         </p>
       </div>
 

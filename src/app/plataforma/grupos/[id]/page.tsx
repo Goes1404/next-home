@@ -26,6 +26,7 @@ import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
 import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
 import { AcessosDoGrupo } from "./AcessosDoGrupo";
+import { SituacaoEPlanoDoGrupo } from "./SituacaoEPlanoDoGrupo";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -112,7 +113,21 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           <dd className="text-titulo">{grupo.numerosConectados}</dd>
         </div>
       </dl>
-      <p className="text-fluid-xs text-tenue -mt-3">O plano só muda no ciclo seguinte; nesta versão ele não se edita aqui.</p>
+
+      <SituacaoEPlanoDoGrupo
+        grupoId={grupo.id}
+        situacao={grupo.situacao}
+        plano={grupo.plano}
+        cancelado={grupo.canceladoEm !== null}
+        suspensoPorAtraso={grupo.situacao === "ativo" && grupo.cobranca.estado === "suspenso"}
+        temAjusteDeLimite={
+          grupo.tetoAjustado !== null ||
+          limites.ajustados.arte !== null ||
+          limites.ajustados.video !== null ||
+          limites.ajustados.lista !== null
+        }
+        planoFixo={grupo.id === GRUPO_NEXT_HOME_ID}
+      />
 
       <FormularioNovoAcesso grupoId={grupo.id} />
 
@@ -151,7 +166,6 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         diaDoVencimento={grupo.diaDoVencimento}
         pagamentos={grupo.pagamentos}
         suspensoManual={grupo.situacao === "suspenso"}
-        podeSuspender={grupo.situacao === "ativo" && grupo.canceladoEm === null}
         hoje={diaEmSP(new Date())}
       />
 

@@ -1,17 +1,23 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { Check, Copy, Eye, EyeOff, KeyRound, Sparkles } from "lucide-react";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import type { AcessoDoGrupo } from "@/lib/plataforma/grupos";
 import { gerarSenhaProvisoria } from "@/lib/plataforma/senhaProvisoria";
 import { redefinirSenhaDoAcesso, type ResultadoSenhaRedefinida } from "../../acoes";
+import { alterarPapelDoAcesso, alternarAtivoDoAcesso, type ResultadoDaEquipe } from "../../equipeAcoes";
 
 const CAMPO =
   "text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento w-full rounded-xl border px-3.5 py-2.5 pr-14 font-mono focus:outline-none";
 const BOTAO_SECUNDARIO =
   "botao-secundario text-titulo text-fluid-sm flex min-h-11 items-center gap-2 px-4 font-medium";
 
-/** Os logins do grupo, cada um com "Redefinir senha" (senha temporária + troca obrigatória). */
+/**
+ * Os logins do grupo. Cada um abre com o que a plataforma faz por ele
+ * (29/10/2026): desativar ou reativar, trocar o papel (gestor ↔ corretor) e
+ * redefinir a senha (senha temporária + troca obrigatória).
+ */
 export function AcessosDoGrupo({ acessos }: { acessos: AcessoDoGrupo[] }) {
   return (
     <section className="cartao flex flex-col gap-4 p-5" aria-labelledby="titulo-acessos">
@@ -20,7 +26,8 @@ export function AcessosDoGrupo({ acessos }: { acessos: AcessoDoGrupo[] }) {
           <KeyRound className="h-4 w-4" /> Acessos
         </h2>
         <p className="text-fluid-xs text-apoio mt-1">
-          Para quem ficou sem entrar: gere uma senha temporária e passe para a pessoa. No próximo login a troca é obrigatória.
+          Toque num acesso para desativar ou reativar, trocar o papel ou redefinir a senha. A imobiliária nunca fica sem
+          administrador ativo: promova outro antes de tirar o último.
         </p>
       </div>
       <ListaDeAcessos acessos={acessos} vazio="Nenhum login neste grupo ainda." />
@@ -87,10 +94,13 @@ function LinhaDoAcesso({ acesso, mostrarGrupo }: { acesso: AcessoDoGrupo; mostra
               {acesso.deveTrocarSenha && " · troca de senha pendente"}
             </span>
           </span>
-          <span className="text-fluid-xs text-acento font-semibold">Redefinir senha</span>
+          <span className="text-fluid-xs text-acento font-semibold">Gerenciar</span>
         </summary>
 
-        <form action={enviar} className="mt-3 flex flex-col gap-3">
+        <GestaoDoAcesso acesso={acesso} />
+
+        <form action={enviar} className="border-linha mt-3 flex flex-col gap-3 border-t pt-3">
+          <p className="text-fluid-xs text-titulo font-medium">Redefinir senha</p>
           <div>
             <label htmlFor={campo} className="text-fluid-xs text-corpo mb-1 block">Senha temporária</label>
             <span className="relative block">
@@ -100,6 +110,7 @@ function LinhaDoAcesso({ acesso, mostrarGrupo }: { acesso: AcessoDoGrupo; mostra
                 type={visivel ? "text" : "password"}
                 required
                 minLength={8}
+                aria-describedby={`${campo}-regra`}
                 autoComplete="off"
                 spellCheck={false}
                 value={senha}
@@ -119,6 +130,9 @@ function LinhaDoAcesso({ acesso, mostrarGrupo }: { acesso: AcessoDoGrupo; mostra
               >
                 {visivel ? <EyeOff aria-hidden className="size-5" /> : <Eye aria-hidden className="size-5" />}
               </button>
+            </span>
+            <span id={`${campo}-regra`} className="text-fluid-xs text-apoio mt-1 block">
+              8 ou mais caracteres, com maiúscula, minúscula, número e símbolo.
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -154,5 +168,93 @@ function LinhaDoAcesso({ acesso, mostrarGrupo }: { acesso: AcessoDoGrupo; mostra
         )}
       </details>
     </li>
+  );
+}
+
+/**
+ * Desativar/reativar e trocar o papel, cada um com confirmação. O que a
+ * confirmação diz é o que muda: desativado, o login perde o painel e sai da
+ * roleta, e os leads dele ficam onde estão até o gestor do grupo repassá-los.
+ */
+function GestaoDoAcesso({ acesso }: { acesso: AcessoDoGrupo }) {
+  const [pendente, iniciar] = useTransition();
+  const [aviso, setAviso] = useState<{ texto: string; erro: boolean } | null>(null);
+  const ehGestor = acesso.papel === "gestor";
+
+  const agir = (pergunta: string, acao: () => Promise<ResultadoDaEquipe>) => {
+    if (!window.confirm(pergunta)) return;
+    iniciar(async () => {
+      setAviso(null);
+      try {
+        const r = await acao();
+        if (!r.ok) return setAviso({ texto: r.erro, erro: true });
+        const carteira =
+          r.leadsNaCarteira && r.leadsNaCarteira > 0
+            ? ` ${r.leadsNaCarteira} ${r.leadsNaCarteira === 1 ? "lead continua" : "leads continuam"} na carteira: o gestor do grupo repassa em Contas.`
+            : "";
+        setAviso({ texto: r.mensagem + carteira, erro: false });
+      } catch (e) {
+        setAviso({
+          texto: ehActionDeOutroBuild(e) ? avisoDePaginaVelha() : "Não foi possível falar com o servidor. Tente de novo.",
+          erro: true,
+        });
+      }
+    });
+  };
+
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        {acesso.ativo ? (
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={() =>
+              agir(
+                `Desativar ${acesso.nome}?\n\nO login perde o acesso ao painel e sai da roleta de leads. Os leads dele continuam na carteira até o gestor do grupo repassá-los.`,
+                () => alternarAtivoDoAcesso(acesso.grupoId, acesso.corretorId, false),
+              )
+            }
+            className={`${BOTAO_SECUNDARIO} text-perigo disabled:opacity-50`}
+          >
+            Desativar
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={() =>
+              agir(`Reativar ${acesso.nome}?\n\nO login volta ao painel e à roleta de leads.`, () =>
+                alternarAtivoDoAcesso(acesso.grupoId, acesso.corretorId, true),
+              )
+            }
+            className={`${BOTAO_SECUNDARIO} disabled:opacity-50`}
+          >
+            Reativar
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={pendente}
+          onClick={() =>
+            agir(
+              ehGestor
+                ? `Tirar ${acesso.nome} da administração da imobiliária?\n\nEle volta a ser corretor e deixa de ver a equipe e as configurações.`
+                : `Tornar ${acesso.nome} administrador da imobiliária?\n\nEle passa a administrar a equipe, os leads de todos e as configurações.`,
+              () => alterarPapelDoAcesso(acesso.grupoId, acesso.corretorId, ehGestor ? "corretor" : "gestor"),
+            )
+          }
+          className={`${BOTAO_SECUNDARIO} disabled:opacity-50`}
+        >
+          {ehGestor ? "Voltar a corretor" : "Tornar administrador"}
+        </button>
+      </div>
+      {pendente && <p className="text-fluid-xs text-apoio" role="status">Salvando…</p>}
+      {aviso && (
+        <p role={aviso.erro ? "alert" : "status"} className={`text-fluid-xs ${aviso.erro ? "text-perigo" : "text-ok"}`}>
+          {aviso.texto}
+        </p>
+      )}
+    </div>
   );
 }

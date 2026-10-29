@@ -30,7 +30,10 @@ export function FormularioNovoAcesso({ grupoId }: { grupoId: string }) {
         </div>
         <div>
           <label htmlFor="novo-acesso-senha" className="text-fluid-xs text-corpo mb-1 block">Senha temporária</label>
-          <input id="novo-acesso-senha" name="senha" type="password" required minLength={8} autoComplete="new-password" className={CAMPO} />
+          <input id="novo-acesso-senha" name="senha" type="password" required minLength={8} autoComplete="new-password" aria-describedby="novo-acesso-senha-regra" className={CAMPO} />
+          <p id="novo-acesso-senha-regra" className="text-fluid-xs text-apoio mt-1">
+            8 ou mais caracteres, com maiúscula, minúscula, número e símbolo.
+          </p>
         </div>
         <div>
           <label htmlFor="novo-acesso-papel" className="text-fluid-xs text-corpo mb-1 block">Tipo de acesso</label>

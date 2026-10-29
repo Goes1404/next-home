@@ -5,7 +5,9 @@ import { MENSAGEM_EMAIL_EM_USO, MENSAGEM_ENDERECO_DE_ACESSO } from "@/lib/corret
 import { convidarCorretorDoGrupo, limparEmail } from "@/lib/corretores/convite";
 import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { creciPendenteDoCadastro } from "@/lib/corretores/cadastroPendente";
+import { erroDaSenha } from "@/lib/auth/politicaDeSenha";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { apagarEm, podeCancelar, podeDesfazerCancelamento, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import {
   ehUuid,
@@ -25,9 +27,11 @@ import {
 } from "@/lib/plataforma/tiposDeConta";
 import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
+import { ehPlano } from "@/lib/plataforma/rotulosDoGrupo";
 import { COLUNA_DO_TETO, lerLimiteDigitado, RECURSOS, type Recurso } from "@/lib/planos/limitesDoPlano";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { Json } from "@/lib/supabase/types";
 
 /**
  * Ações do painel da plataforma (fase 2A, desenho §11).
@@ -71,7 +75,10 @@ export async function criarAcessoPendenteDoGrupo(
   const senha = String(formData.get("senha") ?? "");
   const papel = String(formData.get("papel") ?? "");
   if (!email) return { ok: false, erro: "Informe um e-mail válido." };
-  if (senha.length < 8) return { ok: false, erro: "A senha temporária precisa ter pelo menos 8 caracteres." };
+  // A mesma régua de quem cria a própria senha (29/10/2026): a temporária
+  // também é senha de verdade até a troca, e o Auth não confere maiúscula nem símbolo.
+  const senhaFraca = erroDaSenha(senha);
+  if (senhaFraca) return { ok: false, erro: senhaFraca };
   if (ehEmailDeAcesso(email)) return { ok: false, erro: MENSAGEM_ENDERECO_DE_ACESSO };
   if (papel !== "gestor" && papel !== "corretor") return { ok: false, erro: "Escolha o tipo de acesso." };
 
@@ -162,7 +169,8 @@ export async function redefinirSenhaDoAcesso(
   if (!ehUuid(grupoId) || !ehUuid(corretorId)) return { ok: false, erro: "Acesso não encontrado." };
 
   const senha = String(formData.get("senha") ?? "");
-  if (senha.length < 8) return { ok: false, erro: "A senha temporária precisa ter pelo menos 8 caracteres." };
+  const senhaFraca = erroDaSenha(senha);
+  if (senhaFraca) return { ok: false, erro: senhaFraca };
 
   const servico = createServiceClient();
   const { data: ficha, error: erroFicha } = await servico
@@ -217,7 +225,7 @@ export async function redefinirSenhaDoAcesso(
     return {
       ok: false,
       erro: fraca
-        ? "O Auth recusou essa senha por ser fraca. Use uma mais longa, com letras e números."
+        ? "O Auth recusou essa senha por ser fraca. Use uma mais longa, com maiúscula, minúscula, número e símbolo."
         : "Não foi possível redefinir a senha agora. Tente de novo.",
     };
   }
@@ -508,8 +516,8 @@ export type ResultadoDadosDoGrupo = { ok: true } | { ok: false; erro: string };
 
 /**
  * Contato de cobrança e dados institucionais do grupo. Plano, tipo e
- * endereço ficam de fora: o plano só muda no ciclo seguinte (§20), e nesta
- * fase é de leitura depois de criado.
+ * endereço ficam de fora: o plano tem a própria ação (`mudarPlanoDoGrupo`),
+ * e tipo e endereço não mudam depois de criados.
  */
 export async function editarDadosDoGrupo(grupoId: string, dados: DadosDoGrupo): Promise<ResultadoDadosDoGrupo> {
   const guarda = await exigirAdminDaPlataformaNaAcao();
@@ -652,6 +660,116 @@ export async function ajustarLimitesDoPlano(
       detalhes: { origem: "plataforma", recurso, antes: tetoAntes, depois: novos[recurso] },
     });
     if (erroDoEvento) console.error(`[plataforma] evento do limite ${recurso} (${grupoId}) não gravado: ${erroDoEvento.message}`);
+  }
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoMudancaDePlano = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Muda o plano do grupo (pedido do dono, 29/10/2026). Os tetos de respostas
+ * da IA, artes, vídeos e listas SAEM do plano (`tetoDeRespostasDaIa`,
+ * `tetoDoRecurso`): sem ajuste da plataforma, o grupo passa a ter os números
+ * do plano novo na hora. Ajuste feito à mão (`ajustarTetoDaIa`,
+ * `ajustarLimitesDoPlano`) vence o plano e, por padrão, FICA — foi uma
+ * decisão de alguém. Com `voltarLimitesAoPadrao`, os quatro ajustes voltam a
+ * `null` (o padrão do plano novo), com um evento por teto que mudou, no
+ * mesmo formato das duas ações de ajuste.
+ *
+ * A mensalidade não acompanha: é combinada à mão, em Cobrança (sem pro rata,
+ * §20). O plano a preço de custo deixa o grupo isento de cobrança
+ * (`situacaoDaCobranca`). A Next Home não muda de plano por aqui: ela paga o
+ * custo medido (0195) e nunca é cobrada.
+ *
+ * O evento `plano_alterado` entra no CHECK de `admin_eventos` na 0237; antes
+ * dela o insert falha, o log diz, e o plano muda mesmo assim.
+ */
+export async function mudarPlanoDoGrupo(
+  grupoId: string,
+  pedido: { plano: string; voltarLimitesAoPadrao: boolean },
+): Promise<ResultadoMudancaDePlano> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+  if (grupoId === GRUPO_NEXT_HOME_ID) return { ok: false, erro: "A Next Home fica no plano a preço de custo." };
+  const plano = String(pedido?.plano ?? "");
+  if (!ehPlano(plano)) return { ok: false, erro: "Escolha um dos planos da lista." };
+  const voltar = pedido?.voltarLimitesAoPadrao === true;
+
+  const servico = createServiceClient();
+  const { data: antes, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("plano, teto_respostas_ia, teto_artes, teto_videos, teto_mensagens_lista")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] plano do grupo ${grupoId} não lido: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível mudar o plano agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+
+  // Copiado antes do update: a linha lida não é reaproveitada depois da escrita.
+  const planoAntes = antes.plano;
+  const tetosAntes = {
+    ia: antes.teto_respostas_ia ?? null,
+    arte: antes.teto_artes ?? null,
+    video: antes.teto_videos ?? null,
+    lista: antes.teto_mensagens_lista ?? null,
+  };
+  const temAjuste = Object.values(tetosAntes).some((t) => t !== null);
+  if (planoAntes === plano && !(voltar && temAjuste)) {
+    return { ok: false, erro: "O grupo já está neste plano." };
+  }
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({
+      plano,
+      ...(voltar ? { teto_respostas_ia: null, teto_artes: null, teto_videos: null, teto_mensagens_lista: null } : {}),
+    })
+    .eq("id", grupoId)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] plano do grupo ${grupoId} não gravado: ${error.message}`);
+    return { ok: false, erro: "Não foi possível mudar o plano agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
+
+  const eventos: { acao: string; detalhes: Record<string, unknown> }[] = [];
+  if (planoAntes !== plano) {
+    eventos.push({
+      acao: "plano_alterado",
+      detalhes: { origem: "plataforma", antes: planoAntes, depois: plano, limites_voltaram_ao_padrao: voltar },
+    });
+  }
+  if (voltar) {
+    // Mesmo formato de `ajustarTetoDaIa` (sem `recurso`) e de `ajustarLimitesDoPlano` (com).
+    if (tetosAntes.ia !== null) {
+      eventos.push({ acao: "cota_da_ia_ajustada", detalhes: { origem: "plataforma", antes: tetosAntes.ia, depois: null } });
+    }
+    for (const recurso of RECURSOS) {
+      if (tetosAntes[recurso] === null) continue;
+      eventos.push({
+        acao: "cota_da_ia_ajustada",
+        detalhes: { origem: "plataforma", recurso, antes: tetosAntes[recurso], depois: null },
+      });
+    }
+  }
+  for (const evento of eventos) {
+    const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+      grupo_id: grupoId,
+      acao: evento.acao,
+      ator_id: null,
+      ator_plataforma_user_id: guarda.userId,
+      alvo_corretor_id: null,
+      detalhes: evento.detalhes as Json,
+    });
+    if (erroDoEvento) {
+      console.error(`[plataforma] evento ${evento.acao} (${grupoId}) não gravado: ${erroDoEvento.message}`, evento.detalhes);
+    }
   }
 
   revalidatePath("/plataforma");

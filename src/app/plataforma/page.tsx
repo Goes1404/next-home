@@ -190,7 +190,13 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
           href="/plataforma/acessos"
           className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
         >
-          Buscar acesso e redefinir senha
+          Buscar acesso
+        </Link>
+        <Link
+          href="/plataforma/administradores"
+          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
+        >
+          Administradores
         </Link>
       </div>
 

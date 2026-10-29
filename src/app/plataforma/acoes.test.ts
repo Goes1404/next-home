@@ -42,6 +42,7 @@ const {
   criarGrupoComPrimeiroAcesso,
   criarImobiliaria,
   editarDadosDoGrupo,
+  mudarPlanoDoGrupo,
   redefinirSenhaDoAcesso,
 } = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
@@ -126,7 +127,7 @@ const doGrupo = (tabela: string, grupoId: string) =>
 function formDoAcesso(email: string, papel: "gestor" | "corretor" = "corretor") {
   const form = new FormData();
   form.set("email", email);
-  form.set("senha", "senha-temporaria-1");
+  form.set("senha", "Senha-temporaria-1");
   form.set("papel", papel);
   return form;
 }
@@ -153,6 +154,16 @@ describe("acesso de grupo já criado pela plataforma", () => {
     expect(banco.tabelas.admin_eventos).toEqual(
       expect.arrayContaining([expect.objectContaining({ acao: "conta_criada", ator_plataforma_user_id: OPERADOR })]),
     );
+  });
+
+  it("senha temporária fora da régua (maiúscula, minúscula, número, símbolo) não cria login", async () => {
+    for (const senha of ["senha-temporaria-1", "SENHA-TEMPORARIA-1", "Senhatemporaria1", "Senha-temporaria", "Ab1!"]) {
+      const form = formDoAcesso("corretor@silva.com");
+      form.set("senha", senha);
+      const r = await criarAcessoPendenteDoGrupo(G_NH, undefined, form);
+      expect(r, senha).toEqual({ ok: false, erro: expect.stringMatching(/^A senha precisa de: /) });
+    }
+    expect(banco.consultas).toEqual([]);
   });
 
   it("recusa quem não é administrador da plataforma antes de consultar o banco", async () => {
@@ -760,7 +771,7 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
     };
   });
 
-  const formDaSenha = (senha = "provisoria-123") => {
+  const formDaSenha = (senha = "Provisoria-123") => {
     const form = new FormData();
     form.set("senha", senha);
     return form;
@@ -771,14 +782,14 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
     const r = await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha());
 
     expect(r).toEqual({ ok: true, nome: "Beto", sessoesEncerradas: true });
-    expect(senhasTrocadas).toEqual([{ userId: "usuario-beto-2", atributos: { password: "provisoria-123" } }]);
+    expect(senhasTrocadas).toEqual([{ userId: "usuario-beto-2", atributos: { password: "Provisoria-123" } }]);
     expect(sessoesEncerradas).toEqual(["usuario-beto-2"]);
     expect(ficha(C_BETO)?.deve_trocar_senha).toBe(true);
     const eventos = banco.tabelas.admin_eventos.filter((e) => e.acao === "senha_redefinida");
     expect(eventos).toEqual([
       expect.objectContaining({ grupo_id: G_NH, ator_plataforma_user_id: OPERADOR, alvo_corretor_id: C_BETO }),
     ]);
-    expect(JSON.stringify(banco.tabelas)).not.toContain("provisoria-123");
+    expect(JSON.stringify(banco.tabelas)).not.toContain("Provisoria-123");
   });
 
   it("sessões que não se encerram não desfazem a senha; a tela fica sabendo", async () => {
@@ -806,8 +817,13 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
     expect(senhasTrocadas).toEqual([]);
   });
 
-  it("recusa senha curta e acesso de outro grupo", async () => {
+  it("recusa senha fora da régua e acesso de outro grupo", async () => {
     expect(await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha("curta"))).toMatchObject({ ok: false });
+    // 8+ caracteres, mas sem maiúscula nem símbolo: a régua de 29/10/2026 recusa antes do banco.
+    expect(await redefinirSenhaDoAcesso(G_NH, C_BETO, undefined, formDaSenha("provisoria123"))).toEqual({
+      ok: false,
+      erro: "A senha precisa de: uma letra maiúscula e um símbolo (! @ # $ …).",
+    });
     const outroGrupo = "00000000-0000-4000-8000-0000000000cc";
     expect(await redefinirSenhaDoAcesso(outroGrupo, C_BETO, undefined, formDaSenha())).toEqual({
       ok: false,
@@ -829,5 +845,83 @@ describe("redefinir a senha de um acesso pela plataforma", () => {
     expect(r).toEqual({ ok: false, erro: expect.stringMatching(/fraca/) });
     expect(ficha(C_BETO)?.deve_trocar_senha).toBe(false);
     expect(banco.tabelas.admin_eventos.filter((e) => e.acao === "senha_redefinida")).toEqual([]);
+  });
+});
+
+describe("mudar o plano do grupo (29/10/2026)", () => {
+  const G1 = "00000000-0000-4000-8000-0000000000d1";
+  const G2 = "00000000-0000-4000-8000-0000000000d2";
+  const NEXT_HOME = "00000000-0000-0000-0000-000000000001";
+
+  beforeEach(() => {
+    banco.tabelas.grupos.push(
+      { id: G1, plano: "essencial", teto_respostas_ia: 900, teto_artes: 40, teto_videos: null, teto_mensagens_lista: null },
+      { id: G2, plano: "essencial", teto_respostas_ia: null, teto_artes: null, teto_videos: null, teto_mensagens_lista: null },
+      { id: NEXT_HOME, plano: "custo", teto_respostas_ia: null, teto_artes: null, teto_videos: null, teto_mensagens_lista: null },
+    );
+  });
+  const grupo = (id: string) => banco.tabelas.grupos.find((g) => g.id === id)!;
+
+  it("muda só o plano do grupo pedido e mantém os tetos ajustados à mão", async () => {
+    expect(await mudarPlanoDoGrupo(G1, { plano: "profissional", voltarLimitesAoPadrao: false })).toEqual({ ok: true });
+    expect(grupo(G1)).toMatchObject({ plano: "profissional", teto_respostas_ia: 900, teto_artes: 40 });
+    expect(grupo(G2).plano).toBe("essencial");
+    expect(banco.tabelas.admin_eventos).toEqual([
+      expect.objectContaining({
+        grupo_id: G1,
+        acao: "plano_alterado",
+        ator_plataforma_user_id: OPERADOR,
+        detalhes: { origem: "plataforma", antes: "essencial", depois: "profissional", limites_voltaram_ao_padrao: false },
+      }),
+    ]);
+  });
+
+  it("com 'voltar ao padrão', zera os ajustes e deixa um evento por teto que mudou, como as ações de ajuste", async () => {
+    expect(await mudarPlanoDoGrupo(G1, { plano: "imobiliaria", voltarLimitesAoPadrao: true })).toEqual({ ok: true });
+    expect(grupo(G1)).toMatchObject({
+      plano: "imobiliaria",
+      teto_respostas_ia: null,
+      teto_artes: null,
+      teto_videos: null,
+      teto_mensagens_lista: null,
+    });
+    const detalhes = banco.tabelas.admin_eventos.map((e) => [e.acao, e.detalhes]);
+    expect(detalhes).toEqual([
+      ["plano_alterado", { origem: "plataforma", antes: "essencial", depois: "imobiliaria", limites_voltaram_ao_padrao: true }],
+      ["cota_da_ia_ajustada", { origem: "plataforma", antes: 900, depois: null }],
+      ["cota_da_ia_ajustada", { origem: "plataforma", recurso: "arte", antes: 40, depois: null }],
+    ]);
+  });
+
+  it("mesmo plano sem nada a voltar é recusado; mesmo plano voltando os tetos vale", async () => {
+    expect(await mudarPlanoDoGrupo(G2, { plano: "essencial", voltarLimitesAoPadrao: true })).toEqual({
+      ok: false,
+      erro: "O grupo já está neste plano.",
+    });
+    expect(await mudarPlanoDoGrupo(G1, { plano: "essencial", voltarLimitesAoPadrao: true })).toEqual({ ok: true });
+    expect(grupo(G1).teto_artes).toBeNull();
+    expect(banco.tabelas.admin_eventos.some((e) => e.acao === "plano_alterado")).toBe(false);
+  });
+
+  it("plano fora da lista, id torto, a Next Home e quem não é administrador não chegam ao banco", async () => {
+    expect((await mudarPlanoDoGrupo(G1, { plano: "ouro", voltarLimitesAoPadrao: false })).ok).toBe(false);
+    expect((await mudarPlanoDoGrupo("g1; drop", { plano: "essencial", voltarLimitesAoPadrao: false })).ok).toBe(false);
+    expect(await mudarPlanoDoGrupo(NEXT_HOME, { plano: "essencial", voltarLimitesAoPadrao: false })).toEqual({
+      ok: false,
+      erro: "A Next Home fica no plano a preço de custo.",
+    });
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    expect(await mudarPlanoDoGrupo(G1, { plano: "profissional", voltarLimitesAoPadrao: false })).toEqual({
+      ok: false,
+      erro: "Esta ação é restrita a quem administra a plataforma.",
+    });
+    expect(banco.consultas).toEqual([]);
+    expect(grupo(G1).plano).toBe("essencial");
+  });
+
+  it("grupo que não existe não grava evento", async () => {
+    const r = await mudarPlanoDoGrupo("00000000-0000-4000-8000-0000000000ff", { plano: "profissional", voltarLimitesAoPadrao: false });
+    expect(r).toEqual({ ok: false, erro: "Grupo não encontrado." });
+    expect(banco.tabelas.admin_eventos).toEqual([]);
   });
 });

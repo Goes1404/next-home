@@ -1,16 +1,27 @@
 import { describe, expect, it } from "vitest";
+import { erroDaSenha } from "@/lib/auth/politicaDeSenha";
 import { gerarSenhaProvisoria, TAMANHO_DA_SENHA_PROVISORIA } from "./senhaProvisoria";
 
 describe("senha temporária gerada pela plataforma", () => {
-  it("tem 12 caracteres, minúscula, maiúscula e dígito, sem os que se confundem", () => {
+  it("tem 12 caracteres, minúscula, maiúscula, dígito e símbolo, sem os que se confundem", () => {
     for (let i = 0; i < 200; i++) {
       const senha = gerarSenhaProvisoria();
       expect(senha).toHaveLength(TAMANHO_DA_SENHA_PROVISORIA);
       expect(senha).toMatch(/[a-z]/);
       expect(senha).toMatch(/[A-Z]/);
       expect(senha).toMatch(/[2-9]/);
+      expect(senha).toMatch(/[!@#$%&*?]/);
       expect(senha).not.toMatch(/[01OlI]/);
     }
+  });
+
+  it("sempre passa pela régua da senha (a action confere com erroDaSenha)", () => {
+    for (let i = 0; i < 500; i++) expect(erroDaSenha(gerarSenhaProvisoria())).toBeNull();
+  });
+
+  it("passa pela régua mesmo com o sorteio mais viciado possível (sempre o byte 0)", () => {
+    const zeros = (b: Uint8Array) => b.fill(0);
+    expect(erroDaSenha(gerarSenhaProvisoria(zeros))).toBeNull();
   });
 
   it("não repete: duas seguidas saem diferentes", () => {

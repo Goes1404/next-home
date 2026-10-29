@@ -6,10 +6,8 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
 import type { PagamentoRegistrado } from "@/lib/plataforma/grupos";
 import {
   ajustarCobrancaDoGrupo,
-  reativarGrupo,
   registrarPagamento,
   removerPagamento,
-  suspenderGrupo,
   type ResultadoDaCobranca,
 } from "../../cobrancaAcoes";
 
@@ -34,9 +32,10 @@ const MES = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", month: "long", y
 const mesDaCompetencia = (competencia: string) => MES.format(new Date(`${competencia}T00:00:00Z`));
 
 /**
- * A cobrança do grupo na tela da plataforma (fase 2C): o estado, o histórico,
- * o registro de pagamento à mão e a suspensão manual. Quem suspende por
- * atraso é a conta de `cobranca.ts` (a mesma do webhook): aqui só se vê.
+ * A cobrança do grupo na tela da plataforma (fase 2C): o estado, o histórico
+ * e o registro de pagamento à mão. Quem suspende por atraso é a conta de
+ * `cobranca.ts` (a mesma do webhook): aqui só se vê. A suspensão MANUAL subiu
+ * para "Situação e plano", no alto da página (29/10/2026).
  */
 export function CobrancaDoGrupo({
   grupoId,
@@ -45,7 +44,6 @@ export function CobrancaDoGrupo({
   diaDoVencimento,
   pagamentos,
   suspensoManual,
-  podeSuspender,
   hoje,
 }: {
   grupoId: string;
@@ -55,8 +53,6 @@ export function CobrancaDoGrupo({
   pagamentos: PagamentoRegistrado[];
   /** `grupos.situacao === 'suspenso'`: a suspensão feita à mão. */
   suspensoManual: boolean;
-  /** Grupo ativo e não cancelado: é o único que suspende à mão. */
-  podeSuspender: boolean;
   /** O dia de hoje em São Paulo, `AAAA-MM-DD`. */
   hoje: string;
 }) {
@@ -70,7 +66,6 @@ export function CobrancaDoGrupo({
     mensalidade === null ? "" : String(mensalidade).replace(".", ","),
   );
   const [diaDigitado, setDiaDigitado] = useState(String(diaDoVencimento));
-  const [confirmandoSuspensao, setConfirmandoSuspensao] = useState(false);
 
   const agir = (acao: () => Promise<ResultadoDaCobranca>, sucesso: string, aoDarCerto?: () => void) =>
     iniciar(async () => {
@@ -126,7 +121,7 @@ export function CobrancaDoGrupo({
       </dl>
       {suspensoManual && (
         <p className="text-fluid-xs text-apoio">
-          Este grupo está suspenso à mão. Registrar pagamento não o reativa: use o botão &quot;Reativar&quot; abaixo.
+          Este grupo está suspenso à mão. Registrar pagamento não o reativa: use &quot;Reativar grupo&quot; em Situação e plano, no alto da página.
         </p>
       )}
 
@@ -288,48 +283,6 @@ export function CobrancaDoGrupo({
           </button>
         </div>
       </form>
-
-      <div className="border-linha flex flex-col gap-3 border-t pt-5">
-        <h3 className="text-fluid-sm text-titulo font-medium">Suspensão manual</h3>
-        <p className="text-fluid-xs text-apoio">
-          Suspenso, o grupo perde a IA no WhatsApp, as listas de transmissão, as artes e os vídeos. O painel, o login e
-          o site continuam, e o cliente final não vê erro: o corretor atende à mão.
-        </p>
-        {suspensoManual ? (
-          <div>
-            <button
-              type="button"
-              disabled={pendente}
-              onClick={() => agir(() => reativarGrupo(grupoId), "Grupo reativado.")}
-              className={BOTAO_PRINCIPAL}
-            >
-              {pendente ? "Reativando…" : "Reativar"}
-            </button>
-          </div>
-        ) : podeSuspender ? (
-          confirmandoSuspensao ? (
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={pendente}
-                onClick={() => agir(() => suspenderGrupo(grupoId), "Grupo suspenso.", () => setConfirmandoSuspensao(false))}
-                className="text-fluid-sm bg-perigo text-sobre-cor flex min-h-11 cursor-pointer items-center rounded-xl px-5 font-bold disabled:opacity-60"
-              >
-                {pendente ? "Suspendendo…" : "Confirmar suspensão"}
-              </button>
-              <button type="button" disabled={pendente} onClick={() => setConfirmandoSuspensao(false)} className={BOTAO_SECUNDARIO}>
-                Voltar
-              </button>
-            </div>
-          ) : (
-            <div>
-              <button type="button" onClick={() => setConfirmandoSuspensao(true)} className={BOTAO_SECUNDARIO}>
-                Suspender
-              </button>
-            </div>
-          )
-        ) : null}
-      </div>
     </section>
   );
 }

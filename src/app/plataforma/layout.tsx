@@ -55,6 +55,12 @@ export default async function PlataformaLayout({ children }: { children: React.R
             <span className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/plataforma/administradores"
+              className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo hidden min-h-11 items-center rounded-xl px-3 transition-colors sm:flex"
+            >
+              Administradores
+            </Link>
             <SeletorTema />
             <form action={sair}>
               <button

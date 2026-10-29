@@ -233,7 +233,10 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/saude.ts": { categoria: "plataforma-admin", motivo: "saúde e custo da IA dos grupos da lista (telemetria só AGREGADA por rpc, 0211, nunca ia_interacoes linha a linha); recebe a prova de exigirAdminDaPlataforma*" },
   "src/app/plataforma/cobrancaAcoes.ts": { categoria: "plataforma-admin", motivo: "registra e remove pagamento, ajusta mensalidade e vencimento e suspende ou reativa o grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (fase 2C)" },
   "src/app/plataforma/enderecosAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e tira o endereço do site de UM grupo (0201); a chave só depois de exigirAdminDaPlataformaNaAcao" },
-  "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso, edita o cadastro dele e redefine a senha de um acesso; a chave só depois de exigirAdminDaPlataformaNaAcao" },
+  "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso, edita o cadastro dele, muda o plano e redefine a senha de um acesso; a chave só depois de exigirAdminDaPlataformaNaAcao" },
+  "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/app/plataforma/administradoresAcoes.ts": { categoria: "plataforma-admin", motivo: "põe e tira logins de administradores_da_plataforma (tabela global, sem grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
 };
 
 /** A definição da chave: não é uso. */

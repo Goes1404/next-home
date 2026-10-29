@@ -379,6 +379,10 @@ describe("guarda de credencial derivada", () => {
   const RAIZ = process.cwd();
   const PERMITIDO = join("src", "lib", "corretores", "credenciaisIniciais.ts");
   const PLATAFORMA = join("src", "app", "plataforma", "acoes.ts");
+  // 29/10/2026: o administrador da plataforma criado com senha temporária
+  // nasce com `app_metadata.deve_trocar_senha: true` (não tem ficha onde a
+  // marca dos corretores mora); o login manda para a troca.
+  const ADMINISTRADORES = join("src", "app", "plataforma", "administradoresAcoes.ts");
 
   function arquivosDe(dir: string): string[] {
     const saida: string[] = [];
@@ -412,7 +416,7 @@ describe("guarda de credencial derivada", () => {
         // A redefinição de senha (28/10/2026) segue o mesmo acordo: senha
         // sorteada no navegador (senhaProvisoria.ts) e troca obrigatória.
         if (
-          relativo === PLATAFORMA &&
+          (relativo === PLATAFORMA || relativo === ADMINISTRADORES) &&
           (nome === "login nascido com senha" || nome === "senha trocada pelo administrador") &&
           /deve_trocar_senha:\s*true/.test(codigo)
         ) {

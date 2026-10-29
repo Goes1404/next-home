@@ -102,6 +102,10 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
       .maybeSingle();
 
     if (corretor?.deve_trocar_senha) redirect("/corretor/senha");
+    // Administrador da plataforma criado com senha temporária (29/10/2026,
+    // `administradoresAcoes.ts`): sem ficha, a marca mora no `app_metadata`,
+    // que só a chave de serviço escreve.
+    if (!corretor && sessao.user.app_metadata?.deve_trocar_senha === true) redirect("/corretor/senha");
 
     // Administrador da plataforma sem ficha de corretor (o dono): o painel
     // do corretor mostraria "conta sem vínculo"; a área dele é /plataforma.
@@ -373,6 +377,13 @@ export async function trocarSenha(
     .from("corretores")
     .update({ deve_trocar_senha: false })
     .eq("user_id", user.id);
+  // A do administrador da plataforma sem ficha mora no `app_metadata` (29/10/2026).
+  if (user.app_metadata?.deve_trocar_senha === true) {
+    const { error: erroDaMarca } = await createServiceClient().auth.admin.updateUserById(user.id, {
+      app_metadata: { deve_trocar_senha: false },
+    });
+    if (erroDaMarca) console.error(`[senha] troca obrigatória não desligada (${user.id}): ${erroDaMarca.message}`);
+  }
 
   // Reinicia os 90 dias e renova a sessão: o JWT carrega o `app_metadata`,
   // e sem renovar o painel ainda leria a data velha e mandaria de volta.
