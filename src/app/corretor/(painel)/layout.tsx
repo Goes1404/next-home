@@ -17,6 +17,8 @@ import { BalaoConsultor } from "./BalaoConsultor";
 import { CabecalhoDoPainel } from "./_componentes/CabecalhoDoPainel";
 import { COOKIE_MENU_LATERAL, lerMenuRecolhido } from "./_componentes/menuLateral";
 import { CromaDoModulo } from "./CromaDoModulo";
+import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
+import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { MenuDaConta } from "./MenuDaConta";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
@@ -74,7 +76,14 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [corretor, guardados] = await Promise.all([getCorretorLogado(), cookies()]);
+  const [corretor, guardados, senhaVencida] = await Promise.all([
+    getCorretorLogado(),
+    cookies(),
+    senhaDaSessaoVencida(),
+  ]);
+  // Senha com mais de 90 dias (29/10/2026): troca antes de qualquer tela.
+  // Lido do JWT, sem ida ao Auth; o login já confere, isto pega quem nunca sai.
+  if (senhaVencida) redirect(DESTINO_SENHA_VENCIDA);
   // Ficha criada só para conceder acesso administrativo: permanece fora do
   // painel até o próprio titular informar os dados obrigatórios.
   if (corretor && cadastroEstaPendente(corretor.creci)) redirect("/corretor/completar-cadastro");
@@ -105,7 +114,7 @@ export default async function PainelLayout({
 
   return (
     <MarcaDoPainelProvider marca={{ nome: marca.nome, wordmark: marca.wordmark, logoUrl: marca.logoUrl }}>
-    <CromaDoModulo className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
+    <CromaDoModulo className={`${FONTES_DA_ASTRO} bg-fundo relative isolate flex min-h-svh flex-1 flex-col`}>
       {/*
         A aurora e o grão, fixos atrás de todo o painel (24/09/2026). São o
         que os cartões translúcidos e o vidro do cabeçalho deixam transparecer

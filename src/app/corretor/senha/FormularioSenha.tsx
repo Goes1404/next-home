@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { trocarSenha } from "@/app/corretor/actions";
-import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
+import { BotaoDeAcesso, CampoDeAcesso, ChecklistDaSenha, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
 
 /** Troca de senha de quem já entrou. Campos e botão: `CampoDeAcesso.tsx`. */
 export function FormularioSenha() {
@@ -18,8 +18,8 @@ export function FormularioSenha() {
         tipo="senha"
         minLength={8}
         autoComplete="new-password"
-        dica="Pelo menos 8 caracteres."
       />
+      <ChecklistDaSenha campoId="nova" />
       <CampoDeAcesso
         id="confirmacao"
         name="confirmacao"

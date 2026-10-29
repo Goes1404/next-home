@@ -18,9 +18,17 @@ const semInscricao = () => () => {};
  * `/empreendimentos`.
  */
 function ehPainel(caminho: string): boolean {
-  // `/plataforma` (29/10/2026): a área do administrador da Astro tem a
-  // chegada de tela dela (`plataforma/template.tsx`), sem a onda do site.
   return ["/corretor", "/plataforma"].some((raiz) => caminho === raiz || caminho.startsWith(`${raiz}/`));
+}
+
+/**
+ * A SEÇÃO de um caminho do app: `/corretor/leads/123` → `/corretor/leads`.
+ * No app da Astro a onda passa só quando a seção muda (29/10/2026): abrir um
+ * lead dentro de Leads é trabalho repetido e ganha só a chegada leve da tela;
+ * ir de Leads para Agenda é troca de contexto e ganha a onda.
+ */
+export function secaoDoApp(caminho: string): string {
+  return caminho.split("/").filter(Boolean).slice(0, 2).join("/");
 }
 
 /** `false` no servidor; `true` depois de hidratar — o portal precisa de `document`. */
@@ -65,9 +73,11 @@ function useMontado(): boolean {
  *   componente que compara "caminho anterior" renasce sem passado: a
  *   primeira versão vivia nos dois layouts de grupo e não disparou nenhuma
  *   vez nessa travessia. O raiz é o único que sobrevive a tudo.
- * - Ele mesmo se cala no PAINEL: ali a navegação é trabalho repetido dezenas
- *   de vezes por dia, e a cor já muda por módulo. Sair do painel para o site
- *   continua ondulando — aí é uma troca de contexto de verdade.
+ * - No APP (painel e plataforma) ela passou a ondular de novo em 29/10/2026,
+ *   mas só na troca de SEÇÃO (`secaoDoApp`): a navegação dentro de uma seção
+ *   é trabalho repetido dezenas de vezes por dia. É a "onda da Astro":
+ *   marinho e azul fixos, mais rápida (`onda-da-astro` no globals.css) e
+ *   acima da barra do polegar.
  */
 export function OndaDeTransicao() {
   const montado = useMontado();
@@ -79,7 +89,9 @@ export function OndaDeTransicao() {
   const [ativa, setAtiva] = useState(false);
   if (caminho !== anterior) {
     setAnterior(caminho);
-    setAtiva(true);
+    // No app (painel e plataforma), só quando a SEÇÃO muda (`secaoDoApp`).
+    const app = ehPainel(caminho) || ehPainel(anterior);
+    if (!app || secaoDoApp(caminho) !== secaoDoApp(anterior)) setAtiva(true);
   }
 
   /*
@@ -93,23 +105,29 @@ export function OndaDeTransicao() {
    * A limpeza roda no desmonte E na troca de caminho, então uma navegação
    * em cima da outra não deixa o atributo preso.
    */
-  const mostrar = montado && ativa && !ehPainel(caminho);
+  const mostrar = montado && ativa;
+  // A onda da ASTRO (29/10/2026, "a transição de onda da Next, melhore isso no
+  // nosso app e traga pra nós"): no painel e na plataforma ela volta, nas
+  // cores da Astro, mais rápida e por cima de tudo, só na troca de seção.
+  const daAstro = ehPainel(caminho);
 
   useEffect(() => {
     // Preso ao que de fato RENDERIZA: marcar a raiz sem a onda na tela
-    // deixaria o atributo sem ninguém para limpá-lo.
-    if (!mostrar) return;
+    // deixaria o atributo sem ninguém para limpá-lo. No app não marca: a
+    // cascata de `main > *` do site apagaria o cabeçalho do painel, que tem
+    // a chegada de tela própria (`tela-entra`).
+    if (!mostrar || daAstro) return;
     const raiz = document.documentElement;
     raiz.dataset.entrando = "sim";
     return () => {
       delete raiz.dataset.entrando;
     };
-  }, [mostrar, caminho]);
+  }, [mostrar, daAstro, caminho]);
 
   if (!mostrar) return null;
 
   return createPortal(
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[45]">
+    <div aria-hidden className={`pointer-events-none fixed inset-0 ${daAstro ? "onda-da-astro z-[70]" : "z-[45]"}`}>
       {/*
         DUAS ondas, defasadas: a de trás sai na frente e a da marca chega
         logo atrás. Uma cortina só, por mais curva que seja a borda, ainda
@@ -120,8 +138,8 @@ export function OndaDeTransicao() {
         A `key` é o caminho: caminho novo, elementos novos, animação do
         começo. Sem isso a segunda navegação não tocaria a animação de novo.
       */}
-      <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter />
-      <Camada key={caminho} atraso="60ms" opacidade={1} aoTerminar={() => setAtiva(false)} />
+      <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter astro={daAstro} />
+      <Camada key={caminho} atraso={daAstro ? "40ms" : "60ms"} opacidade={1} astro={daAstro} aoTerminar={() => setAtiva(false)} />
     </div>,
     document.body,
   );
@@ -136,13 +154,17 @@ function Camada({
   atraso,
   opacidade,
   inverter = false,
+  astro = false,
   aoTerminar,
 }: {
   atraso: string;
   opacidade: number;
   inverter?: boolean;
+  /** As cores fixas da Astro (marinho → azul), não o `brand-*` do site. */
+  astro?: boolean;
   aoTerminar?: () => void;
 }) {
+  const id = `onda-${astro ? "astro" : "marca"}-${inverter ? "b" : "a"}`;
   return (
     <div
       onAnimationEnd={aoTerminar}
@@ -156,14 +178,14 @@ function Camada({
         className={`h-full w-full ${inverter ? "-scale-x-100" : ""}`}
       >
         <defs>
-          <linearGradient id={`onda-marca-${inverter ? "b" : "a"}`} x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
             {/* As duas cores do logotipo: o teal abre, o azul fecha. Tinta
                 fixa, não token de tema — a onda é um momento de marca em
                 tela cheia, como a vinheta de abertura, e é a mesma peça no
                 tema claro e no escuro. */}
-            <stop offset="0%" stopColor="var(--color-brand-600)" />
-            <stop offset="55%" stopColor="var(--color-brand-800)" />
-            <stop offset="100%" stopColor="var(--color-azure-600)" />
+            <stop offset="0%" stopColor={astro ? "#2f5ea8" : "var(--color-brand-600)"} />
+            <stop offset="55%" stopColor={astro ? "#0f2547" : "var(--color-brand-800)"} />
+            <stop offset="100%" stopColor={astro ? "#1b3a6b" : "var(--color-azure-600)"} />
           </linearGradient>
         </defs>
         {/*
@@ -173,7 +195,7 @@ function Camada({
           que foi exatamente a queixa ("não é só algo reto, tem curvaturas").
         */}
         <path
-          fill={`url(#onda-marca-${inverter ? "b" : "a"})`}
+          fill={`url(#${id})`}
           d="M0,140 C220,-40 470,270 720,130 C970,-10 1210,260 1440,110 L1440,880 C1210,1040 970,740 720,870 C470,1010 220,730 0,860 Z"
         />
       </svg>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { FontesDaAstroNoDocumento } from "@/components/marca/FontesDaAstroNoDocumento";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { AberturaDoApp } from "./AberturaDoApp";
@@ -45,6 +46,7 @@ export default function CorretorLayout({ children }: { children: React.ReactNode
   return (
     <>
       <ComportamentoDeApp />
+      <FontesDaAstroNoDocumento />
       <AberturaDoApp />
       {children}
     </>

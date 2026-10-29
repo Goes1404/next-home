@@ -1,32 +1,29 @@
 "use client";
 
-import { ViewTransition } from "react";
 import { usePathname } from "next/navigation";
 
 /**
- * A troca de tela do painel: a que sai esmaece subindo, a que entra chega
- * de baixo (`painel-sai` / `painel-entra` em `globals.css`).
+ * A chegada de cada tela do painel.
  *
- * É a View Transitions API pelo `<ViewTransition>` do React — o mesmo que a
- * vitrine já usa para a capa do imóvel. O navegador anima duas FOTOGRAFIAS
- * da região, então o `translate` da animação não toca no DOM vivo: nenhum
- * containing block é criado, e os componentes `fixed` que nascem dentro das
- * telas (folha de ações, barra de salvar, modal) não são afetados. Foi por
- * essa armadilha que a entrada do site público é só opacidade.
+ * Até 29/10/2026 era a View Transitions API (`<ViewTransition>` do React):
+ * o navegador fotografava a página inteira, velha e nova, e animava as duas
+ * fotos. No Android de entrada isso custa caro (duas texturas do tamanho da
+ * tela a cada toque no menu) e era o que mais pesava na troca de tela do app
+ * ("deixe o app leve, rápido, sem tirar qualidade").
  *
- * A chave é a ROTA, e isso decide o que anima: navegar entre telas, sim;
- * mudar um filtro na URL, `router.refresh()` depois de uma ação e o polling
- * das conversas, não — `default="none"` cala qualquer atualização que não
- * seja a troca do nó chaveado. Sem a chave, cada refresh cruzaria a tela
- * inteira em fade, e a tela de Conversas piscaria a cada tique.
+ * Agora: o contêiner é chaveado pela ROTA, então remonta a cada navegação, e
+ * a classe `tela-entra` (globals.css) faz uma chegada só de opacidade e
+ * subida curta — nada de foto. Na troca de SEÇÃO passa por cima a onda da
+ * Astro (`OndaDeTransicao`, no layout raiz), que cobre o corte.
  *
- * Navegador sem a API só não anima; a navegação segue igual.
+ * Filtro na URL, `router.refresh()` e o polling das conversas não mudam a
+ * rota: não remontam nada e não animam nada, como antes.
  */
 export function TransicaoDeTela({ children }: { children: React.ReactNode }) {
   const rota = usePathname();
   return (
-    <ViewTransition key={rota} enter="painel-entra" exit="painel-sai" default="none">
-      <div className="tela-do-painel min-w-0">{children}</div>
-    </ViewTransition>
+    <div key={rota} className="tela-do-painel tela-entra min-w-0">
+      {children}
+    </div>
   );
 }

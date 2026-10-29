@@ -1,13 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { FontesDaAstroNoDocumento } from "@/components/marca/FontesDaAstroNoDocumento";
 import Link from "next/link";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
 import { COR_DA_BARRA_DO_PAINEL, ComportamentoDeApp } from "@/app/corretor/ComportamentoDeApp";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { MarcaAstro } from "@/components/marca/SeloAstro";
+import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
+import { redirect } from "next/navigation";
 
 /** Em `astroimob.vercel.app` o ícone é o da Astro Soluções; nos outros endereços, como sempre foi. */
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,10 +39,13 @@ export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_PAINEL.claro };
  */
 export default async function PlataformaLayout({ children }: { children: React.ReactNode }) {
   await exigirAdminDaPlataformaNaPagina();
+  // A troca a cada 90 dias vale também para quem administra a plataforma.
+  if (await senhaDaSessaoVencida()) redirect(DESTINO_SENHA_VENCIDA);
 
   return (
-    <main data-rota="painel" className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
+    <main data-rota="painel" className={`${FONTES_DA_ASTRO} bg-fundo relative isolate flex min-h-svh flex-1 flex-col`}>
       <ComportamentoDeApp />
+      <FontesDaAstroNoDocumento />
       <header className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">

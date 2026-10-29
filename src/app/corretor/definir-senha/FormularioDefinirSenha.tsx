@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
+import { BotaoDeAcesso, CampoDeAcesso, ChecklistDaSenha, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
 import { definirSenha } from "./acoes";
 
 /**
@@ -22,8 +22,8 @@ export function FormularioDefinirSenha() {
         tipo="senha"
         minLength={8}
         autoComplete="new-password"
-        dica="Pelo menos 8 caracteres."
       />
+      <ChecklistDaSenha campoId="nova" />
       <CampoDeAcesso
         id="confirmacao"
         name="confirmacao"

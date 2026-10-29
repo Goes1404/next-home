@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { SeloAstro } from "@/components/marca/SeloAstro";
@@ -52,8 +53,11 @@ export function TelaDeAcesso({
   recursos,
   aviso,
   rodape,
+  inicio,
   children,
 }: {
+  /** O "← Início" no canto de cima (só o login usa: a saída para a página da Astro). */
+  inicio?: string;
   /** O título da folha ("Entrar", "Esqueci a senha"…). */
   titulo: string;
   apoio?: ReactNode;
@@ -88,6 +92,13 @@ export function TelaDeAcesso({
           <span key={i} className={s.ponto} style={{ top: e.top, left: e.left }} />
         ))}
       </div>
+
+      {inicio && (
+        <Link href={inicio} className={s.inicio}>
+          <ArrowLeft aria-hidden />
+          Início
+        </Link>
+      )}
 
       <section className={s.topo}>
         <p className={`${s.titulo} ${s.marca}`}>

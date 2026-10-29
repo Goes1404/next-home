@@ -56,7 +56,8 @@ export default async function EntrarPage({
   return (
     <TelaDeAcesso
       titulo="Entrar"
-      apoio="Use o e-mail do convite."
+      apoio="Use seu usuário ou o e-mail do convite."
+      inicio="/"
       chamada="Seus leads estão esperando."
       textoDaChamada={MARCA_DA_PLATAFORMA.apoio}
       recursos={RECURSOS}

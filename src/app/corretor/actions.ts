@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { revalidarCatalogo, revalidarCorretores } from "@/lib/catalogo/revalidar";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { destinoSeguro } from "@/lib/auth/links";
+import { lerIdentificadorDeLogin } from "@/lib/auth/identificadorDeLogin";
+import { erroDaSenha, senhaTrocadaEm, senhaVencida } from "@/lib/auth/politicaDeSenha";
+import { DESTINO_SENHA_VENCIDA, registrarSenhaTrocada } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { redirect } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { MENSAGEM_CONFLITO, ehConflitoDeHorario } from "@/lib/agenda/conflito";
@@ -36,16 +39,45 @@ async function exigirSessao() {
   return { supabase, user };
 }
 
+/** A mesma frase para usuário inexistente e senha errada: não confirma quem existe. */
+const LOGIN_INVALIDO = "Usuário ou senha inválidos.";
+
+/**
+ * O e-mail de login a partir do que a pessoa digitou: o próprio e-mail, ou o
+ * do nome de usuário (`email_do_usuario`, 0240, só pela chave de serviço).
+ */
+async function emailDoLogin(texto: string): Promise<string | null> {
+  const id = lerIdentificadorDeLogin(texto);
+  if (!id) return null;
+  if (id.tipo === "email") return id.email;
+  try {
+    const { data, error } = await createServiceClient().rpc("email_do_usuario", { p_usuario: id.usuario });
+    if (error) {
+      console.error(`[entrar] email_do_usuario falhou: ${error.message}`);
+      return null;
+    }
+    return typeof data === "string" && data ? data : null;
+  } catch (e) {
+    console.error("[entrar] email_do_usuario falhou:", e);
+    return null;
+  }
+}
+
 export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<EstadoLogin> {
-  const email = String(formData.get("email") ?? "").trim();
+  // O campo se chama `email` por compatibilidade (gerenciadores de senha já
+  // o conhecem), mas aceita e-mail OU nome de usuário (29/10/2026).
+  const digitado = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
   // Vem do proxy (`/plataforma` sem sessão) por um campo oculto; passa pela
   // mesma régua do link do e-mail, porque qualquer um edita a URL.
   const next = formData.get("next");
 
-  if (!email || !senha) {
-    return { erro: "Informe e-mail e senha." };
+  if (!digitado || !senha) {
+    return { erro: "Informe usuário (ou e-mail) e senha." };
   }
+
+  const email = await emailDoLogin(digitado);
+  if (!email) return { erro: LOGIN_INVALIDO };
 
   const supabase = await createClient();
   const { data: sessao, error } = await supabase.auth.signInWithPassword({
@@ -54,7 +86,23 @@ export async function entrar(_estado: EstadoLogin, formData: FormData): Promise<
   });
 
   if (error) {
-    return { erro: "E-mail ou senha inválidos." };
+    return { erro: LOGIN_INVALIDO };
+  }
+
+  /*
+   * Senha vence a cada 90 dias (29/10/2026). Conta sem data começa a contar
+   * agora; vencida vai direto para a troca. O painel e a plataforma também
+   * conferem a cada tela (`senhaDaSessaoVencida`), para quem nunca sai.
+   */
+  if (sessao?.user) {
+    const appMetadata = sessao.user.app_metadata as Record<string, unknown> | undefined;
+    const trocada = senhaTrocadaEm(appMetadata);
+    if (!trocada) {
+      await registrarSenhaTrocada(sessao.user.id, appMetadata);
+      await supabase.auth.refreshSession();
+    } else if (senhaVencida(trocada)) {
+      redirect(DESTINO_SENHA_VENCIDA);
+    }
   }
 
   /*
@@ -314,9 +362,10 @@ export async function trocarSenha(
   const nova = String(formData.get("nova") ?? "");
   const confirmacao = String(formData.get("confirmacao") ?? "");
 
-  if (nova.length < 8) {
-    return { erro: "A nova senha precisa ter pelo menos 8 caracteres." };
-  }
+  // A régua da Astro (maiúscula, minúscula, número, símbolo, 8+), a mesma
+  // do link de criar senha e do checklist da tela (`politicaDeSenha.ts`).
+  const fraca = erroDaSenha(nova);
+  if (fraca) return { erro: fraca };
   if (nova !== confirmacao) {
     return { erro: "A confirmação não confere com a nova senha." };
   }
@@ -345,6 +394,11 @@ export async function trocarSenha(
     .from("corretores")
     .update({ deve_trocar_senha: false })
     .eq("user_id", user.id);
+
+  // Reinicia os 90 dias e renova a sessão: o JWT carrega o `app_metadata`,
+  // e sem renovar o painel ainda leria a data velha e mandaria de volta.
+  await registrarSenhaTrocada(user.id, user.app_metadata as Record<string, unknown> | undefined);
+  await supabase.auth.refreshSession();
 
   redirect("/corretor");
 }

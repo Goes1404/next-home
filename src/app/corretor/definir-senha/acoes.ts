@@ -2,12 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { DESTINO_SEM_LINK, sessaoAbertaPorLink } from "@/lib/auth/sessaoPorLink";
+import { erroDaSenha } from "@/lib/auth/politicaDeSenha";
+import { registrarSenhaTrocada } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { createClient } from "@/lib/supabase/server";
 
 export type EstadoDefinirSenha = { erro?: string } | undefined;
 
-/** A mesma régua da troca de senha do painel (`trocarSenha`). */
-const MINIMO_DA_SENHA = 8;
 
 /**
  * Define a senha de quem chegou pelo link do convite ou da recuperação.
@@ -39,9 +39,9 @@ export async function definirSenha(
   const nova = String(formData.get("nova") ?? "");
   const confirmacao = String(formData.get("confirmacao") ?? "");
 
-  if (nova.length < MINIMO_DA_SENHA) {
-    return { erro: `A senha precisa ter pelo menos ${MINIMO_DA_SENHA} caracteres.` };
-  }
+  // A régua da Astro (29/10/2026): maiúscula, minúscula, número, símbolo, 8+.
+  const fraca = erroDaSenha(nova);
+  if (fraca) return { erro: fraca };
   if (nova !== confirmacao) {
     return { erro: "A confirmação não confere com a senha." };
   }
@@ -58,6 +58,12 @@ export async function definirSenha(
     // pedir a troca uma vez, com a senha que ela acabou de escolher.
     console.error(`[definir-senha] não zerou deve_trocar_senha: ${erroDaFicha.message}`);
   }
+
+  // Começam os 90 dias desta senha; a sessão é renovada para o JWT trazer a
+  // data nova (ver `trocarSenha`).
+  const { data: depois } = await supabase.auth.getUser();
+  await registrarSenhaTrocada(userId, depois.user?.app_metadata as Record<string, unknown> | undefined);
+  await supabase.auth.refreshSession();
 
   redirect("/corretor");
 }

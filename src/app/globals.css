@@ -3732,7 +3732,7 @@ html[data-menu-aberto] body {
 
   /* 4. A área da plataforma ganha a mesma chegada de tela do painel. */
   .plataforma-tela {
-    animation: painel-entra 380ms var(--ease-out-expo) both;
+    animation: painel-entra 380ms var(--ease-out-expo) backwards;
   }
 }
 @keyframes cartao-sobe {
@@ -3774,5 +3774,95 @@ html[data-troca-tema]::view-transition-new(root) {
   }
   to {
     clip-path: circle(var(--tema-r, 150vmax) at var(--tema-x, 50%) var(--tema-y, 0%));
+  }
+}
+
+/* ===========================================================================
+ * As fontes da Astro no painel e na plataforma (29/10/2026). Relato: "alinhe
+ * essas fontes" — a /plataforma (e o painel) ainda tinham os títulos na
+ * Fraunces (serifa da Next Home) e o texto na Inter, ao lado da marca e do
+ * login da Astro em Bricolage Grotesque + Figtree.
+ *
+ * O elemento que leva `data-rota="painel"` também leva as classes de
+ * `FONTES_DA_ASTRO` (que definem `--font-astro-*`), e aqui as variáveis que
+ * todo o painel já consome (`--font-display`, `--font-sans`) são reapontadas.
+ * Nenhum componente muda. Os títulos ganham um tracking um pouco menos
+ * apertado: a Bricolage é mais larga que a serifa.
+ * ======================================================================== */
+[data-rota="painel"] {
+  --font-display: var(--font-astro-titulo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-astro-texto), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+[data-rota="painel"] :is(h1, h2, h3) {
+  letter-spacing: -0.015em;
+}
+
+/* ===========================================================================
+ * A troca de tela do app, leve (29/10/2026).
+ *
+ * `tela-entra`: a tela nova chega por opacidade e uma subida de 8px, em
+ * 260ms. Sem View Transitions (fotos da página inteira, caras no Android).
+ * O `translate` dura só a chegada: um modal `fixed` aberto nesse quarto de
+ * segundo ficaria preso ao contêiner, e ninguém abre um modal tão rápido.
+ *
+ * `onda-da-astro`: a onda do site, nas cores da Astro, mais curta (520ms) e
+ * só na troca de seção (`OndaDeTransicao`).
+ * ======================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .tela-entra {
+    /* `backwards`, nunca `both`: animação de `translate` que fica "em
+       efeito" depois do fim mantém o bloco de contenção e prenderia para
+       sempre os `fixed` da tela (folhas, modais, barra de salvar). */
+    animation: tela-entra 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .onda-da-astro .onda-transicao {
+    animation-duration: 520ms;
+  }
+}
+@keyframes tela-entra {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+
+/* ===========================================================================
+ * O app leve no celular (29/10/2026). Pedido: "deixe o app leve, rápido,
+ * sem tirar qualidade — como exemplo, TOTVS e SAP".
+ *
+ * Ferramenta de trabalho aberta o dia inteiro num Android de entrada não
+ * pode gastar bateria e quadro com enfeite que ninguém olha. No celular
+ * (tela estreita e toque), o painel fica com o fundo PARADO:
+ *
+ * - as bolhas saem (cinco camadas animadas sem fim, em tela cheia);
+ * - a aurora fica, mas parada (a cor do módulo continua lá: é informação);
+ * - o grão sai (camada fixa em tela cheia, recomposta a cada rolagem);
+ * - o vidro (`backdrop-filter`) do cabeçalho, da barra do polegar e das
+ *   folhas vira cor sólida: desfoque do que passa por baixo é o efeito mais
+ *   caro de rolar no Android, e o fundo já é quase liso.
+ *
+ * O computador segue com tudo: lá sobra GPU e o fundo vivo é parte da
+ * identidade do painel.
+ * ======================================================================== */
+@media (max-width: 767px) and (hover: none) {
+  [data-rota="painel"] .painel-bolhas,
+  [data-rota="painel"] .painel-grao {
+    display: none;
+  }
+  [data-rota="painel"] .painel-aurora,
+  [data-rota="painel"] .painel-aurora > i:nth-child(n) {
+    animation: none;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+  [data-rota="painel"] :is(.backdrop-blur, .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  [data-rota="painel"] :is(header, nav):is(.backdrop-blur-lg, .backdrop-blur-md, .backdrop-blur-xl) {
+    background-color: color-mix(in oklab, var(--color-fundo) 97%, transparent);
   }
 }

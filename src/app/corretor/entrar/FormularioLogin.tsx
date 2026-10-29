@@ -81,7 +81,16 @@ export function FormularioLogin({ next }: { next?: string }) {
   return (
     <form action={action} onSubmit={aoEnviar} className={CLASSE_DO_FORMULARIO}>
       {next && <input type="hidden" name="next" value={next} />}
-      <CampoDeAcesso ref={email} id="email" name="email" rotulo="E-mail" tipo="email" autoComplete="email" />
+      {/* E-mail ou nome de usuário (29/10/2026). `name="email"` fica: é o que o
+          gerenciador de senhas do aparelho já guardou para este site. */}
+      <CampoDeAcesso
+        ref={email}
+        id="email"
+        name="email"
+        rotulo="Usuário ou e-mail"
+        tipo="login"
+        autoComplete="username"
+      />
       <CampoDeAcesso id="senha" name="senha" rotulo="Senha" tipo="senha" autoComplete="current-password" />
 
       {/*

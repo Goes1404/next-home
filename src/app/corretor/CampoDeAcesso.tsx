@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
-import { useId, useState, type Ref } from "react";
+import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { useEffect, useId, useState, type Ref } from "react";
+import { REGRAS_DA_SENHA } from "@/lib/auth/politicaDeSenha";
 import { useFormStatus } from "react-dom";
 import s from "./campoDeAcesso.module.css";
 
@@ -33,8 +34,9 @@ export function CampoDeAcesso({
   id: string;
   name: string;
   rotulo: string;
-  tipo: "email" | "senha";
-  autoComplete: "email" | "current-password" | "new-password";
+  /** `login` aceita e-mail ou nome de usuário (texto livre, teclado de e-mail). */
+  tipo: "email" | "login" | "senha";
+  autoComplete: "email" | "username" | "current-password" | "new-password";
   required?: boolean;
   minLength?: number;
   /** Linha pequena embaixo do campo ("Pelo menos 8 caracteres"). */
@@ -45,7 +47,7 @@ export function CampoDeAcesso({
   const dicaId = useId();
   const avisoId = useId();
   const senha = tipo === "senha";
-  const Icone = senha ? LockKeyhole : Mail;
+  const Icone = senha ? LockKeyhole : tipo === "login" ? UserRound : Mail;
   const descritores = [dica ? dicaId : null, senha && visivel ? avisoId : null].filter(Boolean).join(" ") || undefined;
 
   return (
@@ -55,7 +57,7 @@ export function CampoDeAcesso({
           ref={ref}
           id={id}
           name={name}
-          type={senha ? (visivel ? "text" : "password") : "email"}
+          type={senha ? (visivel ? "text" : "password") : tipo === "login" ? "text" : "email"}
           inputMode={senha ? undefined : "email"}
           autoCapitalize="none"
           spellCheck={false}
@@ -133,3 +135,40 @@ export function ErroDeAcesso({ children }: { children: React.ReactNode }) {
 
 /** Para o `<form>`: o espaçamento compacto entre os campos. */
 export const CLASSE_DO_FORMULARIO = s.formulario;
+
+/**
+ * A régua da senha AO VIVO (29/10/2026): cada critério acende com um check
+ * conforme a pessoa digita no campo `campoId`. As mesmas regras que o
+ * servidor confere (`politicaDeSenha.ts`) — a lista só adianta o aviso, quem
+ * decide é a action.
+ *
+ * Escuta o `input` do próprio campo pelo id em vez de virar campo controlado:
+ * os formulários são não-controlados (o FormData vai direto à action).
+ */
+export function ChecklistDaSenha({ campoId }: { campoId: string }) {
+  const [senha, setSenha] = useState("");
+  useEffect(() => {
+    const campo = document.getElementById(campoId) as HTMLInputElement | null;
+    if (!campo) return;
+    const ler = () => setSenha(campo.value);
+    campo.addEventListener("input", ler);
+    return () => campo.removeEventListener("input", ler);
+  }, [campoId]);
+
+  return (
+    <ul className={s.checklist} aria-label="Critérios da senha">
+      {REGRAS_DA_SENHA.map((r) => {
+        const ok = r.cumpre(senha);
+        return (
+          <li key={r.id} data-ok={ok || undefined} className={s.criterio}>
+            <span aria-hidden className={s.marca}>
+              <Check className="size-3" strokeWidth={3} />
+            </span>
+            {r.rotulo}
+            <span className="sr-only">{ok ? " (cumprido)" : " (falta)"}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

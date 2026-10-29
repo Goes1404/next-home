@@ -15,7 +15,7 @@ export const tituloDaAstro = Bricolage_Grotesque({
 
 export const textoDaAstro = Figtree({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-astro-texto",
   display: "swap",
 });

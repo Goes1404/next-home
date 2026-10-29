@@ -30,10 +30,10 @@ export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
 export default async function SenhaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ link?: string; pedido?: string }>;
+  searchParams: Promise<{ link?: string; pedido?: string; motivo?: string }>;
 }) {
   const email = await getEmailLogado();
-  const { link, pedido } = await searchParams;
+  const { link, pedido, motivo } = await searchParams;
 
   const avisoDoLink =
     link === "vencido" ? (
@@ -64,6 +64,9 @@ export default async function SenhaPage({
           </button>
         </form>
       </>
+    ) : motivo === "vencida" ? (
+      // A troca a cada 90 dias (29/10/2026): o login e o painel mandam para cá.
+      <p>Sua senha completou 90 dias. Por segurança, crie uma nova para continuar.</p>
     ) : undefined;
 
   return (
@@ -79,7 +82,7 @@ export default async function SenhaPage({
       chamada="Sua conta, protegida."
       textoDaChamada="Use uma senha que você não usa em outros sites."
       aviso={avisoDoLink}
-      rodape={<LinkDaFolha href="/corretor">Voltar ao painel</LinkDaFolha>}
+      rodape={motivo === "vencida" ? undefined : <LinkDaFolha href="/corretor">Voltar ao painel</LinkDaFolha>}
     >
       <FormularioSenha />
     </TelaDeAcesso>
