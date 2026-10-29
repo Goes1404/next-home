@@ -1225,6 +1225,67 @@ export type Database = {
         Update: { chave?: string; vigente_desde?: string; valor?: Json; fonte?: string; fonte_url?: string | null }
         Relationships: []
       }
+      /**
+       * 0238 — pedidos de contratação do assistente `/astro/contratar`
+       * (29/10/2026). Global (sem `grupo_id`); só a chave de serviço.
+       */
+      pedidos_de_contratacao: {
+        Row: {
+          id: string
+          criado_em: string
+          plano: "essencial" | "profissional" | "imobiliaria"
+          usuarios: number
+          nome: string
+          whatsapp: string
+          email: string
+          imobiliaria: string | null
+          creci: string | null
+          cidade: string
+          uf: string
+          consentimento_em: string
+          status: "novo" | "em_contato" | "convertido" | "descartado"
+          observacao: string | null
+          grupo_criado_id: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          plano: "essencial" | "profissional" | "imobiliaria"
+          usuarios?: number
+          nome: string
+          whatsapp: string
+          email: string
+          imobiliaria?: string | null
+          creci?: string | null
+          cidade: string
+          uf: string
+          consentimento_em: string
+          status?: "novo" | "em_contato" | "convertido" | "descartado"
+          observacao?: string | null
+          grupo_criado_id?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          plano?: "essencial" | "profissional" | "imobiliaria"
+          usuarios?: number
+          nome?: string
+          whatsapp?: string
+          email?: string
+          imobiliaria?: string | null
+          creci?: string | null
+          cidade?: string
+          uf?: string
+          consentimento_em?: string
+          status?: "novo" | "em_contato" | "convertido" | "descartado"
+          observacao?: string | null
+          grupo_criado_id?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
       venda_fiscal: {
         Row: {

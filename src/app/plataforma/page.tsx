@@ -5,6 +5,7 @@ import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
 import { FILTROS_DE_TIPO, hrefDoFiltro, lerFiltroDeTipo, separarPorTipo } from "@/lib/plataforma/listaPorTipo";
 import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
+import { contarPedidosNovos } from "@/lib/plataforma/pedidos";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
 import { CustoDaIa } from "./CustoDaIa";
 import { SaudeNoCartao } from "./SaudeDoGrupo";
@@ -70,6 +71,8 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
   const filtro = lerFiltroDeTipo((await searchParams).tipo);
   const grupos = await listarGruposDaPlataforma(prova);
   const saudes = await lerSaudeDosGrupos(prova, grupos);
+  // Os pedidos do assistente da página de vendas (29/10/2026).
+  const pedidosNovos = await contarPedidosNovos(prova);
   const { imobiliarias, independentes } = separarPorTipo(grupos);
 
   const secoes = [
@@ -185,6 +188,17 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
           className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
         >
           Novo corretor independente
+        </Link>
+        <Link
+          href="/plataforma/pedidos"
+          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center gap-2 px-4 font-medium"
+        >
+          Pedidos de contratação
+          {pedidosNovos !== null && pedidosNovos > 0 && (
+            <span className="bg-acento text-sobre-cor text-fluid-xs rounded-full px-2 py-0.5 font-bold">
+              {pedidosNovos} {pedidosNovos === 1 ? "novo" : "novos"}
+            </span>
+          )}
         </Link>
         <Link
           href="/plataforma/acessos"

@@ -30,8 +30,10 @@ const VAZIO: FormularioDaImobiliaria = {
   gestorWhatsapp: "",
 };
 
-export function FormularioImobiliaria() {
-  const [dados, setDados] = useState<FormularioDaImobiliaria>(VAZIO);
+export function FormularioImobiliaria({ inicial }: { inicial?: Partial<FormularioDaImobiliaria> } = {}) {
+  // `inicial`: o pedido de contratação que a plataforma abriu (29/10/2026,
+  // `?pedido=` na página); "criar outro" volta ao formulário vazio.
+  const [dados, setDados] = useState<FormularioDaImobiliaria>(() => ({ ...VAZIO, ...inicial }));
   // Enquanto o operador não mexe no endereço, ele segue o nome; idem a mensalidade (R$ 127 x usuários).
   const [slugEditado, setSlugEditado] = useState(false);
   const [mensalidadeEditada, setMensalidadeEditada] = useState(false);

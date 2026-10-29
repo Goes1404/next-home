@@ -31,8 +31,10 @@ const VAZIO: FormularioDoIndependente = {
  * Uma pessoa só: o corretor é o gestor do próprio grupo e o contato de
  * cobrança, então nome, e-mail e WhatsApp são perguntados uma vez.
  */
-export function FormularioIndependente() {
-  const [dados, setDados] = useState<FormularioDoIndependente>(VAZIO);
+export function FormularioIndependente({ inicial }: { inicial?: Partial<FormularioDoIndependente> } = {}) {
+  // `inicial`: o pedido de contratação que a plataforma abriu (29/10/2026,
+  // `?pedido=` na página); "criar outro" volta ao formulário vazio.
+  const [dados, setDados] = useState<FormularioDoIndependente>(() => ({ ...VAZIO, ...inicial }));
   const [slugEditado, setSlugEditado] = useState(false);
   const [mensalidadeEditada, setMensalidadeEditada] = useState(false);
   const [erro, setErro] = useState<string | null>(null);

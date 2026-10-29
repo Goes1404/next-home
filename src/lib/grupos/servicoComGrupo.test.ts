@@ -242,6 +242,11 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/administradoresAcoes.ts": { categoria: "plataforma-admin", motivo: "põe e tira logins de administradores_da_plataforma (tabela global, sem grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
+  "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/pedidosAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status, observação e conta criada de UM pedido (tabela global, 0238); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+
+  // ── Porta pública da página de vendas, sem grupo ─────────────────────────
+  "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };
 
 /** A definição da chave: não é uso. */

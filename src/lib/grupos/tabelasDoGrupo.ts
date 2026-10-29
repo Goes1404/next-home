@@ -26,6 +26,11 @@ export const TABELAS_GLOBAIS = [
   // Parâmetros fiscais NACIONAIS (IRRF, INSS) com vigência e fonte (0232):
   // lei federal vale para todo grupo; só leitura pela sessão.
   "parametros_fiscais",
+  // Pedidos de contratação da página de vendas (0238, 29/10/2026): chegam
+  // ANTES de existir o grupo. O grupo que nasce do pedido fica em
+  // `grupo_criado_id` (não `grupo_id`, que traria o carimbo e as regras de
+  // tabela do grupo). Só a chave de serviço lê e escreve.
+  "pedidos_de_contratacao",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import { SeloAstro } from "@/components/marca/SeloAstro";
 import { linkDoWhatsAppDaAstro, MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 import { LIMITES_POR_MES } from "@/lib/planos/limitesDoPlano";
+import { hrefDeContratar } from "@/lib/plataforma/pedidoDeContratacao";
+import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
 import { PRECO_ESSENCIAL, PRECO_POR_USUARIO_DA_IMOBILIARIA, PRECO_PROFISSIONAL } from "@/lib/plataforma/tiposDeConta";
 import { RodapeLegal } from "./_componentes/PaginaLegal";
 import s from "./astro.module.css";
@@ -23,6 +25,13 @@ import s from "./astro.module.css";
  *
  * Os preços e limites saem das MESMAS constantes que a plataforma cobra
  * (`tiposDeConta.ts`, `limitesDoPlano.ts`): mudou lá, muda aqui.
+ *
+ * Contratar (29/10/2026, "permita a pessoa clicar no plano, e leve ela para
+ * as próximas telas"): o cartão inteiro de cada plano leva ao assistente
+ * `/astro/contratar?plano=<id>`. O link de verdade é o botão "Contratar
+ * <plano>", com o nome curto do plano (Essencial, Profissional,
+ * Imobiliária: o nome inteiro quebrava o botão em duas linhas); o `::before`
+ * dele cobre o cartão, então clicar em qualquer ponto do cartão contrata.
  */
 
 const CONVERSA = [
@@ -66,6 +75,7 @@ function inteiro(valor: number | null): string {
 
 const PLANOS = [
   {
+    id: "essencial",
     nome: "Autônomo Essencial",
     para: "Para o corretor que trabalha sozinho e quer a IA atendendo por ele.",
     preco: reais(PRECO_ESSENCIAL),
@@ -74,6 +84,7 @@ const PLANOS = [
     destaque: false,
   },
   {
+    id: "profissional",
     nome: "Autônomo Profissional",
     para: "Para quem anuncia toda semana e precisa de mais artes, vídeos e listas.",
     preco: reais(PRECO_PROFISSIONAL),
@@ -82,6 +93,7 @@ const PLANOS = [
     destaque: false,
   },
   {
+    id: "imobiliaria",
     nome: "Imobiliária",
     para: "Equipe, gestor, roleta de leads, site próprio e a marca da imobiliária no CRM.",
     preco: reais(PRECO_POR_USUARIO_DA_IMOBILIARIA),
@@ -135,13 +147,21 @@ export default function PaginaDaAstro() {
               funil e marca as visitas. Você entra na conversa para vender.
             </p>
             <div className={`${s.chega} mt-9 flex flex-wrap gap-3`} style={ordem(2)}>
+              {/* "Ver planos" leva aos cartões, que levam ao assistente de
+                  contratação (29/10/2026). Com o WhatsApp configurado, a
+                  conversa segue como o botão principal. */}
               {whatsapp ? (
-                <a href={whatsapp} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoPrincipal} ${s.brilhoUmaVez}`}>
-                  Conversar com a Astro no WhatsApp
-                </a>
+                <>
+                  <a href={whatsapp} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoPrincipal} ${s.brilhoUmaVez}`}>
+                    Conversar com a Astro no WhatsApp
+                  </a>
+                  <a href="#planos" className={`${s.botao} ${s.botaoContorno}`}>
+                    Ver planos
+                  </a>
+                </>
               ) : (
                 <a href="#planos" className={`${s.botao} ${s.botaoPrincipal} ${s.brilhoUmaVez}`}>
-                  Ver planos
+                  Ver planos e contratar
                 </a>
               )}
               <Link href="/corretor/entrar" className={`${s.botao} ${s.botaoContorno}`}>
@@ -240,14 +260,14 @@ export default function PaginaDaAstro() {
         </p>
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
           {PLANOS.map((p, i) => (
-            <article key={p.nome} className={`${p.destaque ? s.planoDestaque : s.plano} ${s.surge} flex flex-col p-7`} style={ordem(i)}>
+            <article key={p.id} className={`${p.destaque ? s.planoDestaque : s.plano} ${s.surge} flex flex-col p-7`} style={ordem(i)}>
               <h3 className={`${s.titulo} text-2xl font-bold`}>{p.nome}</h3>
               <p className={`mt-2 min-h-[3rem] leading-snug ${p.destaque ? "text-white/75" : "text-[var(--tinta-suave)]"}`}>{p.para}</p>
               <p className="mt-6">
                 <span className={`${s.titulo} text-4xl font-extrabold`}>{p.preco}</span>{" "}
                 <span className={p.destaque ? "text-white/70" : "text-[var(--tinta-suave)]"}>{p.unidade}</span>
               </p>
-              <ul className={`mt-6 space-y-2 border-t pt-5 text-[0.95rem] ${p.destaque ? "border-white/20" : "border-[var(--linha)]"}`}>
+              <ul className={`mt-6 mb-7 space-y-2 border-t pt-5 text-[0.95rem] ${p.destaque ? "border-white/20" : "border-[var(--linha)]"}`}>
                 <li>
                   {inteiro(p.limites.arte)} artes com IA{p.destaque ? " por usuário" : ""} por mês
                 </li>
@@ -256,6 +276,15 @@ export default function PaginaDaAstro() {
                 </li>
                 <li>{inteiro(p.limites.lista)} mensagens de lista por mês</li>
               </ul>
+              <Link
+                href={hrefDeContratar(p.id)}
+                className={`${s.ctaDoPlano} ${p.destaque ? s.ctaDoPlanoNoEscuro : ""} mt-auto`}
+              >
+                Contratar {ROTULO_DO_PLANO[p.id]}
+                <span aria-hidden className={s.setaDoPlano}>
+                  →
+                </span>
+              </Link>
             </article>
           ))}
         </div>
@@ -273,9 +302,12 @@ export default function PaginaDaAstro() {
             </p>
           </div>
           <div className={`${s.surge} flex flex-wrap gap-3`} style={ordem(1)}>
+            <Link href="/astro/contratar" className={`${s.botao} ${s.botaoPrincipal}`}>
+              Escolher meu plano
+            </Link>
             {whatsapp && (
-              <a href={whatsapp} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoPrincipal}`}>
-                Conversar com a Astro no WhatsApp
+              <a href={whatsapp} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoContorno}`}>
+                Conversar no WhatsApp
               </a>
             )}
             <Link href="/corretor/entrar" className={`${s.botao} ${s.botaoContorno}`}>

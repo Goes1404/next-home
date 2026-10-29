@@ -1,0 +1,649 @@
+/*
+ * O assistente de contratação da Astro (29/10/2026). Mesma língua visual da
+ * página de vendas (`../astro.module.css`, de onde vêm as cores em
+ * `.pagina`): faixa escura no alto, folha clara por cima, azul da marca nas
+ * ações. Celular primeiro: a barra de ações gruda no pé da tela.
+ *
+ * Movimento só em `translate`/`scale`/`opacity`, e nada anda com "menos
+ * movimento" ligado (o bloco do fim).
+ */
+
+.faixa {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(70% 120% at 90% 0%, rgb(47 94 168 / 0.5), transparent 60%),
+    radial-gradient(50% 90% at 0% 100%, rgb(91 123 168 / 0.25), transparent 65%),
+    var(--noite);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+/* A órbita do logo, passando atrás do título (como no fechamento da página de vendas). */
+.faixa::before {
+  content: "";
+  position: absolute;
+  width: 40rem;
+  height: 13rem;
+  right: -16rem;
+  top: 2.5rem;
+  border: 1.5px solid rgb(169 193 224 / 0.28);
+  border-radius: 50%;
+  transform: rotate(-14deg);
+  pointer-events: none;
+}
+
+.voltarAosPlanos {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0 0.9rem;
+  font-size: 0.875rem;
+  color: rgb(255 255 255 / 0.82);
+  border: 1.5px solid rgb(255 255 255 / 0.22);
+  transition:
+    border-color 160ms,
+    color 160ms;
+}
+.voltarAosPlanos:hover {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.6);
+}
+.voltarAosPlanos:focus-visible {
+  outline: 3px solid var(--bruma);
+  outline-offset: 2px;
+}
+
+/* ---------- A folha ---------- */
+
+.folha {
+  position: relative;
+  z-index: 1;
+  margin-top: -3.5rem;
+  border-radius: 1.75rem;
+  background: #fff;
+  border: 1px solid var(--linha);
+  box-shadow: 0 40px 80px -40px rgb(15 37 71 / 0.45);
+}
+
+/* ---------- Progresso ---------- */
+
+.etapas {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  counter-reset: etapa;
+}
+/* Trilho e preenchimento, ligando o centro da 1ª bolinha ao da 3ª. */
+.etapas::before,
+.etapas::after {
+  content: "";
+  position: absolute;
+  top: 1.05rem;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 3px;
+  border-radius: 3px;
+}
+.etapas::before {
+  background: var(--linha);
+}
+.etapas::after {
+  background: linear-gradient(90deg, var(--azul), #5b84c7);
+  transform-origin: left;
+  scale: var(--progresso, 0) 1;
+}
+.etapa {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7690;
+  text-align: center;
+}
+.bolinha {
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--linha);
+  font-family: var(--font-astro-titulo), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #6b7690;
+  transition:
+    background-color 300ms,
+    border-color 300ms,
+    color 300ms;
+}
+.etapaAtual {
+  color: var(--tinta);
+}
+.etapaAtual .bolinha {
+  border-color: var(--azul);
+  color: var(--azul);
+  box-shadow: 0 0 0 5px rgb(47 94 168 / 0.14);
+}
+.etapaFeita .bolinha {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: #fff;
+}
+.etapaFeita {
+  color: var(--tinta-suave);
+}
+
+/* ---------- Passo 1: planos ---------- */
+
+.opcoes {
+  display: grid;
+  gap: 0.75rem;
+}
+.opcao {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.25rem 0.85rem;
+  border-radius: 1.15rem;
+  border: 1.5px solid var(--linha);
+  background: #fff;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition:
+    border-color 180ms,
+    background-color 180ms,
+    box-shadow 220ms;
+}
+.opcao:hover {
+  border-color: #b9c8de;
+}
+.opcao:has(input:focus-visible) {
+  outline: 3px solid var(--bruma);
+  outline-offset: 2px;
+}
+.opcao:has(input:checked) {
+  border-color: var(--azul);
+  background: #f5f8fd;
+  box-shadow: 0 0 0 4px rgb(47 94 168 / 0.12);
+}
+.radio {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 0.2rem;
+  border-radius: 50%;
+  border: 2px solid #b6c2d6;
+  transition:
+    border-color 180ms,
+    background-color 180ms;
+}
+.radio::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #fff;
+  scale: 0;
+}
+.opcao:has(input:checked) .radio {
+  border-color: var(--azul);
+  background: var(--azul);
+}
+.opcao:has(input:checked) .radio::after {
+  scale: 1;
+}
+.precoDaOpcao {
+  text-align: right;
+  white-space: nowrap;
+}
+.selo {
+  display: inline-block;
+  margin-left: 0.4rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: 0.15em;
+  background: var(--marinho);
+  color: #fff;
+}
+
+.usuarios {
+  border-radius: 1.15rem;
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  padding: 1rem 1.1rem;
+}
+.contador {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--linha);
+  background: #fff;
+  overflow: hidden;
+}
+.contador button {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  color: var(--azul);
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    color 150ms;
+}
+.contador button:hover:not(:disabled) {
+  background: #eef3fa;
+}
+.contador button:disabled {
+  color: #b6c2d6;
+  cursor: not-allowed;
+}
+.contador button:focus-visible {
+  outline: 3px solid var(--bruma);
+  outline-offset: -3px;
+}
+.contador input {
+  width: 3.5rem;
+  height: 3rem;
+  border-inline: 1.5px solid var(--linha);
+  text-align: center;
+  font-family: var(--font-astro-titulo), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--tinta);
+  background: #fff;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.contador input::-webkit-outer-spin-button,
+.contador input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.contador input:focus {
+  outline: none;
+  background: #f5f8fd;
+}
+
+/* ---------- Passo 2: campos (rótulo flutuante, como as telas de acesso) ---------- */
+
+.campo {
+  position: relative;
+}
+.entrada {
+  display: block;
+  width: 100%;
+  height: 3.25rem;
+  border-radius: 0.95rem;
+  border: 1.5px solid #dbe2ee;
+  background: #f4f7fb;
+  padding: 1.2rem 0.95rem 0 0.95rem;
+  font-size: 1rem;
+  line-height: 1.25rem;
+  color: var(--tinta);
+  outline: none;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    box-shadow 0.3s var(--saida);
+}
+select.entrada {
+  appearance: none;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7690' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  cursor: pointer;
+}
+.entrada:hover {
+  border-color: #c5d0e2;
+}
+.entrada:focus {
+  border-color: var(--azul);
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgb(47 94 168 / 0.14);
+}
+.entrada:autofill {
+  -webkit-text-fill-color: var(--tinta);
+  box-shadow: 0 0 0 40px #f4f7fb inset;
+}
+.entrada[aria-invalid="true"] {
+  border-color: #c2413a;
+  background-color: #fff7f6;
+}
+.entrada[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px rgb(194 65 58 / 0.14);
+}
+.rotulo {
+  position: absolute;
+  left: 0.95rem;
+  top: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.25rem;
+  color: #6b7690;
+  pointer-events: none;
+  transform-origin: left top;
+  transition:
+    translate 0.22s var(--saida),
+    scale 0.22s var(--saida),
+    color 0.2s;
+}
+.entrada:focus + .rotulo,
+.entrada:not(:placeholder-shown) + .rotulo,
+.entrada:autofill + .rotulo,
+select.entrada + .rotulo {
+  translate: 0 -0.6rem;
+  scale: 0.76;
+  font-weight: 500;
+}
+.entrada:focus + .rotulo {
+  color: var(--azul);
+}
+.opcional {
+  font-weight: 400;
+  color: #8a94ab;
+}
+.erro {
+  margin-top: 0.3rem;
+  padding-left: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #b3362f;
+}
+.dica {
+  margin-top: 0.3rem;
+  padding-left: 0.2rem;
+  font-size: 0.78rem;
+  color: #6b7690;
+}
+
+/* O campo-isca: fora da tela e fora da ordem de foco. Só robô preenche. */
+.isca {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ---------- Passo 3: revisão ---------- */
+
+.resumo {
+  border-radius: 1.15rem;
+  border: 1px solid var(--linha);
+  overflow: hidden;
+}
+.linhaDoResumo {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 0.25rem 1rem;
+  padding: 0.95rem 1.1rem;
+}
+.linhaDoResumo + .linhaDoResumo {
+  border-top: 1px solid var(--linha);
+}
+.alterar {
+  min-height: 2.75rem;
+  margin: -0.65rem -0.5rem -0.65rem 0;
+  padding: 0 0.6rem;
+  border-radius: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--azul);
+  cursor: pointer;
+}
+.alterar:hover {
+  background: #eef3fa;
+}
+.alterar:focus-visible {
+  outline: 3px solid var(--bruma);
+}
+
+.consentimento {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border-radius: 1.15rem;
+  background: var(--papel);
+  border: 1.5px solid var(--linha);
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 180ms;
+}
+.consentimento:has(input:checked) {
+  border-color: var(--azul);
+}
+.consentimento:has(input[aria-invalid="true"]) {
+  border-color: #c2413a;
+}
+.consentimento input {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: 0.1rem;
+  accent-color: var(--azul);
+  cursor: pointer;
+}
+.consentimento a {
+  color: var(--azul);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Barra de ações ---------- */
+
+/*
+ * No celular a barra gruda no pé da tela, com o total à esquerda: o botão
+ * de seguir fica sempre ao alcance do polegar. No computador ela é o pé da
+ * folha.
+ */
+.acoes {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 -1.25rem -1.25rem;
+  padding: 0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--linha);
+  background: rgb(255 255 255 / 0.94);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-radius: 0 0 1.75rem 1.75rem;
+}
+@media (min-width: 640px) {
+  .acoes {
+    margin: 0 -2.25rem -2.25rem;
+    padding: 1.1rem 2.25rem;
+  }
+}
+
+.voltar {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0 1rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    background-color 150ms;
+}
+.voltar:hover {
+  color: var(--tinta);
+  background: #eef3fa;
+}
+.voltar:focus-visible {
+  outline: 3px solid var(--bruma);
+  outline-offset: 2px;
+}
+
+.giro {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+  animation: girar 0.7s linear infinite;
+}
+
+.avisoDeErro {
+  border-radius: 0.95rem;
+  border: 1px solid #f0c4c0;
+  background: #fff4f3;
+  color: #9b2c26;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Confirmação ---------- */
+
+.selado {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: #e8f6ee;
+  color: #1f8a4c;
+}
+.selado svg {
+  width: 2.3rem;
+  height: 2.3rem;
+}
+.proximos {
+  counter-reset: proximo;
+  display: grid;
+  gap: 0.9rem;
+}
+.proximos li {
+  counter-increment: proximo;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+}
+.proximos li::before {
+  content: counter(proximo);
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--marinho);
+  color: #fff;
+  font-family: var(--font-astro-titulo), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+@keyframes girar {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ---------- Movimento ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .etapas::after {
+    transition: scale 520ms var(--saida);
+  }
+  .etapaAtual .bolinha {
+    animation: pulsar 520ms var(--saida);
+  }
+
+  /* O passo novo entra do lado para onde a pessoa andou. */
+  .passoAvanca {
+    animation: entrarDaDireita 420ms var(--saida) both;
+  }
+  .passoVolta {
+    animation: entrarDaEsquerda 420ms var(--saida) both;
+  }
+  .aparece {
+    animation: aparecer 360ms var(--saida) both;
+  }
+
+  .radio::after {
+    transition: scale 220ms var(--saida);
+  }
+  .total {
+    transition: opacity 200ms;
+  }
+
+  .folha {
+    animation: subirFolha 700ms var(--saida) 80ms backwards;
+  }
+
+  .selado {
+    animation: carimbar 600ms var(--saida) both;
+  }
+  .selado path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: tracarCheck 520ms var(--saida) 280ms forwards;
+  }
+  .proximos li {
+    animation: aparecer 480ms var(--saida) backwards;
+    animation-delay: calc(380ms + var(--ordem, 0) * 110ms);
+  }
+}
+
+@keyframes entrarDaDireita {
+  from {
+    opacity: 0;
+    translate: 28px 0;
+  }
+}
+@keyframes entrarDaEsquerda {
+  from {
+    opacity: 0;
+    translate: -28px 0;
+  }
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+@keyframes subirFolha {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+@keyframes pulsar {
+  40% {
+    scale: 1.12;
+  }
+}
+@keyframes carimbar {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+@keyframes tracarCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

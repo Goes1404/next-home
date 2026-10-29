@@ -361,6 +361,66 @@
   }
 }
 
+/*
+ * O "Contratar <plano>" de cada cartão (29/10/2026). É o link de verdade (o
+ * nome acessível é curto: o botão, não o cartão inteiro); o `::before` dele
+ * cobre o cartão todo, então o toque em qualquer ponto do cartão contrata.
+ * Por isso este botão NÃO tem `position` própria (diferente de `.botao`): o
+ * `::before` se posiciona pelo cartão, que é `relative`.
+ */
+.ctaDoPlano {
+  display: inline-flex;
+  min-height: 3rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0 1.25rem;
+  font-weight: 600;
+  background: var(--azul);
+  color: #fff;
+  transition:
+    background-color 160ms,
+    color 160ms;
+}
+.ctaDoPlano::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* O raio do cartão (`.plano`), não o do botão. */
+  border-radius: 1.5rem;
+}
+.ctaDoPlanoNoEscuro {
+  background: #fff;
+  color: var(--marinho);
+}
+.setaDoPlano {
+  display: inline-block;
+}
+.plano:hover .ctaDoPlano,
+.ctaDoPlano:focus-visible {
+  background: var(--azul-hover);
+}
+.planoDestaque:hover .ctaDoPlanoNoEscuro,
+.ctaDoPlanoNoEscuro:focus-visible {
+  background: #e7eef8;
+}
+.ctaDoPlano:focus-visible {
+  outline: none;
+}
+/* O foco de teclado desenha o contorno no CARTÃO, que é o alvo do clique. */
+.plano:has(.ctaDoPlano:focus-visible),
+.planoDestaque:has(.ctaDoPlano:focus-visible) {
+  outline: 3px solid var(--azul);
+  outline-offset: 4px;
+}
+.plano:has(.ctaDoPlano),
+.planoDestaque:has(.ctaDoPlano) {
+  cursor: pointer;
+}
+
 .fechamento {
   background: var(--marinho);
   color: #fff;
@@ -522,6 +582,14 @@
     .plano:hover,
     .planoDestaque:hover {
       translate: 0 -6px;
+    }
+    /* A seta do "Contratar" anda junto com o cartão (29/10/2026). */
+    .setaDoPlano {
+      transition: translate 280ms var(--saida);
+    }
+    .plano:hover .setaDoPlano,
+    .planoDestaque:hover .setaDoPlano {
+      translate: 4px 0;
     }
   }
 

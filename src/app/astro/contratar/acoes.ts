@@ -1,0 +1,195 @@
+"use server";
+
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { linkDoWhatsAppDaAstro } from "@/lib/marcaDaPlataforma";
+import { notificarCorretor } from "@/lib/notificacoes/push";
+import {
+  mascararParaLog,
+  mensagemDoPedidoParaAstro,
+  primeiroNome,
+  resumoDoPlano,
+  TEMPO_MINIMO_NO_FORMULARIO_MS,
+  validarPedido,
+  type DadosDoPedido,
+  type ErrosDoPedido,
+  type PedidoLimpo,
+} from "@/lib/plataforma/pedidoDeContratacao";
+import { createServiceClient } from "@/lib/supabase/service";
+
+/**
+ * O envio do assistente de contratação (`/astro/contratar`, 29/10/2026).
+ *
+ * Porta PÚBLICA: qualquer um na internet chama. Por isso, nesta ordem:
+ *
+ * 1. Limite por IP, em memória do processo (o mesmo best-effort do
+ *    formulário de lead, `api/leads`): barra o visitante martelando a mesma
+ *    instância quente. Não substitui um rate limit distribuído.
+ * 2. Robô: campo-isca preenchido ou envio antes do tempo mínimo com o
+ *    formulário aberto. Responde como sucesso, sem gravar, para não ensinar
+ *    o robô a driblar.
+ * 3. Consentimento da LGPD marcado.
+ * 4. Validação no servidor com as MESMAS regras do navegador
+ *    (`validarPedido`): o que vem do navegador nunca é confiado.
+ * 5. Limite por WhatsApp, no banco (vale entre instâncias): o mesmo número
+ *    com pedido nas últimas 24 h não grava outro; a pessoa recebe a mesma
+ *    confirmação.
+ *
+ * Grava pela chave de serviço porque a tabela não tem grant para o `anon`
+ * (0238). Log nunca leva o dado pessoal inteiro (`mascararParaLog`).
+ *
+ * Depois da resposta (`after`), avisa no celular os administradores da
+ * plataforma que têm ficha de corretor com aparelho inscrito. O aviso leva o
+ * plano e a cidade, nunca o nome nem o telefone.
+ */
+
+export type EnvioDoPedido = DadosDoPedido & {
+  consentimento: boolean;
+  /** Campo-isca: invisível para gente; só robô preenche. */
+  site: string;
+  /** Há quanto tempo o assistente está aberto na tela (ms). */
+  abertoHaMs: number;
+};
+
+export type RespostaDoPedido =
+  | { ok: true; primeiroNome: string; resumo: string; whatsappDaAstro: string | null }
+  | { ok: false; erro: string; erros?: ErrosDoPedido };
+
+const JANELA_DO_IP_MS = 10 * 60 * 1000;
+const LIMITE_POR_IP = 5;
+const JANELA_DO_WHATSAPP_MS = 24 * 60 * 60 * 1000;
+
+const ENVIOS_POR_IP = new Map<string, number[]>();
+
+function ipLimitado(ip: string, agora: number): boolean {
+  const envios = (ENVIOS_POR_IP.get(ip) ?? []).filter((t) => agora - t < JANELA_DO_IP_MS);
+  envios.push(agora);
+  ENVIOS_POR_IP.set(ip, envios);
+  // O mapa não cresce sem fim numa instância que vive muito.
+  if (ENVIOS_POR_IP.size > 5000) ENVIOS_POR_IP.clear();
+  return envios.length > LIMITE_POR_IP;
+}
+
+function confirmacao(p: PedidoLimpo): RespostaDoPedido {
+  return {
+    ok: true,
+    primeiroNome: primeiroNome(p.nome),
+    resumo: resumoDoPlano(p.plano, p.usuarios),
+    whatsappDaAstro: linkDoWhatsAppDaAstro(undefined, mensagemDoPedidoParaAstro(p)),
+  };
+}
+
+export async function enviarPedidoDeContratacao(envio: EnvioDoPedido): Promise<RespostaDoPedido> {
+  const agora = Date.now();
+  const cabecalhos = await headers();
+  const ip = cabecalhos.get("x-forwarded-for")?.split(",")[0]?.trim() || cabecalhos.get("x-real-ip") || "desconhecido";
+  if (ipLimitado(ip, agora)) {
+    return { ok: false, erro: "Muitos envios seguidos. Espere alguns minutos e tente de novo." };
+  }
+
+  const corpo = (envio ?? {}) as Partial<EnvioDoPedido>;
+  const robo =
+    (typeof corpo.site === "string" && corpo.site.trim() !== "") ||
+    typeof corpo.abertoHaMs !== "number" ||
+    !Number.isFinite(corpo.abertoHaMs) ||
+    corpo.abertoHaMs < TEMPO_MINIMO_NO_FORMULARIO_MS;
+
+  if (corpo.consentimento !== true) {
+    return { ok: false, erro: "Para enviar, confirme que leu e concorda com a Política de Privacidade e os Termos." };
+  }
+
+  const validado = validarPedido(corpo);
+  if (!validado.ok) return { ok: false, erro: "Confira os dados destacados.", erros: validado.erros };
+  const pedido = validado.pedido;
+
+  if (robo) {
+    console.warn("[contratar] envio descartado como robô (campo-isca ou rápido demais)");
+    return confirmacao(pedido);
+  }
+
+  const gravado = await gravarPedido(pedido, agora);
+  if (gravado === "falhou") {
+    return { ok: false, erro: "Não conseguimos registrar o pedido agora. Tente de novo em instantes." };
+  }
+  if (gravado === "repetido") return confirmacao(pedido);
+
+  after(() => avisarAdministradores(pedido));
+  return confirmacao(pedido);
+}
+
+/**
+ * Grava o pedido, a não ser que o mesmo WhatsApp já tenha um nas últimas
+ * 24 h. Nunca lança: sem a chave ou com o banco fora, devolve "falhou" e a
+ * pessoa vê um aviso para tentar de novo (não um erro de servidor).
+ */
+async function gravarPedido(pedido: PedidoLimpo, agora: number): Promise<"gravado" | "repetido" | "falhou"> {
+  try {
+    const servico = createServiceClient();
+
+    const { count, error: erroDoLimite } = await servico
+      .from("pedidos_de_contratacao")
+      .select("id", { count: "exact", head: true })
+      .eq("whatsapp", pedido.whatsapp)
+      .gte("criado_em", new Date(agora - JANELA_DO_WHATSAPP_MS).toISOString());
+    if (erroDoLimite) {
+      // Sem conseguir conferir, grava: perder o pedido é pior que repeti-lo.
+      console.error(`[contratar] limite por WhatsApp não conferido: ${erroDoLimite.message}`);
+    } else if ((count ?? 0) > 0) {
+      console.warn(`[contratar] pedido repetido de ${mascararParaLog(pedido.whatsapp)} em 24 h; não gravado de novo`);
+      return "repetido";
+    }
+
+    const { error } = await servico.from("pedidos_de_contratacao").insert({
+      plano: pedido.plano,
+      usuarios: pedido.usuarios,
+      nome: pedido.nome,
+      whatsapp: pedido.whatsapp,
+      email: pedido.email,
+      imobiliaria: pedido.imobiliaria,
+      creci: pedido.creci,
+      cidade: pedido.cidade,
+      uf: pedido.uf,
+      consentimento_em: new Date(agora).toISOString(),
+    });
+    if (error) {
+      console.error(`[contratar] pedido de ${mascararParaLog(pedido.whatsapp)} não gravado: ${error.message}`);
+      return "falhou";
+    }
+    return "gravado";
+  } catch (e) {
+    console.error(
+      `[contratar] pedido de ${mascararParaLog(pedido.whatsapp)} não gravado:`,
+      e instanceof Error ? e.message : e,
+    );
+    return "falhou";
+  }
+}
+
+/**
+ * Push para quem administra a plataforma e tem ficha de corretor (é a ficha
+ * que tem aparelho inscrito, `inscricoes_push`). Bônus: falha só vai ao log.
+ */
+async function avisarAdministradores(pedido: PedidoLimpo): Promise<void> {
+  try {
+    const servico = createServiceClient();
+    const { data: admins, error } = await servico.from("administradores_da_plataforma").select("user_id");
+    if (error || !admins?.length) return;
+    const { data: fichas, error: erroDasFichas } = await servico
+      .from("corretores")
+      .select("id")
+      .in(
+        "user_id",
+        admins.map((a) => a.user_id),
+      );
+    if (erroDasFichas || !fichas?.length) return;
+    const aviso = {
+      titulo: "Novo pedido de contratação",
+      corpo: `${resumoDoPlano(pedido.plano, pedido.usuarios)} · ${pedido.cidade}/${pedido.uf}`,
+      url: "/plataforma/pedidos",
+      tag: "pedido-de-contratacao",
+    };
+    await Promise.all(fichas.map((f) => notificarCorretor(servico, f.id, aviso)));
+  } catch (e) {
+    console.warn("[contratar] aviso aos administradores não enviado:", e instanceof Error ? e.message : e);
+  }
+}

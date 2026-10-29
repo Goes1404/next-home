@@ -1,0 +1,736 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check, MessageCircle, Minus, Plus } from "lucide-react";
+import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
+import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import {
+  DADOS_VAZIOS,
+  errosDoPasso,
+  limitarUsuarios,
+  mascararWhatsapp,
+  PLANO_CONTRATAVEL,
+  PLANOS_CONTRATAVEIS,
+  reais,
+  resumoDoPlano,
+  totalMensal,
+  UFS,
+  USUARIOS_MAXIMO,
+  USUARIOS_MINIMO,
+  validarPedido,
+  type CampoDoPedido,
+  type DadosDoPedido,
+  type ErrosDoPedido,
+  type PlanoContratavel,
+} from "@/lib/plataforma/pedidoDeContratacao";
+import s from "../astro.module.css";
+import { enviarPedidoDeContratacao, type RespostaDoPedido } from "./acoes";
+import c from "./contratar.module.css";
+
+/**
+ * O assistente de contratação em três passos numa página só (29/10/2026):
+ * Plano → Seus dados → Revisão, e a confirmação.
+ *
+ * - Cada passo só avança com os campos dele válidos (`errosDoPasso`, as
+ *   mesmas regras que a action aplica no servidor). O erro aparece no campo,
+ *   e o foco vai para o primeiro campo com erro.
+ * - Ao trocar de passo, o foco vai para o título do passo novo (quem usa
+ *   leitor de tela ouve onde está) e o passo entra do lado para onde a pessoa
+ *   andou; com "menos movimento", entra parado (CSS).
+ * - Campo-isca (`site`) e o tempo com o assistente aberto vão junto no envio:
+ *   a action descarta robô sem avisar.
+ */
+
+type Passo = 1 | 2 | 3;
+
+const PASSOS: { numero: Passo; nome: string }[] = [
+  { numero: 1, nome: "Plano" },
+  { numero: 2, nome: "Seus dados" },
+  { numero: 3, nome: "Revisão" },
+];
+
+type Confirmado = Extract<RespostaDoPedido, { ok: true }>;
+
+/**
+ * Foca o campo e o traz para o MEIO da tela: no celular a barra de ações
+ * gruda no pé, e o foco simples deixaria o campo (e o erro embaixo dele)
+ * escondido atrás dela.
+ */
+function focarNoMeio(el: HTMLElement | null) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ block: "center", behavior: suave ? "smooth" : "auto" });
+}
+
+export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoContratavel | null }) {
+  const [passo, setPasso] = useState<Passo>(1);
+  const [direcao, setDirecao] = useState<"avanca" | "volta" | null>(null);
+  const [dados, setDados] = useState<DadosDoPedido>({ ...DADOS_VAZIOS, plano: planoInicial ?? "" });
+  const [erros, setErros] = useState<ErrosDoPedido>({});
+  const [consentimento, setConsentimento] = useState(false);
+  const [erroDoConsentimento, setErroDoConsentimento] = useState(false);
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [confirmado, setConfirmado] = useState<Confirmado | null>(null);
+  const [enviando, iniciar] = useTransition();
+  const abertoEm = useRef<number | null>(null);
+  const isca = useRef<HTMLInputElement>(null);
+  const tituloDoPasso = useRef<HTMLHeadingElement>(null);
+  const folha = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    abertoEm.current = Date.now();
+  }, []);
+
+  // Foco e rolagem a cada troca de passo (não na abertura da página).
+  useEffect(() => {
+    if (direcao === null) return;
+    tituloDoPasso.current?.focus({ preventScroll: true });
+    const topo = folha.current?.getBoundingClientRect().top ?? 0;
+    if (topo < 0) {
+      const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      folha.current?.scrollIntoView({ behavior: suave ? "smooth" : "auto", block: "start" });
+    }
+  }, [passo, direcao, confirmado]);
+
+  const plano = dados.plano ? (dados.plano as PlanoContratavel) : null;
+  const total = plano ? totalMensal(plano, dados.usuarios) : null;
+
+  function mudar<K extends keyof DadosDoPedido>(campo: K, valor: DadosDoPedido[K]) {
+    setDados((d) => ({ ...d, [campo]: valor }));
+    if (erros[campo]) setErros((e) => ({ ...e, [campo]: undefined }));
+  }
+
+  function irPara(novo: Passo) {
+    setErroGeral(null);
+    setDirecao(novo > passo ? "avanca" : "volta");
+    setPasso(novo);
+  }
+
+  function focarPrimeiroErro(e: ErrosDoPedido) {
+    const primeiro = (Object.keys(e) as CampoDoPedido[])[0];
+    if (!primeiro) return;
+    // Depois da pintura: o campo com erro pode ter acabado de aparecer.
+    requestAnimationFrame(() => focarNoMeio(document.getElementById(`pedido-${primeiro}`)));
+  }
+
+  function continuar() {
+    if (passo === 3) return enviar();
+    const e = errosDoPasso(passo, dados);
+    setErros(e);
+    if (Object.keys(e).length > 0) return focarPrimeiroErro(e);
+    irPara((passo + 1) as Passo);
+  }
+
+  function enviar() {
+    if (!consentimento) {
+      setErroDoConsentimento(true);
+      focarNoMeio(document.getElementById("pedido-consentimento"));
+      return;
+    }
+    const local = validarPedido(dados);
+    if (!local.ok) {
+      setErros(local.erros);
+      const voltarPara: Passo = local.erros.plano || local.erros.usuarios ? 1 : 2;
+      irPara(voltarPara);
+      return;
+    }
+    iniciar(async () => {
+      setErroGeral(null);
+      try {
+        const r = await enviarPedidoDeContratacao({
+          ...dados,
+          consentimento,
+          site: isca.current?.value ?? "",
+          abertoHaMs: abertoEm.current === null ? 0 : Date.now() - abertoEm.current,
+        });
+        if (r.ok) {
+          setDirecao("avanca");
+          setConfirmado(r);
+          return;
+        }
+        setErroGeral(r.erro);
+        requestAnimationFrame(() => document.getElementById("pedido-erro-geral")?.scrollIntoView({ block: "center" }));
+        if (r.erros && Object.keys(r.erros).length > 0) {
+          setErros(r.erros);
+          irPara(r.erros.plano || r.erros.usuarios ? 1 : 2);
+        }
+      } catch (e) {
+        requestAnimationFrame(() => document.getElementById("pedido-erro-geral")?.scrollIntoView({ block: "center" }));
+        setErroGeral(
+          ehActionDeOutroBuild(e)
+            ? avisoDePaginaVelha()
+            : "Não foi possível falar com o servidor. Confira a internet e tente de novo.",
+        );
+      }
+    });
+  }
+
+  const classeDoPasso = direcao === "avanca" ? c.passoAvanca : direcao === "volta" ? c.passoVolta : "";
+
+  if (confirmado) {
+    return (
+      <section ref={folha} className={`${c.folha} ${c.passoAvanca} scroll-mt-4 px-5 py-8 sm:px-9 sm:py-10`} aria-labelledby="titulo-confirmado">
+        <Confirmacao confirmado={confirmado} titulo={tituloDoPasso} />
+      </section>
+    );
+  }
+
+  return (
+    <section ref={folha} className={`${c.folha} scroll-mt-4 px-5 pt-6 pb-5 sm:px-9 sm:pt-8 sm:pb-9`} aria-label="Contratação">
+      <ol
+        className={c.etapas}
+        aria-label={`Passo ${passo} de 3`}
+        style={{ "--progresso": (passo - 1) / 2 } as CSSProperties}
+      >
+        {PASSOS.map((p) => {
+          const feito = p.numero < passo;
+          const atual = p.numero === passo;
+          return (
+            <li
+              key={p.numero}
+              aria-current={atual ? "step" : undefined}
+              className={`${c.etapa} ${atual ? c.etapaAtual : ""} ${feito ? c.etapaFeita : ""}`}
+            >
+              <span aria-hidden className={c.bolinha} key={atual ? `atual-${passo}` : p.numero}>
+                {feito ? <Check className="size-4" strokeWidth={3} /> : p.numero}
+              </span>
+              {p.nome}
+              {feito && <span className="sr-only"> (feito)</span>}
+            </li>
+          );
+        })}
+      </ol>
+
+      <form
+        noValidate
+        className="mt-8"
+        onSubmit={(e) => {
+          e.preventDefault();
+          continuar();
+        }}
+      >
+        {/* Campo-isca: gente não vê nem alcança pelo teclado; robô preenche. */}
+        <div className={c.isca} aria-hidden="true">
+          <label htmlFor="pedido-site">Site da empresa</label>
+          <input ref={isca} id="pedido-site" name="site" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+        </div>
+
+        <div key={passo} className={classeDoPasso}>
+          {passo === 1 && (
+            <PassoPlano
+              titulo={tituloDoPasso}
+              plano={plano}
+              usuarios={dados.usuarios}
+              erros={erros}
+              aoEscolher={(p) => mudar("plano", p)}
+              aoMudarUsuarios={(n) => mudar("usuarios", n)}
+            />
+          )}
+          {passo === 2 && <PassoDados titulo={tituloDoPasso} dados={dados} erros={erros} mudar={mudar} />}
+          {passo === 3 && plano && (
+            <PassoRevisao
+              titulo={tituloDoPasso}
+              dados={dados}
+              plano={plano}
+              consentimento={consentimento}
+              erroDoConsentimento={erroDoConsentimento}
+              aoConsentir={(v) => {
+                setConsentimento(v);
+                if (v) setErroDoConsentimento(false);
+              }}
+              alterar={irPara}
+            />
+          )}
+        </div>
+
+        {erroGeral && (
+          <p id="pedido-erro-geral" role="alert" className={`${c.avisoDeErro} mt-6`}>
+            {erroGeral}
+          </p>
+        )}
+
+        <div className={`${c.acoes} mt-8`}>
+          {passo > 1 ? (
+            <button type="button" className={c.voltar} onClick={() => irPara((passo - 1) as Passo)} disabled={enviando}>
+              <ArrowLeft aria-hidden className="size-4" />
+              Voltar
+            </button>
+          ) : (
+            <p className="min-w-0 text-sm leading-tight text-[var(--tinta-suave)]" aria-live="polite">
+              {total !== null ? (
+                <>
+                  Total por mês
+                  <span className={`${s.titulo} ${c.total} block text-xl font-extrabold text-[var(--tinta)]`}>
+                    {reais(total)}
+                  </span>
+                </>
+              ) : (
+                "Escolha um plano para continuar"
+              )}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={enviando}
+            aria-busy={enviando}
+            className={`${s.botao} ${s.botaoPrincipal} ml-auto min-w-[9.5rem] disabled:opacity-80`}
+          >
+            {enviando ? (
+              <>
+                <span aria-hidden className={c.giro} />
+                Enviando…
+              </>
+            ) : passo === 3 ? (
+              <>
+                Enviar pedido
+                <Check aria-hidden className="size-4" strokeWidth={3} />
+              </>
+            ) : (
+              <>
+                Continuar
+                <ArrowRight aria-hidden className="size-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+// ── Passo 1 ────────────────────────────────────────────────────────────────
+
+function PassoPlano({
+  titulo,
+  plano,
+  usuarios,
+  erros,
+  aoEscolher,
+  aoMudarUsuarios,
+}: {
+  titulo: React.RefObject<HTMLHeadingElement | null>;
+  plano: PlanoContratavel | null;
+  usuarios: number;
+  erros: ErrosDoPedido;
+  aoEscolher: (p: PlanoContratavel) => void;
+  aoMudarUsuarios: (n: number) => void;
+}) {
+  const erroId = useId();
+  // O que a pessoa digita no contador fica como texto até sair do campo:
+  // apagar para digitar "12" não pode virar "1" no meio do caminho.
+  const [digitado, setDigitado] = useState<string | null>(null);
+
+  return (
+    <fieldset aria-describedby={erros.plano ? erroId : undefined}>
+      <legend className="contents">
+        <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
+          Qual plano é o seu?
+        </h2>
+      </legend>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">Todos com a IA no WhatsApp, o funil, a agenda e as vendas.</p>
+
+      {/* O erro vem ANTES das opções: embaixo, ficaria atrás da barra de ações no celular. */}
+      {erros.plano && (
+        <p id={erroId} className={c.erro} role="alert">
+          {erros.plano}
+        </p>
+      )}
+      <div className={`${c.opcoes} mt-5`}>
+        {PLANOS_CONTRATAVEIS.map((id) => {
+          const p = PLANO_CONTRATAVEL[id];
+          return (
+            <label key={id} className={c.opcao}>
+              <input
+                id={id === PLANOS_CONTRATAVEIS[0] ? "pedido-plano" : undefined}
+                type="radio"
+                name="plano"
+                value={id}
+                checked={plano === id}
+                onChange={() => aoEscolher(id)}
+                className="sr-only"
+              />
+              <span aria-hidden className={c.radio} />
+              <span className="min-w-0">
+                <span className={`${s.titulo} block text-lg leading-snug font-bold`}>
+                  {p.nome}
+                  {id === "imobiliaria" && <span className={c.selo}>Equipe</span>}
+                </span>
+                <span className="mt-0.5 block text-sm leading-snug text-[var(--tinta-suave)]">{p.resumo}</span>
+              </span>
+              <span className={c.precoDaOpcao}>
+                <span className={`${s.titulo} block text-xl font-extrabold`}>{reais(p.preco)}</span>
+                <span className="block text-xs text-[var(--tinta-suave)]">{p.porUsuario ? "por usuário/mês" : "por mês"}</span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      {plano === "imobiliaria" && (
+        <div className={`${c.usuarios} ${c.aparece} mt-4`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <label htmlFor="pedido-usuarios" className="font-semibold">
+                Quantos usuários?
+              </label>
+              <p className="text-sm text-[var(--tinta-suave)]">Cada corretor ou gestor com login conta como um.</p>
+            </div>
+            <div className={c.contador}>
+              <button
+                type="button"
+                aria-label="Menos um usuário"
+                disabled={usuarios <= USUARIOS_MINIMO}
+                onClick={() => {
+                  setDigitado(null);
+                  aoMudarUsuarios(limitarUsuarios(usuarios - 1));
+                }}
+              >
+                <Minus aria-hidden className="size-4" strokeWidth={2.5} />
+              </button>
+              <input
+                id="pedido-usuarios"
+                type="number"
+                inputMode="numeric"
+                min={USUARIOS_MINIMO}
+                max={USUARIOS_MAXIMO}
+                value={digitado ?? String(usuarios)}
+                aria-invalid={erros.usuarios ? true : undefined}
+                onChange={(e) => {
+                  setDigitado(e.target.value);
+                  const n = Number(e.target.value);
+                  if (e.target.value !== "" && Number.isFinite(n)) aoMudarUsuarios(limitarUsuarios(n));
+                }}
+                onBlur={() => setDigitado(null)}
+              />
+              <button
+                type="button"
+                aria-label="Mais um usuário"
+                disabled={usuarios >= USUARIOS_MAXIMO}
+                onClick={() => {
+                  setDigitado(null);
+                  aoMudarUsuarios(limitarUsuarios(usuarios + 1));
+                }}
+              >
+                <Plus aria-hidden className="size-4" strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-[var(--tinta-suave)]" aria-live="polite">
+            {limitarUsuarios(usuarios)} × {reais(PLANO_CONTRATAVEL.imobiliaria.preco)} ={" "}
+            <strong className="text-[var(--tinta)]">{reais(totalMensal("imobiliaria", usuarios))} por mês</strong>
+          </p>
+          {erros.usuarios && <p className={c.erro}>{erros.usuarios}</p>}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+// ── Passo 2 ────────────────────────────────────────────────────────────────
+
+function Campo({
+  campo,
+  rotulo,
+  valor,
+  erro,
+  aoMudar,
+  tipo = "text",
+  inputMode,
+  autoComplete,
+  opcional,
+  dica,
+}: {
+  campo: CampoDoPedido;
+  rotulo: string;
+  valor: string;
+  erro?: string;
+  aoMudar: (v: string) => void;
+  tipo?: "text" | "email" | "tel";
+  inputMode?: "text" | "email" | "tel";
+  autoComplete?: string;
+  opcional?: boolean;
+  dica?: string;
+}) {
+  const id = `pedido-${campo}`;
+  const erroId = `${id}-erro`;
+  const dicaId = `${id}-dica`;
+  return (
+    <div>
+      <div className={c.campo}>
+        <input
+          id={id}
+          name={campo}
+          type={tipo}
+          inputMode={inputMode}
+          autoComplete={autoComplete}
+          placeholder=" "
+          value={valor}
+          required={!opcional}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={[erro ? erroId : null, dica ? dicaId : null].filter(Boolean).join(" ") || undefined}
+          onChange={(e) => aoMudar(e.target.value)}
+          className={c.entrada}
+        />
+        <label htmlFor={id} className={c.rotulo}>
+          {rotulo}
+          {opcional && <span className={c.opcional}> (opcional)</span>}
+        </label>
+      </div>
+      {erro ? (
+        <p id={erroId} className={c.erro}>
+          {erro}
+        </p>
+      ) : (
+        dica && (
+          <p id={dicaId} className={c.dica}>
+            {dica}
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
+function PassoDados({
+  titulo,
+  dados,
+  erros,
+  mudar,
+}: {
+  titulo: React.RefObject<HTMLHeadingElement | null>;
+  dados: DadosDoPedido;
+  erros: ErrosDoPedido;
+  mudar: <K extends keyof DadosDoPedido>(campo: K, valor: DadosDoPedido[K]) => void;
+}) {
+  const imobiliaria = dados.plano === "imobiliaria";
+  return (
+    <div>
+      <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
+        Seus dados
+      </h2>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">É por eles que a {imobiliaria ? "imobiliária" : "sua conta"} vai nascer e que a gente chama você.</p>
+
+      <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Campo campo="nome" rotulo="Nome completo" valor={dados.nome} erro={erros.nome} aoMudar={(v) => mudar("nome", v)} autoComplete="name" />
+        </div>
+        <Campo
+          campo="whatsapp"
+          rotulo="WhatsApp com DDD"
+          tipo="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          valor={dados.whatsapp}
+          erro={erros.whatsapp}
+          aoMudar={(v) => mudar("whatsapp", mascararWhatsapp(v))}
+        />
+        <Campo
+          campo="email"
+          rotulo="E-mail"
+          tipo="email"
+          inputMode="email"
+          autoComplete="email"
+          valor={dados.email}
+          erro={erros.email}
+          aoMudar={(v) => mudar("email", v)}
+        />
+        {imobiliaria && (
+          <div className={`sm:col-span-2 ${c.aparece}`}>
+            <Campo
+              campo="imobiliaria"
+              rotulo="Nome da imobiliária"
+              autoComplete="organization"
+              valor={dados.imobiliaria}
+              erro={erros.imobiliaria}
+              aoMudar={(v) => mudar("imobiliaria", v)}
+            />
+          </div>
+        )}
+        <div className="sm:col-span-2">
+          <Campo
+            campo="creci"
+            rotulo={imobiliaria ? "CRECI da imobiliária" : "CRECI"}
+            opcional
+            valor={dados.creci}
+            erro={erros.creci}
+            aoMudar={(v) => mudar("creci", v)}
+            dica="Se ainda não tiver à mão, a gente pede depois."
+          />
+        </div>
+        <Campo
+          campo="cidade"
+          rotulo="Cidade"
+          autoComplete="address-level2"
+          valor={dados.cidade}
+          erro={erros.cidade}
+          aoMudar={(v) => mudar("cidade", v)}
+        />
+        <div>
+          <div className={c.campo}>
+            <select
+              id="pedido-uf"
+              name="uf"
+              value={dados.uf}
+              autoComplete="address-level1"
+              aria-invalid={erros.uf ? true : undefined}
+              aria-describedby={erros.uf ? "pedido-uf-erro" : undefined}
+              onChange={(e) => mudar("uf", e.target.value)}
+              className={c.entrada}
+            >
+              <option value="">Escolha</option>
+              {UFS.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="pedido-uf" className={c.rotulo}>
+              Estado
+            </label>
+          </div>
+          {erros.uf && (
+            <p id="pedido-uf-erro" className={c.erro}>
+              {erros.uf}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Passo 3 ────────────────────────────────────────────────────────────────
+
+function PassoRevisao({
+  titulo,
+  dados,
+  plano,
+  consentimento,
+  erroDoConsentimento,
+  aoConsentir,
+  alterar,
+}: {
+  titulo: React.RefObject<HTMLHeadingElement | null>;
+  dados: DadosDoPedido;
+  plano: PlanoContratavel;
+  consentimento: boolean;
+  erroDoConsentimento: boolean;
+  aoConsentir: (v: boolean) => void;
+  alterar: (p: Passo) => void;
+}) {
+  const local = [dados.cidade.trim(), dados.uf].filter(Boolean).join("/");
+  return (
+    <div>
+      <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
+        Confira e envie
+      </h2>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">Nada é cobrado agora. A conta só começa depois da conversa com a Astro.</p>
+
+      <dl className={`${c.resumo} mt-5`}>
+        <div className={c.linhaDoResumo}>
+          <div className="min-w-0">
+            <dt className="text-sm text-[var(--tinta-suave)]">Plano</dt>
+            <dd className="font-semibold">{resumoDoPlano(plano, dados.usuarios)}</dd>
+          </div>
+          <button type="button" className={c.alterar} onClick={() => alterar(1)}>
+            Alterar<span className="sr-only"> o plano</span>
+          </button>
+        </div>
+        <div className={c.linhaDoResumo}>
+          <div className="min-w-0 space-y-0.5">
+            <dt className="text-sm text-[var(--tinta-suave)]">Seus dados</dt>
+            <dd className="font-semibold break-words">{dados.nome.trim()}</dd>
+            {plano === "imobiliaria" && <dd className="break-words">{dados.imobiliaria.trim()}</dd>}
+            <dd>{dados.whatsapp}</dd>
+            <dd className="break-all">{dados.email.trim()}</dd>
+            <dd>
+              {local}
+              {dados.creci.trim() ? ` · CRECI ${dados.creci.trim()}` : ""}
+            </dd>
+          </div>
+          <button type="button" className={c.alterar} onClick={() => alterar(2)}>
+            Alterar<span className="sr-only"> os dados</span>
+          </button>
+        </div>
+        <div className={`${c.linhaDoResumo} bg-[var(--papel)]`}>
+          <dt className="font-semibold">Total por mês</dt>
+          <dd className={`${s.titulo} text-xl font-extrabold`}>{reais(totalMensal(plano, dados.usuarios))}</dd>
+        </div>
+      </dl>
+
+      <label className={`${c.consentimento} mt-5`}>
+        <input
+          id="pedido-consentimento"
+          type="checkbox"
+          checked={consentimento}
+          aria-invalid={erroDoConsentimento ? true : undefined}
+          aria-describedby={erroDoConsentimento ? "pedido-consentimento-erro" : undefined}
+          onChange={(e) => aoConsentir(e.target.checked)}
+        />
+        <span className="text-sm leading-relaxed">
+          Autorizo a Astro Soluções a usar estes dados para falar comigo sobre a contratação, como descrito na{" "}
+          <Link href="/astro/privacidade" target="_blank">
+            Política de Privacidade
+          </Link>
+          , e concordo com os{" "}
+          <Link href="/astro/termos" target="_blank">
+            Termos de uso
+          </Link>
+          .
+        </span>
+      </label>
+      {erroDoConsentimento && (
+        <p id="pedido-consentimento-erro" className={c.erro} role="alert">
+          Marque a caixa para enviar o pedido.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Confirmação ────────────────────────────────────────────────────────────
+
+function Confirmacao({ confirmado, titulo }: { confirmado: Confirmado; titulo: React.RefObject<HTMLHeadingElement | null> }) {
+  const proximos = [
+    "A Astro chama você no WhatsApp em até 1 dia útil para confirmar os detalhes.",
+    "A gente configura a conta, conecta o seu WhatsApp e deixa a IA pronta para atender.",
+    "Na primeira semana, a Astro acompanha o uso com você de perto.",
+  ];
+  return (
+    <div className="flex flex-col items-start">
+      <span className={c.selado} aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12.5 10 17.5 19 7" />
+        </svg>
+      </span>
+      <h2 id="titulo-confirmado" ref={titulo} tabIndex={-1} className={`${s.titulo} mt-5 text-[1.9rem] leading-tight font-extrabold outline-none`}>
+        Recebemos seu pedido{confirmado.primeiroNome ? `, ${confirmado.primeiroNome}` : ""}!
+      </h2>
+      <p className="mt-2 text-[var(--tinta-suave)]">
+        Plano <strong className="text-[var(--tinta)]">{confirmado.resumo}</strong>.
+      </p>
+
+      <h3 className={`${s.titulo} mt-7 text-lg font-bold`}>O que acontece agora</h3>
+      <ol className={`${c.proximos} mt-3`}>
+        {proximos.map((t, i) => (
+          <li key={i} style={{ "--ordem": i } as CSSProperties}>
+            <span className="pt-0.5 leading-relaxed">{t}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap [&>*]:whitespace-nowrap">
+        {confirmado.whatsappDaAstro && (
+          <a href={confirmado.whatsappDaAstro} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoPrincipal}`}>
+            <MessageCircle aria-hidden className="size-4" />
+            Falar agora no WhatsApp
+          </a>
+        )}
+        <Link href="/astro" className={`${s.botao} ${s.botaoNoClaro}`}>
+          Voltar à página da Astro
+        </Link>
+      </div>
+    </div>
+  );
+}
