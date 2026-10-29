@@ -1984,6 +1984,9 @@ export type Database = {
           site_facebook: string | null
           envio_grupo_leads_ativo: boolean
           envio_grupo_leads_instancia: string | null
+          grupos_whatsapp_do_central: Json | null
+          grupos_whatsapp_instancia: string | null
+          grupos_whatsapp_lidos_em: string | null
           pular_corretor_whatsapp_desconectado: boolean
           padrao_nome_grupo_leads: string | null
           texto_aviso_grupo_leads: string | null
@@ -2048,6 +2051,9 @@ export type Database = {
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
+          grupos_whatsapp_do_central?: Json | null
+          grupos_whatsapp_instancia?: string | null
+          grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null
@@ -2112,6 +2118,9 @@ export type Database = {
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
+          grupos_whatsapp_do_central?: Json | null
+          grupos_whatsapp_instancia?: string | null
+          grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null

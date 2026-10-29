@@ -26,6 +26,15 @@ const MARCADORES_DO_RELATORIO = [
 ] as const;
 const BOTAO_SECUNDARIO = "botao-solido min-h-11 shrink-0 px-4 text-fluid-sm font-semibold text-acento disabled:opacity-60";
 
+/** Hora da lista guardada, no fuso de São Paulo. */
+const HORA = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 /**
  * Os grupos de WhatsApp dos corretores (aba Roleta de Anúncios pagos desde
  * 26/10/2026): em passos, porque a ordem importa. Sem número central não há
@@ -40,6 +49,7 @@ export function ConfigurarGruposDeLeads({
   nomeDaImobiliaria,
   gruposDoCentral,
   erroDosGrupos,
+  gruposLidosEm = null,
 }: {
   instanciaAtual: string | null;
   /** Quem manda os avisos: o número salvo ou, sem ele, o da conta logada. */
@@ -51,6 +61,8 @@ export function ConfigurarGruposDeLeads({
   nomeDaImobiliaria: string;
   gruposDoCentral: GrupoDoCentral[];
   erroDosGrupos?: string;
+  /** Quando a lista guardada foi lida (0234); `null` = lida agora. */
+  gruposLidosEm?: string | null;
 }) {
   const [padrao, setPadrao] = useState(padraoDoNome ?? "");
   const [relatorio, setRelatorio] = useState(modeloDoRelatorio ?? TEXTO_AVISO_NO_GRUPO_PADRAO);
@@ -213,6 +225,11 @@ export function ConfigurarGruposDeLeads({
         <p className="text-fluid-sm font-semibold text-titulo">
           Grupos neste número{instanciaAtual && !erroDosGrupos ? ` (${gruposDoCentral.length})` : ""}
         </p>
+        {instanciaAtual && !erroDosGrupos && gruposLidosEm && (
+          <p className="text-fluid-xs text-apoio">
+            Lista de {HORA.format(new Date(gruposLidosEm))}. Entrou num grupo agora? Toque em Sincronizar grupos.
+          </p>
+        )}
         {!instanciaAtual ? (
           <p className="text-fluid-xs text-apoio">Conecte o WhatsApp desta conta para ver os grupos de que ele participa.</p>
         ) : erroDosGrupos ? (

@@ -132,3 +132,12 @@ chegando), e a aba ficava no esqueleto o tempo todo. A tela agora lê com
 `listarGruposWhatsapp(central, { prazoMs: 15_000 })`; a sincronização segue
 com 90 s. Diagnóstico: `[grupos] falha ao pedir a lista de grupos` com
 "aborted due to timeout" nos erros da Vercel na rota `/corretor/marketing/impulsionamentos`.
+
+**Causa de verdade e correção (0234, 29/10/2026):** não era a Evolution
+quebrada, era o número central em **255 grupos** — a leitura que deu certo
+levou ~39 s (log `[grupos] lista lida` com `recebidos: 255`). A última lista
+lida fica em `grupos.grupos_whatsapp_do_central` (+ `_instancia`, `_lidos_em`;
+fora do grant do logado). A aba mostra a guardada na hora; vencida (10 min),
+relê depois da resposta (`after`, `fresca: true`). Sincronizar sempre relê e
+guarda; escolher à mão usa a guardada e só relê se o grupo não estiver nela.
+Código: `src/lib/whatsapp/gruposGuardados.ts`.

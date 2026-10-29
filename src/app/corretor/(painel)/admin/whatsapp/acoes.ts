@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
 import { createServiceClient } from "@/lib/supabase/service";
 import { desconectarInstancia } from "@/lib/whatsapp/provider";
-import { listarGruposWhatsapp, listarParticipantesDoGrupo } from "@/lib/whatsapp/provider";
+import { listarGruposWhatsapp, listarParticipantesDoGrupo, type GrupoWhatsapp } from "@/lib/whatsapp/provider";
+import { colunasDaLista, listaGuardada } from "@/lib/whatsapp/gruposGuardados";
 import { lidDoCorretor, mensagemDaSincronizacao, planejarVinculos } from "@/lib/whatsapp/vinculoNoGrupo";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { chaveDoNome, nomeEsperadoDoGrupo, validarPadraoDoNome } from "@/lib/whatsapp/nomeDoGrupoDeLeads";
@@ -132,6 +133,24 @@ export async function configurarPuloDeCorretorDesconectado(
   };
 }
 
+type Servico = ReturnType<typeof createServiceClient>;
+
+/** A lista de grupos guardada no grupo do gestor (0234), se for deste número. */
+async function lerListaDeGrupos(servico: Servico, grupoId: string, instancia: string) {
+  const { data } = await servico
+    .from("grupos")
+    .select("grupos_whatsapp_do_central, grupos_whatsapp_instancia, grupos_whatsapp_lidos_em")
+    .eq("id", grupoId)
+    .maybeSingle();
+  return listaGuardada(data, instancia);
+}
+
+/** Guarda a lista recém-lida; falha só vai ao log (a ação já tem a lista). */
+async function guardarListaDeGrupos(servico: Servico, grupoId: string, instancia: string, grupos: GrupoWhatsapp[]) {
+  const { error } = await servico.from("grupos").update(colunasDaLista(instancia, grupos)).eq("id", grupoId);
+  if (error) console.error("[grupos] falha ao guardar a lista de grupos", error.message);
+}
+
 /**
  * Procura, nos grupos do número central, o grupo de cada corretor pelo padrão
  * de nome da imobiliária (`{corretor} & {imobiliaria}` se ela não escolheu
@@ -153,9 +172,11 @@ export async function sincronizarGruposDeLeads(): Promise<{ ok?: string; erro?: 
   if ("erro" in central) return { erro: central.erro };
   const instancia = central.instancia;
 
-  // Lista nova: o número central pode ter entrado num grupo agora.
+  // Lista nova: o número central pode ter entrado num grupo agora. Fica
+  // guardada no grupo para a aba não esperar a Evolution (0234).
   const lista = await listarGruposWhatsapp(instancia, { fresca: true });
   if (lista.erro) return { erro: lista.erro };
+  await guardarListaDeGrupos(servico, grupoId, instancia, lista.grupos);
   const { data: corretores, error } = await servico
     .from("corretores")
     .select("id, nome, whatsapp, whatsapp_grupo_leads_jid, whatsapp_grupo_leads_manual")
@@ -332,9 +353,15 @@ export async function vincularGrupoDoCorretor(
 
   const central = await garantirNumeroCentral(servico, grupoId, guarda.corretor.id);
   if ("erro" in central) return { erro: central.erro };
-  const lista = await listarGruposWhatsapp(central.instancia);
-  if (lista.erro) return { erro: lista.erro };
-  const grupo = lista.grupos.find((g) => g.jid === grupoJid);
+  // O grupo escolhido saiu da lista que a tela mostrou: a guardada (0234)
+  // basta. Só lê da Evolution se ele não estiver nela (lista velha).
+  let grupo = (await lerListaDeGrupos(servico, grupoId, central.instancia))?.grupos.find((g) => g.jid === grupoJid);
+  if (!grupo) {
+    const lista = await listarGruposWhatsapp(central.instancia);
+    if (lista.erro) return { erro: lista.erro };
+    await guardarListaDeGrupos(servico, grupoId, central.instancia, lista.grupos);
+    grupo = lista.grupos.find((g) => g.jid === grupoJid);
+  }
   if (!grupo) return { erro: "Esse grupo não está no número central. Confira se o número participa dele." };
 
   const { data: dono } = await servico

@@ -4,9 +4,13 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { clienteParaNumerosDaEquipe } from "@/lib/admin/numerosDaEquipe";
 import { idsDeContasOcultas, semContasOcultas } from "@/lib/corretores/contaOculta";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { after } from "next/server";
 import { listarGruposWhatsapp } from "@/lib/whatsapp/provider";
+import { colunasDaLista, listaGuardada, listaVencida } from "@/lib/whatsapp/gruposGuardados";
 import { ConfigurarGruposDeLeads } from "@/app/corretor/(painel)/admin/whatsapp/ConfigurarGruposDeLeads";
 import { opcoesDoNumeroCentral } from "./numeroCentral";
+
+type LidaDosGrupos = Awaited<ReturnType<typeof listarGruposWhatsapp>>;
 
 /**
  * Os grupos de WhatsApp dos corretores na aba Roleta (26/10/2026): número
@@ -39,7 +43,9 @@ export async function DistribuicaoDaEquipe() {
     // "Salve o número central" com ele já salvo.
     createServiceClient()
       .from("grupos")
-      .select("envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads, texto_aviso_grupo_leads")
+      .select(
+        "envio_grupo_leads_ativo, envio_grupo_leads_instancia, padrao_nome_grupo_leads, texto_aviso_grupo_leads, grupos_whatsapp_do_central, grupos_whatsapp_instancia, grupos_whatsapp_lidos_em",
+      )
       .eq("id", gestor.grupoId)
       .maybeSingle()
       .then((r) => {
@@ -60,10 +66,43 @@ export async function DistribuicaoDaEquipe() {
   const propria = (todasInstancias ?? []).find((i) => i.corretor_id === gestor.id);
   const salvo = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
   const central = salvo ?? (propria && opcoes.find((o) => o.instanceName === propria.instance_name)?.conectada ? propria.instance_name : null);
-  // Prazo curto: a lista só ajuda a escolher à mão (normal ~5 s). Evolution
-  // travada não pode segurar a aba inteira; o erro aparece e o resto funciona.
+  /*
+   * A lista guardada no grupo (0234) vem na hora: com o número em 255 grupos a
+   * Evolution leva ~40 s. Vencida (10 min), a tela mostra ela e pede outra
+   * depois de responder. Sem lista guardada, tenta ler com prazo curto; se não
+   * der, a leitura longa segue em segundo plano e a próxima abertura já tem.
+   */
+  const guardada = central ? listaGuardada(configuracao, central) : null;
+  const atualizarDepois = (instancia: string) =>
+    after(async () => {
+      const nova = await listarGruposWhatsapp(instancia, { fresca: true });
+      if (nova.erro) return;
+      const { error } = await createServiceClient()
+        .from("grupos")
+        .update(colunasDaLista(instancia, nova.grupos))
+        .eq("id", gestor.grupoId);
+      if (error) console.error("[grupos] falha ao guardar a lista de grupos", error.message);
+    });
+  const lerAgora = async (instancia: string) => {
+    const r = await listarGruposWhatsapp(instancia, { prazoMs: 15_000 });
+    if (r.erro) {
+      atualizarDepois(instancia);
+      return r;
+    }
+    const { error } = await createServiceClient()
+      .from("grupos")
+      .update(colunasDaLista(instancia, r.grupos))
+      .eq("id", gestor.grupoId);
+    if (error) console.error("[grupos] falha ao guardar a lista de grupos", error.message);
+    return r;
+  };
+  if (central && guardada && listaVencida(guardada.lidaEm)) atualizarDepois(central);
   const [gruposDoCentral, marca] = await Promise.all([
-    central ? listarGruposWhatsapp(central, { prazoMs: 15_000 }) : Promise.resolve({ grupos: [] }),
+    !central
+      ? Promise.resolve<LidaDosGrupos>({ grupos: [] })
+      : guardada
+        ? Promise.resolve<LidaDosGrupos>({ grupos: guardada.grupos })
+        : lerAgora(central),
     lerMarcaDoCrm(gestor.grupoId),
   ]);
 
@@ -84,7 +123,8 @@ export async function DistribuicaoDaEquipe() {
       modeloDoRelatorio={configuracao?.texto_aviso_grupo_leads ?? null}
       nomeDaImobiliaria={marca.nome}
       gruposDoCentral={[...gruposDoCentral.grupos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
-      erroDosGrupos={"erro" in gruposDoCentral ? gruposDoCentral.erro : undefined}
+      erroDosGrupos={gruposDoCentral.erro}
+      gruposLidosEm={guardada?.lidaEm ?? null}
     />
   );
 }

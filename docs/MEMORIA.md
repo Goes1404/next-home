@@ -12444,3 +12444,9 @@ Nota: [[app-no-celular-area-segura-login-e-abertura]].
   `overscroll-behavior: none`, zoom travado, sem menu de link, e o
   `sw-painel.js` mostra `/offline.html` sem rede (só navegação, sem cache de
   página do CRM).
+- **Correção da causa (0234):** o número central estava em 255 grupos e a
+  leitura levava ~39 s (não era a Evolution quebrada; o pagamento da Hostinger
+  pendente não era a causa). A última lista lida fica em
+  `grupos.grupos_whatsapp_do_central`; a aba mostra a guardada na hora e relê
+  em segundo plano (`after`) quando passa de 10 min. 0234 aplicada em produção
+  antes do deploy; colunas fora do grant do logado.
