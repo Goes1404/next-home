@@ -121,4 +121,18 @@ describe("listarGruposWhatsapp", () => {
     const r = await listarGruposWhatsapp("central");
     expect(r.erro).toMatch(/demorou demais/);
   });
+
+  it("a tela passa um prazo curto: Evolution travada não segura a aba Roleta por 90 s", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let sinal: AbortSignal | undefined;
+    globalThis.fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      sinal = init?.signal ?? undefined;
+      await new Promise((_, rejeitar) => sinal?.addEventListener("abort", () => rejeitar(sinal?.reason)));
+      return new Response("[]");
+    }) as typeof fetch;
+    const inicio = Date.now();
+    const r = await listarGruposWhatsapp("central", { prazoMs: 50 });
+    expect(Date.now() - inicio).toBeLessThan(2_000);
+    expect(r.erro).toMatch(/demorou demais/);
+  });
 });

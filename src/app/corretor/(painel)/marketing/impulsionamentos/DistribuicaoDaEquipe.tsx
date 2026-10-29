@@ -60,8 +60,10 @@ export async function DistribuicaoDaEquipe() {
   const propria = (todasInstancias ?? []).find((i) => i.corretor_id === gestor.id);
   const salvo = configuracao?.envio_grupo_leads_ativo ? configuracao.envio_grupo_leads_instancia : null;
   const central = salvo ?? (propria && opcoes.find((o) => o.instanceName === propria.instance_name)?.conectada ? propria.instance_name : null);
+  // Prazo curto: a lista só ajuda a escolher à mão (normal ~5 s). Evolution
+  // travada não pode segurar a aba inteira; o erro aparece e o resto funciona.
   const [gruposDoCentral, marca] = await Promise.all([
-    central ? listarGruposWhatsapp(central) : Promise.resolve({ grupos: [] }),
+    central ? listarGruposWhatsapp(central, { prazoMs: 15_000 }) : Promise.resolve({ grupos: [] }),
     lerMarcaDoCrm(gestor.grupoId),
   ]);
 

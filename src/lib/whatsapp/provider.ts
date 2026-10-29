@@ -889,20 +889,28 @@ export function esquecerGruposLidos(): void {
   gruposLidos.clear();
 }
 
+/**
+ * Teto padrão da leitura (27/10/2026): a 2.3.7 busca a foto de cada grupo.
+ * A tela que só MOSTRA a lista passa `prazoMs` curto (29/10/2026): com a
+ * Evolution travada no `fetchAllGroups` de um número, a aba Roleta esperava
+ * os 90 s inteiros e parecia não carregar.
+ */
+const PRAZO_DA_LISTA_DE_GRUPOS_MS = 90_000;
+
 export async function listarGruposWhatsapp(
   instanceName: string,
-  opcoes: { fresca?: boolean } = {},
+  opcoes: { fresca?: boolean; prazoMs?: number } = {},
 ): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
   const guardada = gruposLidos.get(instanceName);
   if (!opcoes.fresca && guardada && Date.now() - guardada.em < GRUPOS_LIDOS_VALEM_MS) {
     return { grupos: guardada.grupos };
   }
-  const r = await lerGruposDaEvolution(instanceName);
+  const r = await lerGruposDaEvolution(instanceName, opcoes.prazoMs ?? PRAZO_DA_LISTA_DE_GRUPOS_MS);
   if (!r.erro) gruposLidos.set(instanceName, { em: Date.now(), grupos: r.grupos });
   return r;
 }
 
-async function lerGruposDaEvolution(instanceName: string): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
+async function lerGruposDaEvolution(instanceName: string, prazoMs: number): Promise<{ grupos: GrupoWhatsapp[]; erro?: string }> {
   const config = configDoProvedor();
   if (!config) return { grupos: [], erro: "Provedor de WhatsApp não configurado." };
   if (!instanceName) return { grupos: [], erro: "Escolha o número central." };
@@ -915,7 +923,7 @@ async function lerGruposDaEvolution(instanceName: string): Promise<{ grupos: Gru
       cache: "no-store",
       // A Evolution busca a foto de cada grupo, um por um: número em muitos
       // grupos demora. Sem limite, a aba Roleta ficaria presa esperando.
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(prazoMs),
     });
     if (!res.ok) {
       const motivo = motivoDaEvolution(await res.text().catch(() => ""));
