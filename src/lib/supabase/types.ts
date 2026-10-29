@@ -988,8 +988,10 @@ export type Database = {
           comissao_valor: number
           status: "ativa" | "distratada"
           distratada_em: string | null
-          comissao_recebida_em: string | null
-          comissao_prevista_em: string | null
+          distrato_motivo: string | null
+          distrato_parcelas: "manter" | "cancelar" | null
+          distrato_avisado_em: string | null
+          distrato_aviso: string | null
           observacao: string | null
           created_at: string
           atualizado_em: string
@@ -1008,8 +1010,10 @@ export type Database = {
           comissao_valor: number
           status?: "ativa" | "distratada"
           distratada_em?: string | null
-          comissao_recebida_em?: string | null
-          comissao_prevista_em?: string | null
+          distrato_motivo?: string | null
+          distrato_parcelas?: "manter" | "cancelar" | null
+          distrato_avisado_em?: string | null
+          distrato_aviso?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -1028,8 +1032,10 @@ export type Database = {
           comissao_valor?: number
           status?: "ativa" | "distratada"
           distratada_em?: string | null
-          comissao_recebida_em?: string | null
-          comissao_prevista_em?: string | null
+          distrato_motivo?: string | null
+          distrato_parcelas?: "manter" | "cancelar" | null
+          distrato_avisado_em?: string | null
+          distrato_aviso?: string | null
           observacao?: string | null
           created_at?: string
           atualizado_em?: string
@@ -1046,6 +1052,7 @@ export type Database = {
           repasse_percentual: number | null
           repasse_valor: number
           repasse_pago_em: string | null
+          forma_recebimento: "repasse" | "direto"
         }
         Insert: {
           grupo_id?: string
@@ -1055,6 +1062,7 @@ export type Database = {
           repasse_percentual?: number | null
           repasse_valor: number
           repasse_pago_em?: string | null
+          forma_recebimento?: "repasse" | "direto"
         }
         Update: {
           grupo_id?: string
@@ -1064,6 +1072,7 @@ export type Database = {
           repasse_percentual?: number | null
           repasse_valor?: number
           repasse_pago_em?: string | null
+          forma_recebimento?: "repasse" | "direto"
         }
         Relationships: []
       }
@@ -1079,6 +1088,7 @@ export type Database = {
           vencimento: string
           pago_em: string | null
           recorrencia_id: string | null
+          competencia: string | null
           observacao: string | null
           criado_por: string | null
           created_at: string
@@ -1094,6 +1104,7 @@ export type Database = {
           vencimento: string
           pago_em?: string | null
           recorrencia_id?: string | null
+          competencia?: string | null
           observacao?: string | null
           criado_por?: string | null
           created_at?: string
@@ -1109,6 +1120,7 @@ export type Database = {
           vencimento?: string
           pago_em?: string | null
           recorrencia_id?: string | null
+          competencia?: string | null
           observacao?: string | null
           criado_por?: string | null
           created_at?: string
@@ -1131,7 +1143,7 @@ export type Database = {
           regime: "simples" | "presumido"
           aliquota_simples: number
           aliquota_iss: number
-          teto_inss: number
+          regime_apuracao: "competencia" | "caixa"
           cnpj: string | null
           razao_social: string | null
           conferido_em: string | null
@@ -1143,7 +1155,7 @@ export type Database = {
           regime?: "simples" | "presumido"
           aliquota_simples?: number
           aliquota_iss?: number
-          teto_inss?: number
+          regime_apuracao?: "competencia" | "caixa"
           cnpj?: string | null
           razao_social?: string | null
           conferido_em?: string | null
@@ -1155,12 +1167,62 @@ export type Database = {
           regime?: "simples" | "presumido"
           aliquota_simples?: number
           aliquota_iss?: number
-          teto_inss?: number
+          regime_apuracao?: "competencia" | "caixa"
           cnpj?: string | null
           razao_social?: string | null
           conferido_em?: string | null
           atualizado_em?: string
         }
+        Relationships: []
+      }
+      /** 0232 — parcelas da comissão que a imobiliária recebe. */
+      venda_parcelas: {
+        Row: {
+          id: string
+          grupo_id: string
+          venda_id: string
+          numero: number
+          valor: number
+          pagador: "construtora" | "comprador"
+          vence_em: string | null
+          recebida_em: string | null
+          cancelada_em: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          venda_id: string
+          numero: number
+          valor: number
+          pagador?: "construtora" | "comprador"
+          vence_em?: string | null
+          recebida_em?: string | null
+          cancelada_em?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          venda_id?: string
+          numero?: number
+          valor?: number
+          pagador?: "construtora" | "comprador"
+          vence_em?: string | null
+          recebida_em?: string | null
+          cancelada_em?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0232 — parâmetros fiscais nacionais com vigência e fonte (da plataforma, só leitura). */
+      parametros_fiscais: {
+        Row: { chave: string; vigente_desde: string; valor: Json; fonte: string; fonte_url: string | null }
+        Insert: { chave: string; vigente_desde: string; valor: Json; fonte: string; fonte_url?: string | null }
+        Update: { chave?: string; vigente_desde?: string; valor?: Json; fonte?: string; fonte_url?: string | null }
         Relationships: []
       }
       /** 0167 — dados fiscais da venda (DIMOB e NFS-e; só o gestor). */
@@ -4519,8 +4581,24 @@ export type Database = {
         Args: { p_host: string; p_dominio_da_plataforma?: string | null }
         Returns: { grupo_id: string; nome: string; host_principal: string }[]
       }
-      marcar_comissao_recebida: {
-        Args: { p_venda: string; p_data: string | null }
+      marcar_parcela_recebida: {
+        Args: { p_parcela: string; p_data: string | null }
+        Returns: boolean
+      }
+      distratar_venda: {
+        Args: { p_venda: string; p_data: string; p_motivo: string; p_parcelas: "manter" | "cancelar" }
+        Returns: boolean
+      }
+      desfazer_distrato: {
+        Args: { p_venda: string }
+        Returns: boolean
+      }
+      avisar_distrato: {
+        Args: { p_venda: string; p_texto: string | null }
+        Returns: boolean
+      }
+      venda_tem_parcela_recebida: {
+        Args: { p_venda: string }
         Returns: boolean
       }
       marcar_repasse_pago: {
@@ -4554,7 +4632,7 @@ export type Database = {
         Returns: boolean
       }
       salvar_venda: {
-        Args: { p_venda: string | null; p_dados: Json; p_participantes: Json }
+        Args: { p_venda: string | null; p_dados: Json; p_participantes: Json; p_parcelas: Json }
         Returns: string
       }
       devolver_leads_da_imobiliaria: {

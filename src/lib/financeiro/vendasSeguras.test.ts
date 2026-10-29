@@ -17,6 +17,39 @@ const todas = () =>
     .map((n) => semComentarios(readFileSync(join(DIR, n), "utf8")))
     .join("\n");
 
+/**
+ * Os grants que valem hoje para uma tabela: só os que vêm DEPOIS do último
+ * `revoke all ... from authenticated` dela (0116, 0232). Grant antigo que um
+ * revoke apagou não pode reprovar nem aprovar a guarda.
+ */
+function grantsVigentes(sql: string, tabela: string): string[] {
+  const revokes = [...sql.matchAll(new RegExp(String.raw`revoke\s+all\s+on\s+public\.${tabela}\s+from\s+authenticated`, "gi"))];
+  const desde = revokes.length ? revokes[revokes.length - 1].index! : 0;
+  return [
+    ...sql
+      .slice(desde)
+      .matchAll(new RegExp(String.raw`grant\s+(?:update|insert)\s*\(([^)]*)\)\s*on\s+public\.${tabela}\s+to\s+authenticated`, "gi")),
+  ].map((m) => m[1]);
+}
+
+describe("Fase A (0232): distrato e parcela recebida são do gestor", () => {
+  const sql = todas();
+
+  it("nenhum grant vigente de vendas deixa o corretor mudar status ou distrato", () => {
+    const vigentes = grantsVigentes(sql, "vendas");
+    expect(vigentes.length).toBeGreaterThan(0);
+    for (const colunas of vigentes) expect(colunas).not.toMatch(/\bstatus\b|distratada_em|distrato_/);
+  });
+
+  it("nenhum grant de venda_parcelas inclui as datas de recebida ou cancelada", () => {
+    const vigentes = grantsVigentes(sql, "venda_parcelas");
+    expect(vigentes.length).toBeGreaterThan(0);
+    for (const colunas of vigentes) expect(colunas).not.toMatch(/recebida_em|cancelada_em/);
+  });
+
+  it.todo("nenhum código lê as colunas antigas de comissão recebida/prevista (vira `it` no Task 7)");
+});
+
 describe("vendas: dinheiro recebido/pago é só do gestor", () => {
   const sql = todas();
   const grantsDeUpdate = [...sql.matchAll(/grant\s+(?:update|insert)\s*\(([^)]*)\)\s*on\s+public\.(vendas|venda_participantes)\s+to\s+authenticated/gi)];
