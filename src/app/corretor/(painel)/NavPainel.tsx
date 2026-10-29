@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
 import {
   destinoAtivo,
   ehPasta,
@@ -72,7 +73,9 @@ export function NavPainel({
   recolhidoInicial: boolean;
 }) {
   const atual = usePathname();
-  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo);
+  // O ramo da conta (0244) esconde os módulos que não são dele e renomeia pelo vocabulário.
+  const { ramo } = useRamoDoPainel();
+  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo, ramo);
   const dono = destinoAtivo(atual);
   const marcas = useContadoresDoMenu();
   const [recolhido, setRecolhido] = useState(recolhidoInicial);

@@ -1,14 +1,18 @@
 // A marca da PLATAFORMA (28/10/2026): Astro Soluções.
 //
-// Módulo PURO. A plataforma é o produto que a Astro Soluções vende às
-// imobiliárias e aos corretores autônomos; cada cliente é um grupo, com a
-// marca DELE (`marcaDoCrm/marca.ts`). Aqui fica só o que é da plataforma: o
+// Módulo PURO. A plataforma é o produto que a Astro Soluções vende a
+// empresas que vendem e atendem pelo WhatsApp (imobiliárias, corretoras de
+// seguros, escritórios de advocacia e outros ramos desde 29/10/2026, 0244) e
+// a profissionais autônomos; cada cliente é um grupo, com a marca DELE
+// (`marcaDoCrm/marca.ts`). Aqui fica só o que é da plataforma: o
 // login, o ícone de quem não tem logo, a área `/plataforma` e a barra do
 // topo do painel, que mostra "Astro Soluções | <imobiliária>" como os
 // sistemas de gestão (TOTVS, SAP) mostram o produto e a empresa logada.
 //
 // Antes de 28/10/2026 a plataforma se chamava AstroImob; os arquivos de
 // ícone e o endereço `astroimob.vercel.app` mantêm o nome antigo.
+
+import { nomeDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 export const MARCA_DA_PLATAFORMA = {
   nome: "Astro Soluções",
@@ -17,7 +21,8 @@ export const MARCA_DA_PLATAFORMA = {
   /** Rótulo curto da barra do topo e do suporte. */
   produto: "Astro CRM",
   frase: "O CRM que atende seus clientes no WhatsApp enquanto você vende.",
-  apoio: "Leads, conversas, visitas e vendas da sua imobiliária num lugar só.",
+  // Geral desde 29/10/2026: o CRM é vendido a vários ramos, não só imobiliária.
+  apoio: "Leads, conversas, agenda e vendas da sua empresa num lugar só.",
   /** Azul-marinho e azul acinzentado do logo da Astro, com um brilho de estrela. */
   cores: {
     marinho: "#0f2547",
@@ -29,8 +34,18 @@ export const MARCA_DA_PLATAFORMA = {
   },
 } as const;
 
-/** O rótulo da conta na barra do topo: o tipo de cliente da plataforma. */
-export function rotuloDaConta(tipo: "imobiliaria" | "independente"): string {
+/**
+ * O rótulo da conta na barra do topo: o tipo de cliente da plataforma. Na
+ * imobiliária (o ramo padrão) é o de sempre; nos outros ramos (0244,
+ * 29/10/2026) a barra mostra o RAMO ("Corretora de seguros", "Advocacia", o
+ * texto do "Outro"), que é o que diz de quem é aquele CRM.
+ */
+export function rotuloDaConta(
+  tipo: "imobiliaria" | "independente",
+  ramo: Ramo = "imobiliaria",
+  descricao: string | null = null,
+): string {
+  if (ramo !== "imobiliaria") return nomeDoRamo(ramo, descricao);
   return tipo === "independente" ? "Corretor autônomo" : "Imobiliária";
 }
 

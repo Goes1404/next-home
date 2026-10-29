@@ -12,14 +12,15 @@ import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
  * Bricolage Grotesque nos títulos, Figtree no texto.
  */
 export const metadata: Metadata = {
-  title: { absolute: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA para imobiliárias e corretores` },
+  // Geral desde 29/10/2026 (0244): o CRM é vendido a todo ramo que vende pelo WhatsApp.
+  title: { absolute: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA no WhatsApp para empresas que vendem` },
   description:
-    "O CRM da Astro Soluções responde seus leads no WhatsApp com IA, organiza o funil, distribui os leads dos anúncios e marca as visitas.",
+    "O CRM da Astro Soluções responde seus leads no WhatsApp com IA, organiza o funil, distribui os leads dos anúncios e marca os atendimentos. Para imobiliárias, corretoras de seguros, escritórios de advocacia e mais.",
   icons: ICONES_ASTROIMOB,
   manifest: MANIFESTO_DA_PLATAFORMA,
   openGraph: {
-    title: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA para imobiliárias`,
-    description: "Seu lead respondido no WhatsApp em segundos, o funil em ordem e a visita na agenda.",
+    title: `${MARCA_DA_PLATAFORMA.nome} · CRM com IA no WhatsApp`,
+    description: "Seu lead respondido no WhatsApp em segundos, o funil em ordem e o atendimento na agenda.",
     type: "website",
     locale: "pt_BR",
   },

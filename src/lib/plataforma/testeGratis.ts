@@ -10,6 +10,7 @@ import { criarContaComPrimeiroAcesso, emailEmFicha } from "./criarConta";
 import { padraoDoEmail, validarNovoGrupo } from "./dadosDoGrupo";
 import { mascararParaLog, totalMensal, type PedidoLimpo } from "./pedidoDeContratacao";
 import { slugSugerido } from "./tiposDeConta";
+import { documentoProfissionalDaFicha, vocabularioDoRamo } from "@/lib/ramos/ramos";
 
 /**
  * O teste grátis de 7 dias do assistente `/astro/contratar` (29/10/2026,
@@ -137,7 +138,12 @@ export async function iniciarTesteGratis(
   agora: Date = new Date(),
 ): Promise<ResultadoDoTeste> {
   if (!emailConfigurado()) return { ok: false, erro: MENSAGEM_TESTE_INDISPONIVEL };
-  if (!p.creci) return { ok: false, erro: "Para começar o teste grátis, informe o CRECI." };
+  // O documento do ramo (0244): CRECI obrigatório na imobiliária; nos ramos
+  // sem registro obrigatório, a ficha leva o marcador "Não informado".
+  const documentoDaFicha = documentoProfissionalDaFicha(p.ramo, p.creci);
+  if (!documentoDaFicha) {
+    return { ok: false, erro: `Para começar o teste grátis, informe o ${vocabularioDoRamo(p.ramo).documento.rotulo}.` };
+  }
 
   try {
     const servico = createServiceClient();
@@ -160,7 +166,7 @@ export async function iniciarTesteGratis(
       contatoEmail: imobiliaria ? p.email : "",
       contatoTelefone: imobiliaria ? p.whatsapp : "",
       primeiroNome: p.nome,
-      primeiroCreci: p.creci,
+      primeiroCreci: documentoDaFicha,
       primeiroWhatsapp: p.whatsapp,
       primeiroEmail: p.email,
     });
@@ -170,6 +176,8 @@ export async function iniciarTesteGratis(
     const { data: pedido, error: erroDoPedido } = await servico
       .from("pedidos_de_contratacao")
       .insert({
+        ramo: p.ramo,
+        ramo_descricao: p.ramoDescricao,
         plano: p.plano,
         usuarios: p.usuarios,
         nome: p.nome,
@@ -197,10 +205,13 @@ export async function iniciarTesteGratis(
       { origem: "teste-gratis", pedidoId: pedido.id },
       grupo.dados,
       {
+        // O ramo escolhido no assistente (0244): é ele que personaliza o CRM.
+        ramo: p.ramo,
+        ramo_descricao: p.ramoDescricao,
         razao_social: null,
         documento: p.documento,
         creci: p.creci,
-        creci_tipo: imobiliaria ? "J" : "F",
+        creci_tipo: p.creci ? (imobiliaria ? "J" : "F") : null,
         mensalidade: totalMensal(p.plano, p.usuarios),
         // As faturas seguintes caem no dia do fim do teste (até 28).
         dia_do_vencimento: diaDoVencimentoValido(Number(fimDoTeste.slice(8, 10))),
@@ -239,6 +250,7 @@ export async function iniciarTesteGratis(
         origem: "teste-gratis",
         pedido_id: pedido.id,
         plano: p.plano,
+        ramo: p.ramo,
         teste_ate: fim.toISOString(),
         convite_enviado: conta.enviado,
       },

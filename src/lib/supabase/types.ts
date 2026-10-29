@@ -1286,6 +1286,9 @@ export type Database = {
           atualizado_em: string
           documento: string | null
           teste_gratis: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao: string | null
         }
         Insert: {
           id?: string
@@ -1306,6 +1309,9 @@ export type Database = {
           atualizado_em?: string
           documento?: string | null
           teste_gratis?: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Update: {
           id?: string
@@ -1326,6 +1332,9 @@ export type Database = {
           atualizado_em?: string
           documento?: string | null
           teste_gratis?: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Relationships: []
       }
@@ -2238,6 +2247,9 @@ export type Database = {
           teto_videos: number | null
           teto_mensagens_lista: number | null
           tipo: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao: string | null
         }
         Insert: {
           asaas_assinatura_id?: string | null
@@ -2308,6 +2320,9 @@ export type Database = {
           teto_videos?: number | null
           teto_mensagens_lista?: number | null
           tipo: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Update: {
           asaas_assinatura_id?: string | null
@@ -2378,6 +2393,9 @@ export type Database = {
           teto_videos?: number | null
           teto_mensagens_lista?: number | null
           tipo?: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Relationships: []
       }

@@ -28,6 +28,7 @@ import {
 import { apagarLogin, criarContaComPrimeiroAcesso, emailEmFicha, slugDeCorretorLivre } from "@/lib/plataforma/criarConta";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
 import { ehPlano } from "@/lib/plataforma/rotulosDoGrupo";
+import { validarRamo } from "@/lib/ramos/ramos";
 import { COLUNA_DO_TETO, lerLimiteDigitado, RECURSOS, type Recurso } from "@/lib/planos/limitesDoPlano";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -557,6 +558,79 @@ export async function mudarPlanoDoGrupo(
       console.error(`[plataforma] evento ${evento.acao} (${grupoId}) não gravado: ${erroDoEvento.message}`, evento.detalhes);
     }
   }
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoMudancaDeRamo = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Muda o ramo do negócio do grupo (pedido do dono, 29/10/2026, 0244): o ramo
+ * personaliza o CRM do cliente (vocabulário, módulos do menu, IA do
+ * WhatsApp). Só a plataforma muda; o logado lê (grant da 0244) e não escreve.
+ * Nada é apagado ao trocar: o catálogo de imóveis de quem sai da imobiliária
+ * só some do menu, e volta se o ramo voltar.
+ *
+ * A Next Home é imobiliária e fica imobiliária (o prompt dela é o de sempre).
+ * O evento `ramo_do_grupo_alterado` entra no CHECK na 0244; antes dela o
+ * insert falha, o log diz, e o ramo muda mesmo assim (como `plano_alterado`).
+ */
+export async function mudarRamoDoGrupo(
+  grupoId: string,
+  pedido: { ramo: string; ramoDescricao: string },
+): Promise<ResultadoMudancaDeRamo> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+  if (grupoId === GRUPO_NEXT_HOME_ID) return { ok: false, erro: "A Next Home fica no ramo imobiliária." };
+  const validado = validarRamo(pedido?.ramo, pedido?.ramoDescricao);
+  if (!validado.ok) return { ok: false, erro: validado.erro };
+  const { ramo, ramoDescricao } = validado.dados;
+
+  const servico = createServiceClient();
+  const { data: antes, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("ramo, ramo_descricao")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] ramo do grupo ${grupoId} não lido: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível mudar o ramo agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+  // Copiado antes do update: a linha lida não é reaproveitada depois da escrita.
+  const ramoAntes = antes.ramo;
+  if (ramoAntes === ramo && (antes.ramo_descricao ?? null) === ramoDescricao) {
+    return { ok: false, erro: "O grupo já está neste ramo." };
+  }
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({ ramo, ramo_descricao: ramoDescricao })
+    .eq("id", grupoId)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] ramo do grupo ${grupoId} não gravado: ${error.message}`);
+    return { ok: false, erro: "Não foi possível mudar o ramo agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
+
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "ramo_do_grupo_alterado",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: {
+      origem: "plataforma",
+      antes: ramoAntes,
+      depois: ramo,
+      ...(ramoDescricao ? { descricao: ramoDescricao } : {}),
+    },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento ramo_do_grupo_alterado (${grupoId}) não gravado: ${erroDoEvento.message}`);
 
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);

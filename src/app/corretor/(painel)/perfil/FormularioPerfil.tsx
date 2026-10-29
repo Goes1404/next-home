@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { salvarPerfil } from "@/app/corretor/actions";
 import type { CorretorPerfil } from "@/lib/types";
+import { useVocabulario } from "@/lib/ramos/RamoDoPainel";
 
 const CAMPO =
   "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
@@ -19,6 +20,8 @@ function paraExibicao(e164: string): string {
 }
 
 export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
+  // O documento profissional no vocabulário do ramo (0244): CRECI na imobiliária.
+  const documento = useVocabulario().documento;
   const [estado, action, pendente] = useActionState(salvarPerfil, undefined);
 
   return (
@@ -41,7 +44,7 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
 
       <div>
         <label htmlFor="creci" className="text-fluid-sm mb-1.5 block text-corpo">
-          CRECI
+          {documento.rotulo}
         </label>
         <input
           id="creci"
@@ -51,7 +54,7 @@ export function FormularioPerfil({ corretor }: { corretor: CorretorPerfil }) {
           minLength={2}
           maxLength={40}
           defaultValue={corretor.creci}
-          placeholder="Ex.: 123456-F"
+          placeholder={documento.rotulo === "CRECI" ? "Ex.: 123456-F" : undefined}
           className={CAMPO}
         />
         <p className="text-fluid-xs mt-1 text-tenue">

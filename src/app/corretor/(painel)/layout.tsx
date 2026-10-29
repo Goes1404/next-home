@@ -22,6 +22,7 @@ import { CromaDoModulo } from "./CromaDoModulo";
 import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { MenuDaConta } from "./MenuDaConta";
+import { RamoDoPainelProvider } from "@/lib/ramos/RamoDoPainel";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { MARCA_DA_PLATAFORMA, rotuloDaConta } from "@/lib/marcaDaPlataforma";
@@ -111,11 +112,17 @@ export default async function PainelLayout({
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
   // padrão de antes (imobiliária), que só esconde o que já escondia.
   const tipoDoGrupo = corretor?.tipoDoGrupo ?? "imobiliaria";
+  // O ramo da conta (0244, 29/10/2026): todo login cai no MESMO painel
+  // (`/corretor`), e é o ramo que o faz ser o CRM daquele negócio —
+  // vocabulário, módulos do menu e o selo da barra. Sem sessão, imobiliária.
+  const ramo = corretor?.ramo ?? "imobiliaria";
+  const ramoDescricao = corretor?.ramoDescricao ?? null;
   // A lateral do computador nasce do jeito que a pessoa deixou (ver menuLateral.ts).
   const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
 
   return (
     <MarcaDoPainelProvider marca={{ nome: marca.nome, wordmark: marca.wordmark, logoUrl: marca.logoUrl }}>
+    <RamoDoPainelProvider ramo={ramo} descricao={ramoDescricao}>
     <CromaDoModulo className={`${FONTES_DA_ASTRO} bg-fundo relative isolate flex min-h-svh flex-1 flex-col`}>
       {/*
         A aurora e o grão, fixos atrás de todo o painel (24/09/2026). São o
@@ -156,14 +163,14 @@ export default async function PainelLayout({
                 <span aria-hidden className="bg-linha-forte mx-1.5 h-6 w-px shrink-0 sm:mx-2.5" />
                 <Link
                   href="/"
-                  title={`${rotuloDaConta(tipoDoGrupo)}: ${marca.nome}`}
+                  title={`${rotuloDaConta(tipoDoGrupo, ramo, ramoDescricao)}: ${marca.nome}`}
                   className="flex min-w-0 items-center gap-2.5"
                 >
                   <span className="font-display text-titulo min-w-0 truncate text-lg">
                     <LogoDoPainel marca={marca} destaque="text-acento-suave" />
                   </span>
                   <span className="border-linha text-apoio hidden shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] tracking-[0.08em] uppercase md:inline">
-                    {rotuloDaConta(tipoDoGrupo)}
+                    {rotuloDaConta(tipoDoGrupo, ramo, ramoDescricao)}
                   </span>
                 </Link>
               </>
@@ -255,6 +262,7 @@ export default async function PainelLayout({
         </div>
       )}
     </CromaDoModulo>
+    </RamoDoPainelProvider>
     </MarcaDoPainelProvider>
   );
 }

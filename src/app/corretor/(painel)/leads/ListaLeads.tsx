@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { maiuscula, temModulo, vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -84,6 +86,12 @@ export function ListaLeads({
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  // O ramo da conta (0244): o chip "Visitas" vira "Reuniões", "Consultas"...,
+  // e o filtro por empreendimento só existe com o catálogo de imóveis.
+  const { ramo } = useRamoDoPainel();
+  const compromissos = maiuscula(vocabularioDoRamo(ramo).compromisso.plural);
+  const chips = CHIPS.map((c) => (c.valor === "visitas" ? { ...c, label: compromissos } : c));
+  const temCatalogo = temModulo(ramo, "catalogoDeImoveis");
 
   const filtro = (params.get("filtro") ?? "todos") as Filtro;
   const etapaFiltro = params.get("etapa") ?? "";
@@ -272,7 +280,7 @@ export function ListaLeads({
           da barra de seleção: chip escondido atrás de um gesto invisível é
           filtro que existe e ninguém encontra. */}
       <div className="mt-2 flex flex-wrap gap-2 pb-2">
-        {CHIPS.map(({ valor, label, cor }) => {
+        {chips.map(({ valor, label, cor }) => {
           const ativo = filtro === valor && !etapaFiltro;
           return (
             <button
@@ -315,6 +323,7 @@ export function ListaLeads({
               ))}
             </select>
           )}
+{temCatalogo && (
           <select
             value={empreendimentoFiltro}
             onChange={(e) => atualizarUrl({ empreendimento: e.target.value })}
@@ -328,6 +337,7 @@ export function ListaLeads({
               </option>
             ))}
           </select>
+          )}
           <select
             value={etapaFiltro}
             onChange={(e) => atualizarUrl({ etapa: e.target.value, filtro: "" })}

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ATALHOS_MOBILE, destinoAtivo } from "./_componentes/navegacao";
+import { atalhosMobile, destinoAtivo } from "./_componentes/navegacao";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
 import { alternarGaveta, useGavetaAberta } from "./_componentes/gavetaStore";
 import { CarregandoLink } from "./_componentes/CarregandoLink";
 
@@ -23,13 +24,15 @@ export function NavMobileBottom() {
   const atual = usePathname();
   const dono = destinoAtivo(atual);
   const aberta = useGavetaAberta(atual);
+  // Sem catálogo de imóveis no ramo (0244), o terceiro atalho vira o Assistente.
+  const atalhos = atalhosMobile(useRamoDoPainel().ramo);
 
   return (
     <nav
       aria-label="Atalhos do painel"
       className="border-linha bg-fundo/85 h-nav-safe pb-safe fixed inset-x-0 bottom-0 z-50 flex items-stretch justify-around border-t px-1 backdrop-blur-lg md:hidden"
     >
-      {ATALHOS_MOBILE.map((item) => {
+      {atalhos.map((item) => {
         /* Mesmo dono que a gaveta e o sidebar usam. Com `itemAtivo`, a barra
            acenderia "Imóveis" em `/corretor/imoveis/criar-imagem`, que é
            subtópico da Assistente — o polegar diria uma seção e o menu diria

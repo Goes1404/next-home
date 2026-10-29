@@ -140,6 +140,59 @@
   color: var(--tinta-suave);
 }
 
+/* ---------- Passo 1: ramo (29/10/2026, 0244) ---------- */
+
+/* Pílulas de escolha única: duas colunas no celular, três a partir de 640px.
+   Mesmo vocabulário visual das opções de plano (borda azul + halo ao marcar). */
+.ramos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .ramos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.ramo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  min-width: 0;
+  border-radius: 0.95rem;
+  border: 1.5px solid var(--linha);
+  background: #fff;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 180ms,
+    background-color 180ms,
+    box-shadow 220ms;
+}
+.ramo:hover {
+  border-color: #b9c8de;
+}
+.ramo:has(input:focus-visible) {
+  outline: 3px solid var(--bruma);
+  outline-offset: 2px;
+}
+.ramo:has(input:checked) {
+  border-color: var(--azul);
+  background: #f5f8fd;
+  box-shadow: 0 0 0 4px rgb(47 94 168 / 0.12);
+}
+.iconeDoRamo {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--azul);
+}
+
 /* ---------- Passo 1: planos ---------- */
 
 .opcoes {

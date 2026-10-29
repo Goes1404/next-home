@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   ATALHOS_MOBILE,
   GRUPOS_NAV,
+  atalhosMobile,
   ITENS_DA_CONTA,
   destinoAtivo,
   gruposVisiveis,
@@ -13,6 +14,7 @@ import {
   rotaAtiva,
   subitensDe,
 } from "./navegacao";
+import { RAMOS } from "@/lib/ramos/ramos";
 
 describe("mapa de navegação (três destinos no polegar, e é de propósito)", () => {
   it("a barra do polegar leva no máximo 3 destinos", () => {
@@ -613,5 +615,86 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
         expect(gruposVisiveis(ehGestor, tipo).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
       }
     }
+  });
+});
+
+describe("menu pelo ramo da conta (0244, 29/10/2026)", () => {
+  /*
+   * "Todo login vai redirecionar para o CRM da tipagem da conta": a rota é a
+   * mesma (`/corretor`), e é o ramo que esconde o que não é do negócio e
+   * renomeia pelo vocabulário. A imobiliária tem de sair IDÊNTICA.
+   */
+  const DE_IMOBILIARIA = [
+    "/corretor/imoveis",
+    "/corretor/links",
+    "/corretor/marketing/video",
+    "/corretor/admin/construtoras",
+    "/corretor/admin/parceiros",
+    "/corretor/admin/precos",
+    "/corretor/admin/credito",
+  ];
+  const enderecos = (ehGestor: boolean, tipo: "imobiliaria" | "independente", ramo: (typeof RAMOS)[number]) =>
+    gruposVisiveis(ehGestor, tipo, ramo).flatMap((g) => g.itens.flatMap((i) => [i.href, ...(i.subitens ?? []).map((s) => s.href)]));
+
+  it("imobiliária explícita = o menu de sempre (sem ramo)", () => {
+    for (const ehGestor of [true, false]) {
+      for (const tipo of ["imobiliaria", "independente"] as const) {
+        expect(gruposVisiveis(ehGestor, tipo, "imobiliaria")).toEqual(gruposVisiveis(ehGestor, tipo));
+      }
+    }
+    expect(atalhosMobile("imobiliaria")).toBe(ATALHOS_MOBILE);
+    expect(atalhosMobile()).toBe(ATALHOS_MOBILE);
+  });
+
+  it("a imobiliária ainda vê o catálogo, o crédito e o Ranking de VGV", () => {
+    const visiveis = enderecos(true, "imobiliaria", "imobiliaria");
+    for (const href of DE_IMOBILIARIA) expect(visiveis).toContain(href);
+    const ranking = gruposVisiveis(true, "imobiliaria", "imobiliaria")
+      .flatMap((g) => g.itens.flatMap((i) => i.subitens ?? []))
+      .find((s) => s.href === "/corretor/financeiro/ranking");
+    expect(ranking?.label).toBe("Ranking de VGV");
+  });
+
+  it("os outros ramos não veem os módulos de imobiliária", () => {
+    for (const ramo of RAMOS.filter((r) => r !== "imobiliaria")) {
+      for (const ehGestor of [true, false]) {
+        const visiveis = enderecos(ehGestor, "imobiliaria", ramo);
+        for (const href of DE_IMOBILIARIA) expect(visiveis, `${ramo}: ${href}`).not.toContain(href);
+        // O que é de todo negócio continua.
+        for (const href of ["/corretor", "/corretor/pessoas", "/corretor/funil", "/corretor/agenda", "/corretor/whatsapp", "/corretor/financeiro"]) {
+          expect(visiveis, `${ramo}: ${href}`).toContain(href);
+        }
+      }
+    }
+  });
+
+  it("o ranking fala a língua do ramo", () => {
+    const ranking = gruposVisiveis(false, "imobiliaria", "advocacia")
+      .flatMap((g) => g.itens.flatMap((i) => i.subitens ?? []))
+      .find((s) => s.href === "/corretor/financeiro/ranking");
+    expect(ranking?.label).toBe("Ranking de vendas");
+  });
+
+  it("sem o catálogo, a barra do polegar troca Imóveis pelo Assistente", () => {
+    for (const ramo of RAMOS.filter((r) => r !== "imobiliaria")) {
+      const hrefs = atalhosMobile(ramo).map((i) => i.href);
+      expect(hrefs).toEqual(["/corretor", "/corretor/pessoas", "/corretor/whatsapp"]);
+    }
+  });
+
+  it("o teto de sete destinos vale para todo ramo", () => {
+    for (const ramo of RAMOS) {
+      for (const tipo of ["imobiliaria", "independente"] as const) {
+        expect(gruposVisiveis(true, tipo, ramo).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
+      }
+    }
+  });
+
+  it("os componentes do menu leem o ramo do painel", () => {
+    const raiz = join(__dirname, "..");
+    for (const arquivo of ["NavPainel.tsx", "GavetaLateral.tsx"]) {
+      expect(readFileSync(join(raiz, arquivo), "utf8")).toMatch(/gruposVisiveis\(ehGestor, tipoDoGrupo, ramo\)/);
+    }
+    expect(readFileSync(join(raiz, "NavMobileBottom.tsx"), "utf8")).toContain("atalhosMobile(useRamoDoPainel().ramo)");
   });
 });

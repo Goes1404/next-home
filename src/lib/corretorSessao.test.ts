@@ -102,6 +102,32 @@ describe("getCorretorLogado", () => {
     expect(deNovo?.tipoDoGrupo).toBe("imobiliaria");
   });
 
+  it("traz o ramo do grupo (0244), para o painel ser o CRM do negócio", async () => {
+    linha = corretor({ grupo_id: "grupo-b" });
+    grupo = async () => ({ data: { id: "grupo-b", tipo: "imobiliaria", ramo: "advocacia", ramo_descricao: null }, error: null });
+    const eu = await getCorretorLogado();
+    expect(eu?.ramo).toBe("advocacia");
+    expect(eu?.ramoDescricao).toBeNull();
+
+    grupo = async () => ({ data: { id: "grupo-b", tipo: "independente", ramo: "outro", ramo_descricao: " Pet  shop " }, error: null });
+    expect(await getCorretorLogado()).toMatchObject({ ramo: "outro", ramoDescricao: "Pet shop", tipoDoGrupo: "independente" });
+  });
+
+  it("sem a coluna ramo (antes da 0244), o tipo continua valendo e o ramo é imobiliária", async () => {
+    linha = corretor({ grupo_id: "grupo-b" });
+    let chamadas = 0;
+    grupo = async () => {
+      chamadas += 1;
+      // A 1ª leitura (com ramo) falha como antes da migration; a 2ª (só o tipo) responde.
+      return chamadas === 1
+        ? { data: null, error: { code: "42703", message: "column grupos.ramo does not exist" } }
+        : { data: { id: "grupo-b", tipo: "independente" }, error: null };
+    };
+    const eu = await getCorretorLogado();
+    expect(eu?.tipoDoGrupo).toBe("independente");
+    expect(eu?.ramo).toBe("imobiliaria");
+  });
+
   it("linha de outro grupo não decide o menu", async () => {
     linha = corretor({ grupo_id: "grupo-a" });
     grupo = async () => ({ data: { id: "grupo-b", tipo: "independente" }, error: null });

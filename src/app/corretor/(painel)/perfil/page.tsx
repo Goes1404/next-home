@@ -14,6 +14,7 @@ import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
 import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Meu perfil" };
@@ -71,14 +72,15 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
         <EditorAvatar nome={corretor.nome} fotoUrl={corretor.fotoUrl} />
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-acento-lavado border border-acento-linha px-2.5 py-0.5 text-fluid-xs font-semibold text-acento-suave">
-            CRECI {corretor.creci}
+            {/* O documento profissional no vocabulário do ramo (0244): CRECI, SUSEP, OAB... */}
+            {vocabularioDoRamo(corretor.ramo).documento.rotulo} {corretor.creci}
           </span>
           <span className="rounded-full bg-ok-lavado border border-ok-linha px-2.5 py-0.5 text-fluid-xs font-medium text-ok">
             Perfil Público Ativo
           </span>
         </div>
         <p className="text-fluid-xs mt-2 text-apoio">
-          O CRECI é gerenciado pela administração da {marca.nome}.
+          O {vocabularioDoRamo(corretor.ramo).documento.rotulo} é gerenciado pela administração da {marca.nome}.
         </p>
       </div>
 

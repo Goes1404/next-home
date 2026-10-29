@@ -48,6 +48,8 @@ export type OrigemDaConta = { origem: "plataforma"; userId: string } | { origem:
 export type CadastroDaConta = Pick<
   AtualizacaoDoGrupo,
   "razao_social" | "documento" | "creci" | "creci_tipo" | "mensalidade" | "dia_do_vencimento" | "teste_ate"
+  // O ramo do negócio (0244, 29/10/2026), gravado junto do cadastro.
+  | "ramo" | "ramo_descricao"
 >;
 
 export type ResultadoDaConta =

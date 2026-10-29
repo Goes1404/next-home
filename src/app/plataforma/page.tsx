@@ -21,6 +21,8 @@ import { CustoDaIa } from "./CustoDaIa";
 import { PainelDeNumeros } from "./PainelDeNumeros";
 import { SaudeNoCartao } from "./SaudeDoGrupo";
 import { SeloDoTipo } from "./SeloDoTipo";
+import { IconeDoRamo } from "@/lib/ramos/IconeDoRamo";
+import { nomeDoRamo } from "@/lib/ramos/ramos";
 import { UsoDaIa } from "./UsoDaIa";
 
 export const metadata: Metadata = { title: "Contas" };
@@ -128,7 +130,14 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
     const independente = g.tipo === "independente";
     return (
       <li key={g.id} className="cartao flex min-w-0 flex-col gap-4 p-5">
-        <SeloDoTipo tipo={g.tipo} grupoId={g.id} />
+        <div className="flex flex-wrap items-center gap-2">
+          <SeloDoTipo tipo={g.tipo} grupoId={g.id} />
+          {/* O ramo do negócio (0244): o que personaliza o CRM do cliente. */}
+          <span className="text-fluid-xs border-linha text-apoio inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1">
+            <IconeDoRamo ramo={g.ramo} className="size-3.5 shrink-0" />
+            {nomeDoRamo(g.ramo, g.ramoDescricao)}
+          </span>
+        </div>
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="text-titulo text-fluid-lg font-medium break-words">

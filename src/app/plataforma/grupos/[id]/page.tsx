@@ -29,6 +29,7 @@ import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
 import { AcessosDoGrupo } from "./AcessosDoGrupo";
 import { SituacaoEPlanoDoGrupo } from "./SituacaoEPlanoDoGrupo";
+import { RamoDoGrupo } from "./RamoDoGrupo";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -142,6 +143,13 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
           limites.ajustados.lista !== null
         }
         planoFixo={grupo.id === GRUPO_NEXT_HOME_ID}
+      />
+
+      <RamoDoGrupo
+        grupoId={grupo.id}
+        ramo={grupo.ramo}
+        descricao={grupo.ramoDescricao}
+        fixo={grupo.id === GRUPO_NEXT_HOME_ID}
       />
 
       <FormularioNovoAcesso grupoId={grupo.id} />

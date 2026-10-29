@@ -5,12 +5,19 @@
 // no MESMO `NovoGrupoValidado` e na mesma action/RPC (`criar_grupo`): aqui só
 // se monta e valida o pedido; a regra de criar o grupo continua uma só
 // (`validarNovoGrupo`).
+//
+// Ramo (29/10/2026, 0244): os dois formulários escolhem o ramo do negócio
+// (imobiliária, seguros, advocacia... ou "outro" com texto). O TIPO continua
+// sendo "com equipe" (imobiliaria) ou "uma pessoa" (independente) — o nome
+// técnico ficou; o ramo é o que personaliza o CRM. Fora da imobiliária o
+// documento profissional (CRECI-J/F) passa a ser o do ramo e é opcional.
 
 import { normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { lerDiaDoVencimentoDigitado, lerMensalidadeDigitada } from "@/lib/planos/pagamentosDigitados";
 import { validarNovoGrupo, type DadosNovoGrupo, type NovoGrupoValidado } from "./dadosDoGrupo";
 import { cnpjValido, cpfValido, soDigitos } from "./documentos";
 import type { Plano } from "./rotulosDoGrupo";
+import { documentoProfissionalDaFicha, validarRamo, type Ramo } from "@/lib/ramos/ramos";
 
 /** Preços de tabela (desenho multi-grupo §10), em reais por mês. */
 export const PRECO_ESSENCIAL = 97;
@@ -52,10 +59,13 @@ export function slugSugerido(nome: string): string {
 
 /** O que o grupo recebe além do que `criar_grupo` grava (colunas de `grupos`). */
 export type CadastroDoGrupo = {
+  ramo: Ramo;
+  ramo_descricao: string | null;
   razao_social: string | null;
   documento: string;
-  creci: string;
-  creci_tipo: "J" | "F";
+  /** O documento do grupo; `null` no ramo sem registro obrigatório deixado em branco (0244). */
+  creci: string | null;
+  creci_tipo: "J" | "F" | null;
   mensalidade: number;
   dia_do_vencimento: number;
 };
@@ -64,6 +74,9 @@ export type PedidoValidado = { grupo: NovoGrupoValidado; cadastro: CadastroDoGru
 export type ResultadoDoPedido = { ok: true; dados: PedidoValidado } | { ok: false; erro: string };
 
 export type FormularioDaImobiliaria = {
+  /** O ramo (0244). Ausente = imobiliária (formulário de antes do campo). */
+  ramo?: string;
+  ramoDescricao?: string;
   nomeFantasia: string;
   slug: string;
   razaoSocial: string;
@@ -81,6 +94,9 @@ export type FormularioDaImobiliaria = {
 };
 
 export type FormularioDoIndependente = {
+  /** O ramo (0244). Ausente = imobiliária (formulário de antes do campo). */
+  ramo?: string;
+  ramoDescricao?: string;
   nome: string;
   slug: string;
   cpf: string;
@@ -109,12 +125,21 @@ function lerMensalidade(texto: string, padrao: number): Lido<number> {
   return { ok: true, valor: lida.valor ?? padrao };
 }
 
+/** O ramo do formulário; ausente vale imobiliária (o formulário de antes). */
+function lerRamoDoFormulario(f: { ramo?: string; ramoDescricao?: string }) {
+  const r = validarRamo(f.ramo === undefined ? "imobiliaria" : f.ramo, f.ramoDescricao);
+  return r.ok ? r : { ok: false as const, erro: r.erro };
+}
+
 export function validarImobiliaria(f: FormularioDaImobiliaria): ResultadoDoPedido {
+  const ramo = lerRamoDoFormulario(f);
+  if (!ramo.ok) return ramo;
   const documento = soDigitos(f.cnpj);
   if (!cnpjValido(documento)) return { ok: false, erro: "CNPJ inválido. Confira os 14 números." };
   const razao = f.razaoSocial.trim().replace(/\s+/g, " ");
   if (razao.length < 3) return { ok: false, erro: "Informe a razão social." };
-  const creci = f.creciJ.trim();
+  // CRECI-J na imobiliária; nos outros ramos, o registro do ramo, opcional.
+  const creci = documentoProfissionalDaFicha(ramo.dados.ramo, f.creciJ);
   if (!creci) return { ok: false, erro: "Informe o CRECI-J da imobiliária." };
 
   const usuarios = lerUsuarios(f.usuarios);
@@ -146,10 +171,13 @@ export function validarImobiliaria(f: FormularioDaImobiliaria): ResultadoDoPedid
     dados: {
       grupo: grupo.dados,
       cadastro: {
+        ramo: ramo.dados.ramo,
+        ramo_descricao: ramo.dados.ramoDescricao,
         razao_social: razao,
         documento,
-        creci,
-        creci_tipo: "J",
+        // No grupo, o documento digitado (o marcador "Não informado" fica só na ficha).
+        creci: f.creciJ.trim() ? creci : null,
+        creci_tipo: f.creciJ.trim() ? "J" : null,
         mensalidade: mensalidade.valor,
         dia_do_vencimento: dia.valor,
       },
@@ -164,9 +192,11 @@ export function validarImobiliaria(f: FormularioDaImobiliaria): ResultadoDoPedid
  * dele; o CPF é o documento e não há razão social.
  */
 export function validarIndependente(f: FormularioDoIndependente): ResultadoDoPedido {
+  const ramo = lerRamoDoFormulario(f);
+  if (!ramo.ok) return ramo;
   const documento = soDigitos(f.cpf);
   if (!cpfValido(documento)) return { ok: false, erro: "CPF inválido. Confira os 11 números." };
-  const creci = f.creciF.trim();
+  const creci = documentoProfissionalDaFicha(ramo.dados.ramo, f.creciF);
   if (!creci) return { ok: false, erro: "Informe o CRECI-F do corretor." };
   if (!ehPlanoDoIndependente(f.plano)) return { ok: false, erro: "Escolha o plano: Essencial ou Profissional." };
 
@@ -195,10 +225,12 @@ export function validarIndependente(f: FormularioDoIndependente): ResultadoDoPed
     dados: {
       grupo: grupo.dados,
       cadastro: {
+        ramo: ramo.dados.ramo,
+        ramo_descricao: ramo.dados.ramoDescricao,
         razao_social: null,
         documento,
-        creci,
-        creci_tipo: "F",
+        creci: f.creciF.trim() ? creci : null,
+        creci_tipo: f.creciF.trim() ? "F" : null,
         mensalidade: mensalidade.valor,
         dia_do_vencimento: dia.valor,
       },

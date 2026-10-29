@@ -13,8 +13,24 @@
 // Mínimo de usuários da Imobiliária: 1. Nem `tiposDeConta.ts` (`lerUsuarios`
 // aceita de 1 a USUARIOS_MAXIMO) nem `limitesDoPlano.ts` declaram mínimo; o
 // formulário da plataforma só SUGERE 3. O assistente também sugere 3.
+//
+// Ramo (29/10/2026, 0244): a pessoa escolhe o ramo do negócio no primeiro
+// passo ("Imobiliária", "Corretora de seguros", "Advocacia"... e "Outro" com
+// texto). Os ids de plano continuam `essencial | profissional | imobiliaria`
+// (CHECK do banco, links salvos `?plano=imobiliaria`); o que muda é o NOME
+// que a tela mostra: o plano de equipe é "Imobiliária" só para quem é
+// imobiliária, e "Empresa" para os outros ramos (`planoParaORamo`).
 
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import {
+  documentoProfissionalDaFicha,
+  ehRamo,
+  nomeDoRamo,
+  RAMO_PADRAO,
+  validarRamo,
+  vocabularioDoRamo,
+  type Ramo,
+} from "@/lib/ramos/ramos";
 import { cnpjValido, cpfValido, soDigitos } from "./documentos";
 import {
   mensalidadeComoTexto,
@@ -75,6 +91,42 @@ export const PLANO_CONTRATAVEL: Record<
     preco: PRECO_POR_USUARIO_DA_IMOBILIARIA,
     porUsuario: true,
   },
+};
+
+/**
+ * O plano como a tela o mostra para o ramo escolhido. Na imobiliária (e sem
+ * ramo) é `PLANO_CONTRATAVEL`, letra por letra; nos outros ramos o plano de
+ * equipe se chama "Empresa" e os resumos falam a língua do ramo.
+ */
+export function planoParaORamo(
+  plano: PlanoContratavel,
+  ramo: Ramo | null | undefined = RAMO_PADRAO,
+): (typeof PLANO_CONTRATAVEL)[PlanoContratavel] {
+  const base = PLANO_CONTRATAVEL[plano];
+  if (!ramo || ramo === "imobiliaria") return base;
+  const v = vocabularioDoRamo(ramo);
+  switch (plano) {
+    case "essencial":
+      return { ...base, resumo: "Para quem trabalha sozinho e quer a IA atendendo por você." };
+    case "profissional":
+      return { ...base, resumo: "Para quem anuncia toda semana e precisa de mais artes, listas e respostas da IA." };
+    case "imobiliaria":
+      return {
+        ...base,
+        nome: "Empresa",
+        resumo: `Equipe, gestor, roleta de leads e a marca da sua ${v.empresa.genero === "f" ? v.empresa.singular : "empresa"} no CRM.`,
+      };
+  }
+}
+
+/**
+ * O nome curto do botão "Contratar <plano>" da página de vendas, que fala com
+ * todo ramo (0244): o plano de equipe é "Empresa" ali.
+ */
+export const NOME_CURTO_NA_VENDA: Record<PlanoContratavel, string> = {
+  essencial: "Essencial",
+  profissional: "Profissional",
+  imobiliaria: "Empresa",
 };
 
 export function ehPlanoContratavel(valor: unknown): valor is PlanoContratavel {
@@ -162,6 +214,14 @@ function texto(v: unknown, max: number): string {
 
 /** O que o assistente manda ao servidor (tudo texto/número vindo do navegador). */
 export type DadosDoPedido = {
+  /**
+   * O ramo do negócio (0244). Opcional no TIPO só pela compatibilidade com
+   * quem mandava o pedido antes do campo existir (página velha aberta):
+   * ausente vale "imobiliaria"; presente e vazio é erro ("escolha o ramo").
+   */
+  ramo?: string;
+  /** O texto do ramo "outro". */
+  ramoDescricao?: string;
   plano: string;
   usuarios: number;
   nome: string;
@@ -176,6 +236,8 @@ export type DadosDoPedido = {
 };
 
 export const DADOS_VAZIOS: DadosDoPedido = {
+  ramo: "",
+  ramoDescricao: "",
   plano: "",
   usuarios: USUARIOS_SUGERIDOS,
   nome: "",
@@ -190,13 +252,18 @@ export const DADOS_VAZIOS: DadosDoPedido = {
 
 /** O pedido limpo, pronto para gravar. */
 export type PedidoLimpo = {
+  ramo: Ramo;
+  /** Só no ramo "outro". */
+  ramoDescricao: string | null;
   plano: PlanoContratavel;
   usuarios: number;
   nome: string;
   /** Dígitos com o 55. */
   whatsapp: string;
   email: string;
+  /** O nome da empresa no plano de equipe (id `imobiliaria`), de qualquer ramo. */
   imobiliaria: string | null;
+  /** O documento profissional do ramo (CRECI, SUSEP, OAB...), opcional no pedido. */
   creci: string | null;
   /** Só dígitos: CPF (11) ou CNPJ (14). */
   documento: string | null;
@@ -209,7 +276,7 @@ export type ErrosDoPedido = Partial<Record<CampoDoPedido, string>>;
 
 /** Os campos de cada passo do assistente (o 3º é a revisão, sem campo). */
 export const CAMPOS_DO_PASSO: Record<1 | 2, CampoDoPedido[]> = {
-  1: ["plano", "usuarios"],
+  1: ["ramo", "ramoDescricao", "plano", "usuarios"],
   2: ["nome", "whatsapp", "email", "imobiliaria", "creci", "documento", "cidade", "uf"],
 };
 
@@ -219,6 +286,11 @@ export const CAMPOS_DO_PASSO: Record<1 | 2, CampoDoPedido[]> = {
  */
 export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: PedidoLimpo } | { ok: false; erros: ErrosDoPedido } {
   const erros: ErrosDoPedido = {};
+  // Ramo ausente (pedido de antes do campo) = imobiliária; vazio = não escolhido.
+  const ramoLido = validarRamo(d.ramo === undefined ? RAMO_PADRAO : d.ramo, d.ramoDescricao);
+  if (!ramoLido.ok) erros[ramoLido.campo] = ramoLido.erro;
+  const ramo: Ramo = ramoLido.ok ? ramoLido.dados.ramo : ehRamo(d.ramo) ? d.ramo : RAMO_PADRAO;
+  const vocabulario = vocabularioDoRamo(ramo);
   const plano = ehPlanoContratavel(d.plano) ? d.plano : null;
   if (!plano) erros.plano = "Escolha um dos planos.";
 
@@ -244,12 +316,14 @@ export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: Pe
 
   const imobiliaria = texto(d.imobiliaria, 120);
   if (plano === "imobiliaria") {
-    if (imobiliaria.length < 2) erros.imobiliaria = "Informe o nome da imobiliária.";
+    if (imobiliaria.length < 2) {
+      erros.imobiliaria = ramo === "imobiliaria" ? "Informe o nome da imobiliária." : "Informe o nome da empresa.";
+    }
     else if (imobiliaria.length > 120) erros.imobiliaria = "Nome longo demais.";
   }
 
   const creci = texto(d.creci, 30);
-  if (creci.length > 30) erros.creci = "CRECI longo demais.";
+  if (creci.length > 30) erros.creci = `${vocabulario.documento.rotulo} longo demais.`;
 
   // CPF ou CNPJ é opcional; preenchido, tem de valer (dígitos verificadores).
   const documento = soDigitos(typeof d.documento === "string" ? d.documento : "").slice(0, 15);
@@ -264,10 +338,12 @@ export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: Pe
   const uf = typeof d.uf === "string" ? d.uf.trim().toUpperCase() : "";
   if (!ehUf(uf)) erros.uf = "Escolha o estado.";
 
-  if (Object.keys(erros).length > 0 || !plano || !whatsapp || !ehUf(uf)) return { ok: false, erros };
+  if (Object.keys(erros).length > 0 || !ramoLido.ok || !plano || !whatsapp || !ehUf(uf)) return { ok: false, erros };
   return {
     ok: true,
     pedido: {
+      ramo: ramoLido.dados.ramo,
+      ramoDescricao: ramoLido.dados.ramoDescricao,
       plano,
       usuarios,
       nome,
@@ -285,9 +361,14 @@ export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: Pe
 /**
  * O que o teste grátis pede além do pedido (29/10/2026): o CRECI (a ficha do
  * primeiro acesso exige um). Erro por campo, como `validarPedido`.
+ *
+ * Desde a 0244 vale o documento do RAMO: a imobiliária continua exigindo o
+ * CRECI; os ramos sem registro obrigatório (seguros, advocacia, varejo...)
+ * começam sem ele, e a ficha leva `SEM_DOCUMENTO_PROFISSIONAL`.
  */
-export function errosDoTesteGratis(p: Pick<PedidoLimpo, "creci">): ErrosDoPedido {
-  return p.creci ? {} : { creci: "Para começar o teste grátis, informe o CRECI." };
+export function errosDoTesteGratis(p: Pick<PedidoLimpo, "creci"> & { ramo?: Ramo }): ErrosDoPedido {
+  if (documentoProfissionalDaFicha(p.ramo, p.creci)) return {};
+  return { creci: `Para começar o teste grátis, informe o ${vocabularioDoRamo(p.ramo).documento.rotulo}.` };
 }
 
 /** Só os erros dos campos de um passo (o assistente não avança com eles). */
@@ -304,12 +385,13 @@ export function primeiroNome(nome: string): string {
   return nome.trim().split(/\s+/)[0] ?? "";
 }
 
-/** A linha do plano: "Imobiliária, 5 usuários (R$ 635 por mês)". */
-export function resumoDoPlano(plano: PlanoContratavel, usuarios: number): string {
+/** A linha do plano: "Imobiliária, 5 usuários (R$ 635 por mês)"; "Empresa, ..." nos outros ramos. */
+export function resumoDoPlano(plano: PlanoContratavel, usuarios: number, ramo?: Ramo | null): string {
   const total = reais(totalMensal(plano, usuarios));
-  if (plano !== "imobiliaria") return `${PLANO_CONTRATAVEL[plano].nome} (${total} por mês)`;
+  const nome = planoParaORamo(plano, ramo).nome;
+  if (plano !== "imobiliaria") return `${nome} (${total} por mês)`;
   const n = limitarUsuarios(usuarios);
-  return `${PLANO_CONTRATAVEL[plano].nome}, ${n} ${n === 1 ? "usuário" : "usuários"} (${total} por mês)`;
+  return `${nome}, ${n} ${n === 1 ? "usuário" : "usuários"} (${total} por mês)`;
 }
 
 /**
@@ -317,10 +399,15 @@ export function resumoDoPlano(plano: PlanoContratavel, usuarios: number): string
  * a Astro achar a linha na plataforma. Sem e-mail nem CRECI (o WhatsApp já
  * identifica quem escreve).
  */
-export function mensagemDoPedidoParaAstro(p: Pick<PedidoLimpo, "plano" | "usuarios" | "nome" | "imobiliaria" | "cidade" | "uf">): string {
+export function mensagemDoPedidoParaAstro(
+  p: Pick<PedidoLimpo, "plano" | "usuarios" | "nome" | "imobiliaria" | "cidade" | "uf"> &
+    Partial<Pick<PedidoLimpo, "ramo" | "ramoDescricao">>,
+): string {
   const linhas = [
-    `Olá! Acabei de pedir o plano ${resumoDoPlano(p.plano, p.usuarios)} pelo site.`,
+    `Olá! Acabei de pedir o plano ${resumoDoPlano(p.plano, p.usuarios, p.ramo)} pelo site.`,
     `Sou ${p.nome}${p.imobiliaria ? `, da ${p.imobiliaria}` : ""}, de ${p.cidade}/${p.uf}.`,
+    // O ramo só entra quando não é imobiliária: a mensagem de sempre fica igual.
+    ...(p.ramo && p.ramo !== "imobiliaria" ? [`Ramo: ${nomeDoRamo(p.ramo, p.ramoDescricao)}.`] : []),
   ];
   // Espaço comum no lugar do inquebrável do "R$ 97": a mensagem é texto do WhatsApp.
   return linhas.join("\n").replace(/\u00a0/g, " ");
@@ -336,6 +423,9 @@ export function mascararParaLog(whatsapp: string): string {
 
 /** A linha de `pedidos_de_contratacao` que o pré-preenchimento usa. */
 export type PedidoGravado = {
+  /** 0244; ausente nas linhas lidas antes da coluna = imobiliária. */
+  ramo?: string | null;
+  ramo_descricao?: string | null;
   plano: string;
   usuarios: number;
   nome: string;
@@ -349,6 +439,8 @@ export type PedidoGravado = {
 export function formularioDoIndependenteDoPedido(p: PedidoGravado): Partial<FormularioDoIndependente> {
   const plano = p.plano === "profissional" ? "profissional" : "essencial";
   return {
+    ramo: ehRamo(p.ramo) ? p.ramo : RAMO_PADRAO,
+    ramoDescricao: p.ramo_descricao ?? "",
     nome: p.nome,
     slug: slugSugerido(p.nome),
     creciF: p.creci ?? "",
@@ -364,6 +456,8 @@ export function formularioDaImobiliariaDoPedido(p: PedidoGravado): Partial<Formu
   const usuarios = limitarUsuarios(p.usuarios);
   const nome = p.imobiliaria ?? "";
   return {
+    ramo: ehRamo(p.ramo) ? p.ramo : RAMO_PADRAO,
+    ramoDescricao: p.ramo_descricao ?? "",
     nomeFantasia: nome,
     slug: slugSugerido(nome),
     creciJ: p.creci ?? "",

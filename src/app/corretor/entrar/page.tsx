@@ -37,7 +37,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
 
-const RECURSOS = ["IA que responde seus leads no WhatsApp", "Funil, agenda de visitas e vendas", "A equipe inteira num lugar só"];
+// Geral desde 29/10/2026 (0244): o login é o mesmo para todo ramo, e depois
+// dele o painel vira o CRM do ramo da conta.
+const RECURSOS = ["IA que responde seus leads no WhatsApp", "Funil, agenda e vendas", "A equipe inteira num lugar só"];
 
 export default async function EntrarPage({
   searchParams,
@@ -65,7 +67,7 @@ export default async function EntrarPage({
         linkExpirado
           ? "Este link já foi usado ou expirou. Peça outro em 'Esqueci a senha'."
           : parametros.google === "sem-conta"
-            ? "Não encontramos uma conta da Astro com esse Google. Entre com seu usuário e senha, ou peça o convite à sua imobiliária."
+            ? "Não encontramos uma conta da Astro com esse Google. Entre com seu usuário e senha, ou peça o convite à sua empresa."
             : parametros.google === "falhou"
               ? "Não deu para entrar com o Google agora. Tente de novo ou use seu usuário e senha."
               : undefined

@@ -4,7 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ETIQUETA_ETAPA, REGUA_ETAPA } from "../_componentes/etapas";
-import { ETAPA_LABEL } from "@/lib/types";
+import { useRotuloDaEtapa } from "@/lib/ramos/RamoDoPainel";
 import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 import { linkWhatsappPara } from "@/lib/site";
 import { carregarConversaDaPessoa, carregarMaisPessoas } from "./acoes";
@@ -208,6 +208,8 @@ function LinhaPessoa({
   pessoa: PessoaNaLista;
   aoAbrir: (conversaId: string) => void;
 }) {
+  // A etapa no vocabulário do ramo (0244).
+  const rotuloDaEtapa = useRotuloDaEtapa();
   /*
    * Com conversa, a linha ABRE a gaveta e a pessoa não sai da lista. Sem
    * conversa vai para a ficha, porque não há chat para abrir — gaveta vazia
@@ -259,11 +261,11 @@ function LinhaPessoa({
             <span
               className={`text-[11px] shrink-0 rounded-full px-2 py-0.5 font-medium ${ETIQUETA_ETAPA[pessoa.etapa]}`}
             >
-              {ETAPA_LABEL[pessoa.etapa]}
+              {rotuloDaEtapa(pessoa.etapa)}
             </span>
           )}
           <span className="text-fluid-xs text-apoio min-w-0 flex-1 truncate">
-            {pessoa.previa ?? (pessoa.etapa ? ETAPA_LABEL[pessoa.etapa] : "Sem conversa ainda")}
+            {pessoa.previa ?? (pessoa.etapa ? rotuloDaEtapa(pessoa.etapa) : "Sem conversa ainda")}
           </span>
           {/* Verde de estado, não a cor do módulo: o contador vive DENTRO de
               uma linha, e cor de módulo dentro de registro é justamente a

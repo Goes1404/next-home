@@ -83,6 +83,9 @@ describe("enviarPedidoDeContratacao", () => {
     expect(pedidos()).toHaveLength(1);
     const { id: _id, consentimento_em, ...linha } = pedidos()[0];
     expect(linha).toEqual({
+      // Envio sem o campo (página de antes da 0244) = imobiliária.
+      ramo: "imobiliaria",
+      ramo_descricao: null,
       plano: "imobiliaria",
       usuarios: 4,
       nome: "Ana Paula Souza",

@@ -18,6 +18,7 @@ import {
   type PedidoLimpo,
 } from "@/lib/plataforma/pedidoDeContratacao";
 import { createServiceClient } from "@/lib/supabase/service";
+import { nomeDoRamo } from "@/lib/ramos/ramos";
 
 /**
  * O envio do assistente de contratação (`/astro/contratar`, 29/10/2026).
@@ -45,7 +46,8 @@ import { createServiceClient } from "@/lib/supabase/service";
  * plano e a cidade, nunca o nome nem o telefone.
  *
  * Teste grátis (29/10/2026, 0241): com `modo: "teste"`, os passos 1 a 4 são
- * os mesmos, o CRECI passa a ser obrigatório, e no lugar do 5 a conta nasce
+ * os mesmos, o CRECI passa a ser obrigatório (só na imobiliária desde a
+ * 0244: nos outros ramos o registro profissional é opcional), e no lugar do 5 a conta nasce
  * na hora (`iniciarTesteGratis`: um teste por e-mail, WhatsApp e CPF/CNPJ,
  * travado no banco). O link de criar a senha vai SÓ por e-mail.
  */
@@ -90,7 +92,7 @@ function confirmacao(p: PedidoLimpo): Extract<RespostaDoPedido, { ok: true }> {
   return {
     ok: true,
     primeiroNome: primeiroNome(p.nome),
-    resumo: resumoDoPlano(p.plano, p.usuarios),
+    resumo: resumoDoPlano(p.plano, p.usuarios, p.ramo),
     whatsappDaAstro: linkDoWhatsAppDaAstro(undefined, mensagemDoPedidoParaAstro(p)),
   };
 }
@@ -171,6 +173,9 @@ async function gravarPedido(pedido: PedidoLimpo, agora: number): Promise<"gravad
     }
 
     const { error } = await servico.from("pedidos_de_contratacao").insert({
+      // O ramo do negócio (0244): a plataforma cria a conta já nele.
+      ramo: pedido.ramo,
+      ramo_descricao: pedido.ramoDescricao,
       plano: pedido.plano,
       usuarios: pedido.usuarios,
       nome: pedido.nome,
@@ -207,7 +212,7 @@ async function avisarAdministradores(pedido: PedidoLimpo): Promise<void> {
   try {
     await notificarAdminsDaPlataforma(createServiceClient(), {
       titulo: "Novo pedido de contratação",
-      corpo: `${resumoDoPlano(pedido.plano, pedido.usuarios)} · ${pedido.cidade}/${pedido.uf}`,
+      corpo: `${resumoDoPlano(pedido.plano, pedido.usuarios, pedido.ramo)} · ${nomeDoRamo(pedido.ramo, pedido.ramoDescricao)} · ${pedido.cidade}/${pedido.uf}`,
       url: "/plataforma/pedidos",
       tag: "pedido-de-contratacao",
     });

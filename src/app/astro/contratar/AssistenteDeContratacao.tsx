@@ -13,6 +13,7 @@ import {
   mascararWhatsapp,
   PLANO_CONTRATAVEL,
   PLANOS_CONTRATAVEIS,
+  planoParaORamo,
   reais,
   resumoDoPlano,
   totalMensal,
@@ -25,13 +26,28 @@ import {
   type ErrosDoPedido,
   type PlanoContratavel,
 } from "@/lib/plataforma/pedidoDeContratacao";
+import { IconeDoRamo } from "@/lib/ramos/IconeDoRamo";
+import {
+  CONFIG_DOS_RAMOS,
+  ehRamo,
+  nomeDoRamo,
+  RAMO_DESCRICAO_MAXIMO,
+  RAMOS,
+  vocabularioDoRamo,
+  type Ramo,
+} from "@/lib/ramos/ramos";
 import s from "../astro.module.css";
 import { enviarPedidoDeContratacao, type RespostaDoPedido } from "./acoes";
 import c from "./contratar.module.css";
 
 /**
  * O assistente de contratação em três passos numa página só (29/10/2026):
- * Plano → Seus dados → Revisão, e a confirmação.
+ * Ramo e plano → Seus dados → Revisão, e a confirmação.
+ *
+ * - O ramo (29/10/2026, 0244) vem antes do plano, no mesmo passo: o CRM não
+ *   é só de imobiliária, e é o ramo que dá o nome do plano de equipe
+ *   ("Imobiliária" ou "Empresa"), o documento pedido (CRECI só na
+ *   imobiliária) e, depois, o vocabulário e os módulos do painel.
  *
  * - Cada passo só avança com os campos dele válidos (`errosDoPasso`, as
  *   mesmas regras que a action aplica no servidor). O erro aparece no campo,
@@ -49,7 +65,7 @@ import c from "./contratar.module.css";
 type Passo = 1 | 2 | 3;
 
 const PASSOS: { numero: Passo; nome: string }[] = [
-  { numero: 1, nome: "Plano" },
+  { numero: 1, nome: "Ramo e plano" },
   { numero: 2, nome: "Seus dados" },
   { numero: 3, nome: "Revisão" },
 ];
@@ -74,10 +90,20 @@ function focarNoMeio(el: HTMLElement | null) {
   el.scrollIntoView({ block: "center", behavior: suave ? "smooth" : "auto" });
 }
 
-export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoContratavel | null }) {
+/** Erro em qualquer destes campos leva de volta ao passo 1. */
+const doPasso1 = (e: ErrosDoPedido) => Boolean(e.ramo || e.ramoDescricao || e.plano || e.usuarios);
+
+export function AssistenteDeContratacao({
+  planoInicial,
+  ramoInicial = null,
+}: {
+  planoInicial: PlanoContratavel | null;
+  /** `?ramo=` dos cartões "Para quem é" de `/astro` (0244). */
+  ramoInicial?: Ramo | null;
+}) {
   const [passo, setPasso] = useState<Passo>(1);
   const [direcao, setDirecao] = useState<"avanca" | "volta" | null>(null);
-  const [dados, setDados] = useState<DadosDoPedido>({ ...DADOS_VAZIOS, plano: planoInicial ?? "" });
+  const [dados, setDados] = useState<DadosDoPedido>({ ...DADOS_VAZIOS, plano: planoInicial ?? "", ramo: ramoInicial ?? "" });
   const [erros, setErros] = useState<ErrosDoPedido>({});
   const [consentimento, setConsentimento] = useState(false);
   const [erroDoConsentimento, setErroDoConsentimento] = useState(false);
@@ -106,6 +132,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
   }, [passo, direcao, confirmado]);
 
   const plano = dados.plano ? (dados.plano as PlanoContratavel) : null;
+  const ramo: Ramo | null = ehRamo(dados.ramo) ? dados.ramo : null;
   const total = plano ? totalMensal(plano, dados.usuarios) : null;
 
   function mudar<K extends keyof DadosDoPedido>(campo: K, valor: DadosDoPedido[K]) {
@@ -143,7 +170,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
     const local = validarPedido(dados);
     if (!local.ok) {
       setErros(local.erros);
-      const voltarPara: Passo = local.erros.plano || local.erros.usuarios ? 1 : 2;
+      const voltarPara: Passo = doPasso1(local.erros) ? 1 : 2;
       irPara(voltarPara);
       return;
     }
@@ -176,7 +203,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
         requestAnimationFrame(() => document.getElementById("pedido-erro-geral")?.scrollIntoView({ block: "center" }));
         if (r.erros && Object.keys(r.erros).length > 0) {
           setErros(r.erros);
-          irPara(r.erros.plano || r.erros.usuarios ? 1 : 2);
+          irPara(doPasso1(r.erros) ? 1 : 2);
         }
       } catch (e) {
         requestAnimationFrame(() => document.getElementById("pedido-erro-geral")?.scrollIntoView({ block: "center" }));
@@ -243,9 +270,13 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
           {passo === 1 && (
             <PassoPlano
               titulo={tituloDoPasso}
+              ramo={ramo}
+              ramoDescricao={dados.ramoDescricao ?? ""}
               plano={plano}
               usuarios={dados.usuarios}
               erros={erros}
+              aoEscolherRamo={(r) => mudar("ramo", r)}
+              aoMudarRamoDescricao={(t) => mudar("ramoDescricao", t)}
               aoEscolher={(p) => mudar("plano", p)}
               aoMudarUsuarios={(n) => mudar("usuarios", n)}
             />
@@ -291,7 +322,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
                   </span>
                 </>
               ) : (
-                "Escolha um plano para continuar"
+                "Escolha o ramo e o plano"
               )}
             </p>
           )}
@@ -328,30 +359,82 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
 
 function PassoPlano({
   titulo,
+  ramo,
+  ramoDescricao,
   plano,
   usuarios,
   erros,
+  aoEscolherRamo,
+  aoMudarRamoDescricao,
   aoEscolher,
   aoMudarUsuarios,
 }: {
   titulo: React.RefObject<HTMLHeadingElement | null>;
+  ramo: Ramo | null;
+  ramoDescricao: string;
   plano: PlanoContratavel | null;
   usuarios: number;
   erros: ErrosDoPedido;
+  aoEscolherRamo: (r: Ramo) => void;
+  aoMudarRamoDescricao: (t: string) => void;
   aoEscolher: (p: PlanoContratavel) => void;
   aoMudarUsuarios: (n: number) => void;
 }) {
   const erroId = useId();
+  const erroDoRamoId = useId();
+  const v = vocabularioDoRamo(ramo);
   // O que a pessoa digita no contador fica como texto até sair do campo:
   // apagar para digitar "12" não pode virar "1" no meio do caminho.
   const [digitado, setDigitado] = useState<string | null>(null);
 
   return (
-    <fieldset aria-describedby={erros.plano ? erroId : undefined}>
+    <div>
+    <fieldset aria-describedby={erros.ramo ? erroDoRamoId : undefined}>
       <legend className="contents">
         <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
-          Qual plano é o seu?
+          Qual é o seu ramo?
         </h2>
+      </legend>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">O CRM chega com o vocabulário e a IA do seu negócio.</p>
+      {erros.ramo && (
+        <p id={erroDoRamoId} className={c.erro} role="alert">
+          {erros.ramo}
+        </p>
+      )}
+      <div className={`${c.ramos} mt-4`}>
+        {RAMOS.map((id) => (
+          <label key={id} className={c.ramo}>
+            <input
+              id={id === RAMOS[0] ? "pedido-ramo" : undefined}
+              type="radio"
+              name="ramo"
+              value={id}
+              checked={ramo === id}
+              onChange={() => aoEscolherRamo(id)}
+              className="sr-only"
+            />
+            <IconeDoRamo ramo={id} className={c.iconeDoRamo} />
+            <span className="min-w-0">{CONFIG_DOS_RAMOS[id].rotulo}</span>
+          </label>
+        ))}
+      </div>
+      {ramo === "outro" && (
+        <div className={`${c.aparece} mt-3`}>
+          <Campo
+            campo="ramoDescricao"
+            rotulo="Qual é o seu ramo?"
+            valor={ramoDescricao}
+            erro={erros.ramoDescricao}
+            aoMudar={aoMudarRamoDescricao}
+            dica={`Em poucas palavras, até ${RAMO_DESCRICAO_MAXIMO} caracteres. Ex.: clínica veterinária.`}
+          />
+        </div>
+      )}
+    </fieldset>
+
+    <fieldset className="mt-8" aria-describedby={erros.plano ? erroId : undefined}>
+      <legend className="contents">
+        <h3 className={`${s.titulo} text-xl font-bold`}>Qual plano é o seu?</h3>
       </legend>
       <p className="mt-1.5 text-[var(--tinta-suave)]">Todos com a IA no WhatsApp, o funil, a agenda e as vendas.</p>
 
@@ -363,7 +446,8 @@ function PassoPlano({
       )}
       <div className={`${c.opcoes} mt-5`}>
         {PLANOS_CONTRATAVEIS.map((id) => {
-          const p = PLANO_CONTRATAVEL[id];
+          // Sem ramo escolhido ainda, o nome neutro ("Empresa"): a página não é só de imobiliária.
+          const p = planoParaORamo(id, ramo ?? "outro");
           return (
             <label key={id} className={c.opcao}>
               <input
@@ -399,7 +483,7 @@ function PassoPlano({
               <label htmlFor="pedido-usuarios" className="font-semibold">
                 Quantos usuários?
               </label>
-              <p className="text-sm text-[var(--tinta-suave)]">Cada corretor ou gestor com login conta como um.</p>
+              <p className="text-sm text-[var(--tinta-suave)]">Cada {v.equipe.singular} ou gestor com login conta como um.</p>
             </div>
             <div className={c.contador}>
               <button
@@ -449,6 +533,7 @@ function PassoPlano({
         </div>
       )}
     </fieldset>
+    </div>
   );
 }
 
@@ -529,12 +614,17 @@ function PassoDados({
   mudar: <K extends keyof DadosDoPedido>(campo: K, valor: DadosDoPedido[K]) => void;
 }) {
   const imobiliaria = dados.plano === "imobiliaria";
+  // O vocabulário do ramo (0244): "imobiliária"/"CRECI" só para quem é imobiliária.
+  const ramo = ehRamo(dados.ramo) ? dados.ramo : null;
+  const v = vocabularioDoRamo(ramo);
+  const ehImobiliaria = !ramo || ramo === "imobiliaria";
+  const nomeDaEmpresa = ehImobiliaria ? "imobiliária" : "empresa";
   return (
     <div>
       <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
         Seus dados
       </h2>
-      <p className="mt-1.5 text-[var(--tinta-suave)]">É por eles que a {imobiliaria ? "imobiliária" : "sua conta"} vai nascer e que a gente chama você.</p>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">É por eles que a {imobiliaria ? nomeDaEmpresa : "sua conta"} vai nascer e que a gente chama você.</p>
 
       <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
         <div className="sm:col-span-2">
@@ -564,7 +654,7 @@ function PassoDados({
           <div className={`sm:col-span-2 ${c.aparece}`}>
             <Campo
               campo="imobiliaria"
-              rotulo="Nome da imobiliária"
+              rotulo={`Nome da ${nomeDaEmpresa}`}
               autoComplete="organization"
               valor={dados.imobiliaria}
               erro={erros.imobiliaria}
@@ -575,18 +665,22 @@ function PassoDados({
         <div className="sm:col-span-2">
           <Campo
             campo="creci"
-            rotulo={imobiliaria ? "CRECI da imobiliária" : "CRECI"}
+            rotulo={ehImobiliaria ? (imobiliaria ? "CRECI da imobiliária" : "CRECI") : v.documento.rotulo}
             opcional
             valor={dados.creci}
             erro={erros.creci}
-            aoMudar={(v) => mudar("creci", v)}
-            dica="Obrigatório para o teste grátis. Para só falar com a Astro, pode deixar em branco."
+            aoMudar={(t) => mudar("creci", t)}
+            dica={
+              v.documento.obrigatorio
+                ? "Obrigatório para o teste grátis. Para só falar com a Astro, pode deixar em branco."
+                : "Se o seu ramo tiver registro profissional. Pode deixar em branco."
+            }
           />
         </div>
         <div className="sm:col-span-2">
           <Campo
             campo="documento"
-            rotulo={imobiliaria ? "CNPJ da imobiliária" : "CPF"}
+            rotulo={imobiliaria ? `CNPJ da ${nomeDaEmpresa}` : "CPF"}
             opcional
             inputMode="text"
             valor={dados.documento ?? ""}
@@ -661,6 +755,8 @@ function PassoRevisao({
   aoFalarComAAstro: () => void;
 }) {
   const local = [dados.cidade.trim(), dados.uf].filter(Boolean).join("/");
+  const ramo = ehRamo(dados.ramo) ? dados.ramo : null;
+  const documento = vocabularioDoRamo(ramo).documento.rotulo;
   return (
     <div>
       <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
@@ -674,11 +770,12 @@ function PassoRevisao({
       <dl className={`${c.resumo} mt-5`}>
         <div className={c.linhaDoResumo}>
           <div className="min-w-0">
-            <dt className="text-sm text-[var(--tinta-suave)]">Plano</dt>
-            <dd className="font-semibold">{resumoDoPlano(plano, dados.usuarios)}</dd>
+            <dt className="text-sm text-[var(--tinta-suave)]">Ramo e plano</dt>
+            {ramo && <dd className="break-words">{nomeDoRamo(ramo, dados.ramoDescricao)}</dd>}
+            <dd className="font-semibold">{resumoDoPlano(plano, dados.usuarios, ramo)}</dd>
           </div>
           <button type="button" className={c.alterar} onClick={() => alterar(1)}>
-            Alterar<span className="sr-only"> o plano</span>
+            Alterar<span className="sr-only"> o ramo e o plano</span>
           </button>
         </div>
         <div className={c.linhaDoResumo}>
@@ -690,7 +787,7 @@ function PassoRevisao({
             <dd className="break-all">{dados.email.trim()}</dd>
             <dd>
               {local}
-              {dados.creci.trim() ? ` · CRECI ${dados.creci.trim()}` : ""}
+              {dados.creci.trim() ? ` · ${documento} ${dados.creci.trim()}` : ""}
             </dd>
             {dados.documento?.trim() && <dd>{plano === "imobiliaria" ? "CNPJ" : "CPF"} {dados.documento.trim()}</dd>}
           </div>

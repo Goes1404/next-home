@@ -51,6 +51,8 @@ const AGORA = new Date("2026-10-29T15:00:00-03:00");
 const URL_CONVITE = "https://site/auth/confirmar?token_hash=segredo&type=invite";
 
 const PEDIDO: PedidoLimpo = {
+  ramo: "imobiliaria",
+  ramoDescricao: null,
   plano: "essencial",
   usuarios: 1,
   nome: "Ana Paula Souza",

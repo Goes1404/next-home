@@ -61,10 +61,23 @@ export function resumoDaCarteira(c: Partial<Record<EtapaFunil, number>>): Resumo
   };
 }
 
-/** A frase de apoio muda com o estado — frase fixa vira paisagem. */
-export function fraseDoHero(r: ResumoDaCarteira): string {
+/** O compromisso que a etapa `visita_agendada` conta, no vocabulário do ramo (0244). */
+export type CompromissoDoHero = { singular: string; plural: string; genero: "f" | "m" };
+
+const VISITA: CompromissoDoHero = { singular: "visita", plural: "visitas", genero: "f" };
+
+/**
+ * A frase de apoio muda com o estado — frase fixa vira paisagem. O
+ * compromisso vem do ramo da conta (29/10/2026): "visita" na imobiliária (o
+ * texto de sempre), "reunião", "consulta", "atendimento" nos outros.
+ */
+export function fraseDoHero(r: ResumoDaCarteira, c: CompromissoDoHero = VISITA): string {
   if (r.ativos === 0) return "Sua carteira começa no primeiro contato que chegar.";
-  if (r.visitas > 0) return `${r.visitas === 1 ? "Uma visita marcada" : `${r.visitas} visitas marcadas`} — é onde o negócio acontece.`;
+  if (r.visitas > 0) {
+    const um = c.genero === "f" ? "Uma" : "Um";
+    const marcado = c.genero === "f" ? "marcada" : "marcado";
+    return `${r.visitas === 1 ? `${um} ${c.singular} ${marcado}` : `${r.visitas} ${c.plural} ${marcado}s`} — é onde o negócio acontece.`;
+  }
   if (r.emAndamentoPct < 50) return "Cada primeiro contato move o ponteiro.";
   return "Mais da metade da carteira já está em conversa.";
 }

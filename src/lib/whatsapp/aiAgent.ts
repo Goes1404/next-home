@@ -7,6 +7,7 @@ import { formatarReais } from "./dadoPedido";
 import { STATUS_LABEL } from "@/lib/types";
 import { linkDaPagina, linkDoCatalogo } from "./resolverMidia";
 import { estiloDaCasaPara } from "./estiloDaCasa";
+import { construirPromptDoRamo } from "./promptDoRamo";
 import {
   apresentacaoDaCasa,
   CASA_NEXT_HOME,
@@ -338,6 +339,39 @@ export interface RespostaAgenteIA {
  */
 export function construirPromptSistema(ctx: ContextoAtendimento): string {
   const casa = ctx.casa ?? CASA_NEXT_HOME;
+  /*
+   * Ramo que não é imobiliária (0244, 29/10/2026): o prompt de imóvel
+   * (CRECI, catálogo, funil de dormitórios, visita ao decorado) não serve a
+   * um escritório de advocacia. A casa só tem `ramo` fora da imobiliária
+   * (`casaDoGrupo`), então daqui para baixo o texto da imobiliária segue
+   * byte a byte o mesmo (`promptDoRamo.test.ts`).
+   */
+  if (casa.ramo) {
+    return construirPromptDoRamo({
+      ramo: casa.ramo,
+      ramoDescricao: casa.ramoDescricao,
+      nomeAssistente: ctx.nomeAssistente,
+      nomeCorretor: ctx.nomeCorretor,
+      apresentacao: apresentacaoDaCasa(casa),
+      tom: instrucaoDeTom(ctx.tomVoz),
+      regras: blocoRegrasDoCorretor(ctx.nomeCorretor, ctx.regrasDaIa),
+      agora: new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date()),
+      calendario: calendarioProximosDias(10),
+      blocoPerguntaIgnorada: ctx.blocoPerguntaIgnorada,
+      blocoHorariosReais: ctx.blocoHorariosReais,
+      blocoNaoRepitaHorario: ctx.blocoNaoRepitaHorario,
+      exemplosFewShot: ctx.exemplosFewShot,
+      instrucaoExtra: ctx.instrucaoExtra,
+    });
+  }
   const exemplos = exemplosDasRegras(casa);
   // O corte para 10 acontece ANTES, no ranking por relevância
   // (catalogoRelevante.ts) — aqui o slice é só o teto de segurança.

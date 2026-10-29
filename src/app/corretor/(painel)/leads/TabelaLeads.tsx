@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useVocabulario } from "@/lib/ramos/RamoDoPainel";
+import { maiuscula } from "@/lib/ramos/ramos";
 import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
@@ -191,6 +193,8 @@ export function TabelaLeads({
   selecionados: Set<string>;
   aoAlternarSelecao: (id: string) => void;
 }) {
+  // A coluna de quem cuida do lead no vocabulário do ramo (0244): "Corretor" na imobiliária.
+  const vocabulario = useVocabulario();
   // Um lead aberto por vez: abrir outro fecha o anterior. Com 50 linhas,
   // vários abertos ao mesmo tempo recriariam o pergaminho que esta tabela
   // veio substituir.
@@ -321,7 +325,7 @@ export function TabelaLeads({
             </th>
             {gestor && (
               <th className="text-fluid-xs px-3 py-3 font-semibold tracking-wide text-apoio uppercase">
-                Corretor
+                {maiuscula(vocabulario.equipe.singular)}
               </th>
             )}
             <th className="text-fluid-xs px-3 py-3 font-semibold tracking-wide text-apoio uppercase">

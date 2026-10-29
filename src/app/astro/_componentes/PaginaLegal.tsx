@@ -59,7 +59,7 @@ export function ContatoDaAstro() {
   const { email } = dadosDaEmpresa();
   const whatsapp = linkDoWhatsAppDaAstro(undefined, "Olá! Tenho um pedido sobre os meus dados no CRM da Astro Soluções.");
   if (!email && !whatsapp) {
-    return <>pelo gestor da sua imobiliária, que encaminha o pedido à {MARCA_DA_PLATAFORMA.nome}</>;
+    return <>pelo gestor da sua empresa, que encaminha o pedido à {MARCA_DA_PLATAFORMA.nome}</>;
   }
   return (
     <>

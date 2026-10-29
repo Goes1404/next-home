@@ -3,8 +3,9 @@ import type { CSSProperties } from "react";
 import { SeloAstro } from "@/components/marca/SeloAstro";
 import { linkDoWhatsAppDaAstro, MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 import { LIMITES_POR_MES } from "@/lib/planos/limitesDoPlano";
-import { hrefDeContratar } from "@/lib/plataforma/pedidoDeContratacao";
-import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
+import { hrefDeContratar, NOME_CURTO_NA_VENDA, planoParaORamo } from "@/lib/plataforma/pedidoDeContratacao";
+import { IconeDoRamo } from "@/lib/ramos/IconeDoRamo";
+import { CONFIG_DOS_RAMOS, RAMOS } from "@/lib/ramos/ramos";
 import { PRECO_ESSENCIAL, PRECO_POR_USUARIO_DA_IMOBILIARIA, PRECO_PROFISSIONAL } from "@/lib/plataforma/tiposDeConta";
 import { RodapeLegal } from "./_componentes/PaginaLegal";
 import s from "./astro.module.css";
@@ -33,6 +34,13 @@ import s from "./astro.module.css";
  * Imobiliária: o nome inteiro quebrava o botão em duas linhas); o `::before`
  * dele cobre o cartão, então clicar em qualquer ponto do cartão contrata.
  *
+ * Para todo ramo (29/10/2026, 0244, pedido do dono: "não vamos limitar só
+ * para imobiliárias, porque tem seguradoras, advocacia..."): o texto fala de
+ * "empresas que vendem e atendem pelo WhatsApp", a imobiliária vira UM dos
+ * exemplos, e a seção "Para quem é" mostra os ramos, cada cartão levando ao
+ * assistente com o ramo marcado (`?ramo=`). O plano de equipe se chama
+ * "Empresa" aqui (o id continua `imobiliaria`).
+ *
  * Fale com a Astro (29/10/2026): o fechamento e o rodapé levam a
  * `/astro/contato`, o formulário de quem quer perguntar antes de contratar.
  * O contato vira chamado (0240) e avisa no celular quem administra a
@@ -49,20 +57,20 @@ const CONVERSA = [
 
 const PASSOS = [
   { titulo: "O lead chega", texto: "Do anúncio no Instagram, do portal, do site ou da lista de transmissão. Tudo cai no mesmo lugar." },
-  { titulo: "A IA responde na hora", texto: "No WhatsApp do próprio corretor, a qualquer hora. Ela tira dúvidas do imóvel e descobre o que o cliente procura." },
-  { titulo: "O corretor assume", texto: "Com o resumo da conversa pronto e o lead já na etapa certa do funil. Nada de começar do zero." },
-  { titulo: "A visita vira venda", texto: "A visita entra na agenda, o lembrete sai sozinho e a venda fica registrada com a comissão." },
+  { titulo: "A IA responde na hora", texto: "No WhatsApp de quem vende, a qualquer hora. Ela tira as primeiras dúvidas e descobre o que o cliente procura." },
+  { titulo: "A sua equipe assume", texto: "Com o resumo da conversa pronto e o lead já na etapa certa do funil. Nada de começar do zero." },
+  { titulo: "O atendimento vira venda", texto: "A visita, a reunião ou a consulta entra na agenda, o lembrete sai sozinho e a venda fica registrada." },
 ] as const;
 
 const RECURSOS = [
   { nome: "Atendimento com IA no WhatsApp", texto: "Responde quando o cliente escreve, nunca puxa assunto sozinha e passa a conversa para você quando é hora." },
   { nome: "Funil de vendas", texto: "Cada lead na sua etapa, com o histórico da conversa e os próximos passos à vista." },
   { nome: "Roleta de leads dos anúncios", texto: "Distribui os leads entre a equipe na ordem que o gestor definir, e quem pagou o anúncio fica com o lead." },
-  { nome: "Listas de transmissão seguras", texto: "Reative a base antiga com limite diário por corretor, para o número não ser bloqueado." },
-  { nome: "Agenda de visitas", texto: "Visitas marcadas pela IA ou pelo corretor, com lembrete para os dois lados." },
-  { nome: "Artes e vídeos com IA", texto: "Posts e vídeos dos imóveis prontos para o Instagram, com a marca da imobiliária." },
-  { nome: "Site da imobiliária", texto: "Vitrine dos imóveis com o seu domínio, suas cores e sua logo, ligada ao CRM." },
-  { nome: "Vendas e comissões", texto: "Metas, vendas fechadas e o que cada corretor tem a receber, sem planilha paralela." },
+  { nome: "Listas de transmissão seguras", texto: "Reative a base antiga com limite diário por número, para o WhatsApp não ser bloqueado." },
+  { nome: "Agenda de atendimentos", texto: "Visitas, reuniões e consultas marcadas pela IA ou pela equipe, com lembrete para os dois lados." },
+  { nome: "Artes com IA", texto: "Posts prontos para o Instagram, com a sua marca, pedidos numa conversa." },
+  { nome: "Vendas e comissões", texto: "Metas, vendas fechadas e o que cada vendedor tem a receber, sem planilha paralela." },
+  { nome: "Para imobiliárias: catálogo e site", texto: "Catálogo de imóveis, vídeos dos imóveis e vitrine com o seu domínio, ligados ao CRM." },
 ] as const;
 
 /** Posição do item na fileira, para o CSS escalonar a chegada (`--ordem`). */
@@ -82,7 +90,7 @@ const PLANOS = [
   {
     id: "essencial",
     nome: "Autônomo Essencial",
-    para: "Para o corretor que trabalha sozinho e quer a IA atendendo por ele.",
+    para: planoParaORamo("essencial", "outro").resumo,
     preco: reais(PRECO_ESSENCIAL),
     unidade: "por mês",
     limites: LIMITES_POR_MES.essencial,
@@ -99,8 +107,9 @@ const PLANOS = [
   },
   {
     id: "imobiliaria",
-    nome: "Imobiliária",
-    para: "Equipe, gestor, roleta de leads, site próprio e a marca da imobiliária no CRM.",
+    // O id é o de sempre (links salvos `?plano=imobiliaria`); o nome é o de todo ramo.
+    nome: planoParaORamo("imobiliaria", "outro").nome,
+    para: "Equipe, gestor, roleta de leads e a sua marca no CRM. Imobiliárias ganham o site com os imóveis.",
     preco: reais(PRECO_POR_USUARIO_DA_IMOBILIARIA),
     unidade: "por usuário, por mês",
     limites: LIMITES_POR_MES.imobiliaria,
@@ -149,7 +158,7 @@ export default function PaginaDaAstro() {
             </h1>
             <p className={`${s.chega} mt-6 max-w-[34rem] text-lg leading-relaxed text-pretty text-white/78`} style={ordem(1)}>
               O CRM da {MARCA_DA_PLATAFORMA.nome} atende seus leads no WhatsApp com inteligência artificial, organiza o
-              funil e marca as visitas. Você entra na conversa para vender.
+              funil e marca os atendimentos. Você entra na conversa para vender.
             </p>
             <div className={`${s.chega} mt-9 flex flex-wrap gap-3`} style={ordem(2)}>
               {/* "Ver planos" leva aos cartões, que levam ao assistente de
@@ -173,7 +182,10 @@ export default function PaginaDaAstro() {
                 Já sou cliente
               </Link>
             </div>
-            <p className={`${s.chega} mt-7 text-sm text-white/60`} style={ordem(3)}>Para imobiliárias com equipe e para corretores autônomos.</p>
+            <p className={`${s.chega} mt-7 text-sm text-white/60`} style={ordem(3)}>
+              Para empresas que vendem e atendem pelo WhatsApp: imobiliárias, corretoras de seguros, escritórios de
+              advocacia e mais. Com equipe ou autônomo.
+            </p>
           </div>
 
           <div className={`${s.palco} ${s.chegaPalco} mx-auto w-full max-w-[22rem] lg:max-w-[23rem]`}>
@@ -216,7 +228,7 @@ export default function PaginaDaAstro() {
       {/* ---------------- Como funciona ---------------- */}
       <section aria-labelledby="como" className="mx-auto w-full max-w-6xl px-5 py-20 md:px-8 lg:py-28">
         <h2 id="como" className={`${s.titulo} ${s.surge} max-w-2xl text-[clamp(1.9rem,3.6vw,2.75rem)] leading-tight font-bold text-balance`}>
-          Do anúncio até a visita, sem lead esquecido no meio do caminho
+          Do anúncio até a venda, sem lead esquecido no meio do caminho
         </h2>
         <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {PASSOS.map((p, i) => (
@@ -231,16 +243,47 @@ export default function PaginaDaAstro() {
         </ol>
       </section>
 
+      {/* ---------------- Para quem é (0244) ---------------- */}
+      <section id="para-quem" aria-labelledby="titulo-para-quem" className={`${s.ancora} mx-auto w-full max-w-6xl px-5 pb-20 md:px-8 lg:pb-28`}>
+        <h2 id="titulo-para-quem" className={`${s.titulo} ${s.surge} max-w-2xl text-[clamp(1.9rem,3.6vw,2.75rem)] leading-tight font-bold text-balance`}>
+          Para quem é
+        </h2>
+        <p className={`${s.surge} mt-4 max-w-xl leading-relaxed text-[var(--tinta-suave)]`}>
+          O mesmo CRM, com o vocabulário e a IA do seu negócio. Escolha o seu ramo e a conta já nasce do seu jeito.
+        </p>
+        {/* No celular, duas colunas só com o nome (nove cartões com resumo viravam uma parede). */}
+        <ul className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {RAMOS.map((ramo, i) => {
+            const c = CONFIG_DOS_RAMOS[ramo];
+            return (
+              <li key={ramo} className={s.surge} style={ordem(i % 3)}>
+                <Link href={`/astro/contratar?ramo=${ramo}`} className={s.ramoCartao}>
+                  <span aria-hidden className={s.ramoIcone}>
+                    <IconeDoRamo ramo={ramo} className="size-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`${s.titulo} block text-[0.95rem] leading-snug font-bold sm:text-lg`}>
+                      {ramo === "outro" ? "Outro ramo" : c.rotulo}
+                    </span>
+                    <span className="mt-1 hidden text-[0.95rem] leading-snug text-[var(--tinta-suave)] sm:block">{c.resumo}</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
       {/* ---------------- Recursos ---------------- */}
       <section id="recursos" aria-labelledby="titulo-recursos" className={`${s.ancora} bg-white`}>
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-20 md:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:py-28">
           <div className={s.surge}>
             <h2 id="titulo-recursos" className={`${s.titulo} text-[clamp(1.9rem,3.6vw,2.75rem)] leading-tight font-bold text-balance`}>
-              Tudo que o corretor usa no dia, num lugar só
+              Tudo que a sua equipe de vendas usa no dia, num lugar só
             </h2>
             <p className="mt-5 max-w-md leading-relaxed text-[var(--tinta-suave)]">
-              Feito dentro de uma imobiliária de verdade, com a equipe usando todo dia. Cada recurso nasceu de um problema
-              que custava venda.
+              Nasceu dentro de uma imobiliária de verdade, com a equipe usando todo dia, e serve a qualquer negócio que
+              vende pelo WhatsApp. Cada recurso nasceu de um problema que custava venda.
             </p>
           </div>
           <dl className="grid gap-x-10 sm:grid-cols-2">
@@ -257,7 +300,7 @@ export default function PaginaDaAstro() {
       {/* ---------------- Planos ---------------- */}
       <section id="planos" aria-labelledby="titulo-planos" className={`${s.ancora} mx-auto w-full max-w-6xl px-5 py-20 md:px-8 lg:py-28`}>
         <h2 id="titulo-planos" className={`${s.titulo} ${s.surge} max-w-2xl text-[clamp(1.9rem,3.6vw,2.75rem)] leading-tight font-bold text-balance`}>
-          Um plano para a imobiliária, dois para quem é autônomo
+          Um plano para empresas com equipe, dois para quem é autônomo
         </h2>
         <p className={`${s.surge} mt-4 max-w-xl leading-relaxed text-[var(--tinta-suave)]`}>
           Todos com a IA no WhatsApp, o funil, a agenda e as vendas. O que muda é o tamanho da equipe e o volume de artes,
@@ -285,7 +328,7 @@ export default function PaginaDaAstro() {
                 href={hrefDeContratar(p.id)}
                 className={`${s.ctaDoPlano} ${p.destaque ? s.ctaDoPlanoNoEscuro : ""} mt-auto`}
               >
-                Contratar {ROTULO_DO_PLANO[p.id]}
+                Contratar {NOME_CURTO_NA_VENDA[p.id]}
                 <span aria-hidden className={s.setaDoPlano}>
                   →
                 </span>
@@ -300,7 +343,7 @@ export default function PaginaDaAstro() {
         <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-8 px-5 py-20 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:py-24">
           <div className={`${s.surge} max-w-xl`}>
             <h2 className={`${s.titulo} text-[clamp(1.9rem,3.6vw,2.75rem)] leading-tight font-bold text-balance`}>
-              Veja o CRM funcionando com os seus imóveis
+              Veja o CRM funcionando no seu negócio
             </h2>
             <p className="mt-4 leading-relaxed text-white/75">
               A gente configura a sua conta, conecta o WhatsApp e acompanha a primeira semana com você.
