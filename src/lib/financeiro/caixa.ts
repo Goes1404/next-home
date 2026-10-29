@@ -108,6 +108,8 @@ export type Movimento = {
   pagoEm: string | null;
   lancamentoId?: string;
   vendaId?: string;
+  /** Parcela da comissão (entrada de comissão, 0232). */
+  parcelaId?: string;
   corretorId?: string;
 };
 
@@ -142,6 +144,7 @@ export function movimentosDo(lancamentos: LancamentoDoCaixa[], vendas: VendaDoCa
         vencimento: pc.venceEm,
         pagoEm: pc.recebidaEm,
         vendaId: v.id,
+        parcelaId: pc.id,
       });
     }
     for (const p of v.participantes) {
@@ -336,6 +339,8 @@ export type LancamentoDigitado = {
   vencimento: string;
   jaPago: boolean;
   repetirMeses: number;
+  /** Mês de competência "aaaa-mm" (0232). Ausente = o mês do vencimento. */
+  competencia?: string | null;
 };
 
 export function problemasDoLancamento(l: LancamentoDigitado): string[] {
@@ -349,6 +354,10 @@ export function problemasDoLancamento(l: LancamentoDigitado): string[] {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(l.vencimento)) p.push("Informe a data de vencimento.");
   if (!Number.isInteger(l.repetirMeses) || l.repetirMeses < 1 || l.repetirMeses > MESES_MAXIMOS_DA_SERIE) {
     p.push(`Repita de 1 a ${MESES_MAXIMOS_DA_SERIE} meses.`);
+  }
+  if (l.competencia) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(l.competencia)) p.push("Competência inválida: use mês e ano.");
+    else if (l.repetirMeses > 1) p.push("Competência diferente do vencimento só em lançamento avulso.");
   }
   if (l.jaPago && l.repetirMeses > 1) p.push("Lançamento já pago não se repete. Lance os próximos meses sem marcar como pago.");
   return p;

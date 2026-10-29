@@ -246,6 +246,11 @@ describe("validação do lançamento", () => {
     expect(problemasDoLancamento({ ...base, valor: 0 })).not.toEqual([]);
     expect(problemasDoLancamento({ ...base, jaPago: true })).not.toEqual([]);
   });
+  it("competência opcional, no formato aaaa-mm, só em lançamento avulso", () => {
+    expect(problemasDoLancamento({ ...base, repetirMeses: 1, competencia: "2026-09" })).toEqual([]);
+    expect(problemasDoLancamento({ ...base, repetirMeses: 1, competencia: "2026-13" })).not.toEqual([]);
+    expect(problemasDoLancamento({ ...base, competencia: "2026-09" })).not.toEqual([]);
+  });
 });
 
 describe("guardas do caixa", () => {

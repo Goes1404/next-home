@@ -9,8 +9,11 @@ import {
   problemasDaVenda,
   resolverPar,
   traduzirErroDoBanco,
+  validarDistrato,
+  type DistratoDigitado,
   type VendaDigitada,
 } from "@/lib/financeiro/venda";
+import { dividirEmParcelas, valorDaImobiliaria, type FormaRecebimento, type ParcelaNova } from "@/lib/financeiro/parcelas";
 import { mesFechadoEntre, recusaDeMesFechado } from "@/lib/financeiro/mesFechado";
 
 /**
@@ -50,35 +53,61 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
     valor_venda: valorVenda,
     comissao_percentual: comissao.percentual ?? "",
     comissao_valor: comissao.valor,
-    status: v.status,
-    distratada_em: v.status === "distratada" ? (v.distratadaEm ?? "") : "",
     observacao: v.observacao.slice(0, 2000),
   };
 
-  const participantes = v.participantes.map((p) => {
+  // "Recebe direto" é do gestor (0232); do corretor, a chave nem vai, e o
+  // banco mantém a marcação gravada.
+  const gestor = corretor.papel === "gestor";
+  const participantes: {
+    corretor_id: string;
+    parte_percentual: number;
+    repasse_percentual: number | string;
+    repasse_valor: number;
+    forma_recebimento?: FormaRecebimento;
+  }[] = v.participantes.map((p) => {
     const repasse = resolverPar(comissao.valor, p.repasse);
     return {
       corretor_id: p.corretorId,
       parte_percentual: p.partePercentual,
       repasse_percentual: repasse.percentual ?? "",
       repasse_valor: repasse.valor,
+      ...(gestor && p.formaRecebimento ? { forma_recebimento: p.formaRecebimento } : {}),
     };
   });
 
   const supabase = await createClient();
+  let parcelas: ParcelaNova[] = v.parcelas;
+  const formaGravada = new Map<string, FormaRecebimento>();
   if (vendaId) {
     // Venda cujo dinheiro já caiu num mês fechado não muda de valor por baixo do contador.
-    const [{ data: atual }, { data: partes }] = await Promise.all([
-      supabase.from("vendas").select("comissao_recebida_em").eq("id", vendaId).maybeSingle(),
-      supabase.from("venda_participantes").select("repasse_pago_em").eq("venda_id", vendaId),
+    const [{ data: gravadas }, { data: partes }] = await Promise.all([
+      supabase.from("venda_parcelas").select("numero, valor, pagador, vence_em, recebida_em").eq("venda_id", vendaId).order("numero"),
+      supabase.from("venda_participantes").select("corretor_id, repasse_pago_em, forma_recebimento").eq("venda_id", vendaId),
     ]);
-    const fechado = await mesFechadoEntre([atual?.comissao_recebida_em, ...(partes ?? []).map((p) => p.repasse_pago_em)]);
+    const fechado = await mesFechadoEntre([...(gravadas ?? []).map((p) => p.recebida_em), ...(partes ?? []).map((p) => p.repasse_pago_em)]);
     if (fechado) return { erro: recusaDeMesFechado(fechado) };
+    for (const p of partes ?? []) formaGravada.set(p.corretor_id, p.forma_recebimento);
+
+    // A tela não mandou parcelas: ficam as gravadas. Se é uma só e nada
+    // entrou, ela acompanha a comissão nova (o caso de corrigir o valor).
+    if (parcelas.length === 0 && gravadas && gravadas.length > 0) {
+      parcelas = gravadas.map((p) => ({ numero: p.numero, valor: Number(p.valor), pagador: p.pagador, venceEm: p.vence_em }));
+      if (gravadas.length === 1 && !gravadas[0].recebida_em) {
+        parcelas = [{ ...parcelas[0], valor: daImobiliaria(comissao.valor, participantes, formaGravada) }];
+      }
+    }
   }
+  if (parcelas.length === 0) {
+    const esperado = daImobiliaria(comissao.valor, participantes, formaGravada);
+    parcelas = esperado > 0 ? dividirEmParcelas(esperado, 1, null, "construtora") : [];
+  }
+
   const { data: id, error } = await supabase.rpc("salvar_venda", {
     p_venda: vendaId,
     p_dados: dados,
     p_participantes: participantes,
+    p_parcelas: parcelas.map((p) => ({ numero: p.numero, valor: p.valor, pagador: p.pagador, vence_em: p.venceEm ?? "" })),
   });
 
   if (error || !id) {
@@ -90,7 +119,7 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
   // venda não podem contar histórias diferentes. Distrato NÃO volta o lead
   // de etapa sozinho: o que fazer com ele depois é decisão do corretor.
   let aviso = "";
-  if (!vendaId && v.leadId && v.status === "ativa") {
+  if (!vendaId && v.leadId) {
     const { data: lead } = await supabase.from("leads").select("etapa").eq("id", v.leadId).maybeSingle();
     if (lead && lead.etapa !== "fechado") {
       const r = await moverEtapa(v.leadId, "fechado");
@@ -101,6 +130,21 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
   revalidatePath(ROTA);
   if (v.leadId) revalidatePath(`/corretor/leads/${v.leadId}`);
   return { ok: (vendaId ? "Venda atualizada." : "Venda registrada!") + aviso, id: id as string };
+}
+
+/** O que a imobiliária recebe, com a forma enviada ou, sem ela, a gravada. */
+function daImobiliaria(
+  comissao: number,
+  participantes: { corretor_id: string; repasse_valor: number; forma_recebimento?: FormaRecebimento }[],
+  gravada: Map<string, FormaRecebimento>,
+): number {
+  return valorDaImobiliaria(
+    comissao,
+    participantes.map((p) => ({
+      formaRecebimento: p.forma_recebimento ?? gravada.get(p.corretor_id) ?? "repasse",
+      repasseValor: p.repasse_valor,
+    })),
+  );
 }
 
 export async function excluirVenda(vendaId: string): Promise<ResultadoVenda> {
@@ -161,23 +205,84 @@ function erroDaMarcacao(mensagem: string): string {
   return "Não foi possível marcar agora. Tente de novo.";
 }
 
-/** `data` null desmarca: clique errado tem volta. */
-export async function marcarComissaoRecebida(vendaId: string, data: string | null): Promise<ResultadoVenda> {
+/** Uma parcela da comissão entrou (0232). `data` null desmarca: clique errado tem volta. */
+export async function marcarParcelaRecebida(parcelaId: string, data: string | null): Promise<ResultadoVenda> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
   if (corretor.papel !== "gestor") return { erro: "Só o gestor marca pagamento." };
   if (data !== null && (!DATA_ISO.test(data) || data > hojeEmSaoPaulo())) return { erro: "Data inválida." };
 
   const supabase = await createClient();
-  const { data: venda } = await supabase.from("vendas").select("comissao_recebida_em").eq("id", vendaId).maybeSingle();
-  const fechado = await mesFechadoEntre([venda?.comissao_recebida_em, data]);
+  const { data: parcela } = await supabase.from("venda_parcelas").select("recebida_em").eq("id", parcelaId).maybeSingle();
+  const fechado = await mesFechadoEntre([parcela?.recebida_em, data]);
   if (fechado) return { erro: recusaDeMesFechado(fechado) };
-  const { data: ok, error } = await supabase.rpc("marcar_comissao_recebida", { p_venda: vendaId, p_data: data });
-  if (error) return { erro: erroDaMarcacao(error.message) };
-  if (!ok) return { erro: "Venda não encontrada." };
+  const { data: ok, error } = await supabase.rpc("marcar_parcela_recebida", { p_parcela: parcelaId, p_data: data });
+  if (error) {
+    return { erro: error.message.includes("parcela_cancelada") ? traduzirErroDoBanco(error.message) : erroDaMarcacao(error.message) };
+  }
+  if (!ok) return { erro: "Parcela não encontrada." };
 
   revalidatePath(ROTA, "layout");
-  return { ok: data ? "Comissão marcada como recebida." : "Marcação desfeita." };
+  return { ok: data ? "Parcela marcada como recebida." : "Marcação desfeita." };
+}
+
+/**
+ * O distrato é do gestor (0232): ele decide se as parcelas em aberto
+ * continuam devidas ou são canceladas. O mês da venda não muda; o que for
+ * cancelado cai no mês do distrato, que precisa estar aberto.
+ */
+export async function distratarVenda(vendaId: string, d: DistratoDigitado): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  if (corretor.papel !== "gestor") return { erro: "Só o gestor registra o distrato. Use “Avisar distrato”." };
+  const problemas = validarDistrato(d, hojeEmSaoPaulo());
+  if (problemas.length > 0) return { erro: problemas[0] };
+
+  const fechado = await mesFechadoEntre([d.data]);
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
+  const supabase = await createClient();
+  const { data: ok, error } = await supabase.rpc("distratar_venda", {
+    p_venda: vendaId,
+    p_data: d.data,
+    p_motivo: d.motivo.trim().slice(0, 500),
+    p_parcelas: d.parcelas as "manter" | "cancelar",
+  });
+  if (error) return { erro: traduzirErroDoBanco(error.message) };
+  if (!ok) return { erro: "Venda não encontrada, ou já distratada." };
+
+  revalidatePath(ROTA, "layout");
+  return { ok: "Distrato registrado." };
+}
+
+export async function desfazerDistrato(vendaId: string): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  if (corretor.papel !== "gestor") return { erro: "Só o gestor desfaz o distrato." };
+
+  const supabase = await createClient();
+  const { data: venda } = await supabase.from("vendas").select("distratada_em").eq("id", vendaId).maybeSingle();
+  const fechado = await mesFechadoEntre([venda?.distratada_em]);
+  if (fechado) return { erro: recusaDeMesFechado(fechado) };
+  const { data: ok, error } = await supabase.rpc("desfazer_distrato", { p_venda: vendaId });
+  if (error) return { erro: traduzirErroDoBanco(error.message) };
+  if (!ok) return { erro: "Venda não encontrada, ou não está distratada." };
+
+  revalidatePath(ROTA, "layout");
+  return { ok: "Distrato desfeito." };
+}
+
+/** O corretor avisa; o gestor decide (aparece nos alertas do financeiro). */
+export async function avisarDistrato(vendaId: string, texto: string): Promise<ResultadoVenda> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+
+  const supabase = await createClient();
+  const { data: ok, error } = await supabase.rpc("avisar_distrato", { p_venda: vendaId, p_texto: texto.trim().slice(0, 500) });
+  if (error) return { erro: "Não foi possível avisar agora. Tente de novo." };
+  if (!ok) return { erro: "Só quem registrou ou participa da venda avisa o distrato." };
+
+  revalidatePath(ROTA, "layout");
+  return { ok: "Aviso enviado ao gestor." };
 }
 
 export async function marcarRepassePago(vendaId: string, corretorId: string, data: string | null): Promise<ResultadoVenda> {

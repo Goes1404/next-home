@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirGestorNaAcao } from "@/lib/guardas";
-import { problemasDosDadosFiscais, soDigitos, documentoValido, type DadosFiscaisDaVenda, type Regime } from "@/lib/financeiro/fiscal";
+import { problemasDosDadosFiscais, soDigitos, documentoValido, type DadosFiscaisDaVenda, type Regime, type RegimeApuracao } from "@/lib/financeiro/fiscal";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 
 /**
@@ -19,6 +19,7 @@ const docOuNulo = (v: string | null) => (v && soDigitos(v) ? soDigitos(v) : null
 
 export async function salvarConfigFiscal(c: {
   regime: Regime;
+  regimeApuracao: RegimeApuracao;
   aliquotaSimples: number;
   aliquotaIss: number;
   cnpj: string | null;
@@ -28,6 +29,7 @@ export async function salvarConfigFiscal(c: {
   if (!guarda.corretor) return { erro: guarda.erro ?? "Acesso negado." };
 
   if (c.regime !== "simples" && c.regime !== "presumido") return { erro: "Regime inválido." };
+  if (c.regimeApuracao !== "competencia" && c.regimeApuracao !== "caixa") return { erro: "Escolha competência ou caixa." };
   if (!(c.aliquotaSimples >= 0 && c.aliquotaSimples <= 0.5)) return { erro: "A alíquota do Simples deve ficar entre 0% e 50%." };
   if (!(c.aliquotaIss >= 0 && c.aliquotaIss <= 0.1)) return { erro: "O ISS deve ficar entre 0% e 10%." };
   const cnpj = docOuNulo(c.cnpj);
@@ -38,6 +40,7 @@ export async function salvarConfigFiscal(c: {
     .from("fiscal_config")
     .update({
       regime: c.regime,
+      regime_apuracao: c.regimeApuracao,
       aliquota_simples: c.aliquotaSimples,
       aliquota_iss: c.aliquotaIss,
       cnpj,

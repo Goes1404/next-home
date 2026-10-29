@@ -1,3 +1,5 @@
+import { validarParcelas, valorDaImobiliaria, type FormaRecebimento, type ParcelaNova } from "./parcelas";
+
 /**
  * As contas de uma venda — puras, sem banco, para a tela e a action usarem a
  * MESMA régua (duas contas do mesmo dinheiro divergem no primeiro ajuste).
@@ -86,6 +88,8 @@ export type ParticipanteDigitado = {
   corretorId: string;
   partePercentual: number;
   repasse: Digitado;
+  /** Só o gestor muda (0232). Ausente = o servidor mantém o que está gravado. */
+  formaRecebimento?: FormaRecebimento;
 };
 
 export type VendaDigitada = {
@@ -96,10 +100,10 @@ export type VendaDigitada = {
   dataVenda: string; // yyyy-mm-dd
   valorVenda: number | null;
   comissao: Digitado | null;
-  status: StatusVenda;
-  distratadaEm: string | null;
   observacao: string;
   participantes: ParticipanteDigitado[];
+  /** Vazia = uma parcela só com tudo o que a imobiliária recebe (0232). */
+  parcelas: ParcelaNova[];
 };
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
@@ -122,9 +126,6 @@ export function problemasDaVenda(v: VendaDigitada, hojeIso: string): string[] {
   } else if (v.comissao.modo === "valor" && v.valorVenda !== null && v.comissao.numero > v.valorVenda) {
     erros.push("A comissão não pode ser maior que o valor da venda.");
   }
-  if (v.status === "distratada" && (!v.distratadaEm || !DATA.test(v.distratadaEm))) {
-    erros.push("Informe a data do distrato.");
-  }
 
   if (v.participantes.length === 0) {
     erros.push("A venda precisa de pelo menos um corretor.");
@@ -141,6 +142,13 @@ export function problemasDaVenda(v: VendaDigitada, hojeIso: string): string[] {
     if (comissao !== null) {
       const repasses = v.participantes.reduce((s, p) => s + resolverPar(comissao, p.repasse).valor, 0);
       if (repasses > comissao + 0.01) erros.push("Os repasses somam mais que a comissão da venda.");
+      if (v.parcelas.length > 0) {
+        const daImobiliaria = valorDaImobiliaria(
+          comissao,
+          v.participantes.map((p) => ({ formaRecebimento: p.formaRecebimento ?? "repasse", repasseValor: resolverPar(comissao, p.repasse).valor })),
+        );
+        erros.push(...validarParcelas(v.parcelas, daImobiliaria));
+      }
     }
   }
   return erros;
@@ -164,6 +172,20 @@ export function formatarReais(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2, minimumFractionDigits: 0 });
 }
 
+export type DistratoDigitado = { data: string; motivo: string; parcelas: "manter" | "cancelar" | null };
+
+/** O distrato é do gestor (0232): data, motivo e a decisão sobre as parcelas em aberto. */
+export function validarDistrato(d: DistratoDigitado, hojeIso: string): string[] {
+  const erros: string[] = [];
+  if (!DATA.test(d.data)) erros.push("Informe a data do distrato.");
+  else if (d.data > hojeIso) erros.push("A data do distrato não pode ser no futuro.");
+  if (!d.motivo.trim()) erros.push("Conte o motivo do distrato.");
+  if (d.parcelas !== "manter" && d.parcelas !== "cancelar") {
+    erros.push("Decida se as parcelas em aberto continuam devidas ou são canceladas.");
+  }
+  return erros;
+}
+
 /** A mensagem de erro do banco (`raise exception`) em português de tela. */
 export function traduzirErroDoBanco(mensagem: string): string {
   if (mensagem.includes("partes_nao_somam_100")) return "As partes da venda precisam somar 100%.";
@@ -176,6 +198,13 @@ export function traduzirErroDoBanco(mensagem: string): string {
   }
   if (mensagem.includes("vendas_tem_imovel")) return "Escolha o imóvel vendido.";
   if (mensagem.includes("vendas_distrato_coerente")) return "Informe a data do distrato.";
+  if (mensagem.includes("parcelas_nao_somam")) return "As parcelas precisam somar o que a imobiliária recebe.";
+  if (mensagem.includes("parcela_ja_recebida")) {
+    return "Esta venda já tem parcela recebida. Desmarque o recebimento para mudar as parcelas.";
+  }
+  if (mensagem.includes("parcela_cancelada")) return "Esta parcela foi cancelada no distrato. Desfaça o distrato para marcá-la.";
+  if (mensagem.includes("distrato_sem_motivo")) return "Conte o motivo do distrato.";
+  if (mensagem.includes("so_gestor")) return "Só o gestor pode fazer isso.";
   return "Não foi possível salvar a venda agora. Tente de novo.";
 }
 

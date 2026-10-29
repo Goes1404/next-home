@@ -7,6 +7,7 @@ import {
   problemasDaVenda,
   resolverPar,
   traduzirErroDoBanco,
+  validarDistrato,
   vgvCreditado,
   type VendaDigitada,
 } from "./venda";
@@ -76,8 +77,7 @@ const base = (mudar: Partial<VendaDigitada> = {}): VendaDigitada => ({
   dataVenda: "2026-09-20",
   valorVenda: 500000,
   comissao: { modo: "percentual", numero: 5 },
-  status: "ativa",
-  distratadaEm: null,
+  parcelas: [],
   observacao: "",
   participantes: [{ corretorId: "c1", partePercentual: 100, repasse: { modo: "percentual", numero: 40 } }],
   ...mudar,
@@ -142,9 +142,40 @@ describe("problemasDaVenda", () => {
     expect(problemasDaVenda(base({ empreendimentoId: null, imovelDescricao: "Revenda Tamboré" }), hoje)).toEqual([]);
   });
 
-  it("distrato exige a data", () => {
-    expect(problemasDaVenda(base({ status: "distratada" }), hoje).join(" ")).toMatch(/distrato/);
-    expect(problemasDaVenda(base({ status: "distratada", distratadaEm: "2026-09-24" }), hoje)).toEqual([]);
+  // Comissão de 5% de 500 mil = 25 mil; sem parcelas, o servidor cria uma.
+  it("sem parcelas digitadas passa (vira uma parcela só)", () => {
+    expect(problemasDaVenda(base({ parcelas: [] }), hoje)).toEqual([]);
+  });
+
+  it("parcelas que somam a comissão passam", () => {
+    const parcelas = [
+      { numero: 1, valor: 12500, pagador: "comprador" as const, venceEm: "2026-09-20" },
+      { numero: 2, valor: 12500, pagador: "construtora" as const, venceEm: "2026-10-20" },
+    ];
+    expect(problemasDaVenda(base({ parcelas }), hoje)).toEqual([]);
+  });
+
+  it("parcelas que não somam a comissão são barradas, dizendo quanto somaram", () => {
+    const parcelas = [{ numero: 1, valor: 20000, pagador: "construtora" as const, venceEm: null }];
+    expect(problemasDaVenda(base({ parcelas }), hoje).join(" ")).toMatch(/somam R\$\s?20\.000\b/);
+  });
+
+  it("com um corretor recebendo direto, as parcelas somam só o que a imobiliária recebe", () => {
+    const v = base({
+      participantes: [{ corretorId: "c1", partePercentual: 100, repasse: { modo: "valor", numero: 10000 }, formaRecebimento: "direto" }],
+      parcelas: [{ numero: 1, valor: 15000, pagador: "construtora" as const, venceEm: null }],
+    });
+    expect(problemasDaVenda(v, hoje)).toEqual([]);
+  });
+});
+
+describe("validarDistrato", () => {
+  it("exige data, motivo e a decisão sobre as parcelas", () => {
+    expect(validarDistrato({ data: "2026-09-24", motivo: "Cliente desistiu", parcelas: "manter" }, "2026-09-25")).toEqual([]);
+    expect(validarDistrato({ data: "", motivo: "x", parcelas: "manter" }, "2026-09-25").join(" ")).toMatch(/data/);
+    expect(validarDistrato({ data: "2026-09-24", motivo: "  ", parcelas: "cancelar" }, "2026-09-25").join(" ")).toMatch(/motivo/);
+    expect(validarDistrato({ data: "2026-09-24", motivo: "x", parcelas: null }, "2026-09-25").join(" ")).toMatch(/parcelas/);
+    expect(validarDistrato({ data: "2026-09-30", motivo: "x", parcelas: "manter" }, "2026-09-25").join(" ")).toMatch(/futuro/);
   });
 });
 
@@ -153,6 +184,9 @@ describe("traduzirErroDoBanco", () => {
     expect(traduzirErroDoBanco("partes_nao_somam_100")).toMatch(/100%/);
     expect(traduzirErroDoBanco("venda_nao_editavel")).toMatch(/comissão já entrou/);
     expect(traduzirErroDoBanco("participante_de_outro_grupo")).toMatch(/não é da sua imobiliária/);
+    expect(traduzirErroDoBanco("parcelas_nao_somam")).toMatch(/parcelas precisam somar/);
+    expect(traduzirErroDoBanco("parcela_ja_recebida")).toMatch(/Desmarque o recebimento/);
+    expect(traduzirErroDoBanco("so_gestor")).toMatch(/Só o gestor/);
     expect(traduzirErroDoBanco("qualquer coisa")).toMatch(/Tente de novo/);
   });
 });

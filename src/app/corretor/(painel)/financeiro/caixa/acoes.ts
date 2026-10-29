@@ -34,6 +34,8 @@ export async function criarLancamento(l: LancamentoDigitado): Promise<ResultadoC
     vencimento,
     pago_em: l.jaPago ? (vencimento > hoje ? hoje : vencimento) : null,
     recorrencia_id: serie,
+    // A terceira data (0232): a informada (só em avulso) ou o mês do vencimento.
+    competencia: l.competencia && l.repetirMeses <= 1 ? `${l.competencia}-01` : `${vencimento.slice(0, 7)}-01`,
     criado_por: guarda.corretor.id,
   }));
 
@@ -117,17 +119,17 @@ export async function informarSaldo(valor: number): Promise<ResultadoCaixa> {
   return { ok: "Saldo atualizado." };
 }
 
-/** Quando a construtora deve pagar a comissão da venda. */
-export async function preverComissao(vendaId: string, data: string | null): Promise<ResultadoCaixa> {
+/** Quando quem paga deve pagar UMA parcela da comissão (0232). */
+export async function preverParcela(parcelaId: string, data: string | null): Promise<ResultadoCaixa> {
   const guarda = await exigirGestorNaAcao();
   if (!guarda.corretor) return { erro: guarda.erro ?? "Acesso negado." };
   if (!dataValida(data)) return { erro: "Data inválida." };
 
   const supabase = await createClient();
   const { data: linhas, error } = await supabase
-    .from("vendas")
-    .update({ comissao_prevista_em: data })
-    .eq("id", vendaId)
+    .from("venda_parcelas")
+    .update({ vence_em: data, atualizado_em: new Date().toISOString() })
+    .eq("id", parcelaId)
     .select("id");
   if (error || !linhas?.length) return { erro: "Não foi possível salvar a previsão." };
   revalidatePath(ROTA);
