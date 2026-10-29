@@ -4,12 +4,18 @@ import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { coletarNumerosDaSemana } from "@/lib/admin/numerosDaSemana";
-import { leituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
+import { leituraDoGrupo, type LeituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import {
   acharNoticias,
   assuntoDoRelatorio,
   corpoDoRelatorio,
+  type Achado,
 } from "@/lib/admin/relatorioSemanal";
+import { jaMandouNaSemana, textoDoResumoSemanal } from "@/lib/admin/resumoSemanalNoWhatsapp";
+import { coletarSemanaDoGrupo } from "@/lib/admin/semanaDoGrupo";
+import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -88,6 +94,64 @@ async function destinatarios(
   return lista;
 }
 
+/**
+ * O resumo da semana no WhatsApp de cada gestor do grupo que deixou ligado
+ * (0246). Sai pelo canal dos avisos ao corretor (`avisarCorretor`): do
+ * número do PRÓPRIO gestor para ele mesmo, mais a notificação no celular —
+ * não é contato com cliente, então não gasta cota anti-ban nem espera a
+ * janela comercial (mesma regra do resumo do dia).
+ *
+ * Uma vez por semana por gestor: o carimbo `relatorio_semanal_whatsapp_em`
+ * é gravado ANTES do envio (claim), e um segundo POST do pg_cron na mesma
+ * manhã não manda de novo. Sem a 0246 (coluna ausente), a leitura falha e
+ * nada sai — falha fechada.
+ */
+async function mandarResumoNoWhatsapp(
+  supabase: ReturnType<typeof createServiceClient>,
+  p: { grupoId: string; nomeDaCasa: string; leitura: LeituraDoGrupo; achado: Achado | null },
+): Promise<number> {
+  const { data: gestores, error } = await supabase
+    .from("corretores")
+    .select("id, relatorio_semanal_whatsapp, relatorio_semanal_whatsapp_em")
+    .eq("grupo_id", p.grupoId)
+    .eq("papel", "gestor")
+    .eq("ativo", true);
+  if (error) return 0;
+  const agora = new Date();
+  const querem = (gestores ?? []).filter(
+    (g) => g.relatorio_semanal_whatsapp === true && !jaMandouNaSemana(g.relatorio_semanal_whatsapp_em, agora),
+  );
+  if (querem.length === 0) return 0;
+
+  const semana = await coletarSemanaDoGrupo(p.leitura, hojeEmSaoPaulo(agora), async (corretorId) => {
+    const { data, error: erroParados } = await supabase.rpc("leads_parados_do_corretor", { p_corretor: corretorId });
+    return erroParados ? null : Number(data ?? 0);
+  });
+  const texto = textoDoResumoSemanal({
+    nomeDaCasa: p.nomeDaCasa,
+    semana,
+    achado: p.achado,
+    linkDoPainel: linkDoPainel(p.grupoId, "/corretor/admin"),
+  });
+
+  let enviados = 0;
+  for (const gestor of querem) {
+    // O claim: só um tique grava o carimbo desta semana.
+    let claim = supabase
+      .from("corretores")
+      .update({ relatorio_semanal_whatsapp_em: agora.toISOString() })
+      .eq("id", gestor.id)
+      .eq("grupo_id", p.grupoId);
+    claim = gestor.relatorio_semanal_whatsapp_em
+      ? claim.eq("relatorio_semanal_whatsapp_em", gestor.relatorio_semanal_whatsapp_em)
+      : claim.is("relatorio_semanal_whatsapp_em", null);
+    const { data: ganhou } = await claim.select("id");
+    if (!ganhou?.length) continue;
+    if (await avisarCorretor(supabase, gestor.id, texto, "/corretor/admin")) enviados++;
+  }
+  return enviados;
+}
+
 export async function GET(req: NextRequest) {
   if (!requisicaoAutenticada(req)) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
@@ -100,13 +164,31 @@ export async function GET(req: NextRequest) {
 
     let enviados = 0;
     let destinatariosTotal = 0;
+    let noWhatsapp = 0;
     const semDestinatario: string[] = [];
     for (const { id: grupoId } of grupos ?? []) {
-      const numeros = await coletarNumerosDaSemana(await leituraDoGrupo(supabase, grupoId));
+      const leitura = await leituraDoGrupo(supabase, grupoId);
+      const numeros = await coletarNumerosDaSemana(leitura);
       const achados = acharNoticias(numeros);
       const { texto, html } = corpoDoRelatorio({ achados, numeros, urlPainel: enderecoDoPainel(grupoId) });
       // O nome da casa no assunto é o do grupo que recebe (um por volta do laço).
-      const assunto = assuntoDoRelatorio(achados, (await lerMarcaDoCrm(grupoId)).nome);
+      const nomeDaCasa = (await lerMarcaDoCrm(grupoId)).nome;
+      const assunto = assuntoDoRelatorio(achados, nomeDaCasa);
+
+      /*
+       * O resumo no WhatsApp do gestor (0246, 29/10/2026), ANTES do e-mail:
+       * gestor sem e-mail cadastrado também tem WhatsApp. Uma falha aqui não
+       * derruba o e-mail de ninguém.
+       */
+      noWhatsapp += await mandarResumoNoWhatsapp(supabase, {
+        grupoId,
+        nomeDaCasa,
+        leitura,
+        achado: achados[0] ?? null,
+      }).catch((e) => {
+        console.error("[relatorio] resumo no WhatsApp falhou:", e);
+        return 0;
+      });
 
       const para = await destinatarios(supabase, grupoId);
       if (para.length === 0) {
@@ -123,7 +205,7 @@ export async function GET(req: NextRequest) {
       console.warn("[relatorio] grupo sem gestor com e-mail — relatório não enviado:", semDestinatario.join(", "));
     }
 
-    return NextResponse.json({ ok: true, enviados, destinatarios: destinatariosTotal, semDestinatario });
+    return NextResponse.json({ ok: true, enviados, destinatarios: destinatariosTotal, semDestinatario, noWhatsapp });
   } catch (e) {
     // O relatório não pode derrubar nada — mas também não pode falhar em
     // silêncio, ou volta a ser "ninguém olha".

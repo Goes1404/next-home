@@ -9,7 +9,13 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { diaEmSaoPaulo, lerDia, lerMes, mesDoDia, type Dia, type Mes } from "@/lib/agenda/calendario";
 import { ordenarItens, type ItemDaAgenda } from "@/lib/agenda/itens";
 import { deOutrosDias, resumoDoDia, rotuloDoDia, semanaDoDia } from "@/lib/agenda/semana";
-import { lerItensDoDia, lerMarcadoresDoMes, lerProximasVisitas, lerVisitasSemHorario } from "@/lib/agenda/lerAgenda";
+import {
+  lerConfirmacoesDasVisitas,
+  lerItensDoDia,
+  lerMarcadoresDoMes,
+  lerProximasVisitas,
+  lerVisitasSemHorario,
+} from "@/lib/agenda/lerAgenda";
 import {
   lerCompromissosDoDiaDaEquipe,
   lerDiaDaEquipe,
@@ -25,6 +31,7 @@ import { AcoesDaAgenda, type OpcaoDoNovo } from "./_componentes/AcoesDaAgenda";
 import { GradeDaSemana } from "./_componentes/GradeDaSemana";
 import { AgendaNoCelular } from "./_componentes/AgendaNoCelular";
 import { NumerosDoMes } from "./_componentes/NumerosDoMes";
+import { ConfirmacaoAutomatica } from "./_componentes/ConfirmacaoAutomatica";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -167,7 +174,9 @@ async function AgendaDaEquipe({
   // Só filtra por quem é da equipe do gestor: id de fora vira "equipe toda".
   const corretorId = filtro && equipe.some((c) => c.id === filtro) ? filtro : null;
   const recorte = { grupoId, corretorId };
-  const [numeros, marcadores, doDia, compromissos, ...vizinhos] = await Promise.all([
+  const [{ data: ajusteDoGrupo }, numeros, marcadores, doDia, compromissos, ...vizinhos] = await Promise.all([
+    // O opt-in da confirmação automática (0246); sem a coluna, o ajuste some.
+    createServiceClient().from("grupos").select("confirmacao_visita_automatica").eq("id", grupoId).maybeSingle(),
     lerNumerosDaAgenda({ ...recorte, mes }),
     lerMarcadoresDaEquipe({ ...recorte, mes }),
     lerDiaDaEquipe({ ...recorte, dia }),
@@ -201,6 +210,12 @@ async function AgendaDaEquipe({
       <div className="mt-4">
         <NumerosDoMes serie={numeros.serie} medidaDesde={numeros.medidaDesde} />
       </div>
+
+      {ajusteDoGrupo && (
+        <div className="mt-4">
+          <ConfirmacaoAutomatica ligada={ajusteDoGrupo.confirmacao_visita_automatica} />
+        </div>
+      )}
 
       <div className="mt-4 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-6">
         <aside className="hidden space-y-4 lg:sticky lg:top-4 lg:block">
@@ -267,7 +282,12 @@ async function MinhaAgenda({
    * esconderia o preparo de quem a faz.
    */
   const ids = [...new Set(itens.flatMap((i) => (i.tipo === "visita" ? [i.leadId] : [])))];
-  const preparoPorLead = await lerPreparo(grupoId, ids);
+  const [preparoPorLead, confirmacoes] = await Promise.all([
+    lerPreparo(grupoId, ids),
+    // O pedido de confirmação pelo WhatsApp e o "quer remarcar" (0246).
+    lerConfirmacoesDasVisitas(grupoId, itens.flatMap((i) => (i.tipo === "visita" ? [i.id] : []))),
+  ]);
+  const itensDoDia = itens.map((i) => (i.tipo === "visita" && confirmacoes.has(i.id) ? { ...i, ...confirmacoes.get(i.id) } : i));
 
   // Configuração: o token do feed .ics (0126, tabela fechada ao painel) e a grade semanal.
   const { data: agenda } = await createServiceClient()
@@ -334,7 +354,7 @@ async function MinhaAgenda({
           </div>
           <TituloDoDia dia={dia} hoje={hoje} itens={itens} />
           <DiaDaAgenda
-            itens={itens}
+            itens={itensDoDia}
             preparoPorLead={Object.fromEntries(preparoPorLead)}
             vistaDe={corretorId}
             agoraIso={agora.toISOString()}

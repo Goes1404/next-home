@@ -207,3 +207,25 @@ export async function lerVisitasParaConfirmar(
     .filter((v) => v.lead && !v.lead.arquivado_em)
     .map((v) => ({ id: v.id, inicio: v.inicio, status: v.status, nome: v.lead!.nome }));
 }
+
+/**
+ * O pedido de confirmação e o "quer remarcar" das visitas mostradas (0246,
+ * 29/10/2026). À parte do `SELECT_VISITA` de propósito: antes da 0246 as
+ * colunas não existem, a consulta falha e a Agenda só não mostra o botão —
+ * no select principal, a Agenda inteira cairia.
+ */
+export async function lerConfirmacoesDasVisitas(
+  grupoId: string,
+  visitaIds: string[],
+): Promise<Map<string, { confirmacaoPedidaEm: string | null; remarcacaoPedidaEm: string | null }>> {
+  if (visitaIds.length === 0) return new Map();
+  const { data, error } = await createServiceClient()
+    .from("visitas")
+    .select("id, confirmacao_pedida_em, remarcacao_pedida_em")
+    .eq("grupo_id", grupoId)
+    .in("id", visitaIds.slice(0, 200));
+  if (error) return new Map();
+  return new Map(
+    (data ?? []).map((v) => [v.id, { confirmacaoPedidaEm: v.confirmacao_pedida_em, remarcacaoPedidaEm: v.remarcacao_pedida_em }]),
+  );
+}

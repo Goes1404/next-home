@@ -3069,6 +3069,29 @@ export async function registrarVisitaConfirmada(leadId: string): Promise<boolean
 }
 
 /**
+ * O cliente pediu para remarcar a visita respondendo ao pedido de
+ * confirmação ou ao lembrete (0246, 29/10/2026). Carimba a visita futura
+ * ainda marcada do lead, uma vez; remarcar de fato (data nova) apaga o
+ * carimbo (`confirmacao_segue_a_data`). Devolve `true` só quando carimbou —
+ * é isso que decide se o corretor é avisado. Sem a 0246, `false`.
+ */
+export async function registrarRemarcacaoPedida(leadId: string): Promise<boolean> {
+  const { data, error } = await createServiceClient()
+    .from("visitas")
+    .update({ remarcacao_pedida_em: new Date().toISOString() })
+    .eq("lead_id", leadId)
+    .eq("status", "marcada")
+    .gte("inicio", new Date().toISOString())
+    .is("remarcacao_pedida_em", null)
+    .select("id");
+  if (error) {
+    console.warn("[visita] pedido de remarcação não gravado:", error.message);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
+}
+
+/**
  * Guarda a visita que o corretor parece ter combinado no chat, para o Início
  * perguntar "registrar?" (0163). Nunca grava em `leads`: só o toque dele.
  */

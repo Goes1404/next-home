@@ -1781,6 +1781,98 @@ export type Database = {
         }
         Relationships: []
       }
+      /** 0246 — a meta do mês de cada corretor, definida pelo gestor. Só o servidor. */
+      metas_da_equipe: {
+        Row: {
+          grupo_id: string
+          corretor_id: string
+          mes: string
+          meta_visitas: number | null
+          meta_propostas: number | null
+          meta_vendas: number | null
+          definida_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          grupo_id?: string
+          corretor_id: string
+          mes: string
+          meta_visitas?: number | null
+          meta_propostas?: number | null
+          meta_vendas?: number | null
+          definida_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          grupo_id?: string
+          corretor_id?: string
+          mes?: string
+          meta_visitas?: number | null
+          meta_propostas?: number | null
+          meta_vendas?: number | null
+          definida_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0246 — as regras de distribuição do gestor, em ordem. Só o servidor. */
+      regras_distribuicao: {
+        Row: {
+          id: string
+          grupo_id: string
+          ordem: number
+          ativa: boolean
+          nome: string
+          criterio: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes: string[]
+          valor_min: number | null
+          valor_max: number | null
+          origens: string[]
+          max_leads_parados: number | null
+          corretores: string[]
+          criada_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id: string
+          ordem?: number
+          ativa?: boolean
+          nome: string
+          criterio: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes?: string[]
+          valor_min?: number | null
+          valor_max?: number | null
+          origens?: string[]
+          max_leads_parados?: number | null
+          corretores?: string[]
+          criada_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          ordem?: number
+          ativa?: boolean
+          nome?: string
+          criterio?: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes?: string[]
+          valor_min?: number | null
+          valor_max?: number | null
+          origens?: string[]
+          max_leads_parados?: number | null
+          corretores?: string[]
+          criada_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       catalogo_candidatos: {
         Row: {
           grupo_id: string
@@ -2120,6 +2212,9 @@ export type Database = {
           resumo_diario_em: string | null
           relatorio_avaliacoes_em: string | null
           resumo_fim_de_semana: boolean
+          /** 0246: o resumo da semana no WhatsApp do gestor (ligado por padrão). */
+          relatorio_semanal_whatsapp: boolean
+          relatorio_semanal_whatsapp_em: string | null
           resumo_hora: number
           em_pausa: boolean
           email: string | null
@@ -2153,6 +2248,8 @@ export type Database = {
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
+          relatorio_semanal_whatsapp?: boolean
+          relatorio_semanal_whatsapp_em?: string | null
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
@@ -2186,6 +2283,8 @@ export type Database = {
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
+          relatorio_semanal_whatsapp?: boolean
+          relatorio_semanal_whatsapp_em?: string | null
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
@@ -2480,6 +2579,8 @@ export type Database = {
           grupos_whatsapp_instancia: string | null
           grupos_whatsapp_lidos_em: string | null
           pular_corretor_whatsapp_desconectado: boolean
+          /** 0246: o pedido de confirmação de visita sai sozinho (opt-in). */
+          confirmacao_visita_automatica: boolean
           padrao_nome_grupo_leads: string | null
           texto_aviso_grupo_leads: string | null
           id: string
@@ -2554,6 +2655,7 @@ export type Database = {
           grupos_whatsapp_instancia?: string | null
           grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          confirmacao_visita_automatica?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null
           id?: string
@@ -2628,6 +2730,7 @@ export type Database = {
           grupos_whatsapp_instancia?: string | null
           grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          confirmacao_visita_automatica?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null
           id?: string
@@ -4515,6 +4618,10 @@ export type Database = {
           passada_em: string | null
           cobrada_em: string | null
           lembrete_1h_para: string | null
+          /** 0246: o pedido de confirmação saiu; o cliente pediu para remarcar. */
+          confirmacao_pedida_em: string | null
+          confirmacao_pedida_por: "corretor" | "automatica" | null
+          remarcacao_pedida_em: string | null
           respondida_em: string | null
           passada_por: string | null
           criada_por_usuario: string | null
@@ -4533,6 +4640,9 @@ export type Database = {
           passada_em?: string | null
           cobrada_em?: string | null
           lembrete_1h_para?: string | null
+          confirmacao_pedida_em?: string | null
+          confirmacao_pedida_por?: "corretor" | "automatica" | null
+          remarcacao_pedida_em?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -4551,6 +4661,9 @@ export type Database = {
           passada_em?: string | null
           cobrada_em?: string | null
           lembrete_1h_para?: string | null
+          confirmacao_pedida_em?: string | null
+          confirmacao_pedida_por?: "corretor" | "automatica" | null
+          remarcacao_pedida_em?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -5200,6 +5313,28 @@ export type Database = {
       marcar_repasse_pago: {
         Args: { p_venda: string; p_corretor: string; p_data: string | null }
         Returns: boolean
+      }
+      /** 0246 — leads parados (48h sem contato nosso) de um corretor. Só a chave de serviço. */
+      leads_parados_do_corretor: {
+        Args: { p_corretor: string }
+        Returns: number
+      }
+      /** 0246 — "quem receberia este lead?", só para o gestor, sem gravar. */
+      simular_distribuicao: {
+        Args: {
+          p_empreendimento: string | null
+          p_bairro: string | null
+          p_cidade: string | null
+          p_regiao: string | null
+          p_valor: number | null
+          p_canal: string | null
+        }
+        Returns: {
+          corretor_id: string
+          nome: string
+          regra_id: string | null
+          regra_nome: string | null
+        }[]
       }
       ranking_vgv: {
         Args: { p_inicio: string; p_fim: string }

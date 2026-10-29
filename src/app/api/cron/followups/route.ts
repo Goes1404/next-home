@@ -37,6 +37,7 @@ import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTe
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
 import { cobrarVisitas } from "@/lib/agenda/confirmacao";
+import { pedirConfirmacoesAutomaticas } from "@/lib/agenda/confirmacaoAutomatica";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
@@ -744,6 +745,16 @@ export async function GET(req: NextRequest) {
     await agendarPosVisita(supabase);
     await agendarPedidoDeIndicacao(supabase);
     /*
+     * Confirmação automática de visita (0246, 29/10/2026), só nos grupos que
+     * ligaram a opção. Antes da fila: o pedido sai e cancela o lembrete de
+     * véspera pendente da mesma conversa, e o cliente não recebe os dois.
+     * Mesmas travas do lembrete (janela, expediente, IA desligada, cota).
+     */
+    const confirmacoesPedidas = await pedirConfirmacoesAutomaticas(supabase).catch((e) => {
+      console.error("[confirmação automática de visita]", e);
+      return 0;
+    });
+    /*
      * O primeiro contato automático com lead de portal SAIU em 03/10/2026
      * (plano de ativação, regra N1): a IA só responde. O lead de portal
      * aparece nas listas sugeridas e o corretor decide quando mandar.
@@ -773,7 +784,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
   } finally {
     await destravarDisparo("followups", dono);
   }

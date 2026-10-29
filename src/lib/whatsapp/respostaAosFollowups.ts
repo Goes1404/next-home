@@ -13,7 +13,7 @@ import {
   respondeAoFollowup,
   respondeAoPosVisita,
 } from "@/lib/whatsapp/followupTexto";
-import { registrarVisitaConfirmada, ultimoFollowupEnviado } from "@/lib/whatsapp/repositorio";
+import { registrarRemarcacaoPedida, registrarVisitaConfirmada, ultimoFollowupEnviado } from "@/lib/whatsapp/repositorio";
 
 type Fala = { remetente: string; texto: string; em?: string | null };
 
@@ -81,6 +81,8 @@ export async function instrucaoPelosFollowups(p: {
           await avisarCorretor(supabase, p.corretorId, `✅ ${quem} confirmou a visita.${ficha}`);
         }
       } else {
+        // 29/10/2026 (0246): a Agenda mostra "pediu para remarcar" na visita.
+        if (p.leadId) await registrarRemarcacaoPedida(p.leadId);
         await avisarCorretor(
           supabase,
           p.corretorId,

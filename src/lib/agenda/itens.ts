@@ -18,6 +18,9 @@ export type ItemDaAgenda =
       /** O gestor passou a visita do dono do lead para quem a faz. */
       passada?: boolean;
       status?: string;
+      /** 0246: o pedido de confirmação saiu pelo WhatsApp; o cliente pediu para remarcar. */
+      confirmacaoPedidaEm?: string | null;
+      remarcacaoPedidaEm?: string | null;
     }
   | {
       /** Reunião do gestor ou bloqueio pessoal (0226). */

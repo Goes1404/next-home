@@ -29,7 +29,8 @@ export async function MetasDaEquipe({ equipe }: { equipe: Array<{ id: string; no
 
   return (
     <section className="space-y-2">
-      <h2 className="text-fluid-base text-titulo font-medium">Metas do mês</h2>
+      {/* 29/10/2026: "de ganho" separa esta (a que cada um define) das metas da equipe (0246), que o gestor define. */}
+      <h2 className="text-fluid-base text-titulo font-medium">Meta de ganho de cada um</h2>
       <ul className="space-y-2">
         {linhas.map((l) => (
           <li key={l.corretorId} className="cartao p-3 sm:p-4">

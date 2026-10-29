@@ -86,6 +86,7 @@ import {
 import { importarHistoricoDoChat } from "@/lib/whatsapp/importarHistorico";
 import { gerarEEnviarPelaIA } from "@/lib/whatsapp/aberturaPelaIA";
 import { instrucaoPelosFollowups } from "@/lib/whatsapp/respostaAosFollowups";
+import { lerRespostaAoPedidoDeConfirmacao } from "@/lib/agenda/respostaDaConfirmacao";
 import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
@@ -1160,6 +1161,21 @@ export async function POST(req: NextRequest) {
             })
           : null;
       if (aceitouOCorretor) await guardarVisitaSugerida(conversa.id, aceitouOCorretor);
+      /*
+       * Resposta ao pedido de confirmação da visita (ou ao lembrete) com a IA
+       * calada (0246, 29/10/2026): "confirmo" e "não posso" viram o status da
+       * visita e um aviso ao corretor; o ambíguo fica na conversa. Com a IA
+       * atendendo, quem lê é `instrucaoPelosFollowups`, no turno dela. Lead
+       * de outro corretor: a visita não é deste número.
+       */
+      if (decisaoIA.motivo !== "lead_de_outro_corretor") {
+        await lerRespostaAoPedidoDeConfirmacao({
+          conversaId: conversa.id,
+          leadId: conversa.leadId,
+          corretorId: instancia.corretorId,
+          historico: historicoCalado,
+        });
+      }
       if (decisaoIA.motivo !== "lead_pediu_para_sair") {
         // Em camadas: regex para o óbvio, IA para o duvidoso. Aqui só a
         // PARADA age; o resto fica registrado para a revisão semanal.

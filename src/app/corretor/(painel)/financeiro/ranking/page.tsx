@@ -8,6 +8,8 @@ import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { evolucaoNoRanking, fatiaDoCorretor } from "@/lib/financeiro/graficosDoRanking";
 import { mesAntes } from "@/lib/financeiro/painelDeVendas";
 import { Evolucao, Podio, SuaFatia } from "./GraficosDoRanking";
+import { Suspense } from "react";
+import { PlacarDeMetas } from "./PlacarDeMetas";
 
 /** "aaaa-mm-dd" do último dia do mês "aaaa-mm". */
 function ultimoDiaDoMes(mes: string): string {
@@ -78,7 +80,7 @@ export default async function RankingPage({
       <CabecalhoDeTela
         secao="Financeiro"
         titulo="Ranking de VGV"
-        descricao="Quem mais vendeu na equipe. Todos veem as posições; a comissão de cada um continua privada."
+        descricao="Quem mais vendeu na equipe e o placar das metas do mês. Todos veem as posições; a comissão de cada um continua privada."
       />
 
       <nav aria-label="Período" className="flex flex-wrap gap-2">
@@ -95,6 +97,13 @@ export default async function RankingPage({
           </Link>
         ))}
       </nav>
+
+      {/* O placar das metas do mês (0246): só na temporada do mês, que é a dele. */}
+      {periodo === "mes" && (
+        <Suspense fallback={null}>
+          <PlacarDeMetas corretor={corretor} />
+        </Suspense>
+      )}
 
       {ranking === null ? (
         <p className="cartao text-fluid-sm text-corpo p-4">
