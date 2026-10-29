@@ -1676,6 +1676,7 @@ export type Database = {
           created_at: string
           creci: string
           deve_trocar_senha: boolean
+          aviso_senha_em: string | null
           resumo_diario_em: string | null
           relatorio_avaliacoes_em: string | null
           resumo_fim_de_semana: boolean
@@ -1708,6 +1709,7 @@ export type Database = {
           created_at?: string
           creci: string
           deve_trocar_senha?: boolean
+          aviso_senha_em?: string | null
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
@@ -1740,6 +1742,7 @@ export type Database = {
           created_at?: string
           creci?: string
           deve_trocar_senha?: boolean
+          aviso_senha_em?: string | null
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
@@ -3632,6 +3635,8 @@ export type Database = {
           anuncio_pago_por: string | null
           arquivado_em: string | null
           aviso_lead_novo_em: string | null
+          aviso_cliente_respondeu_em: string | null
+          aviso_parado_em: string | null
           arquivado_motivo: string | null
           campos_do_corretor: Json
           consentimento_lgpd: boolean
@@ -3694,6 +3699,8 @@ export type Database = {
           anuncio_pago_por?: string | null
           arquivado_em?: string | null
           aviso_lead_novo_em?: string | null
+          aviso_cliente_respondeu_em?: string | null
+          aviso_parado_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
@@ -3756,6 +3763,8 @@ export type Database = {
           anuncio_pago_por?: string | null
           arquivado_em?: string | null
           aviso_lead_novo_em?: string | null
+          aviso_cliente_respondeu_em?: string | null
+          aviso_parado_em?: string | null
           arquivado_motivo?: string | null
           campos_do_corretor?: Json
           consentimento_lgpd?: boolean
@@ -3998,6 +4007,7 @@ export type Database = {
           datas_anteriores: string[]
           passada_em: string | null
           cobrada_em: string | null
+          lembrete_1h_para: string | null
           respondida_em: string | null
           passada_por: string | null
           criada_por_usuario: string | null
@@ -4015,6 +4025,7 @@ export type Database = {
           datas_anteriores?: string[]
           passada_em?: string | null
           cobrada_em?: string | null
+          lembrete_1h_para?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -4032,6 +4043,7 @@ export type Database = {
           datas_anteriores?: string[]
           passada_em?: string | null
           cobrada_em?: string | null
+          lembrete_1h_para?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -4615,6 +4627,18 @@ export type Database = {
       }
     }
     Functions: {
+      leads_parados_para_aviso: {
+        Args: { p_parado_desde: string; p_janela_desde: string; p_dia_inicio: string; p_limite?: number }
+        Returns: {
+          id: string
+          nome: string
+          telefone: string | null
+          corretor_id: string
+          grupo_id: string
+          ultimo_contato: string
+          aviso_parado_em: string | null
+        }[]
+      }
       consumo_da_ia_por_grupo: {
         Args: { p_inicio: string }
         Returns: {

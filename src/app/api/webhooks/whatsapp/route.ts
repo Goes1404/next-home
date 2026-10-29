@@ -97,6 +97,8 @@ import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/w
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
 import { calarIaNaConversaDeCampanha, registrarLeadDeImpulsionamento } from "@/lib/whatsapp/impulsionamentos";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { avisarClienteRespondeu } from "@/lib/notificacoes/clienteRespondeu";
+import { deveAvisarClienteRespondeu } from "@/lib/notificacoes/regrasDoClienteRespondeu";
 import { lerModoDaRoleta, repassarPelaRoleta } from "@/lib/whatsapp/roletaDosAnuncios";
 import { tratarMensagemDoGrupoDeLeads } from "@/lib/crm/retornoPeloGrupo";
 import { avisarMensagemDoClienteNoGrupo } from "@/lib/crm/retornoPeloGrupo/mensagemDoCliente";
@@ -1094,6 +1096,29 @@ export async function POST(req: NextRequest) {
     }
 
     if (!decisaoIA.responde) {
+      /*
+       * A conversa está com o corretor (IA desligada, expediente, cota):
+       * notificação "cliente respondeu" no celular do dono (29/10/2026).
+       * Depois da resposta, para não segurar o provedor; a carência de 15
+       * min por lead e a `tag` seguram a rajada (`clienteRespondeu.ts`).
+       */
+      if (
+        deveAvisarClienteRespondeu({
+          motivoDoSilencio: decisaoIA.motivo,
+          eTeste: Boolean(conversa.eTeste),
+          leadCriadoAgora: Boolean(conversa.leadCriadoAgora),
+        })
+      ) {
+        const avisoDaResposta = {
+          leadId: conversa.leadId,
+          conversaId: conversa.id,
+          corretorIdDoNumero: instancia.corretorId,
+          grupoIdDoNumero: instancia.grupoId,
+          texto: text,
+          tipo: ehAudio ? "audio" : (tipoMidiaRecebida ?? "texto"),
+        };
+        after(() => avisarClienteRespondeu(createServiceClient(), avisoDaResposta));
+      }
       /*
        * Silêncio também é dado: sem registrar, "o bot respondeu pouco" e "o
        * bot está quebrado" são indistinguíveis no painel. E o MOTIVO é o dado

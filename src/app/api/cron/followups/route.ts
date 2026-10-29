@@ -43,6 +43,9 @@ import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvali
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { lembrarVisitasDaProximaHora } from "@/lib/notificacoes/lembreteDeVisita";
+import { avisarLeadsParados } from "@/lib/notificacoes/leadParado";
+import { avisarSenhasVencendo } from "@/lib/notificacoes/senhaVencendo";
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
@@ -647,6 +650,25 @@ export async function GET(req: NextRequest) {
     console.error("[lead novo]", e);
     return 0;
   });
+  /*
+   * Mais notificações no celular (0236, 29/10/2026), todas para o PRÓPRIO
+   * corretor, por isso antes da janela comercial do cliente. Cada uma tem o
+   * próprio horário: o lembrete de visita sai a qualquer hora (1h antes da
+   * hora que ele marcou); lead parado só das 8h às 19h59, de hora em hora;
+   * senha vencendo só às 9h. Sem a 0236 aplicada, as três não enviam nada.
+   */
+  const lembretesDeVisita = await lembrarVisitasDaProximaHora(supabase).catch((e) => {
+    console.error("[lembrete de visita]", e);
+    return 0;
+  });
+  const leadsParados = await avisarLeadsParados(supabase).catch((e) => {
+    console.error("[lead parado]", e);
+    return 0;
+  });
+  const senhasVencendo = await avisarSenhasVencendo(supabase).catch((e) => {
+    console.error("[senha vencendo]", e);
+    return 0;
+  });
   // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.
   const gruposDeLeads = await enviarLeadsDistribuidosParaGrupos(supabase).catch((e) => {
@@ -688,7 +710,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -730,7 +752,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail });
   } finally {
     await destravarDisparo("followups", dono);
   }

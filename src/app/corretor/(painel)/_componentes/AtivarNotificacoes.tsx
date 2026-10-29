@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { enviarNotificacaoDeTeste } from "./acoesDasNotificacoes";
+import type { ResultadoDoTeste } from "./resultadoDoTeste";
 
 /**
  * Liga a notificação no celular deste aparelho (0203).
@@ -30,6 +32,21 @@ function ehIphoneForaDoApp(): boolean {
 
 export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: boolean }) {
   const [estado, setEstado] = useState<Estado>("carregando");
+  // Ligou agora (no Início): o cartão fica, com o botão de teste, até sair da página.
+  const [acabouDeLigar, setAcabouDeLigar] = useState(false);
+  const [teste, setTeste] = useState<ResultadoDoTeste | null>(null);
+  const [testando, iniciarTeste] = useTransition();
+
+  function testar() {
+    setTeste(null);
+    iniciarTeste(async () => {
+      try {
+        setTeste(await enviarNotificacaoDeTeste());
+      } catch {
+        setTeste({ erro: "Não deu para enviar agora. Tente de novo." });
+      }
+    });
+  }
 
   useEffect(() => {
     let vivo = true;
@@ -65,19 +82,34 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
         body: JSON.stringify({ ...inscricao.toJSON(), aparelho: navigator.userAgent }),
       });
       setEstado(resp.ok ? "ligada" : "erro");
+      if (resp.ok) setAcabouDeLigar(true);
     } catch {
       setEstado("erro");
     }
   }
 
   if (estado === "carregando" || estado === "sem_suporte") return null;
-  if (estado === "ligada" && !sempreVisivel) return null;
+  if (estado === "ligada" && !sempreVisivel && !acabouDeLigar) return null;
 
   return (
     <section className="cartao p-4 sm:p-5" aria-live="polite">
       <h2 className="text-fluid-base font-semibold text-titulo">Avisos no celular</h2>
       {estado === "ligada" ? (
-        <p className="mt-1 text-fluid-sm text-corpo">Ligados neste aparelho. Lead novo e cliente esperando chegam como notificação.</p>
+        <>
+          <p className="mt-1 text-fluid-sm text-corpo">
+            Ligados neste aparelho. Lead novo, cliente que respondeu, visita daqui a 1 hora, lead parado e senha vencendo chegam como notificação.
+          </p>
+          <button
+            type="button"
+            onClick={testar}
+            disabled={testando}
+            className="mt-3 inline-flex min-h-11 items-center rounded-full border border-linha-forte px-5 text-fluid-sm font-semibold text-titulo disabled:opacity-60"
+          >
+            {testando ? "Enviando…" : "Enviar notificação de teste"}
+          </button>
+          {teste?.ok && <p className="mt-2 text-fluid-sm text-corpo">{teste.ok}</p>}
+          {teste?.erro && <p className="mt-2 text-fluid-sm text-perigo">{teste.erro}</p>}
+        </>
       ) : estado === "bloqueada" ? (
         <p className="mt-1 text-fluid-sm text-corpo">
           As notificações estão bloqueadas neste navegador. Libere em Configurações → Notificações do navegador e volte aqui.
