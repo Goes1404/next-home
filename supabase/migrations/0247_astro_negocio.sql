@@ -247,6 +247,8 @@ alter table public.admin_eventos add constraint admin_eventos_acao_check check (
   'teste_gratis_iniciado', 'cobranca_automatica_ligada', 'cobranca_automatica_desligada',
   -- A visão de suporte da plataforma (0243).
   'visao_de_suporte_aberta',
+  -- O ramo da conta trocado pela plataforma (0244).
+  'ramo_do_grupo_alterado',
   -- O negócio da Astro (0247): termo de adesão aceito pela conta e crédito
   -- de indicação aplicado pela plataforma.
   'termo_de_adesao_aceito', 'credito_de_indicacao_aplicado'

@@ -85,6 +85,8 @@ describe("enviarPedidoDeContratacao", () => {
     expect(linha).toEqual({
       // Envio sem o campo (página de antes da 0244) = imobiliária.
       ramo: "imobiliaria",
+      // Sem cookie de indicação (0247).
+      codigo_de_indicacao: null,
       ramo_descricao: null,
       plano: "imobiliaria",
       usuarios: 4,

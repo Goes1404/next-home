@@ -19,6 +19,7 @@ import {
 } from "@/lib/plataforma/pedidoDeContratacao";
 import { createServiceClient } from "@/lib/supabase/service";
 import { nomeDoRamo } from "@/lib/ramos/ramos";
+import { codigoDeIndicacaoDoVisitante } from "@/lib/indicacoes/cookieDoVisitante";
 
 /**
  * O envio do assistente de contratação (`/astro/contratar`, 29/10/2026).
@@ -172,7 +173,10 @@ async function gravarPedido(pedido: PedidoLimpo, agora: number): Promise<"gravad
       return "repetido";
     }
 
+    const codigoDeIndicacao = await codigoDeIndicacaoDoVisitante();
     const { error } = await servico.from("pedidos_de_contratacao").insert({
+      // Quem indicou (0247): a plataforma registra a indicação ao converter o pedido.
+      codigo_de_indicacao: codigoDeIndicacao,
       // O ramo do negócio (0244): a plataforma cria a conta já nele.
       ramo: pedido.ramo,
       ramo_descricao: pedido.ramoDescricao,

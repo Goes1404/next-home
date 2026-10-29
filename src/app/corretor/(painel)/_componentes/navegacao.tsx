@@ -327,10 +327,10 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
           { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio", modulo: "construtoras" },
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio", modulo: "parceirosDeImoveis" },
-          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio", modulo: "precosDoCatalogo" },
-          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio", modulo: "creditoImobiliario" },
           // 29/10/2026 (0245): leads do ZAP, Viva Real e OLX direto no CRM — só de imobiliária.
           { href: "/corretor/admin/portais", label: "Portais", icone: IconeTomada, secao: "Negócio", modulo: "catalogoDeImoveis" },
+          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio", modulo: "precosDoCatalogo" },
+          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio", modulo: "creditoImobiliario" },
           { href: "/corretor/admin/assistente", label: "Assistente", icone: IconeRobo, secao: "Sistema" },
         ],
       },
