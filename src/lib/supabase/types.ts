@@ -1325,6 +1325,30 @@ export type Database = {
        * (29/10/2026). Global (sem `grupo_id`; a origem fica em
        * `grupo_origem_id`); só a chave de serviço.
        */
+      acessos_de_suporte: {
+        Row: {
+          id: string
+          criado_em: string
+          admin_user_id: string
+          grupo_alvo_id: string
+          motivo: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          admin_user_id: string
+          grupo_alvo_id: string
+          motivo?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          admin_user_id?: string
+          grupo_alvo_id?: string
+          motivo?: string | null
+        }
+        Relationships: []
+      }
       chamados_de_suporte: {
         Row: {
           id: string

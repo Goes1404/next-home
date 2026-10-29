@@ -53,6 +53,23 @@ export async function contarChamadosNovos(_prova: { userId: string }): Promise<n
   return count ?? 0;
 }
 
+/**
+ * Quantos chamados estão em aberto (novos e em atendimento), para o painel de
+ * números da plataforma (29/10/2026). `null` se não deu para contar.
+ */
+export async function contarChamadosAbertos(_prova: { userId: string }): Promise<number | null> {
+  const servico = createServiceClient();
+  const { count, error } = await servico
+    .from("chamados_de_suporte")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["novo", "em_atendimento"]);
+  if (error) {
+    console.error(`[plataforma] chamados abertos não contados: ${error.message}`);
+    return null;
+  }
+  return count ?? 0;
+}
+
 /** O nome das contas de onde vieram os chamados do painel (para o link da conta). */
 export async function nomesDasContas(_prova: { userId: string }, ids: string[]): Promise<Map<string, string>> {
   const unicos = [...new Set(ids)];

@@ -40,6 +40,12 @@ export const TABELAS_GLOBAIS = [
   // (não `grupo_id`, pelo mesmo motivo dos pedidos). Só a chave de serviço
   // lê e escreve.
   "chamados_de_suporte",
+  // Acessos da visão de suporte da plataforma (0243, 29/10/2026): o acesso
+  // é um ato da Astro SOBRE a conta, não dado dela. O grupo acessado fica em
+  // `grupo_alvo_id` (não `grupo_id`, pelo mesmo motivo dos chamados). Só a
+  // chave de serviço lê e escreve; o gestor vê os do grupo dele pela chave
+  // filtrada pela sessão.
+  "acessos_de_suporte",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

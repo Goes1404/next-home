@@ -64,6 +64,14 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         </div>
         <h1 className="font-display text-titulo text-fluid-2xl mt-1 break-words">{grupo.nome}</h1>
         <p className="text-fluid-sm text-apoio mt-1 break-all">{grupo.slug}</p>
+        {/* A visão de suporte (0243, 29/10/2026): só números, com o acesso registrado. */}
+        <Link
+          href={`/plataforma/grupos/${grupo.id}/suporte`}
+          prefetch={false}
+          className="text-fluid-sm botao-secundario text-titulo mt-3 inline-flex min-h-11 items-center px-4 font-medium"
+        >
+          Abrir visão de suporte
+        </Link>
       </div>
 
       <SaudeNoDetalhe saude={saude} agora={agora} />

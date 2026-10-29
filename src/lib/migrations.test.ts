@@ -55,6 +55,8 @@ const RESERVADOS = new Set<number>([
   // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
   // depois dela.
   213,
+  // 29/10/2026: reservadas para outras frentes de 29/10; tirar na junção.
+  241, 242,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {

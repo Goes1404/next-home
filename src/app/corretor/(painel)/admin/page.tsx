@@ -12,6 +12,7 @@ import { UsoDasNovidades } from "./_componentes/UsoDasNovidades";
 import { ProntidaoDaEquipe } from "./_componentes/ProntidaoDaEquipe";
 import { SaudeDaOperacao } from "./_componentes/SaudeDaOperacao";
 import { UsoDoPlano } from "./_componentes/UsoDoPlano";
+import { AcessosDoSuporte } from "./_componentes/AcessosDoSuporte";
 import { PassagemDoFunil } from "@/app/corretor/(painel)/_componentes/graficos/PassagemDoFunil";
 import { PlacarDaEquipe } from "@/app/corretor/(painel)/_componentes/graficos/PlacarDaEquipe";
 
@@ -335,6 +336,11 @@ export default async function AdminVisaoGeralPage() {
       {/* SLA e Eventos saíram do menu em 30/09/2026 e viraram esta seção. */}
       <Suspense fallback={null}>
         <SaudeDaOperacao />
+      </Suspense>
+
+      {/* Transparência da visão de suporte da Astro (0243, 29/10/2026). */}
+      <Suspense fallback={null}>
+        <AcessosDoSuporte />
       </Suspense>
 
       {/* Exportação do grupo (0202): só a ficha, nunca a conversa. */}
