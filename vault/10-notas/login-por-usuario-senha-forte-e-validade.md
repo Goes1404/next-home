@@ -58,3 +58,18 @@ meses".
   e o painel manda de volta para a troca quem acabou de trocar.
 
 Ver também [[app-no-celular-area-segura-login-e-abertura]].
+
+## Entrar com Google (29/10/2026)
+
+- Botão só com `NEXT_PUBLIC_LOGIN_GOOGLE=sim` (o provedor Google precisa estar
+  ligado no Supabase → Authentication → Providers, com o Client ID/Secret do
+  Google Cloud e a URL de volta `https://<projeto>.supabase.co/auth/v1/callback`;
+  em URL Configuration, liberar `https://astroimob.vercel.app/auth/google`).
+- Volta em `/auth/google`: troca o `code`, e só entra quem já tem ficha ativa
+  ou é ADM. Google sem conta: sai e, se o Supabase acabou de criar um usuário
+  só-Google (< 5 min), apaga. Conta com senha nunca é apagada.
+- Supabase liga a identidade Google à conta com o mesmo e-mail verificado.
+- Digital/biometria: não implementado (passkey própria exigiria recurso que o
+  Auth atual não oferece de forma estável); o Gerenciador de Senhas do Google
+  já preenche com a digital no Android.
+

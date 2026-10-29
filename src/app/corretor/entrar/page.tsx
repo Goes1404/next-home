@@ -42,7 +42,7 @@ const RECURSOS = ["IA que responde seus leads no WhatsApp", "Funil, agenda de vi
 export default async function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ link?: string; next?: string | string[] }>;
+  searchParams: Promise<{ link?: string; next?: string | string[]; google?: string }>;
 }) {
   const parametros = await searchParams;
   const rodape = await rodapeDoEndereco();
@@ -61,7 +61,15 @@ export default async function EntrarPage({
       chamada="Seus leads estão esperando."
       textoDaChamada={MARCA_DA_PLATAFORMA.apoio}
       recursos={RECURSOS}
-      aviso={linkExpirado ? "Este link já foi usado ou expirou. Peça outro em 'Esqueci a senha'." : undefined}
+      aviso={
+        linkExpirado
+          ? "Este link já foi usado ou expirou. Peça outro em 'Esqueci a senha'."
+          : parametros.google === "sem-conta"
+            ? "Não encontramos uma conta da Astro com esse Google. Entre com seu usuário e senha, ou peça o convite à sua imobiliária."
+            : parametros.google === "falhou"
+              ? "Não deu para entrar com o Google agora. Tente de novo ou use seu usuário e senha."
+              : undefined
+      }
       rodape={rodape === "site" ? <LinkDaFolha href="/">Voltar para o site</LinkDaFolha> : undefined}
     >
       <FormularioLogin next={next} />

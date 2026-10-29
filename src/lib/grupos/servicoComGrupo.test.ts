@@ -250,6 +250,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/suporteAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status e anotação interna de UM chamado (tabela global, 0240); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
 
   // ── Porta pública da página de vendas, sem grupo ─────────────────────────
+  "src/app/auth/google/route.ts": { categoria: "plataforma", motivo: "volta do Entrar com Google: o Auth é global; só APAGA o usuário que o próprio Google acabou de criar sem ficha (sem ler tabela de grupo pela chave)" },
   "src/app/api/plataforma/notificacoes/route.ts": { categoria: "plataforma-admin", motivo: "liga/desliga o aviso no aparelho do PRÓPRIO administrador da plataforma (0239); guarda antes da chave, tabela global" },
   "src/app/plataforma/avisosAcoes.ts": { categoria: "plataforma-admin", motivo: "teste dos avisos da plataforma: guarda antes da chave; manda aos aparelhos dos administradores (0239)" },
   "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
