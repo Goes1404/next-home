@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { AberturaDoApp } from "./AberturaDoApp";
+import { ComportamentoDeApp } from "./ComportamentoDeApp";
 
 const ARETZ_HOSTS = new Set(["aretzimoveis.com", "www.aretzimoveis.com"]);
 const ARETZ_FAVICON =
@@ -36,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function CorretorLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <ComportamentoDeApp />
       <AberturaDoApp />
       {children}
     </>

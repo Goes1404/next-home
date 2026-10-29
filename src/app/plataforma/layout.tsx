@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
+import { ComportamentoDeApp } from "@/app/corretor/ComportamentoDeApp";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { MarcaAstro } from "@/components/marca/SeloAstro";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
@@ -34,6 +35,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
 
   return (
     <main data-rota="painel" className="bg-fundo relative isolate flex min-h-svh flex-1 flex-col">
+      <ComportamentoDeApp />
       <header className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">

@@ -12434,3 +12434,13 @@ Nota: [[vinculo-do-corretor-no-grupo-e-lid]].
 - A causa na Evolution ficou em aberto: sem a chave dela na máquina, não deu
   para medir direto. Reiniciar a instância é o próximo passo.
 
+
+## App com jeito de app (29/10/2026)
+
+Nota: [[app-no-celular-area-segura-login-e-abertura]].
+
+- Puxar para atualizar no app: o gesto é do <html>, não do <body>. No app
+  instalado (`data-app`, `ComportamentoDeApp.tsx`) o <html> tem
+  `overscroll-behavior: none`, zoom travado, sem menu de link, e o
+  `sw-painel.js` mostra `/offline.html` sem rede (só navegação, sem cache de
+  página do CRM).

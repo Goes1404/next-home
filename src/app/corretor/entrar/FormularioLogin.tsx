@@ -7,8 +7,10 @@ import { CampoSenha } from "@/components/ui/CampoSenha";
 
 // Campo alto e texto em tamanho de leitura: este formulário é digitado no
 // celular, com uma senha que a pessoa acabou de criar pelo link do convite.
+// 29/10/2026: py-3 (antes 3.5) para o card caber melhor no celular; 48px de
+// altura continua acima dos 44px do alvo de toque.
 const CAMPO_BASE =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3.5 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
+  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
 
 /**
  * Onde o e-mail fica guardado, e o que cada valor significa:
@@ -81,10 +83,10 @@ export function FormularioLogin({ next }: { next?: string }) {
   };
 
   return (
-    <form action={action} onSubmit={aoEnviar} className="space-y-4">
+    <form action={action} onSubmit={aoEnviar} className="space-y-3">
       {next && <input type="hidden" name="next" value={next} />}
       <div>
-        <label htmlFor="email" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="email" className="text-fluid-sm mb-1 block text-corpo">
           E-mail
         </label>
         <input
@@ -99,7 +101,7 @@ export function FormularioLogin({ next }: { next?: string }) {
       </div>
 
       <div>
-        <label htmlFor="senha" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="senha" className="text-fluid-sm mb-1 block text-corpo">
           Senha
         </label>
         {/* Com o olho: a senha é digitada num teclado de celular que não
@@ -125,26 +127,26 @@ export function FormularioLogin({ next }: { next?: string }) {
           defaultChecked
           className="accent-acento size-4 shrink-0 cursor-pointer"
         />
-        <span className="text-fluid-sm">Salvar meu e-mail neste aparelho</span>
+        {/* 29/10/2026: o aviso "a senha nunca é salva por nós" virou parte
+            do próprio rótulo — dizia o mesmo numa linha a mais. */}
+        <span className="text-fluid-sm">
+          Lembrar meu e-mail <span className="text-tenue">(a senha não fica salva)</span>
+        </span>
       </label>
-      <p className="text-fluid-xs text-tenue -mt-2">
-        A senha nunca é salva por nós — quem oferece guardá-la é o seu próprio
-        navegador ou celular.
-      </p>
 
       {estado?.erro && <p className="text-fluid-sm text-perigo">{estado.erro}</p>}
 
       <button
         type="submit"
         disabled={pendente}
-        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3.5 font-semibold transition-colors disabled:opacity-60"
+        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors disabled:opacity-60"
       >
         {pendente ? "Entrando…" : "Entrar"}
       </button>
 
       <Link
         href="/corretor/esqueci-a-senha"
-        className="text-fluid-sm text-corpo hover:text-titulo flex min-h-11 items-center justify-center underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
+        className="text-fluid-sm text-corpo hover:text-titulo -mb-1 flex min-h-11 items-center justify-center underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
       >
         Esqueci a senha
       </Link>

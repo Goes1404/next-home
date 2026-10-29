@@ -14,6 +14,9 @@ codigo:
   - src/app/corretor/abertura.module.css
   - src/lib/fontesDaAstro.ts
   - test/stubs/next-font-google.ts
+  - src/app/corretor/ComportamentoDeApp.tsx
+  - public/sw-painel.js
+  - public/offline.html
 summary: No app Android (Android 15) a página vai por baixo da barra de status e da de gestos; o cabeçalho, as folhas e os flutuantes passaram a reservar as áreas seguras. Login refeito para celular e abertura animada só no app instalado.
 created: 2026-10-29
 updated: 2026-10-29
@@ -53,3 +56,23 @@ navegador as áreas seguras valem 0, por isso ninguém tinha visto.
   pintura escreve `data-abertura` no <html>; o elemento nunca sai do DOM
   (hidratação). Fundo #08132a = splash nativo do Android.
 - Testes: `next/font/google` ganhou stub em `test/stubs/` (só existe no build).
+
+## Jeito de app, card menor e fundo animado (29/10/2026, segunda leva)
+- **Relato:** "parece um site: arrasto para baixo e atualiza". O gesto de
+  puxar para atualizar do Chrome é do rolador RAIZ: a regra antiga
+  (`overscroll-behavior-y: none`) estava só no <body>.
+- `ComportamentoDeApp` (script inline em `/corretor` e `/plataforma`), só com
+  `display-mode: standalone`: `data-app` no <html>, zoom travado pela meta
+  viewport (a acessibilidade "forçar zoom" do Android passa por cima),
+  `contextmenu` cancelado em link/imagem/botão, registro do `sw-painel.js`.
+- CSS `html[data-app]`: sem overscroll, sem lampejo azul, sem seleção de
+  texto em controles (conteúdo continua selecionável; `.selecionavel` força).
+- `sw-painel.js` agora intercepta SÓ navegação: rede primeiro (navigation
+  preload), e sem rede mostra `/offline.html` (única coisa em cache). Nunca
+  guarda página do CRM.
+- Login: card ~25% mais baixo (campos py-3, aviso da senha dentro do rótulo
+  "Lembrar meu e-mail", sem alça). Céu animado: névoas derivando, órbita
+  balançando, estrelas piscando, cometa a cada ~9 s; nada com menos movimento.
+- Conta de demonstração `adm.exemplo@astroimob.vercel.app` teve a senha
+  redefinida em 29/10/2026 (com o dono) para o revisor da Play Store.
+

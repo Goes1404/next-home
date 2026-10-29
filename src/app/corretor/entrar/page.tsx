@@ -79,6 +79,10 @@ export default async function EntrarPage({
   return (
     <main className={`${FONTES_DA_ASTRO} ${s.tela}`}>
       <div aria-hidden className={s.ceu}>
+        <span className={s.nevoa} />
+        <span className={s.nevoa} />
+        <span className={s.nevoa} />
+        <span className={s.cometa} />
         <svg className={s.orbita} viewBox="0 0 320 100" preserveAspectRatio="none">
           <ellipse cx="160" cy="50" rx="158" ry="48" pathLength={1} />
         </svg>
@@ -108,11 +112,10 @@ export default async function EntrarPage({
       </section>
 
       <section className={s.folha} style={TOKENS_DO_FORMULARIO} aria-labelledby="titulo-entrar">
-        <div aria-hidden className={s.puxador} />
         <h1 id="titulo-entrar" className={`${s.titulo} ${s.folhaTitulo}`}>
           Entrar
         </h1>
-        <p className={s.folhaApoio}>Use o e-mail do convite da sua imobiliária ou da Astro.</p>
+        <p className={s.folhaApoio}>Com o e-mail do convite da sua imobiliária ou da Astro.</p>
 
         {linkExpirado && (
           <p role="alert" className={s.aviso}>
