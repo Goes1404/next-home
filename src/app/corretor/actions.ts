@@ -44,7 +44,7 @@ const LOGIN_INVALIDO = "Usuário ou senha inválidos.";
 
 /**
  * O e-mail de login a partir do que a pessoa digitou: o próprio e-mail, ou o
- * do nome de usuário (`email_do_usuario`, 0240, só pela chave de serviço).
+ * do nome de usuário (`email_do_usuario`, 0235, só pela chave de serviço).
  */
 async function emailDoLogin(texto: string): Promise<string | null> {
   const id = lerIdentificadorDeLogin(texto);

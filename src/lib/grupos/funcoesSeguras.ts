@@ -25,6 +25,8 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "corretor_atual()": "lê só a linha de quem está logado",
   "eh_gestor()": "lê só a linha de quem está logado; significa 'gestor do meu grupo'",
   "eh_admin_da_plataforma()": "lê só a linha de quem está logado em administradores_da_plataforma",
+  "email_do_usuario(text)":
+    "o Auth é global (um login na plataforma): traduz o nome de usuário no e-mail, só pela chave de serviço, sem ler tabela de grupo (0235)",
   "participa_da_venda(uuid)": "confere só a participação de quem está logado (corretor_atual())",
 
   // Olham TODOS os grupos de propósito (Task 4): os slugs e o e-mail de

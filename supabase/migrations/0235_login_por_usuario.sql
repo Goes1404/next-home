@@ -1,4 +1,4 @@
--- 0240 · entrar com nome de usuário, não só com e-mail (29/10/2026)
+-- 0235 · entrar com nome de usuário, não só com e-mail (29/10/2026)
 --
 -- Pedido do dono: "transforme meu login em eduardo.bezerra". O Auth do
 -- Supabase só entra por e-mail; o nome de usuário fica no `app_metadata`
@@ -12,9 +12,10 @@
 -- viraria um catálogo de e-mails por nome de usuário. O login a chama no
 -- servidor, e a resposta para nome inexistente é a mesma de senha errada.
 --
--- Número 0240 (e não 0235) de propósito: outras frentes do mesmo dia podem
--- ocupar 0235–0239. Só aditivo; aplicar ANTES do deploy (sem ela, entrar
--- por e-mail segue funcionando e por usuário responde "inválidos").
+-- Só aditivo; aplicar ANTES do deploy (sem ela, entrar por e-mail segue
+-- funcionando e por usuário responde "inválidos"). Aplicada em produção em
+-- 29/10/2026 (registrada no banco como 0240_login_por_usuario, o número do
+-- primeiro rascunho).
 --
 -- Reversão:
 --   drop function if exists public.email_do_usuario(text);
@@ -36,7 +37,7 @@ as $$
 $$;
 
 comment on function public.email_do_usuario(text) is
-  'Traduz o nome de usuário (app_metadata.usuario) no e-mail de login. Só service_role (0240).';
+  'Traduz o nome de usuário (app_metadata.usuario) no e-mail de login. Só service_role (0235).';
 
 revoke execute on function public.email_do_usuario(text) from public, anon, authenticated;
 grant execute on function public.email_do_usuario(text) to service_role;

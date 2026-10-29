@@ -3,7 +3,7 @@
  * dono: "transforme meu login em eduardo.bezerra").
  *
  * Com "@" é e-mail e vai direto para o Auth. Sem "@" é nome de usuário: o
- * servidor o traduz no e-mail pela função `email_do_usuario` (0240), que lê o
+ * servidor o traduz no e-mail pela função `email_do_usuario` (0235), que lê o
  * `app_metadata.usuario`. A regra do nome é estreita de propósito (letras,
  * números, ponto, hífen e sublinhado, 3 a 40) para nada estranho chegar ao
  * banco — e um texto fora dela já responde "inválidos", sem consulta.

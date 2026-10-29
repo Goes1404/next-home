@@ -222,6 +222,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },
   "src/lib/whatsapp/sonda.ts": { categoria: "plataforma", motivo: "diagnóstico do provedor por instância, em tabela global" },
   "src/lib/auth/pedidoDeLinkDeSenha.ts": { categoria: "plataforma", motivo: "a própria pessoa pede o link: acha UMA ficha (pelo e-mail ou pelo login da sessão) e registra o pedido e lê o nome no grupo dela" },
+  "src/lib/auth/validadeDaSenhaNoServidor.ts": { categoria: "plataforma", motivo: "o Auth é global: grava a data da troca de senha no app_metadata de UM usuário (o da sessão), sem ler tabela de grupo" },
   "src/lib/auth/links.ts": { categoria: "plataforma", motivo: "o Auth é global (um e-mail, um login na plataforma): gera o link de UM usuário pelo e-mail, sem ler tabela de grupo" },
   "src/lib/whatsapp/vencedoraAB.ts": { categoria: "plataforma", motivo: "decide o A/B lista a lista, nos itens da própria lista" },
   "src/lib/sites/resolver.ts": { categoria: "plataforma", motivo: "resolve UM host no grupo dele por site_do_endereco, que devolve uma linha só, do host pedido; a chave é para o domínio da plataforma não vir de quem chama" },

@@ -111,7 +111,7 @@ describe("entrar e o next", () => {
     expect(await login("/plataforma")).toEqual({ erro: "Usuário ou senha inválidos." });
   });
 
-  it("entra pelo nome de usuário, traduzido no e-mail da conta (0240)", async () => {
+  it("entra pelo nome de usuário, traduzido no e-mail da conta (0235)", async () => {
     emailDoUsuario = "eduardo@exemplo.com";
     expect(await login(undefined, "Eduardo.Bezerra")).toBe("/corretor");
     expect(emailsTentados).toEqual(["eduardo@exemplo.com"]);

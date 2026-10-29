@@ -142,3 +142,24 @@ muito grande", "mais animações, transições animadas".
 - Armadilha de teste: `scrollIntoView` com rolagem suave precisa de ~1 s antes
   de medir a opacidade do cartão.
 
+## Quinta leva (29/10/2026, fim da tarde): login como no PC, fontes, onda e leveza
+
+- **Login no celular = cartão centralizado**, como no computador ("no PC
+  está muito bom, no app está estranho"): a folha presa ao pé deixava um céu
+  vazio no meio. Botão "← Início" no canto (link para `/`).
+- **Fontes da Astro no painel e na plataforma**: `[data-rota="painel"]`
+  reaponta `--font-display`/`--font-sans` para Bricolage/Figtree. Portais
+  (gaveta, consultor) ficam fora do `<main>`, então
+  `FontesDaAstroNoDocumento` declara `--font-astro-*` no `:root` só nas rotas
+  de /corretor e /plataforma (o site público não carrega essas fontes).
+- **Troca de tela sem View Transitions**: o `<ViewTransition>` do painel
+  fotografava a página inteira a cada toque no menu (caro no Android de
+  entrada). Agora `tela-entra` (opacidade + 8px, 260ms, fill `backwards` —
+  `both` manteria o `translate` "em efeito" e prenderia os `fixed` da tela).
+- **Onda da Astro**: `OndaDeTransicao` volta no app, marinho/azul fixos,
+  520ms, z-70, só quando a SEÇÃO muda (`secaoDoApp`: dois primeiros
+  segmentos). Não marca `data-entrando` no app (apagaria o cabeçalho).
+- **Celular leve** (`max-width: 767px` e `hover: none`): sem bolhas, sem
+  grão, aurora parada, sem `backdrop-filter` no painel.
+- Login por usuário e senha forte: [[login-por-usuario-senha-forte-e-validade]].
+

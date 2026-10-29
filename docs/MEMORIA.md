@@ -12470,3 +12470,20 @@ Nota: [[app-no-celular-area-segura-login-e-abertura]] (seção "Quarta leva").
   corretor (vai direto para /plataforma). Criada por SQL em produção a pedido
   do dono.
 
+## Login por usuário, senha forte, validade de 90 dias e app mais leve (29/10/2026)
+
+Notas: [[login-por-usuario-senha-forte-e-validade]] e
+[[app-no-celular-area-segura-login-e-abertura]] ("Quinta leva").
+
+- Login aceita e-mail OU nome de usuário: `app_metadata.usuario` +
+  `email_do_usuario(text)` (0235, só service_role). No banco ela ficou
+  registrada como `0240_login_por_usuario`.
+- Senha: 8+, maiúscula, minúscula, número e símbolo (`politicaDeSenha.ts`).
+  Vence a cada 90 dias por `app_metadata.senha_trocada_em`; depois de gravar
+  a data, `refreshSession()` — senão o JWT velho manda de volta para a troca.
+- Painel: troca de tela sem View Transitions (`tela-entra`, fill
+  `backwards`), onda da Astro só na troca de seção, fontes Bricolage/Figtree,
+  e no celular sem bolhas/grão/blur.
+- `entrar` agora usa a chave de serviço (RPC) antes do login; a guarda
+  `servicoComGrupo.test.ts` já classificava `actions.ts`.
+
