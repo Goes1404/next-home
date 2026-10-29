@@ -136,6 +136,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/leads/[id]/documentacaoAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/gmailAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/suporte/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "chamado com a Astro (0240): nome, ficha e grupo saem da sessão; a chave conta e insere chamados do corretor da sessão e lê o nome do grupo dele" },
+  "src/app/corretor/(painel)/suporte/meusChamados.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "lista só os chamados com corretor_origem_id do corretor da sessão (0240)" },
   "src/app/corretor/(painel)/agenda/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/agenda/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
@@ -244,11 +246,14 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
   "src/app/plataforma/pedidosAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status, observação e conta criada de UM pedido (tabela global, 0238); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/lib/plataforma/chamados.ts": { categoria: "plataforma-admin", motivo: "lista e conta chamados_de_suporte (tabela global, 0240) e lê o nome das contas de origem para o link; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/suporteAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status e anotação interna de UM chamado (tabela global, 0240); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
 
   // ── Porta pública da página de vendas, sem grupo ─────────────────────────
   "src/app/api/plataforma/notificacoes/route.ts": { categoria: "plataforma-admin", motivo: "liga/desliga o aviso no aparelho do PRÓPRIO administrador da plataforma (0239); guarda antes da chave, tabela global" },
   "src/app/plataforma/avisosAcoes.ts": { categoria: "plataforma-admin", motivo: "teste dos avisos da plataforma: guarda antes da chave; manda aos aparelhos dos administradores (0239)" },
   "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
+  "src/app/astro/contato/acoes.ts": { categoria: "plataforma", motivo: "Fale com a Astro /astro/contato (29/10/2026): só INSERE o contato em chamados_de_suporte (tabela global, 0240; quem escreve ainda não tem grupo) e conta contatos do mesmo WhatsApp para o limite; o aviso aos administradores sai por avisarAtendimento, sem ler tabela de grupo nenhum" },
   "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };
 

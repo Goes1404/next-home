@@ -327,6 +327,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
 export const ITENS_DA_CONTA: ItemNav[] = [
   { href: "/corretor/perfil", label: "Meu perfil", icone: IconePessoa },
   { href: "/corretor/senha", label: "Trocar senha", icone: IconeChave },
+  // 29/10/2026 (0240): falar com a equipe da Astro é assunto da conta, não
+  // do trabalho do dia; mora com perfil e senha, no avatar e no pé da gaveta.
+  { href: "/corretor/suporte", label: "Suporte da Astro", icone: IconeBoia },
 ];
 
 /**
@@ -491,6 +494,7 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
   "/corretor/senha": "conta",
+  "/corretor/suporte": "conta",
   "/corretor/admin": "admin",
 };
 
@@ -665,6 +669,17 @@ function IconeChave(p: SVGProps<SVGSVGElement>) {
       <rect x="4.5" y="10.5" width="15" height="9.5" rx="2" />
       <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
       <circle cx="12" cy="15.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconeBoia(p: SVGProps<SVGSVGElement>) {
+  // Boia salva-vidas: o sinal de "ajuda" que não se confunde com a conversa.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M6 6l3.5 3.5M14.5 14.5 18 18M18 6l-3.5 3.5M9.5 14.5 6 18" />
     </svg>
   );
 }

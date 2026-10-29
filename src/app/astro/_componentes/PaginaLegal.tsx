@@ -95,6 +95,9 @@ export function RodapeLegal() {
           {cnpj ? `, CNPJ ${cnpj}` : ""}
         </span>
         <nav aria-label="Documentos" className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/astro/contato" className="underline underline-offset-4 hover:text-[var(--azul)]">
+            Fale com a Astro
+          </Link>
           <Link href="/astro/privacidade" className="underline underline-offset-4 hover:text-[var(--azul)]">
             Privacidade
           </Link>

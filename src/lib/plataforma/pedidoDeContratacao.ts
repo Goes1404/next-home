@@ -150,6 +150,11 @@ export function whatsappValido(bruto: string): string | null {
 
 const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
+/** A mesma régua de e-mail do pedido, para o contato do site (0240) não ter outra. */
+export function emailValido(email: string): boolean {
+  return EMAIL.test(email) && email.length <= 200;
+}
+
 function texto(v: unknown, max: number): string {
   return typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max + 1) : "";
 }

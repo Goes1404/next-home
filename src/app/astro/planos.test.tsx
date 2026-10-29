@@ -31,6 +31,10 @@ describe("página de vendas: contratar pelo cartão do plano", () => {
     expect(links.some((l) => l.href === "/astro/contratar" && l.texto === "Escolher meu plano")).toBe(true);
   });
 
+  it("o fechamento e o rodapé levam ao Fale com a Astro (29/10/2026)", () => {
+    expect(links.filter((l) => l.href === "/astro/contato" && l.texto === "Fale com a Astro")).toHaveLength(2);
+  });
+
   it("o topo leva aos planos", () => {
     expect(links.some((l) => l.href === "#planos" && /Ver planos/.test(l.texto))).toBe(true);
   });
