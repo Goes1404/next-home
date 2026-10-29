@@ -11,7 +11,7 @@ codigo:
   - infra/evolution/docker-compose.yml
   - src/lib/whatsapp/provider.ts
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-29
 fonte: pedido de 10/10/2026 ("preciso desses dois valores")
 summary: Na Vercel, WHATSAPP_API_URL e WHATSAPP_API_KEY são variáveis sensíveis e ninguém consegue ler o valor depois de salvo, nem o dono nem o conector desta sessão. O valor de verdade mora no servidor da Evolution, em /opt/evolution/.env. O endereço não está gravado em nenhum lugar do repositório nem do banco.
 ---
@@ -81,6 +81,17 @@ controle de permissões do Claude Code, por expor credencial:
 
 Não contornar. O caminho é o `.env` do servidor, ou o dono autorizar
 explicitamente antes de qualquer mecanismo que mostre o valor.
+
+## Achado em 29/10/2026: onde o servidor está
+
+- Endereço: `https://187-127-56-156.sslip.io` (a raiz responde "Welcome to the
+  Evolution API", versão 2.3.7; o painel é `/manager`, entra com a chave).
+- IP `187.127.56.156` = VPS da **Hostinger** `srv1913142.hstgr.cloud`
+  (Campinas). Console: hPanel → VPS → srv1913142 → terminal do navegador.
+- Como foi achado: o host aparece em `whatsapp_diagnosticos.passos` (a sonda
+  rodou em 20/10). Busca:
+  `regexp_matches(passos::text, 'https?://([a-zA-Z0-9.-]+)', 'g')`. A chave
+  continua só no `/opt/evolution/.env` do servidor.
 
 ## Relacionadas
 - [[env-var-nova-so-vale-depois-de-redeploy]]
