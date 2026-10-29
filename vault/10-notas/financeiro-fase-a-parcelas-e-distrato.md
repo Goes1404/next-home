@@ -45,6 +45,10 @@ que o módulo não precisava de tela nova, e sim de dado que nasce certo.
 - `fiscal_config.regime_apuracao` (padrão `competencia`); sai `teto_inss`.
 - `caixa_lancamentos.competencia` (a terceira data).
 
+## Em produção
+
+Aplicada em 29/10/2026 logo depois do deploy 020c69a7 (push primeiro, migration em seguida: as duas ordens quebram o financeiro por um instante). Conferido: soma das comissões = soma das parcelas (R$ 1.015.765,60, 42 vendas), 23 recebidas preservadas, corretor recusado em `distratar_venda` e gestor aceito (sessão fingida, transação desfeita), zero erro de runtime na Vercel. A única venda distratada antiga com repasse em aberto é do perfil demo e passou a mostrar o repasse como devido.
+
 ## Armadilhas que custaram tempo
 
 - `salvar_venda` apagava e regravava os participantes: a marcação `direto`
