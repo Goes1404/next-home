@@ -3,14 +3,10 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { entrar } from "@/app/corretor/actions";
-import { CampoSenha } from "@/components/ui/CampoSenha";
+import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
 
-// Campo alto e texto em tamanho de leitura: este formulário é digitado no
-// celular, com uma senha que a pessoa acabou de criar pelo link do convite.
-// 29/10/2026: py-3 (antes 3.5) para o card caber melhor no celular; 48px de
-// altura continua acima dos 44px do alvo de toque.
-const CAMPO_BASE =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
+// Os campos (rótulo flutuante, ícone, olho da senha) e o botão são os das
+// quatro telas de acesso: `CampoDeAcesso.tsx`.
 
 /**
  * Onde o e-mail fica guardado, e o que cada valor significa:
@@ -32,7 +28,7 @@ const CHAVE_EMAIL = "nh-corretor-email";
  * com `destinoSeguro`: aqui ele é só repassado, nunca confiado.
  */
 export function FormularioLogin({ next }: { next?: string }) {
-  const [estado, action, pendente] = useActionState(entrar, undefined);
+  const [estado, action] = useActionState(entrar, undefined);
   const email = useRef<HTMLInputElement>(null);
   const lembrar = useRef<HTMLInputElement>(null);
 
@@ -83,73 +79,40 @@ export function FormularioLogin({ next }: { next?: string }) {
   };
 
   return (
-    <form action={action} onSubmit={aoEnviar} className="space-y-3">
+    <form action={action} onSubmit={aoEnviar} className={CLASSE_DO_FORMULARIO}>
       {next && <input type="hidden" name="next" value={next} />}
-      <div>
-        <label htmlFor="email" className="text-fluid-sm mb-1 block text-corpo">
-          E-mail
-        </label>
-        <input
-          ref={email}
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          className={CAMPO_BASE}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="senha" className="text-fluid-sm mb-1 block text-corpo">
-          Senha
-        </label>
-        {/* Com o olho: a senha é digitada num teclado de celular que não
-            mostra o que foi tocado. */}
-        <CampoSenha id="senha" name="senha" required autoComplete="current-password" className={CAMPO_BASE} />
-      </div>
+      <CampoDeAcesso ref={email} id="email" name="email" rotulo="E-mail" tipo="email" autoComplete="email" />
+      <CampoDeAcesso id="senha" name="senha" rotulo="Senha" tipo="senha" autoComplete="current-password" />
 
       {/*
-        A caixa guarda o E-MAIL, e o texto diz isso — "lembrar de mim" sem
-        dizer o quê é justamente o rótulo que faz alguém supor que a senha
-        ficou salva em algum servidor nosso. Ela não fica: quem guarda senha
-        é o gerenciador do próprio aparelho (o teclado do iPhone, o Chrome,
-        o gerenciador do Android), convidado pelo `autoComplete` acima.
-
-        `min-h-11` porque isto é tocado com o polegar: a caixinha tem 16px,
-        mas a área que responde ao toque é a linha inteira.
+        29/10/2026 ("o campo de entrar está muito grande"): "lembrar" e
+        "Esqueci a senha" dividem UMA linha, e o rótulo encurtou para
+        "Lembrar e-mail" — continua dizendo O QUE fica guardado (o e-mail;
+        a senha, quem guarda é o gerenciador do aparelho, convidado pelo
+        `autoComplete`). `min-h-10`: a linha inteira é alvo de polegar.
       */}
-      <label className="text-corpo flex min-h-11 cursor-pointer items-center gap-2.5 select-none">
-        <input
-          ref={lembrar}
-          type="checkbox"
-          name="lembrar"
-          defaultChecked
-          className="accent-acento size-4 shrink-0 cursor-pointer"
-        />
-        {/* 29/10/2026: o aviso "a senha nunca é salva por nós" virou parte
-            do próprio rótulo — dizia o mesmo numa linha a mais. */}
-        <span className="text-fluid-sm">
-          Lembrar meu e-mail <span className="text-tenue">(a senha não fica salva)</span>
-        </span>
-      </label>
+      <div className="text-fluid-sm flex min-h-10 items-center justify-between gap-3">
+        <label className="text-corpo flex min-h-10 cursor-pointer items-center gap-2 select-none">
+          <input
+            ref={lembrar}
+            type="checkbox"
+            name="lembrar"
+            defaultChecked
+            className="accent-acento size-4 shrink-0 cursor-pointer"
+          />
+          Lembrar e-mail
+        </label>
+        <Link
+          href="/corretor/esqueci-a-senha"
+          className="text-acento hover:text-acento-hover flex min-h-10 items-center font-medium"
+        >
+          Esqueci a senha
+        </Link>
+      </div>
 
-      {estado?.erro && <p className="text-fluid-sm text-perigo">{estado.erro}</p>}
+      {estado?.erro && <ErroDeAcesso>{estado.erro}</ErroDeAcesso>}
 
-      <button
-        type="submit"
-        disabled={pendente}
-        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors disabled:opacity-60"
-      >
-        {pendente ? "Entrando…" : "Entrar"}
-      </button>
-
-      <Link
-        href="/corretor/esqueci-a-senha"
-        className="text-fluid-sm text-corpo hover:text-titulo -mb-1 flex min-h-11 items-center justify-center underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
-      >
-        Esqueci a senha
-      </Link>
+      <BotaoDeAcesso enviando="Entrando…">Entrar</BotaoDeAcesso>
     </form>
   );
 }

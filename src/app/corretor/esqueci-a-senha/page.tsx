@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO } from "../CampoDeAcesso";
+import { COR_DA_BARRA_DO_ACESSO } from "../ComportamentoDeApp";
 import { LinkDaFolha, TelaDeAcesso } from "../TelaDeAcesso";
 import { pedirLinkDeSenha } from "./acoes";
 
 export const metadata: Metadata = {
-  title: "Esqueci a senha",
+  title: { absolute: "Esqueci a senha · Astro Soluções" },
   robots: { index: false, follow: false },
 };
 
-const CAMPO =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-fluid-base text-titulo placeholder:text-tenue outline-none transition-colors focus:border-acento";
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
 
 /**
  * Pede o link de recuperação de senha por e-mail.
@@ -27,7 +28,7 @@ export default async function EsqueciASenhaPage({
   return (
     <TelaDeAcesso
       titulo="Esqueci a senha"
-      apoio={enviado ? undefined : "Digite o e-mail com que você entra. Mandamos um link para criar uma senha nova."}
+      apoio={enviado ? undefined : "Mandamos um link para você criar uma senha nova."}
       chamada="Vamos recuperar seu acesso."
       textoDaChamada="Em um minuto você volta para os seus leads."
       rodape={<LinkDaFolha href="/corretor/entrar">Voltar para entrar</LinkDaFolha>}
@@ -43,19 +44,9 @@ export default async function EsqueciASenhaPage({
           nova; ele só funciona uma vez. Se você pediu há menos de um minuto, espere antes de pedir de novo.
         </p>
       ) : (
-        <form action={pedirLinkDeSenha} className="space-y-3">
-          <div>
-            <label htmlFor="email" className="text-fluid-sm text-corpo mb-1 block">
-              E-mail
-            </label>
-            <input id="email" name="email" type="email" required autoComplete="email" className={CAMPO} />
-          </div>
-          <button
-            type="submit"
-            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors"
-          >
-            Mandar o link
-          </button>
+        <form action={pedirLinkDeSenha} className={CLASSE_DO_FORMULARIO}>
+          <CampoDeAcesso id="email" name="email" rotulo="E-mail" tipo="email" autoComplete="email" />
+          <BotaoDeAcesso enviando="Mandando…">Mandar o link</BotaoDeAcesso>
         </form>
       )}
     </TelaDeAcesso>

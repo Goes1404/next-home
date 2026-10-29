@@ -1,0 +1,218 @@
+/*
+ * Campos das telas de acesso da Astro (29/10/2026): rótulo flutuante, ícone
+ * à esquerda, olho da senha à direita. Uma linha por campo, 3rem de altura
+ * (48px: acima dos 44px do alvo de toque). Texto em 16px: menos que isso e o
+ * Safari dá zoom na tela ao focar.
+ *
+ * Cores fixas da folha clara da Astro (a tela de acesso não segue o tema).
+ */
+.formulario {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.campo {
+  position: relative;
+}
+
+.entrada {
+  display: block;
+  width: 100%;
+  height: 3rem;
+  border-radius: 0.875rem;
+  border: 1.5px solid #dbe2ee;
+  background: #f4f7fb;
+  padding: 1.15rem 0.9rem 0 2.6rem;
+  font-size: 1rem;
+  line-height: 1.25rem;
+  color: #0d1b33;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.entrada.comOlho {
+  padding-right: 2.9rem;
+}
+.entrada:hover {
+  border-color: #c5d0e2;
+}
+.entrada:focus {
+  border-color: #2f5ea8;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgb(47 94 168 / 0.14);
+}
+/* O preenchimento automático pinta o campo de amarelo/azul do navegador. */
+.entrada:autofill {
+  -webkit-text-fill-color: #0d1b33;
+  box-shadow: 0 0 0 40px #f4f7fb inset;
+}
+.entrada:autofill:focus {
+  box-shadow:
+    0 0 0 40px #fff inset,
+    0 0 0 4px rgb(47 94 168 / 0.14);
+}
+
+.rotulo {
+  position: absolute;
+  left: 2.6rem;
+  top: 0.875rem;
+  font-size: 0.95rem;
+  line-height: 1.25rem;
+  color: #6b7690;
+  pointer-events: none;
+  transform-origin: left top;
+  transition:
+    translate 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    scale 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.2s;
+}
+.entrada:focus + .rotulo,
+.entrada:not(:placeholder-shown) + .rotulo,
+.entrada:autofill + .rotulo {
+  translate: 0 -0.55rem;
+  scale: 0.76;
+  font-weight: 500;
+}
+.entrada:focus + .rotulo {
+  color: #2f5ea8;
+}
+
+.icone {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #8a94ab;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+.campo:focus-within .icone {
+  color: #2f5ea8;
+}
+
+.olho {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 2.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0.875rem 0.875rem 0;
+  color: #6b7690;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.olho:hover {
+  color: #0d1b33;
+}
+.olho:focus-visible {
+  outline: 2px solid #2f5ea8;
+  outline-offset: -2px;
+}
+
+.dica {
+  margin-top: 0.3rem;
+  padding-left: 0.2rem;
+  font-size: 0.75rem;
+  color: #6b7690;
+}
+
+.botao {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3767b4, #2a559b);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.18) inset,
+    0 10px 24px -12px rgb(47 94 168 / 0.8);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s,
+    scale 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s;
+}
+.botao:hover {
+  background: linear-gradient(180deg, #2f5ea8, #244c8c);
+}
+.botao:active:not(:disabled) {
+  scale: 0.98;
+}
+.botao:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+.botao:focus-visible {
+  outline: 2px solid #2f5ea8;
+  outline-offset: 3px;
+}
+.seta {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: translate 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.botao:hover .seta,
+.botao:active .seta {
+  translate: 0.25rem 0;
+}
+.giro {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+  animation: girar 0.7s linear infinite;
+}
+
+.erro {
+  border-radius: 0.75rem;
+  background: #fdecec;
+  border: 1px solid #f5c2c2;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #9b1c1c;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .erro {
+    animation:
+      erro-chega 0.25s cubic-bezier(0.22, 1, 0.36, 1) both,
+      erro-balanca 0.4s ease-in-out 0.1s;
+  }
+}
+@keyframes girar {
+  to {
+    rotate: 1turn;
+  }
+}
+@keyframes erro-chega {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+@keyframes erro-balanca {
+  20%,
+  60% {
+    translate: -4px 0;
+  }
+  40%,
+  80% {
+    translate: 4px 0;
+  }
+}

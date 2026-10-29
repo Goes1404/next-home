@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { COR_DA_BARRA_DO_ACESSO } from "../ComportamentoDeApp";
 import { redirect } from "next/navigation";
 import { DESTINO_SEM_LINK, sessaoAbertaPorLink } from "@/lib/auth/sessaoPorLink";
 import { createClient } from "@/lib/supabase/server";
@@ -6,9 +7,11 @@ import { FormularioDefinirSenha } from "./FormularioDefinirSenha";
 import { TelaDeAcesso } from "../TelaDeAcesso";
 
 export const metadata: Metadata = {
-  title: "Criar senha",
+  title: { absolute: "Criar senha · Astro Soluções" },
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
 
 /**
  * Onde cai quem abriu o link do convite ou da recuperação de senha: o

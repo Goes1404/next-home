@@ -12450,3 +12450,23 @@ Nota: [[app-no-celular-area-segura-login-e-abertura]].
   `grupos.grupos_whatsapp_do_central`; a aba mostra a guardada na hora e relê
   em segundo plano (`after`) quando passa de 10 min. 0234 aplicada em produção
   antes do deploy; colunas fora do grant do logado.
+
+
+## Astro sem as cores da Next, login compacto e mais movimento (29/10/2026)
+
+Nota: [[app-no-celular-area-segura-login-e-abertura]] (seção "Quarta leva").
+
+- O verde da Next vazava pelo que fica fora do `<main data-rota="painel">`
+  (fundo do body, aviso de versão, seleção). `:root:has([data-rota="painel"],
+  [data-astro])` reaponta `brand-*` e `--color-fundo` para a Astro; o site
+  público das imobiliárias não é afetado.
+- `theme-color` (barra de status do app) era o sálvia/verde de `COR_DA_BARRA`.
+  Agora `viewport.themeColor` por layout/página + `SCRIPT_DA_BARRA`, que
+  reaplica a cor da Astro quando o tema ou a tela mudam.
+- Telas de acesso usam `CampoDeAcesso`/`BotaoDeAcesso` (rótulo flutuante).
+- Cartões do painel sobem com a rolagem só se não tiverem `.fixed` dentro:
+  `translate` em ancestral prende modal `fixed` não-portalado.
+- Conta `adm@astroimob.vercel.app` = administrador da plataforma sem ficha de
+  corretor (vai direto para /plataforma). Criada por SQL em produção a pedido
+  do dono.
+

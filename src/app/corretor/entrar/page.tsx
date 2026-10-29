@@ -1,8 +1,9 @@
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { FormularioLogin } from "./FormularioLogin";
+import { COR_DA_BARRA_DO_ACESSO } from "../ComportamentoDeApp";
 import { LinkDaFolha, TelaDeAcesso } from "../TelaDeAcesso";
 
 /**
@@ -34,6 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
+
 const RECURSOS = ["IA que responde seus leads no WhatsApp", "Funil, agenda de visitas e vendas", "A equipe inteira num lugar só"];
 
 export default async function EntrarPage({
@@ -53,7 +56,7 @@ export default async function EntrarPage({
   return (
     <TelaDeAcesso
       titulo="Entrar"
-      apoio="Com o e-mail do convite da sua imobiliária ou da Astro."
+      apoio="Use o e-mail do convite."
       chamada="Seus leads estão esperando."
       textoDaChamada={MARCA_DA_PLATAFORMA.apoio}
       recursos={RECURSOS}

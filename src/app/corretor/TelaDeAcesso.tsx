@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { SeloAstro } from "@/components/marca/SeloAstro";
 import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
+import { COR_DA_BARRA_DO_ACESSO } from "./ComportamentoDeApp";
 import s from "./telaDeAcesso.module.css";
 
 /**
@@ -69,7 +70,9 @@ export function TelaDeAcesso({
 }) {
   const [nomeA, nomeB] = MARCA_DA_PLATAFORMA.wordmark;
   return (
-    <main className={`${FONTES_DA_ASTRO} ${s.tela}`}>
+    // `data-astro` tira as cores da Next do documento; `data-cor-da-barra`
+    // pinta a barra de status do celular no marinho do céu (SCRIPT_DA_BARRA).
+    <main data-astro="acesso" data-cor-da-barra={COR_DA_BARRA_DO_ACESSO} className={`${FONTES_DA_ASTRO} ${s.tela}`}>
       <div aria-hidden className={s.ceu}>
         <span className={s.nevoa} />
         <span className={s.nevoa} />

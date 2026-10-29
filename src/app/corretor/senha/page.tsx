@@ -1,13 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { COR_DA_BARRA_DO_ACESSO } from "../ComportamentoDeApp";
 import { FormularioSenha } from "./FormularioSenha";
 import { getEmailLogado } from "@/lib/corretorSessao";
 import { sairEReceberNovoLink } from "./acoes";
 import { LinkDaFolha, TelaDeAcesso } from "../TelaDeAcesso";
 
 export const metadata: Metadata = {
-  title: "Trocar senha",
+  title: { absolute: "Trocar senha · Astro Soluções" },
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_ACESSO };
 
 /**
  * `?link=vencido`: veio de `/corretor/definir-senha` com uma sessão que não é

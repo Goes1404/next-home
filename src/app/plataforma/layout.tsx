@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { sair } from "@/app/corretor/actions";
-import { ComportamentoDeApp } from "@/app/corretor/ComportamentoDeApp";
+import { COR_DA_BARRA_DO_PAINEL, ComportamentoDeApp } from "@/app/corretor/ComportamentoDeApp";
 import { SeletorTema } from "@/components/tema/SeletorTema";
 import { MarcaAstro } from "@/components/marca/SeloAstro";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
@@ -14,6 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const base: Metadata = { title: { default: "Plataforma · Astro Soluções", template: "%s · Astro Soluções" }, robots: { index: false, follow: false } };
   return ehEnderecoSoDoPainel((await headers()).get("host")) ? { ...base, icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA } : base;
 }
+
+/** Barra de status no fundo do painel da Astro (ver `SCRIPT_DA_BARRA`). */
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_PAINEL.claro };
 
 /**
  * Casca da área do administrador da plataforma (fase 2A, desenho §11).

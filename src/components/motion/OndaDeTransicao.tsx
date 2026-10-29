@@ -18,7 +18,9 @@ const semInscricao = () => () => {};
  * `/empreendimentos`.
  */
 function ehPainel(caminho: string): boolean {
-  return caminho === "/corretor" || caminho.startsWith("/corretor/");
+  // `/plataforma` (29/10/2026): a área do administrador da Astro tem a
+  // chegada de tela dela (`plataforma/template.tsx`), sem a onda do site.
+  return ["/corretor", "/plataforma"].some((raiz) => caminho === raiz || caminho.startsWith(`${raiz}/`));
 }
 
 /** `false` no servidor; `true` depois de hidratar — o portal precisa de `document`. */

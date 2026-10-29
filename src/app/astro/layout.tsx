@@ -26,5 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default function AstroLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${FONTES_DA_ASTRO} astro-pagina flex flex-1 flex-col`}>{children}</div>;
+  // `data-astro`: tira as cores da Next do documento (ver "A Astro sem as
+  // cores da Next" em globals.css).
+  return (
+    <div data-astro="site" className={`${FONTES_DA_ASTRO} astro-pagina flex flex-1 flex-col`}>
+      {children}
+    </div>
+  );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
-import { SCRIPT_DE_APP } from "./ComportamentoDeApp";
+import { COR_DA_BARRA_DO_ACESSO, COR_DA_BARRA_DO_PAINEL, SCRIPT_DA_BARRA, SCRIPT_DE_APP } from "./ComportamentoDeApp";
 
 /**
  * O jeito de app (sem puxar para atualizar, sem zoom, sem menu de link) só
@@ -45,5 +45,46 @@ describe("comportamento de app", () => {
     expect(sw).toContain('event.request.mode !== "navigate"');
     expect(sw).not.toMatch(/cache\.put|\.put\(/);
     expect(fs.existsSync("public/offline.html")).toBe(true);
+  });
+});
+
+/** Roda o script da cor da barra contra um documento falso. */
+function barra({ caminho, tema, corDaTela }: { caminho: string; tema: "claro" | "escuro"; corDaTela?: string }) {
+  let cor = "#cfd9c2";
+  const meta = { getAttribute: () => cor, setAttribute: (_k: string, v: string) => (cor = v) };
+  const documento = {
+    documentElement: { getAttribute: (k: string) => (k === "data-tema" ? tema : null) },
+    head: {},
+    body: {},
+    readyState: "complete",
+    querySelector: (sel: string) =>
+      sel.includes("theme-color") ? meta : sel.includes("data-cor-da-barra") && corDaTela ? { getAttribute: () => corDaTela } : null,
+    addEventListener: () => {},
+  };
+  class Observador {
+    observe() {}
+  }
+  new Function("document", "location", "MutationObserver", "requestAnimationFrame", SCRIPT_DA_BARRA)(
+    documento,
+    { pathname: caminho },
+    Observador,
+    (f: () => void) => f(),
+  );
+  return cor;
+}
+
+describe("cor da barra de status (sem o verde da Next)", () => {
+  it("no painel, a barra segue o fundo do painel em cada tema", () => {
+    expect(barra({ caminho: "/corretor", tema: "claro" })).toBe(COR_DA_BARRA_DO_PAINEL.claro);
+    expect(barra({ caminho: "/corretor/leads", tema: "escuro" })).toBe(COR_DA_BARRA_DO_PAINEL.escuro);
+    expect(barra({ caminho: "/plataforma", tema: "claro" })).toBe(COR_DA_BARRA_DO_PAINEL.claro);
+  });
+
+  it("a tela que pede uma cor (o céu do login) ganha a dela", () => {
+    expect(barra({ caminho: "/corretor/entrar", tema: "claro", corDaTela: COR_DA_BARRA_DO_ACESSO })).toBe("#08132a");
+  });
+
+  it("fora do painel não mexe (site público das imobiliárias)", () => {
+    expect(barra({ caminho: "/corretores/fulano", tema: "claro" })).toBe("#cfd9c2");
   });
 });

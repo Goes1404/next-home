@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
 import { AberturaDoApp } from "./AberturaDoApp";
-import { ComportamentoDeApp } from "./ComportamentoDeApp";
+import { COR_DA_BARRA_DO_PAINEL, ComportamentoDeApp } from "./ComportamentoDeApp";
 
 const ARETZ_HOSTS = new Set(["aretzimoveis.com", "www.aretzimoveis.com"]);
 const ARETZ_FAVICON =
@@ -28,6 +28,13 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!ehEnderecoSoDoPainel(host)) return {};
   return { icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA };
 }
+
+/**
+ * A barra de status do celular no fundo do painel da Astro, não no sálvia do
+ * site da Next (29/10/2026). As telas de acesso pedem o marinho do céu delas;
+ * o tema escuro e a troca de tela são corrigidos por `SCRIPT_DA_BARRA`.
+ */
+export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_PAINEL.claro };
 
 /**
  * A abertura animada mora AQUI, e não no layout do painel: o app abre em

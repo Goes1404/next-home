@@ -40,9 +40,10 @@ export function SeletorTema() {
 
   const efetivo = atual ?? TEMA_PADRAO;
 
-  function escolher(tema: Tema) {
-    aplicarTemaNoDom(tema);
+  function escolher(tema: Tema, evento: React.MouseEvent<HTMLButtonElement>) {
     gravarCookieDoTema(tema);
+    if (tema === efetivo) return;
+    trocarComCirculo(tema, evento.currentTarget);
   }
 
   return (
@@ -61,7 +62,7 @@ export function SeletorTema() {
             aria-checked={marcado}
             aria-label={opcao.rotulo}
             title={opcao.rotulo}
-            onClick={() => escolher(opcao.valor)}
+            onClick={(e) => escolher(opcao.valor, e)}
             className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors ${
               marcado
                 ? "bg-acento text-white"
@@ -75,6 +76,34 @@ export function SeletorTema() {
       })}
     </div>
   );
+}
+
+/**
+ * O tema novo se abre num CÍRCULO a partir do botão tocado (29/10/2026,
+ * "mais animações"). View Transitions API: o navegador fotografa a tela no
+ * tema velho, aplica o novo e revela a foto nova por um `clip-path` que
+ * cresce (`tema-revela` em `globals.css`). Sem a API, ou com menos
+ * movimento, a troca é direta como antes.
+ */
+function trocarComCirculo(tema: Tema, botao: HTMLElement) {
+  const doc = document as Document & { startViewTransition?: (fn: () => void) => { finished: Promise<void> } };
+  const calmo = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!doc.startViewTransition || calmo) {
+    aplicarTemaNoDom(tema);
+    return;
+  }
+  const caixa = botao.getBoundingClientRect();
+  const x = caixa.left + caixa.width / 2;
+  const y = caixa.top + caixa.height / 2;
+  const raio = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  const html = document.documentElement;
+  html.style.setProperty("--tema-x", `${x}px`);
+  html.style.setProperty("--tema-y", `${y}px`);
+  html.style.setProperty("--tema-r", `${raio}px`);
+  html.setAttribute("data-troca-tema", "");
+  doc
+    .startViewTransition(() => aplicarTemaNoDom(tema))
+    .finished.finally(() => html.removeAttribute("data-troca-tema"));
 }
 
 function IconeSol(props: React.SVGProps<SVGSVGElement>) {

@@ -176,19 +176,23 @@
   background: #fff;
   color: #0d1b33;
   border-radius: 1.5rem 1.5rem 0 0;
-  padding: 1.35rem 1.25rem max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+  padding: 1.15rem 1.15rem max(0.85rem, calc(env(safe-area-inset-bottom, 0px) + 0.6rem));
   box-shadow: 0 -24px 60px -30px rgb(0 0 0 / 0.6);
 }
 .folhaTitulo {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.1;
 }
 .folhaApoio {
-  margin-top: 0.25rem;
-  margin-bottom: 1rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.85rem;
   color: #56627b;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+}
+/* Sem texto de apoio, o título ganha o respiro antes do primeiro campo. */
+.folhaTitulo:not(:has(+ .folhaApoio)) {
+  margin-bottom: 0.85rem;
 }
 .aviso {
   margin-bottom: 1.25rem;
@@ -200,15 +204,15 @@
   color: #3d2c06;
 }
 .rodape {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
   border-top: 1px solid #e3e8f1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #77819a;
 }
 .rodape nav {
@@ -227,7 +231,7 @@
   min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  margin-top: 0.75rem;
+  margin-top: 0.6rem;
   border-radius: 999px;
   border: 1.5px solid #d8e0ec;
   font-size: 0.95rem;
@@ -300,10 +304,10 @@
   }
   .folha {
     margin-top: 0;
-    width: 24rem;
+    width: 22.5rem;
     flex-shrink: 0;
     border-radius: 1.5rem;
-    padding: 1.75rem 1.75rem 1.25rem;
+    padding: 1.5rem 1.5rem 1rem;
     box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.75);
   }
   .nevoa:nth-of-type(1) {
@@ -362,6 +366,49 @@
   }
   .folha {
     animation: subir 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  /* O que está na folha chega em sequência, logo atrás dela: título,
+     campos, botão. Teto de 6 itens (o resto vem com o último). */
+  .folha > :not(form),
+  .folha form > * {
+    animation: item-chega 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.42s;
+  }
+  .folha > :nth-child(1),
+  .folha form > :nth-child(1) {
+    animation-delay: 0.12s;
+  }
+  .folha > :nth-child(2),
+  .folha form > :nth-child(2) {
+    animation-delay: 0.18s;
+  }
+  .folha > :nth-child(3),
+  .folha form > :nth-child(3) {
+    animation-delay: 0.24s;
+  }
+  .folha > :nth-child(4),
+  .folha form > :nth-child(4) {
+    animation-delay: 0.3s;
+  }
+  .folha > :nth-child(5),
+  .folha form > :nth-child(5) {
+    animation-delay: 0.36s;
+  }
+  /* O texto do céu também chega, um passo antes da folha. */
+  .topo > * {
+    animation: item-chega 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .topo > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .topo > :nth-child(n + 3) {
+    animation-delay: 0.16s;
+  }
+}
+@keyframes item-chega {
+  from {
+    opacity: 0;
+    translate: 0 10px;
   }
 }
 @keyframes desenhar {

@@ -3619,3 +3619,160 @@ html[data-menu-aberto] body {
 :where([data-rota="painel"]) :where(h1, h2, h3, h4, p, li, dt, dd, label, blockquote, figcaption) {
   overflow-wrap: break-word;
 }
+
+/* ===========================================================================
+ * A Astro sem as cores da Next (29/10/2026). Relato: "desvincule as cores da
+ * Next com esse app".
+ *
+ * O painel já tinha paleta própria (neutros marinho + cor de módulo), mas o
+ * que mora FORA do `<main data-rota="painel">` ainda era do site da Next
+ * Home: o fundo do `<body>` (aparece no overscroll e entre telas), o aviso
+ * de versão nova (`bg-brand-500`, verde), a seleção de texto, o "Pular para
+ * o conteúdo" e componentes antigos do painel que ainda pintam `brand-*`.
+ *
+ * Em vez de caçar cada uso, a família `brand-*` é REAPONTADA para o azul da
+ * Astro no documento inteiro sempre que a página é da Astro: painel
+ * (`data-rota="painel"`, inclui /plataforma), telas de acesso e página de
+ * vendas (`data-astro`). O site público das imobiliárias não tem nenhum dos
+ * dois marcadores e segue com a marca do grupo.
+ *
+ * Fora de camada de propósito: ganha do `:root[data-tema=…]` do `@layer base`.
+ * A cor da barra do Android (`theme-color`) é cuidada à parte, em
+ * `CorDaBarraDaAstro` (meta não lê CSS).
+ * ======================================================================== */
+:root:has([data-rota="painel"], [data-astro]) {
+  --color-brand-50: #eef3fb;
+  --color-brand-100: #d7e3f5;
+  --color-brand-200: #a9c1e0;
+  --color-brand-300: #7f9fd0;
+  --color-brand-400: #4f7dc4;
+  --color-brand-500: #2f5ea8;
+  --color-brand-600: #244c8c;
+  --color-brand-700: #1b3a6b;
+  --color-brand-800: #0f2547;
+  --color-brand-900: #0a1830;
+  --color-brand-950: #050b18;
+  --color-fundo-marca: #0a1830;
+}
+/* O fundo atrás de tudo = o fundo do painel (valores de `--color-fundo` do
+   painel, em hex). Sem isto o overscroll e o instante entre telas mostravam
+   o sálvia da Next. */
+:root:has([data-rota="painel"]) {
+  --color-fundo: #e3e8f1;
+}
+:root[data-tema="escuro"]:has([data-rota="painel"]) {
+  --color-fundo: #070c16;
+}
+:root:has([data-astro="acesso"]) {
+  --color-fundo: #08132a;
+}
+:root:has([data-rota="painel"], [data-astro]) ::selection {
+  background-color: rgb(47 94 168 / 0.3);
+  color: inherit;
+}
+
+/* ===========================================================================
+ * Mais jeito de app (29/10/2026): "vamos investir em mais animações,
+ * transições animadas… foque nesses pequenos detalhes".
+ *
+ * Tudo aqui é resposta a gesto ou chegada de conteúdo, e só mexe em
+ * `scale`/`translate`/`opacity` (compositor). Com menos movimento, nada anda.
+ * ======================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /*
+   * 1. TOQUE QUE AFUNDA. Num app nativo o botão cede sob o dedo; no site ele
+   * só trocava de cor quando o dedo já tinha saído. Só em tela de toque
+   * (`hover: none`): no mouse, o hover já responde. `scale` avulso, não
+   * `transform`, que tem dono em vários componentes.
+   */
+  @media (hover: none) {
+    :where([data-rota="painel"], [data-astro]) :where(button, [role="button"], a[class*="rounded"], label[class*="rounded"]) {
+      transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+      transition-duration: 160ms;
+      transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    :where([data-rota="painel"], [data-astro]) :where(button, [role="button"], a[class*="rounded"], label[class*="rounded"]):active:not(:disabled) {
+      scale: 0.97;
+      transition-duration: 60ms;
+    }
+  }
+
+  /*
+   * 2. CARTÕES QUE CHEGAM COM A ROLAGEM. Cada cartão do painel sobe e
+   * acende quando entra na tela, pela própria posição (`animation-timeline:
+   * view()`, zero JavaScript). A faixa é curta e em PIXELS (`entry 0px` →
+   * `entry 140px`): um cartão mais alto que a tela (lista de leads) termina
+   * de chegar logo no começo, em vez de ficar meio apagado até o fim.
+   * `backwards`, não `both`: depois de chegar, o cartão fica livre para o
+   * `translate` do próprio hover. Cartão que já nasce na tela não anima.
+   */
+  @supports (animation-timeline: view()) {
+    /* Só o cartão de fora (o de dentro chega junto com ele), e nunca um
+       que tenha algo `fixed` dentro: `translate` cria bloco de contenção, e
+       uma folha ou modal aberto ali dentro ficaria preso ao cartão. */
+    .tela-do-painel :is(.cartao, .shadow-cartao):not(:is(.cartao, .shadow-cartao) *):not(:has(.fixed)) {
+      animation: cartao-sobe linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0px entry 140px;
+    }
+  }
+
+  /*
+   * 3. A PÍLULA DA BARRA DO POLEGAR acende crescendo do centro (como a barra
+   * de navegação do Android) e o ícone dá um pulinho, quando o destino vira o
+   * atual. A animação nasce com o `aria-current`, então roda a cada troca.
+   */
+  [data-rota="painel"] nav[aria-label="Atalhos do painel"] [aria-current="page"] > span:first-child,
+  [data-rota="painel"] nav[aria-label="Atalhos do painel"] button[aria-expanded="true"] > span:first-child {
+    animation: pilula-acende 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  [data-rota="painel"] nav[aria-label="Atalhos do painel"] [aria-current="page"] > span:first-child > svg {
+    animation: icone-pula 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* 4. A área da plataforma ganha a mesma chegada de tela do painel. */
+  .plataforma-tela {
+    animation: painel-entra 380ms var(--ease-out-expo) both;
+  }
+}
+@keyframes cartao-sobe {
+  from {
+    opacity: 0;
+    translate: 0 22px;
+    scale: 0.97;
+  }
+}
+@keyframes pilula-acende {
+  from {
+    scale: 0.35 1;
+    opacity: 0.4;
+  }
+}
+@keyframes icone-pula {
+  40% {
+    translate: 0 -3px;
+    scale: 1.08;
+  }
+}
+
+/*
+ * 5. TROCA DE TEMA EM CÍRCULO: o tema novo se abre a partir do botão tocado
+ * (View Transitions API, em `SeletorTema`). `--tema-x/--tema-y` são o ponto
+ * do toque; o raio cobre a tela inteira a partir dele.
+ */
+html[data-troca-tema]::view-transition-old(root),
+html[data-troca-tema]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html[data-troca-tema]::view-transition-new(root) {
+  animation: tema-revela 560ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+@keyframes tema-revela {
+  from {
+    clip-path: circle(0px at var(--tema-x, 50%) var(--tema-y, 0%));
+  }
+  to {
+    clip-path: circle(var(--tema-r, 150vmax) at var(--tema-x, 50%) var(--tema-y, 0%));
+  }
+}

@@ -26,7 +26,7 @@ export function TransicaoDeTela({ children }: { children: React.ReactNode }) {
   const rota = usePathname();
   return (
     <ViewTransition key={rota} enter="painel-entra" exit="painel-sai" default="none">
-      <div className="min-w-0">{children}</div>
+      <div className="tela-do-painel min-w-0">{children}</div>
     </ViewTransition>
   );
 }

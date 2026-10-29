@@ -2,70 +2,41 @@
 
 import { useActionState } from "react";
 import { trocarSenha } from "@/app/corretor/actions";
+import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
 
-const CAMPO =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-titulo outline-none transition-colors focus:border-acento";
-
+/** Troca de senha de quem já entrou. Campos e botão: `CampoDeAcesso.tsx`. */
 export function FormularioSenha() {
-  const [estado, action, pendente] = useActionState(trocarSenha, undefined);
+  const [estado, action] = useActionState(trocarSenha, undefined);
 
   return (
-    <form action={action} className="space-y-3">
-      <div>
-        <label htmlFor="atual" className="text-fluid-sm mb-1 block text-corpo">
-          Senha atual
-        </label>
-        <input
-          id="atual"
-          name="atual"
-          type="password"
-          required
-          autoComplete="current-password"
-          className={CAMPO}
-        />
-      </div>
+    <form action={action} className={CLASSE_DO_FORMULARIO}>
+      <CampoDeAcesso id="atual" name="atual" rotulo="Senha atual" tipo="senha" autoComplete="current-password" />
+      <CampoDeAcesso
+        id="nova"
+        name="nova"
+        rotulo="Nova senha"
+        tipo="senha"
+        minLength={8}
+        autoComplete="new-password"
+        dica="Pelo menos 8 caracteres."
+      />
+      <CampoDeAcesso
+        id="confirmacao"
+        name="confirmacao"
+        rotulo="Repita a nova senha"
+        tipo="senha"
+        minLength={8}
+        autoComplete="new-password"
+      />
 
-      <div>
-        <label htmlFor="nova" className="text-fluid-sm mb-1 block text-corpo">
-          Nova senha
-        </label>
-        <input
-          id="nova"
-          name="nova"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={CAMPO}
-        />
-        <p className="text-fluid-xs mt-1 text-tenue">Pelo menos 8 caracteres.</p>
-      </div>
+      {estado?.erro && <ErroDeAcesso>{estado.erro}</ErroDeAcesso>}
+      {estado?.ok && (
+        <p role="status" className="text-fluid-sm text-acento">
+          {estado.ok}
+        </p>
+      )}
 
-      <div>
-        <label htmlFor="confirmacao" className="text-fluid-sm mb-1 block text-corpo">
-          Repita a nova senha
-        </label>
-        <input
-          id="confirmacao"
-          name="confirmacao"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className={CAMPO}
-        />
-      </div>
-
-      {estado?.erro && <p className="text-fluid-sm text-perigo">{estado.erro}</p>}
-      {estado?.ok && <p className="text-fluid-sm text-acento-suave">{estado.ok}</p>}
-
-      <button
-        type="submit"
-        disabled={pendente}
-        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors disabled:opacity-60"
-      >
-        {pendente ? "Alterando…" : "Alterar senha"}
-      </button>
+      <BotaoDeAcesso enviando="Alterando…">Alterar senha</BotaoDeAcesso>
     </form>
   );
 }

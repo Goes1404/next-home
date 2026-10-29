@@ -17,6 +17,10 @@ codigo:
   - src/app/corretor/ComportamentoDeApp.tsx
   - public/sw-painel.js
   - public/offline.html
+  - src/app/corretor/CampoDeAcesso.tsx
+  - src/app/corretor/campoDeAcesso.module.css
+  - src/components/tema/SeletorTema.tsx
+  - src/app/plataforma/template.tsx
 summary: No app Android (Android 15) a página vai por baixo da barra de status e da de gestos; o cabeçalho, as folhas e os flutuantes passaram a reservar as áreas seguras. Login refeito para celular e abertura animada só no app instalado.
 created: 2026-10-29
 updated: 2026-10-29
@@ -92,3 +96,49 @@ navegador as áreas seguras valem 0, por isso ninguém tinha visto.
   e texto com `overflow-wrap: break-word`, tudo em `:where()`
   (especificidade zero). Números grandes (4xl/5xl) um degrau menores no
   celular; valores em reais do Financeiro com tamanho fluido.
+
+## Quarta leva (29/10/2026, tarde): sem as cores da Next, login menor, mais movimento
+
+Pedido: "desvincule as cores da Next com esse app", "o campo de entrar está
+muito grande", "mais animações, transições animadas".
+
+- **Site atualiza o app.** O app é TWA: tudo que vai para produção aparece
+  no app na próxima abertura. AAB novo só para ícone, nome, splash nativa ou
+  permissões ([[app-android-da-astro]]).
+- **Cores da Next fora.** O verde vazava pelo que mora FORA do
+  `<main data-rota="painel">`: fundo do `<body>` (overscroll, entre telas),
+  aviso de versão nova (`bg-brand-500`), seleção de texto, componentes antigos
+  com `brand-*`. Solução no fim do `globals.css` ("A Astro sem as cores da
+  Next"): `:root:has([data-rota="painel"], [data-astro])` reaponta a família
+  `brand-*` para o azul da Astro e o `--color-fundo` do documento para o fundo
+  do painel. Marcadores: `data-rota="painel"` (painel e /plataforma),
+  `data-astro="acesso"` (TelaDeAcesso), `data-astro="site"` (/astro). Site
+  público de imobiliária não tem marcador e segue com a marca do grupo.
+- **Barra de status.** `theme-color` vinha de `COR_DA_BARRA` (sálvia/verde do
+  site da Next), reescrita pelo script de tema e pelo seletor. Agora:
+  `viewport.themeColor` no layout de /corretor e /plataforma (`#e3e8f1`), nas
+  4 telas de acesso (`#08132a`), e `SCRIPT_DA_BARRA` (em
+  `ComportamentoDeApp.tsx`) observa tema, a própria meta e o DOM e reaplica
+  (claro `#e3e8f1`, escuro `#070c16`, ou o `data-cor-da-barra` da tela). Só em
+  `/corretor` e `/plataforma`.
+- **Campos de acesso.** `CampoDeAcesso` (rótulo flutuante em CSS puro com
+  `placeholder=" "`, ícone, olho), `BotaoDeAcesso` (spinner por
+  `useFormStatus`, seta) e `ErroDeAcesso` (chega e balança). "Lembrar e-mail"
+  e "Esqueci a senha" numa linha só. Folha do login no celular: ~430 → 345 px.
+  Títulos das telas de acesso viraram "… · Astro Soluções" (era "· Next Home").
+- **Movimento** (fim do `globals.css`, "Mais jeito de app"): toque que afunda
+  (`scale .97`, só `hover: none`); cartões que sobem com a rolagem
+  (`animation-timeline: view()`, faixa `entry 0px → 140px`, `backwards`, só o
+  cartão de fora e nunca um com `.fixed` dentro — `translate` cria bloco de
+  contenção); pílula da barra do polegar que cresce + ícone que pula; troca de
+  tema em círculo a partir do botão (View Transitions, `data-troca-tema`);
+  chegada de tela na /plataforma (`template.tsx`); vibração de 8 ms no app ao
+  tocar navegação/enviar/aba (`SCRIPT_DE_APP`). A onda do site não roda mais
+  em /plataforma.
+- **Conta ADM da plataforma** `adm@astroimob.vercel.app` criada em produção
+  por SQL (auth.users + auth.identities + `administradores_da_plataforma`),
+  sem ficha de corretor: o login a manda direto para /plataforma. E-mail não
+  recebe mensagens; senha com o dono.
+- Armadilha de teste: `scrollIntoView` com rolagem suave precisa de ~1 s antes
+  de medir a opacidade do cartão.
+
