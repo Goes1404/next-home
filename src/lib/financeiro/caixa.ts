@@ -1,3 +1,4 @@
+import { fatiasDoRepasse, type FormaRecebimento, type Parcela } from "./parcelas";
 import { centavos } from "./venda";
 
 /**
@@ -7,8 +8,11 @@ import { centavos } from "./venda";
  *
  * O dinheiro vem de três lugares e nunca é contado duas vezes:
  *  - lançamentos do caixa (aluguel, salários, portais, outras receitas);
- *  - comissão de venda a receber da construtora (sai de `vendas`);
+ *  - comissão de venda a receber, parcela por parcela (sai de `venda_parcelas`, 0232);
  *  - repasse de venda a pagar ao corretor (sai de `venda_participantes`).
+ *
+ * Venda distratada NÃO some: o que entrou e o que foi pago aconteceu e fica
+ * no mês em que aconteceu. Só as parcelas canceladas pelo distrato saem.
  *
  * Duas escolhas conservadoras, de propósito, porque o erro que custa caro é o
  * caixa parecer melhor do que está:
@@ -63,7 +67,13 @@ export type LancamentoDoCaixa = {
   vencimento: string;
   pagoEm: string | null;
   recorrenciaId: string | null;
+  /** Mês de competência ("aaaa-mm-01", 0232). `null` = o mês do vencimento. */
+  competencia: string | null;
 };
+
+export function competenciaDoLancamento(l: LancamentoDoCaixa): string {
+  return l.competencia ?? `${l.vencimento.slice(0, 7)}-01`;
+}
 
 /** O pedaço de uma venda que o caixa precisa. */
 export type VendaDoCaixa = {
@@ -72,10 +82,14 @@ export type VendaDoCaixa = {
   unidade: string | null;
   construtora: string | null;
   status: "ativa" | "distratada";
-  comissaoValor: number;
-  comissaoPrevistaEm: string | null;
-  comissaoRecebidaEm: string | null;
-  participantes: { corretorId: string; nome: string; repasseValor: number; repassePagoEm: string | null }[];
+  parcelas: Parcela[];
+  participantes: {
+    corretorId: string;
+    nome: string;
+    repasseValor: number;
+    repassePagoEm: string | null;
+    formaRecebimento: FormaRecebimento;
+  }[];
 };
 
 export type OrigemMovimento = "lancamento" | "comissao" | "repasse";
@@ -112,39 +126,47 @@ export function movimentosDo(lancamentos: LancamentoDoCaixa[], vendas: VendaDoCa
   }));
 
   for (const v of vendas) {
-    if (v.status !== "ativa") continue;
     const nome = v.unidade ? `${v.imovel} · ${v.unidade}` : v.imovel;
-    if (v.comissaoValor > 0) {
+    const parcelas = [...v.parcelas].sort((x, y) => x.numero - y.numero);
+    const varias = parcelas.length > 1;
+    for (const pc of parcelas) {
+      if (pc.canceladaEm || pc.valor <= 0) continue;
       lista.push({
-        chave: `c:${v.id}`,
+        chave: `p:${pc.id}`,
         origem: "comissao",
         tipo: "entrada",
-        descricao: `Comissão ${nome}`,
+        descricao: varias ? `Comissão ${nome} (${pc.numero}/${parcelas.length})` : `Comissão ${nome}`,
         detalhe: v.construtora,
         categoria: null,
-        valor: centavos(v.comissaoValor),
-        vencimento: v.comissaoPrevistaEm,
-        pagoEm: v.comissaoRecebidaEm,
+        valor: centavos(pc.valor),
+        vencimento: pc.venceEm,
+        pagoEm: pc.recebidaEm,
         vendaId: v.id,
       });
     }
     for (const p of v.participantes) {
-      if (p.repasseValor <= 0) continue;
-      lista.push({
-        chave: `r:${v.id}:${p.corretorId}`,
-        origem: "repasse",
-        tipo: "saida",
+      // Quem recebe direto do pagador não passa pelo caixa da imobiliária.
+      if (p.repasseValor <= 0 || p.formaRecebimento === "direto") continue;
+      const base = {
+        origem: "repasse" as const,
+        tipo: "saida" as const,
         descricao: `Repasse ${p.nome}`,
         detalhe: nome,
         categoria: null,
-        valor: centavos(p.repasseValor),
-        // O repasse sai quando a comissão entra: se já entrou, está devido
-        // desde então; se não, acompanha a previsão da construtora.
-        vencimento: v.comissaoRecebidaEm ?? v.comissaoPrevistaEm,
-        pagoEm: p.repassePagoEm,
         vendaId: v.id,
         corretorId: p.corretorId,
-      });
+      };
+      if (p.repassePagoEm) {
+        // O que foi pago, foi pago: valor cheio, na data do pagamento.
+        lista.push({ ...base, chave: `r:${v.id}:${p.corretorId}`, valor: centavos(p.repasseValor), vencimento: p.repassePagoEm, pagoEm: p.repassePagoEm });
+        continue;
+      }
+      // Em aberto: o repasse acompanha as parcelas (sai quando cada uma entra
+      // ou na previsão dela) e encolhe na proporção do que o distrato cancelou.
+      for (const f of fatiasDoRepasse(p.repasseValor, parcelas)) {
+        if (f.valor <= 0) continue;
+        lista.push({ ...base, chave: `r:${v.id}:${p.corretorId}:${f.parcelaId}`, valor: f.valor, vencimento: f.data, pagoEm: null });
+      }
     }
   }
   return lista;

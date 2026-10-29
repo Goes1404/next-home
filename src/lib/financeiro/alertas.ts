@@ -30,6 +30,8 @@ export type EntradaDosAlertas = {
   mesesFechados: string[];
   semNota: { quantidade: number; valor: number };
   fiscalConferido: boolean;
+  /** Vendas em que um corretor avisou distrato e o gestor ainda não decidiu (0232). */
+  distratosAvisados: { vendaId: string; imovel: string; avisadoEm: string }[];
 };
 
 const ORDEM: Record<Gravidade, number> = { perigo: 0, alerta: 1, info: 2 };
@@ -141,6 +143,18 @@ export function alertasDoFinanceiro(e: EntradaDosAlertas): Alerta[] {
         href: `/corretor/financeiro/resultado?mes=${mesPassado}`,
       });
     }
+  }
+
+  // Distrato é decisão do gestor (manter ou cancelar as parcelas); o
+  // corretor só avisa. Um alerta por venda, porque cada uma pede a sua decisão.
+  for (const d of e.distratosAvisados) {
+    alertas.push({
+      id: `distrato_avisado:${d.vendaId}`,
+      gravidade: "alerta",
+      titulo: `Distrato avisado: ${d.imovel}`,
+      detalhe: `Um corretor avisou o distrato em ${dataBr(d.avisadoEm.slice(0, 10))}. Registre o distrato e decida se as parcelas em aberto continuam devidas.`,
+      href: `/corretor/financeiro/${d.vendaId}`,
+    });
   }
 
   if (!e.fiscalConferido) {

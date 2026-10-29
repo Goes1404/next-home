@@ -11,6 +11,7 @@ const lanc = (p: Partial<LancamentoDoCaixa>): LancamentoDoCaixa => ({
   vencimento: p.vencimento ?? "2026-10-05",
   pagoEm: p.pagoEm ?? null,
   recorrenciaId: null,
+  competencia: null,
 });
 
 const venda: VendaDoCaixa = {
@@ -19,10 +20,10 @@ const venda: VendaDoCaixa = {
   unidade: null,
   construtora: "P4",
   status: "ativa",
-  comissaoValor: 20000,
-  comissaoPrevistaEm: "2026-10-10",
-  comissaoRecebidaEm: "2026-10-12",
-  participantes: [{ corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: "2026-10-15" }],
+  parcelas: [
+    { id: "p1", numero: 1, valor: 20000, pagador: "construtora", venceEm: "2026-10-10", recebidaEm: "2026-10-12", canceladaEm: null },
+  ],
+  participantes: [{ corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: "2026-10-15", formaRecebimento: "repasse" }],
 };
 
 describe("resultado do mês", () => {
@@ -62,9 +63,12 @@ describe("resultado do mês", () => {
     expect(a.resultado).toBe(10300 - 700);
   });
 
-  it("venda distratada não entra", () => {
+  // Até a 0232 a venda distratada sumia inteira, levando junto dinheiro que
+  // já tinha entrado e saído: o resultado de um mês fechado mudava calado.
+  it("venda distratada continua com o que entrou e saiu no mês", () => {
     const r = resultadoDoMes(movimentosDo([], [{ ...venda, status: "distratada" }]), "2026-10");
-    expect(r.temMovimento).toBe(false);
+    expect(r.comissoes).toBe(20000);
+    expect(r.repasses).toBe(8000);
   });
 });
 

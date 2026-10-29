@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  competenciaDoLancamento,
   fluxoDeCaixa,
   movimentosDo,
   problemasDoLancamento,
@@ -11,6 +12,8 @@ import {
   type LancamentoDoCaixa,
   type VendaDoCaixa,
 } from "./caixa";
+import type { Parcela } from "./parcelas";
+import { resultadoDoMes } from "./resultado";
 
 const HOJE = "2026-10-06";
 
@@ -23,6 +26,18 @@ const lanc = (p: Partial<LancamentoDoCaixa>): LancamentoDoCaixa => ({
   vencimento: p.vencimento ?? HOJE,
   pagoEm: p.pagoEm ?? null,
   recorrenciaId: p.recorrenciaId ?? null,
+  competencia: p.competencia ?? null,
+});
+
+const parcela = (p: Partial<Parcela> = {}): Parcela => ({
+  id: "p1",
+  numero: 1,
+  valor: 20000,
+  pagador: "construtora",
+  venceEm: null,
+  recebidaEm: null,
+  canceladaEm: null,
+  ...p,
 });
 
 const venda = (p: Partial<VendaDoCaixa>): VendaDoCaixa => ({
@@ -31,28 +46,102 @@ const venda = (p: Partial<VendaDoCaixa>): VendaDoCaixa => ({
   unidade: p.unidade ?? null,
   construtora: p.construtora ?? "P4",
   status: p.status ?? "ativa",
-  comissaoValor: p.comissaoValor ?? 20000,
-  comissaoPrevistaEm: p.comissaoPrevistaEm ?? null,
-  comissaoRecebidaEm: p.comissaoRecebidaEm ?? null,
-  participantes: p.participantes ?? [{ corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: null }],
+  parcelas: p.parcelas ?? [parcela()],
+  participantes: p.participantes ?? [
+    { corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: null, formaRecebimento: "repasse" },
+  ],
 });
 
 describe("movimentos do caixa", () => {
   it("comissão entra e repasse sai, sem lançar a venda duas vezes", () => {
-    const m = movimentosDo([], [venda({ comissaoPrevistaEm: "2026-10-20" })]);
+    const m = movimentosDo([], [venda({ parcelas: [parcela({ venceEm: "2026-10-20" })] })]);
     expect(m.map((x) => [x.origem, x.tipo, x.valor, x.vencimento])).toEqual([
       ["comissao", "entrada", 20000, "2026-10-20"],
       ["repasse", "saida", 8000, "2026-10-20"],
     ]);
   });
 
-  it("venda distratada não entra no caixa", () => {
-    expect(movimentosDo([], [venda({ status: "distratada" })])).toEqual([]);
+  it("repasse vence quando a parcela entrou", () => {
+    const m = movimentosDo([], [venda({ parcelas: [parcela({ venceEm: "2026-11-01", recebidaEm: "2026-10-02" })] })]);
+    expect(m.find((x) => x.origem === "repasse")!.vencimento).toBe("2026-10-02");
   });
 
-  it("repasse vence quando a comissão entrou", () => {
-    const m = movimentosDo([], [venda({ comissaoPrevistaEm: "2026-11-01", comissaoRecebidaEm: "2026-10-02" })]);
-    expect(m.find((x) => x.origem === "repasse")!.vencimento).toBe("2026-10-02");
+  it("venda distratada não apaga o que já entrou e o que já foi pago", () => {
+    const v = venda({
+      status: "distratada",
+      parcelas: [parcela({ recebidaEm: "2026-03-10" })],
+      participantes: [
+        { corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: "2026-03-15", formaRecebimento: "repasse" },
+      ],
+    });
+    const r = resultadoDoMes(movimentosDo([], [v]), "2026-03");
+    expect(r.comissoes).toBe(20000);
+    expect(r.repasses).toBe(8000);
+  });
+
+  it("distrato com parcelas canceladas: elas somem do caixa", () => {
+    const v = venda({ status: "distratada", parcelas: [parcela({ venceEm: "2026-11-10", canceladaEm: "2026-10-01" })] });
+    expect(movimentosDo([], [v]).filter((x) => x.origem === "comissao")).toEqual([]);
+  });
+
+  it("distrato que mantém as parcelas: continuam pendentes", () => {
+    const v = venda({ status: "distratada", parcelas: [parcela({ venceEm: "2026-11-10" })] });
+    const m = movimentosDo([], [v]).filter((x) => x.origem === "comissao");
+    expect(m.map((x) => [x.valor, x.vencimento, x.pagoEm])).toEqual([[20000, "2026-11-10", null]]);
+  });
+
+  it("três parcelas, uma recebida: uma entrada paga e duas pendentes com o próprio vencimento", () => {
+    const v = venda({
+      parcelas: [
+        parcela({ id: "a", valor: 10000, venceEm: "2026-10-10", recebidaEm: "2026-10-09" }),
+        parcela({ id: "b", numero: 2, valor: 5000, venceEm: "2026-11-10" }),
+        parcela({ id: "c", numero: 3, valor: 5000, venceEm: "2026-12-10" }),
+      ],
+    });
+    const m = movimentosDo([], [v]).filter((x) => x.origem === "comissao");
+    expect(m.map((x) => [x.chave, x.valor, x.vencimento, x.pagoEm])).toEqual([
+      ["p:a", 10000, "2026-10-10", "2026-10-09"],
+      ["p:b", 5000, "2026-11-10", null],
+      ["p:c", 5000, "2026-12-10", null],
+    ]);
+  });
+
+  it("quem recebe direto não gera repasse no caixa", () => {
+    const v = venda({
+      participantes: [{ corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: null, formaRecebimento: "direto" }],
+    });
+    expect(movimentosDo([], [v]).some((x) => x.origem === "repasse")).toBe(false);
+  });
+
+  it("repasse em aberto com uma de três parcelas cancelada: fatias somam dois terços", () => {
+    const v = venda({
+      status: "distratada",
+      parcelas: [
+        parcela({ id: "a", valor: 6000, venceEm: "2026-10-10" }),
+        parcela({ id: "b", numero: 2, valor: 6000, venceEm: "2026-11-10" }),
+        parcela({ id: "c", numero: 3, valor: 6000, venceEm: "2026-12-10", canceladaEm: "2026-10-01" }),
+      ],
+      participantes: [{ corretorId: "c1", nome: "Bruna", repasseValor: 900, repassePagoEm: null, formaRecebimento: "repasse" }],
+    });
+    const r = movimentosDo([], [v]).filter((x) => x.origem === "repasse");
+    expect(r.map((x) => x.chave)).toEqual(["r:v1:c1:a", "r:v1:c1:b"]);
+    expect(r.reduce((s, x) => s + x.valor, 0)).toBe(600);
+  });
+
+  it("repasse já pago sai inteiro, numa linha só, na data do pagamento", () => {
+    const v = venda({
+      parcelas: [parcela({ id: "a", valor: 10000, recebidaEm: "2026-10-01" }), parcela({ id: "b", numero: 2, valor: 10000 })],
+      participantes: [
+        { corretorId: "c1", nome: "Bruna", repasseValor: 8000, repassePagoEm: "2026-10-05", formaRecebimento: "repasse" },
+      ],
+    });
+    const r = movimentosDo([], [v]).filter((x) => x.origem === "repasse");
+    expect(r.map((x) => [x.chave, x.valor, x.pagoEm])).toEqual([["r:v1:c1", 8000, "2026-10-05"]]);
+  });
+
+  it("a competência do lançamento é a informada ou o mês do vencimento", () => {
+    expect(competenciaDoLancamento(lanc({ vencimento: "2026-10-20" }))).toBe("2026-10-01");
+    expect(competenciaDoLancamento(lanc({ vencimento: "2026-10-20", competencia: "2026-09-01" }))).toBe("2026-09-01");
   });
 });
 

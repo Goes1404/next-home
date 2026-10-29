@@ -19,6 +19,7 @@ function entrada(p: Partial<EntradaDosAlertas> = {}): EntradaDosAlertas {
     mesesFechados: ["2026-09"],
     semNota: { quantidade: 0, valor: 0 },
     fiscalConferido: true,
+    distratosAvisados: [],
     ...p,
   };
 }
@@ -26,6 +27,16 @@ function entrada(p: Partial<EntradaDosAlertas> = {}): EntradaDosAlertas {
 const ids = (e: EntradaDosAlertas) => alertasDoFinanceiro(e).map((a) => a.id);
 
 describe("alertasDoFinanceiro", () => {
+  it("corretor avisou distrato: um alerta por venda, levando à venda", () => {
+    const a = alertasDoFinanceiro(
+      entrada({ distratosAvisados: [{ vendaId: "v9", imovel: "Dom Parque · 101", avisadoEm: "2026-10-14T10:00:00Z" }] }),
+    ).filter((x) => x.id.startsWith("distrato_avisado"));
+    expect(a).toHaveLength(1);
+    expect(a[0].gravidade).toBe("alerta");
+    expect(a[0].href).toBe("/corretor/financeiro/v9");
+    expect(a[0].titulo).toContain("Dom Parque · 101");
+  });
+
   it("tudo em dia: nenhum alerta", () => {
     expect(ids(entrada())).toEqual([]);
   });

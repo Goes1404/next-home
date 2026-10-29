@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { diasEntre, diasRestantesNoMes, intervaloDo, lerPeriodo, mesAtual } from "./periodo";
 import { aReceberDasConstrutoras, extratoDo, repasseDoPeriodo, repassesAPagar, type VendaDoExtrato } from "./extrato";
+import type { Parcela } from "./parcelas";
 import { calcularRitmo, escolherComissaoPorVenda, escolherTaxa, fraseDoRitmo } from "./ritmo";
 import { preverCaixa, VENDAS_MINIMAS_PARA_ESTIMAR } from "./previsao";
 import {
@@ -30,6 +31,17 @@ describe("períodos no calendário de São Paulo", () => {
   });
 });
 
+/** A comissão inteira numa parcela só, recebida ou não (o caso de antes da 0232). */
+const parcelaUnica = (recebidaEm: string | null, canceladaEm: string | null = null): Parcela => ({
+  id: "p1",
+  numero: 1,
+  valor: 30000,
+  pagador: "construtora",
+  venceEm: null,
+  recebidaEm,
+  canceladaEm,
+});
+
 const venda = (m: Partial<VendaDoExtrato> = {}): VendaDoExtrato => ({
   id: "v1",
   imovel: "Eternity",
@@ -39,39 +51,40 @@ const venda = (m: Partial<VendaDoExtrato> = {}): VendaDoExtrato => ({
   valorVenda: 600000,
   comissaoValor: 30000,
   status: "ativa",
-  comissaoRecebidaEm: null,
+  parcelas: [parcelaUnica(null)],
   participantes: [
-    { corretorId: "c1", nome: "Bruna", partePercentual: 50, repasseValor: 6000, repassePagoEm: null },
-    { corretorId: "c2", nome: "Edu", partePercentual: 50, repasseValor: 6000, repassePagoEm: null },
+    { corretorId: "c1", nome: "Bruna", partePercentual: 50, repasseValor: 6000, repassePagoEm: null, formaRecebimento: "repasse" },
+    { corretorId: "c2", nome: "Edu", partePercentual: 50, repasseValor: 6000, repassePagoEm: null, formaRecebimento: "repasse" },
   ],
   ...m,
 });
 
 describe("extrato", () => {
   it("separa o que a construtora já pagou do que ainda depende dela", () => {
-    const e = extratoDo("c1", [venda(), venda({ id: "v2", comissaoRecebidaEm: "2026-09-20" })], "2026-09-26");
+    const e = extratoDo("c1", [venda(), venda({ id: "v2", parcelas: [parcelaUnica("2026-09-20")] })], "2026-09-26");
     expect(e.aReceber).toBe(12000);
     expect(e.liberado).toBe(6000);
     expect(e.linhas.map((l) => l.situacao).sort()).toEqual(["aguardando_construtora", "pode_pagar"]);
   });
   it("repasse pago entra no recebido do ano, por mês", () => {
     const pago = venda({
-      participantes: [{ corretorId: "c1", nome: "B", partePercentual: 100, repasseValor: 5000, repassePagoEm: "2026-08-10" }],
+      participantes: [{ corretorId: "c1", nome: "B", partePercentual: 100, repasseValor: 5000, repassePagoEm: "2026-08-10", formaRecebimento: "repasse" }],
     });
     const e = extratoDo("c1", [pago], "2026-09-26");
     expect(e.aReceber).toBe(0);
     expect(e.recebidoNoAno).toBe(5000);
     expect(e.recebidoPorMes).toEqual([{ mes: "2026-08", valor: 5000 }]);
   });
-  it("distrato não fica a receber", () => {
-    expect(extratoDo("c1", [venda({ status: "distratada" })], "2026-09-26").aReceber).toBe(0);
+  it("distrato que cancelou a comissão não fica a receber", () => {
+    const v = venda({ status: "distratada", parcelas: [parcelaUnica(null, "2026-09-10")] });
+    expect(extratoDo("c1", [v], "2026-09-26").aReceber).toBe(0);
   });
   it("repasse do período conta só venda ativa no intervalo", () => {
     expect(repasseDoPeriodo("c1", [venda(), venda({ id: "x", dataVenda: "2026-08-31" })], "2026-09-01", "2026-09-30")).toBe(6000);
   });
   it("gestor: dívida das construtoras ordenada pela mais velha", () => {
     const g = aReceberDasConstrutoras(
-      [venda(), venda({ id: "v2", construtora: "EZTEC", dataVenda: "2026-06-01" }), venda({ id: "v3", comissaoRecebidaEm: "2026-09-02" })],
+      [venda(), venda({ id: "v2", construtora: "EZTEC", dataVenda: "2026-06-01" }), venda({ id: "v3", parcelas: [parcelaUnica("2026-09-02")] })],
       "2026-09-26",
     );
     expect(g.map((x) => x.construtora)).toEqual(["EZTEC", "Cyrela"]);
@@ -79,7 +92,7 @@ describe("extrato", () => {
     expect(g[1].total).toBe(30000);
   });
   it("gestor: repasse liberado não se mistura com o que depende da construtora", () => {
-    const r = repassesAPagar([venda(), venda({ id: "v2", comissaoRecebidaEm: "2026-09-20" })]);
+    const r = repassesAPagar([venda(), venda({ id: "v2", parcelas: [parcelaUnica("2026-09-20")] })]);
     const bruna = r.find((x) => x.corretorId === "c1")!;
     expect(bruna.liberado).toBe(6000);
     expect(bruna.aguardando).toBe(6000);
