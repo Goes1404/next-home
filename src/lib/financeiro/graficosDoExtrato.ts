@@ -1,3 +1,4 @@
+import { fatiasDoRepasse, type FormaRecebimento, type Parcela } from "./parcelas";
 import { centavos, type StatusVenda } from "./venda";
 import { mesAntes, NOMES_MES } from "./painelDeVendas";
 
@@ -10,9 +11,8 @@ import { mesAntes, NOMES_MES } from "./painelDeVendas";
 export type VendaDoGrafico = {
   status: StatusVenda;
   comissaoValor: number;
-  comissaoRecebidaEm: string | null;
-  comissaoPrevistaEm: string | null;
-  participantes: { corretorId: string; repasseValor: number; repassePagoEm: string | null }[];
+  parcelas: Parcela[];
+  participantes: { corretorId: string; repasseValor: number; repassePagoEm: string | null; formaRecebimento: FormaRecebimento }[];
 };
 
 export type MesRecebido = { mes: string; rotulo: string; valor: number };
@@ -81,16 +81,20 @@ export function quandoEntra(
     else futuro.set(prevista.slice(0, 7), (futuro.get(prevista.slice(0, 7)) ?? 0) + valor);
   };
 
+  // Por parcela (0232): a cancelada pelo distrato some; a mantida segue
+  // devida, distratada ou não.
   for (const v of vendas) {
-    if (v.status !== "ativa") continue;
     if (corretorId === null) {
-      if (!v.comissaoRecebidaEm) somarPorPrevisao(v.comissaoValor, v.comissaoPrevistaEm);
+      for (const pc of v.parcelas) if (!pc.recebidaEm && !pc.canceladaEm) somarPorPrevisao(pc.valor, pc.venceEm);
       continue;
     }
     for (const p of v.participantes) {
-      if (p.corretorId !== corretorId || p.repassePagoEm) continue;
-      if (v.comissaoRecebidaEm) liberado += p.repasseValor;
-      else somarPorPrevisao(p.repasseValor, v.comissaoPrevistaEm);
+      if (p.corretorId !== corretorId || p.repassePagoEm || p.formaRecebimento === "direto") continue;
+      const recebidas = new Set(v.parcelas.filter((pc) => pc.recebidaEm).map((pc) => pc.id));
+      for (const f of fatiasDoRepasse(p.repasseValor, v.parcelas)) {
+        if (recebidas.has(f.parcelaId)) liberado += f.valor;
+        else somarPorPrevisao(f.valor, f.data);
+      }
     }
   }
 

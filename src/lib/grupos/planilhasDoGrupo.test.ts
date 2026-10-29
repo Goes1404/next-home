@@ -62,7 +62,8 @@ const DADOS: DadosDoGrupo = {
       comissao_percentual: 5,
       comissao_valor: "25000",
       status: "ativa",
-      comissao_recebida_em: null,
+      id: "v1",
+      ultimo_recebimento: null,
     },
   ],
 };

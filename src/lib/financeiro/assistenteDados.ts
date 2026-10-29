@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getCaixa, getLancamentosPagos } from "./caixaDados";
+import { getAvulsasDoMes, getCaixa, getLancamentosPagos } from "./caixaDados";
 import { getVendas } from "./dados";
 import { getFiscal } from "./fiscalDados";
 import { getMesesFechados } from "./contadorDados";
@@ -9,6 +9,7 @@ import { mesesAte, resultadoDoMes } from "./resultado";
 import { impostosDoMes, ROTULO_REGIME, semNotaFiscal } from "./fiscal";
 import { alertasDoFinanceiro, type Alerta } from "./alertas";
 import type { DadosDoAssistente } from "./assistenteFinanceiro";
+import { receitaBaseDoMes } from "./receitaBase";
 import { centavos } from "./venda";
 
 /**
@@ -27,11 +28,12 @@ export async function lerFinanceiroDoDono(hoje: string): Promise<LeituraDoFinanc
   const meses = mesesAte(mesAtual, 6);
   const desde = `${meses[0]}-01`;
 
-  const [caixa, pagos, leituraVendas, fechados] = await Promise.all([
+  const [caixa, pagos, leituraVendas, fechados, avulsas] = await Promise.all([
     getCaixa(hoje),
     getLancamentosPagos(desde, hoje),
     getVendas(),
     getMesesFechados(),
+    getAvulsasDoMes(mesAtual),
   ]);
   if (!caixa.ok) return caixa;
   if (!pagos.ok) return pagos;
@@ -43,7 +45,6 @@ export async function lerFinanceiroDoDono(hoje: string): Promise<LeituraDoFinanc
 
   const movimentosPagos = movimentosDo(pagos.lancamentos, vendas);
   const resultados = meses.map((m) => resultadoDoMes(movimentosPagos, m));
-  const doMes = resultados[resultados.length - 1];
 
   const vendasFiscais = vendas.map((v) => ({
     id: v.id,
@@ -55,7 +56,7 @@ export async function lerFinanceiroDoDono(hoje: string): Promise<LeituraDoFinanc
     valorVenda: v.valorVenda,
     comissaoValor: v.comissaoValor,
     status: v.status,
-    comissaoRecebidaEm: v.comissaoRecebidaEm,
+    parcelas: v.parcelas,
   }));
   const semNota = fiscal.ok ? semNotaFiscal(vendasFiscais, fiscal.dados) : [];
   const mesesFechados = fechados.ok ? fechados.meses.map((m) => m.mes) : [];
@@ -72,6 +73,13 @@ export async function lerFinanceiroDoDono(hoje: string): Promise<LeituraDoFinanc
     mesesFechados,
     semNota: { quantidade: semNota.length, valor: centavos(semNota.reduce((s, v) => s + v.comissaoValor, 0)) },
     fiscalConferido: fiscal.ok ? fiscal.config.conferidoEm !== null : true,
+    distratosAvisados: vendas
+      .filter((v) => v.status === "ativa" && v.distratoAvisadoEm)
+      .map((v) => ({
+        vendaId: v.id,
+        imovel: [v.imovel, v.unidade].filter(Boolean).join(" · "),
+        avisadoEm: v.distratoAvisadoEm as string,
+      })),
   });
 
   return {
@@ -83,7 +91,10 @@ export async function lerFinanceiroDoDono(hoje: string): Promise<LeituraDoFinanc
       alertas,
       resultados,
       proximos: [...atrasados, ...proximosPendentes(movimentos, hoje, 30), ...semData],
-      impostosDoMes: fiscal.ok ? impostosDoMes(doMes.receitaCorretagem, fiscal.config) : [],
+      // A mesma base da tela Fiscal: pelo regime de apuração (0232), não o caixa.
+      impostosDoMes: fiscal.ok
+        ? impostosDoMes(receitaBaseDoMes(vendas, avulsas, mesAtual, fiscal.config.regimeApuracao).total, fiscal.config)
+        : [],
       regime: fiscal.ok ? ROTULO_REGIME[fiscal.config.regime] : "regime não configurado",
       mesesFechados,
     },

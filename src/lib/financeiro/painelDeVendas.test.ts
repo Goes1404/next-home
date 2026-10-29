@@ -1,17 +1,34 @@
 import { describe, expect, it } from "vitest";
 import { montarPainelDeVendas, reaisCurto, type VendaDoPainel } from "./painelDeVendas";
+import type { Parcela } from "./parcelas";
+
+/** A comissão inteira numa parcela só (o caso de antes da 0232); distratada sem recebimento = cancelada, como na migração. */
+function parcelaUnica(valor: number, recebidaEm: string | null, previstaEm: string | null, distratada: boolean): Parcela[] {
+  return [
+    {
+      id: "p1",
+      numero: 1,
+      valor,
+      pagador: "construtora",
+      venceEm: previstaEm,
+      recebidaEm,
+      canceladaEm: distratada && !recebidaEm ? "2026-01-01" : null,
+    },
+  ];
+}
 
 const EU = "eu";
 const OUTRO = "outro";
 
-function venda(p: Partial<VendaDoPainel> & { dataVenda: string }): VendaDoPainel {
+function venda({ recebidaEm = null, previstaEm = null, ...p }: Partial<VendaDoPainel> & { dataVenda: string; recebidaEm?: string | null; previstaEm?: string | null }): VendaDoPainel {
+  const comissaoValor = p.comissaoValor ?? 20000;
   return {
     valorVenda: 400000,
-    comissaoValor: 20000,
+    comissaoValor,
     status: "ativa",
-    comissaoRecebidaEm: null,
+    parcelas: parcelaUnica(comissaoValor, recebidaEm, previstaEm, p.status === "distratada"),
     imovel: "Joy",
-    participantes: [{ corretorId: EU, partePercentual: 100, repasseValor: 8000, repassePagoEm: null }],
+    participantes: [{ corretorId: EU, partePercentual: 100, repasseValor: 8000, repassePagoEm: null, formaRecebimento: "repasse" }],
     ...p,
   };
 }
@@ -25,8 +42,8 @@ describe("montarPainelDeVendas", () => {
         venda({
           dataVenda: "2026-10-02",
           participantes: [
-            { corretorId: EU, partePercentual: 50, repasseValor: 4000, repassePagoEm: null },
-            { corretorId: OUTRO, partePercentual: 50, repasseValor: 4000, repassePagoEm: null },
+            { corretorId: EU, partePercentual: 50, repasseValor: 4000, repassePagoEm: null, formaRecebimento: "repasse" },
+            { corretorId: OUTRO, partePercentual: 50, repasseValor: 4000, repassePagoEm: null, formaRecebimento: "repasse" },
           ],
         }),
       ],
@@ -38,7 +55,7 @@ describe("montarPainelDeVendas", () => {
   });
 
   it("gestor vê a venda inteira e a comissão da imobiliária", () => {
-    const p = montarPainelDeVendas([venda({ dataVenda: "2026-10-02", comissaoRecebidaEm: "2026-10-05" })], {
+    const p = montarPainelDeVendas([venda({ dataVenda: "2026-10-02", recebidaEm: "2026-10-05" })], {
       corretorId: null,
       hoje,
     });
@@ -51,10 +68,10 @@ describe("montarPainelDeVendas", () => {
       [
         venda({
           dataVenda: "2026-09-10",
-          comissaoRecebidaEm: "2026-09-20",
-          participantes: [{ corretorId: EU, partePercentual: 100, repasseValor: 8000, repassePagoEm: "2026-09-25" }],
+          recebidaEm: "2026-09-20",
+          participantes: [{ corretorId: EU, partePercentual: 100, repasseValor: 8000, repassePagoEm: "2026-09-25", formaRecebimento: "repasse" }],
         }),
-        venda({ dataVenda: "2026-09-12", comissaoRecebidaEm: "2026-09-30" }),
+        venda({ dataVenda: "2026-09-12", recebidaEm: "2026-09-30" }),
         venda({ dataVenda: "2026-10-01" }),
       ],
       { corretorId: EU, hoje },
@@ -104,7 +121,7 @@ describe("montarPainelDeVendas", () => {
 
   it("venda em que o corretor não participa não conta para ele", () => {
     const p = montarPainelDeVendas(
-      [venda({ dataVenda: "2026-10-02", participantes: [{ corretorId: OUTRO, partePercentual: 100, repasseValor: 8000, repassePagoEm: null }] })],
+      [venda({ dataVenda: "2026-10-02", participantes: [{ corretorId: OUTRO, partePercentual: 100, repasseValor: 8000, repassePagoEm: null, formaRecebimento: "repasse" }] })],
       { corretorId: EU, hoje },
     );
     expect(p.vendasMes).toBe(0);

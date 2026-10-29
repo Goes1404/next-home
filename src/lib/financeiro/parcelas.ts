@@ -115,3 +115,40 @@ export function fatiasDoRepasse(repasseValor: number, parcelas: Parcela[]): { pa
     return { parcelaId: p.id, valor, data: p.recebidaEm ?? p.venceEm };
   });
 }
+
+export type EstadosDaComissao = { recebida: number; liberada: number; aguardando: number };
+
+/**
+ * A comissão de uma venda em três estados, na régua de quem olha.
+ * Gestor (`corretorId` null): o que a imobiliária já recebeu e o que está em
+ * aberto (sem "liberado": ou entrou, ou não). Corretor: o repasse pago, o
+ * liberado (proporcional ao que entrou) e o que ainda depende de quem paga.
+ * Quem recebe `direto` não tem nada a receber da imobiliária.
+ */
+export function comissaoEmEstados(
+  v: {
+    parcelas: Parcela[];
+    participantes: { corretorId: string; repasseValor: number; repassePagoEm: string | null; formaRecebimento: FormaRecebimento }[];
+  },
+  corretorId: string | null,
+): EstadosDaComissao {
+  if (corretorId === null) {
+    return { recebida: somaDas(v.parcelas, "recebidas"), liberada: 0, aguardando: somaDas(v.parcelas, "abertas") };
+  }
+  let recebida = 0;
+  let liberada = 0;
+  let aguardando = 0;
+  for (const p of v.participantes) {
+    if (p.corretorId !== corretorId) continue;
+    if (p.repassePagoEm) {
+      recebida += p.repasseValor;
+      continue;
+    }
+    if (p.formaRecebimento === "direto") continue;
+    const devido = repasseDevido(p.repasseValor, v.parcelas);
+    const livre = Math.min(devido, repasseLiberado(p.repasseValor, v.parcelas));
+    liberada += livre;
+    aguardando += devido - livre;
+  }
+  return { recebida: centavos(recebida), liberada: centavos(liberada), aguardando: centavos(aguardando) };
+}

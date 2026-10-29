@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Categoria, LancamentoDoCaixa, SaldoInformado, TipoMovimento } from "./caixa";
+import type { AvulsaParaReceita } from "./receitaBase";
 
 /**
  * Leitura do caixa (0166) pelo cliente de SESSÃO: a RLS só deixa o gestor
@@ -37,7 +38,7 @@ export async function getCaixa(hoje: string): Promise<LeituraDoCaixa> {
   const inicioDoMes = `${hoje.slice(0, 7)}-01`;
   const desde = saldo && saldo.informadoEm < inicioDoMes ? saldo.informadoEm : inicioDoMes;
 
-  const colunas = "id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id";
+  const colunas = "id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id, competencia";
   const [pendentes, pagos] = await Promise.all([
     supabase.from("caixa_lancamentos").select(colunas).is("pago_em", null).order("vencimento").limit(1000),
     supabase.from("caixa_lancamentos").select(colunas).gte("pago_em", desde).order("pago_em").limit(1000),
@@ -56,6 +57,7 @@ export async function getCaixa(hoje: string): Promise<LeituraDoCaixa> {
     vencimento: l.vencimento,
     pagoEm: l.pago_em,
     recorrenciaId: l.recorrencia_id,
+    competencia: l.competencia,
   }));
 
   return { ok: true, lancamentos, saldo };
@@ -69,7 +71,7 @@ export async function getLancamentosPagos(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("caixa_lancamentos")
-    .select("id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id")
+    .select("id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id, competencia")
     .gte("pago_em", desde)
     .lte("pago_em", ate)
     .order("pago_em")
@@ -90,6 +92,34 @@ export async function getLancamentosPagos(
       vencimento: l.vencimento,
       pagoEm: l.pago_em,
       recorrenciaId: l.recorrencia_id,
+      competencia: l.competencia,
     })),
   };
+}
+
+/**
+ * As comissões avulsas que podem entrar na receita-base do imposto do mês
+ * (0232): as de competência no mês (regime de competência) e as pagas no mês
+ * (regime de caixa). `receitaBaseDoMes` escolhe pelo regime.
+ */
+export async function getAvulsasDoMes(mes: string): Promise<AvulsaParaReceita[]> {
+  const supabase = await createClient();
+  const inicio = `${mes}-01`;
+  const [a, m] = mes.split("-").map(Number);
+  const fim = new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("caixa_lancamentos")
+    .select("valor, vencimento, pago_em, competencia")
+    .eq("categoria", "comissao_avulsa")
+    .or(`competencia.eq.${inicio},and(pago_em.gte.${inicio},pago_em.lte.${fim})`)
+    .limit(1000);
+  if (error) {
+    if (error.code !== "PGRST205" && error.code !== "42P01") console.error("[fiscal] falha ao ler comissões avulsas:", error.message);
+    return [];
+  }
+  return (data ?? []).map((l) => ({
+    valor: Number(l.valor),
+    competencia: l.competencia ?? `${l.vencimento.slice(0, 7)}-01`,
+    pagoEm: l.pago_em,
+  }));
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_PARCELAS,
+  comissaoEmEstados,
   dividirEmParcelas,
   fatiasDoRepasse,
   repasseDevido,
@@ -117,5 +118,32 @@ describe("repasse proporcional às parcelas", () => {
     const f = fatiasDoRepasse(1000, abertas);
     expect(f).toHaveLength(3);
     expect(Math.round(f.reduce((s, x) => s + x.valor, 0) * 100)).toBe(100000);
+  });
+});
+
+describe("comissaoEmEstados", () => {
+  const ps = [
+    parcela({ id: "a", valor: 6000, recebidaEm: "2026-11-10" }),
+    parcela({ id: "b", numero: 2, valor: 4000 }),
+  ];
+  const venda = (forma: "repasse" | "direto", pagoEm: string | null = null) => ({
+    parcelas: ps,
+    participantes: [{ corretorId: "c1", repasseValor: 1000, repassePagoEm: pagoEm, formaRecebimento: forma }],
+  });
+
+  it("gestor: recebido e em aberto, sem liberado", () => {
+    expect(comissaoEmEstados(venda("repasse"), null)).toEqual({ recebida: 6000, liberada: 0, aguardando: 4000 });
+  });
+
+  it("corretor: liberado na proporção do que entrou", () => {
+    expect(comissaoEmEstados(venda("repasse"), "c1")).toEqual({ recebida: 0, liberada: 600, aguardando: 400 });
+  });
+
+  it("corretor com repasse pago: tudo recebido", () => {
+    expect(comissaoEmEstados(venda("repasse", "2026-11-12"), "c1")).toEqual({ recebida: 1000, liberada: 0, aguardando: 0 });
+  });
+
+  it("corretor que recebe direto: a imobiliária não deve nada a ele", () => {
+    expect(comissaoEmEstados(venda("direto"), "c1")).toEqual({ recebida: 0, liberada: 0, aguardando: 0 });
   });
 });

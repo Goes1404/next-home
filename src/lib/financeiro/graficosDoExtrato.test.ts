@@ -1,16 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { quandoEntra, recebidoPorMes, type VendaDoGrafico } from "./graficosDoExtrato";
+import type { Parcela } from "./parcelas";
+
+/** A comissão inteira numa parcela só (o caso de antes da 0232); distratada sem recebimento = cancelada, como na migração. */
+function parcelaUnica(valor: number, recebidaEm: string | null, previstaEm: string | null, distratada: boolean): Parcela[] {
+  return [
+    {
+      id: "p1",
+      numero: 1,
+      valor,
+      pagador: "construtora",
+      venceEm: previstaEm,
+      recebidaEm,
+      canceladaEm: distratada && !recebidaEm ? "2026-01-01" : null,
+    },
+  ];
+}
 
 const EU = "eu";
 const hoje = "2026-10-07";
 
-function venda(p: Partial<VendaDoGrafico> & { repasse?: number; pagoEm?: string | null; quem?: string }): VendaDoGrafico {
+function venda({
+  recebidaEm = null,
+  previstaEm = null,
+  repasse,
+  pagoEm,
+  quem,
+  ...p
+}: Partial<VendaDoGrafico> & { repasse?: number; pagoEm?: string | null; quem?: string; recebidaEm?: string | null; previstaEm?: string | null }): VendaDoGrafico {
+  const comissaoValor = p.comissaoValor ?? 20000;
   return {
     status: "ativa",
-    comissaoValor: 20000,
-    comissaoRecebidaEm: null,
-    comissaoPrevistaEm: null,
-    participantes: [{ corretorId: p.quem ?? EU, repasseValor: p.repasse ?? 8000, repassePagoEm: p.pagoEm ?? null }],
+    comissaoValor,
+    parcelas: parcelaUnica(comissaoValor, recebidaEm, previstaEm, p.status === "distratada"),
+    participantes: [{ corretorId: quem ?? EU, repasseValor: repasse ?? 8000, repassePagoEm: pagoEm ?? null, formaRecebimento: "repasse" }],
     ...p,
   };
 }
@@ -34,11 +57,11 @@ describe("quandoEntra", () => {
     const f = quandoEntra(
       EU,
       [
-        venda({ comissaoRecebidaEm: "2026-10-01" }),
-        venda({ comissaoPrevistaEm: "2026-09-30" }),
-        venda({ comissaoPrevistaEm: "2026-10-20" }),
-        venda({ comissaoPrevistaEm: "2026-11-15", repasse: 3000 }),
-        venda({ comissaoPrevistaEm: "2027-03-01", repasse: 1000 }),
+        venda({ recebidaEm: "2026-10-01" }),
+        venda({ previstaEm: "2026-09-30" }),
+        venda({ previstaEm: "2026-10-20" }),
+        venda({ previstaEm: "2026-11-15", repasse: 3000 }),
+        venda({ previstaEm: "2027-03-01", repasse: 1000 }),
         venda({}),
       ],
       hoje,
@@ -59,7 +82,7 @@ describe("quandoEntra", () => {
   });
 
   it("para a imobiliária, a comissão inteira e sem faixa de liberado", () => {
-    const f = quandoEntra(null, [venda({ comissaoRecebidaEm: "2026-10-01" }), venda({ comissaoPrevistaEm: "2026-12-05" })], hoje);
+    const f = quandoEntra(null, [venda({ recebidaEm: "2026-10-01" }), venda({ previstaEm: "2026-12-05" })], hoje);
     expect(f).toEqual([{ chave: "2026-12", rotulo: "Em dez", valor: 20000, tipo: "futuro" }]);
   });
 });

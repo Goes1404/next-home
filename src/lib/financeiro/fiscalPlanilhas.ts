@@ -3,6 +3,7 @@ import {
   ROTULO_REGIME,
   faltasDaDimob,
   formatarDocumento,
+  ultimoRecebimento,
   type ConfigFiscal,
   type DadosFiscaisDaVenda,
   type LinhaDeImposto,
@@ -74,7 +75,7 @@ export function planilhaDeNotas(vendas: VendaParaFiscal[], fiscal: Map<string, D
         f?.vendedorNome ?? v.construtora ?? "",
         formatarDocumento(f?.vendedorDocumento ?? null),
         v.comissaoValor,
-        v.comissaoRecebidaEm ?? "",
+        ultimoRecebimento(v) ?? "",
         f?.notaNumero ?? "",
         f?.notaEmitidaEm ?? "",
       ];

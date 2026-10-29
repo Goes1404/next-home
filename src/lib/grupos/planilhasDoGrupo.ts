@@ -48,6 +48,7 @@ export type CorretorDaExportacao = {
 };
 
 export type VendaDaExportacao = {
+  id: string;
   data_venda: string | null;
   lead_id: string | null;
   corretor_id: string | null;
@@ -58,7 +59,8 @@ export type VendaDaExportacao = {
   comissao_percentual: number | string | null;
   comissao_valor: number | string | null;
   status: string;
-  comissao_recebida_em: string | null;
+  /** A parcela da comissão recebida mais recente (0232), montada na leitura. */
+  ultimo_recebimento: string | null;
 };
 
 export type DadosDoGrupo = {
@@ -73,7 +75,7 @@ export const COLUNAS_DO_IMOVEL =
   "id, nome, slug, status, cidade, bairro, endereco, construtora, preco_a_partir, entrega_prevista, publicado, created_at";
 export const COLUNAS_DO_CORRETOR = "id, nome, creci, papel, ativo, created_at";
 export const COLUNAS_DA_VENDA =
-  "data_venda, lead_id, corretor_id, empreendimento_id, imovel_descricao, unidade, valor_venda, comissao_percentual, comissao_valor, status, comissao_recebida_em";
+  "data_venda, lead_id, corretor_id, empreendimento_id, imovel_descricao, unidade, valor_venda, comissao_percentual, comissao_valor, status, id";
 
 const DATA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" });
 
@@ -174,7 +176,7 @@ function abaDeVendas(
       { titulo: "Comissão (%)", largura: 12 },
       { titulo: "Comissão", largura: 14 },
       { titulo: "Situação", largura: 12 },
-      { titulo: "Comissão recebida em", largura: 14 },
+      { titulo: "Última parcela recebida em", largura: 14 },
     ],
     linhas: vendas.map((v) => [
       data(v.data_venda),
@@ -186,7 +188,7 @@ function abaDeVendas(
       numero(v.comissao_percentual),
       numero(v.comissao_valor),
       v.status === "distratada" ? "Distratada" : "Ativa",
-      data(v.comissao_recebida_em),
+      data(v.ultimo_recebimento),
     ]),
   };
 }

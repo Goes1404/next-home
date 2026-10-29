@@ -32,12 +32,18 @@
 -- Ordem importa: as parcelas são criadas a partir das colunas antigas ANTES
 -- de elas saírem, e as policies que liam `comissao_recebida_em` são
 -- recriadas antes do `drop column`.
+--
+-- Uma transação só, com teto de espera por trava (migracoesAtomicas.test.ts):
+-- vendas e venda_participantes ficam em ACCESS EXCLUSIVE com o painel no ar.
+
+begin;
+set local lock_timeout = '5s';
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- 4. Parâmetros fiscais nacionais
 -- ─────────────────────────────────────────────────────────────────────────
 
-create table public.parametros_fiscais (
+create table if not exists public.parametros_fiscais (
   chave          text not null check (chave in (
                    'irrf_faixas', 'irrf_desconto_simplificado', 'irrf_redutor',
                    'inss_teto', 'inss_autonomo', 'inss_patronal')),
@@ -52,6 +58,7 @@ comment on table public.parametros_fiscais is
   'Parâmetros fiscais nacionais com vigência e fonte (0232). Da plataforma: todo grupo lê, ninguém escreve pela sessão.';
 
 alter table public.parametros_fiscais enable row level security;
+drop policy if exists "parametros_fiscais: todos leem" on public.parametros_fiscais;
 create policy "parametros_fiscais: todos leem"
   on public.parametros_fiscais for select to authenticated
   using (true);
@@ -83,7 +90,7 @@ alter table public.fiscal_config
 -- 1. Parcelas da comissão
 -- ─────────────────────────────────────────────────────────────────────────
 
-create table public.venda_parcelas (
+create table if not exists public.venda_parcelas (
   id            uuid primary key default gen_random_uuid(),
   grupo_id      uuid not null references public.grupos(id) on delete cascade,
   venda_id      uuid not null references public.vendas(id) on delete cascade,
@@ -105,12 +112,13 @@ create table public.venda_parcelas (
 comment on table public.venda_parcelas is
   'Parcelas da comissão que a imobiliária recebe (0232): vencimento, recebimento (gestor) e cancelamento (distrato).';
 
-create index venda_parcelas_venda_idx on public.venda_parcelas (venda_id);
-create index venda_parcelas_abertas_idx on public.venda_parcelas (grupo_id, vence_em)
+create index if not exists venda_parcelas_venda_idx on public.venda_parcelas (venda_id);
+create index if not exists venda_parcelas_abertas_idx on public.venda_parcelas (grupo_id, vence_em)
   where recebida_em is null and cancelada_em is null;
 
 alter table public.venda_parcelas enable row level security;
 
+drop policy if exists isolamento_por_grupo on public.venda_parcelas;
 create policy isolamento_por_grupo on public.venda_parcelas as restrictive for all to authenticated
   using (grupo_id = (select public.grupo_atual()))
   with check (grupo_id = (select public.grupo_atual()));
@@ -163,6 +171,7 @@ update public.vendas
    set distrato_motivo = 'Registrado antes da 0232', distrato_parcelas = 'cancelar'
  where status = 'distratada';
 
+alter table public.vendas drop constraint if exists vendas_distrato_decidido;
 alter table public.vendas
   add constraint vendas_distrato_decidido
   check (status = 'ativa' or (distrato_motivo is not null and distrato_parcelas is not null));
@@ -266,6 +275,7 @@ create policy "venda_participantes: registrador ou gestor excluem"
 
 -- As parcelas: quem vê a venda vê as parcelas; quem pode editar a venda
 -- escreve as parcelas (vencimento e valor, nunca recebida/cancelada).
+drop policy if exists "venda_parcelas: quem ve a venda ve as parcelas" on public.venda_parcelas;
 create policy "venda_parcelas: quem ve a venda ve as parcelas"
   on public.venda_parcelas for select to authenticated
   using (
@@ -277,6 +287,7 @@ create policy "venda_parcelas: quem ve a venda ve as parcelas"
     )
   );
 
+drop policy if exists "venda_parcelas: registrador ou gestor escrevem" on public.venda_parcelas;
 create policy "venda_parcelas: registrador ou gestor escrevem"
   on public.venda_parcelas for insert to authenticated
   with check (
@@ -290,6 +301,7 @@ create policy "venda_parcelas: registrador ou gestor escrevem"
     )
   );
 
+drop policy if exists "venda_parcelas: registrador ou gestor atualizam" on public.venda_parcelas;
 create policy "venda_parcelas: registrador ou gestor atualizam"
   on public.venda_parcelas for update to authenticated
   using (
@@ -303,6 +315,7 @@ create policy "venda_parcelas: registrador ou gestor atualizam"
     )
   );
 
+drop policy if exists "venda_parcelas: registrador ou gestor excluem" on public.venda_parcelas;
 create policy "venda_parcelas: registrador ou gestor excluem"
   on public.venda_parcelas for delete to authenticated
   using (
@@ -768,6 +781,8 @@ grant execute on function public.salvar_venda(uuid, jsonb, jsonb, jsonb) to auth
 
 comment on column public.venda_participantes.forma_recebimento is
   'repasse: a imobiliária recebe e repassa (comissão inteira é receita dela). direto: o corretor recebe a parte dele do pagador. Só o gestor marca direto (0232).';
+
+commit;
 
 -- Reversão (perde parcelas além da 1ª e as marcações de direto/distrato):
 --   alter table public.vendas add column comissao_prevista_em date, add column comissao_recebida_em date;

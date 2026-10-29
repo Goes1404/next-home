@@ -1,3 +1,4 @@
+import { comissaoEmEstados } from "./parcelas";
 import { centavos, vgvCreditado } from "./venda";
 import { mesAntes, NOMES_MES, type VendaDoPainel } from "./painelDeVendas";
 
@@ -86,16 +87,10 @@ export function indicadoresDosMeses(
   const vgv = centavos(lista.reduce((s, v) => s + vgvCreditado(v, parteDe(v, corretorId)), 0));
   const comissao = { recebida: 0, liberada: 0, aguardando: 0, total: 0 };
   for (const v of lista) {
-    if (corretorId === null) {
-      if (v.comissaoRecebidaEm) comissao.recebida += v.comissaoValor;
-      else comissao.aguardando += v.comissaoValor;
-      continue;
-    }
-    for (const p of v.participantes.filter((x) => x.corretorId === corretorId)) {
-      if (p.repassePagoEm) comissao.recebida += p.repasseValor;
-      else if (v.comissaoRecebidaEm) comissao.liberada += p.repasseValor;
-      else comissao.aguardando += p.repasseValor;
-    }
+    const e = comissaoEmEstados(v, corretorId);
+    comissao.recebida += e.recebida;
+    comissao.liberada += e.liberada;
+    comissao.aguardando += e.aguardando;
   }
   comissao.recebida = centavos(comissao.recebida);
   comissao.liberada = centavos(comissao.liberada);
@@ -188,7 +183,7 @@ export function paraOIndicador(vendas: VendaDoIndicador[]): VendaDoIndicador[] {
     valorVenda: v.valorVenda,
     comissaoValor: v.comissaoValor,
     status: v.status,
-    comissaoRecebidaEm: v.comissaoRecebidaEm,
+    parcelas: v.parcelas,
     imovel: v.imovel,
     participantes: v.participantes.map((p) => ({
       corretorId: p.corretorId,
@@ -196,6 +191,7 @@ export function paraOIndicador(vendas: VendaDoIndicador[]): VendaDoIndicador[] {
       partePercentual: p.partePercentual,
       repasseValor: p.repasseValor,
       repassePagoEm: p.repassePagoEm,
+      formaRecebimento: p.formaRecebimento,
     })),
   }));
 }

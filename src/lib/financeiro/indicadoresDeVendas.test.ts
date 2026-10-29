@@ -9,26 +9,43 @@ import {
   variacaoDe,
   type VendaDoIndicador,
 } from "./indicadoresDeVendas";
+import type { Parcela } from "./parcelas";
+
+/** A comissão inteira numa parcela só (o caso de antes da 0232); distratada sem recebimento = cancelada, como na migração. */
+function parcelaUnica(valor: number, recebidaEm: string | null, previstaEm: string | null, distratada: boolean): Parcela[] {
+  return [
+    {
+      id: "p1",
+      numero: 1,
+      valor,
+      pagador: "construtora",
+      venceEm: previstaEm,
+      recebidaEm,
+      canceladaEm: distratada && !recebidaEm ? "2026-01-01" : null,
+    },
+  ];
+}
 
 const EU = "eu";
 const OUTRO = "outro";
 const hoje = "2026-10-07";
 
-function venda(p: Partial<VendaDoIndicador> & { dataVenda: string }): VendaDoIndicador {
+function venda({ recebidaEm = null, previstaEm = null, ...p }: Partial<VendaDoIndicador> & { dataVenda: string; recebidaEm?: string | null; previstaEm?: string | null }): VendaDoIndicador {
+  const comissaoValor = p.comissaoValor ?? 20000;
   return {
     valorVenda: 400000,
-    comissaoValor: 20000,
+    comissaoValor,
     status: "ativa",
-    comissaoRecebidaEm: null,
+    parcelas: parcelaUnica(comissaoValor, recebidaEm, previstaEm, p.status === "distratada"),
     imovel: "Joy",
-    participantes: [{ corretorId: EU, nome: "Eu", partePercentual: 100, repasseValor: 8000, repassePagoEm: null }],
+    participantes: [{ corretorId: EU, nome: "Eu", partePercentual: 100, repasseValor: 8000, repassePagoEm: null, formaRecebimento: "repasse" }],
     ...p,
   };
 }
 
-const meio = [
-  { corretorId: EU, nome: "Eu", partePercentual: 50, repasseValor: 4000, repassePagoEm: null },
-  { corretorId: OUTRO, nome: "Outro", partePercentual: 50, repasseValor: 4000, repassePagoEm: "2026-10-05" },
+const meio: VendaDoIndicador["participantes"] = [
+  { corretorId: EU, nome: "Eu", partePercentual: 50, repasseValor: 4000, repassePagoEm: null, formaRecebimento: "repasse" },
+  { corretorId: OUTRO, nome: "Outro", partePercentual: 50, repasseValor: 4000, repassePagoEm: "2026-10-05", formaRecebimento: "repasse" },
 ];
 
 describe("janelaDeMeses", () => {
@@ -53,7 +70,7 @@ describe("janelaDeMeses", () => {
 describe("indicadoresDosMeses", () => {
   const vendas = [
     venda({ dataVenda: "2026-10-02", participantes: meio }),
-    venda({ dataVenda: "2026-09-10", valorVenda: 600000, comissaoRecebidaEm: "2026-09-30" }),
+    venda({ dataVenda: "2026-09-10", valorVenda: 600000, recebidaEm: "2026-09-30" }),
     venda({ dataVenda: "2026-10-03", status: "distratada" }),
   ];
 

@@ -2,6 +2,7 @@ import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import type { FormaRecebimento, Pagador, Parcela } from "./parcelas";
 import { vgvCreditado, type StatusVenda } from "./venda";
 
 /**
@@ -23,6 +24,7 @@ export type ParticipanteNaTela = {
   repassePercentual: number | null;
   repasseValor: number;
   repassePagoEm: string | null;
+  formaRecebimento: FormaRecebimento;
 };
 
 export type VendaNaTela = {
@@ -42,9 +44,13 @@ export type VendaNaTela = {
   comissaoValor: number;
   status: StatusVenda;
   distratadaEm: string | null;
-  comissaoRecebidaEm: string | null;
-  /** Quando a construtora deve pagar (0166). Previsão, não fato. */
-  comissaoPrevistaEm: string | null;
+  distratoMotivo: string | null;
+  distratoParcelas: "manter" | "cancelar" | null;
+  /** Um corretor avisou o distrato e o gestor ainda não decidiu (0232). */
+  distratoAvisadoEm: string | null;
+  distratoAviso: string | null;
+  /** O que a imobiliária recebe, parcela por parcela, em ordem (0232). */
+  parcelas: Parcela[];
   observacao: string | null;
   participantes: ParticipanteNaTela[];
 };
@@ -55,7 +61,7 @@ export type LeituraDeVendas =
   | { ok: false; motivo: "sem_tabela" | "erro" };
 
 const COLUNAS =
-  "id, corretor_id, lead_id, empreendimento_id, imovel_descricao, unidade, data_venda, valor_venda, comissao_percentual, comissao_valor, status, distratada_em, comissao_recebida_em, comissao_prevista_em, observacao";
+  "id, corretor_id, lead_id, empreendimento_id, imovel_descricao, unidade, data_venda, valor_venda, comissao_percentual, comissao_valor, status, distratada_em, distrato_motivo, distrato_parcelas, distrato_avisado_em, distrato_aviso, observacao";
 
 type LinhaVenda = {
   id: string;
@@ -70,8 +76,10 @@ type LinhaVenda = {
   comissao_valor: number | string;
   status: StatusVenda;
   distratada_em: string | null;
-  comissao_recebida_em: string | null;
-  comissao_prevista_em: string | null;
+  distrato_motivo: string | null;
+  distrato_parcelas: "manter" | "cancelar" | null;
+  distrato_avisado_em: string | null;
+  distrato_aviso: string | null;
   observacao: string | null;
 };
 
@@ -82,6 +90,18 @@ type LinhaParticipante = {
   repasse_percentual: number | string | null;
   repasse_valor: number | string;
   repasse_pago_em: string | null;
+  forma_recebimento: FormaRecebimento;
+};
+
+type LinhaParcela = {
+  id: string;
+  venda_id: string;
+  numero: number;
+  valor: number | string;
+  pagador: Pagador;
+  vence_em: string | null;
+  recebida_em: string | null;
+  cancelada_em: string | null;
 };
 
 const num = (v: number | string | null): number | null => (v === null ? null : Number(v));
@@ -97,11 +117,19 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
   const supabase = await createClient();
   const ids = linhas.map((l) => l.id);
 
-  const { data: parts } = await supabase
-    .from("venda_participantes")
-    .select("venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor, repasse_pago_em")
-    .in("venda_id", ids);
+  const [{ data: parts }, { data: pcs }] = await Promise.all([
+    supabase
+      .from("venda_participantes")
+      .select("venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor, repasse_pago_em, forma_recebimento")
+      .in("venda_id", ids),
+    supabase
+      .from("venda_parcelas")
+      .select("id, venda_id, numero, valor, pagador, vence_em, recebida_em, cancelada_em")
+      .in("venda_id", ids)
+      .order("numero"),
+  ]);
   const participantes = (parts ?? []) as LinhaParticipante[];
+  const parcelas = (pcs ?? []) as LinhaParcela[];
 
   const idsCorretores = [...new Set([...linhas.map((l) => l.corretor_id), ...participantes.map((p) => p.corretor_id)])];
   const idsImoveis = [...new Set(linhas.map((l) => l.empreendimento_id).filter((v): v is string => Boolean(v)))];
@@ -139,8 +167,21 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
     comissaoValor: Number(l.comissao_valor),
     status: l.status,
     distratadaEm: l.distratada_em,
-    comissaoRecebidaEm: l.comissao_recebida_em,
-    comissaoPrevistaEm: l.comissao_prevista_em ?? null,
+    distratoMotivo: l.distrato_motivo,
+    distratoParcelas: l.distrato_parcelas,
+    distratoAvisadoEm: l.distrato_avisado_em,
+    distratoAviso: l.distrato_aviso,
+    parcelas: parcelas
+      .filter((pc) => pc.venda_id === l.id)
+      .map((pc) => ({
+        id: pc.id,
+        numero: Number(pc.numero),
+        valor: Number(pc.valor),
+        pagador: pc.pagador,
+        venceEm: pc.vence_em,
+        recebidaEm: pc.recebida_em,
+        canceladaEm: pc.cancelada_em,
+      })),
     observacao: l.observacao,
     participantes: participantes
       .filter((p) => p.venda_id === l.id)
@@ -151,6 +192,7 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
         repassePercentual: num(p.repasse_percentual),
         repasseValor: Number(p.repasse_valor),
         repassePagoEm: p.repasse_pago_em,
+        formaRecebimento: p.forma_recebimento ?? "repasse",
       }))
       .sort((a, b) => b.partePercentual - a.partePercentual),
   }));

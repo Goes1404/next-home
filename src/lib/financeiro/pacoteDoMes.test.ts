@@ -45,7 +45,9 @@ function entrada(): EntradaDoPacote {
         valorVenda: 400000,
         comissaoValor: 16000,
         status: "ativa",
-        comissaoRecebidaEm: "2026-09-05",
+        parcelas: [
+          { id: "p1", numero: 1, valor: 16000, pagador: "construtora", venceEm: null, recebidaEm: "2026-09-05", canceladaEm: null },
+        ],
       },
     ],
     dados: new Map(),

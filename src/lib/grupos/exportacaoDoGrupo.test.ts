@@ -17,7 +17,8 @@ const codigo = readFileSync(join(process.cwd(), "src/lib/grupos/exportacaoDoGrup
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/\/\/.*$/gm, "");
 
-const PERMITIDAS = ["leads", "empreendimentos", "corretores", "vendas"];
+// `venda_parcelas` (0232): só a data da última parcela recebida, para a aba de vendas.
+const PERMITIDAS = ["leads", "empreendimentos", "corretores", "vendas", "venda_parcelas"];
 
 /** Cada `.from("x")` até o `.range(` que fecha a consulta. */
 function consultas(): { tabela: string; cadeia: string }[] {
@@ -32,7 +33,7 @@ function consultas(): { tabela: string; cadeia: string }[] {
 }
 
 describe("exportação do grupo", () => {
-  it("lê só leads, imóveis, corretores e vendas", () => {
+  it("lê só leads, imóveis, corretores e vendas (com as parcelas)", () => {
     const lidas = consultas().map((c) => c.tabela);
     expect(lidas.length).toBeGreaterThanOrEqual(4);
     expect(lidas.filter((t) => !PERMITIDAS.includes(t))).toEqual([]);

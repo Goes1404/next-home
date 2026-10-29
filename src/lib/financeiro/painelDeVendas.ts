@@ -1,3 +1,4 @@
+import { comissaoEmEstados, type FormaRecebimento, type Parcela } from "./parcelas";
 import { centavos, vgvCreditado, type StatusVenda } from "./venda";
 
 /**
@@ -14,13 +15,14 @@ export type VendaDoPainel = {
   valorVenda: number;
   comissaoValor: number;
   status: StatusVenda;
-  comissaoRecebidaEm: string | null;
+  parcelas: Parcela[];
   imovel: string;
   participantes: {
     corretorId: string;
     partePercentual: number;
     repasseValor: number;
     repassePagoEm: string | null;
+    formaRecebimento: FormaRecebimento;
   }[];
 };
 
@@ -98,16 +100,10 @@ export function montarPainelDeVendas(
 
   const comissao = { recebida: 0, liberada: 0, aguardando: 0 };
   for (const v of contadas) {
-    if (corretorId === null) {
-      if (v.comissaoRecebidaEm) comissao.recebida += v.comissaoValor;
-      else comissao.aguardando += v.comissaoValor;
-      continue;
-    }
-    for (const p of v.participantes.filter((x) => x.corretorId === corretorId)) {
-      if (p.repassePagoEm) comissao.recebida += p.repasseValor;
-      else if (v.comissaoRecebidaEm) comissao.liberada += p.repasseValor;
-      else comissao.aguardando += p.repasseValor;
-    }
+    const e = comissaoEmEstados(v, corretorId);
+    comissao.recebida += e.recebida;
+    comissao.liberada += e.liberada;
+    comissao.aguardando += e.aguardando;
   }
   comissao.recebida = centavos(comissao.recebida);
   comissao.liberada = centavos(comissao.liberada);

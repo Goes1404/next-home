@@ -70,11 +70,29 @@ export async function lerDadosDoGrupo(cliente: Cliente, grupoId: string): Promis
     paginar<CorretorDaExportacao>("corretores", (de, ate) =>
       cliente.from("corretores").select(COLUNAS_DO_CORRETOR).eq("grupo_id", grupoId).order("nome").order("id").range(de, ate),
     ),
-    paginar<VendaDaExportacao>("vendas", (de, ate) =>
+    paginar<Omit<VendaDaExportacao, "ultimo_recebimento">>("vendas", (de, ate) =>
       cliente.from("vendas").select(COLUNAS_DA_VENDA).eq("grupo_id", grupoId).order("data_venda").order("id").range(de, ate),
     ),
   ]);
-  return { leads, imoveis, corretores, vendas };
+  // A data de recebimento mora nas parcelas desde a 0232: a última recebida.
+  const recebidas = await paginar<{ venda_id: string; recebida_em: string }>("venda_parcelas", (de, ate) =>
+    cliente
+      .from("venda_parcelas")
+      .select("venda_id, recebida_em")
+      .eq("grupo_id", grupoId)
+      .not("recebida_em", "is", null)
+      .order("venda_id")
+      .order("numero")
+      .range(de, ate),
+  );
+  const ultimo = new Map<string, string>();
+  for (const p of recebidas) if (p.recebida_em > (ultimo.get(p.venda_id) ?? "")) ultimo.set(p.venda_id, p.recebida_em);
+  return {
+    leads,
+    imoveis,
+    corretores,
+    vendas: vendas.map((v) => ({ ...v, ultimo_recebimento: ultimo.get(v.id) ?? null })),
+  };
 }
 
 /** O .xlsx com as quatro abas. */

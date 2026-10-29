@@ -1,3 +1,4 @@
+import type { Parcela } from "./parcelas";
 import type { ParametrosFiscais } from "./parametrosFiscais";
 import { centavos } from "./venda";
 
@@ -223,8 +224,15 @@ export type VendaParaFiscal = {
   valorVenda: number;
   comissaoValor: number;
   status: "ativa" | "distratada";
-  comissaoRecebidaEm: string | null;
+  parcelas: Parcela[];
 };
+
+/** A parcela recebida mais recente (`null` = nada entrou ainda). */
+export function ultimoRecebimento(v: { parcelas: Parcela[] }): string | null {
+  let ultimo: string | null = null;
+  for (const p of v.parcelas) if (p.recebidaEm && (!ultimo || p.recebidaEm > ultimo)) ultimo = p.recebidaEm;
+  return ultimo;
+}
 
 /** O que falta para a DIMOB de uma venda (lista vazia = completa). */
 export function faltasDaDimob(venda: VendaParaFiscal, f: DadosFiscaisDaVenda | undefined): string[] {
@@ -238,11 +246,14 @@ export function faltasDaDimob(venda: VendaParaFiscal, f: DadosFiscaisDaVenda | u
   return faltas;
 }
 
-/** Comissão que já entrou e ainda não tem nota fiscal registrada. */
+/**
+ * Comissão que já entrou e ainda não tem nota fiscal registrada. Distrato
+ * posterior não desfaz o que entrou: a nota continua devida (0232).
+ */
 export function semNotaFiscal(vendas: VendaParaFiscal[], fiscal: Map<string, DadosFiscaisDaVenda>): VendaParaFiscal[] {
   return vendas
-    .filter((v) => v.status === "ativa" && v.comissaoRecebidaEm !== null && !fiscal.get(v.id)?.notaNumero)
-    .sort((a, b) => (a.comissaoRecebidaEm ?? "").localeCompare(b.comissaoRecebidaEm ?? ""));
+    .filter((v) => ultimoRecebimento(v) !== null && !fiscal.get(v.id)?.notaNumero)
+    .sort((a, b) => (ultimoRecebimento(a) ?? "").localeCompare(ultimoRecebimento(b) ?? ""));
 }
 
 /** Vendas intermediadas no ano (distrato fica de fora: a operação não existiu). */

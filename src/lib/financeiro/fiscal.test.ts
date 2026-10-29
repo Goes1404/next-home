@@ -10,9 +10,11 @@ import {
   problemasDosDadosFiscais,
   semNotaFiscal,
   totalDeImpostos,
+  ultimoRecebimento,
   vendasDoAno,
   type VendaParaFiscal,
 } from "./fiscal";
+import type { Parcela } from "./parcelas";
 import { LINHAS_PADRAO, parametrosNaData } from "./parametrosFiscais";
 import { centavos } from "./venda";
 
@@ -26,7 +28,7 @@ const venda = (p: Partial<VendaParaFiscal> = {}): VendaParaFiscal => ({
   valorVenda: 400000,
   comissaoValor: 16000,
   status: "ativa",
-  comissaoRecebidaEm: null,
+  parcelas: [],
   ...p,
 });
 
@@ -145,11 +147,27 @@ describe("vendas", () => {
     expect(faltasDaDimob(venda(), undefined)).toEqual(["CPF/CNPJ do comprador", "CPF/CNPJ do vendedor"]);
   });
 
-  it("comissão recebida sem nota entra na lista; distrato não", () => {
-    const vs = [venda({ comissaoRecebidaEm: "2026-04-01" }), venda({ id: "v2", comissaoRecebidaEm: "2026-04-02", status: "distratada" }), venda({ id: "v3" })];
-    expect(semNotaFiscal(vs, new Map()).map((v) => v.id)).toEqual(["v1"]);
-    const comNota = new Map([["v1", { vendaId: "v1", compradorNome: null, compradorDocumento: null, vendedorNome: null, vendedorDocumento: null, notaNumero: "123", notaEmitidaEm: null }]]);
+  const recebida = (data: string): Parcela => ({
+    id: `p-${data}`, numero: 1, valor: 16000, pagador: "construtora", venceEm: null, recebidaEm: data, canceladaEm: null,
+  });
+
+  // Distrato depois do recebimento não desfaz a comissão que entrou: ela
+  // continua pedindo nota (0232).
+  it("comissão recebida sem nota entra na lista, distratada ou não", () => {
+    const vs = [
+      venda({ parcelas: [recebida("2026-04-01")] }),
+      venda({ id: "v2", parcelas: [recebida("2026-04-02")], status: "distratada" }),
+      venda({ id: "v3" }),
+    ];
+    expect(semNotaFiscal(vs, new Map()).map((v) => v.id)).toEqual(["v1", "v2"]);
+    const nota = (id: string) => ({ vendaId: id, compradorNome: null, compradorDocumento: null, vendedorNome: null, vendedorDocumento: null, notaNumero: "123", notaEmitidaEm: null });
+    const comNota = new Map([["v1", nota("v1")], ["v2", nota("v2")]]);
     expect(semNotaFiscal(vs, comNota)).toEqual([]);
+  });
+
+  it("último recebimento é a parcela recebida mais recente", () => {
+    expect(ultimoRecebimento(venda({ parcelas: [recebida("2026-04-01"), { ...recebida("2026-05-03"), id: "b", numero: 2 }] }))).toBe("2026-05-03");
+    expect(ultimoRecebimento(venda())).toBeNull();
   });
 
   it("vendas do ano sem distrato", () => {
