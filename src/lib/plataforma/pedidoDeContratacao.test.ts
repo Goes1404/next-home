@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   errosDoPasso,
+  errosDoTesteGratis,
   formularioDaImobiliariaDoPedido,
   formularioDoIndependenteDoPedido,
   hrefDeContratar,
@@ -121,10 +122,25 @@ describe("validarPedido", () => {
         email: "ana@imob.com.br",
         imobiliaria: "Imob Sol",
         creci: null,
+        documento: null,
         cidade: "Barueri",
         uf: "SP",
       },
     });
+  });
+
+  it("CPF ou CNPJ opcional (0241): limpo para dígitos, e torto recusa", () => {
+    const cpf = validarPedido({ ...BOM, documento: "529.982.247-25" });
+    expect(cpf.ok && cpf.pedido.documento).toBe("52998224725");
+    const cnpj = validarPedido({ ...BOM, documento: "11.444.777/0001-61" });
+    expect(cnpj.ok && cnpj.pedido.documento).toBe("11444777000161");
+    expect(validarPedido({ ...BOM, documento: "111.111.111-11" })).toMatchObject({ ok: false, erros: { documento: expect.any(String) } });
+    expect(validarPedido({ ...BOM, documento: "123" })).toMatchObject({ ok: false, erros: { documento: expect.any(String) } });
+  });
+
+  it("o teste grátis pede o CRECI", () => {
+    expect(errosDoTesteGratis({ creci: null })).toEqual({ creci: expect.stringContaining("CRECI") });
+    expect(errosDoTesteGratis({ creci: "1-F" })).toEqual({});
   });
 
   it("autônomo: usuários viram 1 e o nome da imobiliária é ignorado", () => {

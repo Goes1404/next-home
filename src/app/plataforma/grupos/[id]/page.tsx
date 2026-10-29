@@ -7,6 +7,7 @@ import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
+import { lerFaturaEmAberto, variaveisDoAsaasFaltando } from "@/lib/cobranca/asaas";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerAcessosDoGrupo, lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
@@ -20,6 +21,7 @@ import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
+import { CobrancaAutomatica } from "./CobrancaAutomatica";
 import { EnderecosDoGrupo } from "./EnderecosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
@@ -52,6 +54,11 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
   const acessos = await lerAcessosDoGrupo(prova, grupo.id);
+  // A cobrança automática (0241): a fatura em aberto vem do Asaas na hora;
+  // falha do Asaas só esconde o link (lerFaturaEmAberto devolve null).
+  const faltandoNoAsaas = variaveisDoAsaasFaltando();
+  const fatura =
+    faltandoNoAsaas.length === 0 && grupo.asaasAssinaturaId ? await lerFaturaEmAberto(grupo.asaasAssinaturaId) : null;
 
   return (
     <section className="flex max-w-3xl flex-col gap-6">
@@ -175,6 +182,16 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         pagamentos={grupo.pagamentos}
         suspensoManual={grupo.situacao === "suspenso"}
         hoje={diaEmSP(new Date())}
+      />
+
+      <CobrancaAutomatica
+        grupoId={grupo.id}
+        faltando={faltandoNoAsaas}
+        isento={grupo.plano === "custo"}
+        assinaturaId={grupo.asaasAssinaturaId}
+        fatura={fatura}
+        mensalidade={grupo.mensalidade}
+        temDocumento={Boolean(grupo.documento)}
       />
 
       {marca && (

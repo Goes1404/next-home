@@ -4,7 +4,9 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { linkDoWhatsAppDaAstro } from "@/lib/marcaDaPlataforma";
 import { notificarAdminsDaPlataforma } from "@/lib/notificacoes/push";
+import { iniciarTesteGratis } from "@/lib/plataforma/testeGratis";
 import {
+  errosDoTesteGratis,
   mascararParaLog,
   mensagemDoPedidoParaAstro,
   primeiroNome,
@@ -41,6 +43,11 @@ import { createServiceClient } from "@/lib/supabase/service";
  * Depois da resposta (`after`), avisa no celular os administradores da
  * plataforma que têm ficha de corretor com aparelho inscrito. O aviso leva o
  * plano e a cidade, nunca o nome nem o telefone.
+ *
+ * Teste grátis (29/10/2026, 0241): com `modo: "teste"`, os passos 1 a 4 são
+ * os mesmos, o CRECI passa a ser obrigatório, e no lugar do 5 a conta nasce
+ * na hora (`iniciarTesteGratis`: um teste por e-mail, WhatsApp e CPF/CNPJ,
+ * travado no banco). O link de criar a senha vai SÓ por e-mail.
  */
 
 export type EnvioDoPedido = DadosDoPedido & {
@@ -49,10 +56,19 @@ export type EnvioDoPedido = DadosDoPedido & {
   site: string;
   /** Há quanto tempo o assistente está aberto na tela (ms). */
   abertoHaMs: number;
+  /** `teste`: começa o teste grátis de 7 dias; ausente ou `pedido`: só o pedido. */
+  modo?: "pedido" | "teste";
 };
 
 export type RespostaDoPedido =
-  | { ok: true; primeiroNome: string; resumo: string; whatsappDaAstro: string | null }
+  | {
+      ok: true;
+      primeiroNome: string;
+      resumo: string;
+      whatsappDaAstro: string | null;
+      /** O teste grátis começou: até quando, e se o e-mail do convite saiu (para onde). */
+      teste?: { fimDoTeste: string; emailEnviado: boolean; email: string };
+    }
   | { ok: false; erro: string; erros?: ErrosDoPedido };
 
 const JANELA_DO_IP_MS = 10 * 60 * 1000;
@@ -70,7 +86,7 @@ function ipLimitado(ip: string, agora: number): boolean {
   return envios.length > LIMITE_POR_IP;
 }
 
-function confirmacao(p: PedidoLimpo): RespostaDoPedido {
+function confirmacao(p: PedidoLimpo): Extract<RespostaDoPedido, { ok: true }> {
   return {
     ok: true,
     primeiroNome: primeiroNome(p.nome),
@@ -105,6 +121,21 @@ export async function enviarPedidoDeContratacao(envio: EnvioDoPedido): Promise<R
   if (robo) {
     console.warn("[contratar] envio descartado como robô (campo-isca ou rápido demais)");
     return confirmacao(pedido);
+  }
+
+  if (corpo.modo === "teste") {
+    const errosDoTeste = errosDoTesteGratis(pedido);
+    if (Object.keys(errosDoTeste).length > 0) {
+      return { ok: false, erro: "Confira os dados destacados.", erros: errosDoTeste };
+    }
+    const teste = await iniciarTesteGratis(pedido, new Date(agora));
+    if (!teste.ok) {
+      return teste.campo ? { ok: false, erro: teste.erro, erros: { [teste.campo]: teste.erro } } : { ok: false, erro: teste.erro };
+    }
+    return {
+      ...confirmacao(pedido),
+      teste: { fimDoTeste: teste.fimDoTeste, emailEnviado: teste.emailEnviado, email: pedido.email },
+    };
   }
 
   const gravado = await gravarPedido(pedido, agora);
@@ -147,6 +178,7 @@ async function gravarPedido(pedido: PedidoLimpo, agora: number): Promise<"gravad
       email: pedido.email,
       imobiliaria: pedido.imobiliaria,
       creci: pedido.creci,
+      documento: pedido.documento,
       cidade: pedido.cidade,
       uf: pedido.uf,
       consentimento_em: new Date(agora).toISOString(),

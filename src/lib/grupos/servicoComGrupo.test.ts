@@ -101,6 +101,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/wa/route.ts": { categoria: "por-id", validadoPor: "siteDaRequisicao", motivo: "porteiro: sorteia e grava o clique no grupo do site" },
   "src/app/wa/[campanha]/route.ts": { categoria: "por-id", validadoPor: "siteDaRequisicao", motivo: "porteiro: imóvel e sorteio dentro do grupo do site" },
   "src/app/api/webhooks/meta/route.ts": { categoria: "por-id", validadoPor: "assinaturaValida", motivo: "assinatura da Meta; integração presa ao grupo 1 até a fase 7" },
+  "src/app/api/webhooks/asaas/route.ts": { categoria: "por-id", validadoPor: "tokenDoAsaasValido", motivo: "token do webhook do Asaas (0241, 29/10/2026) conferido antes da chave; o grupo sai da assinatura/cliente do pagamento gravados em grupos" },
   "src/app/api/webhooks/whatsapp/route.ts": { categoria: "por-id", validadoPor: "resolverInstancia", motivo: "a instância (com o segredo dela) decide o corretor e o grupo da mensagem" },
   "src/lib/whatsapp/repositorio.ts": { categoria: "helper", motivo: "parte da instância que o webhook validou pelo segredo; a palavra-chave filtra o grupo dela" },
   "src/lib/inbound/processarEmail.ts": { categoria: "helper", motivo: "grupo explícito de quem chama (portal = grupo 1; Gmail = grupo da conta); leituras com grupo_id (portas.test.ts)" },
@@ -175,6 +176,8 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/sites/siteDoGrupo.ts": { categoria: "helper", motivo: "lê o site editável do grupo que quem chama provou (gestor da sessão ou o grupo que o endereço resolveu); UMA linha pelo id" },
   "src/lib/marcaDoCrm/gravarLogo.ts": { categoria: "helper", motivo: "grava a logo do grupo que quem chama provou (gestor da sessão ou operador da plataforma); só toca a linha e a pasta desse grupo" },
   "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
+  "src/lib/cobranca/webhookDoAsaas.ts": { categoria: "helper", motivo: "recebe o cliente da chave da rota que conferiu o token do Asaas; acha UM grupo pela assinatura/cliente do pagamento e grava o pagamento só nele (0241)" },
+  "src/lib/plataforma/criarConta.ts": { categoria: "helper", motivo: "núcleo da criação de conta (29/10/2026): confere a própria prova antes de escrever (a guarda da plataforma de novo, ou o pedido do teste grátis relido pela chave) e só toca o grupo que acabou de criar" },
   "src/lib/planos/cobrancaDoGrupo.ts": { categoria: "helper", motivo: "cobrança do grupo que quem chama validou (instância do webhook ou do disparador, sessão do painel); toda leitura filtra o grupo (fase 2C)" },
   "src/lib/planos/usoDaIa.ts": { categoria: "helper", motivo: "cota da IA do grupo que quem chama validou (instância do webhook, sessão, guarda da plataforma); toda leitura filtra o grupo" },
 
@@ -241,6 +244,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/saude.ts": { categoria: "plataforma-admin", motivo: "saúde e custo da IA dos grupos da lista (telemetria só AGREGADA por rpc, 0211, nunca ia_interacoes linha a linha); recebe a prova de exigirAdminDaPlataforma*" },
   "src/app/plataforma/cobrancaAcoes.ts": { categoria: "plataforma-admin", motivo: "registra e remove pagamento, ajusta mensalidade e vencimento e suspende ou reativa o grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (fase 2C)" },
+  "src/app/plataforma/cobrancaAutomaticaAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e desliga a cobrança automática (Asaas) de UM grupo (0241); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/enderecosAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e tira o endereço do site de UM grupo (0201); a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso, edita o cadastro dele, muda o plano e redefine a senha de um acesso; a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
@@ -263,6 +267,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
   "src/lib/plataforma/avisosVigentes.ts": { categoria: "plataforma", motivo: "faixa do painel (0242, 29/10/2026): lê os avisos da Astro no ar em avisos_aos_clientes, tabela GLOBAL sem dado de grupo nenhum; o público (papel) é filtrado por quem desenha a faixa, com a sessão" },
   "src/app/astro/contato/acoes.ts": { categoria: "plataforma", motivo: "Fale com a Astro /astro/contato (29/10/2026): só INSERE o contato em chamados_de_suporte (tabela global, 0240; quem escreve ainda não tem grupo) e conta contatos do mesmo WhatsApp para o limite; o aviso aos administradores sai por avisarAtendimento, sem ler tabela de grupo nenhum" },
+  "src/lib/plataforma/testeGratis.ts": { categoria: "plataforma", motivo: "teste grátis do /astro/contratar (0241, 29/10/2026): conta pedidos/grupos/fichas do mesmo e-mail, WhatsApp ou documento (só contagens), insere UM pedido e cria a conta pelo núcleo criarConta, que relê esse pedido como prova; marca o pedido e grava o evento do grupo recém-criado" },
   "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };
 

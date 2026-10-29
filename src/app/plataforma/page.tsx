@@ -34,6 +34,7 @@ const SITUACAO: Record<ResumoDeGrupo["situacao"], { rotulo: string; classe: stri
 
 /** A mensalidade na lista (fase 2C); o plano de custo não é cobrado e fica sem etiqueta. */
 const COBRANCA: Partial<Record<EstadoDaCobranca, { rotulo: string; classe: string }>> = {
+  teste: { rotulo: "Teste grátis", classe: "bg-campo text-titulo border-linha-forte" },
   em_dia: { rotulo: "Mensalidade em dia", classe: "bg-ok-lavado text-ok border-ok-linha" },
   pendente: { rotulo: "Mensalidade vencida", classe: "bg-alerta-lavado text-alerta border-alerta-linha" },
   suspenso: { rotulo: "Suspenso por cobrança", classe: "bg-perigo-lavado text-perigo border-perigo-linha" },

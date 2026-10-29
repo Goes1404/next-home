@@ -4,9 +4,11 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, MessageCircle, Minus, Plus } from "lucide-react";
 import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
+import { mascararCnpj, mascararCpf, soDigitos } from "@/lib/plataforma/documentos";
 import {
   DADOS_VAZIOS,
   errosDoPasso,
+  errosDoTesteGratis,
   limitarUsuarios,
   mascararWhatsapp,
   PLANO_CONTRATAVEL,
@@ -39,6 +41,9 @@ import c from "./contratar.module.css";
  *   andou; com "menos movimento", entra parado (CSS).
  * - Campo-isca (`site`) e o tempo com o assistente aberto vão junto no envio:
  *   a action descarta robô sem avisar.
+ * - Na revisão, duas saídas (29/10/2026, 0241): "Começar teste grátis de 7
+ *   dias" (a conta nasce na hora e o link de criar a senha vai por e-mail;
+ *   pede o CRECI) e "Falar com a Astro" (só o pedido, como antes).
  */
 
 type Passo = 1 | 2 | 3;
@@ -50,6 +55,12 @@ const PASSOS: { numero: Passo; nome: string }[] = [
 ];
 
 type Confirmado = Extract<RespostaDoPedido, { ok: true }>;
+type Modo = "teste" | "pedido";
+
+/** CPF enquanto cabe em 11 dígitos; daí em diante, CNPJ. */
+function mascararDocumento(texto: string): string {
+  return soDigitos(texto).length > 11 ? mascararCnpj(texto) : mascararCpf(texto);
+}
 
 /**
  * Foca o campo e o traz para o MEIO da tela: no celular a barra de ações
@@ -73,6 +84,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState<Confirmado | null>(null);
   const [enviando, iniciar] = useTransition();
+  const [modoEnviando, setModoEnviando] = useState<Modo>("teste");
   const abertoEm = useRef<number | null>(null);
   const isca = useRef<HTMLInputElement>(null);
   const tituloDoPasso = useRef<HTMLHeadingElement>(null);
@@ -115,14 +127,14 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
   }
 
   function continuar() {
-    if (passo === 3) return enviar();
+    if (passo === 3) return enviar("teste");
     const e = errosDoPasso(passo, dados);
     setErros(e);
     if (Object.keys(e).length > 0) return focarPrimeiroErro(e);
     irPara((passo + 1) as Passo);
   }
 
-  function enviar() {
+  function enviar(modo: Modo) {
     if (!consentimento) {
       setErroDoConsentimento(true);
       focarNoMeio(document.getElementById("pedido-consentimento"));
@@ -135,6 +147,16 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
       irPara(voltarPara);
       return;
     }
+    if (modo === "teste") {
+      const doTeste = errosDoTesteGratis(local.pedido);
+      if (Object.keys(doTeste).length > 0) {
+        setErros(doTeste);
+        irPara(2);
+        focarPrimeiroErro(doTeste);
+        return;
+      }
+    }
+    setModoEnviando(modo);
     iniciar(async () => {
       setErroGeral(null);
       try {
@@ -143,6 +165,7 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
           consentimento,
           site: isca.current?.value ?? "",
           abertoHaMs: abertoEm.current === null ? 0 : Date.now() - abertoEm.current,
+          modo,
         });
         if (r.ok) {
           setDirecao("avanca");
@@ -240,6 +263,8 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
                 if (v) setErroDoConsentimento(false);
               }}
               alterar={irPara}
+              enviando={enviando}
+              aoFalarComAAstro={() => enviar("pedido")}
             />
           )}
         </div>
@@ -279,11 +304,11 @@ export function AssistenteDeContratacao({ planoInicial }: { planoInicial: PlanoC
             {enviando ? (
               <>
                 <span aria-hidden className={c.giro} />
-                Enviando…
+                {modoEnviando === "teste" ? "Criando sua conta…" : "Enviando…"}
               </>
             ) : passo === 3 ? (
               <>
-                Enviar pedido
+                Começar teste grátis de 7 dias
                 <Check aria-hidden className="size-4" strokeWidth={3} />
               </>
             ) : (
@@ -555,7 +580,19 @@ function PassoDados({
             valor={dados.creci}
             erro={erros.creci}
             aoMudar={(v) => mudar("creci", v)}
-            dica="Se ainda não tiver à mão, a gente pede depois."
+            dica="Obrigatório para o teste grátis. Para só falar com a Astro, pode deixar em branco."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Campo
+            campo="documento"
+            rotulo={imobiliaria ? "CNPJ da imobiliária" : "CPF"}
+            opcional
+            inputMode="text"
+            valor={dados.documento ?? ""}
+            erro={erros.documento}
+            aoMudar={(v) => mudar("documento", mascararDocumento(v))}
+            dica="Vai na fatura da assinatura. Se preferir, a gente pede depois."
           />
         </div>
         <Campo
@@ -610,6 +647,8 @@ function PassoRevisao({
   erroDoConsentimento,
   aoConsentir,
   alterar,
+  enviando,
+  aoFalarComAAstro,
 }: {
   titulo: React.RefObject<HTMLHeadingElement | null>;
   dados: DadosDoPedido;
@@ -618,14 +657,19 @@ function PassoRevisao({
   erroDoConsentimento: boolean;
   aoConsentir: (v: boolean) => void;
   alterar: (p: Passo) => void;
+  enviando: boolean;
+  aoFalarComAAstro: () => void;
 }) {
   const local = [dados.cidade.trim(), dados.uf].filter(Boolean).join("/");
   return (
     <div>
       <h2 ref={titulo} tabIndex={-1} className={`${s.titulo} text-2xl font-bold outline-none`}>
-        Confira e envie
+        Confira e comece
       </h2>
-      <p className="mt-1.5 text-[var(--tinta-suave)]">Nada é cobrado agora. A conta só começa depois da conversa com a Astro.</p>
+      <p className="mt-1.5 text-[var(--tinta-suave)]">
+        Teste grátis por 7 dias, sem cartão: a conta nasce agora e o link para criar a senha chega no seu e-mail. Para
+        continuar depois do teste, é só assinar; sem assinatura, os recursos pagos pausam sozinhos.
+      </p>
 
       <dl className={`${c.resumo} mt-5`}>
         <div className={c.linhaDoResumo}>
@@ -648,6 +692,7 @@ function PassoRevisao({
               {local}
               {dados.creci.trim() ? ` · CRECI ${dados.creci.trim()}` : ""}
             </dd>
+            {dados.documento?.trim() && <dd>{plano === "imobiliaria" ? "CNPJ" : "CPF"} {dados.documento.trim()}</dd>}
           </div>
           <button type="button" className={c.alterar} onClick={() => alterar(2)}>
             Alterar<span className="sr-only"> os dados</span>
@@ -682,9 +727,22 @@ function PassoRevisao({
       </label>
       {erroDoConsentimento && (
         <p id="pedido-consentimento-erro" className={c.erro} role="alert">
-          Marque a caixa para enviar o pedido.
+          Marque a caixa para continuar.
         </p>
       )}
+
+      <p className="mt-5 text-sm text-[var(--tinta-suave)]">
+        Prefere conversar antes?{" "}
+        <button
+          type="button"
+          className={c.alterar}
+          disabled={enviando}
+          onClick={aoFalarComAAstro}
+        >
+          Falar com a Astro
+        </button>{" "}
+        e a gente chama você no WhatsApp.
+      </p>
     </div>
   );
 }
@@ -692,6 +750,7 @@ function PassoRevisao({
 // ── Confirmação ────────────────────────────────────────────────────────────
 
 function Confirmacao({ confirmado, titulo }: { confirmado: Confirmado; titulo: React.RefObject<HTMLHeadingElement | null> }) {
+  if (confirmado.teste) return <ConfirmacaoDoTeste confirmado={confirmado} teste={confirmado.teste} titulo={titulo} />;
   const proximos = [
     "A Astro chama você no WhatsApp em até 1 dia útil para confirmar os detalhes.",
     "A gente configura a conta, conecta o seu WhatsApp e deixa a IA pronta para atender.",
@@ -725,6 +784,68 @@ function Confirmacao({ confirmado, titulo }: { confirmado: Confirmado; titulo: R
           <a href={confirmado.whatsappDaAstro} target="_blank" rel="noopener" className={`${s.botao} ${s.botaoPrincipal}`}>
             <MessageCircle aria-hidden className="size-4" />
             Falar agora no WhatsApp
+          </a>
+        )}
+        <Link href="/astro" className={`${s.botao} ${s.botaoNoClaro}`}>
+          Voltar à página da Astro
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** "2026-11-05" → "05/11". */
+const diaEMes = (dia: string) => `${dia.slice(8, 10)}/${dia.slice(5, 7)}`;
+
+function ConfirmacaoDoTeste({
+  confirmado,
+  teste,
+  titulo,
+}: {
+  confirmado: Confirmado;
+  teste: NonNullable<Confirmado["teste"]>;
+  titulo: React.RefObject<HTMLHeadingElement | null>;
+}) {
+  const proximos = teste.emailEnviado
+    ? [
+        `Abra o e-mail que enviamos para ${teste.email} (confira o spam) e toque no link.`,
+        "Crie a sua senha: o link confirma o seu e-mail e abre o painel.",
+        "Conecte o seu WhatsApp no painel e deixe a IA atendendo.",
+      ]
+    : [
+        "Sua conta foi criada, mas o e-mail com o link de acesso não saiu agora.",
+        "A Astro chama você no WhatsApp para liberar o acesso.",
+        "Depois, é só criar a senha e conectar o seu WhatsApp.",
+      ];
+  return (
+    <div className="flex flex-col items-start">
+      <span className={c.selado} aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12.5 10 17.5 19 7" />
+        </svg>
+      </span>
+      <h2 id="titulo-confirmado" ref={titulo} tabIndex={-1} className={`${s.titulo} mt-5 text-[1.9rem] leading-tight font-extrabold outline-none`}>
+        Seu teste grátis começou{confirmado.primeiroNome ? `, ${confirmado.primeiroNome}` : ""}!
+      </h2>
+      <p className="mt-2 text-[var(--tinta-suave)]">
+        Plano <strong className="text-[var(--tinta)]">{confirmado.resumo}</strong>, grátis até{" "}
+        <strong className="text-[var(--tinta)]">{diaEMes(teste.fimDoTeste)}</strong>.
+      </p>
+
+      <h3 className={`${s.titulo} mt-7 text-lg font-bold`}>Agora</h3>
+      <ol className={`${c.proximos} mt-3`}>
+        {proximos.map((t, i) => (
+          <li key={i} style={{ "--ordem": i } as CSSProperties}>
+            <span className="pt-0.5 leading-relaxed">{t}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap [&>*]:whitespace-nowrap">
+        {confirmado.whatsappDaAstro && (
+          <a href={confirmado.whatsappDaAstro} target="_blank" rel="noopener" className={`${s.botao} ${teste.emailEnviado ? s.botaoNoClaro : s.botaoPrincipal}`}>
+            <MessageCircle aria-hidden className="size-4" />
+            Falar com a Astro
           </a>
         )}
         <Link href="/astro" className={`${s.botao} ${s.botaoNoClaro}`}>

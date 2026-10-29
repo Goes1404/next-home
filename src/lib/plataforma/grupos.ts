@@ -73,6 +73,7 @@ async function contarDoGrupo(
     criado_em: string;
     dia_do_vencimento: number;
     teto_respostas_ia: number | null;
+    teste_ate: string | null;
   },
 ) {
   const grupoId = grupo.id;
@@ -116,6 +117,7 @@ async function contarDoGrupo(
       diaDoVencimento: grupo.dia_do_vencimento,
       competenciasPagas: (pagamentos.data ?? []).map((p) => p.competencia),
       hoje: new Date(),
+      testeAte: grupo.teste_ate,
     }),
   };
 }
@@ -127,7 +129,7 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
   const servico = createServiceClient();
   const { data, error } = await servico
     .from("grupos")
-    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, creci, teto_respostas_ia")
+    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, creci, teto_respostas_ia, teste_ate")
     .order("criado_em", { ascending: true });
   if (error) throw new Error(`Falha ao listar os grupos: ${error.message}`);
 
@@ -173,6 +175,9 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   pagamentos: PagamentoRegistrado[];
   /** Os endereços do site do grupo (0201), o principal primeiro. */
   enderecos: EnderecoDoGrupo[];
+  /** Cliente e assinatura no Asaas (0241); `null` = cobrança automática desligada. */
+  asaasClienteId: string | null;
+  asaasAssinaturaId: string | null;
 };
 
 export type EnderecoDoGrupo = { host: string; tipo: "proprio" | "gratuito"; principal: boolean };
@@ -199,7 +204,7 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
   const { data: g, error } = await servico
     .from("grupos")
     .select(
-      "id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
+      "id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, teto_respostas_ia, teste_ate, asaas_cliente_id, asaas_assinatura_id, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
     )
     .eq("id", grupoId)
     .maybeSingle();
@@ -251,6 +256,8 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
       observacao: p.observacao,
     })),
     enderecos: (enderecos ?? []).map((e) => ({ host: e.host, tipo: e.tipo, principal: e.principal })),
+    asaasClienteId: g.asaas_cliente_id,
+    asaasAssinaturaId: g.asaas_assinatura_id,
     ...(await contarDoGrupo(servico, g)),
   };
 }

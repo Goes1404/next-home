@@ -20,7 +20,7 @@ import { estaSuspenso, situacaoDaCobranca, type SituacaoDaCobranca } from "./cob
 export async function lerCobrancaDoGrupo(grupoId: string, agora: Date = new Date()): Promise<SituacaoDaCobranca> {
   const servico = createServiceClient();
   const [grupo, pagamentos] = await Promise.all([
-    servico.from("grupos").select("plano, situacao, criado_em, dia_do_vencimento").eq("id", grupoId).maybeSingle(),
+    servico.from("grupos").select("plano, situacao, criado_em, dia_do_vencimento, teste_ate").eq("id", grupoId).maybeSingle(),
     servico.from("pagamentos_do_grupo").select("competencia").eq("grupo_id", grupoId),
   ]);
 
@@ -36,6 +36,10 @@ export async function lerCobrancaDoGrupo(grupoId: string, agora: Date = new Date
       diasDeAtraso: 0,
       suspendeEm: null,
       proximoVencimento: diaEmSP(agora),
+      fimDoTeste: null,
+      diasDeTesteRestantes: 0,
+      testeTerminouSemPagamento: false,
+      emAberto: [],
     };
   }
 
@@ -46,10 +50,29 @@ export async function lerCobrancaDoGrupo(grupoId: string, agora: Date = new Date
     diaDoVencimento: grupo.data.dia_do_vencimento,
     competenciasPagas: (pagamentos.data ?? []).map((p) => p.competencia),
     hoje: agora,
+    testeAte: grupo.data.teste_ate,
   });
 }
 
 /** O grupo está suspenso (à mão ou por atraso)? Erro de leitura = não. */
 export async function grupoSuspenso(grupoId: string, agora: Date = new Date()): Promise<boolean> {
   return estaSuspenso(await lerCobrancaDoGrupo(grupoId, agora));
+}
+
+/**
+ * A assinatura do grupo no Asaas (0241), para o botão "Pagar agora" do
+ * painel: `null` sem assinatura ou com erro de leitura (o botão só some).
+ * Lê UMA linha pelo id que quem chama validou (a sessão do painel).
+ */
+export async function lerAssinaturaDoGrupo(grupoId: string): Promise<string | null> {
+  const { data, error } = await createServiceClient()
+    .from("grupos")
+    .select("asaas_assinatura_id")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (error) {
+    console.error(`[cobrança] assinatura do grupo ${grupoId} não lida: ${error.message}`);
+    return null;
+  }
+  return data?.asaas_assinatura_id ?? null;
 }

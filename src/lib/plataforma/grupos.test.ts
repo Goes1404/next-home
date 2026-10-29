@@ -156,6 +156,7 @@ describe("listarGruposDaPlataforma", () => {
       "plano",
       "situacao",
       "slug",
+      "teste_ate",
       "teto_respostas_ia",
       "tipo",
     ]);

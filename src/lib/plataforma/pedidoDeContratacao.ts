@@ -15,6 +15,7 @@
 // formulário da plataforma só SUGERE 3. O assistente também sugere 3.
 
 import { normalizarWhatsapp } from "@/lib/whatsapp";
+import { cnpjValido, cpfValido, soDigitos } from "./documentos";
 import {
   mensalidadeComoTexto,
   mensalidadeDoPlano,
@@ -168,6 +169,8 @@ export type DadosDoPedido = {
   email: string;
   imobiliaria: string;
   creci: string;
+  /** CPF ou CNPJ, opcional (0241): trava o "um teste por documento" e vai ao Asaas. */
+  documento?: string;
   cidade: string;
   uf: string;
 };
@@ -180,6 +183,7 @@ export const DADOS_VAZIOS: DadosDoPedido = {
   email: "",
   imobiliaria: "",
   creci: "",
+  documento: "",
   cidade: "",
   uf: "",
 };
@@ -194,6 +198,8 @@ export type PedidoLimpo = {
   email: string;
   imobiliaria: string | null;
   creci: string | null;
+  /** Só dígitos: CPF (11) ou CNPJ (14). */
+  documento: string | null;
   cidade: string;
   uf: Uf;
 };
@@ -204,7 +210,7 @@ export type ErrosDoPedido = Partial<Record<CampoDoPedido, string>>;
 /** Os campos de cada passo do assistente (o 3º é a revisão, sem campo). */
 export const CAMPOS_DO_PASSO: Record<1 | 2, CampoDoPedido[]> = {
   1: ["plano", "usuarios"],
-  2: ["nome", "whatsapp", "email", "imobiliaria", "creci", "cidade", "uf"],
+  2: ["nome", "whatsapp", "email", "imobiliaria", "creci", "documento", "cidade", "uf"],
 };
 
 /**
@@ -245,6 +251,12 @@ export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: Pe
   const creci = texto(d.creci, 30);
   if (creci.length > 30) erros.creci = "CRECI longo demais.";
 
+  // CPF ou CNPJ é opcional; preenchido, tem de valer (dígitos verificadores).
+  const documento = soDigitos(typeof d.documento === "string" ? d.documento : "").slice(0, 15);
+  if (documento && !(documento.length === 11 ? cpfValido(documento) : documento.length === 14 && cnpjValido(documento))) {
+    erros.documento = "CPF ou CNPJ inválido. Confira os números.";
+  }
+
   const cidade = texto(d.cidade, 80);
   if (cidade.length < 2) erros.cidade = "Informe a cidade.";
   else if (cidade.length > 80) erros.cidade = "Nome da cidade longo demais.";
@@ -263,10 +275,19 @@ export function validarPedido(d: Partial<DadosDoPedido>): { ok: true; pedido: Pe
       email,
       imobiliaria: plano === "imobiliaria" ? imobiliaria : null,
       creci: creci || null,
+      documento: documento || null,
       cidade,
       uf,
     },
   };
+}
+
+/**
+ * O que o teste grátis pede além do pedido (29/10/2026): o CRECI (a ficha do
+ * primeiro acesso exige um). Erro por campo, como `validarPedido`.
+ */
+export function errosDoTesteGratis(p: Pick<PedidoLimpo, "creci">): ErrosDoPedido {
+  return p.creci ? {} : { creci: "Para começar o teste grátis, informe o CRECI." };
 }
 
 /** Só os erros dos campos de um passo (o assistente não avança com eles). */

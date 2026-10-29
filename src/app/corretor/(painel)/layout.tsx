@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
@@ -221,8 +222,11 @@ export default async function PainelLayout({
           {/* Artes, vídeos e mensagens de lista do plano (limites do plano): idem. */}
           <FaixaLimitesDoPlano />
           {/* A mensalidade do grupo (fase 2C): vencida ou em atraso, para
-              todos. `null` com a cobrança em dia ou isenta. */}
-          <FaixaCobranca />
+              todos. `null` com a cobrança em dia ou isenta. Em Suspense
+              (0241): o botão do gestor consulta o Asaas, e a tela não espera. */}
+          <Suspense fallback={null}>
+            <FaixaCobranca />
+          </Suspense>
 
           {/*
             A coluna de conteúdo fica em 1fr e a da lateral em `auto`: quem

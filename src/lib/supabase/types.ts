@@ -912,6 +912,7 @@ export type Database = {
       /** 0114 — a venda (F1 do módulo financeiro). */
       pagamentos_do_grupo: {
         Row: {
+          asaas_pagamento_id: string | null
           competencia: string
           created_at: string
           grupo_id: string
@@ -922,6 +923,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          asaas_pagamento_id?: string | null
           competencia: string
           created_at?: string
           grupo_id: string
@@ -932,6 +934,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          asaas_pagamento_id?: string | null
           competencia?: string
           created_at?: string
           grupo_id?: string
@@ -1281,6 +1284,8 @@ export type Database = {
           observacao: string | null
           grupo_criado_id: string | null
           atualizado_em: string
+          documento: string | null
+          teste_gratis: boolean
         }
         Insert: {
           id?: string
@@ -1299,6 +1304,8 @@ export type Database = {
           observacao?: string | null
           grupo_criado_id?: string | null
           atualizado_em?: string
+          documento?: string | null
+          teste_gratis?: boolean
         }
         Update: {
           id?: string
@@ -1317,6 +1324,8 @@ export type Database = {
           observacao?: string | null
           grupo_criado_id?: string | null
           atualizado_em?: string
+          documento?: string | null
+          teste_gratis?: boolean
         }
         Relationships: []
       }
@@ -2161,6 +2170,8 @@ export type Database = {
       }
       grupos: {
         Row: {
+          asaas_assinatura_id: string | null
+          asaas_cliente_id: string | null
           cancelado_em: string | null
           contato_cobranca_email: string | null
           contato_cobranca_nome: string | null
@@ -2221,6 +2232,7 @@ export type Database = {
           razao_social: string | null
           situacao: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teste_ate: string | null
           teto_respostas_ia: number | null
           teto_artes: number | null
           teto_videos: number | null
@@ -2228,6 +2240,8 @@ export type Database = {
           tipo: "imobiliaria" | "independente"
         }
         Insert: {
+          asaas_assinatura_id?: string | null
+          asaas_cliente_id?: string | null
           cancelado_em?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
@@ -2288,6 +2302,7 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teste_ate?: string | null
           teto_respostas_ia?: number | null
           teto_artes?: number | null
           teto_videos?: number | null
@@ -2295,6 +2310,8 @@ export type Database = {
           tipo: "imobiliaria" | "independente"
         }
         Update: {
+          asaas_assinatura_id?: string | null
+          asaas_cliente_id?: string | null
           cancelado_em?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
@@ -2355,6 +2372,7 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug?: string
+          teste_ate?: string | null
           teto_respostas_ia?: number | null
           teto_artes?: number | null
           teto_videos?: number | null

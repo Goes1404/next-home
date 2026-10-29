@@ -3,9 +3,11 @@
  * banco: o que entra no resumo diário das mensalidades.
  */
 
+import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
+
 export type CobrancaParaAviso = {
   nome: string;
-  estado: "isento" | "em_dia" | "pendente" | "suspenso";
+  estado: EstadoDaCobranca;
   diasDeAtraso: number;
   /** Tem competência vencida e não paga (distingue suspensão por atraso da manual). */
   temEmAberto: boolean;
