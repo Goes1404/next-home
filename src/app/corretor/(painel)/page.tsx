@@ -20,6 +20,7 @@ import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
 import { AtivarNotificacoes } from "./_componentes/AtivarNotificacoes";
+import { InstalarNoIphone } from "./_componentes/InstalarNoIphone";
 import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { HojeNaAgenda } from "./_componentes/HojeNaAgenda";
@@ -173,6 +174,9 @@ export default async function PainelInicio({
       <Suspense fallback={null}>
         <ControlesRapidos />
       </Suspense>
+
+      {/* Como instalar o app no iPhone (29/10/2026): só no Safari do iOS, fora do app. */}
+      <InstalarNoIphone />
 
       {/* Avisos no celular: some quando já estão ligados neste aparelho. */}
       <AtivarNotificacoes />

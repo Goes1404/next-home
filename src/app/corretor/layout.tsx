@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { FontesDaAstroNoDocumento } from "@/components/marca/FontesDaAstroNoDocumento";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { ehEnderecoSoDoPainel } from "@/lib/enderecosDoPainel";
+import { APP_DO_IPHONE, META_DO_IPHONE } from "@/lib/marcaDoCrm/iphone";
 import { AberturaDoApp } from "./AberturaDoApp";
 import { COR_DA_BARRA_DO_PAINEL, ComportamentoDeApp } from "./ComportamentoDeApp";
 
@@ -27,7 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
   if (!ehEnderecoSoDoPainel(host)) return {};
-  return { icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA };
+  // No iPhone, "Adicionar à Tela de Início" abre como app, com as telas de
+  // abertura da Astro (29/10/2026; `lib/marcaDoCrm/iphone.ts`). Só aqui, no
+  // endereço do app: os sites dos grupos seguem com `capable: false` do raiz.
+  return { icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA, appleWebApp: APP_DO_IPHONE, other: META_DO_IPHONE };
 }
 
 /**

@@ -1,0 +1,17 @@
+[
+  { "aparelho": "iPhone 16 Pro Max", "largura": 440, "altura": 956, "escala": 3 },
+  { "aparelho": "iPhone 16 Pro", "largura": 402, "altura": 874, "escala": 3 },
+  { "aparelho": "iPhone 14/15 Pro Max, 15/16 Plus", "largura": 430, "altura": 932, "escala": 3 },
+  { "aparelho": "iPhone 14/15/16, 14/15 Pro", "largura": 393, "altura": 852, "escala": 3 },
+  { "aparelho": "iPhone 12/13 Pro Max, 14 Plus", "largura": 428, "altura": 926, "escala": 3 },
+  { "aparelho": "iPhone 12/13/14, 12/13 Pro", "largura": 390, "altura": 844, "escala": 3 },
+  { "aparelho": "iPhone X/XS/11 Pro, 12/13 mini", "largura": 375, "altura": 812, "escala": 3 },
+  { "aparelho": "iPhone XS Max, 11 Pro Max", "largura": 414, "altura": 896, "escala": 3 },
+  { "aparelho": "iPhone XR, 11", "largura": 414, "altura": 896, "escala": 2 },
+  { "aparelho": "iPhone 8 Plus", "largura": 414, "altura": 736, "escala": 3 },
+  { "aparelho": "iPhone SE 2/3, 8", "largura": 375, "altura": 667, "escala": 2 },
+  { "aparelho": "iPad 10.9\"/Air", "largura": 820, "altura": 1180, "escala": 2 },
+  { "aparelho": "iPad Pro 11\"", "largura": 834, "altura": 1194, "escala": 2 },
+  { "aparelho": "iPad Pro 12.9\"", "largura": 1024, "altura": 1366, "escala": 2 },
+  { "aparelho": "iPad 9.7\"/mini", "largura": 768, "altura": 1024, "escala": 2 }
+]

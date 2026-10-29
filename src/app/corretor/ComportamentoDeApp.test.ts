@@ -40,12 +40,28 @@ describe("comportamento de app", () => {
     expect(css).toMatch(/html\[data-app\]\s*\{[^}]*overscroll-behavior:\s*none/);
   });
 
+  /*
+   * Até 29/10/2026 esta guarda proibia qualquer `.put(` no worker. O offline
+   * leve (segunda leva) passou a guardar a casca e os dados do app sem
+   * internet — mudança consciente. O que continua proibido é guardar PÁGINA
+   * do CRM: a navegação segue da rede, e sem rede vira `/offline.html`. O
+   * comportamento do cache (caixa por usuário, nada de conversa) está em
+   * `swPainel.test.ts`.
+   */
   it("o service worker do painel mostra a página offline e não guarda páginas do CRM", () => {
     const sw = fs.readFileSync("public/sw-painel.js", "utf8");
     expect(sw).toContain('"/offline.html"');
     expect(sw).toContain('event.request.mode !== "navigate"');
-    expect(sw).not.toMatch(/cache\.put|\.put\(/);
+    // Os dois únicos `put`: a casca e a caixa de dados do usuário.
+    expect(sw.match(/\.put\(/g)?.length).toBe(2);
+    expect(sw).toContain("caixa.put(ROTA_DOS_DADOS");
+    expect(sw).toContain("caixa.put(pedido, resposta)");
     expect(fs.existsSync("public/offline.html")).toBe(true);
+  });
+
+  it("sair da conta manda o service worker apagar os dados guardados", () => {
+    expect(SCRIPT_DE_APP).toContain('postMessage({tipo:"limpar-dados"})');
+    expect(fs.readFileSync("src/app/corretor/LimparSaida.tsx", "utf8")).toContain('postMessage({ tipo: "limpar-dados" })');
   });
 });
 

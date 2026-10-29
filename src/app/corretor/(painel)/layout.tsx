@@ -19,6 +19,8 @@ import { BalaoConsultor } from "./BalaoConsultor";
 import { CabecalhoDoPainel } from "./_componentes/CabecalhoDoPainel";
 import { COOKIE_MENU_LATERAL, lerMenuRecolhido } from "./_componentes/menuLateral";
 import { CromaDoModulo } from "./CromaDoModulo";
+import { BotaoBuscaRapida } from "./_componentes/busca/BotaoBuscaRapida";
+import { SincronizarOffline } from "./_componentes/SincronizarOffline";
 import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { MenuDaConta } from "./MenuDaConta";
@@ -191,6 +193,9 @@ export default async function PainelLayout({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Busca rápida (29/10/2026): lupa no celular, "Buscar ⌘K" no
+                computador. A paleta só é baixada no primeiro uso. */}
+            {corretor && <BotaoBuscaRapida ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} />}
             <SeletorTema />
 
             {corretor && (
@@ -269,6 +274,9 @@ export default async function PainelLayout({
             e sem URL. Ele mesmo se cala na tela do consultor.
           */}
           <BalaoConsultor />
+          {/* Guarda a agenda de hoje e os leads recentes para o app sem
+              internet (29/10/2026). Não desenha nada. */}
+          <SincronizarOffline />
         </>
       ) : (
         <div className="mx-auto w-full max-w-2xl px-4 py-12">

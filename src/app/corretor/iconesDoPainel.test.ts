@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { ICONES_ASTROIMOB, CAMINHO_DO_MANIFESTO_DO_PAINEL, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
+import { APP_DO_IPHONE, META_DO_IPHONE } from "@/lib/marcaDoCrm/iphone";
 import { MARCA_NEXT_HOME, marcaDoCrm } from "@/lib/marcaDoCrm/marca";
 
 /**
@@ -55,7 +56,8 @@ describe("login e telas de /corretor", () => {
   it("em astroimob.vercel.app: ícone e manifesto do app da Astro Soluções, nunca o da Next Home", async () => {
     host = "astroimob.vercel.app";
     const { generateMetadata } = await import("./layout");
-    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA });
+    // + o app do iPhone (29/10/2026): sem barra do Safari e com telas de abertura.
+    expect(await generateMetadata()).toEqual({ icons: ICONES_ASTROIMOB, manifest: MANIFESTO_DA_PLATAFORMA, appleWebApp: APP_DO_IPHONE, other: META_DO_IPHONE });
   });
 
   it("no endereço da Next Home: nada declarado", async () => {

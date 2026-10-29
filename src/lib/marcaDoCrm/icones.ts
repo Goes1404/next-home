@@ -21,7 +21,14 @@ export const ICONES_ASTROIMOB = {
     { url: "/icones/icone-astroimob.svg", type: "image/svg+xml" },
     { url: "/icones/astroimob-192.png", sizes: "192x192", type: "image/png" },
   ],
-  apple: [{ url: "/icones/astroimob-180.png", sizes: "180x180", type: "image/png" }],
+  // 180 primeiro (o padrão do iPhone); 120, 152 e 167 desde 29/10/2026 (iPhone
+  // antigo e iPad), gerados pelo mesmo script.
+  apple: [
+    { url: "/icones/astroimob-180.png", sizes: "180x180", type: "image/png" },
+    { url: "/icones/astroimob-120.png", sizes: "120x120", type: "image/png" },
+    { url: "/icones/astroimob-152.png", sizes: "152x152", type: "image/png" },
+    { url: "/icones/astroimob-167.png", sizes: "167x167", type: "image/png" },
+  ],
 } satisfies NonNullable<Metadata["icons"]>;
 
 /** Os ícones do painel de um grupo que não é a Next Home. */

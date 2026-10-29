@@ -21,7 +21,9 @@
  *   de enviar, numa aba ou num seletor — o "clique" que todo app nativo tem
  *   (29/10/2026). Aparelho sem vibração (ou iPhone) só ignora;
  * - (em qualquer navegador) cobre a tela com o véu da Astro ao enviar um
- *   `<form data-sair>` — a saída animada da conta (29/10/2026);
+ *   `<form data-sair>` — a saída animada da conta (29/10/2026) — e manda o
+ *   service worker apagar os dados do app sem internet (`limpar-dados`;
+ *   a tela de login manda de novo, ver `LimparSaida`);
  * - registra o service worker do painel (`sw-painel.js`), que mostra a tela
  *   "sem conexão" da Astro no lugar da página do Chrome. Ele já era o das
  *   notificações; registrar de novo é idempotente.
@@ -29,7 +31,10 @@
 export const SCRIPT_DE_APP = `try{
   document.addEventListener("submit",function(e){
     var f=e.target;
-    if(f&&f.hasAttribute&&f.hasAttribute("data-sair"))document.documentElement.setAttribute("data-saindo","");
+    if(f&&f.hasAttribute&&f.hasAttribute("data-sair")){
+      document.documentElement.setAttribute("data-saindo","");
+      try{var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(c)c.postMessage({tipo:"limpar-dados"});}catch(x){}
+    }
   },true);
   var app=window.matchMedia&&(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches);
   if(app){
