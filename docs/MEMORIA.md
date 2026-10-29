@@ -12537,3 +12537,10 @@ Nota: [[aba-campanhas-virou-uma-lista-so]].
   --write` reformata o arquivo inteiro (diff de 900 linhas). Edite à mão.
 - Prévia de componente do painel sem login: página temporária em
   `src/app/auth/<nome>/` (fora do reescrito de site), `next dev`, Playwright.
+
+## Suporte e contato da Astro (29/10/2026)
+
+Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)
+aplicada. Site `/astro/contato`, painel `/corretor/suporte`, atendimento em
+`/plataforma/suporte`; todo chamado avisa os ADMs no celular.
+

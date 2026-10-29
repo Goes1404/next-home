@@ -26,6 +26,7 @@ F0–F6.
 - [[login-por-usuario-senha-forte-e-validade]] — login por usuário, senha forte com checklist e troca a cada 90 dias (29/10)
 - [[notificacoes-no-celular-e-poderes-do-adm]] — 4 avisos novos no celular e poderes do ADM da plataforma (29/10)
 - [[contratar-plano-pela-pagina-da-astro]] — clicar no plano leva ao assistente de contratação; pedidos na Plataforma (29/10)
+- [[suporte-e-contato-da-astro]] — Fale com a Astro, Suporte da Astro no painel e /plataforma/suporte (29/10)
 - [[ficha-publica-do-imovel]] — /imovel/<grupo>/<slug> para imobiliária sem site e o montador único do link do imóvel (21/10)
 - [[botoes-que-parecem-botoes]] — todo botão mostra que é botão sem o mouse; quatro estilos e guarda (09/10)
 - [[anuncios-pagos-em-abas]] — Anúncios pagos em cinco abas por `?aba=`; `botao-solido` e `botao-aba` (26/10)
