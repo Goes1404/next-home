@@ -12512,3 +12512,12 @@ Nota: [[contratar-plano-pela-pagina-da-astro]].
 - Vínculo com a conta criada é `grupo_criado_id`: coluna `grupo_id` obrigaria
   carimbo/policy de grupo.
 
+## Avisos dos atendimentos no celular do ADM (29/10/2026)
+
+Nota: [[notificacoes-no-celular-e-poderes-do-adm]] (seção do mesmo nome).
+
+- ADM sem ficha não tinha onde receber push: 0239 cria
+  `inscricoes_push_da_plataforma` e `notificarAdminsDaPlataforma`.
+- Pedido de contratação, conta nova, suspensa/reativada e resumo diário das
+  mensalidades em aberto (9h) vão para os ADMs.
+

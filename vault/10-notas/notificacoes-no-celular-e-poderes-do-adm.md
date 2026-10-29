@@ -60,3 +60,21 @@ para o ADM (eu e o Goes)".
   mudar a RLS de tudo. Próxima rodada, com desenho próprio.
 
 Ver [[login-por-usuario-senha-forte-e-validade]].
+
+## Avisos dos atendimentos no celular do ADM (29/10/2026, 17h)
+
+Pedido: "todos os atendimentos que tivermos, faça a notificação cair na nossa
+conta (adm do sistema)".
+
+- **Armadilha:** o ADM da plataforma não tem ficha de corretor, e
+  `inscricoes_push` exige `corretor_id`/`grupo_id` — nenhum aviso chegava a
+  ele. Agora: `inscricoes_push_da_plataforma` (0239, global, dono = usuário do
+  Auth) + `notificarAdminsDaPlataforma` (só para quem AINDA está em
+  `administradores_da_plataforma`). Liga/testa no cartão "Avisos da Astro no
+  celular" da /plataforma (`/api/plataforma/notificacoes`).
+- Avisam: pedido de contratação; conta nova; conta suspensa/reativada à mão;
+  resumo das mensalidades em aberto às 9h (tique dos follow-ups, minuto < 5).
+  Suporte/contato: rodada seguinte (chamados).
+- A guarda `servicoComGrupo.test.ts` exige, em `agrega-por-grupo`, o laço
+  literal `for (const { id: grupoId } of grupos)`.
+
