@@ -15,6 +15,8 @@
 
 begin;
 
+set local lock_timeout = '5s';
+
 create or replace function public.encerrar_sessoes_do_usuario(p_user_id uuid)
 returns integer
 language sql
