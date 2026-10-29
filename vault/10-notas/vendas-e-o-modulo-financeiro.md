@@ -6,7 +6,7 @@ status: growing
 custou: medio
 codigo: supabase/migrations/0114_vendas.sql
 created: 2026-09-25
-updated: 2026-09-26
+updated: 2026-10-29
 summary: Módulo financeiro F1 a F8 (0114-0116; o bônus de especialista da roleta saiu na 0117). Venda com co-corretagem, comissão digitada por venda (% ou R$, as duas gravadas) e distrato. Grant por coluna (com o revoke da tabela, 0116) deixa comissão recebida e repasse pago só para o gestor. Base do extrato, do ranking de VGV e do desempenho.
 ---
 
@@ -108,3 +108,7 @@ deu **true**. Pela API, o corretor marcaria a própria comissão como recebida.
   com grant por coluna, e foi provocada.
 - `leads`, `corretores` e `catalogo_candidatos` já faziam o revoke; só as
   três tabelas novas não.
+
+## Fase A (0232, 29/10/2026)
+
+As datas `comissao_prevista_em`/`comissao_recebida_em` saíram: a comissão virou parcelas em `venda_parcelas`, o distrato passou a ser só do gestor e não apaga mais o que já foi pago. Ver [[financeiro-fase-a-parcelas-e-distrato]].

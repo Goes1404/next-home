@@ -7,7 +7,7 @@ status: ativo
 custou: medio
 codigo: [src/lib/financeiro/caixa.ts, src/lib/financeiro/caixaDados.ts, "src/app/corretor/(painel)/financeiro/caixa/", supabase/migrations/0166_caixa_da_imobiliaria.sql]
 summary: Contas a pagar e receber, saldo informado e fluxo de 13 semanas, só para o gestor. Comissão e repasse vêm das vendas, nunca lançados de novo.
-updated: 2026-10-06
+updated: 2026-10-29
 ---
 
 # O caixa da imobiliária
@@ -33,3 +33,7 @@ Tela: Financeiro → Caixa (`/corretor/financeiro/caixa`), só gestor.
   conciliação OFX ficam para depois.
 
 Ligado de [[MOC — CRM e Painel]]. Antes: [[vendas-e-o-modulo-financeiro]].
+
+## Fase A (0232, 29/10/2026)
+
+A comissão entra no caixa parcela por parcela; venda distratada não some mais (o pago fica no mês em que aconteceu). Lançamento ganhou `competencia`. Ver [[financeiro-fase-a-parcelas-e-distrato]].

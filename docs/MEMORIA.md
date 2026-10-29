@@ -12370,3 +12370,16 @@ Nota: [[conta-sem-vinculo-tem-botao-de-sair]].
   (`preserve-manual-memoization`: o setter tem de estar nas dependências).
   Depois de `git pull`, rode a suíte, o `lintTeto` e o build antes de achar
   que a produção está verde.
+
+## Financeiro Fase A: parcelas, distrato do gestor e imposto por competência (0232, 29/10/2026)
+
+Nota: [[financeiro-fase-a-parcelas-e-distrato]]. Design e plano em `docs/superpowers/`; pesquisa em `docs/pesquisa/`.
+
+- **Distrato apagava dinheiro que já tinha entrado**: `movimentosDo` pulava a venda distratada inteira, e o Resultado de um mês fechado mudava calado. Agora só as parcelas canceladas saem.
+- **`salvar_venda` apagava e regravava participantes**: qualquer marcação do gestor na linha (`forma_recebimento`) sumia quando o corretor reenviava. Virou update + insert + delete; chave ausente mantém o gravado.
+- **Gatilho de coluna não basta**: o corretor podia APAGAR a linha `direto` e reinserir como `repasse`. Precisa de gatilho `before delete` também (achado da revisão de segurança automática).
+- **Na competência, a data da venda trava o mês fechado**, não só as datas de dinheiro: editar a data ou criar venda num mês fechado mudaria o que o contador recebeu.
+- **Guarda de grant por coluna lê só o que vem depois do último `revoke all ... from authenticated`** (`grantsVigentes` em `vendasSeguras.test.ts`).
+- **Migration com `begin;`/`commit;`, `lock_timeout` e `drop policy if exists`** é exigida pela guarda `migracoesAtomicas` desde a 0188.
+- **Migração de dados antigos não cabe em `.db.test`** (o banco já sobe com a migration): conferência pontual subindo até a 0231, gravando no formato velho e aplicando a 0232; soma das parcelas = soma das comissões ao centavo.
+- **Build local no Windows quebra por `PixelMeta.tsx` × `pixelMeta.ts`** (resolução sem caixa); a Vercel compila.

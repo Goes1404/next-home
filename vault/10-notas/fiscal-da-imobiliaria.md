@@ -7,7 +7,7 @@ status: ativo
 custou: medio
 codigo: [src/lib/financeiro/fiscal.ts, src/lib/financeiro/fiscalPlanilhas.ts, src/lib/financeiro/fiscalDoMes.ts, "src/app/corretor/(painel)/financeiro/fiscal/page.tsx", src/app/api/painel/fiscal-excel/route.ts, supabase/migrations/0167_fiscal_da_imobiliaria.sql]
 summary: Impostos estimados do mês (Simples ou presumido), comissões sem NFS-e, RPA dos corretores autônomos e DIMOB do ano, cada um com planilha .xlsx para o contador. Só o gestor.
-updated: 2026-10-06
+updated: 2026-10-29
 ---
 
 # O fiscal da imobiliária
@@ -33,3 +33,7 @@ Terceiro bloco do financeiro do dono, depois de [[caixa-da-imobiliaria]] e
   construtora vêm do lead e do imóvel como padrão; documento é cobrado.
 - **Não emite nota.** Emissão automática exige integração com a prefeitura;
   aqui só se registra o número e a tela lista a comissão que entrou sem nota.
+
+## Fase A (0232, 29/10/2026)
+
+`teto_inss` saiu da configuração: IRRF, redutor e INSS moram em `parametros_fiscais` com vigência e fonte. A estimativa segue `regime_apuracao` (padrão competência). Ver [[financeiro-fase-a-parcelas-e-distrato]].
