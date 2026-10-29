@@ -12,6 +12,11 @@
   --tinta: #0d1b33;
   --tinta-suave: #44506a;
   --linha: #d8e0ec;
+  /* A curva de todo o movimento da página: sai rápido e assenta devagar,
+     como app nativo (29/10/2026). */
+  --saida: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Altura do cabeçalho (que gruda no alto ao rolar). */
+  --altura-do-cabecalho: calc(4.5rem + env(safe-area-inset-top, 0px));
 
   font-family: var(--font-astro-texto), system-ui, sans-serif;
   background: var(--papel);
@@ -25,9 +30,56 @@
   letter-spacing: -0.02em;
 }
 
+/* ---------- Cabeçalho ---------- */
+
+/*
+ * 29/10/2026: o cabeçalho saiu de dentro do topo para poder grudar no alto
+ * ao rolar. A margem negativa o devolve para cima do fundo escuro do topo
+ * (que ganha o mesmo tanto de respiro em cima), então parado na abertura a
+ * página fica igual a antes. O grudar e o fundo escuro estão lá embaixo, em
+ * "Movimento".
+ */
+.cabecalho {
+  position: relative;
+  z-index: 30;
+  height: var(--altura-do-cabecalho);
+  margin-bottom: calc(-1 * var(--altura-do-cabecalho));
+  padding-top: env(safe-area-inset-top, 0px);
+  color: #fff;
+}
+
+/* Sublinhado que corre da esquerda (Recursos, Planos), em vez do
+   `underline` seco do navegador. */
+.linkDoTopo {
+  position: relative;
+}
+.linkDoTopo::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.35rem;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  scale: 0 1;
+  transform-origin: left;
+}
+.linkDoTopo:hover::after,
+.linkDoTopo:focus-visible::after {
+  scale: 1 1;
+}
+
+/* Os links internos (#recursos, #planos) param abaixo do cabeçalho grudado,
+   não por baixo dele. */
+.ancora {
+  scroll-margin-top: calc(var(--altura-do-cabecalho) + 0.5rem);
+}
+
 /* ---------- Topo ---------- */
 
 .topo {
+  padding-top: var(--altura-do-cabecalho);
   background:
     radial-gradient(70% 90% at 85% 10%, rgb(47 94 168 / 0.45), transparent 60%),
     radial-gradient(60% 70% at 0% 100%, rgb(91 123 168 / 0.25), transparent 65%),
@@ -46,7 +98,18 @@
   border-radius: 999px;
   padding: 0 1.4rem;
   font-weight: 600;
-  transition: background-color 160ms, border-color 160ms, color 160ms;
+  /* `relative` + `overflow` + `isolation`: o brilho do botão principal
+     (::after) corre por dentro, atrás do texto. `scale` entra na lista
+     porque o globals.css afunda o botão no toque. */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms,
+    translate 220ms var(--saida),
+    scale 160ms var(--saida);
 }
 .botao:focus-visible {
   outline: 3px solid var(--bruma);
@@ -76,7 +139,7 @@
   color: var(--azul);
 }
 
-/* ---------- A conversa do topo (o único momento animado) ---------- */
+/* ---------- A conversa do topo ---------- */
 
 .palco {
   position: relative;
@@ -91,6 +154,20 @@
   border-radius: 50%;
   transform: rotate(-16deg);
   z-index: -1;
+}
+/* O "satélite" da órbita, como no selo: um ponto de luz preso ao traço,
+   que dá a volta junto quando a órbita gira (29/10/2026). */
+.orbita::after {
+  content: "";
+  position: absolute;
+  top: -4.25px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: #dbe7f6;
+  box-shadow: 0 0 14px 3px rgb(169 193 224 / 0.65);
 }
 .estrela {
   position: absolute;
@@ -201,8 +278,22 @@
 /* ---------- Corpo ---------- */
 
 .passo {
-  border-top: 2px solid var(--marinho);
+  /* A linha de cima é um trilho claro com o traço marinho por cima (::before),
+     para o traço poder se desenhar ao rolar (29/10/2026). Sem animação, o
+     traço já nasce inteiro, como era. */
+  position: relative;
+  border-top: 2px solid var(--linha);
   padding-top: 1.1rem;
+}
+.passo::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--marinho);
+  transform-origin: left;
 }
 .numeroDoPasso {
   font-family: var(--font-astro-titulo), system-ui, sans-serif;
@@ -213,8 +304,26 @@
 }
 
 .recurso {
+  position: relative;
   border-top: 1px solid var(--linha);
   padding: 1.25rem 0;
+}
+/* No mouse, o fio de cima acende em azul da esquerda para a direita. */
+.recurso::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--azul);
+  scale: 0 1;
+  transform-origin: left;
+}
+@media (hover: hover) {
+  .recurso:hover::before {
+    scale: 1 1;
+  }
 }
 
 .plano {
@@ -226,6 +335,30 @@
   border-radius: 1.5rem;
   background: var(--marinho);
   color: #fff;
+}
+/* A sombra do hover mora num ::after e só a OPACIDADE dela muda: animar o
+   `box-shadow` em si repinta o cartão a cada quadro. */
+.plano,
+.planoDestaque {
+  position: relative;
+  isolation: isolate;
+}
+.plano::after,
+.planoDestaque::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 30px 60px -30px rgb(15 37 71 / 0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .plano:hover::after,
+  .planoDestaque:hover::after {
+    opacity: 1;
+  }
 }
 
 .fechamento {
@@ -244,4 +377,242 @@
   border: 1.5px solid rgb(169 193 224 / 0.3);
   border-radius: 50%;
   transform: translateY(-50%) rotate(-14deg);
+}
+
+/* ===========================================================================
+ * Movimento (29/10/2026): "na página inicial, vamos colocar algumas
+ * animações, transições…", com o app "leve, rápido, sem tirar qualidade".
+ *
+ * Regras que valem para o bloco inteiro:
+ * - CSS puro, zero JavaScript e zero biblioteca: a página segue Server
+ *   Component e não baixa nada a mais.
+ * - Só `translate`/`scale`/`opacity` (compositor; nada de animar sombra,
+ *   cor de fundo ou tamanho). `translate`/`scale` avulsos, não `transform`,
+ *   para não brigar com o `transform` que a órbita já usa nem com o `scale`
+ *   do toque no globals.css.
+ * - O título do topo (o maior texto da abertura, candidato a LCP) NÃO começa
+ *   transparente: só desliza. Começar em opacidade 0 atrasa o LCP medido.
+ * - Com "menos movimento" ligado, nada anda: tudo nasce no lugar. A única
+ *   exceção é o fundo do cabeçalho grudado, que é estado (legibilidade do
+ *   texto branco sobre as seções claras), não enfeite.
+ * ======================================================================== */
+
+/*
+ * CABEÇALHO QUE GRUDA. O fundo escuro acende conforme a página rola
+ * (`animation-timeline: scroll()`, sem ouvir evento de rolagem). Só gruda
+ * onde o navegador sabe acender o fundo: sem isso, texto branco ficaria por
+ * cima das seções claras. Onde não há suporte, o cabeçalho fica parado no
+ * topo, como sempre foi.
+ */
+@supports (animation-timeline: scroll()) {
+  .cabecalho {
+    position: sticky;
+    top: 0;
+  }
+  .cabecalho::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgb(8 19 42 / 0.93);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-bottom: 1px solid rgb(169 193 224 / 0.14);
+    opacity: 0;
+    animation: acenderFundo linear both;
+    animation-timeline: scroll();
+    animation-range: 0px 96px;
+  }
+}
+@keyframes acenderFundo {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Âncoras (#recursos, #planos) deslizam até a seção. Só nesta página
+     (`:has`), para não mudar a rolagem das outras telas do app. */
+  :global(html):has(.cabecalho) {
+    scroll-behavior: smooth;
+  }
+
+  /* Fio de progresso da leitura, na base do cabeçalho grudado. */
+  @supports (animation-timeline: scroll()) {
+    .cabecalho::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--azul), var(--bruma));
+      transform-origin: left;
+      scale: 0 1;
+      opacity: 0.7;
+      animation: progresso linear both;
+      animation-timeline: scroll();
+    }
+  }
+
+  .linkDoTopo::after {
+    transition: scale 260ms var(--saida);
+  }
+
+  /*
+   * CHEGADA DO TOPO, em degraus: título, texto, botões, nota. O título só
+   * desliza (ver regra do LCP acima); os demais sobem e acendem, 90 ms um
+   * depois do outro (`--ordem`, posto pela página). O celular chega junto,
+   * um pouco menor que no fim, e a conversa começa logo depois.
+   */
+  .chegaTitulo {
+    animation: deslizar 800ms var(--saida) backwards;
+  }
+  .chega {
+    animation: chegar 700ms var(--saida) backwards;
+    animation-delay: calc(80ms + var(--ordem, 0) * 90ms);
+  }
+  .chegaPalco {
+    animation: chegarPalco 900ms var(--saida) 120ms backwards;
+  }
+
+  /* A estrela respira devagar; a órbita (acima) já gira. */
+  .estrela {
+    animation: cintilar 5s ease-in-out infinite;
+  }
+
+  /* Uma passada de brilho no botão principal do topo, uma vez, depois que a
+     abertura assentou. No mouse, a passada se repete a cada hover. */
+  .botaoPrincipal::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+    translate: -110% 0;
+    pointer-events: none;
+  }
+  .brilhoUmaVez::after {
+    animation: varrer 1100ms var(--saida) 1400ms backwards;
+  }
+
+  @media (hover: hover) {
+    .botao:hover {
+      translate: 0 -1px;
+    }
+    .botaoPrincipal::after {
+      transition: translate 700ms var(--saida);
+    }
+    .botaoPrincipal:hover::after {
+      translate: 110% 0;
+    }
+
+    .recurso::before {
+      transition: scale 420ms var(--saida);
+    }
+
+    .plano,
+    .planoDestaque {
+      transition: translate 280ms var(--saida);
+    }
+    .plano::after,
+    .planoDestaque::after {
+      transition: opacity 280ms var(--saida);
+    }
+    .plano:hover,
+    .planoDestaque:hover {
+      translate: 0 -6px;
+    }
+  }
+
+  /* A órbita do fechamento balança devagar, sem dar a volta. */
+  .fechamento::before {
+    animation: balancar 24s ease-in-out infinite alternate;
+  }
+
+  /*
+   * SEÇÕES QUE SOBEM COM A ROLAGEM (`animation-timeline: view()`, zero
+   * JavaScript), mesma receita dos cartões do painel no globals.css: faixa
+   * curta e em PIXELS, para bloco alto não ficar meio apagado; `backwards`,
+   * para depois de chegar o item ficar livre para o `translate` do hover;
+   * item que já nasce na tela não anima. `--ordem` empurra a faixa de cada
+   * item da fileira um pouco adiante: os cartões lado a lado chegam em
+   * cascata, não em bloco.
+   */
+  @supports (animation-timeline: view()) {
+    .surge {
+      animation: surgir linear backwards;
+      animation-timeline: view();
+      animation-range: entry calc(var(--ordem, 0) * 36px) entry calc(140px + var(--ordem, 0) * 36px);
+    }
+    /* O traço marinho de cada passo se desenha da esquerda, logo atrás do
+       passo que sobe. */
+    .passo::before {
+      animation: tracar linear backwards;
+      animation-timeline: view();
+      animation-range: entry calc(60px + var(--ordem, 0) * 36px) entry calc(300px + var(--ordem, 0) * 36px);
+    }
+  }
+}
+
+@keyframes progresso {
+  to {
+    scale: 1 1;
+  }
+}
+@keyframes deslizar {
+  from {
+    translate: 0 14px;
+  }
+}
+@keyframes chegar {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+@keyframes chegarPalco {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+    scale: 0.97;
+  }
+}
+@keyframes cintilar {
+  0%,
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+  50% {
+    scale: 0.78;
+    opacity: 0.7;
+  }
+}
+@keyframes varrer {
+  from {
+    translate: -110% 0;
+  }
+  to {
+    translate: 110% 0;
+  }
+}
+@keyframes balancar {
+  from {
+    transform: translateY(-50%) rotate(-14deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(-4deg);
+  }
+}
+@keyframes surgir {
+  from {
+    opacity: 0;
+    translate: 0 28px;
+  }
+}
+@keyframes tracar {
+  from {
+    scale: 0 1;
+  }
 }
