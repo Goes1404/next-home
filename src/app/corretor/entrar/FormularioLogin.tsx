@@ -96,7 +96,7 @@ export function FormularioLogin({ next }: { next?: string }) {
       {/*
         29/10/2026 ("o campo de entrar está muito grande"): "lembrar" e
         "Esqueci a senha" dividem UMA linha, e o rótulo encurtou para
-        "Lembrar e-mail" — continua dizendo O QUE fica guardado (o e-mail;
+        "Lembrar login" — continua dizendo O QUE fica guardado (o login;
         a senha, quem guarda é o gerenciador do aparelho, convidado pelo
         `autoComplete`). `min-h-10`: a linha inteira é alvo de polegar.
       */}
@@ -109,7 +109,7 @@ export function FormularioLogin({ next }: { next?: string }) {
             defaultChecked
             className="accent-acento size-4 shrink-0 cursor-pointer"
           />
-          Lembrar e-mail
+          Lembrar login
         </label>
         <Link
           href="/corretor/esqueci-a-senha"
