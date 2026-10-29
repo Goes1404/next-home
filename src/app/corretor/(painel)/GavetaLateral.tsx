@@ -274,7 +274,7 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
               );
             })}
             <li>
-              <form action={sair}>
+              <form action={sair} data-sair>
                 <button
                   type="submit"
                   className="text-perigo hover:bg-perigo-lavado flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors"

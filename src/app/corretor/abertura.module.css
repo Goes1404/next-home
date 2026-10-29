@@ -1,3 +1,6 @@
+/* 29/10/2026 ("deixe o app mais rápido para entrar"): a abertura caiu de
+   2,6 s para 1,45 s — mesma sequência, tempos encurtados.
+ */
 /*
  * Abertura do app (29/10/2026): o selo da Astro se monta — o ladrilho
  * aparece, o "A" se desenha, a órbita passa em volta e a estrela acende —,
@@ -27,7 +30,7 @@
 }
 :global(html[data-abertura="sim"]) .abertura {
   display: flex;
-  animation: sair 0.45s ease-in 2s forwards;
+  animation: sair 0.3s ease-in 1.15s forwards;
 }
 :global(html[data-abertura="pulou"]) .abertura {
   display: flex;
@@ -41,24 +44,24 @@
 }
 .ladrilho {
   transform-origin: 32px 32px;
-  animation: crescer 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: crescer 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .letra {
   opacity: 0;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: desenhar 0.55s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+  animation: desenhar 0.35s cubic-bezier(0.65, 0, 0.35, 1) 0.15s forwards;
 }
 .orbita {
   opacity: 0;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: desenhar 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.75s forwards;
+  animation: desenhar 0.45s cubic-bezier(0.65, 0, 0.35, 1) 0.4s forwards;
 }
 .estrela {
   transform-origin: 49px 21px;
   opacity: 0;
-  animation: acender 0.45s cubic-bezier(0.22, 1, 0.36, 1) 1.3s forwards;
+  animation: acender 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.75s forwards;
 }
 .nome {
   font-family: var(--font-astro-titulo), system-ui, sans-serif;
@@ -67,7 +70,7 @@
   letter-spacing: -0.02em;
   opacity: 0;
   translate: 0 8px;
-  animation: surgir 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.35s forwards;
+  animation: surgir 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
 }
 .nome span {
   color: #a9c1e0;

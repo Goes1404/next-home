@@ -28,7 +28,7 @@ export const SCRIPT_DA_ABERTURA = `try{
     h.setAttribute("data-abertura","sim");
     var el=document.getElementById("abertura-do-app");
     if(el){el.addEventListener("click",function(){h.setAttribute("data-abertura","pulou");});}
-    setTimeout(function(){h.removeAttribute("data-abertura");},2600);
+    setTimeout(function(){h.removeAttribute("data-abertura");},1450);
   }
 }catch(e){}`;
 

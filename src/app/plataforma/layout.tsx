@@ -49,12 +49,14 @@ export default async function PlataformaLayout({ children }: { children: React.R
       <header className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/plataforma" className="font-display text-titulo text-lg">
+            <Link href="/plataforma" className="font-display text-titulo shrink-0 text-lg">
               <MarcaAstro selo="size-7" destaque="text-apoio font-normal" />
             </Link>
-            <span className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</span>
+            {/* Só a partir de 640px (29/10/2026): no celular o rótulo não
+                encolhia e passava por baixo do seletor de tema. */}
+            <span className="text-fluid-xs text-apoio hidden truncate tracking-[0.16em] uppercase sm:inline">Plataforma</span>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link
               href="/plataforma/administradores"
               className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo hidden min-h-11 items-center rounded-xl px-3 transition-colors sm:flex"
@@ -62,7 +64,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
               Administradores
             </Link>
             <SeletorTema />
-            <form action={sair}>
+            <form action={sair} data-sair>
               <button
                 type="submit"
                 className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 cursor-pointer items-center rounded-xl px-3 transition-colors"

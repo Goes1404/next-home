@@ -163,3 +163,24 @@ muito grande", "mais animações, transições animadas".
   grão, aurora parada, sem `backdrop-filter` no painel.
 - Login por usuário e senha forte: [[login-por-usuario-senha-forte-e-validade]].
 
+## Sexta leva (29/10/2026, 15h40): cartão no centro, saída animada, mais rápido
+
+- **Cartão no centro exato** no celular: `.tela` virou grade
+  `minmax(min-content, 1fr) auto 1fr` (cartão na faixa do meio). Em tela
+  baixa a faixa de cima não encolhe abaixo da marca e o cartão desce.
+- **Campo de 52px** (era 48) e menos margem lateral: o e-mail longo
+  (`adm.exemplo@astroimob.vercel.app`) cabe inteiro em 390px.
+- **Card maior no computador** (27rem, título 1.5rem).
+- **Saída animada**: `<form data-sair>` → `SCRIPT_DE_APP` marca
+  `html[data-saindo]` no envio → véu marinho com o selo (`::after`). O "Sair"
+  redireciona SEM recarregar, então `LimparSaida` (na TelaDeAcesso) troca para
+  "fim" e remove o atributo; sem isso o véu cobriria o login para sempre.
+  **Armadilha de teste:** `profundidadeDoPainel.test.ts` lê o ÚLTIMO
+  `@media (prefers-reduced-motion: reduce)` do globals.css; bloco novo de
+  movimento vai em `no-preference`, não em `reduce`.
+- **Mais rápido**: abertura de 2,6 s → 1,45 s; onda 520 → 380 ms; no celular
+  os cartões não têm mais a chegada pela rolagem (linha do tempo por cartão
+  em cada quadro do gesto).
+- Plataforma: o rótulo "Plataforma" some abaixo de 640px (passava por baixo
+  do seletor de tema).
+

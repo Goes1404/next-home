@@ -22,14 +22,18 @@
   position: relative;
   isolation: isolate;
   min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  /* 29/10/2026 ("no PC está muito bom, no app está estranho"): no celular
-     também é marca + CARTÃO, centralizados, como no computador — a folha
-     presa ao pé deixava um céu vazio enorme no meio da tela. */
-  justify-content: center;
-  gap: 1.25rem;
-  padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  /* 29/10/2026 ("coloque o card de entrar no meio da tela"): no celular o
+     CARTÃO fica no centro exato da tela. Grade de três faixas: a do meio é o
+     cartão, as de cima e de baixo dividem a sobra por igual (1fr cada). A de
+     cima nunca fica menor que a marca (`minmax(min-content, 1fr)`): em tela
+     baixa o cartão desce o necessário em vez de cobrir o título. */
+  display: grid;
+  grid-template-rows: minmax(min-content, 1fr) auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  /* Margens laterais curtas (0.75rem) e folha com 1rem por dentro: no
+     celular cada pixel de largura é e-mail visível no campo (29/10/2026,
+     "está cortando" o usuário/e-mail). */
+  padding: calc(env(safe-area-inset-top, 0px) + 1rem) 0.75rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
   overflow: hidden;
   color: #fff;
   font-family: var(--font-astro-texto), system-ui, sans-serif;
@@ -130,8 +134,9 @@
 .topo {
   width: 100%;
   max-width: 26rem;
-  align-self: center;
-  padding: 0 0.35rem;
+  justify-self: center;
+  align-self: end;
+  padding: 3.25rem 0.35rem 1.25rem;
 }
 
 /* "← Início" (29/10/2026): a saída do login para a página da Astro. Fica
@@ -185,13 +190,14 @@
   font-weight: 600;
 }
 .chamada {
-  margin-top: 1.25rem;
-  font-size: clamp(1.85rem, 8vw, 2.4rem);
+  margin-top: 0.9rem;
+  font-size: clamp(1.6rem, 7vw, 2.1rem);
   line-height: 1.02;
   font-weight: 800;
   max-width: 16ch;
 }
 .apoio {
+  display: none;
   margin-top: 0.75rem;
   max-width: 30ch;
   font-size: 1rem;
@@ -204,11 +210,8 @@
 
 /* Celular baixo: a marca encolhe para o botão "Entrar" caber sem rolar. */
 @media (max-width: 63.99rem) and (max-height: 820px) {
-  .tela {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 3.5rem);
-  }
   .chamada {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     font-size: clamp(1.75rem, 7.5vw, 2.1rem);
   }
   .apoio {
@@ -224,10 +227,10 @@
   background: #fff;
   color: #0d1b33;
   border-radius: 1.5rem;
-  padding: 1.15rem 1.15rem 0.85rem;
+  padding: 1.15rem 1rem 0.85rem;
   width: 100%;
   max-width: 26rem;
-  align-self: center;
+  justify-self: center;
   box-shadow: 0 -24px 60px -30px rgb(0 0 0 / 0.6);
 }
 .folhaTitulo {
@@ -298,6 +301,7 @@
 
 @media (min-width: 64rem) {
   .tela {
+    display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -320,6 +324,7 @@
     padding: 0;
     flex: 1;
     max-width: 34rem;
+    align-self: center;
   }
   .marca {
     font-size: 1.35rem;
@@ -329,8 +334,16 @@
     font-size: clamp(3rem, 4.6vw, 4.25rem);
   }
   .apoio {
+    display: block;
     font-size: 1.15rem;
     max-width: 34ch;
+  }
+  .folhaTitulo {
+    font-size: 1.5rem;
+  }
+  .folhaApoio {
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
   }
   .recursos {
     display: grid;
@@ -355,10 +368,12 @@
   }
   .folha {
     margin-top: 0;
-    width: 22.5rem;
+    /* 29/10/2026: "no desktop, pode deixar o card um pouco maior". */
+    width: 27rem;
+    max-width: none;
     flex-shrink: 0;
-    border-radius: 1.5rem;
-    padding: 1.5rem 1.5rem 1rem;
+    border-radius: 1.75rem;
+    padding: 2.25rem 2.25rem 1.4rem;
     box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.75);
   }
   .nevoa:nth-of-type(1) {

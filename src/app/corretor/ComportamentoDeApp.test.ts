@@ -31,7 +31,8 @@ describe("comportamento de app", () => {
 
   it("no navegador comum: nada muda", () => {
     const r = rodar(false);
-    expect(r).toEqual({ app: null, viewport: "width=device-width, initial-scale=1, viewport-fit=cover", ouvintes: [] });
+    // Só o véu da saída animada, que vale em qualquer navegador.
+    expect(r).toEqual({ app: null, viewport: "width=device-width, initial-scale=1, viewport-fit=cover", ouvintes: ["submit"] });
   });
 
   it("o CSS desliga o puxar-para-atualizar no rolador RAIZ (o <html>)", () => {

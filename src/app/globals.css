@@ -3706,7 +3706,10 @@ html[data-menu-aberto] body {
    * `backwards`, não `both`: depois de chegar, o cartão fica livre para o
    * `translate` do próprio hover. Cartão que já nasce na tela não anima.
    */
-  @supports (animation-timeline: view()) {
+  /* Só no computador desde 29/10/2026 ("deixe o app leve ao arrastar pra
+     baixo"): no celular, cada cartão com linha do tempo de rolagem é
+     trabalho a mais em todo quadro do gesto. */
+  @supports (animation-timeline: view()) and (not (hover: none)) {
     /* Só o cartão de fora (o de dentro chega junto com ele), e nunca um
        que tenha algo `fixed` dentro: `translate` cria bloco de contenção, e
        uma folha ou modal aberto ali dentro ficaria preso ao cartão. */
@@ -3816,8 +3819,9 @@ html[data-troca-tema]::view-transition-new(root) {
        sempre os `fixed` da tela (folhas, modais, barra de salvar). */
     animation: tela-entra 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
+  /* 380ms (era 520ms, 29/10/2026: "deixe a animação de ondas mais rápido"). */
   .onda-da-astro .onda-transicao {
-    animation-duration: 520ms;
+    animation-duration: 380ms;
   }
 }
 @keyframes tela-entra {
@@ -3864,5 +3868,54 @@ html[data-troca-tema]::view-transition-new(root) {
   }
   [data-rota="painel"] :is(header, nav):is(.backdrop-blur-lg, .backdrop-blur-md, .backdrop-blur-xl) {
     background-color: color-mix(in oklab, var(--color-fundo) 97%, transparent);
+  }
+}
+
+/* ===========================================================================
+ * Saída animada da conta (29/10/2026, "faça animação ao deslogar").
+ *
+ * Todo `<form data-sair>` (o "Sair" do menu da conta, da gaveta e da
+ * plataforma) marca `data-saindo` no `<html>` no envio (`SCRIPT_DE_APP`,
+ * sem esperar o servidor). O véu marinho com o selo da Astro cobre a tela
+ * enquanto a sessão fecha e o login carrega — o login, por sua vez, já chega
+ * com a entrada animada dele. Só `opacity` e `scale`.
+ * ======================================================================== */
+html[data-saindo]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: all;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b3a6b'/%3E%3Cpath d='M18 48 L32 15 L46 48' fill='none' stroke='%23fff' stroke-width='5.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='32' cy='37' rx='24' ry='7.5' transform='rotate(-18 32 37)' fill='none' stroke='%23a9c1e0' stroke-width='2.6'/%3E%3Cpath d='M49 15 L50.6 19.4 L55 21 L50.6 22.6 L49 27 L47.4 22.6 L43 21 L47.4 19.4 Z' fill='%23fff'/%3E%3C/svg%3E")
+      center / 4.5rem no-repeat,
+    radial-gradient(60% 45% at 50% 45%, rgb(47 94 168 / 0.45), transparent 70%),
+    #08132a;
+}
+/* O login, ao montar, troca para "fim" (`LimparSaida`) e o véu se desfaz. */
+html[data-saindo="fim"]::after {
+  pointer-events: none;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-saindo]::after {
+    animation: saindo 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  html[data-saindo="fim"]::after {
+    animation: saindo-fim 360ms ease-out both;
+  }
+}
+@keyframes saindo {
+  from {
+    opacity: 0;
+    scale: 1.04;
+  }
+}
+@keyframes saindo-fim {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

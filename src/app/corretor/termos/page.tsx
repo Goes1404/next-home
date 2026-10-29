@@ -85,7 +85,7 @@ export default async function TermosPage() {
           ) : (
             <FormularioAceite />
           )}
-          <form action={sair}>
+          <form action={sair} data-sair>
             <button
               type="submit"
               className="botao-secundario text-fluid-sm text-corpo min-h-11 w-full rounded-full px-7 py-3"

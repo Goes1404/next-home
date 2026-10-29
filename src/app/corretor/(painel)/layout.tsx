@@ -177,7 +177,7 @@ export default async function PainelLayout({
                 fotoUrl={corretor.fotoUrl}
                 iniciais={iniciais(corretor.nome)}
                 formularioSair={
-                  <form action={sair}>
+                  <form action={sair} data-sair>
                     <button
                       type="submit"
                       className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 transition-colors"
@@ -263,7 +263,7 @@ function ContaSemVinculo() {
         Seu acesso está ativo, mas ainda não foi ligado a um cadastro de corretor. Fale com
         quem administra o site para concluir o vínculo — depois disso o painel abre normalmente.
       </p>
-      <form action={sair} className="mt-6">
+      <form action={sair} data-sair className="mt-6">
         <button
           type="submit"
           className="botao-secundario text-fluid-sm text-corpo min-h-11 w-full rounded-full px-7 py-3 sm:w-auto"
