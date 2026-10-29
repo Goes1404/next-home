@@ -12360,7 +12360,10 @@ Nota: [[conta-sem-vinculo-tem-botao-de-sair]].
 - **Login sem corretor ficava preso na tela "Conta ainda não vinculada"**: o
   "Sair" mora no menu da conta, que só aparece com corretor. O cartão ganhou
   o próprio botão de sair. Quem cai ali precisa do vínculo no cadastro
-  (`corretores.user_id` + `slug`).
+  (`corretores.user_id` + `slug`). Quem estava preso era o **dono**
+  (administrador da plataforma, sem corretor por desenho): o login o leva a
+  `/plataforma`, mas o app abre `/corretor` direto. Agora o layout do painel
+  manda o administrador sem corretor para `/plataforma`.
 - **A `main` estava vermelha por duas coisas que vieram de outras sessões**:
   a 0231 sem `set local lock_timeout` (guarda `migracoesAtomicas.test.ts`) e
   `DiaDaAgenda.tsx` com `useCallback(..., [])` que o React Compiler recusa

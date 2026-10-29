@@ -28,6 +28,7 @@ import { SeletorTema } from "@/components/tema/SeletorTema";
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
 import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
@@ -77,6 +78,15 @@ export default async function PainelLayout({
   // Ficha criada só para conceder acesso administrativo: permanece fora do
   // painel até o próprio titular informar os dados obrigatórios.
   if (corretor && cadastroEstaPendente(corretor.creci)) redirect("/corretor/completar-cadastro");
+  // Administrador da plataforma sem ficha de corretor (o dono): o login já o
+  // manda para /plataforma, mas o app e os atalhos abrem /corretor direto, e
+  // ele caía preso em "conta sem vínculo" (29/10/2026). Decide pela sessão,
+  // como `exigirAdminDaPlataforma*`; só roda para quem não tem corretor.
+  if (!corretor) {
+    const supabase = await createClient();
+    const { data: ehAdmin } = await supabase.rpc("eh_admin_da_plataforma");
+    if (ehAdmin === true) redirect("/plataforma");
+  }
   // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
   // O aceite dos termos está temporariamente desativado; a página e a action
   // continuam preservadas para reativação posterior.

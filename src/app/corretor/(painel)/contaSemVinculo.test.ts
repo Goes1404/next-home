@@ -13,4 +13,11 @@ describe("conta sem vínculo", () => {
     const cartao = codigo.slice(codigo.indexOf("function ContaSemVinculo("));
     expect(cartao).toMatch(/<form action=\{sair\}/);
   });
+
+  it("administrador da plataforma sem corretor vai para /plataforma, não para o cartão", () => {
+    const codigo = readFileSync("src/app/corretor/(painel)/layout.tsx", "utf8");
+    expect(codigo).toMatch(
+      /if \(!corretor\) \{[\s\S]{0,200}rpc\("eh_admin_da_plataforma"\)[\s\S]{0,80}redirect\("\/plataforma"\)/,
+    );
+  });
 });
