@@ -1,4 +1,4 @@
-import { fatiasDoRepasse, type FormaRecebimento, type Parcela } from "./parcelas";
+import { fatiasDoRepasse, repasseDevido, type FormaRecebimento, type Parcela } from "./parcelas";
 import { centavos } from "./venda";
 
 /**
@@ -110,6 +110,8 @@ export type Movimento = {
   vendaId?: string;
   /** Parcela da comissão (entrada de comissão, 0232). */
   parcelaId?: string;
+  /** Repasse que um distrato reduziu: não se paga cheio, o gestor ajusta antes. */
+  aguardaAjuste?: boolean;
   corretorId?: string;
 };
 
@@ -166,9 +168,17 @@ export function movimentosDo(lancamentos: LancamentoDoCaixa[], vendas: VendaDoCa
       }
       // Em aberto: o repasse acompanha as parcelas (sai quando cada uma entra
       // ou na previsão dela) e encolhe na proporção do que o distrato cancelou.
+      const reduzido = repasseDevido(p.repasseValor, parcelas) < p.repasseValor - 0.01;
       for (const f of fatiasDoRepasse(p.repasseValor, parcelas)) {
         if (f.valor <= 0) continue;
-        lista.push({ ...base, chave: `r:${v.id}:${p.corretorId}:${f.parcelaId}`, valor: f.valor, vencimento: f.data, pagoEm: null });
+        lista.push({
+          ...base,
+          chave: `r:${v.id}:${p.corretorId}:${f.parcelaId}`,
+          valor: f.valor,
+          vencimento: f.data,
+          pagoEm: null,
+          ...(reduzido ? { aguardaAjuste: true } : {}),
+        });
       }
     }
   }

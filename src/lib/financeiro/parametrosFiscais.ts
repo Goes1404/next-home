@@ -88,14 +88,23 @@ export const LINHAS_PADRAO: LinhaDeParametro[] = [
   { chave: "inss_patronal", vigenteDesde: "2025-01-01", valor: 0.2, fonte: `${LEI_8212} (20% da empresa fora do Simples)`, fonteUrl: null },
 ];
 
+/**
+ * A linha vigente na data. Antes da primeira vigência cadastrada, a mais
+ * antiga, com a fonte dizendo isso: uma tela de mês antigo não pode virar
+ * página de erro (revisão final, 29/10). Chave sem linha nenhuma é erro.
+ */
 const vigente = (linhas: LinhaDeParametro[], chave: ChaveFiscal, data: string) => {
   let melhor: LinhaDeParametro | null = null;
+  let maisAntiga: LinhaDeParametro | null = null;
   for (const l of linhas) {
-    if (l.chave !== chave || l.vigenteDesde > data) continue;
+    if (l.chave !== chave) continue;
+    if (!maisAntiga || l.vigenteDesde < maisAntiga.vigenteDesde) maisAntiga = l;
+    if (l.vigenteDesde > data) continue;
     if (!melhor || l.vigenteDesde > melhor.vigenteDesde) melhor = l;
   }
-  if (!melhor) throw new Error(`parametro_fiscal_ausente:${chave}`);
-  return melhor;
+  if (melhor) return melhor;
+  if (!maisAntiga) throw new Error(`parametro_fiscal_ausente:${chave}`);
+  return { ...maisAntiga, fonte: `${maisAntiga.fonte} (data anterior à primeira vigência cadastrada)` };
 };
 
 export function parametrosNaData(linhas: LinhaDeParametro[], data: string): ParametrosFiscais {

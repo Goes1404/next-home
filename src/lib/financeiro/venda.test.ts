@@ -221,3 +221,20 @@ describe("datasQueTravamAVenda", () => {
     ]);
   });
 });
+
+// Revisão final: do corretor a forma não viaja (o banco mantém a gravada), e
+// a validação esperava a comissão cheia; o corretor não salvava nem uma
+// observação numa venda dividida com alguém recebendo direto.
+describe("problemasDaVenda com a forma gravada pelo gestor", () => {
+  it("sem a forma no que o corretor digitou, vale a forma gravada", () => {
+    const v = base({
+      participantes: [{ corretorId: "c1", partePercentual: 100, repasse: { modo: "valor", numero: 10000 } }],
+      parcelas: [
+        { numero: 1, valor: 7500, pagador: "construtora", venceEm: null },
+        { numero: 2, valor: 7500, pagador: "construtora", venceEm: null },
+      ],
+    });
+    expect(problemasDaVenda(v, "2026-09-25", new Map([["c1", "direto"]]))).toEqual([]);
+    expect(problemasDaVenda(v, "2026-09-25")).not.toEqual([]);
+  });
+});

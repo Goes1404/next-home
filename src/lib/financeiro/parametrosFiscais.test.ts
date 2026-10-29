@@ -35,3 +35,15 @@ describe("parametrosNaData", () => {
     for (const o of p.origem) expect(o.fonte.trim()).not.toBe("");
   });
 });
+
+// Revisão final: antes de 05/2025 não há linha vigente de IRRF, e a tela
+// Fiscal de um mês antigo virava página de erro.
+describe("parametrosNaData antes da primeira vigência", () => {
+  it("usa a linha mais antiga de cada chave e diz isso na fonte", () => {
+    const p = parametrosNaData(LINHAS_PADRAO, "2024-12-15");
+    expect(p.tetoInss).toBe(8157.41);
+    expect(p.faixasIrrf).toHaveLength(5);
+    const faixas = p.origem.find((o) => o.chave === "irrf_faixas")!;
+    expect(faixas.fonte).toMatch(/anterior/i);
+  });
+});

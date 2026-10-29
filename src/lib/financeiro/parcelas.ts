@@ -152,3 +152,13 @@ export function comissaoEmEstados(
   }
   return { recebida: centavos(recebida), liberada: centavos(liberada), aguardando: centavos(aguardando) };
 }
+
+/**
+ * O repasse pode ser marcado como pago? A marcação é uma data só e vale o
+ * repasse INTEIRO (até a Fase C trazer o pagamento por parcela). Então só
+ * quando algo já entrou e nenhum distrato reduziu o devido; reduzido, o
+ * gestor ajusta o repasse na divisão antes de pagar (revisão final, 29/10).
+ */
+export function podeMarcarRepassePago(repasseValor: number, parcelas: Parcela[]): boolean {
+  return repasseLiberado(repasseValor, parcelas) > 0 && repasseDevido(repasseValor, parcelas) >= repasseValor - 0.01;
+}

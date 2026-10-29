@@ -112,8 +112,16 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
  * O que impede gravar, em português de tela. Lista vazia = pode gravar.
  * A migration repete o essencial (soma 100, valor > 0) como segunda linha de
  * defesa; esta é a primeira, e a única que explica o problema.
+ *
+ * `formasGravadas`: a forma de recebimento que já está no banco, por
+ * corretor. Do corretor a forma não viaja (só o gestor a muda), e a soma das
+ * parcelas tem de bater com o que a imobiliária recebe DE FATO.
  */
-export function problemasDaVenda(v: VendaDigitada, hojeIso: string): string[] {
+export function problemasDaVenda(
+  v: VendaDigitada,
+  hojeIso: string,
+  formasGravadas: Map<string, FormaRecebimento> = new Map(),
+): string[] {
   const erros: string[] = [];
   if (!v.empreendimentoId && !v.imovelDescricao.trim()) erros.push("Escolha o imóvel vendido.");
   if (!DATA.test(v.dataVenda)) erros.push("Informe a data da venda.");
@@ -145,7 +153,10 @@ export function problemasDaVenda(v: VendaDigitada, hojeIso: string): string[] {
       if (v.parcelas.length > 0) {
         const daImobiliaria = valorDaImobiliaria(
           comissao,
-          v.participantes.map((p) => ({ formaRecebimento: p.formaRecebimento ?? "repasse", repasseValor: resolverPar(comissao, p.repasse).valor })),
+          v.participantes.map((p) => ({
+            formaRecebimento: p.formaRecebimento ?? formasGravadas.get(p.corretorId) ?? "repasse",
+            repasseValor: resolverPar(comissao, p.repasse).valor,
+          })),
         );
         erros.push(...validarParcelas(v.parcelas, daImobiliaria));
       }

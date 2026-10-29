@@ -3,6 +3,7 @@ import {
   MAX_PARCELAS,
   comissaoEmEstados,
   dividirEmParcelas,
+  podeMarcarRepassePago,
   fatiasDoRepasse,
   repasseDevido,
   repasseLiberado,
@@ -145,5 +146,17 @@ describe("comissaoEmEstados", () => {
 
   it("corretor que recebe direto: a imobiliária não deve nada a ele", () => {
     expect(comissaoEmEstados(venda("direto"), "c1")).toEqual({ recebida: 0, liberada: 0, aguardando: 0 });
+  });
+});
+
+// Revisão final: a marcação de repasse é uma data só e vale o repasse
+// inteiro; depois de um distrato que cancelou parcela, marcar "pago"
+// registraria saída maior que a devida.
+describe("podeMarcarRepassePago", () => {
+  it("só quando algo entrou e nada foi cancelado", () => {
+    const recebida = parcela({ id: "a", valor: 5000, recebidaEm: "2026-10-02" });
+    expect(podeMarcarRepassePago(1000, [recebida, parcela({ id: "b", numero: 2, valor: 5000 })])).toBe(true);
+    expect(podeMarcarRepassePago(1000, [parcela({ id: "a" })])).toBe(false);
+    expect(podeMarcarRepassePago(1000, [recebida, parcela({ id: "b", numero: 2, valor: 5000, canceladaEm: "2026-10-20" })])).toBe(false);
   });
 });

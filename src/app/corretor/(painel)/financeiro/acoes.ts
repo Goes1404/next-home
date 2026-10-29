@@ -33,7 +33,15 @@ export async function salvarVenda(vendaId: string | null, v: VendaDigitada): Pro
 
   // Server Action é endpoint HTTP: a tela valida para explicar, aqui valida
   // para valer.
-  const problemas = problemasDaVenda(v, hojeEmSaoPaulo());
+  // A forma de recebimento gravada vale para quem não a manda (o corretor):
+  // a soma das parcelas é contra o que a imobiliária recebe de fato.
+  const formasGravadas = new Map<string, FormaRecebimento>();
+  if (vendaId) {
+    const leitor = await createClient();
+    const { data } = await leitor.from("venda_participantes").select("corretor_id, forma_recebimento").eq("venda_id", vendaId);
+    for (const p of data ?? []) formasGravadas.set(p.corretor_id, p.forma_recebimento);
+  }
+  const problemas = problemasDaVenda(v, hojeEmSaoPaulo(), formasGravadas);
   if (problemas.length > 0) return { erro: problemas[0] };
 
   // Corretor comum só registra venda da qual participa. O gestor pode

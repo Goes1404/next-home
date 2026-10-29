@@ -139,6 +139,21 @@ describe("movimentos do caixa", () => {
     expect(r.map((x) => [x.chave, x.valor, x.pagoEm])).toEqual([["r:v1:c1", 8000, "2026-10-05"]]);
   });
 
+  it("repasse reduzido pelo distrato fica marcado para ajuste (não se paga cheio)", () => {
+    const v = venda({
+      status: "distratada",
+      parcelas: [
+        parcela({ id: "a", valor: 6000, recebidaEm: "2026-10-01" }),
+        parcela({ id: "b", numero: 2, valor: 6000, canceladaEm: "2026-10-05" }),
+      ],
+      participantes: [{ corretorId: "c1", nome: "Bruna", repasseValor: 900, repassePagoEm: null, formaRecebimento: "repasse" }],
+    });
+    const r = movimentosDo([], [v]).filter((x) => x.origem === "repasse");
+    expect(r.every((x) => x.aguardaAjuste)).toBe(true);
+    const normal = movimentosDo([], [venda({ parcelas: [parcela({ recebidaEm: "2026-10-01" })] })]).filter((x) => x.origem === "repasse");
+    expect(normal.some((x) => x.aguardaAjuste)).toBe(false);
+  });
+
   it("a competência do lançamento é a informada ou o mês do vencimento", () => {
     expect(competenciaDoLancamento(lanc({ vencimento: "2026-10-20" }))).toBe("2026-10-01");
     expect(competenciaDoLancamento(lanc({ vencimento: "2026-10-20", competencia: "2026-09-01" }))).toBe("2026-09-01");

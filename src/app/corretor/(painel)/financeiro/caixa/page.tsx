@@ -45,7 +45,7 @@ function Liquidar({ m, hoje }: { m: Movimento; hoje: string }) {
   }
   // Repasse só se paga depois que a comissão entrou (o extrato separa o
   // "liberado" do "aguardando"); antes disso o botão não aparece.
-  if (m.origem === "repasse" && m.vendaId && m.corretorId && m.vencimento && m.vencimento <= hoje) {
+  if (m.origem === "repasse" && m.vendaId && m.corretorId && m.vencimento && m.vencimento <= hoje && !m.aguardaAjuste) {
     return (
       <BotaoAcao acao={marcarRepassePago.bind(null, m.vendaId, m.corretorId, hoje)} rotulopendente="Marcando…" variante="secundario">
         Paguei

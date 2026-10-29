@@ -207,7 +207,9 @@ export function FormularioVenda({
       ? parcelas.map((p, i) => ({ numero: i + 1, valor: lerReais(p.valor) ?? 0, pagador: p.pagador, venceEm: p.venceEm || null }))
       : [],
   };
-  const problemas = problemasDaVenda(digitada, hojeEmSaoPaulo());
+  // Do corretor a forma não viaja, mas a soma das parcelas é contra a forma
+  // gravada (que a linha já traz).
+  const problemas = problemasDaVenda(digitada, hojeEmSaoPaulo(), new Map(linhas.map((l) => [l.corretorId, l.forma])));
 
   function mudarLinha(chave: number, mudanca: Partial<Linha>) {
     setLinhas((atual) => atual.map((l) => (l.chave === chave ? { ...l, ...mudanca } : l)));

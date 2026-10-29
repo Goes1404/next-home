@@ -4,7 +4,14 @@ import { notFound } from "next/navigation";
 import { getCorretorLogado, getEmpreendimentosParaFiltro, getEquipeAtiva } from "@/lib/corretorSessao";
 import { getVenda } from "@/lib/financeiro/dados";
 import { formatarPercentual, formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
-import { ROTULO_PAGADOR, repasseDevido, repasseLiberado, situacaoDaParcela, somaDas, type SituacaoDaParcela } from "@/lib/financeiro/parcelas";
+import {
+  ROTULO_PAGADOR,
+  podeMarcarRepassePago,
+  repasseDevido,
+  situacaoDaParcela,
+  somaDas,
+  type SituacaoDaParcela,
+} from "@/lib/financeiro/parcelas";
 import type { VendaNaTela } from "@/lib/financeiro/dados";
 import { BotaoAcao } from "../../_componentes/BotaoAcao";
 import { marcarParcelaRecebida, marcarRepassePago } from "../acoes";
@@ -75,8 +82,8 @@ function PagamentosDaVenda({ venda }: { venda: VendaNaTela }) {
       <ParcelasDaVenda venda={venda} gestor />
       <ul className="divide-linha divide-y">
         {venda.participantes.map((p) => {
-          const liberado = repasseLiberado(p.repasseValor, venda.parcelas);
           const devido = repasseDevido(p.repasseValor, venda.parcelas);
+          const reduzido = devido < p.repasseValor - 0.01;
           return (
             <li key={p.corretorId} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span className="text-fluid-sm text-corpo min-w-0 break-words">
@@ -95,10 +102,14 @@ function PagamentosDaVenda({ venda }: { venda: VendaNaTela }) {
                 <BotaoAcao acao={marcarRepassePago.bind(null, venda.id, p.corretorId, null)} variante="secundario" rotulopendente="Desfazendo…">
                   Desfazer
                 </BotaoAcao>
-              ) : p.formaRecebimento === "direto" ? null : liberado > 0 ? (
+              ) : p.formaRecebimento === "direto" ? null : podeMarcarRepassePago(p.repasseValor, venda.parcelas) ? (
                 <BotaoAcao acao={marcarRepassePago.bind(null, venda.id, p.corretorId, hoje)} rotulopendente="Marcando…">
                   Paguei hoje
                 </BotaoAcao>
+              ) : reduzido ? (
+                // A marcação vale o repasse inteiro: com o devido reduzido pelo
+                // distrato, o gestor ajusta o repasse na divisão antes de pagar.
+                <span className="text-fluid-xs text-alerta">ajuste o repasse para {formatarReais(devido)} na divisão antes de pagar</span>
               ) : (
                 <span className="text-fluid-xs text-tenue">libera quando a comissão entrar</span>
               )}
