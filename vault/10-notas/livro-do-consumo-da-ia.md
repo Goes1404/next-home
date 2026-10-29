@@ -2,7 +2,7 @@
 title: Toda chamada paga de IA grava no livro do consumo, e é dele que sai o custo da plataforma
 tags: [ia, banco, admin, armadilha]
 type: nota
-status: seedling
+status: growing
 custou: medio
 codigo: [supabase/migrations/0233_livro_do_consumo_da_ia.sql, src/lib/planos/consumoDaIa.ts, src/lib/planos/custoDaIa.ts, src/lib/whatsapp/llm.ts, src/lib/plataforma/saude.ts, src/app/plataforma/CustoDaIa.tsx, src/lib/planos/consumoCompleto.test.ts]
 created: 2026-10-29
@@ -57,3 +57,5 @@ importadores de `llm.ts` teria de declarar validação.
 from ia_consumo where grupo_id = ... and criado_em >= <mês> group by 1`.
 Finalidade sumida = caminho que perdeu o `uso`. Log `[consumo-ia] não
 gravou` = insert recusado (quase sempre corretor de outro grupo no `quemPaga`).
+
+**Produção (29/10/2026):** 0233 aplicada antes do deploy de `ca35ab93`. Conferido: RLS ligada, 1 policy, 3 gatilhos, logado/anônimo sem acesso à tabela e à função, carimbo preenche o grupo pelo corretor (insert desfeito).

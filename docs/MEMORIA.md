@@ -12419,3 +12419,4 @@ Nota: [[livro-do-consumo-da-ia]].
 - Banco local de teste estava em uso por outra sessão: a 0233 foi conferida
   numa transação desfeita (script no scratchpad), sem `db:teste`, que
   derrubaria o banco dela.
+- **Aplicada em produção em 29/10/2026**, antes do deploy de `ca35ab93`; objetos, privilégios e carimbo conferidos (insert de prova desfeito, `ia_consumo` com 0 linhas no momento).
