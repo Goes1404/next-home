@@ -70,7 +70,7 @@ export async function processarEmailDeLead(
     if (error) console.error("[inbound] falha ao gravar inbound_logs:", error.message);
   };
 
-  const leadsExtraidos = await extrairVariosLeadsComIA(emailInput);
+  const leadsExtraidos = await extrairVariosLeadsComIA(emailInput, { grupoId: opcoes.grupoId, corretorId: opcoes.corretorDono ?? null });
 
   if (leadsExtraidos.length === 0) {
     await registrarLog("ignorado", {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ChaveQualidade } from "./imagensTipos";
+import { registrarConsumoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * Geração de imagem pela OpenAI.
@@ -161,6 +162,8 @@ export type PedidoDeImagem = {
    */
   textosNaCena?: string[] | null;
   timeoutMs?: number;
+  /** O corretor que pediu: quem paga a geração (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 };
 
 /**
@@ -244,7 +247,14 @@ export async function gerarImagem(pedido: PedidoDeImagem): Promise<ResultadoImag
 
     const corpo = (await resposta.json()) as {
       data?: { b64_json?: string; url?: string }[];
+      usage?: { input_tokens?: number; output_tokens?: number };
     };
+    // A imagem é cobrada por token (a saída é quase todo o preço), e a conta
+    // vale mesmo que a resposta venha sem a imagem logo abaixo.
+    await registrarConsumoDaIa(
+      { finalidade: "arte_imagem", quemPaga: pedido.quemPaga },
+      { modelo, tokensEntrada: corpo.usage?.input_tokens ?? null, tokensSaida: corpo.usage?.output_tokens ?? null },
+    );
     const primeira = corpo.data?.[0];
 
     if (primeira?.b64_json) {

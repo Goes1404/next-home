@@ -1,4 +1,5 @@
 import "server-only";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { corrigirNomeDoCorretor } from "./nomeDoCorretor";
 import { marcaDoDado } from "./dadoPedido";
 import { estagioIncompativel } from "./estagioIncompativel";
@@ -107,6 +108,11 @@ export type IdentidadeDoAtendimento = {
 
 export type PedidoDeTurno = {
   identidade: IdentidadeDoAtendimento;
+  /**
+   * Quem paga as chamadas de IA deste turno (livro do consumo, 0233): o
+   * corretor dono do número. O eval passa `{ semGrupo: "eval" }`.
+   */
+  quemPaga: QuemPagaAIa;
   /**
    * O catálogo COMPLETO. O ranking e o encolhimento por foco acontecem
    * aqui dentro — quem chama não deve pré-filtrar, senão volta a existir
@@ -368,6 +374,7 @@ export async function executarTurnoDeAtendimento(
           ultimaFalaNossa,
           jaRecusouAntes:
             recusasPelaIA > 0 || falasDoCliente.some((f) => detectarRecusa(f) !== null),
+          quemPaga: pedido.quemPaga,
         })
       : null;
 
@@ -466,7 +473,7 @@ export async function executarTurnoDeAtendimento(
   };
   const mensagemParaIA =
     vezDoCliente.length > 0 ? vezDoCliente : "(o cliente não respondeu; escreva a mensagem de retomada)";
-  const bruta = await gerarRespostaIA(ctxAgente, mensagemParaIA);
+  const bruta = await gerarRespostaIA(ctxAgente, mensagemParaIA, pedido.quemPaga);
 
   /*
    * O guardrail recebe o histórico COMPLETO, não o recortado: é dele que
@@ -558,6 +565,7 @@ export async function executarTurnoDeAtendimento(
         orcamentoMs: restante,
       },
       mensagemParaIA,
+      pedido.quemPaga,
     );
     if (!nova.meta.fallback) {
       const refeita = conferir(nova);

@@ -6,7 +6,7 @@ status: seedling
 custou: medio
 codigo: [supabase/migrations/0211_saude_e_custo_da_ia_por_grupo.sql, src/lib/planos/custoDaIa.ts, src/lib/plataforma/saudeDoGrupo.ts, src/lib/plataforma/saude.ts, src/app/plataforma/SaudeDoGrupo.tsx, src/app/plataforma/CustoDaIa.tsx]
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-29
 summary: O dono vê, por grupo, um semáforo (verde/amarelo/vermelho) com motivos e o custo da IA do mês em R$ com margem sobre a mensalidade. A telemetria vem agregada por duas funções (0211), porque a guarda da plataforma proíbe ler ia_interacoes linha a linha.
 ---
 
@@ -38,3 +38,5 @@ cota esgotada. Amarelo = WhatsApp desconectado ou não cadastrado (só de
 corretor ativo), mensalidade vencida, erro de envio, fallback (>= 3 e >= 20%
 das tentativas), cota >= 80%, custo > 30% da mensalidade. Grupo encerrado não
 é monitorado. A lista lê tudo de uma vez por fonte (`lerSaudeDosGrupos`), sem N+1.
+
+**29/10/2026:** a soma por `ia_interacoes` deixava metade do gasto de fora. O custo agora sai do livro do consumo: [[livro-do-consumo-da-ia]] (0233).

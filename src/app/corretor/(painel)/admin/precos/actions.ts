@@ -7,6 +7,7 @@ import { exigirGestorNaAcao } from "@/lib/guardas";
 import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import type { EmpreendimentoSimples, ItemConciliado, LoteHistorico } from "@/lib/precos/types";
 import { lerTabelaDePrecosComIa, transcreverPrintDaTabela } from "@/lib/precos/leituraPorIa";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { revalidarSitePublico } from "@/lib/sites/revalidar";
 
 /**
@@ -269,9 +270,12 @@ type ResultadoDaLeitura =
     }
   | { ok: false; erro: string; texto?: string };
 
-async function lerComIa(texto: string, opts?: { prazoMs?: number; dePrint?: boolean }): Promise<ResultadoDaLeitura> {
+async function lerComIa(
+  texto: string,
+  opts: { prazoMs?: number; dePrint?: boolean; quemPaga: QuemPagaAIa },
+): Promise<ResultadoDaLeitura> {
   const catalogo = await buscarCatalogoAtualParaConciliacao();
-  const leitura = await lerTabelaDePrecosComIa(texto, catalogo, { prazoMs: opts?.prazoMs });
+  const leitura = await lerTabelaDePrecosComIa(texto, catalogo, { prazoMs: opts.prazoMs, quemPaga: opts.quemPaga });
   if (leitura.falhou) {
     return {
       ok: false,
@@ -296,7 +300,7 @@ async function lerComIa(texto: string, opts?: { prazoMs?: number; dePrint?: bool
     descartados: leitura.descartados,
     valoresDeReferencia: leitura.valoresDeReferencia ?? false,
     naoLidos: leitura.naoLidos ?? 0,
-    dePrint: opts?.dePrint ?? false,
+    dePrint: opts.dePrint ?? false,
   };
 }
 
@@ -308,7 +312,10 @@ export async function lerTabelaColadaComIa(texto: string): Promise<ResultadoDaLe
   const guarda = await exigirGestorNaAcao();
   if (guarda.erro !== undefined) return { ok: false, erro: guarda.erro };
   if (texto.trim().length === 0) return { ok: false, erro: "Cole a tabela primeiro." };
-  return lerComIa(texto.slice(0, 200_000), { prazoMs: PRAZO_DA_LEITURA_MS });
+  return lerComIa(texto.slice(0, 200_000), {
+    prazoMs: PRAZO_DA_LEITURA_MS,
+    quemPaga: { corretorId: guarda.corretor.id },
+  });
 }
 
 /** Foto normalizada para JPEG que a OpenAI lê, girada pelo EXIF e com 2048 px no máximo. */
@@ -389,7 +396,7 @@ export async function lerArquivosDaTabela(caminhos: string[]): Promise<Resultado
         prints.map(async (a, i) => {
           const url = await printParaDataUrl(a.bytes, a.tipo);
           if (!url) return { i, ok: false as const };
-          const r = await transcreverPrintDaTabela(url, { orcamentoMs: 30_000 });
+          const r = await transcreverPrintDaTabela(url, { orcamentoMs: 30_000, quemPaga: { corretorId: guarda.corretor.id } });
           return { i, ...r };
         }),
       );
@@ -410,6 +417,7 @@ export async function lerArquivosDaTabela(caminhos: string[]): Promise<Resultado
     return lerComIa(texto.slice(0, 200_000), {
       prazoMs: PRAZO_DA_LEITURA_MS - (Date.now() - inicio),
       dePrint: transcricao.length > 0,
+      quemPaga: { corretorId: guarda.corretor.id },
     });
   } finally {
     await supabase.storage.from(BUCKET).remove(validos).catch(() => undefined);

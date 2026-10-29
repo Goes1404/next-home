@@ -274,6 +274,7 @@ export async function gerarPreviewCampanha(params: {
     fatos,
     anteriores,
     manterAbertura: Boolean(textoB),
+    quemPaga: { corretorId: corretor.id },
   });
 
   let exemploB: string | null = null;
@@ -296,6 +297,7 @@ export async function gerarPreviewCampanha(params: {
         ...anteriores,
       ],
       manterAbertura: true,
+      quemPaga: { corretorId: corretor.id },
     });
     exemploB = b.textos[0] ?? null;
     reescritos += b.reescritos;
@@ -362,7 +364,11 @@ export async function sugerirAberturas(params: {
     vencedoras,
   );
   for (let tentativa = 0; tentativa < 2; tentativa++) {
-    const r = await chamarLlmJson(prompt, { temperature: 0.9, orcamentoMs: 15_000 });
+    const r = await chamarLlmJson(prompt, {
+      temperature: 0.9,
+      orcamentoMs: 15_000,
+      uso: { finalidade: "campanha", quemPaga: { corretorId: corretor.id } },
+    });
     if (!r.ok) return { erro: "A IA não respondeu agora. Tente de novo em instantes." };
     const par = aberturasDoJson(r.json);
     if (par) return par;

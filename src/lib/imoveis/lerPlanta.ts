@@ -1,5 +1,6 @@
 import { extrairJsonDeTexto } from "@/lib/whatsapp/llmTipos";
 import { modeloOpenai } from "@/lib/whatsapp/openai";
+import { registrarConsumoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { lerFichaDeMetragens, metragemPelaFicha } from "./fichaTecnica";
 
 /**
@@ -118,11 +119,21 @@ ${textoDoPdf.slice(0, TETO_DE_TEXTO)}`;
  * provável que uma só; e quando o número ESTÁ escrito na imagem, as duas
  * concordam sempre. É a mesma ideia do voto: caro seria pedir três.
  */
+/** O que a resposta da OpenAI cobrou, no livro do consumo (0233). */
+async function registrarLeitura(quemPaga: QuemPagaAIa, corpo: unknown): Promise<void> {
+  const uso = (corpo as { usage?: { prompt_tokens?: number; completion_tokens?: number } } | null)?.usage;
+  await registrarConsumoDaIa(
+    { finalidade: "planta", quemPaga },
+    { modelo: modeloOpenai(), tokensEntrada: uso?.prompt_tokens ?? null, tokensSaida: uso?.completion_tokens ?? null },
+  );
+}
+
 async function confirmarFinal(
   imagem: Buffer,
   mime: string,
   apiKey: string,
   timeoutMs: number,
+  quemPaga: QuemPagaAIa,
 ): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -158,6 +169,7 @@ async function confirmarFinal(
 
     if (!resposta.ok) return null;
     const corpo = await resposta.json();
+    await registrarLeitura(quemPaga, corpo);
     const json = extrairJsonDeTexto(corpo?.choices?.[0]?.message?.content ?? "");
     const final = (json as { final?: unknown } | null)?.final;
     return typeof final === "string" && final.trim() ? final.trim() : null;
@@ -180,7 +192,7 @@ export async function lerPlanta(
   imagem: Buffer,
   mime: string,
   textoDoPdf: string,
-  opts: { timeoutMs?: number } = {},
+  opts: { timeoutMs?: number; quemPaga: QuemPagaAIa },
 ): Promise<ResultadoLeituraPlanta> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, motivo: "sem_api_key" };
@@ -230,6 +242,7 @@ export async function lerPlanta(
     }
 
     const corpo = await resposta.json();
+    await registrarLeitura(opts.quemPaga, corpo);
     const texto: string | undefined = corpo?.choices?.[0]?.message?.content;
     if (!texto) return { ok: false, motivo: "resposta_inutil" };
 
@@ -238,7 +251,7 @@ export async function lerPlanta(
 
     // Metragem só entra com o final CONFIRMADO por uma segunda leitura.
     const confirmado = primeiraLeitura
-      ? await confirmarFinal(imagem, mime, apiKey, opts.timeoutMs ?? 25_000)
+      ? await confirmarFinal(imagem, mime, apiKey, opts.timeoutMs ?? 25_000, opts.quemPaga)
       : null;
     const mesmoNumero =
       confirmado !== null &&

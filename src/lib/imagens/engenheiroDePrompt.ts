@@ -1,6 +1,7 @@
 import "server-only";
 
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * O engenheiro de prompt: pergunta o que falta, depois escreve o pedido.
@@ -103,6 +104,8 @@ export async function perguntarOQueFalta(params: {
    * sobre apartamento.
    */
   dominio: "imovel" | "livre";
+  /** Quem paga a chamada (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<Pergunta[]> {
   const ideia = params.ideia.trim();
   if (!ideia) return [];
@@ -152,6 +155,7 @@ Responda apenas com JSON:
   const r = await chamarLlmJson(prompt, {
     temperature: 0.4,
     orcamentoMs: ORCAMENTO_PERGUNTAS_MS,
+    uso: { finalidade: "arte_texto", quemPaga: params.quemPaga },
   });
   // Falha aqui não bloqueia: sem perguntas, o fluxo segue direto para o prompt.
   return r.ok ? perguntasDoJson(r.json) : [];

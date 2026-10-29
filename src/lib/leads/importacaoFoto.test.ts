@@ -6,6 +6,8 @@ vi.mock("@/lib/whatsapp/llm", () => ({ chamarLlmJson: (...a: unknown[]) => chama
 import sharp from "sharp";
 import { extrairDeImagem } from "./importacao";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 async function foto(): Promise<Buffer> {
   return sharp({ create: { width: 40, height: 30, channels: 3, background: "#ffffff" } })
     .png()
@@ -25,7 +27,7 @@ describe("Importação — a foto vai primeiro para o motor do atendimento", () 
       json: { leads: [{ nome: "Ana Prado", telefone: "(11) 99123-4567" }] },
     });
 
-    const r = await extrairDeImagem(await foto(), "image/png");
+    const r = await extrairDeImagem(await foto(), "image/png", QUEM_PAGA);
 
     const [, opts] = chamarLlmJson.mock.calls[0];
     expect(opts.detalheImagem).toBe("high");
@@ -45,7 +47,7 @@ describe("Importação — a foto vai primeiro para o motor do atendimento", () 
     });
     vi.stubGlobal("fetch", fetchFalso);
 
-    const r = await extrairDeImagem(await foto(), "image/png");
+    const r = await extrairDeImagem(await foto(), "image/png", QUEM_PAGA);
 
     expect(fetchFalso).toHaveBeenCalledOnce();
     expect(r.candidatos.map((c) => c.nome)).toEqual(["Bia"]);
@@ -54,7 +56,7 @@ describe("Importação — a foto vai primeiro para o motor do atendimento", () 
   it("arquivo que nem o sharp abre (HEIC) vai direto ao Gemini", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.stubEnv("GOOGLE_AI_API_KEY", "");
-    const r = await extrairDeImagem(Buffer.from("nao-e-imagem"), "image/heic");
+    const r = await extrairDeImagem(Buffer.from("nao-e-imagem"), "image/heic", QUEM_PAGA);
     expect(chamarLlmJson).not.toHaveBeenCalled();
     expect(r.candidatos).toHaveLength(0);
   });

@@ -2267,6 +2267,50 @@ export type Database = {
           },
         ]
       }
+      ia_consumo: {
+        Row: {
+          corretor_id: string | null
+          criado_em: string
+          finalidade: string
+          grupo_id: string
+          id: number
+          modelo: string
+          segundos_de_audio: number | null
+          tokens_entrada: number | null
+          tokens_saida: number | null
+        }
+        Insert: {
+          corretor_id?: string | null
+          criado_em?: string
+          finalidade: string
+          grupo_id?: string
+          id?: never
+          modelo: string
+          segundos_de_audio?: number | null
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+        }
+        Update: {
+          corretor_id?: string | null
+          criado_em?: string
+          finalidade?: string
+          grupo_id?: string
+          id?: never
+          modelo?: string
+          segundos_de_audio?: number | null
+          tokens_entrada?: number | null
+          tokens_saida?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_consumo_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ia_interacoes: {
         Row: {
           grupo_id: string
@@ -4562,6 +4606,18 @@ export type Database = {
       }
     }
     Functions: {
+      consumo_da_ia_por_grupo: {
+        Args: { p_inicio: string }
+        Returns: {
+          grupo_id: string
+          finalidade: string
+          modelo: string
+          chamadas: number
+          tokens_entrada: number
+          tokens_saida: number
+          segundos_de_audio: number
+        }[]
+      }
       custo_da_ia_por_grupo: {
         Args: { p_inicio: string }
         Returns: { grupo_id: string; modelo: string; interacoes: number; tokens_entrada: number; tokens_saida: number }[]

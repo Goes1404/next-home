@@ -82,6 +82,7 @@ export async function testarAgenteIA(
    * comportamento no teste e recebia outro na rua.
    */
   const turno = await executarTurnoDeAtendimento({
+    quemPaga: { corretorId: corretor.id, grupoId: corretor.grupoId },
     identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,
@@ -118,7 +119,10 @@ export async function testarAgenteIA(
   });
 
   const conversaCompleta = [...historico.map((h) => h.texto), mensagem].join("\n");
-  const dossie = await extrairDossieCliente(conversaCompleta, `playground-${corretor.id}`);
+  const dossie = await extrairDossieCliente(conversaCompleta, `playground-${corretor.id}`, {
+    corretorId: corretor.id,
+    grupoId: corretor.grupoId,
+  });
 
   return {
     texto: resposta.textoResposta,

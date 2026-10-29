@@ -2,8 +2,9 @@ import type { CustoDaIa as Custo } from "@/lib/planos/custoDaIa";
 
 /**
  * O custo da IA do grupo no mês, a margem sobre a mensalidade e o alerta de
- * 30%. É ESTIMATIVA (tokens gravados × preço de tabela × câmbio): a tela diz
- * isso. Só número, nenhum texto de conversa.
+ * 30%. É ESTIMATIVA (cada chamada paga gravada no livro do consumo, 0233, ×
+ * preço de tabela × câmbio): a tela diz isso. No detalhe, de onde vem o
+ * custo, por funcionalidade. Só número, nenhum texto de conversa.
  *
  * Classes por extenso: montada em tempo de execução, a classe não existiria.
  */
@@ -38,9 +39,22 @@ export function CustoDaIa({ custo, mensalidade, cambio, compacto = false }: { cu
       ) : (
         <p className="text-fluid-xs text-apoio">Sem mensalidade: não há margem a calcular.</p>
       )}
+      {!compacto && custo.porFinalidade.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {custo.porFinalidade.map((f) => (
+            <li key={f.finalidade} className="text-fluid-xs flex items-baseline justify-between gap-3">
+              <span className="text-apoio min-w-0">
+                {f.rotulo}
+                {f.chamadas > 0 && <span className="text-tenue"> · {f.chamadas.toLocaleString("pt-BR")}×</span>}
+              </span>
+              <span className="text-titulo shrink-0 tabular-nums">{REAIS.format(f.custoBrl)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {!compacto && (
         <p className="text-fluid-xs text-tenue">
-          Estimativa: tokens gravados × preço de tabela, dólar a {REAIS.format(cambio)}.
+          Estimativa: cada chamada paga de IA (tokens, ou minutos de áudio na transcrição) × preço de tabela, dólar a {REAIS.format(cambio)}.
           {custo.modelosSemPreco.length > 0 && ` Sem preço na tabela (contado como gpt-4.1-mini): ${custo.modelosSemPreco.join(", ")}.`}
         </p>
       )}

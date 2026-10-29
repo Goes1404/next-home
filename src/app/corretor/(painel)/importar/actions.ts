@@ -194,7 +194,7 @@ export async function analisarTexto(conteudo: string): Promise<ResultadoAnalise>
 
   // Conversa do WhatsApp colada na caixa também chega aqui, e a fala de quem
   // colou não pode virar lead.
-  const resultado = await extrairDeTexto(conteudo, {
+  const resultado = await extrairDeTexto(conteudo, { corretorId: corretor.id, grupoId: corretor.grupoId }, {
     dono: { nome: corretor.nome, telefone: corretor.whatsapp },
   });
   if (resultado.candidatos.length === 0) {
@@ -237,6 +237,7 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
 
   const nome = arquivo.name.toLowerCase();
   const dono = { nome: corretor.nome, telefone: corretor.whatsapp };
+  const quemPaga = { corretorId: corretor.id, grupoId: corretor.grupoId };
   const bytes = async () => Buffer.from(await arquivo.arrayBuffer());
 
   const ehPdf = arquivo.type === "application/pdf" || nome.endsWith(".pdf");
@@ -266,14 +267,14 @@ export async function analisarArquivo(formData: FormData): Promise<ResultadoAnal
    * que ele viaja daqui, inclusive para o `.txt` solto do Android.
    */
   const resultado = ehPdf
-    ? await extrairDePdf(await bytes())
+    ? await extrairDePdf(await bytes(), quemPaga)
     : ehXlsx
       ? await extrairDeXlsx(await bytes())
       : ehZip
-        ? await extrairDeZipWhatsapp(await bytes(), dono)
+        ? await extrairDeZipWhatsapp(await bytes(), quemPaga, dono)
         : ehImagem
-          ? await extrairDeImagem(await bytes(), mimeDaImagem(arquivo.type, nome))
-          : await extrairDeTexto(await arquivo.text(), { nomeDoArquivo: arquivo.name, dono });
+          ? await extrairDeImagem(await bytes(), mimeDaImagem(arquivo.type, nome), quemPaga)
+          : await extrairDeTexto(await arquivo.text(), quemPaga, { nomeDoArquivo: arquivo.name, dono });
 
   if (resultado.candidatos.length === 0) {
     return { erro: resultado.aviso ?? "Nenhum contato com telefone foi encontrado no arquivo." };
@@ -467,7 +468,7 @@ export async function analisarEmailGmail(dados: {
   remetente?: string;
   html?: string;
 }): Promise<ResultadoAnaliseEmail> {
-  const { supabase } = await exigirCorretor();
+  const { supabase, corretor } = await exigirCorretor();
 
   const conteudo = dados.texto || dados.html || "";
   if (!conteudo.trim()) {
@@ -479,7 +480,7 @@ export async function analisarEmailGmail(dados: {
     html: dados.html,
     subject: dados.assunto,
     from: dados.remetente,
-  });
+  }, { corretorId: corretor.id, grupoId: corretor.grupoId });
 
   if (extraidos.length === 0) {
     return {

@@ -2,6 +2,7 @@ import { extrairTextoDePdf } from "@/lib/leads/pdfTexto";
 import { limparTextoDeApresentacao } from "./textoDoDeck";
 import { STATUS_LABEL, type StatusObra } from "@/lib/types";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * Lê o texto de uma apresentação e propõe o cadastro do imóvel.
@@ -167,8 +168,8 @@ export type ResultadoRascunho =
   | { ok: true; rascunho: RascunhoCadastro }
   | { ok: false; motivo: "sem_texto" | "ia_indisponivel" };
 
-export async function montarRascunhoDePdf(pdf: Buffer): Promise<ResultadoRascunho> {
-  return montarRascunhoDeTexto(limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
+export async function montarRascunhoDePdf(pdf: Buffer, quemPaga: QuemPagaAIa): Promise<ResultadoRascunho> {
+  return montarRascunhoDeTexto(limparTextoDeApresentacao(extrairTextoDePdf(pdf)), quemPaga);
 }
 
 /**
@@ -176,13 +177,19 @@ export async function montarRascunhoDePdf(pdf: Buffer): Promise<ResultadoRascunh
  * do site da construtora. Os filtros (preço fora, tetos de plausibilidade)
  * valem para os dois porque moram em `interpretarRascunho`, não no prompt.
  */
-export async function montarRascunhoDeTexto(conteudo: string, dicas?: string): Promise<ResultadoRascunho> {
+export async function montarRascunhoDeTexto(
+  conteudo: string,
+  quemPaga: QuemPagaAIa,
+  dicas?: string,
+): Promise<ResultadoRascunho> {
   // Sem texto a origem é imagem pura (deck escaneado, página montada por
   // JavaScript). Não vale mandar para a IA: ela receberia quase nada e
   // inventaria um empreendimento inteiro.
   if (!conteudo || conteudo.length < MINIMO_DE_TEXTO) return { ok: false, motivo: "sem_texto" };
 
-  const resposta = await chamarLlmJson(montarPrompt(conteudo.slice(0, TETO_DE_TEXTO), dicas));
+  const resposta = await chamarLlmJson(montarPrompt(conteudo.slice(0, TETO_DE_TEXTO), dicas), {
+    uso: { finalidade: "pdf_imovel", quemPaga },
+  });
   if (!resposta.ok) return { ok: false, motivo: "ia_indisponivel" };
 
   return { ok: true, rascunho: interpretarRascunho(resposta.json) };

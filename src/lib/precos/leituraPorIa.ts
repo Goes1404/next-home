@@ -1,4 +1,5 @@
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { dividirEmPedacos } from "@/lib/leads/leituraPorIa";
 import { calcularSimilaridade } from "./matchingEngine";
 import type { EmpreendimentoSimples, ItemConciliado } from "./types";
@@ -159,11 +160,11 @@ export type LeituraDaTabela = {
 export async function lerTabelaDePrecosComIa(
   texto: string,
   catalogo: EmpreendimentoSimples[],
-  opts?: { prazoMs?: number },
+  opts: { prazoMs?: number; quemPaga: QuemPagaAIa },
 ): Promise<LeituraDaTabela> {
   const limpo = texto.trim();
   if (!limpo) return { itens: [], descartados: [], falhou: false };
-  const fim = Date.now() + (opts?.prazoMs ?? PRAZO_PADRAO_MS);
+  const fim = Date.now() + (opts.prazoMs ?? PRAZO_PADRAO_MS);
 
   const listaDoCatalogo = catalogo
     .map((e) => {
@@ -189,7 +190,11 @@ export async function lerTabelaDePrecosComIa(
         const inicio = i + k === 0 ? "" : `COMEÇO DO ARQUIVO (só para saber de qual empreendimento é o trecho):\n${cabecalho}\n\n`;
         return chamarLlmJson(
           `${PROMPT}\n\nNOSSO CATÁLOGO (slug | nome | bairro | cidade):\n${listaDoCatalogo}\n\n${inicio}TRECHO DA TABELA:\n${pedaco}`,
-          { temperature: 0, orcamentoMs: Math.min(ORCAMENTO_POR_PEDACO_MS, resta) },
+          {
+            temperature: 0,
+            orcamentoMs: Math.min(ORCAMENTO_POR_PEDACO_MS, resta),
+            uso: { finalidade: "tabela_precos", quemPaga: opts.quemPaga },
+          },
         );
       }),
     );
@@ -293,11 +298,12 @@ Responda EXCLUSIVAMENTE um JSON válido, sem crases e sem texto em volta:
 
 export async function transcreverPrintDaTabela(
   imagemDataUrl: string,
-  opts?: { orcamentoMs?: number },
+  opts: { orcamentoMs?: number; quemPaga: QuemPagaAIa },
 ): Promise<{ ok: true; texto: string } | { ok: false }> {
   const r = await chamarLlmJson(PROMPT_DA_TRANSCRICAO, {
+    uso: { finalidade: "tabela_precos", quemPaga: opts.quemPaga },
     temperature: 0,
-    orcamentoMs: opts?.orcamentoMs ?? 30_000,
+    orcamentoMs: opts.orcamentoMs ?? 30_000,
     fatia: 1,
     imagens: [imagemDataUrl],
     // Aqui se lê dígito: em "low" a imagem vira 512 px e o centavo some.

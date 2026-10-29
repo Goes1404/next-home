@@ -91,6 +91,7 @@ export async function lerAudioDoRelato(p: {
     base64: midia.base64,
     mimeType: midia.mimeType,
     segundos: segundosDoAudio(completa?.message),
+    quemPaga: { grupoId: p.grupoId },
   });
   const texto = transcricao.sucesso ? transcricao.textoTranscrito.trim() : "";
   if (!texto) return { ok: false, audioPath };

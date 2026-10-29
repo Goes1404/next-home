@@ -52,6 +52,7 @@ describe("referências de imagem", () => {
     const form = corpoDeEdicao(
       {
         prompt: "fachada ao pôr do sol",
+        quemPaga: { corretorId: "corretor-1" },
         largura: 1024,
         altura: 1024,
         qualidade: "low",

@@ -668,6 +668,7 @@ export async function responderComIA(conversaId: string): Promise<ResultadoEnvio
   ]);
 
   const turno = await executarTurnoDeAtendimento({
+    quemPaga: { corretorId: identidade.corretorId, grupoId: identidade.grupoId },
     identidade: {
       nomeCorretor: identidade.nomeCorretor,
       slugCorretor: identidade.slugCorretor ?? undefined,

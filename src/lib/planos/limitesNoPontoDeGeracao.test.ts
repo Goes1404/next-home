@@ -21,7 +21,7 @@ const PONTOS: { arquivo: string; recurso: string; caro: string[] }[] = [
     arquivo: "src/app/corretor/(painel)/marketing/video/acoes.ts",
     recurso: "video",
     // A visão que classifica as fotos e a fila de render. Nas duas ações.
-    caro: ["preparar(pedido)", "enfileirarVideo({"],
+    caro: ["preparar(pedido, ", "enfileirarVideo({"],
   },
   {
     arquivo: "src/app/corretor/(painel)/campanhas/acoes.ts",

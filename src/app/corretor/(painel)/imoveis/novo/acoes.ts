@@ -194,7 +194,11 @@ export async function lerSiteParaNovoImovel(url: string): Promise<LeituraParaNov
   ]
     .filter(Boolean)
     .join("\n");
-  const leitura = await montarRascunhoDeTexto(pagina.texto.slice(0, 20_000), dicas);
+  const leitura = await montarRascunhoDeTexto(
+    pagina.texto.slice(0, 20_000),
+    { corretorId: corretor.id, grupoId: corretor.grupoId },
+    dicas,
+  );
   const r = leitura.ok ? leitura.rascunho : {};
 
   return {

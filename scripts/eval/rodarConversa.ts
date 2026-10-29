@@ -130,6 +130,7 @@ async function conversarCom(persona: Persona): Promise<ConversaSimulada> {
     }
 
     const turno = await executarTurnoDeAtendimento({
+      quemPaga: { semGrupo: "eval" },
       identidade: IDENTIDADE,
       catalogo,
       historico,

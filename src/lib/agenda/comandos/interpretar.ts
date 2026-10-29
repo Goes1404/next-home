@@ -1,6 +1,7 @@
 import type { Dia } from "@/lib/agenda/calendario";
 import { agoraEmSaoPaulo } from "@/lib/crm/retornoPeloGrupo/ler";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { escreverEmSaoPaulo, lerInstante, meioDiaEmSaoPaulo, partesEmSaoPaulo } from "./instante";
 import { NAO_ENTENDI, type PedidoDoCorretor } from "./tipos";
 
@@ -211,7 +212,7 @@ export function normalizarPedido(json: unknown, agora: Date, ehGestor: boolean):
  */
 export async function interpretarPedido(
   textoDaMensagem: string,
-  opcoes: { agora: Date; ehGestor: boolean; chamar?: typeof chamarLlmJson },
+  opcoes: { agora: Date; ehGestor: boolean; quemPaga: QuemPagaAIa; chamar?: typeof chamarLlmJson },
 ): Promise<PedidoDoCorretor> {
   try {
     if (!textoDaMensagem.trim()) return NAO_ENTENDI;
@@ -219,6 +220,7 @@ export async function interpretarPedido(
     const resultado = await chamar(montarPromptDoPedido(textoDaMensagem, opcoes.agora, opcoes.ehGestor), {
       temperature: 0.1,
       orcamentoMs: ORCAMENTO_PEDIDO_MS,
+      uso: { finalidade: "agenda", quemPaga: opcoes.quemPaga },
     });
     if (!resultado.ok) {
       console.error("Erro ao interpretar o pedido de agenda:", resultado.erro);

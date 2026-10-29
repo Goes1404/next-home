@@ -6,6 +6,8 @@ vi.mock("@/lib/whatsapp/llm", () => ({ chamarLlmJson: (...a: unknown[]) => chama
 import { extrairDeTexto } from "./importacao";
 import { conferirLeituraDaIa, dividirEmPedacos, nomeEstaNoTexto, telefoneEstaNoTexto } from "./leituraPorIa";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const LISTA = `1. Carlos Souza — whats 11 91234-5678, visita sábado
 2. Fernanda Lima, tel: +55 (11) 93456-7890, fernanda.lima@hotmail.com
 3. Pedro, 11 3456-7890 (fixo) / 11 99988-7766 (cel)`;
@@ -25,7 +27,7 @@ describe("lista de leads sem cabeçalho lida pela IA", () => {
         ],
       }),
     );
-    const r = await extrairDeTexto(LISTA);
+    const r = await extrairDeTexto(LISTA, QUEM_PAGA);
     expect(r.metodo).toBe("ia");
     expect(r.candidatos.map((c) => [c.nome, c.telefoneE164, c.email])).toEqual([
       ["Carlos Souza", "5511912345678", null],
@@ -39,7 +41,7 @@ describe("lista de leads sem cabeçalho lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       respondeu({ leads: [{ nome: "Carlos Souza", telefone: "11 90000-1111" }, { nome: "Pedro", telefone: "11 99988-7766" }] }),
     );
-    const r = await extrairDeTexto(LISTA);
+    const r = await extrairDeTexto(LISTA, QUEM_PAGA);
     expect(r.candidatos.map((c) => c.nome)).toEqual(["Pedro"]);
   });
 
@@ -47,20 +49,20 @@ describe("lista de leads sem cabeçalho lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       respondeu({ leads: [{ nome: "Pedro Henrique Alves", telefone: "11 99988-7766", email: "pedro@gmail.com" }] }),
     );
-    const r = await extrairDeTexto(LISTA);
+    const r = await extrairDeTexto(LISTA, QUEM_PAGA);
     expect(r.candidatos[0].nome).toBe("Contato sem nome");
     expect(r.candidatos[0].email).toBeNull();
   });
 
   it("tabela com cabeçalho não gasta chamada de IA", async () => {
-    const r = await extrairDeTexto("nome;telefone\nAna Prado;11 98888-7777");
+    const r = await extrairDeTexto("nome;telefone\nAna Prado;11 98888-7777", QUEM_PAGA);
     expect(r.metodo).toBe("tabela");
     expect(chamarLlmJson).not.toHaveBeenCalled();
   });
 
   it("sem IA, lê linha a linha e avisa para conferir", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false, erro: "sem_api_key", latenciaMs: 0 });
-    const r = await extrairDeTexto(LISTA);
+    const r = await extrairDeTexto(LISTA, QUEM_PAGA);
     expect(r.candidatos.length).toBeGreaterThan(0);
     expect(r.aviso).toMatch(/IA não respondeu/);
   });

@@ -1,4 +1,5 @@
 import { algumProvedorConfigurado, chamarLlmJson, ORCAMENTO_DOSSIE_MS } from "./llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { TETO_DA_MEMORIA } from "./memoriaDaConversa";
 import type { DossieClienteIA, TemperaturaLeadLabel } from "./types";
 
@@ -140,6 +141,7 @@ function emailPlausivel(valor: string | null): string | null {
 export async function extrairDossieCliente(
   conversaTexto: string,
   leadId: string,
+  quemPaga: QuemPagaAIa,
   memoriaAnterior?: string | null,
 ): Promise<DossieClienteIA> {
   const dossieDefault: DossieClienteIA = {
@@ -165,7 +167,7 @@ export async function extrairDossieCliente(
   // do agente de resposta, sem duplicar o fetch aqui.
   const resultado = await chamarLlmJson(
     `${PROMPT_DOSSIE}${blocoDaMemoriaAnterior(memoriaAnterior)}\n\n--- TRANSCRIÇÃO DA CONVERSA ---\n${conversaTexto.slice(0, 12000)}`,
-    { temperature: 0.1, orcamentoMs: ORCAMENTO_DOSSIE_MS, fatia: 1 },
+    { temperature: 0.1, orcamentoMs: ORCAMENTO_DOSSIE_MS, fatia: 1, uso: { finalidade: "dossie", quemPaga } },
   );
 
   if (!resultado.ok) {

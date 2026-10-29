@@ -17,6 +17,7 @@ import { lerPlanilhaXlsx } from "./xlsxLeitura";
 import { lerZip, type MotivoZipIlegivel } from "./zipLeitura";
 import { lerListaComIa } from "./leituraPorIa";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import { registrarConsumoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * Leitura de listas de leads que o corretor traz de fora — planilha exportada
@@ -485,7 +486,7 @@ Regras:
 
 type ParteGemini = { text: string } | { inline_data: { mime_type: string; data: string } };
 
-async function chamarGemini(partes: ParteGemini[]): Promise<CandidatoLead[] | null> {
+async function chamarGemini(partes: ParteGemini[], quemPaga: QuemPagaAIa): Promise<CandidatoLead[] | null> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) return null;
 
@@ -514,6 +515,14 @@ async function chamarGemini(partes: ParteGemini[]): Promise<CandidatoLead[] | nu
     }
 
     const json = await resposta.json();
+    await registrarConsumoDaIa(
+      { finalidade: "importacao_leads", quemPaga },
+      {
+        modelo: "gemini-2.5-flash",
+        tokensEntrada: json.usageMetadata?.promptTokenCount ?? null,
+        tokensSaida: json.usageMetadata?.candidatesTokenCount ?? null,
+      },
+    );
     const texto = json.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!texto) return null;
 
@@ -551,6 +560,7 @@ async function chamarGemini(partes: ParteGemini[]): Promise<CandidatoLead[] | nu
  */
 export async function extrairDeTexto(
   conteudo: string,
+  quemPaga: QuemPagaAIa,
   contexto?: { nomeDoArquivo?: string; dono?: DonoDaExportacao },
 ): Promise<ResultadoExtracao> {
   const limpo = conteudo.replace(/^\uFEFF/, "").trim();
@@ -574,7 +584,7 @@ export async function extrairDeTexto(
   // contra o texto; se ela não responder, a escada antiga segue abaixo.
   let iaFalhou = false;
   if (!comCabecalho && !temNumeroCortado(limpo)) {
-    const daIa = await lerListaComIa(limpo);
+    const daIa = await lerListaComIa(limpo, quemPaga);
     if (daIa.ok) {
       const candidatos = dedupInterno(
         daIa.leads
@@ -625,7 +635,7 @@ export async function extrairDeTexto(
   );
   if (doRegex.length > 0) return { candidatos: doRegex, metodo: "texto" };
 
-  const daIa = await chamarGemini([{ text: `Conteúdo:\n${limpo.slice(0, 60_000)}` }]);
+  const daIa = await chamarGemini([{ text: `Conteúdo:\n${limpo.slice(0, 60_000)}` }], quemPaga);
   if (daIa === null) {
     return {
       candidatos: [],
@@ -659,7 +669,7 @@ export async function extrairDeTexto(
  * Só o passo 3 depende de GEMINI_API_KEY. Sem a chave, PDF de texto continua
  * funcionando — que é a maior parte do que chega.
  */
-export async function extrairDePdf(pdf: Buffer | Uint8Array): Promise<ResultadoExtracao> {
+export async function extrairDePdf(pdf: Buffer | Uint8Array, quemPaga: QuemPagaAIa): Promise<ResultadoExtracao> {
   const texto = extrairTextoDePdf(pdf);
 
   if (texto) {
@@ -681,7 +691,7 @@ export async function extrairDePdf(pdf: Buffer | Uint8Array): Promise<ResultadoE
         data: Buffer.isBuffer(pdf) ? pdf.toString("base64") : Buffer.from(pdf).toString("base64"),
       },
     },
-  ]);
+  ], quemPaga);
 
   if (daIa === null) {
     return {
@@ -832,6 +842,7 @@ function candidatoDoAutor(autor: AutorDaConversa): CandidatoLead {
  */
 export async function extrairDeZipWhatsapp(
   zip: Buffer | Uint8Array,
+  quemPaga: QuemPagaAIa,
   dono?: DonoDaExportacao,
 ): Promise<ResultadoExtracao> {
   const leitura = lerZip(Buffer.from(zip), {
@@ -865,7 +876,7 @@ export async function extrairDeZipWhatsapp(
 
   // `.zip` não é sinônimo de conversa. Lista compactada segue o caminho de
   // sempre, em vez de morrer com "formato não suportado" por causa do envelope.
-  return extrairDeTexto(texto, { nomeDoArquivo: principal.nome, dono });
+  return extrairDeTexto(texto, quemPaga, { nomeDoArquivo: principal.nome, dono });
 }
 
 /**
@@ -1091,6 +1102,7 @@ function candidatosDoJson(json: unknown): CandidatoLead[] {
 export async function extrairDeImagem(
   imagem: Buffer | Uint8Array,
   mimeType: string,
+  quemPaga: QuemPagaAIa,
 ): Promise<ResultadoExtracao> {
   let daIa: CandidatoLead[] | null = null;
 
@@ -1104,6 +1116,7 @@ export async function extrairDeImagem(
       fatia: 1,
       imagens: [`data:${tipo};base64,${legivelPelaOpenai.toString("base64")}`],
       detalheImagem: "high",
+      uso: { finalidade: "importacao_leads", quemPaga },
     });
     if (r.ok) daIa = candidatosDoJson(r.json);
     else console.error("[importacao] leitura da foto pela OpenAI falhou:", r.erro, r.detalhe ?? "");
@@ -1113,7 +1126,7 @@ export async function extrairDeImagem(
     daIa = await chamarGemini([
       { text: INSTRUCAO_DA_FOTO },
       { inline_data: { mime_type: mimeType, data: Buffer.from(imagem).toString("base64") } },
-    ]);
+    ], quemPaga);
   }
 
   if (daIa === null) {

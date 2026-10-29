@@ -129,6 +129,7 @@ export async function enviarMensagemDoConsultor(params: {
     credito,
     exemplos,
     nomeDaCasa: casa.nomeDaCasa,
+    quemPaga: { corretorId: corretor.id, grupoId: corretor.grupoId },
   });
 
   await gravarMensagemDoConsultor({

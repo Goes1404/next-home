@@ -488,6 +488,7 @@ async function responderAtrasada(
   if (pendentes.length === 0) return "pulada";
 
   const turno = await executarTurnoDeAtendimento({
+    quemPaga: { corretorId: instancia.corretor_id, grupoId: instancia.grupo_id },
     identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,
@@ -1042,6 +1043,7 @@ async function processarFollowup(
    * uma rodada nova de sugestões, o oposto de "retome de onde parou".
    */
   const turno = await executarTurnoDeAtendimento({
+    quemPaga: { corretorId: instancia.corretor_id, grupoId: instancia.grupo_id },
     identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,

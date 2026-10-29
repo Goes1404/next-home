@@ -9,6 +9,8 @@ import {
 } from "./importacao";
 import { lerLinhasDaAba } from "./xlsxLeitura";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 /*
  * Os formatos que a importação passou a aceitar em 24/09/2026. Os fixtures
  * reproduzem o que os programas de verdade geram — o `.txt` do Android com o
@@ -27,7 +29,7 @@ describe("Importação — .txt solto da conversa do WhatsApp (Android)", () => 
   ].join("\n");
 
   it("lê como conversa, não como tabela", async () => {
-    const resultado = await extrairDeTexto(CONVERSA, {
+    const resultado = await extrairDeTexto(CONVERSA, QUEM_PAGA, {
       nomeDoArquivo: "Conversa do WhatsApp com +55 11 99123-4567.txt",
     });
 
@@ -44,7 +46,7 @@ describe("Importação — .txt solto da conversa do WhatsApp (Android)", () => 
       "12/09/2026 09:43 - Ana Prado: sábado pode?",
     ].join("\n");
 
-    const resultado = await extrairDeTexto(colada, { dono: { nome: "Bruna Next Home" } });
+    const resultado = await extrairDeTexto(colada, QUEM_PAGA, { dono: { nome: "Bruna Next Home" } });
 
     expect(resultado.candidatos.map((c) => c.nome)).toEqual(["Ana Prado"]);
   });
@@ -123,7 +125,7 @@ describe("Importação — contatos (.vcf)", () => {
   it("o arquivo .vcf enviado como texto chega ao leitor de contatos", async () => {
     const vcf = ["BEGIN:VCARD", "VERSION:3.0", "FN:Carla", "TEL:11 96666-5555", "END:VCARD"].join("\n");
 
-    const resultado = await extrairDeTexto(vcf, { nomeDoArquivo: "Carla.vcf" });
+    const resultado = await extrairDeTexto(vcf, QUEM_PAGA, { nomeDoArquivo: "Carla.vcf" });
 
     expect(resultado.metodo).toBe("contatos");
     expect(resultado.candidatos[0].telefoneE164).toBe("5511966665555");
@@ -257,7 +259,7 @@ describe("Importação — foto ou print", () => {
     vi.stubEnv("GOOGLE_AI_API_KEY", "");
     vi.stubEnv("OPENAI_API_KEY", "");
 
-    const resultado = await extrairDeImagem(Buffer.from([0xff, 0xd8, 0xff]), "image/jpeg");
+    const resultado = await extrairDeImagem(Buffer.from([0xff, 0xd8, 0xff]), "image/jpeg", QUEM_PAGA);
 
     expect(resultado.candidatos).toHaveLength(0);
     expect(resultado.aviso).toContain("digite os contatos");

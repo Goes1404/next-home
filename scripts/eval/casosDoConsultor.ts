@@ -349,6 +349,7 @@ async function exercitar(
 
   for (const caso of casos) {
     const r = await turnoDoConsultor({
+      quemPaga: { semGrupo: "eval" },
       pedido: caso.pergunta,
       historico: [],
       catalogo,

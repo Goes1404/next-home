@@ -18,7 +18,8 @@
  * atende), Whisper da Groq com o filtro de "sem fala" por trecho, e o Gemini
  * por último — modelo generativo é o que mais completa o que não ouviu.
  */
-import { groqAudioConfigurado, transcreverComGroq } from "./groqAudio";
+import { groqAudioConfigurado, MODELO_AUDIO_GROQ, transcreverComGroq } from "./groqAudio";
+import { registrarConsumoDaIa, type GastoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 export interface ResultadoAudio {
   textoTranscrito: string;
@@ -36,6 +37,8 @@ export interface EntradaAudio {
   mimeType?: string | null;
   /** Duração declarada pelo WhatsApp (`audioMessage.seconds`). */
   segundos?: number | null;
+  /** O corretor dono do número: quem paga a transcrição (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }
 
 /**
@@ -183,9 +186,22 @@ Regras:
 
 Responda só JSON: {"haFala": true|false, "texto": "..."}`;
 
-type Tentativa = { ok: true; texto: string } | { ok: false; erro: string };
+/**
+ * `gasto` vem sempre que o provedor RESPONDEU: a transcrição recusada pelas
+ * travas (ou "sem fala") foi cobrada do mesmo jeito.
+ */
+type Tentativa = { ok: true; texto: string; gasto: GastoDaIa } | { ok: false; erro: string; gasto?: GastoDaIa };
 
-async function transcreverComOpenAI(base64: string, mimeType: string): Promise<Tentativa> {
+/**
+ * A duração para a cobrança por minuto. O WhatsApp declara a do áudio; sem
+ * ela, estima pelo tamanho (voz em Opus fica perto de 16 kbit/s = 2 KB/s).
+ */
+export function duracaoCobrada(base64: string, declarados: number | null): number {
+  if (typeof declarados === "number" && Number.isFinite(declarados) && declarados > 0) return declarados;
+  return Math.max(1, Math.round((base64.length * 3) / 4 / 2000));
+}
+
+async function transcreverComOpenAI(base64: string, mimeType: string, segundos: number): Promise<Tentativa> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, erro: "sem_api_key" };
   try {
@@ -193,7 +209,8 @@ async function transcreverComOpenAI(base64: string, mimeType: string): Promise<T
     const t = setTimeout(() => controller.abort(), 15_000);
     const form = new FormData();
     form.append("file", new Blob([Buffer.from(base64, "base64")], { type: mimeType }), `audio.${extensaoDo(mimeType)}`);
-    form.append("model", process.env.OPENAI_AUDIO_MODEL || "gpt-4o-mini-transcribe");
+    const modelo = process.env.OPENAI_AUDIO_MODEL || "gpt-4o-mini-transcribe";
+    form.append("model", modelo);
     form.append("language", "pt");
     form.append("response_format", "json");
     // Mesma ideia do prompt do Gemini: pedir literalidade, sem assunto.
@@ -206,9 +223,10 @@ async function transcreverComOpenAI(base64: string, mimeType: string): Promise<T
     });
     clearTimeout(t);
     if (!res.ok) return { ok: false, erro: `http_${res.status}` };
+    const gasto: GastoDaIa = { modelo, segundosDeAudio: segundos };
     const json = (await res.json().catch(() => null)) as { text?: unknown } | null;
     const texto = typeof json?.text === "string" ? json.text.trim() : "";
-    return texto ? { ok: true, texto } : { ok: false, erro: "resposta_vazia" };
+    return texto ? { ok: true, texto, gasto } : { ok: false, erro: "resposta_vazia", gasto };
   } catch (err) {
     return { ok: false, erro: err instanceof Error ? err.name : String(err) };
   }
@@ -241,12 +259,17 @@ async function transcreverComGemini(base64: string, mimeType: string): Promise<T
     clearTimeout(t);
     if (!res.ok) return { ok: false, erro: `http_${res.status}` };
     const json = await res.json();
+    const gasto: GastoDaIa = {
+      modelo,
+      tokensEntrada: json.usageMetadata?.promptTokenCount ?? null,
+      tokensSaida: json.usageMetadata?.candidatesTokenCount ?? null,
+    };
     const bruto = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!bruto) return { ok: false, erro: "resposta_vazia" };
+    if (!bruto) return { ok: false, erro: "resposta_vazia", gasto };
     const parsed = JSON.parse(bruto) as { haFala?: unknown; texto?: unknown };
-    if (parsed.haFala === false) return { ok: false, erro: "sem_fala" };
+    if (parsed.haFala === false) return { ok: false, erro: "sem_fala", gasto };
     const texto = typeof parsed.texto === "string" ? parsed.texto.trim() : "";
-    return texto ? { ok: true, texto } : { ok: false, erro: "resposta_vazia" };
+    return texto ? { ok: true, texto, gasto } : { ok: false, erro: "resposta_vazia", gasto };
   } catch (err) {
     return { ok: false, erro: err instanceof Error ? err.name : String(err) };
   }
@@ -284,15 +307,22 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
   if (!base64) return FALHA("sem_audio");
   const mimeType = (entrada.mimeType || "audio/ogg").split(";")[0].trim() || "audio/ogg";
   const segundos = entrada.segundos ?? null;
+  const duracao = duracaoCobrada(base64, segundos);
 
   const motores: Array<{ nome: "openai" | "groq" | "gemini"; tentar: () => Promise<Tentativa> }> = [
-    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType) },
+    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType, duracao) },
     {
       nome: "groq",
       tentar: async () => {
         if (!groqAudioConfigurado()) return { ok: false, erro: "sem_api_key" };
         const r = await transcreverComGroq(base64, mimeType);
-        return r.ok ? { ok: true, texto: r.texto } : { ok: false, erro: r.erro };
+        if (!r.ok && !r.respondeu) return { ok: false, erro: r.erro };
+        // A Groq cobra no mínimo 10 s por chamada.
+        const gasto: GastoDaIa = {
+          modelo: process.env.GROQ_AUDIO_MODEL || MODELO_AUDIO_GROQ,
+          segundosDeAudio: Math.max(10, (r.ok ? r.segundos : null) ?? duracao),
+        };
+        return r.ok ? { ok: true, texto: r.texto, gasto } : { ok: false, erro: r.erro, gasto };
       },
     },
     { nome: "gemini", tentar: () => transcreverComGemini(base64, mimeType) },
@@ -300,6 +330,7 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
 
   for (const motor of motores) {
     const r = await motor.tentar();
+    if (r.gasto) await registrarConsumoDaIa({ finalidade: "transcricao_audio", quemPaga: entrada.quemPaga }, r.gasto);
     if (!r.ok) {
       if (r.erro !== "sem_api_key") console.warn(`[audio] ${motor.nome} não transcreveu: ${r.erro}`);
       continue;

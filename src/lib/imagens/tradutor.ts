@@ -1,6 +1,7 @@
 import "server-only";
 
 import { algumProvedorLeImagem, chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import {
   conferir,
   instrucaoDaGramatica,
@@ -127,6 +128,8 @@ export type EntradaDoTradutor = {
    * defeito que `conferir` teve de desfazer.
    */
   dominio?: Dominio;
+  /** Quem paga a chamada (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 };
 
 export type PromptTraduzido = {
@@ -255,6 +258,7 @@ export async function traduzirPedido(entrada: EntradaDoTradutor): Promise<Prompt
     temperature: 0.7,
     orcamentoMs: verFotos ? ORCAMENTO_COM_FOTO_MS : ORCAMENTO_MS,
     imagens: verFotos ? urls : undefined,
+    uso: { finalidade: "arte_texto", quemPaga: entrada.quemPaga },
   });
 
   if (!r.ok) return fechar(original, false, fotos, false);

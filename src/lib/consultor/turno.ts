@@ -1,6 +1,7 @@
 import "server-only";
 
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { soarHumano } from "@/lib/whatsapp/vozHumana";
 import type { Empreendimento } from "@/lib/types";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
@@ -105,6 +106,8 @@ export async function turnoDoConsultor(params: {
   agora?: Date;
   /** O nome da casa do grupo do corretor (`casa.ts`). Ausente: a marca do site. */
   nomeDaCasa?: string | null;
+  /** Quem paga a chamada (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<RespostaDoConsultor> {
   const agora = params.agora ?? new Date();
 
@@ -119,7 +122,11 @@ export async function turnoDoConsultor(params: {
     ...(params.nomeDaCasa !== undefined ? { nomeDaCasa: params.nomeDaCasa } : {}),
   });
 
-  const r = await chamarLlmJson(prompt, { temperature: 0, orcamentoMs: ORCAMENTO_MS });
+  const r = await chamarLlmJson(prompt, {
+    temperature: 0,
+    orcamentoMs: ORCAMENTO_MS,
+    uso: { finalidade: "consultor", quemPaga: params.quemPaga },
+  });
   if (!r.ok) {
     console.warn(`[consultor] motor falhou: ${r.erro}`);
     return {

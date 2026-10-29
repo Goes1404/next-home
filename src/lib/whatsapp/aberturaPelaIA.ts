@@ -169,6 +169,7 @@ export async function gerarEEnviarPelaIA(params: {
     ]);
 
     const turno = await executarTurnoDeAtendimento({
+      quemPaga: { corretorId: instancia.corretor_id },
       identidade: {
         nomeCorretor: corretor.nome,
         slugCorretor: corretor.slug ?? undefined,
@@ -312,6 +313,7 @@ export async function rascunharPelaIA(params: {
   ]);
 
   const turno = await executarTurnoDeAtendimento({
+    quemPaga: { corretorId: instancia.corretor_id },
     identidade: {
       nomeCorretor: corretor.nome,
       slugCorretor: corretor.slug ?? undefined,

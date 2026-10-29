@@ -12,6 +12,7 @@ import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { montarContextoDaInteracao } from "@/lib/whatsapp/contextoDaInteracao";
 import { extrairDossieCliente, normalizarSaidaDoDossie } from "@/lib/whatsapp/dossierExtractor";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import type { DossieClienteIA } from "@/lib/whatsapp/types";
 import { horasDesdeAUltimaFala } from "@/lib/whatsapp/tempoDaConversa";
 import { devoExtrair } from "@/lib/whatsapp/quandoExtrair";
@@ -140,6 +141,8 @@ async function atualizarFichaEMemoria(params: {
   conversa: ConversaPersistida;
   historico: { remetente: "cliente" | "bot" | "corretor"; texto: string }[];
   telefone: string;
+  /** O corretor dono do número: quem paga a extração (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
   /**
    * A IA acabou de responder.
    *
@@ -177,6 +180,7 @@ async function atualizarFichaEMemoria(params: {
     const dossie = await extrairDossieCliente(
       transcricao,
       conversa.leadId ?? params.telefone,
+      params.quemPaga,
       conversa.memoria,
     );
     if (conversa.leadId) await salvarDossie(conversa.leadId, dossie);
@@ -670,7 +674,10 @@ export async function POST(req: NextRequest) {
       return { base64: baixado.base64, mimeType: audioMsg?.mimetype ?? baixado.mimeType, segundos };
     };
     if (ehAudio) {
-      const resultadoAudio = await transcreverAudioWhatsapp(await audioDecifrado());
+      const resultadoAudio = await transcreverAudioWhatsapp({
+        ...(await audioDecifrado()),
+        quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
+      });
       audioFalhou = !resultadoAudio.sucesso;
       text = resultadoAudio.textoTranscrito;
       /*
@@ -768,12 +775,14 @@ export async function POST(req: NextRequest) {
               conversaId: conversa.id,
               remoteJid: jidBruto,
               mensagemAtualId: providerMessageId,
+              quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
             });
             if (trazidas > 0) {
               await atualizarFichaEMemoria({
                 conversa,
                 historico: await historicoRecente(conversa.id),
                 telefone: sender,
+                quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
               });
             }
           }
@@ -1133,6 +1142,7 @@ export async function POST(req: NextRequest) {
           texto: text,
           ultimaFalaNossa:
             [...historicoCalado].reverse().find((m) => m.remetente !== "cliente")?.texto ?? "",
+          quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
         });
         let acao: "marcou" | "registrou" = "registrou";
         if (classificacao.recusa?.familia === "parada") {
@@ -1163,6 +1173,7 @@ export async function POST(req: NextRequest) {
         conversa,
         historico: historicoCalado,
         telefone: sender,
+        quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
       });
       return NextResponse.json({ ok: true, action: "ia_calada", motivo: decisaoIA.motivo, sender });
     }
@@ -1269,6 +1280,7 @@ export async function POST(req: NextRequest) {
      * um agente que não existe.
      */
     const turno = await executarTurnoDeAtendimento({
+      quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
       identidade: {
         nomeCorretor: instancia.nomeCorretor,
         slugCorretor: instancia.slugCorretor ?? undefined,
@@ -1514,7 +1526,13 @@ export async function POST(req: NextRequest) {
     }
 
     const dossie =
-      (await atualizarFichaEMemoria({ conversa, historico, telefone: sender, iaRespondeu: true })) ??
+      (await atualizarFichaEMemoria({
+        conversa,
+        historico,
+        telefone: sender,
+        iaRespondeu: true,
+        quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
+      })) ??
       /*
        * A extração pode ter sido pulada (conversa sem lead, por exemplo).
        * O que vem abaixo compara dossiê novo com anterior para avisar o

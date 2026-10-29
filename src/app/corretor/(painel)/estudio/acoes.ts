@@ -133,10 +133,11 @@ export async function enviarMensagemDoEstudio(params: {
     // UMA consulta para os dois caminhos: desde 10/09 a arte também precisa do
     // catálogo, para reconhecer o imóvel citado e oferecer as fotos dele.
     const imoveis = await getEmpreendimentosDoPainel();
+    const quemPaga = { corretorId: corretor.id, grupoId: corretor.grupoId };
     resposta =
       params.tipo === "arte"
-        ? await turnoDeArte({ historico, mensagem: texto, imoveis })
-        : await turnoDeVideo({ historico, mensagem: texto, imoveis });
+        ? await turnoDeArte({ historico, mensagem: texto, imoveis, quemPaga })
+        : await turnoDeVideo({ historico, mensagem: texto, imoveis, quemPaga });
   } catch (e) {
     console.error("[estudio] turno falhou:", e);
     // Degradação, nunca bloqueio: o pedido está salvo; a IA só não respondeu.

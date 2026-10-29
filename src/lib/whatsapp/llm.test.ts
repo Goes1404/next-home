@@ -12,6 +12,13 @@ const chamarGroqJson = vi.fn();
 const chamarNvidiaJson = vi.fn();
 const chamarGeminiJson = vi.fn();
 const chamarOpenaiJson = vi.fn();
+const registrarConsumoDaIa = vi.fn();
+
+vi.mock("@/lib/planos/consumoDaIa", () => ({
+  registrarConsumoDaIa: (...args: unknown[]) => registrarConsumoDaIa(...args),
+}));
+
+const USO = { finalidade: "atendimento", quemPaga: { corretorId: "corretor-1" } } as const;
 
 vi.mock("./openai", () => ({
   chamarOpenaiJson: (...args: unknown[]) => chamarOpenaiJson(...args),
@@ -64,6 +71,7 @@ beforeEach(async () => {
   chamarNvidiaJson.mockReset();
   chamarGeminiJson.mockReset();
   chamarOpenaiJson.mockReset();
+  registrarConsumoDaIa.mockReset();
   delete process.env.IA_PROVEDOR_FORCADO;
   delete process.env.IA_ORDEM_PROVEDORES;
   /*
@@ -89,7 +97,7 @@ describe("Ordem dos provedores de reserva (só quando não há motor)", () => {
   it("o primeiro da fila responde e os seguintes nem são chamados", async () => {
     chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
 
     expect(r.ok && r.modelo).toBe("gemini-2.5-flash");
     expect(chamarNvidiaJson).not.toHaveBeenCalled();
@@ -100,7 +108,7 @@ describe("Ordem dos provedores de reserva (só quando não há motor)", () => {
     chamarGeminiJson.mockResolvedValue(falha("http_429"));
     chamarNvidiaJson.mockResolvedValue(ok("mistralai/mistral-nemotron"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
 
     expect(r.ok).toBe(true);
     expect(r.ok && r.modelo).toBe("mistralai/mistral-nemotron");
@@ -110,14 +118,14 @@ describe("Ordem dos provedores de reserva (só quando não há motor)", () => {
     chamarGeminiJson.mockResolvedValue(falha("http_4xx"));
     chamarNvidiaJson.mockResolvedValue(ok("mistralai/mistral-nemotron"));
 
-    expect((await chamarLlmJson("prompt")).ok).toBe(true);
+    expect((await chamarLlmJson("prompt", { uso: USO })).ok).toBe(true);
   });
 
   it("só quando TODOS falham é que existe contingência", async () => {
     chamarGeminiJson.mockResolvedValue(falha("http_429"));
     chamarNvidiaJson.mockResolvedValue(falha("timeout"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
     expect(r.ok).toBe(false);
     expect(!r.ok && r.erro).toBe("timeout");
   });
@@ -131,7 +139,7 @@ describe("Provedor sem chave", () => {
     ({ chamarLlmJson } = await import("./llm"));
     chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
 
     expect(r.ok && r.modelo).toBe("gemini-2.5-flash");
     expect(chamarNvidiaJson).not.toHaveBeenCalled();
@@ -143,7 +151,7 @@ describe("Provedor sem chave", () => {
     vi.resetModules();
     ({ chamarLlmJson } = await import("./llm"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
     expect(!r.ok && r.erro).toBe("sem_api_key");
   });
 });
@@ -155,7 +163,7 @@ describe("Orçamento de tempo", () => {
     chamarGeminiJson.mockResolvedValue(falha("timeout"));
     chamarNvidiaJson.mockResolvedValue(ok("mistralai/mistral-nemotron"));
 
-    await chamarLlmJson("prompt", { orcamentoMs: 20_000 });
+    await chamarLlmJson("prompt", { uso: USO, orcamentoMs: 20_000 });
 
     const tetoPrimeiro = chamarGeminiJson.mock.calls[0][1].timeoutMs;
     expect(tetoPrimeiro).toBeLessThan(20_000);
@@ -176,7 +184,7 @@ describe("Provedor forçado (usado pelo eval)", () => {
     process.env.IA_PROVEDOR_FORCADO = "nvidia";
     chamarNvidiaJson.mockResolvedValue(falha("http_429"));
 
-    const r = await chamarLlmJson("prompt");
+    const r = await chamarLlmJson("prompt", { uso: USO });
 
     expect(r.ok).toBe(false);
     expect(chamarGeminiJson).not.toHaveBeenCalled();
@@ -210,7 +218,7 @@ describe("Três provedores na cascata", () => {
     chamarGeminiJson.mockResolvedValue(falha("timeout"));
     chamarNvidiaJson.mockResolvedValue(ok("mistralai/mistral-nemotron"));
 
-    const r = await chamar("prompt", { orcamentoMs: 26_000 });
+    const r = await chamar("prompt", { uso: USO, orcamentoMs: 26_000 });
 
     expect(r.ok && r.modelo).toBe("mistralai/mistral-nemotron");
     const tetoNvidia = chamarNvidiaJson.mock.calls[0][1].timeoutMs;
@@ -235,7 +243,7 @@ describe("Motor único", () => {
     const { chamarLlmJson: chamar } = await comMotor();
     chamarOpenaiJson.mockResolvedValue(ok("gpt-4.1-mini"));
 
-    const r = await chamar("prompt");
+    const r = await chamar("prompt", { uso: USO });
 
     expect(r.ok && r.modelo).toBe("gpt-4.1-mini");
     expect(chamarGeminiJson).not.toHaveBeenCalled();
@@ -251,7 +259,7 @@ describe("Motor único", () => {
     const { chamarLlmJson: chamar } = await comMotor();
     chamarOpenaiJson.mockResolvedValue(falha("http_429"));
 
-    const r = await chamar("prompt");
+    const r = await chamar("prompt", { uso: USO });
 
     expect(r.ok).toBe(false);
     expect(chamarGeminiJson).not.toHaveBeenCalled();
@@ -265,7 +273,7 @@ describe("Motor único", () => {
     chamarOpenaiJson.mockResolvedValueOnce(falha("http_5xx"));
     chamarOpenaiJson.mockResolvedValueOnce(ok("gpt-4.1-mini"));
 
-    const r = await chamar("prompt", { orcamentoMs: 20_000 });
+    const r = await chamar("prompt", { uso: USO, orcamentoMs: 20_000 });
 
     expect(r.ok).toBe(true);
     const teto = chamarOpenaiJson.mock.calls[0][1].timeoutMs;
@@ -280,7 +288,7 @@ describe("Motor único", () => {
     const { chamarLlmJson: chamar } = await comMotor();
     chamarOpenaiJson.mockResolvedValueOnce(ok("gpt-4.1-mini"));
 
-    await chamar("prompt", { orcamentoMs: 12_000, fatia: 1 });
+    await chamar("prompt", { uso: USO, orcamentoMs: 12_000, fatia: 1 });
 
     expect(chamarOpenaiJson.mock.calls[0][1].timeoutMs).toBeGreaterThan(11_000);
   });
@@ -356,7 +364,7 @@ describe("Visão: com foto, só quem sabe olhar entra", () => {
     ({ chamarLlmJson } = await import("./llm"));
     chamarOpenaiJson.mockResolvedValue(ok("gpt-4.1-mini"));
 
-    await chamarLlmJson("descreva", { imagens: ["https://sto/a.jpg", "https://sto/b.jpg"] });
+    await chamarLlmJson("descreva", { uso: USO, imagens: ["https://sto/a.jpg", "https://sto/b.jpg"] });
 
     expect(chamarOpenaiJson).toHaveBeenCalledTimes(1);
     expect(chamarOpenaiJson.mock.calls[0][1].imagens).toEqual([
@@ -367,7 +375,7 @@ describe("Visão: com foto, só quem sabe olhar entra", () => {
 
   it("provedor de TEXTO não recebe foto — mandar devolveria 400 e pareceria queda", async () => {
     // Sem chave da OpenAI sobram os de reserva, e nenhum declara visão.
-    const r = await chamarLlmJson("descreva", { imagens: ["https://sto/a.jpg"] });
+    const r = await chamarLlmJson("descreva", { uso: USO, imagens: ["https://sto/a.jpg"] });
 
     expect(chamarGeminiJson).not.toHaveBeenCalled();
     expect(chamarNvidiaJson).not.toHaveBeenCalled();
@@ -377,7 +385,7 @@ describe("Visão: com foto, só quem sabe olhar entra", () => {
   it("sem foto, nada muda: os provedores de texto seguem atendendo", async () => {
     chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
 
-    const r = await chamarLlmJson("oi");
+    const r = await chamarLlmJson("oi", { uso: USO });
 
     expect(r.ok).toBe(true);
     expect(chamarGeminiJson).toHaveBeenCalledTimes(1);
@@ -392,5 +400,29 @@ describe("Visão: com foto, só quem sabe olhar entra", () => {
     vi.resetModules();
     const comMotor = await import("./llm");
     expect(comMotor.algumProvedorLeImagem()).toBe(true);
+  });
+});
+
+describe("Livro do consumo (0233)", () => {
+  it("quem respondeu vai para o livro, com os tokens e o uso de quem chamou", async () => {
+    chamarGeminiJson.mockResolvedValue(ok("gemini-2.5-flash"));
+
+    await chamarLlmJson("prompt", { uso: USO });
+
+    expect(registrarConsumoDaIa).toHaveBeenCalledTimes(1);
+    expect(registrarConsumoDaIa).toHaveBeenCalledWith(USO, { modelo: "gemini-2.5-flash", tokensEntrada: 10, tokensSaida: 5 });
+  });
+
+  it("na cascata, só a resposta que valeu é gravada; contingência não grava nada", async () => {
+    chamarGeminiJson.mockResolvedValue(falha("http_429"));
+    chamarNvidiaJson.mockResolvedValue(ok("mistralai/mistral-nemotron"));
+    await chamarLlmJson("prompt", { uso: USO });
+    expect(registrarConsumoDaIa).toHaveBeenCalledTimes(1);
+    expect(registrarConsumoDaIa.mock.calls[0][1].modelo).toBe("mistralai/mistral-nemotron");
+
+    registrarConsumoDaIa.mockReset();
+    chamarNvidiaJson.mockResolvedValue(falha("timeout"));
+    await chamarLlmJson("prompt", { uso: USO });
+    expect(registrarConsumoDaIa).not.toHaveBeenCalled();
   });
 });

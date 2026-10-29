@@ -8,6 +8,8 @@ import {
   parsearTabelaLeads,
 } from "./importacao";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 describe("Importação de leads — tabela com cabeçalho", () => {
   it("lê um CSV com ponto e vírgula e cabeçalho em português", () => {
     const csv = [
@@ -147,7 +149,7 @@ describe("Importação de leads — PDF", () => {
       "Bruno Lima 11987654321 bruno@exemplo.com",
     ]);
 
-    const resultado = await extrairDePdf(pdf);
+    const resultado = await extrairDePdf(pdf, QUEM_PAGA);
 
     expect(resultado.metodo).toBe("texto");
     expect(resultado.candidatos.map((c) => c.telefoneE164)).toEqual(
@@ -158,7 +160,7 @@ describe("Importação de leads — PDF", () => {
   it("lê a tabela do PDF quando ela vem com separador", async () => {
     const pdf = pdfCom(["nome;telefone;email", "Carla Souza;11 98888-7777;carla@exemplo.com"]);
 
-    const resultado = await extrairDePdf(pdf);
+    const resultado = await extrairDePdf(pdf, QUEM_PAGA);
 
     expect(resultado.metodo).toBe("texto");
     expect(resultado.candidatos).toHaveLength(1);
@@ -169,7 +171,7 @@ describe("Importação de leads — PDF", () => {
   it("avisa que o PDF é escaneado quando não há texto nem IA disponível", async () => {
     const semTexto = pdfCom([]);
 
-    const resultado = await extrairDePdf(semTexto);
+    const resultado = await extrairDePdf(semTexto, QUEM_PAGA);
 
     expect(resultado.candidatos).toHaveLength(0);
     expect(resultado.aviso).toMatch(/escaneado/i);
@@ -193,7 +195,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
   }
 
   it("traz o cliente e deixa o corretor de fora", async () => {
-    const resultado = await extrairDeZipWhatsapp(zipDaConversa());
+    const resultado = await extrairDeZipWhatsapp(zipDaConversa(), QUEM_PAGA);
 
     expect(resultado.metodo).toBe("whatsapp");
     expect(resultado.candidatos).toHaveLength(1);
@@ -210,6 +212,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
 
     const resultado = await extrairDeZipWhatsapp(
       zipDaConversa("Conversa do WhatsApp com Clientes Alphaville.txt", grupo),
+      QUEM_PAGA,
       { nome: "Bruna Next Home", telefone: "5511972207204" },
     );
 
@@ -227,6 +230,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
 
     const resultado = await extrairDeZipWhatsapp(
       zipDaConversa("Conversa do WhatsApp com Ana Prado.txt", salvo),
+      QUEM_PAGA,
     );
 
     expect(resultado.candidatos).toHaveLength(1);
@@ -246,6 +250,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
 
     const resultado = await extrairDeZipWhatsapp(
       zipDaConversa("Conversa do WhatsApp com +1 415 555-2671.txt", gringo),
+      QUEM_PAGA,
     );
 
     expect(resultado.candidatos[0].telefone).toBe("+1 415 555-2671");
@@ -262,6 +267,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
 
     const resultado = await extrairDeZipWhatsapp(
       zipDaConversa("Conversa do WhatsApp com Grupo.txt", grupo),
+      QUEM_PAGA,
       { nome: "Bruna", telefone: "5511972207204" },
     );
 
@@ -273,7 +279,7 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
       { nome: "leads.csv", conteudo: "nome;telefone\nAna Prado;11991234567" },
     ]);
 
-    const resultado = await extrairDeZipWhatsapp(zip);
+    const resultado = await extrairDeZipWhatsapp(zip, QUEM_PAGA);
 
     expect(resultado.metodo).toBe("tabela");
     expect(resultado.candidatos[0].nome).toBe("Ana Prado");
@@ -282,14 +288,14 @@ describe("Importação — conversa exportada do WhatsApp (.zip)", () => {
   it("explica o .zip só com mídia em vez de dizer que não achou contato", async () => {
     const zip = montarZip([{ nome: "IMG-0001.jpg", conteudo: Buffer.alloc(500, 1) }]);
 
-    const resultado = await extrairDeZipWhatsapp(zip);
+    const resultado = await extrairDeZipWhatsapp(zip, QUEM_PAGA);
 
     expect(resultado.candidatos).toHaveLength(0);
     expect(resultado.aviso).toContain("Sem mídia");
   });
 
   it("recusa um arquivo que não é .zip com uma frase útil", async () => {
-    const resultado = await extrairDeZipWhatsapp(Buffer.from("%PDF-1.4 isto é um pdf"));
+    const resultado = await extrairDeZipWhatsapp(Buffer.from("%PDF-1.4 isto é um pdf"), QUEM_PAGA);
 
     expect(resultado.metodo).toBe("nenhum");
     expect(resultado.aviso).toContain("não é um .zip");

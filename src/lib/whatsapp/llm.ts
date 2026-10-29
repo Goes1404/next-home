@@ -5,6 +5,7 @@ import { chamarGroqJson, groqConfigurada, modeloGroq, promptCabeNaGroq } from ".
 import { chamarNvidiaJson, modeloNvidia, nvidiaConfigurada } from "./nvidia";
 import { chamarOpenaiJson, modeloOpenai, openaiConfigurada } from "./openai";
 import { valeRetentar, type MotivoFalhaLlm, type ResultadoLlm } from "./llmTipos";
+import { registrarConsumoDaIa, type UsoDaIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * O motor de IA — o único ponto do sistema que decide COM QUEM falar.
@@ -208,7 +209,12 @@ export function algumProvedorLeImagem(): boolean {
 
 export async function chamarLlmJson(
   prompt: string,
-  opts?: {
+  opts: {
+    /**
+     * Para que é a chamada e quem paga (0233). Obrigatório: é por aqui que o
+     * custo de cada funcionalidade chega à plataforma. Ver `consumoDaIa.ts`.
+     */
+    uso: UsoDaIa;
     temperature?: number;
     orcamentoMs?: number;
     imagens?: string[];
@@ -229,9 +235,9 @@ export async function chamarLlmJson(
     fatia?: number;
   },
 ): Promise<ResultadoLlm> {
-  const orcamentoMs = opts?.orcamentoMs ?? ORCAMENTO_AGENTE_MS;
+  const orcamentoMs = opts.orcamentoMs ?? ORCAMENTO_AGENTE_MS;
   const prazoFinal = Date.now() + orcamentoMs;
-  const imagens = opts?.imagens ?? [];
+  const imagens = opts.imagens ?? [];
 
   const disponiveis = ordemDosProvedores().filter(
     (p) =>
@@ -244,7 +250,7 @@ export async function chamarLlmJson(
   );
 
   const tetoPorProvedor = Math.floor(
-    orcamentoMs * (opts?.fatia ?? (disponiveis.length === 1 ? FATIA_MOTOR_UNICO : FATIA_MAXIMA)),
+    orcamentoMs * (opts.fatia ?? (disponiveis.length === 1 ? FATIA_MOTOR_UNICO : FATIA_MAXIMA)),
   );
   /*
    * Avisar quando um provedor com chave fica de fora por não caber. Sem
@@ -277,10 +283,10 @@ export async function chamarLlmJson(
 
     const timeoutMs = Math.min(tetoPorProvedor, restante);
     let resultado = await provedor.chamar(prompt, {
-      temperature: opts?.temperature,
+      temperature: opts.temperature,
       timeoutMs,
       imagens,
-      detalheImagem: opts?.detalheImagem,
+      detalheImagem: opts.detalheImagem,
     });
 
     // Uma retentativa no mesmo provedor só para o que falha rápido (5xx,
@@ -290,10 +296,10 @@ export async function chamarLlmJson(
       const aindaResta = prazoFinal - Date.now();
       if (aindaResta >= MINIMO_UTIL_MS) {
         resultado = await provedor.chamar(prompt, {
-          temperature: opts?.temperature,
+          temperature: opts.temperature,
           timeoutMs: Math.min(tetoPorProvedor, aindaResta),
           imagens,
-          detalheImagem: opts?.detalheImagem,
+          detalheImagem: opts.detalheImagem,
         });
       }
     }
@@ -301,8 +307,15 @@ export async function chamarLlmJson(
     if (resultado.ok) {
       // Latência do que o cliente esperou de FATO, incluindo o provedor que
       // falhou antes — senão a telemetria mostraria só a última perna e a
-      // espera real ficaria invisível.
-      return { ...resultado, latenciaMs: Date.now() - inicio };
+      // espera real ficaria invisível. Medida antes do livro: a gravação do
+      // consumo não é espera do modelo.
+      const latenciaMs = Date.now() - inicio;
+      await registrarConsumoDaIa(opts.uso, {
+        modelo: resultado.modelo,
+        tokensEntrada: resultado.tokensEntrada,
+        tokensSaida: resultado.tokensSaida,
+      });
+      return { ...resultado, latenciaMs };
     }
 
     ultimaFalha = resultado.erro;

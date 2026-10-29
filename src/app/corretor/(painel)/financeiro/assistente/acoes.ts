@@ -43,7 +43,11 @@ export async function perguntarAoFinanceiro(historico: MensagemFinanceira[], per
     .map((m) => ({ papel: m.papel, texto: m.texto.slice(0, 1200) }));
   const prompt = promptDoAssistente(bloco.texto, historicoLimpo, texto);
 
-  const r = await chamarLlmJson(prompt, { temperature: 0.2, orcamentoMs: 25_000 });
+  const r = await chamarLlmJson(prompt, {
+    temperature: 0.2,
+    orcamentoMs: 25_000,
+    uso: { finalidade: "financeiro", quemPaga: { corretorId: guarda.corretor.id } },
+  });
   if (!r.ok) {
     void registrarInteracao({
       corretorId: guarda.corretor.id,

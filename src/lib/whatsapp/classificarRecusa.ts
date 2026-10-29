@@ -1,5 +1,6 @@
 import "server-only";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { detectarRecusa } from "./recusaDoCliente";
 import { ofereceuParar } from "./duvidaDeEngano";
 import {
@@ -27,6 +28,8 @@ export async function classificarRecusa(p: {
   /** A última fala do bot ou do corretor: o que dá sentido a um "não". */
   ultimaFalaNossa: string;
   jaRecusouAntes?: boolean;
+  /** Quem paga a chamada, quando a regex não decide (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<ClassificacaoDeRecusa> {
   const pelaRegex = detectarRecusa(p.texto, {
     jaRecusouAntes: p.jaRecusouAntes,
@@ -41,7 +44,7 @@ export async function classificarRecusa(p: {
   try {
     const resposta = await chamarLlmJson(
       montarPromptDeRecusa({ ultimaFalaNossa: p.ultimaFalaNossa, falaDoCliente: p.texto }),
-      { temperature: 0, orcamentoMs: ORCAMENTO_MS, fatia: 1 },
+      { temperature: 0, orcamentoMs: ORCAMENTO_MS, fatia: 1, uso: { finalidade: "recusa", quemPaga: p.quemPaga } },
     );
     if (!resposta.ok) return { recusa: null, decididoPor: null, veredito: null, modelo: null };
     const veredito = lerVeredito(resposta.json, p.texto);

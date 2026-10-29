@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { transcreverAudioWhatsapp } from "./audioTranscriber";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { LIMITE_DO_HISTORICO, lerHistoricoDoChat } from "./historicoDoChat";
 import { baixarMidiaDoProvedor, buscarMensagensDoChat } from "./provider";
 
@@ -25,6 +26,8 @@ export async function importarHistoricoDoChat(params: {
   remoteJid: string;
   /** A mensagem que acionou a importação: ela segue o caminho normal. */
   mensagemAtualId: string | null;
+  /** O corretor dono do número: quem paga as transcrições (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<number> {
   const supabase = createServiceClient();
   const marcar = async (desfecho: "importado" | "indisponivel") => {
@@ -74,7 +77,11 @@ export async function importarHistoricoDoChat(params: {
             mensagemCompleta: m.bruto,
           });
           if (baixado.ok) {
-            const r = await transcreverAudioWhatsapp({ base64: baixado.base64, mimeType: baixado.mimeType });
+            const r = await transcreverAudioWhatsapp({
+              base64: baixado.base64,
+              mimeType: baixado.mimeType,
+              quemPaga: params.quemPaga,
+            });
             if (r.sucesso && r.textoTranscrito) conteudo = r.textoTranscrito;
           }
         }

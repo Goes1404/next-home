@@ -174,7 +174,7 @@ function montarDependencias(p: {
         return true;
       }
     },
-    interpretar: (texto) => interpretarPedido(texto, { agora, ehGestor }),
+    interpretar: (texto) => interpretarPedido(texto, { agora, ehGestor, quemPaga: { corretorId, grupoId } }),
     buscarLeads: async (nome) => {
       const trecho = trechoDeBusca(nome);
       if (!trecho) return [];

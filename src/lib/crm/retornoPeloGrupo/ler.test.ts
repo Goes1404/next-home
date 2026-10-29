@@ -19,6 +19,7 @@ function pedido(extra: Partial<Parameters<typeof lerRetornoDaLigacao>[0]> = {}) 
     fichaAtual: "Ana, 11 99999-0000",
     dossieAtual: null,
     agora: AGORA,
+    quemPaga: { corretorId: "corretor-1" },
     ...extra,
   };
 }

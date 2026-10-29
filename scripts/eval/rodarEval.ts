@@ -407,6 +407,7 @@ async function main() {
      * garantiria a quarta.
      */
     const turno = await executarTurnoDeAtendimento({
+      quemPaga: { semGrupo: "eval" },
       identidade: {
         nomeCorretor: "Bruna Cristal",
         slugCorretor: "cristal-bruna",

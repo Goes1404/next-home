@@ -12,6 +12,8 @@ import {
 } from "./leituraPorIa";
 import type { EmpreendimentoSimples } from "./types";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const catalogo: EmpreendimentoSimples[] = [
   { id: "1", nome: "Viva RSF Vila do Conde", slug: "viva-rsf", cidade: "Barueri", bairro: "Vila do Conde", precoAtual: 457000 },
   { id: "2", nome: "Breeze Home Clube", slug: "breeze", cidade: "Barueri", bairro: "Jardim Júlio", precoAtual: null },
@@ -40,7 +42,7 @@ describe("valores escritos na tabela", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Breeze Home Clube", slug: "breeze", menorPreco: 381405.62, unidades: null }] }),
     );
-    const r = await lerTabelaDePrecosComIa("Breeze Home Clube\n2 dorms 49 m² 1 R$ 381.405,62 B-107", catalogo);
+    const r = await lerTabelaDePrecosComIa("Breeze Home Clube\n2 dorms 49 m² 1 R$ 381.405,62 B-107", catalogo, { quemPaga: QUEM_PAGA });
     expect(r.descartados).toEqual([]);
     expect(r.itens[0]?.precoNovo).toBe(381406);
   });
@@ -51,7 +53,7 @@ describe("tabela de preços lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Residencial Viva Vila do Conde", slug: "viva-rsf", menorPreco: 448000, unidades: 3 }] }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.itens).toHaveLength(1);
     expect(r.itens[0]).toMatchObject({ empreendimentoId: "1", precoNovo: 448000, selecionado: true, diferencaReais: -9000 });
   });
@@ -60,14 +62,14 @@ describe("tabela de preços lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Viva Vila do Conde", slug: "viva-rsf", menorPreco: 440000 }] }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.itens).toHaveLength(0);
     expect(r.descartados).toHaveLength(1);
   });
 
   it("parcela não passa por preço de imóvel", async () => {
     chamarLlmJson.mockResolvedValue(ok({ imoveis: [{ nomeNoArquivo: "Viva", slug: "viva-rsf", menorPreco: 1200 }] }));
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.itens).toHaveLength(0);
   });
 
@@ -75,7 +77,7 @@ describe("tabela de preços lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Acqua Park Barueri", slug: "breeze", menorPreco: 448000 }] }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.itens[0]).toMatchObject({ empreendimentoId: "2", matchStatus: "sugerido", selecionado: false });
   });
 
@@ -83,13 +85,13 @@ describe("tabela de preços lida pela IA", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Outro Prédio", slug: "inventado", menorPreco: 448000 }] }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.itens[0]).toMatchObject({ empreendimentoId: null, matchStatus: "nao_encontrado", selecionado: false });
   });
 
   it("IA fora do ar é falha declarada, não 'nada encontrado'", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false, erro: "timeout", latenciaMs: 1 });
-    const r = await lerTabelaDePrecosComIa(TABELA, catalogo);
+    const r = await lerTabelaDePrecosComIa(TABELA, catalogo, { quemPaga: QUEM_PAGA });
     expect(r.falhou).toBe(true);
   });
 
@@ -98,7 +100,7 @@ describe("tabela de preços lida pela IA", () => {
     chamarLlmJson
       .mockResolvedValueOnce(ok({ imoveis: [{ nomeNoArquivo: "Viva", slug: "viva-rsf", menorPreco: 469900 }] }))
       .mockResolvedValue(ok({ imoveis: [{ nomeNoArquivo: "Viva", slug: "viva-rsf", menorPreco: 448000 }] }));
-    const r = await lerTabelaDePrecosComIa(longa, catalogo);
+    const r = await lerTabelaDePrecosComIa(longa, catalogo, { quemPaga: QUEM_PAGA });
     expect(chamarLlmJson.mock.calls.length).toBeGreaterThan(1);
     expect(chamarLlmJson.mock.calls[1][0]).toContain("COMEÇO DO ARQUIVO");
     expect(r.itens).toHaveLength(1);
@@ -134,7 +136,7 @@ describe("tabelão da RSF lido de print", () => {
         ],
       }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELAO, breezeComPreco);
+    const r = await lerTabelaDePrecosComIa(TABELAO, breezeComPreco, { quemPaga: QUEM_PAGA });
     expect(r.valoresDeReferencia).toBe(true);
     const breeze = r.itens.find((i) => i.empreendimentoId === "2");
     expect(breeze).toMatchObject({ precoNovo: 381405, selecionado: false });
@@ -144,7 +146,7 @@ describe("tabelão da RSF lido de print", () => {
     chamarLlmJson.mockResolvedValue(
       ok({ imoveis: [{ nomeNoArquivo: "Viva RSF Jaguaribe", slug: "viva-jaguaribe", menorPreco: 593239 }] }),
     );
-    const r = await lerTabelaDePrecosComIa(TABELAO.replace(/Nota:.*$/m, ""), catalogoRsf);
+    const r = await lerTabelaDePrecosComIa(TABELAO.replace(/Nota:.*$/m, ""), catalogoRsf, { quemPaga: QUEM_PAGA });
     expect(r.itens[0]).toMatchObject({ empreendimentoId: "3", matchStatus: "exato", selecionado: true });
     expect(chamarLlmJson.mock.calls[0][0]).toContain("também: Viva RSF Jaguaribe");
   });
@@ -156,7 +158,7 @@ describe("tabelão da RSF lido de print", () => {
 
   it("a transcrição do print vira texto, uma linha por unidade, lida em alta resolução", async () => {
     chamarLlmJson.mockResolvedValue(ok({ linhas: ["Breeze Home Clube | 2 dorms 49 m² | 1 | R$ 381.405,62 | B-107", "  ", 3] }));
-    const r = await transcreverPrintDaTabela("data:image/jpeg;base64,AAAA");
+    const r = await transcreverPrintDaTabela("data:image/jpeg;base64,AAAA", { quemPaga: QUEM_PAGA });
     expect(r).toEqual({ ok: true, texto: "Breeze Home Clube | 2 dorms 49 m² | 1 | R$ 381.405,62 | B-107" });
     expect(chamarLlmJson.mock.calls[0][1]).toMatchObject({ detalheImagem: "high", imagens: ["data:image/jpeg;base64,AAAA"] });
   });

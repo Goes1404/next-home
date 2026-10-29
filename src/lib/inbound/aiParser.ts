@@ -1,6 +1,7 @@
 import type { EmailInboundInput, LeadExtraido, PortalOrigem } from "./types";
 import { extrairLeadViaRegex, identificarPortalOrigem } from "./regexFallback";
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { normalizarTelefoneBrasileiro } from "./phoneUtils";
 
 const PROMPT_SISTEMA_MULTI = `Você é um extrator de leads imobiliários de alta precisão.
@@ -28,7 +29,7 @@ import { extrairVariosLeadsViaRegex } from "./regexFallback";
  * Extrai um ou múltiplos leads de um e-mail pela cascata de IA, com
  * fallback por regex quando nenhum provedor responde.
  */
-export async function extrairVariosLeadsComIA(email: EmailInboundInput): Promise<LeadExtraido[]> {
+export async function extrairVariosLeadsComIA(email: EmailInboundInput, quemPaga: QuemPagaAIa): Promise<LeadExtraido[]> {
   const corpoTexto = email.text || email.html || "";
   const entradaCompleta = `Assunto: ${email.subject || ""}\nDe: ${email.from || ""}\nPara: ${email.to || ""}\n\nCorpo:\n${corpoTexto.slice(0, 10000)}`;
 
@@ -39,7 +40,7 @@ export async function extrairVariosLeadsComIA(email: EmailInboundInput): Promise
       // estourou cota naquele minuto.
       const resultado = await chamarLlmJson(
         `${PROMPT_SISTEMA_MULTI}\n\nE-mail a ser analisado:\n${entradaCompleta}`,
-        { temperature: 0.1, orcamentoMs: 12_000 },
+        { temperature: 0.1, orcamentoMs: 12_000, uso: { finalidade: "email_recebido", quemPaga } },
       );
 
       if (resultado.ok) {
@@ -83,7 +84,7 @@ export async function extrairVariosLeadsComIA(email: EmailInboundInput): Promise
 /**
  * Extrai 1 lead (compatibilidade).
  */
-export async function extrairLeadComIA(email: EmailInboundInput): Promise<LeadExtraido | null> {
-  const lista = await extrairVariosLeadsComIA(email);
+export async function extrairLeadComIA(email: EmailInboundInput, quemPaga: QuemPagaAIa): Promise<LeadExtraido | null> {
+  const lista = await extrairVariosLeadsComIA(email, quemPaga);
   return lista.length > 0 ? lista[0] : null;
 }

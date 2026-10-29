@@ -1,4 +1,5 @@
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { NAO_E_RELATO, normalizarLeituraDoRetorno, type LeituraDoRetorno } from "./leituraDoRetorno";
 
 /*
@@ -107,6 +108,7 @@ export async function lerRetornoDaLigacao(p: {
   fichaAtual: string;
   dossieAtual: string | null;
   agora: Date;
+  quemPaga: QuemPagaAIa;
 }): Promise<ResultadoDaLeitura> {
   try {
     const relato = p.relato.trim();
@@ -130,6 +132,7 @@ export async function lerRetornoDaLigacao(p: {
       temperature: 0.1,
       orcamentoMs: ORCAMENTO_RETORNO_MS,
       fatia: 1,
+      uso: { finalidade: "retorno_ligacao", quemPaga: p.quemPaga },
     });
     if (!resultado.ok) {
       console.error("Erro ao ler o retorno da ligação:", resultado.erro);

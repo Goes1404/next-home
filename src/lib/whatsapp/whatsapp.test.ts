@@ -17,6 +17,8 @@ import {
 import { ehJidDeGrupoWhatsapp, enviarMensagemWhatsapp } from "./provider";
 import type { Empreendimento } from "@/lib/types";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const IMOVEL_MOCK: Empreendimento = {
   slug: "canvas-alphaville",
   nome: "Canvas Alphaville",
@@ -385,6 +387,7 @@ describe("Fila de campanha — proteção anti-ban", () => {
     // que o WhatsApp restringe (a conta da Bruna, 07/10/2026).
     const original = "Olá, Marina! Conheça o Canvas Alphaville.";
     const primeira = await variarSemRepetir({
+      quemPaga: QUEM_PAGA,
       texto: original,
       nome: "Marina",
       nomes: ["Marina"],
@@ -394,6 +397,7 @@ describe("Fila de campanha — proteção anti-ban", () => {
     expect(primeira).toEqual({ ok: true, texto: original, personalizadoPorIA: false, semelhanca: 0 });
 
     const segunda = await variarSemRepetir({
+      quemPaga: QUEM_PAGA,
       texto: "Olá, Paulo! Conheça o Canvas Alphaville.",
       nome: "Paulo",
       nomes: ["Paulo"],
@@ -412,6 +416,7 @@ describe("Fila de campanha — proteção anti-ban", () => {
       empreendimentoNome: "Canvas Alphaville",
     });
     const exemplos = await exemplosDaLista({
+      quemPaga: QUEM_PAGA,
       textos: fila.map((item, i) => ({ texto: item.mensagemPersonalizada, nomeLead: leads[i].nome })),
       fatos: ["Canvas Alphaville"],
       anteriores: [],
@@ -427,7 +432,7 @@ describe("Fila de campanha — proteção anti-ban", () => {
 
 describe("Dossiê do cliente", () => {
   it("cai num fallback estruturado quando não há API Key", async () => {
-    const dossie = await extrairDossieCliente("Olá, tenho interesse no Canvas", "lead-999");
+    const dossie = await extrairDossieCliente("Olá, tenho interesse no Canvas", "lead-999", QUEM_PAGA);
 
     expect(dossie).toHaveProperty("leadId", "lead-999");
     expect(dossie).toHaveProperty("temperaturaScore");
@@ -455,7 +460,7 @@ describe("Nota de acompanhamento ao corretor", () => {
 
 describe("Transcrição de áudio", () => {
   it("não afirma sucesso quando a transcrição falhou", async () => {
-    const resAudio = await transcreverAudioWhatsapp({ base64: "data:audio/ogg;base64,AAA" });
+    const resAudio = await transcreverAudioWhatsapp({ quemPaga: QUEM_PAGA, base64: "data:audio/ogg;base64,AAA" });
 
     expect(resAudio.sucesso).toBe(false);
     // O texto mostrado no CRM tem que contar a mesma história do `sucesso`.

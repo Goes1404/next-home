@@ -1,4 +1,5 @@
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * Lista de leads SEM cabeçalho lida pela IA (28/09/2026).
@@ -169,7 +170,7 @@ export type ResultadoLeituraPorIa =
  * nunca bloqueia a importação. Se só ALGUNS falharem, o resultado é parcial
  * e diz quantos, para a tela avisar em vez de fingir que leu tudo.
  */
-export async function lerListaComIa(conteudo: string): Promise<ResultadoLeituraPorIa> {
+export async function lerListaComIa(conteudo: string, quemPaga: QuemPagaAIa): Promise<ResultadoLeituraPorIa> {
   const pedacos = dividirEmPedacos(conteudo);
   const respostas: (LeadLidoPelaIa[] | null)[] = new Array(pedacos.length).fill(null);
 
@@ -179,7 +180,11 @@ export async function lerListaComIa(conteudo: string): Promise<ResultadoLeituraP
       const i = proximo;
       proximo += 1;
       const pedaco = pedacos[i];
-      const r = await chamarLlmJson(PROMPT + pedaco, { temperature: 0, orcamentoMs: ORCAMENTO_POR_PEDACO_MS });
+      const r = await chamarLlmJson(PROMPT + pedaco, {
+        temperature: 0,
+        orcamentoMs: ORCAMENTO_POR_PEDACO_MS,
+        uso: { finalidade: "importacao_leads", quemPaga },
+      });
       if (!r.ok) {
         console.error("[importacao] IA não leu um pedaço da lista:", r.erro);
         continue;

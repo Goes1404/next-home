@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { getEmpreendimentoDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
@@ -112,7 +113,7 @@ export type Roteiro = {
   problemas: string[];
 };
 
-async function preparar(pedido: PedidoDeVideo) {
+async function preparar(pedido: PedidoDeVideo, quemPaga: QuemPagaAIa) {
   if (pedido.fonte === "catalogo") {
     const imovel = await getEmpreendimentoDoPainel(pedido.slug);
     if (!imovel) return { erro: "Imóvel não encontrado." as const };
@@ -126,7 +127,7 @@ async function preparar(pedido: PedidoDeVideo) {
     // continua mandando, e a extra entra quando ganha o lugar.
     const extras = (pedido.fotosExtras ?? []).slice(0, 8);
     const fotosExtras =
-      extras.length > 0 ? comoMidias(extras, await classificarFotos(extras.map((f) => f.url))) : [];
+      extras.length > 0 ? comoMidias(extras, await classificarFotos(extras.map((f) => f.url), quemPaga)) : [];
     return {
       fotos: [...imovel.galeria, ...fotosExtras],
       copy: {
@@ -148,7 +149,7 @@ async function preparar(pedido: PedidoDeVideo) {
     return { erro: "Envie pelo menos 3 fotos." as const };
   }
 
-  const tipos = await classificarFotos(pedido.fotos.map((f) => f.url));
+  const tipos = await classificarFotos(pedido.fotos.map((f) => f.url), quemPaga);
   const briefing = montarBriefing({
     imovel: null,
     objetivo: pedido.objetivo,
@@ -187,7 +188,7 @@ export async function verRoteiro(
   const limite = await conferirLimite(corretor.grupoId, "video");
   if (!limite.ok) return { erro: limite.erro };
 
-  const p = await preparar(pedido);
+  const p = await preparar(pedido, { corretorId: corretor.id, grupoId: corretor.grupoId });
   if ("erro" in p) return { erro: p.erro };
 
   const planos = montarRoteiro({ fotos: p.fotos, objetivo: pedido.objetivo });
@@ -230,7 +231,7 @@ export async function criarVideo(pedido: PedidoDeVideo): Promise<{ erro?: string
   const limiteDoMes = await conferirLimite(corretor.grupoId, "video");
   if (!limiteDoMes.ok) return { erro: limiteDoMes.erro };
 
-  const p = await preparar(pedido);
+  const p = await preparar(pedido, { corretorId: corretor.id, grupoId: corretor.grupoId });
   if ("erro" in p) return { erro: p.erro };
 
   const planos = montarRoteiro({ fotos: p.fotos, objetivo: pedido.objetivo });

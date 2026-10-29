@@ -12395,3 +12395,27 @@ Nota: [[app-no-celular-area-segura-login-e-abertura]].
 - Login refeito (celular primeiro, fontes da Astro). Abertura animada só no
   app instalado, 1x por sessão (`AberturaDoApp.tsx`).
 - `next/font/google` nos testes: stub em `test/stubs/next-font-google.ts`.
+
+## Livro do consumo da IA: o custo da plataforma contava metade (0233, 29/10/2026)
+
+Nota: [[livro-do-consumo-da-ia]].
+
+- **O custo em /plataforma (0211) somava só `ia_interacoes.tokens_*`**, que é a
+  telemetria do atendimento. Ficavam de fora o dossiê (a cada mensagem), a
+  recusa, a transcrição, o follow-up e a abertura (linha sem tokens), artes,
+  vídeo, planta, PDF do imóvel, importação de leads, preços, campanhas, agenda
+  e e-mail dos portais. Número baixo demais, alerta de 30% calado.
+- **Regra nova:** `chamarLlmJson` exige `uso: { finalidade, quemPaga }` no tipo
+  e grava em `ia_consumo` quando alguém responde; quem fala direto com o
+  provedor chama `registrarConsumoDaIa`. `consumoCompleto.test.ts` reprova
+  arquivo com endereço de API de IA sem o livro.
+- `quemPaga: { corretorId }` basta (carimbo da 0191 acha o grupo). Eval passa
+  `{ semGrupo: "eval" }`. Transcrição cobra por segundos (Groq mínimo 10 s).
+- **Troca sem contar duas vezes:** `consumo_da_ia_por_grupo` soma o livro e a
+  telemetria antiga só antes da primeira linha do livro. Aplicar a 0233 ANTES
+  do deploy; a 0211 fica para o código antigo.
+- `consumoDaIa.ts` entrou em `servicoComGrupo.test.ts` como `plataforma` (só
+  insere). Como `helper` puxaria declaração em cada importador de `llm.ts`.
+- Banco local de teste estava em uso por outra sessão: a 0233 foi conferida
+  numa transação desfeita (script no scratchpad), sem `db:teste`, que
+  derrubaria o banco dela.

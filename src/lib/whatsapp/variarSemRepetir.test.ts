@@ -29,7 +29,7 @@ function responde(mensagem: string) {
   return { ok: true, json: { mensagem } };
 }
 
-const base = { texto: ORIGINAL, nome: "Ana", nomes: ["Ana"], fatos: FATOS, semente: 3 };
+const base = { texto: ORIGINAL, nome: "Ana", nomes: ["Ana"], fatos: FATOS, semente: 3, quemPaga: { corretorId: "corretor-1" } };
 
 describe("reescrita que não repete o número", () => {
   beforeEach(() => chamarLlmJson.mockReset());

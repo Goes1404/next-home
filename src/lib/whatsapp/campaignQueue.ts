@@ -1,6 +1,7 @@
 import { dentroDaJanela } from "./antiBan";
 import { nomeUtilDoLead, primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { algumProvedorConfigurado, chamarLlmJson } from "./llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import type { ItemFilaCampanha } from "./types";
 import { comecoAleatorio, distribuirVariantes, type Variante } from "./testeAB";
 import { aplicarContexto, trocarNome, type ContextoTemplate } from "./listaDeTransmissao";
@@ -154,6 +155,8 @@ export async function variarSemRepetir(params: {
   orcamentoMs?: number;
   /** Fixa o estilo sorteado. Só o teste passa isto; produção sorteia. */
   semente?: number;
+  /** O corretor dono da lista: quem paga a reescrita (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<ResultadoDaVariacao> {
   const tentativas = Math.max(0, params.tentativas ?? 2);
   const semente = params.semente ?? Math.floor(Math.random() * 1_000_000);
@@ -183,6 +186,7 @@ export async function variarSemRepetir(params: {
       const resultado = await chamarLlmJson(prompt, {
         temperature: i === 0 ? 0.9 : 1,
         orcamentoMs: params.orcamentoMs ?? 9_000,
+        uso: { finalidade: "campanha", quemPaga: params.quemPaga },
       });
       if (!resultado.ok) {
         // A camada do LLM já retenta o que falha rápido; um timeout ou cota
@@ -373,6 +377,7 @@ export async function exemplosDaLista(params: {
   fatos: readonly string[];
   anteriores: readonly TextoAnterior[];
   manterAbertura?: boolean;
+  quemPaga: QuemPagaAIa;
 }): Promise<{ textos: string[]; reescritos: number; repetidos: number }> {
   const anteriores = [...params.anteriores];
   const textos: string[] = [];
@@ -390,6 +395,7 @@ export async function exemplosDaLista(params: {
       manterAbertura: params.manterAbertura,
       tentativas: 1,
       orcamentoMs: 7_000,
+      quemPaga: params.quemPaga,
     });
     const texto = v.ok ? v.texto : exemplo.texto;
     if (v.ok && v.personalizadoPorIA) reescritos++;

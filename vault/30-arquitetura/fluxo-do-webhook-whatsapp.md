@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-27
+updated: 2026-10-29
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -122,6 +122,12 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
     ([[campanha-tambem-mexe-no-funil]]).
 
 Orçamento de tempo: 6s rajada + 20s agente + ~5s envios + 12s dossiê ≈ 43s.
+
+Custo: cada chamada paga do caminho (transcrição, recusa, resposta, a
+retentativa contra repetição, dossiê) grava uma linha em `ia_consumo` com o
+corretor do número (`quemPaga`), e é dela que sai o custo do grupo em
+/plataforma ([[livro-do-consumo-da-ia]], 0233). A gravação é um insert por
+chamada e fica FORA da latência medida.
 
 Grupo (0191): a instância resolvida traz o `grupo_id` do número, e as taxas
 do simulador que o turno usa são as desse grupo, não as do site. Toda linha

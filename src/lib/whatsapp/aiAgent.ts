@@ -2,6 +2,7 @@ import type { Empreendimento } from "@/lib/types";
 import { resumoDeDisponibilidade } from "@/lib/imoveis/unidades";
 import { formatarMoedaBRL } from "@/lib/precos/moneyUtils";
 import { chamarLlmJson, ORCAMENTO_AGENTE_MS } from "./llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { formatarReais } from "./dadoPedido";
 import { STATUS_LABEL } from "@/lib/types";
 import { linkDaPagina, linkDoCatalogo } from "./resolverMidia";
@@ -696,6 +697,8 @@ export async function gerarRespostaIA(
    * eval, que sempre tiveram uma mensagem só.
    */
   mensagemCliente: string | string[],
+  /** Quem paga a resposta (livro do consumo, 0233). O eval passa `semGrupo`. */
+  quemPaga: QuemPagaAIa,
 ): Promise<RespostaAgenteIA> {
   const fallback = (
     motivoFalha: MotivoFalhaLlm,
@@ -755,6 +758,7 @@ export async function gerarRespostaIA(
   const resultado = await chamarLlmJson(entradaPrompt, {
     temperature: 0.2,
     orcamentoMs: ctx.orcamentoMs ?? ORCAMENTO_AGENTE_MS,
+    uso: { finalidade: "atendimento", quemPaga },
   });
 
   if (!resultado.ok) {

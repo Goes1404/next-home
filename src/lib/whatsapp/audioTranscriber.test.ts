@@ -10,6 +10,8 @@ import {
 } from "./audioTranscriber";
 import { textoDosTrechos } from "./groqAudio";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const AUDIO = Buffer.alloc(2000, 7).toString("base64");
 
 describe("o áudio que vai para a transcrição", () => {
@@ -71,7 +73,7 @@ describe("a cadeia de motores", () => {
     globalThis.fetch = vi.fn(async () =>
       new Response(JSON.stringify({ text: "Oi, queria ver o [inaudível] no sábado" })),
     ) as typeof fetch;
-    const r = await transcreverAudioWhatsapp({ base64: AUDIO, segundos: 4 });
+    const r = await transcreverAudioWhatsapp({ quemPaga: QUEM_PAGA, base64: AUDIO, segundos: 4 });
     expect(r.sucesso).toBe(true);
     expect(r.parcial).toBe(true);
     expect(r.motor).toBe("openai");
@@ -82,7 +84,7 @@ describe("a cadeia de motores", () => {
     globalThis.fetch = vi.fn(async () =>
       new Response(JSON.stringify({ text: "Legendas pela comunidade Amara.org" })),
     ) as typeof fetch;
-    const r = await transcreverAudioWhatsapp({ base64: AUDIO, segundos: 3 });
+    const r = await transcreverAudioWhatsapp({ quemPaga: QUEM_PAGA, base64: AUDIO, segundos: 3 });
     expect(r.sucesso).toBe(false);
     expect(r.motivo).toBe("nao_entendido");
   });
@@ -90,7 +92,7 @@ describe("a cadeia de motores", () => {
   it("sem áudio decifrado nem chama motor nenhum", async () => {
     const f = vi.fn();
     globalThis.fetch = f as unknown as typeof fetch;
-    const r = await transcreverAudioWhatsapp({ base64: "https://mmg.whatsapp.net/x.enc" });
+    const r = await transcreverAudioWhatsapp({ quemPaga: QUEM_PAGA, base64: "https://mmg.whatsapp.net/x.enc" });
     expect(r.sucesso).toBe(false);
     expect(r.motivo).toBe("sem_audio");
     expect(f).not.toHaveBeenCalled();

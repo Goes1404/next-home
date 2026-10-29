@@ -10,7 +10,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 const lerListaComIa = vi.fn();
-vi.mock("./leituraPorIa", () => ({ lerListaComIa: (...a: unknown[]) => lerListaComIa(...a) }));
+vi.mock("./leituraPorIa", () => ({ lerListaComIa: (...a: unknown[]) => lerListaComIa(...a, QUEM_PAGA) }));
 vi.mock("@/lib/whatsapp/llm", () => ({
   chamarLlmJson: () => {
     throw new Error("a IA não pode ser chamada com número cortado na lista");
@@ -27,6 +27,8 @@ import {
   parsearTabelaLeads,
   temNumeroCortado,
 } from "./importacao";
+
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
 
 describe("número de planilha", () => {
   it("notação científica sem todos os dígitos é cortada", () => {
@@ -88,7 +90,7 @@ describe("importação com telefone cortado", () => {
 
   it("lista sem cabeçalho com número cortado não passa pela IA", async () => {
     lerListaComIa.mockClear();
-    const resultado = await extrairDeTexto("Ana Prado\t5,51198E+12\nCaio Lima\t11981918127");
+    const resultado = await extrairDeTexto("Ana Prado\t5,51198E+12\nCaio Lima\t11981918127", QUEM_PAGA);
     expect(lerListaComIa).not.toHaveBeenCalled();
     expect(resultado.candidatos.map((c) => [c.nome, c.telefoneE164, c.telefoneCortado ?? null])).toEqual([
       ["Ana Prado", null, "5,51198E+12"],

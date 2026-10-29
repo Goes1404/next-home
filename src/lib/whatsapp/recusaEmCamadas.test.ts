@@ -7,6 +7,8 @@ import {
   temSinalNegativo,
 } from "./recusaEmCamadas";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const llm = vi.hoisted(() => ({
   configurado: true,
   resposta: null as unknown,
@@ -79,7 +81,7 @@ describe("leitura do veredito da IA", () => {
 describe("classificarRecusa: as camadas", () => {
   it("o que a regex pega não chega à IA", async () => {
     llm.chamadas = 0;
-    const r = await classificarRecusa({ texto: "me tira da lista", ultimaFalaNossa: "" });
+    const r = await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "me tira da lista", ultimaFalaNossa: "" });
     expect(r.decididoPor).toBe("regex");
     expect(r.recusa?.familia).toBe("parada");
     expect(llm.chamadas).toBe(0);
@@ -87,14 +89,14 @@ describe("classificarRecusa: as camadas", () => {
 
   it("mensagem sem sinal negativo não custa chamada", async () => {
     llm.chamadas = 0;
-    const r = await classificarRecusa({ texto: "2 dormitórios em Barueri", ultimaFalaNossa: "" });
+    const r = await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "2 dormitórios em Barueri", ultimaFalaNossa: "" });
     expect(r.recusa).toBeNull();
     expect(llm.chamadas).toBe(0);
   });
 
   it("o duvidoso vai à IA, e com confiança alta vira recusa", async () => {
     llm.resposta = respostaDaIA({ familia: "parada", confianca: 0.93, trecho: "prefiro não receber essas coisas" });
-    const r = await classificarRecusa({ texto: "prefiro não receber essas coisas", ultimaFalaNossa: "Oi! Tudo bem?" });
+    const r = await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "prefiro não receber essas coisas", ultimaFalaNossa: "Oi! Tudo bem?" });
     expect(r.decididoPor).toBe("ia");
     expect(r.recusa).toEqual({ familia: "parada", trecho: "prefiro não receber essas coisas" });
     expect(r.modelo).toBe("gpt-4.1-mini");
@@ -102,22 +104,22 @@ describe("classificarRecusa: as camadas", () => {
 
   it("confiança baixa fica registrada sem virar recusa", async () => {
     llm.resposta = respostaDaIA({ familia: "desinteresse", confianca: 0.5, trecho: "deixa pra lá" });
-    const r = await classificarRecusa({ texto: "deixa pra lá", ultimaFalaNossa: "Quer ver a planta?" });
+    const r = await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "deixa pra lá", ultimaFalaNossa: "Quer ver a planta?" });
     expect(r.recusa).toBeNull();
     expect(r.veredito?.familia).toBe("desinteresse");
   });
 
   it("IA fora do ar: vale a regex sozinha, sem lançar", async () => {
     llm.resposta = { ok: false, erro: "timeout", latenciaMs: 4000 };
-    expect((await classificarRecusa({ texto: "deixa pra lá", ultimaFalaNossa: "" })).recusa).toBeNull();
+    expect((await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "deixa pra lá", ultimaFalaNossa: "" })).recusa).toBeNull();
     llm.resposta = new Error("rede");
-    expect((await classificarRecusa({ texto: "deixa pra lá", ultimaFalaNossa: "" })).recusa).toBeNull();
+    expect((await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "deixa pra lá", ultimaFalaNossa: "" })).recusa).toBeNull();
   });
 
   it("sem provedor configurado, nem tenta", async () => {
     llm.configurado = false;
     llm.chamadas = 0;
-    await classificarRecusa({ texto: "deixa pra lá", ultimaFalaNossa: "" });
+    await classificarRecusa({ quemPaga: QUEM_PAGA, texto: "deixa pra lá", ultimaFalaNossa: "" });
     expect(llm.chamadas).toBe(0);
     llm.configurado = true;
   });

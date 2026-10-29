@@ -11,8 +11,9 @@ import type { ResumoDeGrupo } from "./grupos";
  *
  * Pela chave de serviço, e só depois da guarda: cada função pede a PROVA de
  * `exigirAdminDaPlataforma*`, como em `grupos.ts`. Nada de conversa: a
- * telemetria vem AGREGADA pelas funções `custo_da_ia_por_grupo` e
- * `saude_da_ia_por_grupo` (0211), que devolvem contagens e somas. Uma
+ * telemetria vem AGREGADA pelas funções `consumo_da_ia_por_grupo` (0233, o
+ * livro de TODA chamada paga) e `saude_da_ia_por_grupo` (0211), que devolvem
+ * contagens e somas. Uma
  * consulta por fonte para todos os grupos da lista (sem N+1), sempre com o
  * conjunto de grupos explícito.
  *
@@ -62,7 +63,7 @@ export async function lerSaudeDosGrupos(_prova: { userId: string }, grupos: Resu
 
   const [mensalidades, custos, sinais, corretores, instancias] = await Promise.all([
     servico.from("grupos").select("id, mensalidade").in("id", ids),
-    servico.rpc("custo_da_ia_por_grupo", { p_inicio: inicioDoMes }),
+    servico.rpc("consumo_da_ia_por_grupo", { p_inicio: inicioDoMes }),
     servico.rpc("saude_da_ia_por_grupo", { p_desde: ha24h }),
     lerTudo(
       (de, ate) =>
@@ -99,7 +100,14 @@ export async function lerSaudeDosGrupos(_prova: { userId: string }, grupos: Resu
     const custo = custoDaIa({
       tokens: (custos.data ?? [])
         .filter((c) => c.grupo_id === g.id)
-        .map((c) => ({ modelo: c.modelo, tokensEntrada: Number(c.tokens_entrada), tokensSaida: Number(c.tokens_saida) })),
+        .map((c) => ({
+          modelo: c.modelo,
+          finalidade: c.finalidade,
+          chamadas: Number(c.chamadas),
+          tokensEntrada: Number(c.tokens_entrada),
+          tokensSaida: Number(c.tokens_saida),
+          segundosDeAudio: Number(c.segundos_de_audio),
+        })),
       respostas: g.usoDaIa.respostas,
       mensalidade,
       cambio,

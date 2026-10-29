@@ -87,6 +87,7 @@ F0–F6.
 - [[identidade-da-ia-de-cada-grupo]] — tela Administração > Assistente: o gestor dá nome, região e tom à IA da equipe (0199, 20/10)
 - [[cota-de-respostas-da-ia-por-grupo]] — teto mensal de respostas da IA por grupo (plano ou ajuste da plataforma), contado por gatilho; no teto a IA cala com `cota_do_grupo` (0197, 20/10)
 - [[saude-e-custo-da-ia-por-grupo]] — semáforo de saúde e custo da IA (R$, margem) por grupo em /plataforma; telemetria agregada por rpc (0211, 21/10)
+- [[livro-do-consumo-da-ia]] — toda chamada paga de IA grava em `ia_consumo` (finalidade + quem paga); o custo da plataforma sai dele, por funcionalidade (0233, 29/10)
 - [[plataforma-tipos-de-conta]] — /plataforma em duas seções (imobiliárias × independentes) com selo e filtro; criação por rotas separadas, mesma action/RPC (22/10)
 - [[limites-do-plano-artes-videos-e-listas]] — teto mensal de artes, vídeos e mensagens de lista por plano, contado por gatilho (colunas novas em `uso_da_ia`); confere antes de gastar, lista que não cabe é recusada inteira, Next Home sem teto (0214, 22/10)
 - [[numero-em-um-grupo-e-aceite-dos-termos]] — um número de WhatsApp só fica num grupo (gatilho por grupo, recusa com frase no pareamento e no webhook) e o painel pede o aceite dos termos no primeiro acesso (0198, 20/10)

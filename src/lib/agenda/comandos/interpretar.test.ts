@@ -13,6 +13,7 @@ const llmPadrao = vi.mocked(chamarLlmJson);
 
 /** Terça, 27/10/2026, 12:00 em São Paulo. */
 const AGORA = new Date("2026-10-27T15:00:00.000Z");
+const QUEM_PAGA = { corretorId: "corretor-1" };
 const NAO_ENTENDI = { tipo: "nao_entendi" };
 
 function respostaOk(json: unknown) {
@@ -293,7 +294,7 @@ describe("interpretarPedido", () => {
     const chamar = vi.fn().mockResolvedValue(
       respostaOk({ tipo: "marcar_visita", cliente: "Ana", quando: "2026-10-31T10:00:00-03:00", imovel: "Alpha" }),
     );
-    const r = await interpretarPedido("visita com a Ana sábado 10h no Alpha", { agora: AGORA, ehGestor: false, chamar });
+    const r = await interpretarPedido("visita com a Ana sábado 10h no Alpha", { agora: AGORA, ehGestor: false, quemPaga: QUEM_PAGA, chamar });
     expect(r).toEqual({ tipo: "marcar_visita", cliente: "Ana", quando: "2026-10-31T10:00:00-03:00", imovel: "Alpha" });
     expect(chamar).toHaveBeenCalledTimes(1);
     const [prompt, opcoes] = chamar.mock.calls[0];
@@ -303,7 +304,7 @@ describe("interpretarPedido", () => {
 
   it("sem `chamar`, usa o chamarLlmJson", async () => {
     llmPadrao.mockResolvedValue(respostaOk({ tipo: "consultar", dia: "2026-10-28" }));
-    expect(await interpretarPedido("o que eu tenho amanhã?", { agora: AGORA, ehGestor: false })).toEqual({
+    expect(await interpretarPedido("o que eu tenho amanhã?", { agora: AGORA, ehGestor: false, quemPaga: QUEM_PAGA })).toEqual({
       tipo: "consultar",
       dia: "2026-10-28",
     });
@@ -312,17 +313,17 @@ describe("interpretarPedido", () => {
 
   it("modelo falhou: não entendi", async () => {
     const chamar = vi.fn().mockResolvedValue({ ok: false, erro: "timeout", latenciaMs: 12000 });
-    expect(await interpretarPedido("visita com a Ana", { agora: AGORA, ehGestor: false, chamar })).toEqual(NAO_ENTENDI);
+    expect(await interpretarPedido("visita com a Ana", { agora: AGORA, ehGestor: false, quemPaga: QUEM_PAGA, chamar })).toEqual(NAO_ENTENDI);
   });
 
   it("modelo lançou: não entendi, sem lançar", async () => {
     const chamar = vi.fn().mockRejectedValue(new Error("rede"));
-    expect(await interpretarPedido("visita com a Ana", { agora: AGORA, ehGestor: false, chamar })).toEqual(NAO_ENTENDI);
+    expect(await interpretarPedido("visita com a Ana", { agora: AGORA, ehGestor: false, quemPaga: QUEM_PAGA, chamar })).toEqual(NAO_ENTENDI);
   });
 
   it("mensagem vazia: não entendi, sem chamar o modelo", async () => {
     const chamar = vi.fn();
-    expect(await interpretarPedido("   ", { agora: AGORA, ehGestor: true, chamar })).toEqual(NAO_ENTENDI);
+    expect(await interpretarPedido("   ", { agora: AGORA, ehGestor: true, quemPaga: QUEM_PAGA, chamar })).toEqual(NAO_ENTENDI);
     expect(chamar).not.toHaveBeenCalled();
   });
 
@@ -331,7 +332,7 @@ describe("interpretarPedido", () => {
       .fn()
       .mockResolvedValue(respostaOk({ tipo: "reuniao", inicio: "2026-11-02T09:00:00-03:00", participantes: "equipe" }));
     expect(
-      await interpretarPedido("reunião com a equipe toda segunda 9h", { agora: AGORA, ehGestor: false, chamar }),
+      await interpretarPedido("reunião com a equipe toda segunda 9h", { agora: AGORA, ehGestor: false, quemPaga: QUEM_PAGA, chamar }),
     ).toEqual(NAO_ENTENDI);
   });
 });

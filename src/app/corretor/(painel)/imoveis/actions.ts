@@ -738,6 +738,7 @@ export async function melhorarDescricaoComIA(
   const resultado = await chamarLlmJson(montarPromptDescricao(entrada), {
     temperature: 0.7,
     orcamentoMs: 40_000,
+    uso: { finalidade: "descricao_imovel", quemPaga: { corretorId: corretor.id } },
   });
 
   if (!resultado.ok) {

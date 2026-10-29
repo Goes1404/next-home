@@ -695,6 +695,7 @@ async function processarInstancia(ctx: {
         const tempoRestante = fimDoOrcamento - Date.now() - margemMs;
         const tentativasDaIA = tempoRestante > 30_000 ? 3 : tempoRestante > 20_000 ? 2 : 1;
         const variacao = await variarSemRepetir({
+          quemPaga: { corretorId: instancia.corretor_id, grupoId: instancia.grupo_id },
           texto,
           nome: primeiroNomeUtil(lead?.nome),
           nomes: nomesDaPessoa(lead?.nome),

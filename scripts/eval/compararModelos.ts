@@ -372,6 +372,7 @@ async function chamarUmaVez(modelo: string, cenario: Cenario): Promise<Tentativa
   const bruta = await gerarRespostaIA(
     { ...CONTEXTO_BASE, historicoMensagens: cenario.historico },
     cenario.mensagem,
+    { semGrupo: "eval" },
   );
   const latenciaMs = Date.now() - inicio;
 

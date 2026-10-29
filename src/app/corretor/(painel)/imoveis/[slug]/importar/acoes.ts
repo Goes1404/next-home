@@ -270,7 +270,9 @@ export async function gerarTipologiaDaPlanta(entrada: {
   const imagem = extrairImagensDePdf(pdf).imagens[entrada.indice];
   if (!imagem) return { ok: false, erro: "não reencontrei a planta no arquivo" };
 
-  const leitura = await lerPlanta(imagem.bytes, imagem.mime, limparTextoDeApresentacao(extrairTextoDePdf(pdf)));
+  const leitura = await lerPlanta(imagem.bytes, imagem.mime, limparTextoDeApresentacao(extrairTextoDePdf(pdf)), {
+    quemPaga: { corretorId: corretor.id, grupoId: corretor.grupoId },
+  });
   return gravarTipologiaLida(supabase, entrada, leitura);
 }
 
@@ -450,7 +452,10 @@ export async function sugerirCadastroDoPdf(caminhoStaging: string): Promise<Suge
     return { ok: false, aviso: "Não consegui reabrir o arquivo para ler os dados escritos nele." };
   }
 
-  const resultado = await montarRascunhoDePdf(Buffer.from(await baixado.data.arrayBuffer()));
+  const resultado = await montarRascunhoDePdf(Buffer.from(await baixado.data.arrayBuffer()), {
+    corretorId: corretor.id,
+    grupoId: corretor.grupoId,
+  });
 
   if (!resultado.ok) {
     return {
@@ -689,7 +694,11 @@ export async function sugerirCadastroDoSite(entrada: {
   const corretor = await getCorretorLogado();
   if (!corretor) return { ok: false, aviso: "Sessão expirada. Entre de novo." };
 
-  const resultado = await montarRascunhoDeTexto(entrada.texto.slice(0, 20_000), dicasComoTexto(entrada.dicas));
+  const resultado = await montarRascunhoDeTexto(
+    entrada.texto.slice(0, 20_000),
+    { corretorId: corretor.id, grupoId: corretor.grupoId },
+    dicasComoTexto(entrada.dicas),
+  );
   if (!resultado.ok) {
     return {
       ok: false,
@@ -878,7 +887,9 @@ export async function gerarTipologiaDaPlantaDoSite(entrada: {
   });
   if (!busca.ok) return { ok: false, erro: "não consegui reabrir a planta" };
 
-  const leitura = await lerPlanta(busca.bytes, busca.contentType.split(";")[0].trim(), entrada.texto.slice(0, 20_000));
+  const leitura = await lerPlanta(busca.bytes, busca.contentType.split(";")[0].trim(), entrada.texto.slice(0, 20_000), {
+    quemPaga: { corretorId: corretor.id, grupoId: corretor.grupoId },
+  });
   const supabase = await createClient();
   return gravarTipologiaLida(supabase, entrada, leitura);
 }

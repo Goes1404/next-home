@@ -181,6 +181,7 @@ export async function POST(req: NextRequest) {
     largura: formato.largura,
     altura: formato.altura,
     qualidade: corpo?.qualidade ?? "low",
+    quemPaga: { corretorId: corretor.id, grupoId: corretor.grupoId },
   });
 
   if (!resultado.ok) {

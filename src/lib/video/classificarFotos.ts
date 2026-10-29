@@ -1,6 +1,7 @@
 import "server-only";
 
 import { REGRAS_DE_PLANO, type TipoDePlano } from "./gramatica";
+import { registrarConsumoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 
 /**
  * Classifica por VISÃO as fotos que o corretor subiu.
@@ -51,7 +52,7 @@ export function classificacaoDeReserva(quantas: number): TipoDePlano[] {
   return Array.from({ length: quantas }, (_, i) => roda[i % roda.length]);
 }
 
-export async function classificarFotos(urls: string[]): Promise<TipoDePlano[]> {
+export async function classificarFotos(urls: string[], quemPaga: QuemPagaAIa): Promise<TipoDePlano[]> {
   const fotos = urls.slice(0, MAX_FOTOS);
   if (fotos.length === 0) return [];
 
@@ -60,13 +61,14 @@ export async function classificarFotos(urls: string[]): Promise<TipoDePlano[]> {
 
   const controle = new AbortController();
   const alarme = setTimeout(() => controle.abort(), TIMEOUT_MS);
+  const modelo = process.env.OPENAI_MODEL || "gpt-4.1-mini";
   try {
     const resposta = await fetch(BASE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       signal: controle.signal,
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+        model: modelo,
         temperature: 0,
         response_format: { type: "json_object" },
         messages: [
@@ -100,6 +102,11 @@ export async function classificarFotos(urls: string[]): Promise<TipoDePlano[]> {
 
     if (!resposta.ok) return classificacaoDeReserva(fotos.length);
     const corpo = await resposta.json();
+    // Respondeu, então cobrou — mesmo que o JSON venha torto logo abaixo.
+    await registrarConsumoDaIa(
+      { finalidade: "video", quemPaga },
+      { modelo, tokensEntrada: corpo?.usage?.prompt_tokens ?? null, tokensSaida: corpo?.usage?.completion_tokens ?? null },
+    );
     const bruto = JSON.parse(corpo?.choices?.[0]?.message?.content ?? "{}") as { tipos?: unknown };
     const tipos = bruto.tipos;
     if (!Array.isArray(tipos)) return classificacaoDeReserva(fotos.length);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CAMBIO_PADRAO_USD_BRL, cambioUsdBrl, custoDaIa, precoDoModelo } from "./custoDaIa";
+import { CAMBIO_PADRAO_USD_BRL, cambioUsdBrl, custoDaIa, precoDoModelo, rotuloDaFinalidade } from "./custoDaIa";
 
 describe("preço do modelo", () => {
   it("casa o nome com ou sem prefixo do provedor", () => {
@@ -81,5 +81,65 @@ describe("custo da IA do mês", () => {
       cambio: 5,
     });
     expect(c.modelosSemPreco).toEqual(["xyz"]);
+  });
+});
+
+describe("custo por finalidade (livro do consumo, 0233)", () => {
+  it("separa o custo de cada funcionalidade, da mais cara para a mais barata", () => {
+    const c = custoDaIa({
+      tokens: [
+        { modelo: "gpt-4.1-mini", finalidade: "atendimento", chamadas: 10, tokensEntrada: 1_000_000, tokensSaida: 0 },
+        { modelo: "gpt-4.1-mini", finalidade: "dossie", chamadas: 10, tokensEntrada: 2_000_000, tokensSaida: 0 },
+        { modelo: "gemini-3.5-flash", finalidade: "dossie", chamadas: 1, tokensEntrada: 1_000_000, tokensSaida: 0 },
+      ],
+      respostas: 10,
+      mensalidade: null,
+      cambio: 5,
+    });
+    // atendimento 1M × 0,40 = 0,40 → R$ 2; dossiê 2M × 0,40 + 1M × 0,30 = 1,10 → R$ 5,50
+    expect(c.porFinalidade.map((f) => [f.finalidade, f.chamadas])).toEqual([
+      ["dossie", 11],
+      ["atendimento", 10],
+    ]);
+    expect(c.porFinalidade[0].custoBrl).toBeCloseTo(5.5);
+    expect(c.porFinalidade[0].rotulo).toBe("Ficha do cliente (a cada mensagem)");
+    expect(c.custoBrl).toBeCloseTo(7.5);
+  });
+
+  it("transcrição cobra pela duração, não por token, e não é 'modelo sem preço'", () => {
+    const c = custoDaIa({
+      tokens: [
+        { modelo: "gpt-4o-mini-transcribe", finalidade: "transcricao_audio", tokensEntrada: 0, tokensSaida: 0, segundosDeAudio: 600 },
+        { modelo: "whisper-large-v3-turbo", finalidade: "transcricao_audio", tokensEntrada: 0, tokensSaida: 0, segundosDeAudio: 3600 },
+      ],
+      respostas: 0,
+      mensalidade: null,
+      cambio: 1,
+    });
+    // 10 min × 0,003 + 60 min × 0,04/60 = 0,03 + 0,04
+    expect(c.custoUsd).toBeCloseTo(0.07);
+    expect(c.modelosSemPreco).toEqual([]);
+  });
+
+  it("a arte gerada tem preço próprio (saída de imagem)", () => {
+    const c = custoDaIa({
+      tokens: [{ modelo: "gpt-image-2", finalidade: "arte_imagem", tokensEntrada: 0, tokensSaida: 1_000_000 }],
+      respostas: 0,
+      mensalidade: null,
+      cambio: 1,
+    });
+    expect(c.custoUsd).toBeCloseTo(30);
+    expect(c.modelosSemPreco).toEqual([]);
+  });
+
+  it("finalidade da telemetria antiga (antes do livro) aparece com o nome cru", () => {
+    const c = custoDaIa({
+      tokens: [{ modelo: "gpt-4.1-mini", finalidade: "retorno_ligacao", tokensEntrada: 1, tokensSaida: 1 }],
+      respostas: 0,
+      mensalidade: null,
+      cambio: 1,
+    });
+    expect(c.porFinalidade[0].rotulo).toBe("Retorno da ligação");
+    expect(rotuloDaFinalidade("algo_antigo")).toBe("algo_antigo");
   });
 });

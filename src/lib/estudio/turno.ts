@@ -7,6 +7,7 @@ import { MAX_PERGUNTAS, perguntarOQueFalta, type Resposta } from "@/lib/imagens/
 import { traduzirPedido } from "@/lib/imagens/tradutor";
 import { fatosDoImovelCitado, fotosParaReferencia } from "./imovelNaArte";
 import { chamarLlmJson } from "@/lib/whatsapp/llm";
+import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { soarHumano } from "@/lib/whatsapp/vozHumana";
 import type { Empreendimento } from "@/lib/types";
 import { verRoteiro, type PedidoDeVideo } from "@/app/corretor/(painel)/marketing/video/acoes";
@@ -134,6 +135,8 @@ export async function turnoDeArte(params: {
    * Supabase — a mesma razão de `turnoDeVideo` recebê-lo.
    */
   imoveis: Empreendimento[];
+  /** Quem paga as chamadas de IA do turno (livro do consumo, 0233). */
+  quemPaga: QuemPagaAIa;
 }): Promise<RespostaDoTurno> {
   const historicoCompleto = params.historico;
   const ideia = ideiaAcumulada(historicoCompleto) || params.mensagem.trim();
@@ -212,6 +215,7 @@ export async function turnoDeArte(params: {
       dominio: imovelCitado ? "imovel" : "livre",
       formato: TAMANHOS.find((t) => t.chave === tamanho)?.rotulo ?? tamanho,
       temReferencia: referencias.length > 0,
+      quemPaga: params.quemPaga,
     });
     const proxima = perguntas.find((p) => !feitas.includes(p.texto));
     if (proxima) {
@@ -241,6 +245,7 @@ export async function turnoDeArte(params: {
     urlsDeReferencia: referencias.map((referencia) => referencia.url),
     // O MESMO critério que decide o domínio do briefing — uma conta só.
     dominio: imovelCitado ? "imovel" : "livre",
+    quemPaga: params.quemPaga,
   });
 
   const proposta: PropostaDeArte = {
@@ -353,7 +358,7 @@ function canalPorTexto(texto: string): ChaveCanal | null {
  * alcança. Ela só pode escolher entre os slugs listados: alucinação vira
  * impossível por construção, a mesma regra do `resolverMidia`.
  */
-async function entenderPedidoDeVideo(texto: string, imoveis: Empreendimento[]): Promise<Entendido> {
+async function entenderPedidoDeVideo(texto: string, imoveis: Empreendimento[], quemPaga: QuemPagaAIa): Promise<Entendido> {
   const reserva: Entendido = {
     slug: imovelPorTexto(texto, imoveis)?.slug ?? null,
     objetivo: objetivoPorTexto(texto),
@@ -381,7 +386,11 @@ Diga o que ele quis. Se um campo não estiver claro no texto, devolva null —
 NÃO chute. Responda apenas com JSON:
 {"slug": "..." | null, "objetivo": "..." | null, "canal": "..." | null}`;
 
-  const r = await chamarLlmJson(prompt, { temperature: 0, orcamentoMs: ORCAMENTO_ENTENDER_MS });
+  const r = await chamarLlmJson(prompt, {
+    temperature: 0,
+    orcamentoMs: ORCAMENTO_ENTENDER_MS,
+    uso: { finalidade: "video", quemPaga },
+  });
   if (!r.ok || !r.json || typeof r.json !== "object") return reserva;
   const j = r.json as Record<string, unknown>;
 
@@ -404,6 +413,7 @@ export async function turnoDeVideo(params: {
   historico: MensagemDoEstudio[];
   mensagem: string;
   imoveis: Empreendimento[];
+  quemPaga: QuemPagaAIa;
 }): Promise<RespostaDoTurno> {
   // Só imóvel com foto vira vídeo — a MESMA régua da página antiga.
   const comFoto = params.imoveis.filter((i) => i.publicado !== false && Boolean(i.capa?.url || i.galeria[0]?.url));
@@ -421,7 +431,7 @@ export async function turnoDeVideo(params: {
     .concat(params.mensagem)
     .join(". ");
 
-  const e = await entenderPedidoDeVideo(texto, comFoto);
+  const e = await entenderPedidoDeVideo(texto, comFoto, params.quemPaga);
 
   if (!e.slug) {
     const opcoes = comFoto.slice(0, 4).map((i) => i.nome);

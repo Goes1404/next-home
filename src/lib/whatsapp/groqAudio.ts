@@ -28,8 +28,10 @@ export function groqAudioConfigurado(): boolean {
 }
 
 export type ResultadoTranscricaoGroq =
-  | { ok: true; texto: string }
-  | { ok: false; erro: string };
+  /** `segundos`: a duração que a Groq mediu (é por ela que cobra). */
+  | { ok: true; texto: string; segundos: number | null }
+  /** `respondeu`: houve resposta HTTP 200, e a chamada foi cobrada. */
+  | { ok: false; erro: string; respondeu?: boolean };
 
 /**
  * `dadosBase64` é o áudio já decodificado do caminho do WhatsApp — o mesmo
@@ -85,11 +87,11 @@ export async function transcreverComGroq(
       return { ok: false, erro: `http_${res.status}${corpo ? `: ${corpo.slice(0, 150)}` : ""}` };
     }
 
-    const json = (await res.json().catch(() => null)) as Parameters<typeof textoDosTrechos>[0] | null;
+    const json = (await res.json().catch(() => null)) as (Parameters<typeof textoDosTrechos>[0] & { duration?: unknown }) | null;
     const texto = json ? textoDosTrechos(json) : "";
-    if (!texto) return { ok: false, erro: "resposta_vazia" };
+    if (!texto) return { ok: false, erro: "resposta_vazia", respondeu: true };
 
-    return { ok: true, texto };
+    return { ok: true, texto, segundos: typeof json?.duration === "number" ? json.duration : null };
   } catch (err) {
     const abortou = err instanceof Error && err.name === "AbortError";
     return { ok: false, erro: abortou ? "timeout" : String(err) };

@@ -177,6 +177,7 @@ export async function aplicarRetornoAoLead(
         fichaAtual: await fichaDoLead(ctx, { nome, etapa: etapaAtual, empreendimento_id: lead.empreendimento_id }),
         dossieAtual: textoDoDossie(dossieAtual),
         agora: r.enviadaEm,
+        quemPaga: { corretorId, grupoId },
       });
 
   ctx.estado.nomeDoLead = nome;

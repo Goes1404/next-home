@@ -50,6 +50,7 @@ const base = {
   credito: CREDITO,
   exemplos: "",
   agora: new Date("2026-09-10T12:00:00Z"),
+  quemPaga: { corretorId: "corretor-1" },
 };
 
 const respondeu = (json: unknown) => ({

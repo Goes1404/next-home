@@ -165,6 +165,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/respostaAosFollowups.ts": { categoria: "helper", motivo: "conversa em atendimento, validada por quem chama" },
   "src/lib/whatsapp/primeiroContatoNoEnvio.ts": { categoria: "helper", motivo: "conta e libera o primeiro contato do corretor que quem chama já resolveu (instância, dono da lista, sorteado da roleta)" },
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
+  "src/lib/planos/consumoDaIa.ts": { categoria: "plataforma", motivo: "só INSERE a linha do livro do consumo (0233), uma por chamada paga; nunca lê. O grupo vem do corretor pelo carimbo, que confere o grupo informado contra ele" },
   "src/lib/marcaDoCrm/ler.ts": { categoria: "helper", motivo: "nome, logo e endereço principal do grupo que quem chama validou (sessão, ficha lida pelo cron, instância do webhook); lê UMA linha pelo id" },
   "src/lib/imovelPublico/ler.ts": { categoria: "helper", motivo: "slug do grupo, grupo pelo slug da URL (a ficha pública) e base do link do imóvel do grupo que quem chama validou; lê UMA linha de grupos" },
   "src/lib/sites/siteDoGrupo.ts": { categoria: "helper", motivo: "lê o site editável do grupo que quem chama provou (gestor da sessão ou o grupo que o endereço resolveu); UMA linha pelo id" },

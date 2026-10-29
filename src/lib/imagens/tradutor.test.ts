@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const QUEM_PAGA = { corretorId: "corretor-1" } as const;
+
 const chamarLlmJson = vi.fn();
 const algumProvedorLeImagem = vi.fn(() => true);
 vi.mock("@/lib/whatsapp/llm", () => ({
@@ -33,14 +35,14 @@ beforeEach(() => {
 describe("o tradutor devolve português, e é ele que vai", () => {
   it("usa o texto do modelo quando ele responde", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    const r = await traduzirPedido({ pedido: "fachada bonita", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada bonita", fatos: [] });
     expect(r.prompt).toBe(BOM);
     expect(r.daIa).toBe(true);
   });
 
   it("os fatos do imóvel entram no prompt DO MOTOR", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "post do Dom Parque", fatos: ["Empreendimento: Dom Parque"] });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "post do Dom Parque", fatos: ["Empreendimento: Dom Parque"] });
     expect(chamarLlmJson.mock.calls[0][0]).toContain("Dom Parque");
   });
 
@@ -54,6 +56,7 @@ describe("o tradutor devolve português, e é ele que vai", () => {
   it("as escolhas de chip entram no prompt DO MOTOR, com a pergunta junto", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: "fachada do Dom Parque",
       fatos: [],
       respostas: [{ pergunta: "Que hora do dia?", escolha: "Pôr do sol" }],
@@ -66,6 +69,7 @@ describe("o tradutor devolve português, e é ele que vai", () => {
   it("escolha em branco não vira linha no prompt", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: "fachada",
       fatos: [],
       respostas: [{ pergunta: "Que hora do dia?", escolha: "   " }],
@@ -75,7 +79,7 @@ describe("o tradutor devolve português, e é ele que vai", () => {
 
   it("a instrução da gramática viaja junto — senão o modelo não sabe o que cobrir", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "fachada", fatos: [] });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada", fatos: [] });
     const enviado = String(chamarLlmJson.mock.calls[0][0]).toLowerCase();
     expect(enviado).toContain("restrições");
     expect(enviado).toContain("soletr");
@@ -85,21 +89,21 @@ describe("o tradutor devolve português, e é ele que vai", () => {
 describe("falha do motor é degradação DECLARADA", () => {
   it("motor fora do ar devolve o texto do corretor com daIa false", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false, erro: "sem_api_key", latenciaMs: 0 });
-    const r = await traduzirPedido({ pedido: "fachada bonita ao entardecer", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada bonita ao entardecer", fatos: [] });
     expect(r.prompt).toBe("fachada bonita ao entardecer");
     expect(r.daIa).toBe(false);
   });
 
   it("resposta curta demais é RECUSADA — trocar o texto do corretor por duas palavras é pior que não tentar", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk("um prédio"));
-    const r = await traduzirPedido({ pedido: "fachada bonita ao entardecer", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada bonita ao entardecer", fatos: [] });
     expect(r.daIa).toBe(false);
     expect(r.prompt).toBe("fachada bonita ao entardecer");
   });
 
   it("JSON sem o campo esperado também cai na reserva", async () => {
     chamarLlmJson.mockResolvedValue({ ...respostaOk(""), json: { outro: "coisa" } });
-    const r = await traduzirPedido({ pedido: "fachada bonita ao entardecer", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada bonita ao entardecer", fatos: [] });
     expect(r.daIa).toBe(false);
   });
 });
@@ -107,27 +111,27 @@ describe("falha do motor é degradação DECLARADA", () => {
 describe("o portão", () => {
   it("marca abaixoDoPiso para o caso `Torre.`", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false, erro: "http_5xx", latenciaMs: 10 });
-    const r = await traduzirPedido({ pedido: "Torre.", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "Torre.", fatos: [] });
     expect(r.abaixoDoPiso).toBe(true);
   });
 
   it("prompt completo não fica abaixo do piso nem tem pendência", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    const r = await traduzirPedido({ pedido: "fachada", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada", fatos: [] });
     expect(r.abaixoDoPiso).toBe(false);
     expect(r.naoCobriu).toEqual([]);
   });
 
   it("ajuste parte do prompt ANTERIOR, não do zero", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "mais claro", fatos: [], promptAnterior: BOM });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "mais claro", fatos: [], promptAnterior: BOM });
     const enviado = String(chamarLlmJson.mock.calls[0][0]);
     expect(enviado).toContain(BOM);
     expect(enviado.toLowerCase()).toContain("mude apenas");
   });
 
   it("pedido vazio não gasta chamada nenhuma", async () => {
-    const r = await traduzirPedido({ pedido: "   ", fatos: [] });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "   ", fatos: [] });
     expect(chamarLlmJson).not.toHaveBeenCalled();
     expect(r.prompt).toBe("");
     expect(r.abaixoDoPiso).toBe(true);
@@ -152,7 +156,7 @@ describe("com foto anexada, o tradutor NÃO manda descrever o que não vê", () 
 
   async function promptDoMotor(fotos: number) {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: PEDIDO_REAL, fatos: [], fotosDeReferencia: fotos });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: PEDIDO_REAL, fatos: [], fotosDeReferencia: fotos });
     return String(chamarLlmJson.mock.calls[0][0]);
   }
 
@@ -191,6 +195,7 @@ describe("com foto anexada, o tradutor NÃO manda descrever o que não vê", () 
     chamarLlmJson.mockResolvedValue(respostaOk(edicao));
 
     const r = await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: PEDIDO_REAL,
       fatos: [],
       fotosDeReferencia: 2,
@@ -205,7 +210,7 @@ describe("com foto anexada, o tradutor NÃO manda descrever o que não vê", () 
   it("`Torre.` continua barrado mesmo com foto — piso de edição não é piso nenhum", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false });
 
-    const r = await traduzirPedido({ pedido: "Torre.", fatos: [], fotosDeReferencia: 1 });
+    const r = await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "Torre.", fatos: [], fotosDeReferencia: 1 });
 
     expect(r.abaixoDoPiso).toBe(true);
   });
@@ -224,6 +229,7 @@ describe("com visão, o modelo olha as fotos em vez de adivinhar", () => {
   async function traduzirComFotos(extra: Partial<Parameters<typeof traduzirPedido>[0]> = {}) {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     const r = await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: PEDIDO,
       fatos: [],
       fotosDeReferencia: 2,
@@ -269,6 +275,7 @@ describe("com visão, o modelo olha as fotos em vez de adivinhar", () => {
   it("motor que falha não deixa `viuAsFotos` verdadeiro — não houve leitura nenhuma", async () => {
     chamarLlmJson.mockResolvedValue({ ok: false });
     const r = await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: PEDIDO,
       fatos: [],
       fotosDeReferencia: 2,
@@ -289,7 +296,7 @@ describe("com visão, o modelo olha as fotos em vez de adivinhar", () => {
     const semFoto = (async () => {
       chamarLlmJson.mockClear();
       chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-      await traduzirPedido({ pedido: PEDIDO, fatos: [] });
+      await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: PEDIDO, fatos: [] });
       return chamarLlmJson.mock.calls[0][1];
     })();
     expect(opts.orcamentoMs).toBeGreaterThan((await semFoto).orcamentoMs);
@@ -299,12 +306,13 @@ describe("com visão, o modelo olha as fotos em vez de adivinhar", () => {
 describe("o ofício entra no prompt, e é filtrado pelo regime", () => {
   it("criar do zero recebe a hora que vende; editar foto, não", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "fachada do Eternity", fatos: [], dominio: "imovel" });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada do Eternity", fatos: [], dominio: "imovel" });
     const criacao = String(chamarLlmJson.mock.calls[0][0]);
 
     chamarLlmJson.mockClear();
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: "clareia essa foto",
       fatos: [],
       fotosDeReferencia: 1,
@@ -319,6 +327,7 @@ describe("o ofício entra no prompt, e é filtrado pelo regime", () => {
   it("editar foto recebe o que PRESERVAR; criar do zero, não", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
     await traduzirPedido({
+      quemPaga: QUEM_PAGA,
       pedido: "clareia essa foto",
       fatos: [],
       fotosDeReferencia: 1,
@@ -328,7 +337,7 @@ describe("o ofício entra no prompt, e é filtrado pelo regime", () => {
 
     chamarLlmJson.mockClear();
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "fachada do Eternity", fatos: [], dominio: "imovel" });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada do Eternity", fatos: [], dominio: "imovel" });
     const criacao = String(chamarLlmJson.mock.calls[0][0]);
 
     expect(edicao).toContain("Preserve a arquitetura");
@@ -337,13 +346,13 @@ describe("o ofício entra no prompt, e é filtrado pelo regime", () => {
 
   it("as regras que valem sempre vão nos dois regimes", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "fachada", fatos: [], dominio: "imovel" });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "fachada", fatos: [], dominio: "imovel" });
     expect(String(chamarLlmJson.mock.calls[0][0])).toContain("aprumadas");
   });
 
   it("pedido LIVRE não recebe o ofício de arquitetura — o Estúdio não é só de imóvel", async () => {
     chamarLlmJson.mockResolvedValue(respostaOk(BOM));
-    await traduzirPedido({ pedido: "um cachorro de papai noel", fatos: [] });
+    await traduzirPedido({ quemPaga: QUEM_PAGA, pedido: "um cachorro de papai noel", fatos: [] });
     const enviado = String(chamarLlmJson.mock.calls[0][0]);
 
     expect(enviado).not.toContain("aprumadas");
