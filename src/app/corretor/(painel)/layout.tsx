@@ -38,7 +38,7 @@ import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 import { createClient } from "@/lib/supabase/server";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { contaAceitouTermoDeAdesao } from "@/lib/termos/aceiteDoTermoDeAdesao";
-import { CAMINHO_DO_TERMO_DE_ADESAO, precisaAceitarTermoDeAdesao } from "@/lib/termos/termoDeAdesao";
+import { CAMINHO_DO_TERMO_DE_ADESAO, TERMO_DE_ADESAO_OBRIGATORIO, precisaAceitarTermoDeAdesao } from "@/lib/termos/termoDeAdesao";
 
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
@@ -115,7 +115,7 @@ export default async function PainelLayout({
   // Home) fica de fora. A página mora FORA deste grupo (senão seria
   // redirecionada para si mesma), como as de entrar e trocar senha. Erro ao
   // ler o aceite NÃO tranca o painel (`contaAceitouTermoDeAdesao`).
-  if (corretor && corretor.papel === "gestor" && corretor.grupoId !== GRUPO_NEXT_HOME_ID) {
+  if (TERMO_DE_ADESAO_OBRIGATORIO && corretor && corretor.papel === "gestor" && corretor.grupoId !== GRUPO_NEXT_HOME_ID) {
     const sessao = await createClient();
     const contaJaAceitou = await contaAceitouTermoDeAdesao(sessao, corretor.grupoId);
     if (precisaAceitarTermoDeAdesao({ papel: corretor.papel, ehContaDaCasa: false, contaJaAceitou })) {

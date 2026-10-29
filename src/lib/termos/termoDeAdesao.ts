@@ -126,5 +126,12 @@ export function precisaAceitarTermoDeAdesao(entrada: {
   return entrada.papel === "gestor" && !entrada.ehContaDaCasa && !entrada.contaJaAceitou;
 }
 
+/**
+ * O painel só cobra o aceite com isto ligado (29/10/2026, decisão do dono):
+ * o texto ainda é rascunho para o advogado. Desligado, a página existe e
+ * aceita, mas ninguém é redirecionado. Ligar depois da revisão do texto.
+ */
+export const TERMO_DE_ADESAO_OBRIGATORIO = false;
+
 /** O endereço da página do termo (fora do `(painel)`, para não redirecionar para si mesma). */
 export const CAMINHO_DO_TERMO_DE_ADESAO = "/corretor/termo-de-adesao";
