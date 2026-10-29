@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DESTINO_SEM_LINK, sessaoAbertaPorLink } from "@/lib/auth/sessaoPorLink";
 import { createClient } from "@/lib/supabase/server";
 import { FormularioDefinirSenha } from "./FormularioDefinirSenha";
+import { TelaDeAcesso } from "../TelaDeAcesso";
 
 export const metadata: Metadata = {
   title: "Criar senha",
@@ -29,21 +30,21 @@ export default async function DefinirSenhaPage() {
   if (!sessaoAbertaPorLink(data.claims)) redirect(DESTINO_SEM_LINK);
 
   return (
-    <main className="bg-fundo flex min-h-svh items-center justify-center px-5 py-10">
-      <div className="border-linha bg-superficie shadow-painel-alto w-full max-w-sm rounded-2xl border p-6 sm:p-7">
-        <h1 className="text-fluid-xl text-titulo font-medium">Crie sua senha</h1>
-        <p className="text-fluid-sm text-apoio mt-1 mb-6 break-words">
-          {email ? (
-            <>
-              Esta será a senha de <span className="text-corpo">{email}</span> no painel de corretores.
-            </>
-          ) : (
-            "Esta será a sua senha no painel de corretores."
-          )}
-        </p>
-
-        <FormularioDefinirSenha />
-      </div>
-    </main>
+    <TelaDeAcesso
+      titulo="Crie sua senha"
+      apoio={
+        email ? (
+          <span className="break-words">
+            Esta será a senha de <strong className="font-semibold">{email}</strong>.
+          </span>
+        ) : (
+          "Esta será a sua senha para entrar no CRM."
+        )
+      }
+      chamada="Bem-vindo à Astro."
+      textoDaChamada="Crie sua senha e comece a atender seus leads."
+    >
+      <FormularioDefinirSenha />
+    </TelaDeAcesso>
   );
 }

@@ -76,3 +76,19 @@ navegador as áreas seguras valem 0, por isso ninguém tinha visto.
 - Conta de demonstração `adm.exemplo@astroimob.vercel.app` teve a senha
   redefinida em 29/10/2026 (com o dono) para o revisor da Play Store.
 
+
+## Terceira leva (29/10/2026, tarde)
+- **Tema:** o seletor tem só claro e escuro (saiu o "padrão do site", ícone
+  de computador). Sem cookie, o claro (`TEMA_PADRAO`) aparece marcado.
+- **Menu aberto:** `GavetaLateral` marca `data-menu-aberto` no <html>, que
+  trava o rolador raiz (no Android o <body> sozinho não segura) — arrastar
+  fora do menu não rola nem recarrega a tela de trás.
+- **Assistente (mascote):** 80px → 52px no celular, 25% maior no computador;
+  "voltar ao topo" desceu junto (6,5rem → 4,5rem acima da barra).
+- **Telas de acesso:** `TelaDeAcesso.tsx` + `telaDeAcesso.module.css` (era
+  `entrar.module.css`) servem entrar, esqueci a senha, criar senha e trocar
+  senha. As três últimas usavam a paleta do site e saíam VERDES da Next Home.
+- **Nada corta:** em `[data-rota="painel"]`, item de grid com `min-width: 0`
+  e texto com `overflow-wrap: break-word`, tudo em `:where()`
+  (especificidade zero). Números grandes (4xl/5xl) um degrau menores no
+  celular; valores em reais do Financeiro com tamanho fluido.

@@ -315,7 +315,7 @@ function CartaoDeCliques({
         <>
           {/* `null` = a contagem falhou. Mostrar "0" aqui faria o corretor
               achar que o link parou de converter. */}
-          <p className="font-display text-titulo mt-1 text-4xl tabular-nums">
+          <p className="font-display text-titulo mt-1 text-3xl tabular-nums md:text-4xl">
             {cliques ? cliques.hoje : "—"}
           </p>
           <p className="text-fluid-xs text-apoio mt-1">

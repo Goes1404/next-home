@@ -185,10 +185,12 @@ export function BalaoConsultor() {
           onClick={() => setAberto(true)}
           aria-label="Abrir o consultor"
           title="Fale com a IA"
-          className="group pointer-events-auto absolute right-3 bottom-[calc(var(--nav-mobile-h)+env(safe-area-inset-bottom)+0.75rem)] flex h-20 w-[5.25rem] cursor-pointer items-end justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 md:right-5 md:bottom-5"
+          className="group pointer-events-auto absolute right-2.5 bottom-[calc(var(--nav-mobile-h)+env(safe-area-inset-bottom)+0.5rem)] flex h-14 w-12 origin-bottom-right cursor-pointer items-end justify-center opacity-90 transition-[transform,opacity] duration-200 hover:-translate-y-1 hover:opacity-100 active:scale-95 md:right-5 md:bottom-5 md:scale-125 md:opacity-100"
         >
-          {/* O mascote com o halo (07/10/2026): ver `Mascote`. */}
-          <Mascote altura={80} destaque className="transition-transform duration-300 group-hover:-rotate-6" />
+          {/* O mascote com o halo (07/10/2026): ver `Mascote`. Em 29/10/2026
+              desceu de 80px para 52px ("está na frente de muitas
+              informações"); no computador, onde sobra canto, cresce 25%. */}
+          <Mascote altura={52} destaque className="transition-transform duration-300 group-hover:-rotate-6" />
         </button>
       )}
     </div>,

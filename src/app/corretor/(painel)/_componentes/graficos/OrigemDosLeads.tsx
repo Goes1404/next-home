@@ -111,7 +111,7 @@ export function OrigemVisual({
                   </span>
                 )}
                 <p className="mt-2 flex items-baseline gap-2">
-                  <span className="font-display text-titulo text-4xl leading-none font-bold tracking-[-0.03em] tabular-nums">{l.leads}</span>
+                  <span className="font-display text-titulo text-3xl leading-none md:text-4xl font-bold tracking-[-0.03em] tabular-nums">{l.leads}</span>
                   <span className="text-fluid-xs text-apoio">{l.leads === 1 ? "lead" : "leads"} · {parte}%</span>
                 </p>
                 {/* A parte do total: um medidor só, na cor do módulo. */}

@@ -180,7 +180,7 @@ function Cartoes({ atual, anterior, serie, gestor }: { atual: IndicadoresDeVenda
           <div key={c.rotulo} className="min-w-0 rounded-2xl border border-linha bg-vidro p-3">
             <dt className="text-fluid-xs text-apoio">{c.rotulo}</dt>
             <dd className="mt-1 space-y-1">
-              <span title={reais(v)} className="block font-display text-xl leading-none font-bold tracking-[-0.02em] text-titulo tabular-nums whitespace-nowrap sm:text-2xl">
+              <span title={reais(v)} className="block font-display text-[clamp(1rem,4.6vw,1.25rem)] leading-tight font-bold tracking-[-0.02em] text-titulo tabular-nums [overflow-wrap:anywhere] sm:text-2xl sm:leading-none sm:whitespace-nowrap">
                 {c.formato(v)}
               </span>
               {delta !== null ? (

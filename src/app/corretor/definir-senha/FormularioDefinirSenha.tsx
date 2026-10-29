@@ -5,7 +5,7 @@ import { CampoSenha } from "@/components/ui/CampoSenha";
 import { definirSenha } from "./acoes";
 
 const CAMPO =
-  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3.5 text-fluid-base text-titulo outline-none transition-colors focus:border-acento";
+  "w-full rounded-xl border border-linha-forte bg-elevado px-4 py-3 text-fluid-base text-titulo outline-none transition-colors focus:border-acento";
 
 /**
  * Sem campo de senha atual: quem chega pelo convite nunca teve uma, e quem
@@ -16,9 +16,9 @@ export function FormularioDefinirSenha() {
   const [estado, action, pendente] = useActionState(definirSenha, undefined);
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-3">
       <div>
-        <label htmlFor="nova" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="nova" className="text-fluid-sm mb-1 block text-corpo">
           Nova senha
         </label>
         <CampoSenha id="nova" name="nova" required minLength={8} autoComplete="new-password" className={CAMPO} />
@@ -26,7 +26,7 @@ export function FormularioDefinirSenha() {
       </div>
 
       <div>
-        <label htmlFor="confirmacao" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="confirmacao" className="text-fluid-sm mb-1 block text-corpo">
           Repita a senha
         </label>
         <CampoSenha
@@ -48,7 +48,7 @@ export function FormularioDefinirSenha() {
       <button
         type="submit"
         disabled={pendente}
-        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3.5 font-semibold transition-colors disabled:opacity-60"
+        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors disabled:opacity-60"
       >
         {pendente ? "Salvando…" : "Salvar senha e entrar"}
       </button>

@@ -76,7 +76,7 @@ export function EsperaVisual({
           <p id="esperando-titulo" className="text-fluid-sm text-apoio">
             Esperando sua resposta
           </p>
-          <p className="font-display text-titulo mt-1 text-5xl leading-none font-bold tracking-[-0.03em] tabular-nums">{total}</p>
+          <p className="font-display text-titulo mt-1 text-4xl leading-none md:text-5xl font-bold tracking-[-0.03em] tabular-nums">{total}</p>
         </div>
         <p className="text-fluid-xs text-apoio sm:max-w-[16rem] sm:text-right">
           {atrasados > 0

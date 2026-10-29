@@ -10,9 +10,9 @@ export function FormularioSenha() {
   const [estado, action, pendente] = useActionState(trocarSenha, undefined);
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-3">
       <div>
-        <label htmlFor="atual" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="atual" className="text-fluid-sm mb-1 block text-corpo">
           Senha atual
         </label>
         <input
@@ -26,7 +26,7 @@ export function FormularioSenha() {
       </div>
 
       <div>
-        <label htmlFor="nova" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="nova" className="text-fluid-sm mb-1 block text-corpo">
           Nova senha
         </label>
         <input
@@ -42,7 +42,7 @@ export function FormularioSenha() {
       </div>
 
       <div>
-        <label htmlFor="confirmacao" className="text-fluid-sm mb-1.5 block text-corpo">
+        <label htmlFor="confirmacao" className="text-fluid-sm mb-1 block text-corpo">
           Repita a nova senha
         </label>
         <input
@@ -62,7 +62,7 @@ export function FormularioSenha() {
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-full bg-acento px-7 py-3 text-sm font-medium text-sobre-cor transition-colors hover:bg-acento-hover disabled:opacity-60"
+        className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-base w-full rounded-full px-7 py-3 font-semibold transition-colors disabled:opacity-60"
       >
         {pendente ? "Alterando…" : "Alterar senha"}
       </button>

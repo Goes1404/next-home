@@ -144,12 +144,18 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
     document.addEventListener("keydown", aoTeclar);
     // A página atrás não rola com a gaveta aberta: arrastar o polegar sobre o
     // escurecido é o gesto de "fechar" mais comum, e rolar o fundo o quebra.
+    // 29/10/2026: no Android quem rola a página é o <html>, não o <body> — com
+    // só o body travado, arrastar fora do menu ainda rolava a tela de trás e
+    // até recarregava a página. `data-menu-aberto` trava o <html> (CSS em
+    // globals.css, "Menu aberto").
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.setAttribute("data-menu-aberto", "");
 
     return () => {
       document.removeEventListener("keydown", aoTeclar);
       document.body.style.overflow = overflowAnterior;
+      document.documentElement.removeAttribute("data-menu-aberto");
       // O foco volta ao hambúrguer que estiver na tela (topo ou barra).
       document.querySelector<HTMLElement>('[aria-controls="gaveta-do-painel"]')?.focus();
     };
@@ -187,7 +193,7 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
         tabIndex={-1}
         aria-label="Fechar menu"
         onClick={fecharGaveta}
-        className="absolute inset-0 h-full w-full bg-black/60 backdrop-blur-[2px]"
+        className="absolute inset-0 h-full w-full touch-none bg-black/60 backdrop-blur-[2px]"
       />
 
       <aside
@@ -222,7 +228,7 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
 
         {/* Só `overflow-y`: rolagem lateral em navegação esconde alvo sem
             avisar que ele existe (naoRolaDeLado.test.ts). */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4">
           <div className="space-y-5">
             {grupos.map((grupo) => (
               <div key={grupo.titulo}>

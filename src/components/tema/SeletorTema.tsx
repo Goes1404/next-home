@@ -1,19 +1,24 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { aplicarTemaNoDom, assinarTema, gravarCookieDoTema, lerEscolhaDoDom, type Tema } from "@/lib/tema";
+import { aplicarTemaNoDom, assinarTema, gravarCookieDoTema, lerEscolhaDoDom, TEMA_PADRAO, type Tema } from "@/lib/tema";
 
-const OPCOES: { valor: Tema | null; rotulo: string }[] = [
+/*
+ * Só claro e escuro (29/10/2026, pedido do dono): o terceiro botão ("padrão
+ * do site", ícone de computador) confundia no app. Quem nunca escolheu vê o
+ * padrão da casa marcado (`TEMA_PADRAO`), que é o que a página mostra.
+ */
+const OPCOES: { valor: Tema; rotulo: string }[] = [
   { valor: "claro", rotulo: "Usar tema claro" },
   { valor: "escuro", rotulo: "Usar tema escuro" },
-  { valor: null, rotulo: "Voltar ao tema padrão do site" },
 ];
 
 /** No servidor (e durante a hidratação) ninguém sabe o cookie: sem escolha. */
 const SEM_ESCOLHA = () => null;
 
 /**
- * Três estados, um só controle: claro, escuro, ou o padrão da casa.
+ * Dois estados, um só controle: claro ou escuro (até 29/10/2026 havia um
+ * terceiro, "o padrão da casa").
  *
  * A fonte da verdade continua sendo o cookie — mas quem o lê agora é o
  * script inline do layout raiz, antes da primeira pintura, e ele deixa a
@@ -33,7 +38,9 @@ const SEM_ESCOLHA = () => null;
 export function SeletorTema() {
   const atual = useSyncExternalStore(assinarTema, lerEscolhaDoDom, SEM_ESCOLHA);
 
-  function escolher(tema: Tema | null) {
+  const efetivo = atual ?? TEMA_PADRAO;
+
+  function escolher(tema: Tema) {
     aplicarTemaNoDom(tema);
     gravarCookieDoTema(tema);
   }
@@ -45,7 +52,7 @@ export function SeletorTema() {
       className="border-linha bg-superficie/60 inline-flex items-center gap-0.5 rounded-full border p-0.5"
     >
       {OPCOES.map((opcao) => {
-        const marcado = atual === opcao.valor;
+        const marcado = efetivo === opcao.valor;
         return (
           <button
             key={opcao.rotulo}
@@ -63,7 +70,6 @@ export function SeletorTema() {
           >
             {opcao.valor === "claro" && <IconeSol aria-hidden className="h-4 w-4" />}
             {opcao.valor === "escuro" && <IconeLua aria-hidden className="h-4 w-4" />}
-            {opcao.valor === null && <IconeSistema aria-hidden className="h-4 w-4" />}
           </button>
         );
       })}
@@ -88,11 +94,3 @@ function IconeLua(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function IconeSistema(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="3" y="4" width="18" height="13" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
-  );
-}

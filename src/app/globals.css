@@ -3585,3 +3585,37 @@ html[data-app] :is(input, textarea, [contenteditable], .selecionavel) {
 html[data-app] :is(button, a, [role="button"]) {
   touch-action: manipulation;
 }
+
+/* Menu aberto (29/10/2026): a tela de trás não rola nem recarrega enquanto a
+   gaveta do celular está aberta. Quem escreve é `GavetaLateral`. */
+html[data-menu-aberto] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+html[data-menu-aberto] body {
+  overflow: hidden;
+}
+
+/* ===========================================================================
+ * Nada corta no celular (29/10/2026). Relato: "tem algumas palavras e cards
+ * cortando" dentro do app.
+ *
+ * As duas causas de sempre, tratadas na raiz para todo o painel:
+ *
+ * 1. Item de GRID tem `min-width: auto` = a largura do conteúdo. Um número
+ *    grande, um e-mail ou um nome comprido empurra a coluna para além da
+ *    tela, e o `overflow-hidden` do cartão corta. Com `min-width: 0` a
+ *    coluna respeita a grade e o conteúdo quebra ou trunca dentro dela.
+ * 2. Palavra que não cabe na linha (e-mail, link, nome sem espaço) não
+ *    quebra por padrão. `overflow-wrap: break-word` só age quando a palavra
+ *    sozinha passaria da caixa; o resto do texto continua igual.
+ *
+ * Tudo dentro de `:where()`: especificidade zero, então qualquer classe do
+ * próprio componente (`min-w-[…]`, `whitespace-nowrap`, `truncate`) vence.
+ * ======================================================================== */
+:where([data-rota="painel"]) :where(.grid > *) {
+  min-width: 0;
+}
+:where([data-rota="painel"]) :where(h1, h2, h3, h4, p, li, dt, dd, label, blockquote, figcaption) {
+  overflow-wrap: break-word;
+}
