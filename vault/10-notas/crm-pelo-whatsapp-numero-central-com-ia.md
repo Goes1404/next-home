@@ -119,4 +119,11 @@ Para ligar: rodar 0249 e 0250 no SQL Editor, conectar o chip em
 `CENTRAL_MODELO`, o gestor ligar o interruptor, e subir `ONDA_ATUAL` uma onda
 por vez.
 
+**30/10/2026:** publicado em produção e `ONDA_ATUAL` = 3 a pedido do dono
+(testa depois). Com isso, o que liga o central de fato é o interruptor
+"Comandos pelo WhatsApp" (`grupos.central_whatsapp_ativo`) e o chip conectado
+em `/plataforma/central`. Para recuar uma onda: baixar `ONDA_ATUAL` e
+publicar. A guarda de `ferramentas.test.ts` passou a cobrar que toda
+ferramenta ligada tenha tratador, e que na onda 0 nada rode.
+
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].

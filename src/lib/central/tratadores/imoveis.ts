@@ -580,9 +580,9 @@ async function leadsParaOImovel(deps: DependenciasDeImoveis, ctx: ContextoDoCent
     leads: lista,
     maisQueNaoCouberam: combinam.length > TETO_DE_LEADS ? combinam.length - TETO_DE_LEADS : null,
     nenhum: combinam.length === 0 ? "Nenhum cliente com perfil declarado para este imóvel (região, dormitórios ou orçamento)." : null,
-    // A lista de transmissão é a capacidade 14, da onda 3: aqui só se oferece.
+    // A lista de transmissão é a capacidade 14 (`montar_lista`): aqui só se oferece.
     lista: combinam.length
-      ? "Montar uma lista de envio com eles ainda não dá por aqui (chega numa próxima etapa); hoje é pelo painel, na tela do imóvel."
+      ? "Dá para mandar o imóvel a eles numa lista de transmissão: é só pedir (ex.: \"manda o lançamento pra quem quer esse perfil\")."
       : null,
   });
 }

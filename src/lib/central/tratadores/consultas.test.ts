@@ -246,7 +246,7 @@ describe("registro no catálogo", () => {
 
   it("na onda 0 a consulta continua desligada: o portão é a onda, não o tratador", async () => {
     const { criarExecutor } = await import("../executar");
-    const { executar } = criarExecutor(corretor);
+    const { executar } = criarExecutor(corretor, undefined, 0);
     expect(await executar("quem_ligar_hoje", {})).toMatchObject({ aindaNao: true });
   });
 });

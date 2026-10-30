@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { TRATADORES } from "./executar";
+import { TRATADORES, criarExecutor } from "./executar";
 import { FERRAMENTAS, ONDA_ATUAL, declaracoesPara, textoDaAjuda } from "./ferramentas";
 
 describe("catálogo do número central", () => {
@@ -24,13 +24,23 @@ describe("catálogo do número central", () => {
     expect(declaracoesPara("gestor").length).toBe(FERRAMENTAS.length);
   });
 
-  // Os tratadores da onda 1 já entram em TRATADORES (`tratadores/index.ts`);
-  // quem barra é a `onda` de cada ferramenta contra ONDA_ATUAL (`criarExecutor`).
-  it(`na onda ${ONDA_ATUAL} nenhuma ação com tratador está ligada (nada grava no CRM)`, () => {
-    for (const nome of Object.keys(TRATADORES.acoes)) {
-      const f = FERRAMENTAS.find((x) => x.nome === nome);
-      expect(f && f.onda > ONDA_ATUAL, `ação ${nome} ainda não pode estar ligada`).toBe(true);
+  // Todos os tratadores entram em TRATADORES (`tratadores/index.ts`); quem
+  // barra é a `onda` de cada ferramenta contra ONDA_ATUAL (`criarExecutor`).
+  it(`na onda ${ONDA_ATUAL} toda ferramenta ligada tem tratador (nada responde "ainda não sei" por esquecimento)`, () => {
+    const ligadas = FERRAMENTAS.filter((f) => f.onda <= ONDA_ATUAL);
+    for (const f of ligadas) {
+      const tem = f.tipo === "consulta" ? Boolean(TRATADORES.consultas[f.nome]) : Boolean(TRATADORES.acoes[f.nome]);
+      expect(tem, `${f.nome} está ligada e não tem tratador`).toBe(true);
     }
+  });
+
+  it("na onda 0 nenhuma ação roda, mesmo com tratador (o portão é a onda)", async () => {
+    const ctx = { corretorId: "c1", grupoId: "g1", papel: "gestor" as const, nome: "Ana", imobiliaria: "Next Home" };
+    const { executar, itensPropostos } = criarExecutor(ctx, TRATADORES, 0);
+    for (const nome of Object.keys(TRATADORES.acoes)) {
+      expect(await executar(nome, {}), nome).toMatchObject({ aindaNao: true });
+    }
+    expect(itensPropostos).toEqual([]);
   });
 
   it("a ajuda mostra o que já funciona e o que vem depois", () => {

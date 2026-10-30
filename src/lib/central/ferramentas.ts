@@ -15,7 +15,7 @@ import type { DeclaracaoDeFerramenta } from "./cerebro";
  */
 
 /** A onda em produção. Sobe a cada entrega (spec 5). */
-export const ONDA_ATUAL = 0;
+export const ONDA_ATUAL = 3;
 
 export type TipoDeFerramenta = "consulta" | "acao";
 

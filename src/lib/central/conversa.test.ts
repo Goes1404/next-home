@@ -138,8 +138,8 @@ describe("boas-vindas, cota, foto e áudio", () => {
     expect(espioes.pensou).toEqual([]);
   });
 
-  it("foto: ainda não sei ler", async () => {
-    const { deps } = montar();
+  it("foto: ainda não sei ler (onda 0)", async () => {
+    const { deps } = montar({ onda: 0 });
     expect(await responderNoCentral(msg("", { tipo: "imagem" }), deps)).toEqual([TEXTOS.semFoto]);
   });
 
@@ -174,6 +174,7 @@ describe("cérebro", () => {
 
   it("pedido de onda futura: a ferramenta diz ainda não, nada vira proposta", async () => {
     const { deps, estado } = montar({
+      onda: 0,
       pensar: async (e) => {
         const r = await e.executar("cadastrar_lead", { nome: "João" });
         return { ok: true, texto: String((r as { mensagem: string }).mensagem), chamadas: [{ nome: "cadastrar_lead", argumentos: { nome: "João" }, resultado: r }], modelo: "m", tokensEntrada: 1, tokensSaida: 1, custoUsd: 0 };
@@ -272,7 +273,7 @@ describe("foto (onda 1)", () => {
 
   it("onda 0: segue 'ainda não sei', sem baixar nem chamar a IA", async () => {
     const baixar = vi.fn(async (): Promise<MidiaRecebida> => ({ ok: true, base64: JPEG, mimeType: "image/jpeg" }));
-    const { deps, espioes } = montar({ midia: baixar });
+    const { deps, espioes } = montar({ onda: 0, midia: baixar });
     expect(await responderNoCentral(foto("ficha"), deps)).toEqual([TEXTOS.semFoto]);
     expect(baixar).not.toHaveBeenCalled();
     expect(espioes.pensou).toEqual([]);

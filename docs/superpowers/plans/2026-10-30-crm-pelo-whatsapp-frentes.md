@@ -66,7 +66,9 @@ agendada de retomada foi desligada.
 
 Publicado em produção em 30/10/2026: `/api/versao` → `2f1064a9c8d1`
 (nexthomeimoveis.com e astroimob.vercel.app). Central ainda sem chip
-conectado e em `ONDA_ATUAL = 0`.
+conectado. `ONDA_ATUAL` subiu para 3 a pedido do dono ("pode ir subindo as
+ondas, e depois testo"): o interruptor da imobiliária e o chip conectado
+continuam sendo o que liga de fato.
 
 ## Migrations que o dono roda no SQL Editor
 

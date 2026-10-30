@@ -218,7 +218,7 @@ describe("leads_para_o_imovel", () => {
     expect(r.leads.map((l) => l.nome)).toEqual(["João Pereira"]);
     expect(Object.keys(r.leads[0]).sort()).toEqual(["etapa", "nome", "porque"]);
     expect(r.leads[0].etapa).toBe("Em conversa");
-    expect(r.lista).toMatch(/próxima etapa/);
+    expect(r.lista).toMatch(/lista de transmissão/);
   });
 
   it("gestor vê o grupo, com o corretor de cada um, e nunca outro grupo nem fechado", async () => {

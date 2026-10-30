@@ -393,8 +393,8 @@ describe("montar_lista: o 'sim' só enfileira", () => {
     const { resultados, desfaziveis } = await executarProposta(corretor, ex.itensPropostos, tratadores);
     expect(resultados[0].ok).toBe(true);
     expect(desfaziveis).toHaveLength(1);
-    // Na onda de hoje (0), a lista ainda não existe pelo central.
-    expect(await criarExecutor(corretor, tratadores).executar("montar_lista", PEDIDO)).toMatchObject({ aindaNao: true });
+    // Abaixo da onda 3, a lista ainda não existe pelo central.
+    expect(await criarExecutor(corretor, tratadores, 2).executar("montar_lista", PEDIDO)).toMatchObject({ aindaNao: true });
   });
 });
 
