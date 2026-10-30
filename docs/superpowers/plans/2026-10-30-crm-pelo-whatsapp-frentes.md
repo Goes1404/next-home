@@ -69,8 +69,9 @@ agendada de retomada foi desligada.
 - `0249_central_da_plataforma.sql` (tabelas do central).
 - `0250_antecedencia_do_aviso_de_visita.sql` (frente J).
 
-O código funciona sem elas (o central e o ajuste somem). Depois de rodar,
-conferir as tabelas/colunas e registrar em `supabase_migrations.schema_migrations`.
+**Aplicadas pelo dono no SQL Editor em 30/10/2026**, conferidas (5 tabelas,
+coluna em `grupos`, `desfazer`/`desfeito_em`, policies, gatilhos, RLS, índices,
+grants) e registradas em `supabase_migrations.schema_migrations`.
 
 ## Fases seguintes, em sequência automática (pedido do dono, 30/10/2026)
 
