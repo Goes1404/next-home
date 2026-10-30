@@ -47,8 +47,8 @@ um arquivo por frente em `src/lib/central/tratadores/`).
 | Frente | Arquivo | Ferramentas | Estado |
 |---|---|---|---|
 | F · Imóveis | `tratadores/imoveis.ts` | `informacao_de_imovel`, `imoveis_para_o_lead`, `leads_para_o_imovel`, `simular_financiamento`, `atualizar_imovel` (gestor) | juntada (30/10) |
-| G · Relatórios | `tratadores/relatorios.ts` | `relatorio_do_corretor`, `meta_e_comissao`, `relatorio_da_equipe` (gestor), `resultado_do_mes` (gestor), `whatsapp_da_equipe` (gestor) | em andamento (30/10) |
-| H · Financeiro e gestão | `tratadores/financeiro.ts` | `registrar_venda`, `lancar_no_caixa` (gestor), `informar_gasto_de_anuncio`, `redistribuir_leads` (gestor) | em andamento (30/10) |
+| G · Relatórios | `tratadores/relatorios.ts` | `relatorio_do_corretor`, `meta_e_comissao`, `relatorio_da_equipe` (gestor), `resultado_do_mes` (gestor), `whatsapp_da_equipe` (gestor) | juntada (30/10) |
+| H · Financeiro e gestão | `tratadores/financeiro.ts` | `registrar_venda`, `lancar_no_caixa` (gestor), `informar_gasto_de_anuncio`, `redistribuir_leads` (gestor) | juntada (30/10) |
 | I · Documentos, lembretes e planilha | `tratadores/documentos.ts` | `documentos_do_lead`, `lembrete` (precisa de envio agendado pelo central), `importar_planilha` | em andamento (30/10) |
 
 Cada frente nova: criar o arquivo com `CONSULTAS_X`/`ACOES_X` e ligá-lo em
