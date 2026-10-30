@@ -58,6 +58,14 @@ horário no painel e o central em grupos da equipe (4.1) também são da onda 2,
 mas mexem em cron, telas e webhook: ficam para a sessão principal, depois de
 F a I.
 
+## Migrations que o dono roda no SQL Editor
+
+- `0249_central_da_plataforma.sql` (tabelas do central).
+- `0250_antecedencia_do_aviso_de_visita.sql` (frente J).
+
+O código funciona sem elas (o central e o ajuste somem). Depois de rodar,
+conferir as tabelas/colunas e registrar em `supabase_migrations.schema_migrations`.
+
 ## Fases seguintes, em sequência automática (pedido do dono, 30/10/2026)
 
 O dono pediu que cada fase comece sozinha quando a anterior estiver juntada e
@@ -68,8 +76,8 @@ dono; tudo fica pronto e desligado.
 
 | Frente | Onde | O quê | Estado |
 |---|---|---|---|
-| J · Avisos espontâneos | cron + `src/lib/central/` + tela do perfil | Resumo do dia, lead novo, visita na próxima hora e lembrete (gravado pela Frente I) saindo pelo central (4.7), com o horário do resumo e a antecedência do aviso escolhidos por pessoa no painel (padrão 8h e 1 h). Migration provável (preferências): criar com o próximo número livre e NÃO aplicar (o dono roda no SQL Editor). Respeita `central_whatsapp_ativo` e a cota. | em andamento (30/10) |
-| K · Central em grupos da equipe | `webhook.ts`/`conversa.ts` do central | Grupo só da equipe (4.1): responde quando mencionado; dado de lead vai no privado de quem pediu; grupo com cliente é ignorado. | a fazer |
+| J · Avisos espontâneos | cron + `src/lib/central/` + tela do perfil | Resumo do dia, lead novo, visita na próxima hora e lembrete (gravado pela Frente I) saindo pelo central (4.7), com o horário do resumo e a antecedência do aviso escolhidos por pessoa no painel (padrão 8h e 1 h). Migration provável (preferências): criar com o próximo número livre e NÃO aplicar (o dono roda no SQL Editor). Respeita `central_whatsapp_ativo` e a cota. | juntada (30/10) |
+| K · Central em grupos da equipe | `webhook.ts`/`conversa.ts` do central | Grupo só da equipe (4.1): responde quando mencionado; dado de lead vai no privado de quem pediu; grupo com cliente é ignorado. | em andamento (30/10) |
 
 J e K mexem em `conversa.ts`/`webhook.ts`: lançar J primeiro e K depois de J
 juntada, ou dividir os arquivos antes de lançar as duas juntas.
