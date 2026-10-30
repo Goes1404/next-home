@@ -21,6 +21,11 @@ const repositorio = vi.hoisted(() => ({
   cancelarVisitaLead: vi.fn(),
   apagarLembretesPendentesDeVisita: vi.fn(async () => {}),
   registrarEtapaAutomatica: vi.fn(async () => {}),
+  // `../executar` carrega todos os tratadores (tratadores/index.ts); os das
+  // outras frentes também importam daqui. Não são usados neste teste.
+  ativarIaNaConversa: vi.fn(),
+  desligarIaPorFalaDoCorretor: vi.fn(),
+  localizarTelefoneNoGrupo: vi.fn(),
 }));
 vi.mock("@/lib/whatsapp/repositorio", () => repositorio);
 
