@@ -145,8 +145,8 @@ async function entregar(
   url: string,
   somentePorEmail = false,
 ): Promise<{ ok: true; enviado: boolean; url?: string } | { ok: false; erro: string }> {
-  const { data: grupo } = await servico.from("grupos").select("nome").eq("id", grupoId).maybeSingle();
-  const envio = await enviarLinkDeAcesso(tipo, email, grupo?.nome ?? site.nome, url);
+  const { data: grupo } = await servico.from("grupos").select("nome, teste_ate").eq("id", grupoId).maybeSingle();
+  const envio = await enviarLinkDeAcesso(tipo, email, grupo?.nome ?? site.nome, url, { testeAte: grupo?.teste_ate ?? null });
   if (envio.enviado) return { ok: true, enviado: true };
   if (somentePorEmail) {
     console.warn(`[acesso] link (${tipo}) de conta já usada não saiu por e-mail: ${envio.motivo}; não mostrado`);

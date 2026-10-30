@@ -137,7 +137,7 @@ describe("convidar", () => {
 
     expect(r).toEqual({ ok: true, enviado: false, url: URL_CONVITE });
     expect(pedidosDeLink).toEqual([["invite", "ana@gmail.com", "/corretor/definir-senha", GRUPO_A]]);
-    expect(enviados).toEqual([["invite", "ana@gmail.com", "Imobiliária Sol", URL_CONVITE]]);
+    expect(enviados).toEqual([["invite", "ana@gmail.com", "Imobiliária Sol", URL_CONVITE, { testeAte: null }]]);
     expect(corretor("c1")).toMatchObject({
       user_id: "usuario-novo",
       email: "ana@gmail.com",

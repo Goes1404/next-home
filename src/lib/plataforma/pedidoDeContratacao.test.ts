@@ -208,9 +208,11 @@ describe("mensagem e pré-preenchimento", () => {
   it("imobiliária: a pessoa é o contato e o primeiro gestor; mensalidade pelos usuários", () => {
     expect(formularioDaImobiliariaDoPedido(gravado)).toEqual({
       ramo: "imobiliaria",
+      pedidoId: gravado.id,
       ramoDescricao: "",
       nomeFantasia: "Imob Sol",
       slug: "imob-sol",
+      cnpj: "",
       creciJ: "12345-J",
       usuarios: "4",
       mensalidade: "508,00",
@@ -226,15 +228,24 @@ describe("mensagem e pré-preenchimento", () => {
   it("independente: plano e mensalidade do pedido", () => {
     expect(formularioDoIndependenteDoPedido({ ...gravado, plano: "profissional", imobiliaria: null, creci: null })).toEqual({
       ramo: "imobiliaria",
+      pedidoId: gravado.id,
       ramoDescricao: "",
       nome: "Ana Paula Souza",
       slug: "ana-paula-souza",
+      cpf: "",
       creciF: "",
       email: "ana@imob.com.br",
       whatsapp: "(11) 98765-4321",
       plano: "profissional",
       mensalidade: "147,00",
     });
+  });
+
+  it("o documento do pedido vai mascarado ao campo do tipo (CNPJ na imobiliária, CPF no independente)", () => {
+    expect(formularioDaImobiliariaDoPedido({ ...gravado, documento: "11222333000181" }).cnpj).toBe("11.222.333/0001-81");
+    expect(formularioDaImobiliariaDoPedido({ ...gravado, documento: "52998224725" }).cnpj).toBe("");
+    expect(formularioDoIndependenteDoPedido({ ...gravado, plano: "essencial", documento: "52998224725" }).cpf).toBe("529.982.247-25");
+    expect(formularioDoIndependenteDoPedido({ ...gravado, plano: "essencial", documento: null }).cpf).toBe("");
   });
 
   it("criar conta abre o formulário do tipo certo, só com o id do pedido na URL", () => {

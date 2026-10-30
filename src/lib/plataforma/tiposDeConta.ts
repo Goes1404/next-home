@@ -74,6 +74,12 @@ export type PedidoValidado = { grupo: NovoGrupoValidado; cadastro: CadastroDoGru
 export type ResultadoDoPedido = { ok: true; dados: PedidoValidado } | { ok: false; erro: string };
 
 export type FormularioDaImobiliaria = {
+  /**
+   * O pedido de contratação que pré-preencheu o formulário (`?pedido=`):
+   * a conta criada fica ligada a ele (convertido + indicação). Ausente =
+   * conta criada do zero.
+   */
+  pedidoId?: string;
   /** O ramo (0244). Ausente = imobiliária (formulário de antes do campo). */
   ramo?: string;
   ramoDescricao?: string;
@@ -94,6 +100,8 @@ export type FormularioDaImobiliaria = {
 };
 
 export type FormularioDoIndependente = {
+  /** O pedido de contratação que pré-preencheu o formulário (ver `FormularioDaImobiliaria`). */
+  pedidoId?: string;
   /** O ramo (0244). Ausente = imobiliária (formulário de antes do campo). */
   ramo?: string;
   ramoDescricao?: string;

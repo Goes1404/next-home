@@ -210,3 +210,56 @@ describe("proxy", () => {
     expect(volta.headers.get("location")).toBeNull();
   });
 });
+
+/*
+ * Quem administra a plataforma sem ficha de corretor (o dono) também
+ * recupera a senha (revisão de 30/10/2026). O e-mail é procurado só entre os
+ * logins de `administradores_da_plataforma`, e a resposta da tela é a mesma.
+ */
+describe("administrador da plataforma sem ficha", () => {
+  const ADMIN = "usuario-admin";
+  beforeEach(() => {
+    banco = bancoFalso({
+      corretores: [],
+      grupos: [],
+      administradores_da_plataforma: [{ user_id: ADMIN }],
+      admin_eventos: [],
+    });
+    const usuarios: Record<string, { id: string; email: string }> = { [ADMIN]: { id: ADMIN, email: "Dono@Astro.com.br" } };
+    banco.cliente.auth = {
+      admin: { getUserById: async (id: string) => ({ data: { user: usuarios[id] ?? null }, error: null }) },
+    };
+    respostaDoLink = { ok: true, url: "https://crm/auth/confirmar?token_hash=h&type=recovery", userId: ADMIN };
+  });
+
+  it("recebe o link, com o registro do pedido como evento da plataforma e a mesma resposta", async () => {
+    const r = await pedir("dono@astro.com.br");
+    await rodarDepois();
+    expect(r).toBe("/corretor/esqueci-a-senha?enviado=1");
+    expect(pedidosDeLink).toEqual([["recovery", "dono@astro.com.br", "/corretor/definir-senha", "plataforma"]]);
+    expect(enviados).toHaveLength(1);
+    expect(pedidos()).toEqual([
+      expect.objectContaining({
+        grupo_id: null,
+        alvo_corretor_id: null,
+        detalhes: { origem: "plataforma", via: "esqueci_a_senha", alvo_user_id: ADMIN },
+      }),
+    ]);
+  });
+
+  it("tem o mesmo limite de 1 pedido por minuto", async () => {
+    await pedir("dono@astro.com.br");
+    await rodarDepois();
+    vi.setSystemTime(new Date("2026-10-20T12:00:30Z"));
+    await pedir("dono@astro.com.br");
+    await rodarDepois();
+    expect(pedidosDeLink).toHaveLength(1);
+  });
+
+  it("e-mail que não é de nenhum administrador não gera nada", async () => {
+    expect(await pedir("outro@astro.com.br")).toBe("/corretor/esqueci-a-senha?enviado=1");
+    await rodarDepois();
+    expect(pedidosDeLink).toEqual([]);
+    expect(banco.tabelas.admin_eventos).toEqual([]);
+  });
+});

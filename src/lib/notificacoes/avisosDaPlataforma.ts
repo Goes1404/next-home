@@ -6,7 +6,8 @@ import { lerRiscosDasContas } from "@/lib/plataforma/sinaisDeRisco";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notificarAdminsDaPlataforma, type Notificacao } from "./push";
 import { diaEmSaoPaulo, horaEMinutoEmSP } from "./relogio";
-import { resumoDasCobrancas, type CobrancaParaAviso } from "./regrasDosAvisosDaPlataforma";
+import { resumoDasCobrancas, rotuloDaContaNova, type CobrancaParaAviso } from "./regrasDosAvisosDaPlataforma";
+import type { Ramo } from "@/lib/ramos/ramos";
 
 /**
  * Os atendimentos da Astro no celular de quem administra a plataforma
@@ -40,11 +41,11 @@ export function avisarAtendimento(n: Notificacao): void {
 }
 
 /** Conta criada pela plataforma (avisa o OUTRO ADM; quem criou também recebe). */
-export function avisarContaNova(nome: string, tipo: string): void {
+export function avisarContaNova(nome: string, tipo: string, ramo?: Ramo | null, ramoDescricao?: string | null): void {
   depoisDaResposta(() =>
     notificarAdminsDaPlataforma(createServiceClient(), {
       titulo: "Conta nova na Astro",
-      corpo: `${nome} (${tipo === "independente" ? "corretor independente" : "imobiliária"}) foi criada.`,
+      corpo: `${nome} (${rotuloDaContaNova(tipo, ramo, ramoDescricao)}) foi criada.`,
       url: "/plataforma",
       tag: "conta-nova",
     }),

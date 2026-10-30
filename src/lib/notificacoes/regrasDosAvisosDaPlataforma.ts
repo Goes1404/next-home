@@ -4,6 +4,7 @@
  */
 
 import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
+import { nomeDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 export type CobrancaParaAviso = {
   nome: string;
@@ -36,4 +37,16 @@ export function resumoDasCobrancas(lista: CobrancaParaAviso[]): { titulo: string
     titulo: n === 1 ? "1 mensalidade em aberto" : `${n} mensalidades em aberto`,
     corpo: itens.join(", ") + (resto > 0 ? ` e mais ${resto}` : "") + ".",
   };
+}
+
+/**
+ * O rótulo da conta no aviso: pelo RAMO (0244) quando ele não é imobiliária
+ * ("Clínica, empresa"), senão o de sempre ("imobiliária", "corretor
+ * independente").
+ */
+export function rotuloDaContaNova(tipo: string, ramo?: Ramo | null, ramoDescricao?: string | null): string {
+  if (ramo && ramo !== "imobiliaria") {
+    return `${nomeDoRamo(ramo, ramoDescricao)}, ${tipo === "independente" ? "profissional independente" : "empresa"}`;
+  }
+  return tipo === "independente" ? "corretor independente" : "imobiliária";
 }

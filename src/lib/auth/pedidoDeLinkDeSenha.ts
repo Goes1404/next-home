@@ -3,8 +3,10 @@ import "server-only";
 import { enviarLinkDeAcesso } from "@/lib/auth/emailsDeAcesso";
 import { gerarLinkDeAcesso } from "@/lib/auth/links";
 import { ehEmailDeAcesso } from "@/lib/corretores/credenciaisIniciais";
+import { MARCA_DA_PLATAFORMA } from "@/lib/marcaDaPlataforma";
 import { site } from "@/lib/site";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { Database } from "@/lib/supabase/types";
 
 /**
  * O pedido de link de senha que a PRÓPRIA pessoa faz: "Esqueci a senha"
@@ -25,8 +27,13 @@ import { createServiceClient } from "@/lib/supabase/service";
  * coisa (ver `esqueci-a-senha/acoes.ts`); os desfechos daqui são para o log
  * e para o pedido da própria sessão.
  *
- * A conta sem ficha de corretor (o administrador da plataforma sem ficha)
- * não recupera a senha por aqui: o link dela sai pelo painel do Supabase.
+ * A conta sem ficha de corretor que administra a plataforma (o dono, por
+ * exemplo) também recupera por aqui (revisão de 30/10/2026): sem ficha, o
+ * e-mail é procurado entre os logins de `administradores_da_plataforma`
+ * (nunca na lista inteira do Auth), e o registro do pedido é um evento da
+ * plataforma (`grupo_id` nulo, `detalhes.origem = 'plataforma'`,
+ * `detalhes.alvo_user_id`), com o mesmo limite. A tela pública responde
+ * igual nos dois casos.
  *
  * O registro é lido ANTES de gravar: pedido acima do limite não grava linha,
  * para quem insiste não encher a tabela. Depois de gravar, lê de novo: dois
@@ -45,6 +52,15 @@ type Servico = ReturnType<typeof createServiceClient>;
 type Ficha = { id: string; user_id: string; grupo_id: string };
 
 /**
+ * De quem é o pedido: a ficha (o registro mora no grupo dela) ou o login de
+ * quem administra a plataforma sem ficha (registro da plataforma, sem grupo).
+ */
+type Alvo = { tipo: "ficha"; ficha: Ficha } | { tipo: "admin"; userId: string };
+
+/** Teto de leitura de `administradores_da_plataforma`: são poucos logins. */
+const MAXIMO_DE_ADMINISTRADORES = 50;
+
+/**
  * Pura: com os pedidos anteriores (instantes ISO, da última hora), um pedido
  * novo agora cabe no limite?
  */
@@ -60,19 +76,40 @@ function padraoExato(email: string): string {
   return email.replace(/[\\%_]/g, (c) => "\\" + c).replaceAll("*", "_");
 }
 
-async function lerPedidos(servico: Servico, ficha: Ficha, agora: Date) {
-  return servico
-    .from("admin_eventos")
-    .select("id, created_at")
-    .eq("grupo_id", ficha.grupo_id)
-    .eq("acao", ACAO_DO_PEDIDO)
-    .eq("alvo_corretor_id", ficha.id)
-    .gte("created_at", new Date(agora.getTime() - UMA_HORA_MS).toISOString());
+async function lerPedidos(servico: Servico, alvo: Alvo, agora: Date) {
+  const desde = new Date(agora.getTime() - UMA_HORA_MS).toISOString();
+  const base = servico.from("admin_eventos").select("id, created_at").eq("acao", ACAO_DO_PEDIDO);
+  if (alvo.tipo === "ficha") {
+    return base.eq("grupo_id", alvo.ficha.grupo_id).eq("alvo_corretor_id", alvo.ficha.id).gte("created_at", desde);
+  }
+  return base.is("grupo_id", null).eq("detalhes->>alvo_user_id", alvo.userId).gte("created_at", desde);
+}
+
+function registroDoPedido(alvo: Alvo, via: string, agora: Date): Database["public"]["Tables"]["admin_eventos"]["Insert"] {
+  if (alvo.tipo === "ficha") {
+    return {
+      grupo_id: alvo.ficha.grupo_id,
+      acao: ACAO_DO_PEDIDO,
+      ator_id: null,
+      alvo_corretor_id: alvo.ficha.id,
+      detalhes: { via },
+      created_at: agora.toISOString(),
+    };
+  }
+  // Evento da plataforma (0191): sem grupo, sem nenhuma linha-mãe, origem marcada.
+  return {
+    grupo_id: null,
+    acao: ACAO_DO_PEDIDO,
+    ator_id: null,
+    alvo_corretor_id: null,
+    detalhes: { origem: "plataforma", via, alvo_user_id: alvo.userId },
+    created_at: agora.toISOString(),
+  };
 }
 
 /** Reserva a vez do pedido; `false` = acima do limite (ou não deu para conferir). */
-async function reservarPedido(servico: Servico, ficha: Ficha, via: string, agora: Date): Promise<boolean> {
-  const antes = await lerPedidos(servico, ficha, agora);
+async function reservarPedido(servico: Servico, alvo: Alvo, via: string, agora: Date): Promise<boolean> {
+  const antes = await lerPedidos(servico, alvo, agora);
   if (antes.error) {
     console.error(`[senha] pedidos anteriores não lidos; pedido recusado: ${antes.error.message}`);
     return false;
@@ -81,14 +118,7 @@ async function reservarPedido(servico: Servico, ficha: Ficha, via: string, agora
 
   const { data: proprio, error } = await servico
     .from("admin_eventos")
-    .insert({
-      grupo_id: ficha.grupo_id,
-      acao: ACAO_DO_PEDIDO,
-      ator_id: null,
-      alvo_corretor_id: ficha.id,
-      detalhes: { via },
-      created_at: agora.toISOString(),
-    })
+    .insert(registroDoPedido(alvo, via, agora))
     .select("id")
     .single();
   if (error || !proprio) {
@@ -96,7 +126,7 @@ async function reservarPedido(servico: Servico, ficha: Ficha, via: string, agora
     return false;
   }
 
-  const depois = await lerPedidos(servico, ficha, agora);
+  const depois = await lerPedidos(servico, alvo, agora);
   if (depois.error) {
     console.error(`[senha] pedidos não relidos; pedido recusado: ${depois.error.message}`);
     return false;
@@ -105,21 +135,55 @@ async function reservarPedido(servico: Servico, ficha: Ficha, via: string, agora
   return pedidoCabeNoLimite(outros, agora);
 }
 
-/** Gera o link de recuperação do e-mail e manda — só se o Auth devolver o login da ficha. */
-async function gerarEMandar(servico: Servico, ficha: Ficha, email: string): Promise<DesfechoDoPedido> {
-  const link = await gerarLinkDeAcesso("recovery", email, "/corretor/definir-senha", ficha.grupo_id);
+/** Gera o link de recuperação do e-mail e manda — só se o Auth devolver o login do alvo. */
+async function gerarEMandar(servico: Servico, alvo: Alvo, email: string): Promise<DesfechoDoPedido> {
+  // O administrador sem ficha não tem grupo: o link vai ao endereço do CRM
+  // (`enderecoDoPainel` de qualquer grupo que não é a Next Home), onde mora `/plataforma`.
+  const grupoDoLink = alvo.tipo === "ficha" ? alvo.ficha.grupo_id : "plataforma";
+  const userIdEsperado = alvo.tipo === "ficha" ? alvo.ficha.user_id : alvo.userId;
+  const link = await gerarLinkDeAcesso("recovery", email, "/corretor/definir-senha", grupoDoLink);
   if (!link.ok) return "nao_enviado";
-  if (link.userId !== ficha.user_id) {
-    console.error(`[senha] o e-mail da ficha ${ficha.id} é de outro login; link não enviado`);
+  if (link.userId !== userIdEsperado) {
+    console.error(`[senha] o e-mail do pedido é de outro login; link não enviado`);
     return "nao_enviado";
   }
-  const { data: grupo } = await servico.from("grupos").select("nome").eq("id", ficha.grupo_id).maybeSingle();
-  const desfecho = await enviarLinkDeAcesso("recovery", email, grupo?.nome || site.nome, link.url);
+  // O administrador sem ficha recebe o e-mail com o nome da plataforma.
+  let nome: string = MARCA_DA_PLATAFORMA.nome;
+  if (alvo.tipo === "ficha") {
+    const { data: grupo } = await servico.from("grupos").select("nome").eq("id", alvo.ficha.grupo_id).maybeSingle();
+    nome = grupo?.nome || site.nome;
+  }
+  const desfecho = await enviarLinkDeAcesso("recovery", email, nome, link.url);
   if (!desfecho.enviado) {
     console.warn(`[senha] link de recuperação não enviado: ${desfecho.motivo}`);
     return "nao_enviado";
   }
   return "enviado";
+}
+
+/**
+ * O login de quem administra a plataforma com este e-mail, ou `null`. Só
+ * percorre `administradores_da_plataforma` (poucos logins), lendo cada um
+ * no Auth: nenhum outro login é consultado.
+ */
+async function adminDaPlataformaPorEmail(servico: Servico, email: string): Promise<string | null | "erro"> {
+  const { data, error } = await servico
+    .from("administradores_da_plataforma")
+    .select("user_id")
+    .limit(MAXIMO_DE_ADMINISTRADORES);
+  if (error) {
+    console.error(`[senha] administradores da plataforma não lidos: ${error.message}`);
+    return "erro";
+  }
+  for (const { user_id } of data ?? []) {
+    const { data: lido, error: erroDoAuth } = await servico.auth.admin.getUserById(user_id);
+    if (erroDoAuth) {
+      console.error(`[senha] login de administrador não lido: ${erroDoAuth.message}`);
+      continue;
+    }
+    if (lido?.user?.email?.trim().toLowerCase() === email) return user_id;
+  }
+  return null;
 }
 
 /** "Esqueci a senha": o e-mail digitado, achado pela ficha que tem login. */
@@ -139,10 +203,18 @@ export async function pedirLinkDeSenhaPorEmail(emailDigitado: string, agora = ne
     return "nao_enviado";
   }
   const ficha = fichas?.[0] as Ficha | undefined;
-  if (!ficha) return "sem_ficha";
+  let alvo: Alvo;
+  if (ficha) {
+    alvo = { tipo: "ficha", ficha };
+  } else {
+    const admin = await adminDaPlataformaPorEmail(servico, email);
+    if (admin === "erro") return "nao_enviado";
+    if (!admin) return "sem_ficha";
+    alvo = { tipo: "admin", userId: admin };
+  }
 
-  if (!(await reservarPedido(servico, ficha, "esqueci_a_senha", agora))) return "limite";
-  return gerarEMandar(servico, ficha, email);
+  if (!(await reservarPedido(servico, alvo, "esqueci_a_senha", agora))) return "limite";
+  return gerarEMandar(servico, alvo, email);
 }
 
 /**
@@ -167,9 +239,24 @@ export async function pedirLinkDeSenhaDaConta(
     console.error(`[senha] ficha da sessão não lida: ${error.message}`);
     return "nao_enviado";
   }
-  if (!ficha?.user_id) return "sem_ficha";
+  let alvo: Alvo;
+  if (ficha?.user_id) {
+    alvo = { tipo: "ficha", ficha: ficha as Ficha };
+  } else {
+    // Sem ficha: só quem administra a plataforma (o login é o da própria sessão).
+    const { data: admin, error: erroAdmin } = await servico
+      .from("administradores_da_plataforma")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (erroAdmin) {
+      console.error(`[senha] administrador da sessão não conferido: ${erroAdmin.message}`);
+      return "nao_enviado";
+    }
+    if (!admin) return "sem_ficha";
+    alvo = { tipo: "admin", userId };
+  }
 
-  const f = ficha as Ficha;
-  if (!(await reservarPedido(servico, f, "link_vencido", agora))) return "limite";
-  return gerarEMandar(servico, f, email);
+  if (!(await reservarPedido(servico, alvo, "link_vencido", agora))) return "limite";
+  return gerarEMandar(servico, alvo, email);
 }

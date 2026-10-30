@@ -696,6 +696,36 @@ describe("criação por tipo de conta (imobiliária e corretor independente)", (
     ]);
   });
 
+  it("conta criada de um pedido (?pedido=): o pedido vira convertido com a conta e a indicação é registrada", async () => {
+    const PEDIDO = "7d1f2c3b-1111-4222-8333-944455556666";
+    banco.tabelas.grupos[0].codigo_de_indicacao = "nexthome1";
+    banco.tabelas.pedidos_de_contratacao = [
+      { id: PEDIDO, status: "novo", grupo_criado_id: null, codigo_de_indicacao: "nexthome1" },
+    ];
+    banco.tabelas.indicacoes = [];
+
+    const r = await criarImobiliaria({ ...IMOBILIARIA, pedidoId: PEDIDO });
+
+    expect(r).toMatchObject({ ok: true, grupoId: "grupo-2" });
+    expect(banco.tabelas.pedidos_de_contratacao[0]).toMatchObject({ status: "convertido", grupo_criado_id: "grupo-2" });
+    expect(banco.tabelas.indicacoes).toEqual([
+      expect.objectContaining({ grupo_indicador_id: G_NH, grupo_indicado_id: "grupo-2", pedido_id: PEDIDO }),
+    ]);
+  });
+
+  it("pedido já ligado a outra conta não é sobrescrito; id torto é ignorado", async () => {
+    const PEDIDO = "7d1f2c3b-1111-4222-8333-944455556666";
+    banco.tabelas.pedidos_de_contratacao = [{ id: PEDIDO, status: "convertido", grupo_criado_id: G_NH }];
+    expect((await criarCorretorIndependente({ ...INDEPENDENTE, pedidoId: PEDIDO })).ok).toBe(true);
+    expect(banco.tabelas.pedidos_de_contratacao[0]).toMatchObject({ grupo_criado_id: G_NH });
+    expect(banco.consultas.filter((c) => c.tabela === "indicacoes")).toEqual([]);
+  });
+
+  it("pedidoId torto é ignorado (a conta nasce e nenhum pedido é tocado)", async () => {
+    expect((await criarImobiliaria({ ...IMOBILIARIA, pedidoId: "x; drop" })).ok).toBe(true);
+    expect(banco.consultas.filter((c) => c.tabela === "pedidos_de_contratacao")).toEqual([]);
+  });
+
   it("documento inválido é recusado antes do banco", async () => {
     expect(await criarImobiliaria({ ...IMOBILIARIA, cnpj: "11.222.333/0001-80" })).toEqual({
       ok: false,

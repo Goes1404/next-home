@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resumoDasCobrancas } from "./regrasDosAvisosDaPlataforma";
+import { resumoDasCobrancas, rotuloDaContaNova } from "./regrasDosAvisosDaPlataforma";
 
 describe("resumo diário das mensalidades para o ADM", () => {
   it("sem atraso, não avisa", () => {
@@ -33,5 +33,14 @@ describe("resumo diário das mensalidades para o ADM", () => {
       temEmAberto: true,
     }));
     expect(resumoDasCobrancas(lista)?.corpo).toBe("A (5 dias), B (4 dias), C (3 dias) e mais 2.");
+  });
+});
+
+describe("rótulo da conta nova no aviso (pelo ramo)", () => {
+  it("imobiliária (ou sem ramo) mantém o texto de sempre; outro ramo diz o ramo", () => {
+    expect(rotuloDaContaNova("imobiliaria")).toBe("imobiliária");
+    expect(rotuloDaContaNova("independente", "imobiliaria")).toBe("corretor independente");
+    expect(rotuloDaContaNova("imobiliaria", "outro", "Pet shop")).toBe("Pet shop, empresa");
+    expect(rotuloDaContaNova("independente", "outro", "Pet shop")).toBe("Pet shop, profissional independente");
   });
 });

@@ -31,7 +31,7 @@ import {
   vocabularioDoRamo,
   type Ramo,
 } from "@/lib/ramos/ramos";
-import { cnpjValido, cpfValido, soDigitos } from "./documentos";
+import { cnpjValido, cpfValido, mascararCnpj, mascararCpf, soDigitos } from "./documentos";
 import {
   mensalidadeComoTexto,
   mensalidadeDoPlano,
@@ -423,6 +423,8 @@ export function mascararParaLog(whatsapp: string): string {
 
 /** A linha de `pedidos_de_contratacao` que o pré-preenchimento usa. */
 export type PedidoGravado = {
+  /** O id do pedido: vai no formulário para a conta criada ficar ligada a ele. */
+  id?: string;
   /** 0244; ausente nas linhas lidas antes da coluna = imobiliária. */
   ramo?: string | null;
   ramo_descricao?: string | null;
@@ -433,16 +435,27 @@ export type PedidoGravado = {
   email: string;
   imobiliaria: string | null;
   creci: string | null;
+  /** CPF ou CNPJ (só dígitos, 0241), opcional no pedido. */
+  documento?: string | null;
 };
+
+/** O documento do pedido no campo certo: CPF (11) no independente, CNPJ (14) na imobiliária. */
+function documentoDoPedido(documento: string | null | undefined, tamanho: 11 | 14): string {
+  const d = soDigitos(documento ?? "");
+  if (d.length !== tamanho) return "";
+  return tamanho === 11 ? mascararCpf(d) : mascararCnpj(d);
+}
 
 /** O "Novo corretor independente" já com o que a pessoa contou no pedido. */
 export function formularioDoIndependenteDoPedido(p: PedidoGravado): Partial<FormularioDoIndependente> {
   const plano = p.plano === "profissional" ? "profissional" : "essencial";
   return {
     ramo: ehRamo(p.ramo) ? p.ramo : RAMO_PADRAO,
+    ...(p.id ? { pedidoId: p.id } : {}),
     ramoDescricao: p.ramo_descricao ?? "",
     nome: p.nome,
     slug: slugSugerido(p.nome),
+    cpf: documentoDoPedido(p.documento, 11),
     creciF: p.creci ?? "",
     email: p.email,
     whatsapp: mascararWhatsapp(p.whatsapp),
@@ -457,9 +470,11 @@ export function formularioDaImobiliariaDoPedido(p: PedidoGravado): Partial<Formu
   const nome = p.imobiliaria ?? "";
   return {
     ramo: ehRamo(p.ramo) ? p.ramo : RAMO_PADRAO,
+    ...(p.id ? { pedidoId: p.id } : {}),
     ramoDescricao: p.ramo_descricao ?? "",
     nomeFantasia: nome,
     slug: slugSugerido(nome),
+    cnpj: documentoDoPedido(p.documento, 14),
     creciJ: p.creci ?? "",
     usuarios: String(usuarios),
     mensalidade: mensalidadeComoTexto(mensalidadeDoPlano("imobiliaria", usuarios)),

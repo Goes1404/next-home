@@ -20,8 +20,10 @@ export async function enviarLinkDeAcesso(
   email: string,
   nomeDoGrupo: string,
   url: string,
+  /** `grupos.teste_ate` (0241): o convite de conta em teste grátis diz até quando. */
+  opcoes: { testeAte?: string | null; agora?: Date } = {},
 ): Promise<ResultadoEmail> {
-  const { assunto, paragrafos, botao } = conteudo(tipo, nomeDoGrupo);
+  const { assunto, paragrafos, botao } = conteudo(tipo, nomeDoGrupo, frasesDoTeste(tipo, opcoes));
   const fechamento = [
     "Este link só funciona uma vez. Se ele não abrir, peça outro em \"Esqueci a senha\", na tela de entrar.",
     tipo === "invite"
@@ -40,12 +42,27 @@ export async function enviarLinkDeAcesso(
   return enviarEmail({ para: email, assunto, html, texto });
 }
 
-function conteudo(tipo: TipoDeLink, nomeDoGrupo: string) {
+/**
+ * O convite de conta em teste grátis diz até quando ele vai (o teste é de 7
+ * dias, `testeGratis.ts`). Fora do teste (ou data inválida/passada), nada.
+ */
+export function frasesDoTeste(tipo: TipoDeLink, opcoes: { testeAte?: string | null; agora?: Date }): string[] {
+  if (tipo !== "invite" || !opcoes.testeAte) return [];
+  const fim = new Date(opcoes.testeAte);
+  if (Number.isNaN(fim.getTime()) || fim.getTime() <= (opcoes.agora ?? new Date()).getTime()) return [];
+  const dia = fim.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  return [`A conta está no teste grátis de 7 dias, até ${dia}.`];
+}
+
+// Texto neutro (revisão de 30/10/2026): a conta pode ser de qualquer ramo
+// (0244), não só de uma imobiliária com corretores.
+function conteudo(tipo: TipoDeLink, nomeDoGrupo: string, extras: string[] = []) {
   if (tipo === "invite") {
     return {
       assunto: `Seu acesso ao painel da ${nomeDoGrupo}`,
       paragrafos: [
-        `Você recebeu acesso ao painel de corretores da ${nomeDoGrupo}.`,
+        `Você recebeu acesso ao painel da ${nomeDoGrupo}.`,
+        ...extras,
         "Para entrar pela primeira vez, crie a sua senha pelo link abaixo.",
       ],
       botao: "Criar minha senha",

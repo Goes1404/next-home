@@ -31,6 +31,8 @@ import { ehPlano } from "@/lib/plataforma/rotulosDoGrupo";
 import { validarRamo } from "@/lib/ramos/ramos";
 import { COLUNA_DO_TETO, lerLimiteDigitado, RECURSOS, type Recurso } from "@/lib/planos/limitesDoPlano";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
+import { encerrarAssinaturaDoGrupo } from "@/lib/cobranca/asaas";
+import { registrarIndicacaoDoPedido } from "@/lib/indicacoes/indicacao";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Json } from "@/lib/supabase/types";
 
@@ -272,13 +274,13 @@ export async function criarGrupoComPrimeiroAcesso(dados: DadosNovoGrupo): Promis
 export async function criarImobiliaria(form: FormularioDaImobiliaria): Promise<ResultadoNovoGrupo> {
   const pedido = validarImobiliaria(form);
   if (!pedido.ok) return { ok: false, erro: pedido.erro };
-  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro);
+  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro, form?.pedidoId);
 }
 
 export async function criarCorretorIndependente(form: FormularioDoIndependente): Promise<ResultadoNovoGrupo> {
   const pedido = validarIndependente(form);
   if (!pedido.ok) return { ok: false, erro: pedido.erro };
-  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro);
+  return criarGrupoValidado(pedido.dados.grupo, pedido.dados.cadastro, form?.pedidoId);
 }
 
 /**
@@ -287,16 +289,57 @@ export async function criarCorretorIndependente(form: FormularioDoIndependente):
  * guarda (`origem: "plataforma"`). O núcleo confere a sessão de novo antes
  * da chave: ninguém o chama "como plataforma" sem ser.
  */
-async function criarGrupoValidado(d: NovoGrupoValidado, cadastro?: CadastroDoGrupo): Promise<ResultadoNovoGrupo> {
+async function criarGrupoValidado(
+  d: NovoGrupoValidado,
+  cadastro?: CadastroDoGrupo,
+  pedidoId?: unknown,
+): Promise<ResultadoNovoGrupo> {
   const guarda = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in guarda) return { ok: false, erro: guarda.erro };
 
   const r = await criarContaComPrimeiroAcesso({ origem: "plataforma", userId: guarda.userId }, d, cadastro);
   if (!r.ok) return r;
+  if (typeof pedidoId === "string" && ehUuid(pedidoId)) await converterPedido(createServiceClient(), guarda.userId, pedidoId, r.grupoId);
   revalidatePath("/plataforma");
-  // Conta nova no celular dos ADMs (29/10/2026, "todos os atendimentos").
-  avisarContaNova(d.nome, d.tipo);
+  // Conta nova no celular dos ADMs (29/10/2026, "todos os atendimentos"), pelo ramo.
+  avisarContaNova(d.nome, d.tipo, cadastro?.ramo, cadastro?.ramo_descricao);
   return r;
+}
+
+/**
+ * A conta criada a partir de um pedido de contratação (`?pedido=`, revisão
+ * de 30/10/2026): o pedido vira `convertido` com a conta (`grupo_criado_id`)
+ * e a indicação do pedido, se houver código, liga a conta nova a quem
+ * indicou — o mesmo que `atualizarPedido` faz quando se marca à mão. Pedido
+ * já ligado a outra conta não é sobrescrito. Nunca falha a criação: a conta
+ * já existe, e o pedido se ajusta à mão em Pedidos.
+ */
+async function converterPedido(
+  servico: ReturnType<typeof createServiceClient>,
+  userId: string,
+  pedidoId: string,
+  grupoId: string,
+): Promise<void> {
+  const { data, error } = await servico
+    .from("pedidos_de_contratacao")
+    .update({ status: "convertido", grupo_criado_id: grupoId, atualizado_em: new Date().toISOString() })
+    .eq("id", pedidoId)
+    .is("grupo_criado_id", null)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] pedido ${pedidoId} não marcado como convertido: ${error.message}`);
+    return;
+  }
+  if (!data || data.length === 0) {
+    console.warn(`[plataforma] pedido ${pedidoId} não encontrado ou já ligado a outra conta; não convertido`);
+    return;
+  }
+  const indicacao = await registrarIndicacaoDoPedido(servico, { pedidoId, grupoIndicadoId: grupoId });
+  if (indicacao.resultado === "falhou") {
+    console.error(`[plataforma] indicação do pedido ${pedidoId} não registrada: ${indicacao.motivo}`);
+  }
+  console.info(`[plataforma] pedido ${pedidoId} → convertido (conta ${grupoId}) por ${userId}`);
+  revalidatePath("/plataforma/pedidos");
 }
 
 export type ResultadoDadosDoGrupo = { ok: true } | { ok: false; erro: string };
@@ -489,7 +532,7 @@ export async function mudarPlanoDoGrupo(
   const servico = createServiceClient();
   const { data: antes, error: erroLeitura } = await servico
     .from("grupos")
-    .select("plano, teto_respostas_ia, teto_artes, teto_videos, teto_mensagens_lista")
+    .select("plano, teto_respostas_ia, teto_artes, teto_videos, teto_mensagens_lista, asaas_assinatura_id")
     .eq("id", grupoId)
     .maybeSingle();
   if (erroLeitura) {
@@ -511,11 +554,21 @@ export async function mudarPlanoDoGrupo(
     return { ok: false, erro: "O grupo já está neste plano." };
   }
 
+  // O plano a preço de custo não é cobrado: a assinatura do Asaas sai ANTES
+  // (revisão de 30/10/2026). Se o Asaas não cancela, o plano não muda —
+  // melhor recusar do que deixar o grupo isento aqui e cobrado lá.
+  const assinaturaAntes = plano === "custo" ? (antes.asaas_assinatura_id ?? null) : null;
+  if (assinaturaAntes) {
+    const encerrada = await encerrarAssinaturaDoGrupo(assinaturaAntes);
+    if (!encerrada.ok) return { ok: false, erro: encerrada.erro };
+  }
+
   const { data, error } = await servico
     .from("grupos")
     .update({
       plano,
       ...(voltar ? { teto_respostas_ia: null, teto_artes: null, teto_videos: null, teto_mensagens_lista: null } : {}),
+      ...(assinaturaAntes ? { asaas_assinatura_id: null } : {}),
     })
     .eq("id", grupoId)
     .select("id");
@@ -526,6 +579,12 @@ export async function mudarPlanoDoGrupo(
   if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
 
   const eventos: { acao: string; detalhes: Record<string, unknown> }[] = [];
+  if (assinaturaAntes) {
+    eventos.push({
+      acao: "cobranca_automatica_desligada",
+      detalhes: { origem: "plataforma", asaas_assinatura_id: assinaturaAntes, motivo: "plano_custo" },
+    });
+  }
   if (planoAntes !== plano) {
     eventos.push({
       acao: "plano_alterado",
@@ -661,17 +720,35 @@ export async function registrarCancelamento(grupoId: string): Promise<ResultadoC
   // e não a um `ativo` que tiraria a suspensão por atraso sem ninguém pedir.
   const { data: antes, error: erroAntes } = await servico
     .from("grupos")
-    .select("situacao")
+    .select("situacao, cancelado_em, dados_apagados_em, asaas_assinatura_id")
     .eq("id", grupoId)
     .maybeSingle();
   if (erroAntes) {
     console.error(`[plataforma] grupo ${grupoId} não lido para cancelar: ${erroAntes.message}`);
     return { ok: false, erro: "Não foi possível registrar o cancelamento agora. Tente de novo." };
   }
-  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+  if (!antes || antes.cancelado_em || antes.dados_apagados_em) {
+    return { ok: false, erro: "Grupo não encontrado ou já cancelado." };
+  }
+
+  // Grupo cancelado não é cobrado: a assinatura do Asaas sai ANTES (revisão
+  // de 30/10/2026). Se o Asaas não cancela, o cancelamento não é registrado,
+  // e a tela diz por quê. Desfazer o cancelamento NÃO religa a cobrança: isso
+  // é decisão de quem administra, em Cobrança.
+  const assinaturaAntes = antes.asaas_assinatura_id ?? null;
+  if (assinaturaAntes) {
+    const encerrada = await encerrarAssinaturaDoGrupo(assinaturaAntes);
+    if (!encerrada.ok) return { ok: false, erro: encerrada.erro };
+  }
+
   const { data, error } = await servico
     .from("grupos")
-    .update({ cancelado_em: agora, situacao: "encerrado", situacao_antes_do_cancelamento: antes.situacao })
+    .update({
+      cancelado_em: agora,
+      situacao: "encerrado",
+      situacao_antes_do_cancelamento: antes.situacao,
+      ...(assinaturaAntes ? { asaas_assinatura_id: null } : {}),
+    })
     .eq("id", grupoId)
     .is("cancelado_em", null)
     .is("dados_apagados_em", null)
@@ -691,6 +768,18 @@ export async function registrarCancelamento(grupoId: string): Promise<ResultadoC
     detalhes: { origem: "plataforma", apagar_em: apagarEm(agora).toISOString() },
   });
   if (erroDoEvento) console.error(`[plataforma] evento do cancelamento (${grupoId}) não gravado: ${erroDoEvento.message}`);
+
+  if (assinaturaAntes) {
+    const { error: erroDaCobranca } = await servico.from("admin_eventos").insert({
+      grupo_id: grupoId,
+      acao: "cobranca_automatica_desligada",
+      ator_id: null,
+      ator_plataforma_user_id: guarda.userId,
+      alvo_corretor_id: null,
+      detalhes: { origem: "plataforma", asaas_assinatura_id: assinaturaAntes, motivo: "cancelamento" },
+    });
+    if (erroDaCobranca) console.error(`[plataforma] evento da cobrança desligada (${grupoId}) não gravado: ${erroDaCobranca.message}`);
+  }
 
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);
