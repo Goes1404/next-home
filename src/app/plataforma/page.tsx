@@ -236,6 +236,23 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
         </p>
       </div>
 
+      {/* O que pede resposta agora (30/10/2026): os botões com contador saíram
+          do topo para a navegação; o aviso de novos fica aqui. */}
+      {((pedidosNovos ?? 0) > 0 || (chamadosNovos ?? 0) > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {(pedidosNovos ?? 0) > 0 && (
+            <Link href="/plataforma/pedidos" className="text-fluid-sm border-acento bg-acento-lavado text-titulo flex min-h-11 items-center gap-2 rounded-xl border px-4 font-medium">
+              {pedidosNovos} {pedidosNovos === 1 ? "pedido de contratação novo" : "pedidos de contratação novos"}
+            </Link>
+          )}
+          {(chamadosNovos ?? 0) > 0 && (
+            <Link href="/plataforma/suporte" className="text-fluid-sm border-acento bg-acento-lavado text-titulo flex min-h-11 items-center gap-2 rounded-xl border px-4 font-medium">
+              {chamadosNovos} {chamadosNovos === 1 ? "chamado novo" : "chamados novos"}
+            </Link>
+          )}
+        </div>
+      )}
+
       <PainelDeNumeros painel={painel} pedidosNovos={pedidosNovos} chamadosAbertos={chamadosAbertos} />
 
       {/* Risco de cancelamento (29/10/2026): as contas que pedem uma ligação
@@ -270,66 +287,21 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
         )}
       </section>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {/* As áreas (pedidos, suporte, indicações…) moram na navegação da casca
+          desde 30/10/2026; aqui ficam só os atalhos de criar conta, que no
+          computador também estão na barra lateral. */}
+      <div className="flex flex-wrap gap-2 lg:hidden">
         <Link
           href="/plataforma/grupos/novo/imobiliaria"
           className="text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 items-center justify-center rounded-xl px-4 font-medium"
         >
-          Nova imobiliária
+          Nova conta de equipe
         </Link>
         <Link
           href="/plataforma/grupos/novo/independente"
           className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
         >
-          Novo corretor independente
-        </Link>
-        <Link
-          href="/plataforma/pedidos"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center gap-2 px-4 font-medium"
-        >
-          Pedidos de contratação
-          {pedidosNovos !== null && pedidosNovos > 0 && (
-            <span className="bg-acento text-sobre-cor text-fluid-xs rounded-full px-2 py-0.5 font-bold">
-              {pedidosNovos} {pedidosNovos === 1 ? "novo" : "novos"}
-            </span>
-          )}
-        </Link>
-        <Link
-          href="/plataforma/suporte"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center gap-2 px-4 font-medium"
-        >
-          Suporte e contato
-          {chamadosNovos !== null && chamadosNovos > 0 && (
-            <span className="bg-acento text-sobre-cor text-fluid-xs rounded-full px-2 py-0.5 font-bold">
-              {chamadosNovos} {chamadosNovos === 1 ? "novo" : "novos"}
-            </span>
-          )}
-        </Link>
-        {/* Indique e ganhe (0247, 29/10/2026): indicações e créditos a aplicar. */}
-        <Link
-          href="/plataforma/indicacoes"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Indicações
-        </Link>
-        {/* O recado da Astro no painel de todos os clientes (0242, 29/10/2026). */}
-        <Link
-          href="/plataforma/avisos"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Avisos aos clientes
-        </Link>
-        <Link
-          href="/plataforma/acessos"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Buscar acesso
-        </Link>
-        <Link
-          href="/plataforma/administradores"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Administradores
+          Novo profissional autônomo
         </Link>
       </div>
 
@@ -370,7 +342,7 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
           {secao.lista.length === 0 ? (
             <p className="cartao text-fluid-sm text-apoio p-5">{secao.vazio}</p>
           ) : (
-            <ul className="grid gap-4 md:grid-cols-2">{secao.lista.map(cartao)}</ul>
+            <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{secao.lista.map(cartao)}</ul>
           )}
         </section>
       ))}

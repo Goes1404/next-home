@@ -153,7 +153,7 @@ export default async function SuportePage({ searchParams }: { searchParams: Busc
                   )}
                 </dl>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {conversa && (
                     <a
                       href={conversa}
