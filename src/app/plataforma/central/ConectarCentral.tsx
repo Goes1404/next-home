@@ -9,14 +9,15 @@ import { conectarCentral, type ResultadoDaConexao } from "../centralAcoes";
  * celular do chip: WhatsApp → Aparelhos conectados → Conectar aparelho →
  * Conectar com número de telefone, e digitar o código.
  */
-export function ConectarCentral({ conectado }: { conectado: boolean }) {
+export function ConectarCentral({ conectado, telefone }: { conectado: boolean; telefone: string }) {
   const router = useRouter();
   const [resultado, setResultado] = useState<ResultadoDaConexao | null>(null);
+  const [numero, setNumero] = useState(telefone);
   const [pendente, iniciar] = useTransition();
   const pedir = (modo: "codigo" | "qr") =>
     iniciar(async () => {
       try {
-        setResultado(await conectarCentral(modo));
+        setResultado(await conectarCentral(modo, numero));
       } catch {
         setResultado({ ok: false, erro: "Sem conexão. Tente de novo." });
       }
@@ -24,6 +25,16 @@ export function ConectarCentral({ conectado }: { conectado: boolean }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <label className="flex max-w-xs flex-col gap-1">
+        <span className="text-fluid-xs text-apoio">Número do chip (troque aqui ao mudar de chip)</span>
+        <input
+          type="tel"
+          inputMode="tel"
+          value={numero}
+          onChange={(e) => setNumero(e.target.value)}
+          className="min-h-11 rounded-xl border border-linha bg-superficie px-3 text-fluid-sm text-titulo tabular-nums"
+        />
+      </label>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

@@ -65,7 +65,7 @@ export default async function NumeroCentralPage() {
             Ainda não registrado. Coloque o chip num celular com WhatsApp e gere o código de conexão.
           </p>
         )}
-        <ConectarCentral conectado={central?.status_conexao === "conectado"} />
+        <ConectarCentral conectado={central?.status_conexao === "conectado"} telefone={telefoneFormatado(telefone)} />
       </div>
     </section>
   );

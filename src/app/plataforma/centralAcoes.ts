@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { obterQrCodeInstancia } from "@/lib/whatsapp/provider";
 import { INSTANCIA_DO_CENTRAL, TELEFONE_PADRAO_DO_CENTRAL } from "@/lib/central/constantes";
 import { esquecerCentral } from "@/lib/central/numeroDoCentral";
+import { normalizarTelefoneBr } from "@/lib/whatsapp/telefone";
 
 /**
  * Conectar o número central da plataforma (onda 0, Task 8). Só o
@@ -19,12 +20,26 @@ export type ResultadoDaConexao =
   | { ok: true; codigo: string | null; qrcode: string | null; jaConectado: boolean }
   | { ok: false; erro: string };
 
-export async function conectarCentral(modo: "codigo" | "qr"): Promise<ResultadoDaConexao> {
+/**
+ * O número do chip: o digitado na tela (troca de chip, 30/10/2026: o
+ * primeiro chip teve o envio pelo sistema barrado pelo WhatsApp), senão o
+ * já registrado, senão `CENTRAL_TELEFONE`/o padrão. Antes a tela regravava
+ * sempre o padrão, e trocar de chip exigia mudar o código.
+ */
+export async function conectarCentral(modo: "codigo" | "qr", telefoneDigitado?: string): Promise<ResultadoDaConexao> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
 
-  const telefone = (process.env.CENTRAL_TELEFONE || TELEFONE_PADRAO_DO_CENTRAL).replace(/\D/g, "");
   const supabase = createServiceClient();
+  let telefone: string;
+  if (telefoneDigitado?.trim()) {
+    const normalizado = normalizarTelefoneBr(telefoneDigitado);
+    if (!normalizado) return { ok: false, erro: "Número inválido. Use DDD + número, ex.: 11 91234-5678." };
+    telefone = normalizado;
+  } else {
+    const { data: atual } = await supabase.from("central_da_plataforma").select("telefone").eq("instance_name", INSTANCIA_DO_CENTRAL).maybeSingle();
+    telefone = (atual?.telefone || process.env.CENTRAL_TELEFONE || TELEFONE_PADRAO_DO_CENTRAL).replace(/\D/g, "");
+  }
   const { error } = await supabase
     .from("central_da_plataforma")
     .upsert({ instance_name: INSTANCIA_DO_CENTRAL, telefone }, { onConflict: "instance_name" });
