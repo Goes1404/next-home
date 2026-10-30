@@ -22,7 +22,7 @@ codigo:
   - supabase/migrations/0246_gestor_e_agenda.sql
   - supabase/migrations/0247_astro_negocio.sql
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-10-30
 summary: O CRM atende vários ramos (grupos.ramo, 0244) com vocabulário, módulos e IA por ramo; imobiliária fica idêntica. Mais portais Grupo OLX, match e vitrine curta (0245); metas, relatório no WhatsApp, distribuição por regra e confirmação de visita (0246); indique e ganhe, termo de adesão, ajuda e risco de cancelamento (0247); busca ⌘K, offline por usuário e PWA do iPhone.
 ---
 
@@ -80,3 +80,6 @@ o login cai no CRM do ramo da conta.
 - iPhone: PWA completa + `docs/APP-IOS.md` (Capacitor, conta Apple US$ 99/ano).
 
 Ver também [[cobranca-asaas-e-teste-gratis]], [[contratar-plano-pela-pagina-da-astro]].
+
+## Desktop da plataforma (30/10/2026)
+- A linha de 8 botões no topo de /plataforma (`sm:flex-row` sem `flex-wrap`) vazava no computador. Agora a casca (`plataforma/layout.tsx`) tem barra lateral no lg+ e faixa rolável no celular, com a lista única em `NavDaPlataforma.tsx`. Pedidos/chamados novos viraram aviso no topo de Contas.

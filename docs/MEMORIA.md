@@ -12567,3 +12567,4 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - 0247: indicação por cookie `astro_indicacao` (30 dias), crédito de 50% de uma mensalidade no 1º pagamento > 0; termo de adesão bloqueia só gestor/independente; risco de cancelamento às 9h. **O CHECK de `admin_eventos` vigente é o da 0247** (une 0243 + `ramo_do_grupo_alterado` + termo/crédito).
 - `sw-painel.js` agora guarda dados por usuário e apaga ao sair/login/401; nunca conversas.
 - Nota: [[multi-ramo-portais-gestor-e-negocio-da-astro]].
+- 30/10/2026: /plataforma no desktop ganhou barra lateral (NavDaPlataforma.tsx); a linha de 8 botões sem flex-wrap vazava.
