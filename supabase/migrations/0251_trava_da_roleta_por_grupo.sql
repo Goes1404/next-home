@@ -111,9 +111,9 @@ begin
          (select count(*) from leads l2 where l2.corretor_id = c.id and l2.arquivado_em is null and l2.etapa not in ('perdido', 'fechado') and l2.created_at > now() - interval '30 days') asc, random() limit 1;
     end if;
     if v_alvo is null then v_sem := v_sem + 1; continue; end if;
-    insert into lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes) values (v_lead.id, v_ator, 'repasse', 'Repasse na saÃ­da do corretor', jsonb_build_object('origem_anterior', v_lead.origem_atribuicao, 'de', p_corretor, 'para', v_alvo, 'motivo', 'saida_do_corretor'));
+    insert into lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes) values (v_lead.id, v_ator, 'repasse', 'Repasse na saída do corretor', jsonb_build_object('origem_anterior', v_lead.origem_atribuicao, 'de', p_corretor, 'para', v_alvo, 'motivo', 'saida_do_corretor'));
     update leads set corretor_id = v_alvo, origem_atribuicao = case when p_destino is null then 'roleta' else 'manual' end where id = v_lead.id;
-    insert into lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes) values (v_lead.id, v_ator, 'sistema', format('Lead transferido de %s pela gestÃ£o, na saÃ­da dele', v_saindo.nome), jsonb_build_object('de', p_corretor, 'para', v_alvo, 'motivo', 'saida_do_corretor'));
+    insert into lead_interacoes (lead_id, corretor_id, tipo, conteudo, detalhes) values (v_lead.id, v_ator, 'sistema', format('Lead transferido de %s pela gestão, na saída dele', v_saindo.nome), jsonb_build_object('de', p_corretor, 'para', v_alvo, 'motivo', 'saida_do_corretor'));
     v_contagem := jsonb_set(v_contagem, array[v_alvo::text], to_jsonb(coalesce((v_contagem ->> v_alvo::text)::integer, 0) + 1)); v_movidos := v_movidos + 1;
   end loop;
   insert into admin_eventos (ator_id, acao, alvo_corretor_id, detalhes) values (v_ator, 'leads_redistribuidos', p_corretor, jsonb_build_object('motivo', 'saida_do_corretor', 'modo', case when p_destino is null then 'roleta' else 'escolhido' end, 'destino', p_destino, 'movidos', v_movidos, 'sem_destino', v_sem));

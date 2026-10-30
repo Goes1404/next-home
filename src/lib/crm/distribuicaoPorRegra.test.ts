@@ -332,7 +332,13 @@ describe("a trava da roleta é por grupo (0251)", () => {
     const inicio = "create or replace function public.devolver_leads_da_imobiliaria(";
     const nova = bloco(ler("0251_"), inicio, "\n$$;");
     const da0216 = bloco(ler("0216_"), inicio, "\n$$;");
-    expect(nova).toBe(da0216.replace(TRAVA_GLOBAL, "perform pg_advisory_xact_lock(hashtext('roleta_leads:' || v_grupo::text));"));
+    // 30/10/2026: a 0251 também conserta o texto que a 0216 gravou com
+    // acentuação quebrada ("saÃ\u00ADda"); fora isso e a trava, é a mesma função.
+    const consertada = da0216
+      .replace(TRAVA_GLOBAL, "perform pg_advisory_xact_lock(hashtext('roleta_leads:' || v_grupo::text));")
+      .replace("Repasse na saÃ\u00ADda do corretor", "Repasse na saída do corretor")
+      .replace("pela gestÃ£o, na saÃ\u00ADda dele", "pela gestão, na saída dele");
+    expect(nova).toBe(consertada);
   });
 
   it("nenhuma outra função viva ainda toma a trava global (todas serializam pela mesma chave)", () => {
