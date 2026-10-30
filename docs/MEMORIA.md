@@ -12778,3 +12778,11 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - A guarda de `ferramentas.test.ts` exigia `TRATADORES.acoes` vazio: quebrava
   com qualquer tratador de onda 1, mesmo desligado. A linha saiu; o laço que
   cobra `onda > ONDA_ATUAL` ficou.
+
+## Revisão geral de 30/10/2026 (36 defeitos, 0251)
+- SW: escopo `/corretor/` não controla `/corretor` (start_url) → offline e limpeza ao sair falhavam; registro novo `/corretor`, antigo mantido (push), limpeza pelo `.active` (`swDoPainel.ts`).
+- Server Action com arquivo > 4,5 MB é recusada pela Vercel antes do servidor e derruba a página: reduzir no navegador (`SeletorArquivo` + `lib/imagem/reduzir.ts`).
+- PostgREST corta em 1000 linhas: não usar `.limit(40*n)` em lote.
+- 0251: trava da roleta por grupo (distribuir_lead + devolver_leads_da_imobiliaria, mesma chave); consertou acentuação quebrada gravada pela 0216.
+- Asaas: cancelar/plano custo cancela a assinatura antes; mudar valor/dia com assinatura ativa é recusado (PUT sem `value`); estornos tratados no webhook.
+- Nota: [[revisao-geral-de-30-10]].
