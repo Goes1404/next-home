@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** O número 11 96867-1127 conectado como instância da plataforma. Ele reconhece quem da equipe escreve (texto ou áudio), dá boas-vindas, responde "o que você sabe fazer?" e "ainda não sei fazer isso" para o que é de ondas futuras. Fica em silêncio para quem não é da equipe e registra todo comando. Nenhuma ação grava dado do CRM nesta onda.
+**Goal:** O número 11 96867-1127 conectado como instância da plataforma. Ele reconhece quem da equipe escreve (texto ou áudio), dá boas-vindas, responde "o que você sabe fazer?" e "ainda não sei fazer isso" para o que é de ondas futuras. Fica em silêncio para quem não é da equipe e registra todo comando. Nenhuma ação grava dado do CRM nesta onda. E, pedido do dono, **quando o WhatsApp de um corretor desconecta do sistema, o central avisa o corretor por WhatsApp** (hoje o aviso é só por e-mail).
 
 **Architecture:**
 - **Instância própria.** O central é uma instância Evolution registrada numa tabela própria e global (`central_da_plataforma`), não em `corretor_whatsapp_instancias`: aquela tabela tem `corretor_id not null unique` e 42 arquivos supõem um corretor.
@@ -45,6 +45,7 @@
 
    Testes na Task 5.
 6. **Indisponível.** Com o motor de IA fora (sem crédito, timeout), a resposta é "estou indisponível agora", nunca o silêncio. Teste na Task 6.
+7. **Aviso de queda.** No máximo UM por queda, somando e-mail e WhatsApp. Nunca sai pela instância do próprio corretor, que está caída. Corretor sem e-mail passa a ser avisado pelo central. Com o central desconectado, o e-mail continua sozinho. Testes na Task 10.
 
 ---
 
@@ -244,7 +245,42 @@
 - [ ] O script roda `pensar` com as declarações da Task 5 (sem executar nada). Mede o acerto da ferramenta, dos argumentos principais, a latência e o custo, por `--modelo`. `quemPaga: { semGrupo: "eval" }`.
 - [ ] Rodar com pelo menos dois modelos de primeira linha e o econômico de hoje (`gpt-4.1-mini`). Registrar a tabela em `eval/resultados/` e escolher `CENTRAL_MODELO`. Critério: acerto ≥ 90% (spec 2), depois latência de texto ≤ 10 s, depois custo.
 
-### Task 10: Retenção e verificação final
+### Task 10: Aviso de queda do número do corretor pelo central
+
+O número desconecta **do sistema** (Evolution), mas o WhatsApp continua no celular do corretor: a mensagem do central chega. Hoje `avisarQuedaSeNecessario` (`src/lib/whatsapp/avisoDeQueda.ts:207`), chamado a cada minuto pelo disparador (`varrerQuedasDeNumero`, `campaignDispatcher.ts:240`), manda **só e-mail**. Ele sai sem avisar quem não tem e-mail (~:236), e a marca `aviso_queda_enviado_em` garante um aviso por queda.
+
+**Files:**
+- Modify: `src/lib/whatsapp/avisoDeQueda.ts`
+- Create: `src/lib/central/avisoDeQuedaPeloCentral.ts`, `src/lib/central/avisoDeQuedaPeloCentral.test.ts`
+
+- [ ] `montarWhatsappDeQueda(aviso, { nome, urlPainel })` (puro): mensagem curta, a partir do mesmo `aviso` de `avaliarSaudeDaConexao` que monta o e-mail. Diz:
+  - a hora da queda (SP);
+  - o que para enquanto estiver fora: a IA não atende os clientes e as listas ficam paradas;
+  - o passo para reconectar, com o link da tela WhatsApp do painel.
+
+  Quando `motivo_queda_codigo` é 401 (o WhatsApp tirou o aparelho), a mensagem diz isso e orienta: "se recusar, espere algumas horas e tente de novo".
+- [ ] `avisarPeloCentral(corretorId, texto)`: manda pelo central para `corretores.whatsapp`. Só envia se três condições valem:
+  1. o central está `conectado` (`central_da_plataforma`);
+  2. o grupo do corretor tem `central_whatsapp_ativo`;
+  3. o corretor está `ativo`.
+
+  Devolve `{ enviado }` e nunca lança. Nunca usa a instância do corretor.
+- [ ] Em `avisarQuedaSeNecessario`:
+  - depois de `aviso.mereceEmail`, tentar os dois canais: e-mail (se houver) e central;
+  - **gravar a marca quando pelo menos um saiu**;
+  - corretor sem e-mail deixa de sair cedo: o central pode avisar;
+  - se nenhum canal sair, não marca, para tentar de novo no próximo minuto, como hoje.
+- [ ] Ao reconectar, se tinha havido aviso, o central manda "Seu WhatsApp voltou a conectar, está tudo funcionando" [minha]. Isso no ponto em que a marca de queda é zerada (`registrarEventoConexao`).
+- [ ] Testes:
+  - texto por motivo (401 e queda comum), com hora em SP;
+  - central desconectado: só e-mail;
+  - recurso desligado no grupo: só e-mail;
+  - sem e-mail e com central: avisa pelo central e marca;
+  - nenhum canal saiu: não marca;
+  - a marca impede o segundo aviso na mesma queda;
+  - guarda de código: `avisarPeloCentral` só usa o `instance_name` de `central_da_plataforma`.
+
+### Task 11: Retenção e verificação final
 
 - [ ] Retenção: no cron diário existente, apagar `central_comandos.texto` com mais de 30 dias (os números ficam) e `central_tentativas` com mais de 30 dias. Teste da função pura que monta o corte.
 - [ ] `npx tsc --noEmit -p .`, `npx vitest run --dir src`, `node scripts/lintTeto.mjs`, `npx next build`, `node scripts/bundleTeto.mjs`.
@@ -257,7 +293,8 @@
   5. "cadastra o João, 11 9…": "ainda não sei fazer isso";
   6. foto: "ainda não sei ler foto";
   7. número de fora: nenhuma resposta, só uma linha em `central_tentativas` sem texto;
-  8. na instância do corretor, **nenhum lead, conversa ou resposta de IA** foi criado para o número central (conferir `whatsapp_conversas` e `leads` pelo telefone do central).
+  8. na instância do corretor, **nenhum lead, conversa ou resposta de IA** foi criado para o número central (conferir `whatsapp_conversas` e `leads` pelo telefone do central);
+  9. queda: desconectar o número de um corretor de teste da Next Home (logout pela tela dele). Dentro do tempo de `avaliarSaudeDaConexao`, chega a mensagem do central no celular, uma vez só. Reconectar: chega o "voltou a conectar".
 - [ ] Vault: nota de implementação ligada a `[[crm-pelo-whatsapp-numero-central-com-ia]]`, MOC "IA e Atendimento", `docs/MEMORIA.md`. Atualizar `vault/30-arquitetura/fluxo-do-webhook-whatsapp.md` com o desvio do central e o filtro do laço.
 
 ## Depois desta onda

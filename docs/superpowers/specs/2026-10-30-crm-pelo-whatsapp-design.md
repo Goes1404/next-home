@@ -358,6 +358,12 @@ cliente, cadastrar imóvel por foto e convidar ou desativar usuário.
   número do próprio corretor para ele mesmo, e o celular não toca
   (`avisarCorretor`). A notificação web continua.
 - Cada aviso pode ser respondido ali mesmo ("marca visita com ele amanhã").
+- **Queda do número do corretor** [dono], já na onda 0: quando o WhatsApp do
+  corretor desconecta do sistema, o central avisa no WhatsApp dele (que
+  continua funcionando no celular), com o passo para reconectar. Hoje esse
+  aviso é só por e-mail, e quem não tem e-mail não recebe nada. Continua um
+  aviso por queda, somando os dois canais; ao reconectar, o central confirma
+  [minha].
 - Horários: **cada pessoa escolhe no painel** o horário do resumo do dia e a
   antecedência do aviso de visita, com padrão de 8h e 1 hora [dono]. Lead
   novo sai na hora; lembrete, na hora pedida; leads parados vão dentro do
@@ -387,7 +393,7 @@ seguinte começa com o que a anterior ensinou. Ordem aprovada pelo dono.
 
 | Onda | O que a Next Home recebe | Capacidades (seção 3) |
 |---|---|---|
-| **0 · Fundação** | O número 11 96867-1127 conectado como instância da plataforma; no painel, a chave que liga o recurso por imobiliária, o link `wa.me` e o número que o central reconhece; reconhece quem escreve (4.2) e dá boas-vindas; entende texto e áudio (foto responde "ainda não sei"); responde "o que você sabe fazer?" e "ainda não sei"; avisa quando a IA está indisponível (7.2); registra todo comando (4.6) | 19 (ajuda) |
+| **0 · Fundação** | O número 11 96867-1127 conectado como instância da plataforma; no painel, a chave que liga o recurso por imobiliária, o link `wa.me` e o número que o central reconhece; reconhece quem escreve (4.2) e dá boas-vindas; entende texto e áudio (foto responde "ainda não sei"); responde "o que você sabe fazer?" e "ainda não sei"; avisa quando a IA está indisponível (7.2); registra todo comando (4.6); **avisa o corretor quando o WhatsApp dele desconecta** (4.7) | 19 (ajuda) |
 | **1 · Leads e agenda** | O uso de todo dia | 1, 2, 3, 4, 6, 7, 18, 19 (desfazer), 21 |
 | **2 · Imóveis, relatórios e avisos** | O gestor passa a ver valor; o central começa a mandar mensagem por conta própria (avisos de 4.7, com a escolha de horário no painel, e lembretes); o central passa a funcionar em grupos da equipe (4.1) | 5, 8, 9, 10, 11, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29, 30 |
 | **3 · Listas, imagens e o que vai ao cliente** | O que mexe com clientes e com o risco de bloqueio, por último | 14, 15, 16, 17, 20, 31, 32, 33 |
