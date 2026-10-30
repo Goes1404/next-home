@@ -329,6 +329,7 @@ const EXCECOES: Record<string, string> = {
     "ações sobre UMA conta pelo id (criar acesso, papel, ativar, ocultar, passar carteira); o lote de acessos precisa incluir a conta oculta",
   "src/app/corretor/(painel)/admin/whatsapp/acoes.ts": "desconectar o número de um corretor já escolhido",
   "src/app/corretor/(painel)/_componentes/acoesMensagemPelaIA.ts": "a instância do PRÓPRIO corretor logado",
+  "src/lib/financeiro/vendaPeloCentral.ts": "confere pelo id, no grupo, o corretor já escolhido (o dono do lead) da venda; não lista a equipe",
   "src/app/corretor/(painel)/anotacoes/page.tsx":
     "nomes de autor/destinatário das notas que a pessoa já tem; a lista para direcionar vem de getEquipeAtiva",
   "src/app/corretor/(painel)/leads/page.tsx":
