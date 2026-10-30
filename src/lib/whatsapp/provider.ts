@@ -872,6 +872,60 @@ export async function enviarMensagemWhatsappParaGrupo(params: {
   }
 }
 
+/**
+ * A mídia nativa (`sendMedia`) num grupo, pelo mesmo motivo de
+ * `enviarMensagemWhatsappParaGrupo` existir à parte: o JID do grupo não passa
+ * pelo normalizador de telefone. Sem legenda, como `enviarMidiaWhatsapp`: o
+ * contexto vai no balão de texto antes. Usada pelo número central quando a
+ * resposta com arquivo pode aparecer no grupo da equipe (spec 4.1 e 4.5).
+ */
+export async function enviarMidiaWhatsappParaGrupo(params: {
+  instanceName: string;
+  grupoJid: string;
+  tipo: TipoMidiaWhatsapp;
+  url: string;
+}): Promise<ResultadoEnvio> {
+  const grupoJid = params.grupoJid.trim();
+  if (!params.instanceName || !params.url.trim() || !ehJidDeGrupoWhatsapp(grupoJid)) {
+    return { enviado: false, motivo: "dados_invalidos" };
+  }
+  const config = configDoProvedor();
+  if (!config) {
+    return {
+      enviado: false,
+      motivo: "provedor_nao_configurado",
+      detalhe: "Defina WHATSAPP_API_URL e WHATSAPP_API_KEY para ativar o envio.",
+    };
+  }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${config.baseUrl}/message/sendMedia/${encodeURIComponent(params.instanceName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: config.apiKey },
+      signal: controller.signal,
+      body: JSON.stringify({ number: grupoJid, mediatype: tipoMidiaDoProvedor(params.tipo), media: params.url }),
+    });
+    clearTimeout(timeoutId);
+    const corpo = await res.text().catch(() => "");
+    if (!res.ok) {
+      return { enviado: false, motivo: "erro_provedor", detalhe: `HTTP ${res.status}${corpo ? `: ${corpo.slice(0, 200)}` : ""}` };
+    }
+    let json: unknown = null;
+    try {
+      json = corpo ? JSON.parse(corpo) : null;
+    } catch {
+      // O detalhe abaixo preserva uma resposta inesperada do provedor.
+    }
+    const messageId = messageIdDaResposta(json);
+    return messageId
+      ? { enviado: true, messageId }
+      : { enviado: false, motivo: "sem_confirmacao", detalhe: `HTTP ${res.status} sem key.id — resposta: ${corpo.slice(0, 300) || "(vazia)"}` };
+  } catch (err) {
+    return { enviado: false, motivo: "erro_provedor", detalhe: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export type GrupoWhatsapp = { jid: string; nome: string };
 
 /** Lista os grupos visíveis para uma instância conectada da Evolution. */

@@ -29,6 +29,11 @@ const PONTOS: { arquivo: string; recurso: string; caro: string[] }[] = [
     caro: ['total_leads: elegiveis.length', 'from("whatsapp_campanhas_fila").insert'],
   },
   { arquivo: "src/lib/whatsapp/listasVivas.ts", recurso: "lista", caro: ['from("whatsapp_campanhas_fila").insert'] },
+  // A arte e o vídeo pedidos pelo número central (onda 3): espelham a rota e
+  // `criarVideo` sem sessão, e respondem pela mesma régua. O tradutor também
+  // é IA paga, então vem depois do limite.
+  { arquivo: "src/lib/estudio/artePeloCentral.ts", recurso: "arte", caro: ["traduzirPedido({", "gerarImagem({"] },
+  { arquivo: "src/lib/video/videoPeloCentral.ts", recurso: "video", caro: ["enfileirarVideo({"] },
 ];
 
 describe("limites do plano no ponto de geração", () => {

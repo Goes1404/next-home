@@ -1,21 +1,34 @@
 import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   baixarMidiaDoProvedor,
   enviarMensagemWhatsapp,
   enviarMensagemWhatsappParaGrupo,
+  enviarMidiaWhatsapp,
+  enviarMidiaWhatsappParaGrupo,
   listarParticipantesDoGrupo,
+  type TipoMidiaWhatsapp,
 } from "@/lib/whatsapp/provider";
 import { numeroDoJid } from "@/lib/whatsapp/participantesDoGrupo";
 import { desembrulhar } from "@/lib/crm/retornoPeloGrupo/identificar";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
+import { registrarAvisoNoHistorico } from "./avisos";
 import { pensar } from "./cerebro";
-import { responderNoCentral, responderNoGrupo, type Dependencias, type EstadoDoCentral, type MensagemRecebida } from "./conversa";
+import {
+  comMarcasDosArquivos,
+  responderNoCentralComArquivos,
+  responderNoGrupo,
+  type Dependencias,
+  type EstadoDoCentral,
+  type MensagemRecebida,
+  type RespostaDoCentral,
+} from "./conversa";
+import type { ArquivoDaResposta } from "./executar";
 import { tratarMensagemDoGrupoNoCentral, type DependenciasDoGrupo, type LinhaDaEquipe, type MensagemDeGrupo } from "./grupo";
 import { identificarRemetente, type OpcaoDeImobiliaria } from "./identificar";
 import { documentoDaMensagem, referenciaDaMensagem } from "./midia";
@@ -310,6 +323,45 @@ async function lerEquipePorContato(e: { numeros: string[]; lids: string[] }): Pr
   }));
 }
 
+/** O arquivo do central no vocabulário do provedor (foto e vídeo nativos). */
+const tipoNoProvedor = (a: ArquivoDaResposta): TipoMidiaWhatsapp => (a.tipo === "video" ? "video" : "foto");
+
+/**
+ * Manda a resposta do privado: os textos, depois os arquivos (o texto é o
+ * contexto do anexo, e a mídia vai sem legenda). A entrega que chega depois
+ * (`depois`: a arte que passou do tempo do webhook) espera em
+ * `emSegundoPlano` — o `after()` do Next, que segura a função depois da
+ * resposta HTTP até o teto da rota (`maxDuration`) — e entra no histórico da
+ * conversa como fala do central, como os avisos (4.7), com o arquivo como
+ * marca. Quem só devolve texto segue o caminho de sempre.
+ */
+export async function enviarRespostaDoCentral(
+  destino: { instanceName: string; telefone: string },
+  resposta: RespostaDoCentral,
+  emSegundoPlano: (tarefa: () => Promise<void>) => void = after,
+): Promise<void> {
+  const { instanceName, telefone } = destino;
+  const mandar = async (textos: string[], arquivos: ArquivoDaResposta[]) => {
+    for (const texto of textos) await enviarMensagemWhatsapp({ instanceName, telefone, texto });
+    for (const a of arquivos) {
+      const r = await enviarMidiaWhatsapp({ instanceName, telefone, tipo: tipoNoProvedor(a), url: a.url });
+      if (!r.enviado) console.warn("[central] arquivo não saiu:", r.motivo, r.detalhe ?? "");
+    }
+  };
+  await mandar(resposta.textos, resposta.arquivos ?? []);
+  for (const pendente of resposta.depois ?? []) {
+    emSegundoPlano(async () => {
+      try {
+        const e = await pendente.entrega;
+        await mandar([e.texto], e.arquivos);
+        await registrarAvisoNoHistorico(createServiceClient(), pendente.corretorId, comMarcasDosArquivos(e.texto, e.arquivos), new Date());
+      } catch (erro) {
+        console.error("[central] entrega posterior falhou:", erro);
+      }
+    });
+  }
+}
+
 function dependenciasDoGrupo(central: CentralDaPlataforma, grupoJid: string, payload: Payload): DependenciasDoGrupo {
   const daConversa = dependenciasReais(central.instanceName, payload);
   return {
@@ -326,6 +378,10 @@ function dependenciasDoGrupo(central: CentralDaPlataforma, grupoJid: string, pay
     responder: (m, remetente) => responderNoGrupo(m, { ...daConversa, identificar: async () => remetente }),
     enviarNoGrupo: async (texto) => (await enviarMensagemWhatsappParaGrupo({ instanceName: central.instanceName, grupoJid, texto })).enviado,
     enviarNoPrivado: async (telefone, texto) => (await enviarMensagemWhatsapp({ instanceName: central.instanceName, telefone, texto })).enviado,
+    enviarArquivoNoGrupo: async (a) =>
+      (await enviarMidiaWhatsappParaGrupo({ instanceName: central.instanceName, grupoJid, tipo: tipoNoProvedor(a), url: a.url })).enviado,
+    enviarArquivoNoPrivado: async (telefone, a) =>
+      (await enviarMidiaWhatsapp({ instanceName: central.instanceName, telefone, tipo: tipoNoProvedor(a), url: a.url })).enviado,
   };
 }
 
@@ -369,11 +425,15 @@ export async function tratarWebhookDoCentral(req: NextRequest, payload: Payload)
     mensagem.telefone = data?.whatsapp ?? null;
   }
 
-  const respostas = await responderNoCentral(mensagem, dependenciasReais(central.instanceName, payload));
+  const resposta = await responderNoCentralComArquivos(mensagem, dependenciasReais(central.instanceName, payload));
   if (mensagem.telefone) {
-    for (const texto of respostas) {
-      await enviarMensagemWhatsapp({ instanceName: central.instanceName, telefone: mensagem.telefone, texto });
-    }
+    await enviarRespostaDoCentral({ instanceName: central.instanceName, telefone: mensagem.telefone }, resposta);
   }
-  return NextResponse.json({ ok: true, action: "central", respostas: respostas.length });
+  return NextResponse.json({
+    ok: true,
+    action: "central",
+    respostas: resposta.textos.length,
+    ...(resposta.arquivos?.length ? { arquivos: resposta.arquivos.length } : {}),
+    ...(resposta.depois?.length ? { depois: resposta.depois.length } : {}),
+  });
 }

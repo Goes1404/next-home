@@ -383,6 +383,8 @@ describe("grupo suspenso por cobrança (fase 2C)", () => {
     ["src/lib/whatsapp/aberturaPelaIA.ts", /grupoSuspenso\(data\.grupo_id\)/],
     ["src/app/api/imagens/gerar/route.ts", /await grupoSuspenso\(corretor\.grupoId\)[\s\S]*MENSAGEM_DE_ARTES_PAUSADAS/],
     ["src/app/corretor/(painel)/marketing/video/acoes.ts", /await grupoSuspenso\(corretor\.grupoId\)\) return \{ erro: MENSAGEM_DE_VIDEOS_PAUSADOS/],
+    ["src/lib/estudio/artePeloCentral.ts", /await grupoSuspenso\(quem\.grupoId\)\) return \{ ok: false, erro: MENSAGEM_DE_ARTES_PAUSADAS/],
+    ["src/lib/video/videoPeloCentral.ts", /await grupoSuspenso\(quem\.grupoId\)\) return \{ ok: false, erro: MENSAGEM_DE_VIDEOS_PAUSADOS/],
   ])("%s respeita a suspensão", (arquivo, regra) => {
     expect(semComentarios(arquivo)).toMatch(regra);
   });

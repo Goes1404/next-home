@@ -1,6 +1,15 @@
 import { CAMBIO_PADRAO_USD_BRL } from "@/lib/planos/custoDaIa";
 import type { ChamadaFeita, EntradaDoCerebro, ImagemDoCerebro, MensagemDoHistorico, ResultadoDoCerebro } from "./cerebro";
-import { criarExecutor, executarProposta, TRATADORES, type ContextoDoCentral, type FeitoDesfazivel, type Tratadores } from "./executar";
+import {
+  criarExecutor,
+  executarProposta,
+  TRATADORES,
+  type ArquivoDaResposta,
+  type ContextoDoCentral,
+  type EntregaDepois,
+  type FeitoDesfazivel,
+  type Tratadores,
+} from "./executar";
 import { declaracoesPara, EXEMPLOS_POR_ONDA, ferramenta, ONDA_ATUAL } from "./ferramentas";
 import { respostaSoNoPrivado } from "./grupo";
 import { aparar } from "./historico";
@@ -22,7 +31,8 @@ import { hashDoTelefone, telefoneCanonico } from "./telefone";
  *
  * Sem rede nem banco direto: tudo entra por `Dependencias`, no molde de
  * `responderAoCorretor` da agenda por mensagem. Devolve as mensagens a
- * mandar (zero, uma ou duas); quem envia é o webhook.
+ * mandar (zero, uma ou duas) e, da onda 3 em diante, os arquivos que vão
+ * depois delas (`RespostaDoCentral`); quem envia é o webhook.
  *
  * Ordem: reentrega → quem é → cota → boas-vindas → planilha/foto/áudio →
  * proposta pendente → cérebro → registro. A foto (onda 1) vai ao cérebro como
@@ -112,9 +122,34 @@ export type Dependencias = {
 
 /**
  * O que responder e onde pode aparecer. `soNoPrivado` sai da regra única de
- * `grupo.ts`; no privado tanto faz, no grupo decide.
+ * `grupo.ts`; no privado tanto faz, no grupo decide (e vale também para os
+ * arquivos).
+ *
+ * - `arquivos`: vão DEPOIS dos textos, como mídia nativa (4.5: arte, foto,
+ *   planta, para o corretor encaminhar). Só URL; nunca entram no histórico
+ *   nem no registro, onde viram "[imagem]".
+ * - `depois`: trabalho que passou do tempo do webhook (a arte lenta). O texto
+ *   já disse "te mando em instantes"; o webhook espera a promessa depois de
+ *   responder (`after`) e manda o que ela entregar. Só nasce de um "sim", que
+ *   é sempre no privado.
+ *
+ * Quem só devolve texto não vê diferença: os dois campos ficam de fora.
  */
-export type RespostaDoCentral = { textos: string[]; soNoPrivado: boolean };
+export type RespostaDoCentral = {
+  textos: string[];
+  soNoPrivado: boolean;
+  arquivos?: ArquivoDaResposta[];
+  depois?: EntregaPendente[];
+};
+
+/** A entrega que chega depois, e de quem é (o histórico dela é o dessa pessoa). */
+export type EntregaPendente = { corretorId: string; entrega: Promise<EntregaDepois> };
+
+/** No histórico e no registro, o arquivo vira uma marca: nem a URL nem o conteúdo. */
+export function comMarcasDosArquivos(texto: string, arquivos: ArquivoDaResposta[]): string {
+  if (arquivos.length === 0) return texto;
+  return [texto, ...arquivos.map((a) => (a.tipo === "video" ? "[vídeo]" : "[imagem]"))].join("\n");
+}
 
 export type MensagemRecebida = {
   mensagemId: string;
@@ -328,6 +363,15 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
 }
 
 /**
+ * A mesma conversa no privado, com o que vai além do texto: os arquivos e a
+ * entrega que chega depois. É o que o webhook usa; `responderNoCentral`
+ * segue devolvendo só os textos.
+ */
+export async function responderNoCentralComArquivos(m: MensagemRecebida, deps: Dependencias): Promise<RespostaDoCentral> {
+  return responder(m, deps, false);
+}
+
+/**
  * A mensagem que mencionou o central num grupo só da equipe (4.1). Quem
  * escreveu já vem identificado em `deps.identificar`, pela imobiliária do
  * grupo; o webhook manda no grupo ou no privado conforme `soNoPrivado`.
@@ -485,10 +529,14 @@ async function responder(m: MensagemRecebida, deps: Dependencias, noGrupo: boole
       estado.proposta = null;
       let resposta: string;
       let desfazer: FeitoDesfazivel[] | null = null;
+      let arquivos: ArquivoDaResposta[] = [];
+      let depois: EntregaPendente[] = [];
       if (leitura.tipo === "confirmar") {
         const feito = await executarProposta(ctx, proposta.itens, tratadores);
         resposta = feito.resultados.map((r) => r.texto).join("\n");
         desfazer = feito.desfaziveis.length ? feito.desfaziveis : null;
+        arquivos = feito.resultados.flatMap((r) => r.arquivos ?? []);
+        depois = feito.resultados.flatMap((r) => (r.depois ? [{ corretorId: ctx.corretorId, entrega: r.depois }] : []));
         // Foto já guardada sai do histórico: a próxima fala sobre um cliente
         // não pode anexar de novo o mesmo documento a outra pessoa.
         const usadas = new Set(proposta.itens.map((i) => (i.dados._midia as ReferenciaDaMidia | undefined)?.id).filter(Boolean));
@@ -498,13 +546,19 @@ async function responder(m: MensagemRecebida, deps: Dependencias, noGrupo: boole
       } else {
         resposta = leitura.tipo === "cancelar" ? TEXTOS.cancelado : TEXTOS.venceu;
       }
+      const dito = comMarcasDosArquivos(resposta, arquivos);
       estado.historico = aparar(
-        [...estado.historico, { papel: "pessoa", texto, em: agora.toISOString() }, { papel: "central", texto: resposta, em: agora.toISOString() }],
+        [...estado.historico, { papel: "pessoa", texto, em: agora.toISOString() }, { papel: "central", texto: dito, em: agora.toISOString() }],
         agora,
       );
       await deps.salvarEstado(ctx.corretorId, estado);
-      await registro({ proposta, confirmado: leitura.tipo === "confirmar", resultado: resposta, desfazer }, texto);
-      return { textos: [...saida, resposta], soNoPrivado: true };
+      await registro({ proposta, confirmado: leitura.tipo === "confirmar", resultado: dito, desfazer }, texto);
+      return {
+        textos: [...saida, resposta],
+        soNoPrivado: true,
+        ...(arquivos.length > 0 ? { arquivos } : {}),
+        ...(depois.length > 0 ? { depois } : {}),
+      };
     }
   }
 
@@ -557,6 +611,9 @@ async function responder(m: MensagemRecebida, deps: Dependencias, noGrupo: boole
   const proposta = executor.itensPropostos.length > 0 ? criarProposta(executor.itensPropostos, agora) : null;
   if (proposta || !noGrupo) estado.proposta = proposta;
   const resposta = proposta ? textoDaProposta(proposta) : resultado.texto;
+  // O arquivo que uma consulta devolveu (fotos, planta) vai depois do texto.
+  const arquivos = executor.arquivosColetados;
+  const dito = comMarcasDosArquivos(resposta, arquivos);
   // A referência da foto fica na fala da pessoa (só com a onda 2), para o
   // "é do João" da próxima mensagem; o modelo só lê `texto`.
   const daPessoa: MensagemDoHistorico = {
@@ -565,10 +622,11 @@ async function responder(m: MensagemRecebida, deps: Dependencias, noGrupo: boole
     em: agora.toISOString(),
     ...(imagem && documentos && m.midia ? { midia: m.midia } : {}),
   };
-  estado.historico = aparar([...estado.historico, daPessoa, { papel: "central", texto: resposta, em: agora.toISOString() }], agora);
+  estado.historico = aparar([...estado.historico, daPessoa, { papel: "central", texto: dito, em: agora.toISOString() }], agora);
   await deps.salvarEstado(ctx.corretorId, estado);
-  await registro({ ferramentas, proposta, resultado: resposta, custoCentavos: centavos(resultado.custoUsd) }, noRegistro);
+  await registro({ ferramentas, proposta, resultado: dito, custoCentavos: centavos(resultado.custoUsd) }, noRegistro);
   return {
+    ...(arquivos.length > 0 ? { arquivos } : {}),
     textos: [...saida, resposta],
     soNoPrivado: respostaSoNoPrivado({
       ferramentas: [...usadas, ...ferramentas.map((f) => f.nome)],
