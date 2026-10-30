@@ -35,3 +35,8 @@ summary: Revisão de tudo que entrou em 29–30/10 achou 36 defeitos (painel, Wh
 - Pendente (decisão do dono): no teste grátis com Asaas, a assinatura nasce no dia do fim do teste e não no `dia_do_vencimento`.
 
 Ver [[multi-ramo-portais-gestor-e-negocio-da-astro]], [[ia-no-atendimento-audio-resumo-e-nota]].
+
+## Navegação mais rápida (30/10, tarde)
+- `staleTimes.dynamic = 30` (voltar a uma seção em 30 s é instantâneo; actions com revalidate limpam).
+- Faixas do layout em Suspense; contadores do menu atrasados 1,2 s; onda da Astro 240 ms.
+- 0252 com índices propostos; conferir chave assimétrica de JWT no Supabase (senão `getClaims` vira `getUser`).

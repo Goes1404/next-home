@@ -12786,3 +12786,11 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - 0251: trava da roleta por grupo (distribuir_lead + devolver_leads_da_imobiliaria, mesma chave); consertou acentuação quebrada gravada pela 0216.
 - Asaas: cancelar/plano custo cancela a assinatura antes; mudar valor/dia com assinatura ativa é recusado (PUT sem `value`); estornos tratados no webhook.
 - Nota: [[revisao-geral-de-30-10]].
+
+## Navegação do painel mais rápida (30/10/2026)
+- `experimental.staleTimes.dynamic = 30`: voltar a uma seção visitada há < 30 s não vai ao servidor; server action com revalidatePath/revalidateTag e `router.refresh()` limpam esse cache. Mudança de fora da sessão (webhook, colega) pode aparecer com até 30 s de atraso.
+- Faixas do layout (conexão, cota da IA, limites) estavam fora de Suspense e seguravam a casca inteira; agora em Suspense. Contadores do menu esperam 1,2 s após trocar de rota.
+- A onda da Astro corre DEPOIS da troca de rota e cobre a tela: 240 ms (era 380).
+- Bug antigo: o filtro "com foto" do Marketing sempre passa porque o mapper preenche `capa` com `CAPA_PADRAO`.
+- 0252 (índices: whatsapp_mensagens (conversa_id, created_at desc), ia_interacoes parcial, cliques_whatsapp) — EXPLAIN da view whatsapp_esperando_resposta: 126 ms com incremental sort sobre 6,6 mil linhas.
+- Aberto: conferir se o Supabase assina JWT com chave assimétrica; se for HS256, `getClaims()` cai em `getUser()` (ida à rede) em todo pedido.
