@@ -24,12 +24,13 @@ describe("catálogo do número central", () => {
     expect(declaracoesPara("gestor").length).toBe(FERRAMENTAS.length);
   });
 
-  it(`na onda ${ONDA_ATUAL} nenhuma ação tem tratador (nada grava no CRM)`, () => {
+  it(`na onda ${ONDA_ATUAL} nenhuma ação com tratador está ligada (nada grava no CRM)`, () => {
+    // Os tratadores da onda 1 já existem (`tratadores/`), mas só rodam quando
+    // `ONDA_ATUAL` chegar na onda deles: até lá respondem "ainda não sei".
     for (const nome of Object.keys(TRATADORES.acoes)) {
       const f = FERRAMENTAS.find((x) => x.nome === nome);
       expect(f && f.onda > ONDA_ATUAL, `ação ${nome} ainda não pode existir`).toBe(true);
     }
-    expect(Object.keys(TRATADORES.acoes)).toEqual([]);
   });
 
   it("a ajuda mostra o que já funciona e o que vem depois", () => {

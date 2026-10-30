@@ -65,6 +65,7 @@ F0–F6.
 - [[importacao-de-leads-le-os-formatos-que-o-corretor-tem]] — .txt da conversa, .vcf, .xlsx, foto/print e o CSV do Google Contatos
 - [[lista-de-leads-sem-cabecalho-e-lida-pela-ia]] — lista .txt solta vai à IA; telefone, nome e e-mail só entram se estiverem no texto
 - [[telefone-com-55-que-a-planilha-corta]] — "5,51198E+12" não vira telefone; colar, link do Google e .xlsx trazem o número inteiro (09/10)
+- [[central-cadastra-e-atualiza-lead]] — o número central cadastra (regra da palavra-chave, origem painel/manual) e atualiza a ficha; desfaz arquiva ou devolve o campo (30/10)
 
 ## Dados do lead
 - [[fk-do-embed-de-leads-e-explicita]] — desde a 0206, `leads` tem duas FKs para `corretores`; embed sem `!leads_corretor_id_fkey` derruba lista e ficha com PGRST201 (22/10)
