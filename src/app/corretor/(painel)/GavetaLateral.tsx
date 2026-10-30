@@ -98,6 +98,12 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
   const dono = destinoAtivo(atual);
   const modulo = moduloAtivo(atual);
   const marcas = useContadoresDoMenu();
+  // "Conta e ajuda" (30/10/2026): começa aberto se a pessoa está numa dessas telas.
+  const [contaAberta, setContaAberta] = useState(() =>
+    itensDaConta(ehGestor)
+      .slice(1)
+      .some((item) => atual === item.href || atual.startsWith(`${item.href}/`)),
+  );
 
   /*
    * Acordeão: o tópico expandido é o da rota, a menos que a pessoa tenha
@@ -262,20 +268,63 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
             de perigo, porque é o único que tira a pessoa daqui. */}
         <div className="border-linha border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           <ul className="space-y-0.5">
-            {itensDaConta(ehGestor).map((item) => {
-              const Icone = item.icone;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors"
-                  >
-                    <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
+            {/* 30/10/2026 (pedido do dono: "no menu tem muitas opções"): só
+                "Meu perfil" fica à vista; senha, indique e ganhe, ajuda e
+                suporte moram juntos em "Conta e ajuda", que abre no toque. */}
+            {itensDaConta(ehGestor)
+              .slice(0, 1)
+              .map((item) => {
+                const Icone = item.icone;
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors"
+                    >
+                      <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            <li>
+              <button
+                type="button"
+                aria-expanded={contaAberta}
+                onClick={() => setContaAberta((v) => !v)}
+                className="text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-sm transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="5" cy="12" r="1.2" />
+                  <circle cx="12" cy="12" r="1.2" />
+                  <circle cx="19" cy="12" r="1.2" />
+                </svg>
+                <span className="flex-1 text-left">Conta e ajuda</span>
+                <svg viewBox="0 0 24 24" className={cn("h-4 w-4 shrink-0 transition-transform", contaAberta && "rotate-90")} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+              {contaAberta && (
+                <ul className="border-linha mt-0.5 ml-5 space-y-0.5 border-l pl-2">
+                  {itensDaConta(ehGestor)
+                    .slice(1)
+                    .map((item) => {
+                      const Icone = item.icone;
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className="text-apoio hover:bg-vidro hover:text-titulo flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors"
+                          >
+                            <Icone aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                            {item.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                </ul>
+              )}
+            </li>
             <li>
               <form action={sair} data-sair>
                 <button

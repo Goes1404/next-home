@@ -4,6 +4,7 @@ import Image from "next/image";
 import { enviarMidiaCorretor } from "@/app/corretor/actions";
 import { iniciais } from "@/lib/format";
 import { SeletorArquivo } from "./SeletorArquivo";
+import { REDUCAO_DA_LOGO } from "@/lib/imagem/reduzir";
 
 export function EditorAvatar({ nome, fotoUrl }: { nome: string; fotoUrl: string | null }) {
   return (
@@ -35,7 +36,8 @@ export function EditorAvatar({ nome, fotoUrl }: { nome: string; fotoUrl: string 
         action={enviarMidiaCorretor.bind(null, "avatar")}
         accept="image/jpeg,image/png,image/webp"
         rotulo="Trocar foto"
-        dica="Imagem até 5MB (JPG, PNG ou WebP)."
+        dica="JPG, PNG ou WebP. Fotos grandes são reduzidas sozinhas."
+        reducao={REDUCAO_DA_LOGO}
       />
     </div>
   );

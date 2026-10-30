@@ -4,6 +4,7 @@ import { useState } from "react";
 import { enviarMidiaCorretor } from "@/app/corretor/actions";
 import type { FundoTipo } from "@/lib/types";
 import { SeletorArquivo } from "./SeletorArquivo";
+import { REDUCAO_DA_CAPA } from "@/lib/imagem/reduzir";
 
 const BOTAO_BASE = "text-fluid-sm rounded-full px-4 py-2 font-medium transition-colors";
 const BOTAO_ATIVO = "bg-acento text-sobre-cor";
@@ -42,14 +43,15 @@ export function FundoLink({ fundoTipo }: { fundoTipo: FundoTipo }) {
             action={enviarMidiaCorretor.bind(null, "fundo_video")}
             accept="video/mp4"
             rotulo="Trocar vídeo"
-            dica="Vídeo até 20MB (MP4)."
+            dica="Vídeo MP4 de até 4 MB."
           />
         ) : (
           <SeletorArquivo
             action={enviarMidiaCorretor.bind(null, "fundo_foto")}
             accept="image/jpeg,image/png,image/webp"
             rotulo="Trocar foto de fundo"
-            dica="Imagem até 5MB (JPG, PNG ou WebP)."
+            dica="JPG, PNG ou WebP. Fotos grandes são reduzidas sozinhas."
+            reducao={REDUCAO_DA_CAPA}
           />
         )}
       </div>
