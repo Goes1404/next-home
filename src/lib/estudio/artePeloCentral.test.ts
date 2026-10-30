@@ -33,8 +33,13 @@ vi.mock("@/lib/imagens/galeria", () => ({
   getTetoDeHoje: async () => ({ usadasHoje, teto: 20 }),
   registrarImagem: (...a: unknown[]) => (ordem.push("galeria"), registrarImagem(...a)),
 }));
+const entradasDoTradutor: { pedido: string; fatos: string[]; dominio?: string }[] = [];
+/** O que o tradutor "reescreve"; nulo = o eco de sempre (pedido | fatos). */
+let traducao: string | null = null;
 vi.mock("@/lib/imagens/tradutor", () => ({
-  traduzirPedido: async (e: { pedido: string; fatos: string[] }) => (ordem.push("tradutor"), { prompt: `${e.pedido} | ${e.fatos.join("; ")}`, daIa: true }),
+  traduzirPedido: async (e: { pedido: string; fatos: string[]; dominio?: string }) => (
+    ordem.push("tradutor"), entradasDoTradutor.push(e), { prompt: traducao ?? `${e.pedido} | ${e.fatos.join("; ")}`, daIa: true }
+  ),
 }));
 vi.mock("@/lib/imagens/carimbo", () => ({
   carimbarRessalva: async (bytes: Buffer, mime: string) => (ordem.push("carimbo"), { bytes: Buffer.concat([bytes, Buffer.from("+ressalva")]), mime, carimbada: true }),
@@ -80,6 +85,8 @@ describe("arte do Estúdio pelo central", () => {
   beforeEach(() => {
     ordem.length = 0;
     uploads.length = 0;
+    entradasDoTradutor.length = 0;
+    traducao = null;
     consumo.mockClear();
     registrarImagem.mockClear();
     limiteOk = true;
@@ -137,6 +144,36 @@ describe("arte do Estúdio pelo central", () => {
 
   it("imóvel de outro grupo não é lido nem gera arte", async () => {
     expect(await gerarArtePeloCentral({ ...pedido, empreendimentoId: "e9" })).toEqual({ ok: false, erro: "Não achei esse imóvel no catálogo da imobiliária." });
+    expect(ordem).toEqual([]);
+  });
+
+  it("a frase pedida chega ao gerador sem mudança, mesmo se o tradutor a reescrever", async () => {
+    const frase = "Visite e ganhe um champanhe somente este final de semana";
+    // O tradutor "melhora" a frase (caixa alta, palavra a menos): não pode valer.
+    traducao = 'Post do Dom Parque, fachada ao entardecer, com o texto "VISITE E GANHE CHAMPANHE" no topo em letra branca.';
+    const r = await gerarArtePeloCentral({ ...pedido, texto: `Post do Vitta para redes sociais. Com o texto "${frase}" escrito na arte, exatamente assim.`, textoNaArte: frase });
+    expect(r).toMatchObject({ ok: true });
+    // O tradutor também viu a frase, entre aspas, para decidir posição e letra.
+    expect(entradasDoTradutor[0].pedido).toContain(`"${frase}"`);
+    const corpo = JSON.parse(String((globalThis.fetch as unknown as { mock: { calls: [string, { body: string }][] } }).mock.calls[0][1].body));
+    // O ditado é a frase declarada, inteira, e só ela.
+    expect(corpo.prompt).toContain(`Escreva na imagem exatamente este texto, com a grafia e os acentos idênticos: "${frase}".`);
+    expect(corpo.prompt).not.toContain('idênticos: "VISITE');
+  });
+
+  it("arte livre (sem imóvel): sem ficha, ofício livre, sem ressalva, na galeria sem imóvel, consumo gravado", async () => {
+    const r = await gerarArtePeloCentral({ ...pedido, empreendimentoId: null, texto: "Post para redes sociais. O que mostrar: prédio futurista flutuante." });
+    expect(r).toMatchObject({ ok: true, ressalva: "nao_se_aplica" });
+    expect(ordem).toEqual(["tradutor", "gerador", "upload", "galeria"]);
+    expect(entradasDoTradutor[0]).toMatchObject({ fatos: [], dominio: "livre" });
+    expect(uploads[0].bytes.toString()).not.toContain("+ressalva");
+    expect(registrarImagem).toHaveBeenCalledWith(expect.objectContaining({ corretorId: "c1", empreendimentoId: null }));
+    expect(consumo).toHaveBeenCalledWith({ finalidade: "arte_imagem", quemPaga: { corretorId: "c1", grupoId: G } }, expect.anything());
+  });
+
+  it("arte livre também passa pelo limite do plano antes de qualquer IA", async () => {
+    limiteOk = false;
+    expect(await gerarArtePeloCentral({ ...pedido, empreendimentoId: null })).toMatchObject({ ok: false });
     expect(ordem).toEqual([]);
   });
 

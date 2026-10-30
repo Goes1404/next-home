@@ -35,10 +35,32 @@ import { fatosDoImovelCitado } from "./imovelNaArte";
  *    do "Gerar assim";
  * 3. `gerarImagem` (que grava o consumo no livro, `registrarConsumoDaIa`,
  *    finalidade `arte_imagem`, com quem pediu pagando);
- * 4. a ressalva legal carimbada por código ANTES do upload (a peça é sempre
- *    de um imóvel), o upload no mesmo caminho e a linha na galeria
- *    (`registrarImagem`, com o imóvel: é ela que o gatilho da 0214 conta no
- *    limite do mês, e é por ela que a arte aparece no Estúdio).
+ * 4. a ressalva legal carimbada por código ANTES do upload quando a peça é
+ *    de um imóvel (arte livre não leva, como na tela), o upload no mesmo
+ *    caminho e a linha na galeria (`registrarImagem`: é ela que o gatilho da
+ *    0214 conta no limite do mês, com ou sem imóvel, e é por ela que a arte
+ *    aparece no Estúdio).
+ *
+ * Arte livre (sem imóvel) existe na tela desde 11/09/2026 ("o Estúdio passou
+ * a aceitar qualquer assunto"), e pelo central é a mesma coisa: sem ficha,
+ * domínio `livre` no tradutor, sem ressalva e galeria sem imóvel. Foi o que
+ * faltou na conversa da Bruna (30/10): "um prédio futurista flutuante" virou
+ * "use o Midjourney".
+ *
+ * ## A frase na arte (`textoNaArte`)
+ *
+ * É o texto DITADO da tela (`textosEntreAspas`), só que declarado: o central
+ * não tem campo nem aspas confiáveis (o pedido chega por áudio transcrito),
+ * então a ferramenta recebe a frase à parte e ela vai ao gerador SEM passar
+ * pelo tradutor — `textosNaCena: [frase]`, que o `promptFinal` transforma em
+ * "escreva exatamente este texto, caractere por caractere". O tradutor
+ * também a vê, entre aspas no pedido, para decidir posição e letra; se ele a
+ * reescrever, o que vale no fim é a instrução literal com a frase original.
+ *
+ * Limite honesto: o gerador NÃO garante texto legível. Medido na F0
+ * (10/09): entre aspas e soletrado, 2 em 2; solto, 3 em 4. É o melhor
+ * caminho que a tela tem; texto exato por código só a ressalva legal
+ * (`carimbo.ts`). Por isso a entrega pede para conferir a frase.
  *
  * A orquestração está espelhada, não compartilhada, porque a rota é presa
  * por guardas que leem o código dela (`receitas.test.ts`,
@@ -83,8 +105,11 @@ export type ResultadoDaArte =
       ok: true;
       url: string;
       imagemId: string | null;
-      /** `falhou` = a arte saiu SEM a ressalva legal, e quem recebe precisa saber. */
-      ressalva: "aplicada" | "falhou";
+      /**
+       * `falhou` = a arte de imóvel saiu SEM a ressalva legal, e quem recebe
+       * precisa saber. `nao_se_aplica` = arte livre, sem imóvel (a régua da rota).
+       */
+      ressalva: "aplicada" | "nao_se_aplica" | "falhou";
     }
   | { ok: false; erro: string };
 
@@ -105,34 +130,49 @@ function fraseDoMotivo(motivo: string): string {
 }
 
 export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
-  empreendimentoId: string;
+  /** O imóvel da arte. Nulo = arte livre, sem imóvel (como a tela permite). */
+  empreendimentoId: string | null;
   formato: ChaveTamanho;
   /** O pedido em português ("Post do Vitta para o Instagram"); o tradutor o transforma em prompt. */
   texto: string;
+  /** A frase que sai escrita na arte, exatamente como pedida; não passa pelo tradutor. */
+  textoNaArte?: string | null;
 }): Promise<ResultadoDaArte> {
   const conferida = await conferirArtePeloCentral(pedido);
   if (!conferida.ok) return conferida;
 
   const supabase = createServiceClient();
-  const { data: linha } = await supabase
-    .from("empreendimentos")
-    .select(SELECT_EMPREENDIMENTO)
-    .eq("id", pedido.empreendimentoId)
-    .eq("grupo_id", pedido.grupoId)
-    .maybeSingle();
-  if (!linha) return { ok: false, erro: "Não achei esse imóvel no catálogo da imobiliária." };
-  const imovel = mapEmpreendimento(linha as unknown as LinhaEmpreendimento);
+  let imovel: ReturnType<typeof mapEmpreendimento> | null = null;
+  if (pedido.empreendimentoId) {
+    const { data: linha } = await supabase
+      .from("empreendimentos")
+      .select(SELECT_EMPREENDIMENTO)
+      .eq("id", pedido.empreendimentoId)
+      .eq("grupo_id", pedido.grupoId)
+      .maybeSingle();
+    if (!linha) return { ok: false, erro: "Não achei esse imóvel no catálogo da imobiliária." };
+    imovel = mapEmpreendimento(linha as unknown as LinhaEmpreendimento);
+  }
 
   const quemPaga = { corretorId: pedido.corretorId, grupoId: pedido.grupoId };
   // Sem foto de referência, como o Estúdio quando o corretor não escolhe uma:
-  // a ficha entra como fatos e a ressalva diz que é ilustrativa.
-  const traduzido = await traduzirPedido({ pedido: pedido.texto, fatos: fatosDoImovelCitado(imovel), dominio: "imovel", quemPaga });
+  // a ficha entra como fatos e a ressalva diz que é ilustrativa. Sem imóvel,
+  // nada de ficha e o ofício é o livre (a régua do `turno.ts`).
+  const traduzido = await traduzirPedido({
+    pedido: pedido.texto,
+    fatos: imovel ? fatosDoImovelCitado(imovel) : [],
+    dominio: imovel ? "imovel" : "livre",
+    quemPaga,
+  });
   const prompt = traduzido.prompt.trim() || pedido.texto;
   const formato = TAMANHOS.find((t) => t.chave === pedido.formato) ?? TAMANHOS[0];
+  // A frase declarada é o ditado inteiro: vai como veio, e só ela. Sem frase,
+  // o ditado é o da tela (o que estiver entre aspas no prompt).
+  const frase = pedido.textoNaArte?.trim();
 
   const resultado = await gerarImagem({
     prompt: montarPedido(prompt, receitaPor("livre")),
-    textosNaCena: textosEntreAspas(prompt),
+    textosNaCena: frase ? [frase] : textosEntreAspas(prompt),
     largura: formato.largura,
     altura: formato.altura,
     qualidade: "low",
@@ -143,7 +183,10 @@ export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
 
   // Peça de imóvel: a ressalva é obrigatória, por código, antes do arquivo
   // existir. Se o carimbo falhar a arte já foi paga e é entregue, avisando.
-  const marcada = await carimbarRessalva(resultado.bytes, resultado.mime);
+  // Arte livre não leva: aviso onde não se aplica ensina a ignorar aviso.
+  const marcada = imovel
+    ? await carimbarRessalva(resultado.bytes, resultado.mime)
+    : { bytes: resultado.bytes, mime: resultado.mime, carimbada: false };
   const hash = createHash("sha256").update(marcada.bytes).digest("hex").slice(0, 16);
   const caminho = `corretores/${pedido.corretorId}/criacoes/${hash}.png`;
   const { error: erroUpload } = await supabase.storage
@@ -166,8 +209,9 @@ export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
     altura: medida?.altura ?? formato.altura,
     referenciaUrl: null,
     latenciaMs: resultado.latenciaMs,
-    empreendimentoId: imovel.id ?? pedido.empreendimentoId,
+    empreendimentoId: imovel ? (imovel.id ?? pedido.empreendimentoId) : null,
   });
 
-  return { ok: true, url, imagemId: imagem?.id ?? null, ressalva: marcada.carimbada ? "aplicada" : "falhou" };
+  const ressalva = !imovel ? "nao_se_aplica" : marcada.carimbada ? "aplicada" : "falhou";
+  return { ok: true, url, imagemId: imagem?.id ?? null, ressalva };
 }
