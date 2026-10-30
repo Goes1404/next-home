@@ -3819,9 +3819,11 @@ html[data-troca-tema]::view-transition-new(root) {
        sempre os `fixed` da tela (folhas, modais, barra de salvar). */
     animation: tela-entra 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
-  /* 380ms (era 520ms, 29/10/2026: "deixe a animação de ondas mais rápido"). */
+  /* 240ms (era 520ms → 380ms em 29/10; 30/10/2026: "ainda está muito
+     devagar pra trocar de página"). A onda corre DEPOIS da troca de rota e
+     cobre o conteúdo novo enquanto passa: cada ms aqui é espera percebida. */
   .onda-da-astro .onda-transicao {
-    animation-duration: 380ms;
+    animation-duration: 240ms;
   }
 }
 @keyframes tela-entra {

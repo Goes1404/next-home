@@ -22,7 +22,11 @@ export default async function WhatsappPainelPage() {
   // A configuração é lida do banco, não presumida: o painel precisa abrir
   // mostrando o que está de fato valendo para o número deste corretor.
   const supabase = await createClient();
-  const [{ data: instancia }, { data: funil }] = await Promise.all([
+  // As quatro leituras desta tela são independentes e saem JUNTAS
+  // (30/10/2026): as duas "à parte" de baixo eram mais duas idas ao banco em
+  // série. Continuam consultas separadas — a razão de cada uma estar à parte
+  // é falhar sozinha, não esperar a outra.
+  const [{ data: instancia }, { data: funil }, { data: recusa }, leituraDoGrupo] = await Promise.all([
     supabase
       .from("corretor_whatsapp_instancias")
       .select(
@@ -38,26 +42,25 @@ export default async function WhatsappPainelPage() {
       )
       .eq("corretor_id", corretor.id)
       .maybeSingle(),
+    // O número recusado por ser de outra conta (0198). Consulta à parte: se a
+    // coluna ainda não existir (migration depois do deploy), a tela segue sem
+    // o aviso em vez de cair inteira.
+    supabase
+      .from("corretor_whatsapp_instancias")
+      .select("numero_recusado_em")
+      .eq("corretor_id", corretor.id)
+      .maybeSingle(),
+    // Nome e tom fixados pelo gestor para a equipe (0199): o campo do corretor
+    // deixa de valer, e a tela diz isso. Consulta à parte pelo mesmo motivo da
+    // de cima: sem a migration, a tela segue sem o aviso.
+    // Só a coluna ausente (42703) é "nada fixado"; outro erro vira aviso
+    // neutro na tela e linha no log, em vez de esconder o aviso.
+    supabase
+      .from("grupos")
+      .select("ia_nome_assistente, ia_tom")
+      .eq("id", corretor.grupoId)
+      .maybeSingle(),
   ]);
-
-  // O número recusado por ser de outra conta (0198). Consulta à parte: se a
-  // coluna ainda não existir (migration depois do deploy), a tela segue sem
-  // o aviso em vez de cair inteira.
-  const { data: recusa } = await supabase
-    .from("corretor_whatsapp_instancias")
-    .select("numero_recusado_em")
-    .eq("corretor_id", corretor.id)
-    .maybeSingle();
-  // Nome e tom fixados pelo gestor para a equipe (0199): o campo do corretor
-  // deixa de valer, e a tela diz isso. Consulta à parte pelo mesmo motivo da
-  // de cima: sem a migration, a tela segue sem o aviso.
-  // Só a coluna ausente (42703) é "nada fixado"; outro erro vira aviso
-  // neutro na tela e linha no log, em vez de esconder o aviso.
-  const leituraDoGrupo = await supabase
-    .from("grupos")
-    .select("ia_nome_assistente, ia_tom")
-    .eq("id", corretor.grupoId)
-    .maybeSingle();
   if (leituraDoGrupo.error && leituraDoGrupo.error.code !== "42703") {
     console.error(
       `[minha ia] grupo ${corretor.grupoId}: não consegui ler o nome e o tom fixados: ${leituraDoGrupo.error.message}`,

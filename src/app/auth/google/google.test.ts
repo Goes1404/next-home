@@ -7,7 +7,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 let troca: { data: { user: unknown }; error: unknown };
-let ficha: { id: string; ativo: boolean } | null;
+let ficha: { id: string; ativo: boolean; deve_trocar_senha?: boolean } | null;
+const datasRegistradas: string[] = [];
+let renovou: number;
 let ehAdmin: boolean;
 let saiu: boolean;
 const apagados: string[] = [];
@@ -19,6 +21,9 @@ vi.mock("@/lib/supabase/server", () => ({
       signOut: async () => {
         saiu = true;
       },
+      refreshSession: async () => {
+        renovou++;
+      },
     },
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: ficha }) }) }) }),
     rpc: async () => ({ data: ehAdmin }),
@@ -26,6 +31,13 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({ auth: { admin: { deleteUser: async (id: string) => apagados.push(id) } } }),
+}));
+
+vi.mock("@/lib/auth/validadeDaSenhaNoServidor", () => ({
+  DESTINO_SENHA_VENCIDA: "/corretor/senha?motivo=vencida",
+  registrarSenhaTrocada: async (id: string) => {
+    datasRegistradas.push(id);
+  },
 }));
 
 const { GET } = await import("./route");
@@ -48,6 +60,8 @@ beforeEach(() => {
   ehAdmin = false;
   saiu = false;
   apagados.length = 0;
+  datasRegistradas.length = 0;
+  renovou = 0;
 });
 
 describe("volta do Google", () => {
@@ -85,5 +99,36 @@ describe("volta do Google", () => {
     ficha = { id: "c1", ativo: false };
     expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor/entrar?google=sem-conta");
     expect(apagados).toEqual([]);
+  });
+});
+
+describe("senha de quem entra com o Google (revisão de 30/10/2026)", () => {
+  const recente = new Date().toISOString();
+
+  it("sem data da troca, começa os 90 dias e renova a sessão", async () => {
+    expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor");
+    expect(datasRegistradas).toEqual(["u1"]);
+    expect(renovou).toBe(1);
+  });
+
+  it("com data recente, não regrava; vencida vai para a troca", async () => {
+    troca = { data: { user: usuario({ app_metadata: { senha_trocada_em: recente } }) }, error: null };
+    expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor");
+    expect(datasRegistradas).toEqual([]);
+    troca = { data: { user: usuario({ app_metadata: { senha_trocada_em: "2020-01-01T00:00:00Z" } }) }, error: null };
+    expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor/senha?motivo=vencida");
+  });
+
+  it("troca obrigatória pela ficha ou, sem ficha, pelo app_metadata", async () => {
+    troca = { data: { user: usuario({ app_metadata: { senha_trocada_em: recente } }) }, error: null };
+    ficha = { id: "c1", ativo: true, deve_trocar_senha: true };
+    expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor/senha");
+    ficha = null;
+    ehAdmin = true;
+    troca = {
+      data: { user: usuario({ app_metadata: { senha_trocada_em: recente, deve_trocar_senha: true } }) },
+      error: null,
+    };
+    expect((await pedir("?code=x")).headers.get("Location")).toBe("/corretor/senha");
   });
 });

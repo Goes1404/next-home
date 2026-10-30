@@ -22,7 +22,7 @@ export const EVENTO_ABRIR_BUSCA = "astro:abrir-busca";
  * a barra do polegar já tem os quatro alvos que cabem em 320px); no
  * computador mostra a dica do atalho.
  */
-export function BotaoBuscaRapida({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; tipoDoGrupo: TipoDoGrupo }) {
+export function BotaoBuscaRapida({ ehGestor, tipoDoGrupo, usuarioId }: { ehGestor: boolean; tipoDoGrupo: TipoDoGrupo; usuarioId: string }) {
   const [aberta, setAberta] = useState(false);
   // Depois do primeiro uso a paleta fica montada (fechada): reabrir é instantâneo.
   const [usada, setUsada] = useState(false);
@@ -75,7 +75,7 @@ export function BotaoBuscaRapida({ ehGestor, tipoDoGrupo }: { ehGestor: boolean;
         </kbd>
       </button>
       {usada && (
-        <PaletaDeBusca aberta={aberta} aoFechar={() => setAberta(false)} ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} />
+        <PaletaDeBusca aberta={aberta} aoFechar={() => setAberta(false)} ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} usuarioId={usuarioId} />
       )}
     </>
   );

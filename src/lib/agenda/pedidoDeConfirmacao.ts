@@ -1,6 +1,7 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { registrarInteracao } from "@/lib/crm/interacoes";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import { podeEnviarPorIniciativa, silencioDaConversa } from "@/lib/whatsapp/quandoAIaResponde";
@@ -12,6 +13,7 @@ import {
   reservarCotaCampanha,
   situacaoDaConversa,
 } from "@/lib/whatsapp/repositorio";
+import { lerRamo, vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
 import { MOTIVO_EM_PORTUGUES, naJanelaAutomatica, podePedirConfirmacao, textoDoPedidoDeConfirmacao } from "./confirmacaoDaVisita";
 
 type Supa = ReturnType<typeof createServiceClient>;
@@ -134,6 +136,14 @@ export async function pedirConfirmacaoDaVisita(
     if (!podeEnviarPorIniciativa({ conversa: situacao, numero }).responde) {
       return { enviado: false, erro: "A conversa ou o número não aceitam envio automático." };
     }
+    /*
+     * Conta suspensa (cobrança ou plataforma) não manda nada automático
+     * (revisão de 30/10/2026) — a mesma regra que cala a IA e a varredura
+     * de respostas atrasadas. O toque do corretor continua: é ele falando.
+     */
+    if (await grupoSuspenso(p.grupoId, agora)) {
+      return { enviado: false, erro: "Conta suspensa: nada automático sai.", pular: true };
+    }
   }
 
   // O claim: um pedido por data de visita, mesmo com dois toques ou dois tiques.
@@ -163,19 +173,19 @@ export async function pedirConfirmacaoDaVisita(
     }
   }
 
-  const { data: corretor } = await supabase
-    .from("corretores")
-    .select("nome")
-    .eq("id", visita.corretor_id)
-    .eq("grupo_id", p.grupoId)
-    .maybeSingle();
+  const [{ data: corretor }, ramo] = await Promise.all([
+    supabase.from("corretores").select("nome").eq("id", visita.corretor_id).eq("grupo_id", p.grupoId).maybeSingle(),
+    ramoDoGrupo(supabase, p.grupoId),
+  ]);
   const imovel = Array.isArray(lead.empreendimento) ? lead.empreendimento[0] : lead.empreendimento;
   const texto = textoDoPedidoDeConfirmacao({
     cliente: lead.nome,
-    corretor: corretor?.nome ?? "seu corretor",
+    // "seu corretor" na imobiliária (o de sempre); "seu consultor" etc. nos outros ramos.
+    corretor: corretor?.nome ?? `seu ${vocabularioDoRamo(ramo).equipe.singular}`,
     inicio: visita.inicio,
     lugar: imovel?.nome ?? null,
     agora,
+    ramo,
   });
 
   const envio = await enviarMensagemWhatsapp({ instanceName: instancia.instance_name, telefone: conversa.telefoneCliente, texto });
@@ -227,4 +237,14 @@ export async function pedirConfirmacaoDaVisita(
     .eq("status", "pendente");
   if (erroDoCancelamento) console.warn("[confirmação de visita] lembrete pendente não cancelado:", erroDoCancelamento.message);
   return { enviado: true, texto };
+}
+
+/**
+ * O ramo do grupo (0244) para o texto que vai ao cliente (30/10/2026,
+ * revisão). Sem a coluna (antes da 0244) ou com erro, imobiliária: o texto
+ * de sempre.
+ */
+async function ramoDoGrupo(supabase: Supa, grupoId: string): Promise<Ramo> {
+  const { data, error } = await supabase.from("grupos").select("ramo").eq("id", grupoId).maybeSingle();
+  return lerRamo(error ? null : (data as { ramo?: unknown } | null)?.ramo);
 }

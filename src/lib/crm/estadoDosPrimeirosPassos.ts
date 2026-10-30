@@ -28,6 +28,8 @@ export async function lerEstadoDosPrimeirosPassos(): Promise<(EstadoDoInicio & {
   const servico = createServiceClient();
   const papel = corretor.papel;
   const tipoDoGrupo = corretor.tipoDoGrupo;
+  // Sem catálogo de imóveis no ramo, nem conta imóvel (`cuidaDoCatalogo`).
+  const ramo = corretor.ramo;
   const contagem = (r: { count: number | null; error: { message: string } | null }, o_que: string): number | null => {
     if (r.error) {
       console.error(`[primeiros passos] ${o_que} não contado: ${r.error.message}`);
@@ -48,7 +50,7 @@ export async function lerEstadoDosPrimeirosPassos(): Promise<(EstadoDoInicio & {
       .eq("corretor_id", corretor.id)
       .eq("status_conexao", "conectado"),
     servico.from("inscricoes_push").select("id", { count: "exact", head: true }).eq("corretor_id", corretor.id),
-    cuidaDoCatalogo({ papel, tipoDoGrupo })
+    cuidaDoCatalogo({ papel, tipoDoGrupo, ramo })
       ? supabase.from("empreendimentos").select("id", { count: "exact", head: true }).eq("grupo_id", corretor.grupoId)
       : nada,
     // Conta oculta (0189) não é equipe convidada: fica de fora da contagem.
@@ -68,11 +70,12 @@ export async function lerEstadoDosPrimeirosPassos(): Promise<(EstadoDoInicio & {
     corretorId: corretor.id,
     papel,
     tipoDoGrupo,
+    ramo,
     whatsappConectado: conectados === null ? null : conectados > 0,
     temFoto: Boolean(corretor.fotoUrl),
     temApresentacao: Boolean(corretor.bio && corretor.bio.trim().length >= 20),
     aparelhosComAviso: contagem(aparelhos, "aparelhos com aviso"),
-    imoveisDoGrupo: cuidaDoCatalogo({ papel, tipoDoGrupo }) ? contagem(imoveis, "imóveis") : null,
+    imoveisDoGrupo: cuidaDoCatalogo({ papel, tipoDoGrupo, ramo }) ? contagem(imoveis, "imóveis") : null,
     corretoresAtivos: convidaAEquipe({ papel, tipoDoGrupo }) ? contagem(equipe, "equipe") : null,
     leads: contagem(carteira, "leads"),
   };

@@ -156,3 +156,12 @@ describe("o documento profissional da ficha", () => {
     expect(documentoProfissionalDaFicha("advocacia", "OAB/SP 123")).toBe("OAB/SP 123");
   });
 });
+
+describe("o botão de um toque no ramo (30/10/2026, revisão)", () => {
+  it("imobiliária: nada muda; outros ramos: o compromisso deles", async () => {
+    const { acoesDeEtapaDoRamo } = await import("./ramos");
+    expect(acoesDeEtapaDoRamo("imobiliaria")).toEqual({});
+    expect(acoesDeEtapaDoRamo("seguros")).toEqual({ qualificado: "Marquei reunião", visita_agendada: "Ele compareceu" });
+    expect(acoesDeEtapaDoRamo("saude").qualificado).toBe("Marquei consulta");
+  });
+});

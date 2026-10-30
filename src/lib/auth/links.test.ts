@@ -133,6 +133,28 @@ describe("enviarLinkDeAcesso", () => {
     expect(enviados[0].assunto).not.toBe("");
   });
 
+  it("texto neutro (qualquer ramo) e, no convite de conta em teste, até quando vai o teste", async () => {
+    await enviarLinkDeAcesso("invite", "ana@exemplo.com.br", "Clínica Sol", "https://x/auth/confirmar", {
+      testeAte: "2026-11-06T18:00:00Z",
+      agora: new Date("2026-10-30T18:00:00Z"),
+    });
+    expect(enviados[0].texto).toContain("Você recebeu acesso ao painel da Clínica Sol.");
+    expect(enviados[0].texto).not.toContain("corretores");
+    expect(enviados[0].texto).toContain("teste grátis de 7 dias, até 06/11/2026");
+
+    // Teste já acabado, ou link de recuperação: sem a frase.
+    await enviarLinkDeAcesso("invite", "ana@exemplo.com.br", "Clínica Sol", "https://x/auth/confirmar", {
+      testeAte: "2026-10-01T18:00:00Z",
+      agora: new Date("2026-10-30T18:00:00Z"),
+    });
+    await enviarLinkDeAcesso("recovery", "ana@exemplo.com.br", "Clínica Sol", "https://x/auth/confirmar", {
+      testeAte: "2026-11-06T18:00:00Z",
+      agora: new Date("2026-10-30T18:00:00Z"),
+    });
+    expect(enviados[1].texto).not.toContain("teste grátis");
+    expect(enviados[2].texto).not.toContain("teste grátis");
+  });
+
   it("escapa o nome do grupo no HTML", async () => {
     await enviarLinkDeAcesso("invite", "ana@exemplo.com.br", "<b>Sol</b>", "https://x/auth/confirmar");
     expect(enviados[0].html).not.toContain("<b>Sol</b>");

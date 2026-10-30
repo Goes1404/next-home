@@ -654,6 +654,8 @@ describe("menu pelo ramo da conta (0244, 29/10/2026)", () => {
     "/corretor/admin/parceiros",
     "/corretor/admin/precos",
     "/corretor/admin/credito",
+    // O consultor responde com o catálogo e o crédito imobiliário (30/10/2026).
+    "/corretor/consultor",
   ];
   const enderecos = (ehGestor: boolean, tipo: "imobiliaria" | "independente", ramo: (typeof RAMOS)[number]) =>
     gruposVisiveis(ehGestor, tipo, ramo).flatMap((g) => g.itens.flatMap((i) => [i.href, ...(i.subitens ?? []).map((s) => s.href)]));

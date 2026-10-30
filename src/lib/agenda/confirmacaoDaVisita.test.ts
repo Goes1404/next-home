@@ -77,6 +77,14 @@ describe("o texto", () => {
     expect(texto.startsWith("Oi! Aqui é Ana.")).toBe(true);
     expect(texto).toContain("amanhã às 10h. Posso");
   });
+
+  it("no ramo, o compromisso dele (30/10/2026); imobiliária explícita = o de sempre", () => {
+    const base = { cliente: "Maria", corretor: "Ana", inicio: "2026-10-30T13:00:00Z", lugar: null, agora };
+    expect(textoDoPedidoDeConfirmacao({ ...base, ramo: "imobiliaria" })).toBe(textoDoPedidoDeConfirmacao(base));
+    expect(textoDoPedidoDeConfirmacao({ ...base, ramo: "seguros" })).toContain("confirmar nossa reunião amanhã");
+    expect(textoDoPedidoDeConfirmacao({ ...base, ramo: "varejo" })).toMatch(/confirmar nosso atendimento amanhã/);
+    expect(textoDoPedidoDeConfirmacao({ ...base, ramo: "saude" })).not.toContain("visita");
+  });
 });
 
 describe("a resposta do cliente", () => {

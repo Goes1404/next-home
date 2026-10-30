@@ -24,10 +24,17 @@ vi.mock("@/lib/email", () => ({
 }));
 // O texto do e-mail vira os próprios números: o que se confere é QUAIS
 // números chegaram a quem, não a redação.
-vi.mock("@/lib/admin/relatorioSemanal", () => ({
+vi.mock("@/lib/admin/relatorioSemanal", async (original) => ({
+  ...(await original<typeof import("@/lib/admin/relatorioSemanal")>()),
   acharNoticias: () => [],
   assuntoDoRelatorio: () => "Relatório",
   corpoDoRelatorio: ({ numeros }: { numeros: unknown }) => ({ texto: JSON.stringify(numeros), html: "" }),
+}));
+
+// A cobrança de cada grupo: os testes dizem quem está suspenso.
+const suspensos = new Set<string>();
+vi.mock("@/lib/planos/cobrancaDoGrupo", () => ({
+  grupoSuspenso: async (grupoId: string) => suspensos.has(grupoId),
 }));
 
 // O resumo no WhatsApp (0246) sai pelo canal dos avisos ao corretor.
@@ -49,7 +56,7 @@ describe("/api/cron/relatorio-semanal", () => {
     vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "sim");
     enviados.length = 0;
     banco = bancoFalso({
-      grupos: [{ id: GRUPO_A }, { id: GRUPO_B }],
+      grupos: [{ id: GRUPO_A, situacao: "ativo" }, { id: GRUPO_B, situacao: "ativo" }],
       corretores: [
         { id: "gestor-a", nome: "Ana", email: "ana@a", user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_A },
         { id: "corretor-a", nome: "Caio", email: null, user_id: null, papel: "corretor", ativo: true, grupo_id: GRUPO_A },
@@ -121,7 +128,7 @@ describe("/api/cron/relatorio-semanal no WhatsApp do gestor", () => {
     enviados.length = 0;
     noWhatsapp.length = 0;
     banco = bancoFalso({
-      grupos: [{ id: GRUPO_A }, { id: GRUPO_B }],
+      grupos: [{ id: GRUPO_A, situacao: "ativo" }, { id: GRUPO_B, situacao: "ativo" }],
       corretores: [
         { id: "gestor-a", nome: "Ana Souza", email: "ana@a", user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_A, relatorio_semanal_whatsapp: true, relatorio_semanal_whatsapp_em: null },
         { id: "gestor-a2", nome: "Alice", email: null, user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_A, relatorio_semanal_whatsapp: false, relatorio_semanal_whatsapp_em: null },
@@ -194,5 +201,83 @@ describe("/api/cron/relatorio-semanal sem a chave do e-mail", () => {
     const corpo = await resp.json();
     expect(enviados).toHaveLength(0);
     expect(corpo.enviados ?? 0).toBe(0);
+  });
+});
+
+/*
+ * Só contas vivas e com alguém para receber (revisão de 30/10/2026): antes
+ * todo grupo, cancelado inclusive, pagava a coleta inteira dos números.
+ */
+describe("/api/cron/relatorio-semanal só monta para quem vai receber", () => {
+  const GRUPO_C = "00000000-0000-0000-0000-00000000000c";
+  const GRUPO_D = "00000000-0000-0000-0000-00000000000d";
+  const GRUPO_E = "00000000-0000-0000-0000-00000000000e";
+  const gestor = (id: string, grupo: string, querWhatsapp: boolean) => ({
+    id,
+    nome: id,
+    email: `${id}@x`,
+    user_id: null,
+    papel: "gestor",
+    ativo: true,
+    grupo_id: grupo,
+    relatorio_semanal_whatsapp: querWhatsapp,
+    relatorio_semanal_whatsapp_em: null,
+  });
+
+  beforeEach(() => {
+    enviados.length = 0;
+    noWhatsapp.length = 0;
+    suspensos.clear();
+    banco = bancoFalso({
+      grupos: [
+        { id: GRUPO_A, situacao: "ativo", cancelado_em: null },
+        { id: GRUPO_B, situacao: "ativo", cancelado_em: "2026-10-01T00:00:00Z" },
+        { id: GRUPO_C, situacao: "encerrado", cancelado_em: null },
+        { id: GRUPO_D, situacao: "ativo", cancelado_em: null },
+        { id: GRUPO_E, situacao: "ativo", cancelado_em: null },
+      ],
+      corretores: [
+        gestor("ga", GRUPO_A, true),
+        gestor("gb", GRUPO_B, true),
+        gestor("gc", GRUPO_C, true),
+        gestor("gd", GRUPO_D, true),
+        gestor("ge", GRUPO_E, false),
+      ],
+      leads: [],
+      visitas: [],
+      vendas: [],
+      corretor_whatsapp_instancias: [],
+      whatsapp_funil_metricas: [],
+      whatsapp_resposta_metricas: [],
+      whatsapp_campanhas_fila: [],
+      empreendimentos: [],
+    });
+  });
+
+  it("cancelado, encerrado, suspenso e grupo sem ninguém para receber não são montados", async () => {
+    vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "");
+    suspensos.add(GRUPO_D);
+    const resp = await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    const corpo = await resp.json();
+    expect(noWhatsapp.map((m) => m.para)).toEqual(["ga"]);
+    // D (suspenso) e E (ninguém quer, e-mail desligado) foram pulados; B e C nem vieram.
+    expect(corpo.pulados).toBe(2);
+    // O claim por gestor continua: o suspenso não foi carimbado.
+    expect(banco.tabelas.corretores.find((c) => c.id === "gd")?.relatorio_semanal_whatsapp_em).toBeNull();
+  });
+
+  it("com o e-mail ligado, o grupo sem opt-in no WhatsApp ainda é montado (e o suspenso não)", async () => {
+    vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "sim");
+    suspensos.add(GRUPO_D);
+    await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    expect(enviados.map((e) => e.para).sort()).toEqual(["ga@x", "ge@x"]);
+  });
+
+  it("deveMontarORelatorio", async () => {
+    const { deveMontarORelatorio } = await import("@/lib/admin/relatorioSemanal");
+    expect(deveMontarORelatorio({ gestoresNoWhatsapp: 1, porEmail: false, suspenso: false })).toBe(true);
+    expect(deveMontarORelatorio({ gestoresNoWhatsapp: 0, porEmail: true, suspenso: false })).toBe(true);
+    expect(deveMontarORelatorio({ gestoresNoWhatsapp: 0, porEmail: false, suspenso: false })).toBe(false);
+    expect(deveMontarORelatorio({ gestoresNoWhatsapp: 3, porEmail: true, suspenso: true })).toBe(false);
   });
 });

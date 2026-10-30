@@ -6,6 +6,7 @@ import { chamarLlmJson, algumProvedorConfigurado } from "@/lib/whatsapp/llm";
 import type { Ramo } from "@/lib/ramos/ramos";
 import {
   cacheDaLinha,
+  comTentativa,
   decidirResumo,
   falasParaOResumo,
   lerSaidaDoResumo,
@@ -14,6 +15,7 @@ import {
   type DecisaoDoResumo,
   type FalaDaConversa,
   type ResumoDaConversa,
+  tentativaDoResumo,
 } from "./resumoDaConversa";
 import { notaDaLinha, type NotaDoLead } from "./notaDoLead";
 import { recalcularNotaDoLead } from "./notaDoLeadServidor";
@@ -40,18 +42,48 @@ export type EstadoDoResumo = {
   decisao?: DecisaoDoResumo | "falhou";
 };
 
-/** As últimas falas do lead (todas as conversas que a sessão enxerga). */
-async function falasDoLead(supabase: Cliente, leadId: string): Promise<FalaDaConversa[]> {
+/**
+ * As últimas falas do lead (todas as conversas que a sessão enxerga) e
+ * quantas conversas ela enxerga — zero é o ADM ou o lead cuja conversa está
+ * em outro número (0134).
+ */
+async function falasDoLead(supabase: Cliente, leadId: string): Promise<{ falas: FalaDaConversa[]; conversasVisiveis: number }> {
   const { data: conversas } = await supabase.from("whatsapp_conversas").select("id").eq("lead_id", leadId);
   const ids = (conversas ?? []).map((c) => c.id);
-  if (ids.length === 0) return [];
+  if (ids.length === 0) return { falas: [], conversasVisiveis: 0 };
   const { data } = await supabase
     .from("whatsapp_mensagens")
     .select("remetente, conteudo, created_at")
     .in("conversa_id", ids)
     .order("created_at", { ascending: false })
     .limit(80);
-  return (data ?? []).map((m) => ({ remetente: m.remetente, texto: m.conteudo ?? "", em: m.created_at }));
+  return {
+    falas: (data ?? []).map((m) => ({ remetente: m.remetente, texto: m.conteudo ?? "", em: m.created_at })),
+    conversasVisiveis: ids.length,
+  };
+}
+
+/**
+ * A nota para MOSTRAR na ficha, sem gravar (revisão de 30/10/2026).
+ *
+ * A sessão não grava a nota: a RLS pode esconder dela a conversa do lead
+ * (ADM, lead em outro número), e a conta sem as falas sai "frio — sumiu" —
+ * gravada, ela trocava a nota boa da chave de serviço pela degradada. Quem
+ * grava é o webhook (a cada fala do cliente) e o tique dos follow-ups.
+ *
+ * Sem conversa visível, vale a nota gravada (feita pela chave, com as
+ * falas); só sem nenhuma a conta da sessão aparece, e só na tela.
+ */
+async function notaParaMostrar(
+  supabase: Cliente,
+  leadId: string,
+  linha: LinhaDoCache,
+  conversasVisiveis: number,
+  agora: Date,
+): Promise<NotaDoLead | null> {
+  const gravada = notaDaLinha(linha);
+  if (conversasVisiveis === 0 && gravada) return gravada;
+  return (await recalcularNotaDoLead(supabase, leadId, agora, { gravar: false })) ?? gravada;
 }
 
 type LinhaDoCache = {
@@ -83,17 +115,22 @@ export const NOTA_DA_FICHA_VENCE_EM_MS = 30 * 60_000;
 
 /**
  * O estado para a primeira pintura: nenhuma chamada de IA. A nota vencida
- * (ou nunca calculada) é refeita aqui — é a régua determinística, três
- * leituras e uma gravação.
+ * (ou nunca calculada) é refeita aqui só para MOSTRAR — a régua
+ * determinística, sem gravação (`notaParaMostrar`).
  */
 export async function lerEstadoDoResumo(supabase: Cliente, leadId: string, agora: Date = new Date()): Promise<EstadoDoResumo | null> {
-  const [linha, falas] = await Promise.all([linhaDoCache(supabase, leadId), falasDoLead(supabase, leadId)]);
+  const [linha, { falas, conversasVisiveis }] = await Promise.all([
+    linhaDoCache(supabase, leadId),
+    falasDoLead(supabase, leadId),
+  ]);
   if (!linha) return null;
   const cache = cacheDaLinha(linha);
   const ultima = falas[0]?.em ?? null;
   const vencida =
     !linha.nota_calculada_em || agora.getTime() - new Date(linha.nota_calculada_em).getTime() > NOTA_DA_FICHA_VENCE_EM_MS;
-  const nota = vencida ? ((await recalcularNotaDoLead(supabase, leadId, agora)) ?? notaDaLinha(linha)) : notaDaLinha(linha);
+  const nota = vencida
+    ? await notaParaMostrar(supabase, leadId, linha, conversasVisiveis, agora)
+    : notaDaLinha(linha);
   return {
     resumo: cache?.resumo ?? null,
     geradoEm: cache?.geradoEm ?? null,
@@ -121,7 +158,10 @@ export async function atualizarResumoDaConversa(
   },
 ): Promise<EstadoDoResumo | null> {
   const agora = p.agora ?? new Date();
-  const [linha, todas] = await Promise.all([linhaDoCache(supabase, p.leadId), falasDoLead(supabase, p.leadId)]);
+  const [linha, { falas: todas, conversasVisiveis }] = await Promise.all([
+    linhaDoCache(supabase, p.leadId),
+    falasDoLead(supabase, p.leadId),
+  ]);
   if (!linha) return null;
   const cache = cacheDaLinha(linha);
   const falas = falasParaOResumo(todas);
@@ -135,6 +175,7 @@ export async function atualizarResumoDaConversa(
     forcar: p.forcar,
     resumosHoje: p.resumosHoje,
     semCota: p.semCota || !algumProvedorConfigurado(),
+    ultimaTentativaEm: tentativaDoResumo(linha.resumo_conversa),
   });
   const doCache = (d: EstadoDoResumo["decisao"]): EstadoDoResumo => ({
     resumo: cache?.resumo ?? null,
@@ -144,6 +185,27 @@ export async function atualizarResumoDaConversa(
     decisao: d,
   });
   if (decisao !== "gerar") return doCache(decisao);
+
+  /*
+   * A TENTATIVA é carimbada antes da chamada (revisão de 30/10/2026), e só
+   * segue quem conseguiu gravar: o intervalo de `decidirResumo` passa a
+   * valer mesmo quando a IA devolve algo ilegível, e a sessão que a RLS não
+   * deixa gravar no lead (0 linhas) não chama a IA — sem cache, ela
+   * chamaria a cada abertura da ficha. De quebra, duas abas abertas juntas
+   * não pagam dois resumos (a segunda vê a tentativa da primeira).
+   */
+  const tentativaEm = agora.toISOString();
+  const carimbo = await supabase
+    .from("leads")
+    .update({ resumo_conversa: comTentativa(linha.resumo_conversa, tentativaEm) as unknown as Json })
+    .eq("id", p.leadId)
+    .select("id");
+  if (carimbo.error || (carimbo.data ?? []).length === 0) {
+    console.warn(
+      `[resumo da conversa] tentativa não carimbada (${carimbo.error?.message ?? "0 linhas"}): sem chamada à IA`,
+    );
+    return doCache("falhou");
+  }
 
   const resultado = await chamarLlmJson(montarPromptDoResumo({ ramo: p.ramo, ramoDescricao: p.ramoDescricao, falas }), {
     temperature: 0.2,
@@ -157,13 +219,26 @@ export async function atualizarResumoDaConversa(
   }
 
   const geradoEm = agora.toISOString();
-  const { error } = await supabase
+  /*
+   * Com o resumo vai `nota_calculada_em = null`: a nota muda com a leitura
+   * nova da IA, mas quem a GRAVA é a chave de serviço (o tique dos
+   * follow-ups pega as nunca calculadas primeiro). A sessão só mostra.
+   */
+  const { data: gravadas, error } = await supabase
     .from("leads")
-    .update({ resumo_conversa: resumo as unknown as Json, resumo_conversa_em: geradoEm, resumo_conversa_ate: ultima ?? geradoEm })
-    .eq("id", p.leadId);
-  if (error) console.warn(`[resumo da conversa] cache não gravou: ${error.message}`);
+    .update({
+      resumo_conversa: { ...resumo, tentativaEm: geradoEm } as unknown as Json,
+      resumo_conversa_em: geradoEm,
+      resumo_conversa_ate: ultima ?? geradoEm,
+      nota_calculada_em: null,
+    })
+    .eq("id", p.leadId)
+    .select("id");
+  if (error || (gravadas ?? []).length === 0) {
+    console.warn(`[resumo da conversa] cache não gravou: ${error?.message ?? "0 linhas"}`);
+  }
 
-  // A nota é refeita com a leitura nova da IA (o ajuste limitado da régua).
-  const nota = (await recalcularNotaDoLead(supabase, p.leadId, agora)) ?? notaDaLinha(linha);
+  // A nota com a leitura nova da IA (o ajuste limitado da régua), só para a tela.
+  const nota = await notaParaMostrar(supabase, p.leadId, linha, conversasVisiveis, agora);
   return { resumo, geradoEm, desatualizado: false, nota, decisao: "gerar" };
 }

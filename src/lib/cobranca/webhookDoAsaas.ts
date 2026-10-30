@@ -18,6 +18,16 @@ import { recompensarIndicacao } from "@/lib/indicacoes/indicacao";
  *   suspensão é derivada (`cobranca.ts`), não gravada.
  * - `PAYMENT_OVERDUE`: nada muda no banco (o painel já deriva o atraso);
  *   só avisa os administradores.
+ * - `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`,
+ *   `PAYMENT_CHARGEBACK_DISPUTE`, `PAYMENT_DELETED` (revisão de 30/10/2026):
+ *   o dinheiro voltou (ou pode voltar) — a linha de `pagamentos_do_grupo`
+ *   desse `asaas_pagamento_id` sai (idempotente: sem linha, nada a tirar), a
+ *   competência volta a ficar em aberto no painel, e os administradores são
+ *   avisados. O crédito de indicação gerado por ESSE pagamento: se ainda não
+ *   foi aplicado, é apagado e a recompensa é recalculada (sai de novo se a
+ *   conta tiver outro pagamento de verdade, `recompensarIndicacao`); se já
+ *   foi aplicado (o desconto já foi dado), NÃO some — ganha uma observação
+ *   "revisar" e o aviso pede a conferência à mão.
  * - Qualquer outro evento: ignorado (a rota responde 200 do mesmo jeito,
  *   senão o Asaas repete e pausa a fila depois de 15 falhas).
  *
@@ -50,11 +60,19 @@ export type Desfecho =
   | { resultado: "repetido"; grupoId: string }
   | { resultado: "competencia_ja_paga"; grupoId: string; competencia: string }
   | { resultado: "vencido_avisado"; grupoId: string }
+  | { resultado: "estornado"; grupoId: string | null; removido: boolean; creditoParaRevisar: boolean }
   /** Falha do banco: a rota responde 500 e o Asaas tenta de novo. */
   | { resultado: "falhou"; motivo: string };
 
 const RECEBIDO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 const VENCIDO = "PAYMENT_OVERDUE";
+/** O pagamento deixou de valer (ou está em disputa): o registro sai. */
+const DESFEITO: Record<string, string> = {
+  PAYMENT_REFUNDED: "estornado",
+  PAYMENT_CHARGEBACK_REQUESTED: "com chargeback pedido",
+  PAYMENT_CHARGEBACK_DISPUTE: "em disputa de chargeback",
+  PAYMENT_DELETED: "apagado no Asaas",
+};
 
 /**
  * Compara o token recebido com o esperado em tempo constante (pelo hash dos
@@ -122,11 +140,14 @@ export async function processarEventoDoAsaas(
   agora: Date = new Date(),
 ): Promise<Desfecho> {
   const tipo = typeof evento?.event === "string" ? evento.event : "";
-  if (!RECEBIDO.has(tipo) && tipo !== VENCIDO) return { resultado: "ignorado", motivo: `evento ${tipo || "sem tipo"}` };
+  if (!RECEBIDO.has(tipo) && tipo !== VENCIDO && !DESFEITO[tipo]) {
+    return { resultado: "ignorado", motivo: `evento ${tipo || "sem tipo"}` };
+  }
   const pagamento = evento.payment;
   if (!pagamento || typeof pagamento.id !== "string" || !ID.test(pagamento.id)) {
     return { resultado: "ignorado", motivo: "evento sem pagamento" };
   }
+  if (DESFEITO[tipo]) return desfazerPagamento(servico, tipo, pagamento as Partial<PagamentoDoAsaas> & { id: string }, avisar);
 
   const achado = await acharGrupo(servico, pagamento);
   if (!achado.ok) return { resultado: "falhou", motivo: achado.motivo };
@@ -216,4 +237,113 @@ export async function processarEventoDoAsaas(
   });
   await recompensarDepoisDoPagamento(servico, grupo, avisar);
   return { resultado: "registrado", grupoId: grupo.id, competencia };
+}
+
+/**
+ * Estorno, chargeback ou cobrança apagada: tira o registro do pagamento (se
+ * houver) e cuida do crédito de indicação que ele gerou. Idempotente: a
+ * segunda entrega não acha linha e não mexe em nada.
+ */
+async function desfazerPagamento(
+  servico: Servico,
+  tipo: string,
+  pagamento: Partial<PagamentoDoAsaas> & { id: string },
+  avisar: (aviso: Aviso) => void,
+): Promise<Desfecho> {
+  const { data: registro, error: erroDaBusca } = await servico
+    .from("pagamentos_do_grupo")
+    .select("id, grupo_id, competencia, valor, pago_em")
+    .eq("asaas_pagamento_id", pagamento.id)
+    .maybeSingle();
+  if (erroDaBusca) return { resultado: "falhou", motivo: `pagamento não conferido: ${erroDaBusca.message}` };
+
+  let grupo: { id: string; nome: string } | null = null;
+  if (registro) {
+    const { data } = await servico.from("grupos").select("id, nome").eq("id", registro.grupo_id).maybeSingle();
+    grupo = data ?? { id: registro.grupo_id, nome: "Uma conta" };
+  } else {
+    const achado = await acharGrupo(servico, pagamento);
+    if (!achado.ok) return { resultado: "falhou", motivo: achado.motivo };
+    grupo = achado.grupo;
+  }
+
+  // Cobrança apagada que nunca foi paga: não havia o que tirar nem avisar.
+  if (!registro && tipo === "PAYMENT_DELETED") {
+    return { resultado: "estornado", grupoId: grupo?.id ?? null, removido: false, creditoParaRevisar: false };
+  }
+
+  let creditoParaRevisar = false;
+  let recalcular = false;
+  if (registro) {
+    // O crédito é lido ANTES de apagar o pagamento: a FK zera `pagamento_id`.
+    const { data: creditos, error: erroDoCredito } = await servico
+      .from("creditos_de_indicacao")
+      .select("id, aplicado_em, observacao")
+      .eq("pagamento_id", registro.id);
+    if (erroDoCredito) return { resultado: "falhou", motivo: `crédito não conferido: ${erroDoCredito.message}` };
+
+    const { error: erroDoDelete } = await servico.from("pagamentos_do_grupo").delete().eq("id", registro.id);
+    if (erroDoDelete) return { resultado: "falhou", motivo: `pagamento não removido: ${erroDoDelete.message}` };
+
+    for (const credito of creditos ?? []) {
+      if (!credito.aplicado_em) {
+        // Ainda não virou desconto: apaga (só se continuar não aplicado).
+        const { data: apagado, error } = await servico
+          .from("creditos_de_indicacao")
+          .delete()
+          .eq("id", credito.id)
+          .is("aplicado_em", null)
+          .select("id");
+        if (error) console.error(`[asaas] crédito ${credito.id} não apagado após ${tipo}: ${error.message}`);
+        if (!error && apagado?.length) {
+          recalcular = true;
+          continue;
+        }
+      }
+      // Já aplicado (ou não deu para apagar): fica, marcado para revisão.
+      creditoParaRevisar = true;
+      const nota = `Revisar: o pagamento ${pagamento.id} que gerou este crédito foi ${DESFEITO[tipo]}.`;
+      const observacao = [nota, credito.observacao].filter(Boolean).join(" ").slice(0, 1000);
+      const { error } = await servico.from("creditos_de_indicacao").update({ observacao }).eq("id", credito.id);
+      if (error) console.error(`[asaas] crédito ${credito.id} não marcado para revisão: ${error.message}`);
+    }
+
+    const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+      grupo_id: registro.grupo_id,
+      acao: "pagamento_removido",
+      ator_id: null,
+      ator_plataforma_user_id: null,
+      alvo_corretor_id: null,
+      detalhes: {
+        origem: "asaas",
+        evento: tipo,
+        competencia: registro.competencia,
+        valor: Number(registro.valor),
+        pago_em: registro.pago_em,
+        asaas_pagamento_id: pagamento.id,
+      },
+    });
+    if (erroDoEvento) console.error(`[asaas] evento da remoção (${registro.grupo_id}) não gravado: ${erroDoEvento.message}`);
+  }
+
+  if (grupo) {
+    const valor = Number(registro?.valor ?? pagamento.value);
+    const quanto = Number.isFinite(valor) ? ` ${reaisDoAviso(valor)}` : "";
+    const partes = [`Pagamento ${DESFEITO[tipo]}: ${grupo.nome}${quanto}.`];
+    if (registro) {
+      partes.push(`A competência ${registro.competencia.slice(5, 7)}/${registro.competencia.slice(0, 4)} voltou a ficar em aberto.`);
+    }
+    if (creditoParaRevisar) partes.push("O crédito de indicação que ele gerou já foi aplicado: revise à mão.");
+    avisar({
+      titulo: "Pagamento desfeito no Asaas",
+      corpo: partes.join(" "),
+      url: `/plataforma/grupos/${grupo.id}`,
+      tag: `asaas-desfeito-${pagamento.id}`,
+    });
+  }
+
+  // O crédito apagado volta se a conta tiver outro pagamento de verdade.
+  if (recalcular && grupo) await recompensarDepoisDoPagamento(servico, grupo, avisar);
+
+  return { resultado: "estornado", grupoId: grupo?.id ?? null, removido: Boolean(registro), creditoParaRevisar };
 }

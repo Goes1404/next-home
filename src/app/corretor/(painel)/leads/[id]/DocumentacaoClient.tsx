@@ -4,6 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, Paperclip, RotateCcw, X } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { temModulo } from "@/lib/ramos/ramos";
 import { dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
 import {
   avisoDePaginaVelha,
@@ -108,6 +110,8 @@ export function DocumentacaoClient({
   fases: FaseNaTela[];
   sugerirEtapa: boolean;
 }) {
+  // O ramo (30/10/2026, revisão): "construtoras" e "imóvel" só para quem vende imóvel.
+  const comImoveis = temModulo(useRamoDoPainel().ramo, "catalogoDeImoveis");
   const [faseAtiva, setFaseAtiva] = useState<FaseDocumento>("financiamento");
   const [perfil, setPerfil] = useState<PerfilDeDocumento>("clt");
   const [novoItem, setNovoItem] = useState("");
@@ -363,7 +367,9 @@ export function DocumentacaoClient({
           <p className="text-fluid-xs text-apoio">
             {faseAtiva === "financiamento"
               ? "Nenhum documento pedido ainda. A lista começa pelo perfil de renda e você ajusta depois."
-              : "A lista do contrato começa com o que as construtoras costumam pedir; ajuste para a deste imóvel."}
+              : comImoveis
+                ? "A lista do contrato começa com o que as construtoras costumam pedir; ajuste para a deste imóvel."
+                : "A lista do contrato começa com o que costuma ser pedido; ajuste para a deste cliente."}
           </p>
           {editavel && (
             <div className="flex flex-wrap items-center gap-2">

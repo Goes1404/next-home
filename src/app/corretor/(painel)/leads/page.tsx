@@ -109,14 +109,16 @@ export default async function LeadsPage({
    * recortados. "Sem dono" só existe na equipe.
    */
   const pedidoDeCarteira = semDono ? CARTEIRA_EQUIPE : filtro.corretorId;
-  const [pagina, gestor, arquivados, empreendimentos, carteira] = await Promise.all([
+  // A equipe (só do gestor) entra na MESMA leva (30/10/2026): antes ela
+  // esperava as cinco leituras acabarem para só então ir ao banco.
+  const [pagina, gestor, arquivados, empreendimentos, carteira, equipe] = await Promise.all([
     getPaginaDeLeads(filtro),
     souGestor(),
     contarLeadsArquivados(pedidoDeCarteira),
     getEmpreendimentosParaFiltro(),
     getCarteiraDaVisao(pedidoDeCarteira),
+    souGestor().then((ehGestor) => (ehGestor ? getEquipeAtiva() : [])),
   ]);
-  const equipe = gestor ? await getEquipeAtiva() : [];
 
   // O nome de quem é a carteira alheia, para a faixa dizer em voz alta.
   let nomeDaCarteira: string | null = null;

@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { useRamoDoPainel, useVocabulario } from "@/lib/ramos/RamoDoPainel";
+import { temModulo } from "@/lib/ramos/ramos";
 import { salvarQualificacao } from "./acoes";
 
 /**
@@ -87,11 +89,25 @@ export function Qualificacao({
    * Fechada ela continua a UM toque, e o resumo diz o que se ganha ao abrir.
    * Quando houver dado, ela abre sozinha — aí o conteúdo justifica o espaço.
    */
-  const temAlgo = Boolean(min || max || renda || dorms || regiao || empreendimento);
+  // O ramo (30/10/2026, revisão): dormitórios e imóvel de interesse são de
+  // imóvel; nos outros ramos os campos somem (o valor gravado não muda).
+  const comImoveis = temModulo(useRamoDoPainel().ramo, "catalogoDeImoveis");
+  const oferta = useVocabulario().oferta.singular;
+  const temAlgo = Boolean(
+    min ||
+    max ||
+    renda ||
+    (comImoveis && dorms) ||
+    regiao ||
+    (comImoveis && empreendimento),
+  );
   const rotulo = "text-fluid-xs mb-1 block text-tenue";
 
   return (
-    <details open={temAlgo} className="border-linha bg-elevado rounded-2xl border p-4 sm:p-5">
+    <details
+      open={temAlgo}
+      className="border-linha bg-elevado rounded-2xl border p-4 sm:p-5"
+    >
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
         <h2 className="text-fluid-base text-titulo font-medium">O que procura</h2>
         <span className="text-fluid-xs text-tenue">
@@ -101,9 +117,8 @@ export function Qualificacao({
 
       {!temAlgo && (
         <p className="text-fluid-sm text-apoio mt-3">
-          Anote aqui o que este cliente procura. O que estiver preenchido a
-          assistente usa na conversa — e é o que evita oferecer imóvel fora do
-          que ele pode.
+          Anote aqui o que este cliente procura. O que estiver preenchido a assistente
+          usa na conversa — e é o que evita oferecer {oferta} fora do que ele pode.
         </p>
       )}
 
@@ -121,9 +136,10 @@ export function Qualificacao({
             onChange={(e) => setRenda(e.target.value)}
             disabled={salvando}
           />
-          <p className="text-fluid-xs mt-1 text-tenue">
-            Diferente do orçamento: é o que entra por mês, e é o que define o financiamento. A IA
-            pergunta isso na conversa e preenche sozinha.
+          <p className="text-fluid-xs text-tenue mt-1">
+            {comImoveis
+              ? "Diferente do orçamento: é o que entra por mês, e é o que define o financiamento. A IA pergunta isso na conversa e preenche sozinha."
+              : "Diferente do orçamento: é o que entra por mês."}
           </p>
         </div>
 
@@ -155,20 +171,22 @@ export function Qualificacao({
             className={campo}
           />
         </div>
-        <div>
-          <label className={rotulo} htmlFor="dorms">
-            Dormitórios (mínimo)
-          </label>
-          <input
-            id="dorms"
-            inputMode="numeric"
-            value={dorms}
-            disabled={salvando}
-            onChange={(e) => setDorms(e.target.value.replace(/\D/g, ""))}
-            placeholder="3"
-            className={campo}
-          />
-        </div>
+        {comImoveis && (
+          <div>
+            <label className={rotulo} htmlFor="dorms">
+              Dormitórios (mínimo)
+            </label>
+            <input
+              id="dorms"
+              inputMode="numeric"
+              value={dorms}
+              disabled={salvando}
+              onChange={(e) => setDorms(e.target.value.replace(/\D/g, ""))}
+              placeholder="3"
+              className={campo}
+            />
+          </div>
+        )}
         <div>
           <label className={rotulo} htmlFor="regiao">
             Região de interesse
@@ -182,30 +200,33 @@ export function Qualificacao({
             className={campo}
           />
         </div>
-        <div className="sm:col-span-2">
-          <label className={rotulo} htmlFor="empreendimento">
-            Imóvel de interesse
-          </label>
-          <select
-            id="empreendimento"
-            value={empreendimento}
-            disabled={salvando}
-            onChange={(e) => setEmpreendimento(e.target.value)}
-            className={campo}
-          >
-            <option value="">— nenhum —</option>
-            {empreendimentos.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        {comImoveis && (
+          <div className="sm:col-span-2">
+            <label className={rotulo} htmlFor="empreendimento">
+              Imóvel de interesse
+            </label>
+            <select
+              id="empreendimento"
+              value={empreendimento}
+              disabled={salvando}
+              onChange={(e) => setEmpreendimento(e.target.value)}
+              className={campo}
+            >
+              <option value="">— nenhum —</option>
+              {empreendimentos.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {(min || max) && (
-        <p className="text-fluid-xs mt-3 text-tenue">
-          Faixa: {min ? moeda.format(Number(min)) : "—"} a {max ? moeda.format(Number(max)) : "—"}
+        <p className="text-fluid-xs text-tenue mt-3">
+          Faixa: {min ? moeda.format(Number(min)) : "—"} a{" "}
+          {max ? moeda.format(Number(max)) : "—"}
         </p>
       )}
 

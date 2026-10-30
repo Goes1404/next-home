@@ -60,7 +60,9 @@ export default async function AnotacoesPage({
   if (colegaFiltro) query = query.eq("destinatario_id", colegaFiltro);
   if (soPendentes) query = query.is("concluida_em", null).not("lembrete_em", "is", null);
 
-  const [{ data: linhas }, gestor, empreendimentos, { data: leadDoFiltro }] = await Promise.all([
+  // A equipe vai na primeira leva (30/10/2026): não depende das notas, e
+  // antes era uma terceira ida ao banco, em série, no fim da página.
+  const [{ data: linhas }, gestor, empreendimentos, { data: leadDoFiltro }, equipeAtiva] = await Promise.all([
     query,
     souGestor(),
     getEmpreendimentosParaFiltro(),
@@ -69,6 +71,7 @@ export default async function AnotacoesPage({
     leadFiltro
       ? supabase.from("leads").select("id, nome, telefone").eq("id", leadFiltro).maybeSingle()
       : Promise.resolve({ data: null }),
+    getEquipeAtiva(),
   ]);
   const notas = linhas ?? [];
 
@@ -132,7 +135,7 @@ export default async function AnotacoesPage({
 
   // Colegas para direcionar: a equipe ativa menos o próprio corretor. O
   // gestor vê todos; corretor comum também — delegar nota não é privilégio.
-  const equipe = (await getEquipeAtiva()).filter((c) => c.id !== corretor.id);
+  const equipe = equipeAtiva.filter((c) => c.id !== corretor.id);
 
   return (
     <div>

@@ -19,6 +19,7 @@
  * Testes: `buscaRapida.test.ts`.
  */
 import { ETAPA_LABEL, type EtapaFunil } from "@/lib/types";
+import { RAMO_PADRAO, lerRamo, rotulosDeEtapaDoRamo, temModulo, vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 export type TipoDoResultado = "pagina" | "acao" | "lead" | "conversa" | "imovel";
 
@@ -181,15 +182,19 @@ async function rodar<T>(consultas: Consulta[]): Promise<T[]> {
  */
 export async function buscarNoPainel(
   cliente: ClienteDaBusca,
-  p: { termo: string; recorte: RecorteDaBusca; corretorId: string; foraDasOcultas: string | null },
+  p: { termo: string; recorte: RecorteDaBusca; corretorId: string; foraDasOcultas: string | null; ramo?: Ramo | null },
 ): Promise<RespostaDaBusca> {
   const termo = sanearTermo(p.termo);
   if (termo.length < MINIMO_PARA_BUSCAR) return RESPOSTA_VAZIA;
+  // O ramo (30/10/2026, revisão): sem catálogo de imóveis, nem consulta a
+  // tabela; e a etapa do lead sai no vocabulário dele ("Reunião marcada").
+  const comCatalogo = temModulo(p.ramo, "catalogoDeImoveis");
+  const rotulosDoRamo: Partial<Record<EtapaFunil, string>> = rotulosDeEtapaDoRamo(p.ramo);
 
   const [leads, conversas, imoveis] = await Promise.all([
     rodar<LinhaLead>(consultasDeLeads(cliente, termo, p.recorte, p.foraDasOcultas)).catch(() => []),
     rodar<LinhaConversa>(consultasDeConversas(cliente, termo, p.corretorId)).catch(() => []),
-    rodar<LinhaImovel>([consultaDeImoveis(cliente, termo)]).catch(() => []),
+    comCatalogo ? rodar<LinhaImovel>([consultaDeImoveis(cliente, termo)]).catch(() => []) : Promise.resolve([] as LinhaImovel[]),
   ]);
 
   return {
@@ -197,7 +202,7 @@ export async function buscarNoPainel(
       tipo: "lead" as const,
       id: l.id,
       titulo: l.nome?.trim() || "Sem nome",
-      detalhe: [l.telefone, l.etapa ? (ETAPA_LABEL[l.etapa as EtapaFunil] ?? null) : null].filter(Boolean).join(" · ") || null,
+      detalhe: [l.telefone, l.etapa ? (rotulosDoRamo[l.etapa as EtapaFunil] ?? ETAPA_LABEL[l.etapa as EtapaFunil] ?? null) : null].filter(Boolean).join(" · ") || null,
       href: `/corretor/leads/${l.id}`,
     })),
     conversas: conversas.map((c) => ({
@@ -237,6 +242,24 @@ export const ACOES_RAPIDAS: Atalho[] = [
   { tipo: "acao", href: "/corretor/imoveis/criar-imagem", titulo: "Criar arte", detalhe: "Imagem com IA", palavras: ["arte", "imagem", "post"] },
 ];
 
+/**
+ * As ações rápidas do ramo (30/10/2026, revisão). Na imobiliária é
+ * `ACOES_RAPIDAS`, o mesmo array de sempre. Nos outros ramos "Nova visita"
+ * vira o compromisso do ramo ("Nova reunião", "Novo atendimento") e
+ * "Cadastrar no catálogo" some com o catálogo de imóveis (`catalogoDeImoveis`).
+ */
+export function acoesRapidasDoRamo(ramo: Ramo | null | undefined): Atalho[] {
+  if (lerRamo(ramo) === RAMO_PADRAO) return ACOES_RAPIDAS;
+  const compromisso = vocabularioDoRamo(ramo).compromisso;
+  return ACOES_RAPIDAS.flatMap((a): Atalho[] => {
+    if (a.href === "/corretor/imoveis/novo") return temModulo(ramo, "catalogoDeImoveis") ? [a] : [];
+    if (a.href === "/corretor/agenda") {
+      return [{ ...a, titulo: `${compromisso.genero === "f" ? "Nova" : "Novo"} ${compromisso.singular}`, palavras: [...(a.palavras ?? []), compromisso.singular] }];
+    }
+    return [a];
+  });
+}
+
 /** As telas e ações que casam com o termo. Termo vazio = as ações, para começar. */
 export function filtrarAtalhos(atalhos: Atalho[], termo: string, limite = 6): Atalho[] {
   const t = normalizar(termo);
@@ -262,6 +285,21 @@ export function filtrarAtalhos(atalhos: Atalho[], termo: string, limite = 6): At
 // ---------------------------------------------------------------------------
 
 export const CHAVE_DAS_RECENTES = "astro:buscas-recentes";
+
+/**
+ * A chave das buscas recentes DESTE usuário (30/10/2026, revisão): com uma
+ * chave só, quem entrava depois num celular compartilhado via o que o
+ * anterior procurou (nomes de clientes). O "Sair" e a tela de login apagam
+ * todas (`LimparSaida`, `chavesDasRecentes`).
+ */
+export function chaveDasRecentes(usuarioId: string): string {
+  return `${CHAVE_DAS_RECENTES}:${usuarioId}`;
+}
+
+/** As chaves de buscas recentes guardadas (a antiga, global, e as por usuário). */
+export function ehChaveDasRecentes(chave: string | null | undefined): boolean {
+  return chave === CHAVE_DAS_RECENTES || Boolean(chave?.startsWith(`${CHAVE_DAS_RECENTES}:`));
+}
 export const MAXIMO_DE_RECENTES = 6;
 
 /** Lê o que estiver guardado; qualquer coisa estranha vira lista vazia. */

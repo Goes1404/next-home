@@ -122,3 +122,21 @@ describe("cada passo leva à tela que o faz", () => {
     expect(chaveDoOcultar("a")).not.toBe(chaveDoOcultar("b"));
   });
 });
+
+describe("o ramo da conta (30/10/2026, revisão)", () => {
+  it("imobiliária explícita = o mesmo de sem ramo, letra por letra", () => {
+    expect(passosDoInicio({ ...gestorNovo, ramo: "imobiliaria" })).toEqual(passosDoInicio(gestorNovo));
+  });
+
+  it("sem catálogo de imóveis, o passo do primeiro imóvel não existe", () => {
+    expect(ids({ ...gestorNovo, ramo: "seguros" })).toEqual(["whatsapp", "perfil", "avisos", "equipe", "lead"]);
+    expect(ids({ ...gestorNovo, tipoDoGrupo: "independente", ramo: "advocacia" })).not.toContain("imovel");
+  });
+
+  it("o texto fala a língua do ramo: nada de corretor nem de 'sua página'", () => {
+    const passos = passosDoInicio({ ...gestorNovo, ramo: "seguros" });
+    const texto = passos.map((p) => `${p.titulo} ${p.porque}`).join(" ");
+    expect(texto).not.toMatch(/corretor|sua página|imóve/i);
+    expect(passos.find((p) => p.id === "equipe")?.porque).toContain("Cada consultor");
+  });
+});

@@ -235,6 +235,35 @@ export async function cancelarAssinatura(assinaturaId: string): Promise<void> {
   await chamar<unknown>("DELETE", `/subscriptions/${encodeURIComponent(assinaturaId)}`);
 }
 
+/**
+ * Encerra a assinatura do grupo quando OUTRA ação o tira da cobrança
+ * (cancelamento, plano a preço de custo — revisão de 30/10/2026). Não lança:
+ * devolve a frase para a tela recusar a ação inteira, em vez de deixar o
+ * grupo cancelado aqui e o Asaas cobrando. 404 = a assinatura já não existe
+ * lá (apagada no painel do Asaas): conta como encerrada.
+ */
+export async function encerrarAssinaturaDoGrupo(
+  assinaturaId: string,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (!asaasConfigurado()) {
+    return {
+      ok: false,
+      erro: `A cobrança automática deste grupo está ligada, mas o Asaas não está configurado aqui (falta: ${variaveisDoAsaasFaltando().join(", ")}). Desligue a assinatura antes; nada foi mudado.`,
+    };
+  }
+  try {
+    await cancelarAssinatura(assinaturaId);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof ErroDoAsaas && e.status === 404) return { ok: true };
+    console.error(`[asaas] assinatura ${assinaturaId} não cancelada: ${e instanceof Error ? e.message : "erro"}`);
+    return {
+      ok: false,
+      erro: "Não deu para cancelar a cobrança automática no Asaas agora, então nada foi mudado (o grupo seguiria sendo cobrado). Tente de novo em instantes.",
+    };
+  }
+}
+
 export async function listarCobrancasDaAssinatura(
   assinaturaId: string,
   tempoLimiteMs: number = TEMPO_LIMITE_MS,

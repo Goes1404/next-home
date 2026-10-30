@@ -170,7 +170,34 @@ export async function ajustarCobrancaDoGrupo(
   const dia = lerDiaDoVencimentoDigitado(pedido.diaDoVencimento);
   if (!dia.ok) return { ok: false, erro: dia.erro };
 
-  const { data, error } = await createServiceClient()
+  const servico = createServiceClient();
+  const { data: antes, error: erroDaLeitura } = await servico
+    .from("grupos")
+    .select("mensalidade, dia_do_vencimento, asaas_assinatura_id")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroDaLeitura) {
+    console.error(`[plataforma] cobrança do grupo ${grupoId} não lida: ${erroDaLeitura.message}`);
+    return { ok: false, erro: ERRO_GENERICO };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+  // Com a cobrança automática ligada, o valor e o dia moram TAMBÉM na
+  // assinatura do Asaas (revisão de 30/10/2026). A API de atualização
+  // (`PUT /subscriptions/{id}`) só documenta `nextDueDate` e
+  // `updatePendingPayments`, sem o valor; mudar só aqui deixaria o painel e
+  // o Asaas cobrando números diferentes. Até haver um caminho confirmado, a
+  // mudança passa por desligar e religar a cobrança (a assinatura nova sai
+  // com o valor e o dia novos).
+  const mensalidadeAntes = antes.mensalidade == null ? null : Number(antes.mensalidade);
+  const mudou = mensalidadeAntes !== mensalidade.valor || antes.dia_do_vencimento !== dia.valor;
+  if (antes.asaas_assinatura_id && mudou) {
+    return {
+      ok: false,
+      erro: "A cobrança automática está ligada: o Asaas seguiria cobrando o valor e o dia antigos. Desligue a cobrança automática, salve a mensalidade e o vencimento novos e religue a cobrança.",
+    };
+  }
+
+  const { data, error } = await servico
     .from("grupos")
     .update({ mensalidade: mensalidade.valor, dia_do_vencimento: dia.valor })
     .eq("id", grupoId)

@@ -237,7 +237,7 @@ export default async function EquipePage() {
                   >
                     {lead.nome}
                   </Link>
-                  <EtiquetaEtapa etapa={lead.etapa} />
+                  <EtiquetaEtapa etapa={lead.etapa} ramo={gestor.ramo} />
                   <NotaDoLeadChip nota={lead.nota} />
                 </div>
                 <p className="text-fluid-xs text-tenue mt-0.5">

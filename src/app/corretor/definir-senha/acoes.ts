@@ -61,8 +61,12 @@ export async function definirSenha(
 
   // Começam os 90 dias desta senha; a sessão é renovada para o JWT trazer a
   // data nova (ver `trocarSenha`).
+  // A troca obrigatória do administrador sem ficha mora no `app_metadata`
+  // (`administradoresAcoes.ts`): a senha escolhida pelo link também a desliga.
   const { data: depois } = await supabase.auth.getUser();
-  await registrarSenhaTrocada(userId, depois.user?.app_metadata as Record<string, unknown> | undefined);
+  const meta = { ...((depois.user?.app_metadata as Record<string, unknown> | undefined) ?? {}) };
+  if (meta.deve_trocar_senha === true) meta.deve_trocar_senha = false;
+  await registrarSenhaTrocada(userId, meta);
   await supabase.auth.refreshSession();
 
   redirect("/corretor");

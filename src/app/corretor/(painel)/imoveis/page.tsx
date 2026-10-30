@@ -5,6 +5,7 @@ import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { ListaImoveisClient } from "./ListaImoveisClient";
 import { CabecalhoDeTela } from "../_componentes/CabecalhoDeTela";
 import { getArtePorImovel } from "@/lib/imagens/galeria";
+import { AvisoDeCarregamento, EsqueletoCartao } from "../_componentes/Esqueleto";
 
 export const metadata = {
   title: "Gestão & Edição de Imóveis | Painel do Corretor",
@@ -13,7 +14,31 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function ImoveisPage() {
+/**
+ * O cabeçalho (título, "+ Novo imóvel", atalhos) não depende de dado e sai
+ * na hora (30/10/2026); o catálogo, que é a consulta mais cara do painel
+ * (imóveis com tipologias, mídias, lazer e unidades: 115–200 ms no banco),
+ * chega atrás do próprio Suspense. Antes a tela inteira esperava por ele.
+ */
+export default function ImoveisPage() {
+  return (
+    <div className="space-y-6">
+      <CabecalhoDoCatalogo />
+      <Suspense
+        fallback={
+          <>
+            <AvisoDeCarregamento>Carregando o catálogo…</AvisoDeCarregamento>
+            <EsqueletoCartao linhas={5} />
+          </>
+        }
+      >
+        <Catalogo />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Catalogo() {
   const imoveis = await getEmpreendimentosDoPainel();
 
 
@@ -37,7 +62,31 @@ export default async function ImoveisPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <>
+      {/*
+        O que falta CADASTRAR não mora mais aqui (04/09/2026, decisão do
+        usuário): o cartão de cadastro incompleto e o dos lançamentos
+        levantados no mercado foram os dois para "Fila de cadastro", que é o
+        subtópico dedicado a isso no menu. Esta tela é o CATÁLOGO: o que já existe,
+        para editar. "Links por imóvel" também saiu do cabeçalho pelo mesmo
+        motivo: virou subtópico do menu.
+      */}
+      <ListaImoveisClient imoveis={imoveis} artePorImovel={Object.fromEntries(artePorImovel)} />
+
+      <Suspense fallback={null}>
+        <ProcuraPorImovel
+          imoveis={imoveis
+            .filter((i) => i.id)
+            .map((i) => ({ id: i.id as string, nome: i.nome, slug: i.slug, publicado: i.publicado !== false, foto: i.galeria?.[0]?.url ?? null }))}
+        />
+      </Suspense>
+    </>
+  );
+}
+
+function CabecalhoDoCatalogo() {
+  return (
+    <>
       {/*
         A sobrelinha "CATÁLOGO & PORTFÓLIO" saiu: era um rótulo em cima de um
         título, dizendo a mesma coisa duas vezes — e ficava FORA do
@@ -90,23 +139,6 @@ export default async function ImoveisPage() {
         }
       />
 
-      {/*
-        O que falta CADASTRAR não mora mais aqui (04/09/2026, decisão do
-        usuário): o cartão de cadastro incompleto e o dos lançamentos
-        levantados no mercado foram os dois para "Fila de cadastro", que é o
-        subtópico dedicado a isso no menu. Esta tela é o CATÁLOGO: o que já existe,
-        para editar. "Links por imóvel" também saiu do cabeçalho pelo mesmo
-        motivo: virou subtópico do menu.
-      */}
-      <ListaImoveisClient imoveis={imoveis} artePorImovel={Object.fromEntries(artePorImovel)} />
-
-      <Suspense fallback={null}>
-        <ProcuraPorImovel
-          imoveis={imoveis
-            .filter((i) => i.id)
-            .map((i) => ({ id: i.id as string, nome: i.nome, slug: i.slug, publicado: i.publicado !== false, foto: i.galeria?.[0]?.url ?? null }))}
-        />
-      </Suspense>
-    </div>
+    </>
   );
 }

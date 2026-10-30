@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { destinoSeguro } from "@/lib/auth/links";
+import { senhaTrocadaEm, senhaVencida } from "@/lib/auth/politicaDeSenha";
+import { DESTINO_SENHA_VENCIDA, registrarSenhaTrocada } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (error || !user) return irPara("/corretor/entrar?google=falhou");
 
   const [{ data: ficha }, { data: ehAdmin }] = await Promise.all([
-    supabase.from("corretores").select("id, ativo").eq("user_id", user.id).maybeSingle(),
+    supabase.from("corretores").select("id, ativo, deve_trocar_senha").eq("user_id", user.id).maybeSingle(),
     supabase.rpc("eh_admin_da_plataforma"),
   ]);
 
@@ -46,6 +48,24 @@ export async function GET(request: NextRequest) {
     }
     return irPara("/corretor/entrar?google=sem-conta");
   }
+
+  // Os 90 dias da senha (revisão de 30/10/2026), como em `entrar`: quem só
+  // entra com o Google também começa a contar no primeiro login (senão a
+  // validade nunca começaria), e a sessão é renovada para o JWT trazer a
+  // data. Vencida vai para a troca.
+  const appMetadata = user.app_metadata as Record<string, unknown> | undefined;
+  const trocada = senhaTrocadaEm(appMetadata);
+  if (!trocada) {
+    await registrarSenhaTrocada(user.id, appMetadata);
+    await supabase.auth.refreshSession();
+  } else if (senhaVencida(trocada)) {
+    return irPara(DESTINO_SENHA_VENCIDA);
+  }
+
+  // A troca obrigatória, como em `entrar`: na ficha (`deve_trocar_senha`) e,
+  // para o administrador sem ficha, no `app_metadata`.
+  if (ficha?.deve_trocar_senha) return irPara("/corretor/senha");
+  if (!ficha && appMetadata?.deve_trocar_senha === true) return irPara("/corretor/senha");
 
   if (!ficha && ehAdmin === true && !next) return irPara("/plataforma");
   return irPara(destinoSeguro(next));

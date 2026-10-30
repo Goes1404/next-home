@@ -188,3 +188,68 @@ describe("indique e ganhe no webhook (0247)", () => {
     expect(avisos.map((a) => a.titulo)).toEqual(["Pagamento recebido"]);
   });
 });
+
+describe("pagamento desfeito no Asaas (revisão de 30/10/2026)", () => {
+  async function receber() {
+    await processarEventoDoAsaas(servico(), evento("PAYMENT_RECEIVED"), avisar);
+    avisos = [];
+  }
+
+  it("estorno tira o registro, deixa o evento e avisa; a segunda entrega não faz nada", async () => {
+    await receber();
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_REFUNDED"), avisar);
+    expect(r).toEqual({ resultado: "estornado", grupoId: G1, removido: true, creditoParaRevisar: false });
+    expect(banco.tabelas.pagamentos_do_grupo).toEqual([]);
+    expect(banco.tabelas.admin_eventos.at(-1)).toMatchObject({
+      grupo_id: G1,
+      acao: "pagamento_removido",
+      detalhes: expect.objectContaining({ origem: "asaas", evento: "PAYMENT_REFUNDED", asaas_pagamento_id: "pay_1" }),
+    });
+    expect(avisos).toEqual([expect.objectContaining({ corpo: expect.stringMatching(/estornado: Imob Sol.*11\/2026/) })]);
+
+    avisos = [];
+    const de_novo = await processarEventoDoAsaas(servico(), evento("PAYMENT_REFUNDED"), avisar);
+    expect(de_novo).toMatchObject({ resultado: "estornado", removido: false });
+    expect(banco.tabelas.admin_eventos.filter((e) => e.acao === "pagamento_removido")).toHaveLength(1);
+  });
+
+  it("chargeback pedido ou em disputa também tira o registro", async () => {
+    for (const tipo of ["PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE"]) {
+      await receber();
+      expect(await processarEventoDoAsaas(servico(), evento(tipo), avisar)).toMatchObject({ removido: true });
+      expect(banco.tabelas.pagamentos_do_grupo).toEqual([]);
+    }
+  });
+
+  it("cobrança apagada que nunca foi paga não avisa nem grava nada", async () => {
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_DELETED"), avisar);
+    expect(r).toEqual({ resultado: "estornado", grupoId: G1, removido: false, creditoParaRevisar: false });
+    expect(avisos).toEqual([]);
+    expect(banco.tabelas.admin_eventos).toEqual([]);
+  });
+
+  it("crédito de indicação ainda não aplicado é apagado (e recalculado: sem outro pagamento, não volta)", async () => {
+    banco.tabelas.indicacoes = [{ id: "ind-1", codigo: "beto1234", grupo_indicador_id: G2, grupo_indicado_id: G1 }];
+    banco.tabelas.creditos_de_indicacao = [];
+    await receber();
+    expect(banco.tabelas.creditos_de_indicacao).toHaveLength(1);
+
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_REFUNDED"), avisar);
+    expect(r).toMatchObject({ removido: true, creditoParaRevisar: false });
+    expect(banco.tabelas.creditos_de_indicacao).toEqual([]);
+  });
+
+  it("crédito já aplicado NÃO some: fica marcado para revisão e o aviso pede a conferência", async () => {
+    banco.tabelas.indicacoes = [{ id: "ind-1", codigo: "beto1234", grupo_indicador_id: G2, grupo_indicado_id: G1 }];
+    banco.tabelas.creditos_de_indicacao = [];
+    await receber();
+    banco.tabelas.creditos_de_indicacao[0].aplicado_em = "2026-11-10T12:00:00Z";
+
+    const r = await processarEventoDoAsaas(servico(), evento("PAYMENT_CHARGEBACK_REQUESTED"), avisar);
+    expect(r).toMatchObject({ removido: true, creditoParaRevisar: true });
+    expect(banco.tabelas.creditos_de_indicacao).toEqual([
+      expect.objectContaining({ aplicado_em: "2026-11-10T12:00:00Z", observacao: expect.stringMatching(/^Revisar: .*pay_1/) }),
+    ]);
+    expect(avisos[0].corpo).toMatch(/revise à mão/);
+  });
+});

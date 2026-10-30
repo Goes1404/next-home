@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { inscricaoDoPainel, registrarSwDoPainel } from "@/lib/painel/swDoPainel";
 import { enviarNotificacaoDeTeste } from "./acoesDasNotificacoes";
 import type { ResultadoDoTeste } from "./resultadoDoTeste";
 
@@ -34,6 +35,8 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
   const [estado, setEstado] = useState<Estado>("carregando");
   // Ligou agora (no Início): o cartão fica, com o botão de teste, até sair da página.
   const [acabouDeLigar, setAcabouDeLigar] = useState(false);
+  // Em que passo o "Ligar" parou (30/10/2026): sem isto, todo erro era a mesma frase.
+  const [passoDoErro, setPassoDoErro] = useState<string | null>(null);
   const [teste, setTeste] = useState<ResultadoDoTeste | null>(null);
   const [testando, iniciarTeste] = useTransition();
 
@@ -56,8 +59,8 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
         return vivo && setEstado(ehIphoneForaDoApp() ? "iphone_fora_do_app" : "sem_suporte");
       }
       if (Notification.permission === "denied") return vivo && setEstado("bloqueada");
-      const reg = await navigator.serviceWorker.getRegistration("/corretor/");
-      const inscricao = await reg?.pushManager.getSubscription();
+      // Olha o registro novo (`/corretor`) e o antigo (`/corretor/`): ver `swDoPainel.ts`.
+      const inscricao = await inscricaoDoPainel();
       if (vivo) setEstado(inscricao ? "ligada" : "desligada");
     })().catch(() => vivo && setEstado("desligada"));
     return () => {
@@ -68,22 +71,32 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
   async function ligar() {
     if (!CHAVE) return;
     setEstado("ligando");
+    setPassoDoErro(null);
+    let passo = "pedir permissão";
     try {
       const permissao = await Notification.requestPermission();
       if (permissao !== "granted") return setEstado(permissao === "denied" ? "bloqueada" : "desligada");
-      const reg = await navigator.serviceWorker.register("/sw-painel.js", { scope: "/corretor/" });
-      await navigator.serviceWorker.ready;
+      passo = "preparar o aparelho";
+      const reg = await registrarSwDoPainel();
+      passo = "inscrever o aparelho";
       const inscricao =
-        (await reg.pushManager.getSubscription()) ??
+        (await inscricaoDoPainel()) ??
         (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveEmBytes(CHAVE) }));
+      passo = "salvar no servidor";
       const resp = await fetch("/api/notificacoes", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...inscricao.toJSON(), aparelho: navigator.userAgent }),
       });
-      setEstado(resp.ok ? "ligada" : "erro");
-      if (resp.ok) setAcabouDeLigar(true);
-    } catch {
+      if (!resp.ok) {
+        const corpo = (await resp.json().catch(() => null)) as { erro?: string } | null;
+        setPassoDoErro(corpo?.erro ?? `o servidor respondeu ${resp.status}`);
+        return setEstado("erro");
+      }
+      setEstado("ligada");
+      setAcabouDeLigar(true);
+    } catch (e) {
+      setPassoDoErro(`falhou ao ${passo}${e instanceof Error && e.message ? ` (${e.message.slice(0, 80)})` : ""}`);
       setEstado("erro");
     }
   }
@@ -132,7 +145,9 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
             {estado === "ligando" ? "Ligando…" : "Ligar avisos neste celular"}
           </button>
           {estado === "erro" && (
-            <p className="mt-2 text-fluid-sm text-perigo">Não deu para ligar agora. Recarregue a página e tente de novo.</p>
+            <p className="mt-2 text-fluid-sm text-perigo">
+              Não deu para ligar agora{passoDoErro ? ` — ${passoDoErro}` : ""}. Recarregue a página e tente de novo; se repetir, mande um print desta mensagem ao suporte.
+            </p>
           )}
         </>
       )}

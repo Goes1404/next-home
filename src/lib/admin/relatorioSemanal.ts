@@ -223,3 +223,15 @@ export function corpoDoRelatorio(params: {
 
   return { texto, html };
 }
+
+/**
+ * Monta o relatório deste grupo? (puro, revisão de 30/10/2026) Só grupo em
+ * dia (a lista já vem sem os cancelados e encerrados; aqui sai o suspenso)
+ * e com alguém para receber: um gestor com o resumo no WhatsApp ligado, ou o
+ * e-mail ligado. Antes, todo grupo — cancelado inclusive — pagava a coleta
+ * inteira dos números para ninguém ler.
+ */
+export function deveMontarORelatorio(p: { gestoresNoWhatsapp: number; porEmail: boolean; suspenso: boolean }): boolean {
+  if (p.suspenso) return false;
+  return p.gestoresNoWhatsapp > 0 || p.porEmail;
+}

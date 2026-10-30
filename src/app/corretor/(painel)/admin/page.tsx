@@ -103,10 +103,12 @@ export default async function AdminVisaoGeralPage() {
 
   // As duas views só trazem contagens; a RLS da 0134 recortaria para as
   // conversas do próprio ADM. A leitura sai recortada pelo grupo do gestor.
-  const supabase = await clienteParaNumerosDaEquipe();
-  const equipe = await getEquipeAtiva();
+  // O cliente e a equipe saem juntos, e as contas ocultas vão na mesma leva
+  // das views (30/10/2026): eram quatro idas ao banco em série antes de a
+  // tela pintar a primeira linha; agora são duas.
+  const [supabase, equipe] = await Promise.all([clienteParaNumerosDaEquipe(), getEquipeAtiva()]);
 
-  const [agregado, { data: funilWhats }, { data: respostaWhats }] = await Promise.all([
+  const [agregado, { data: funilWhats }, { data: respostaWhats }, ocultas] = await Promise.all([
     getAgregadoDaEquipe(equipe),
     supabase.lerView((c) =>
       c
@@ -123,10 +125,10 @@ export default async function AdminVisaoGeralPage() {
         .from("whatsapp_resposta_metricas")
         .select("corretor_id, conversas_com_fala_do_cliente, conversas_atendidas, mediana_segundos, atendidas_em_ate_60s"),
     ),
+    // Conta oculta (0189): as conversas dela não entram nos números da equipe.
+    idsDeContasOcultas(supabase),
   ]);
 
-  // Conta oculta (0189): as conversas dela não entram nos números da equipe.
-  const ocultas = await idsDeContasOcultas(supabase);
   const funilVisivel = semContasOcultas(funilWhats ?? [], ocultas, (l) => l.corretor_id);
   const respostaVisivel = semContasOcultas(respostaWhats ?? [], ocultas, (l) => l.corretor_id);
 

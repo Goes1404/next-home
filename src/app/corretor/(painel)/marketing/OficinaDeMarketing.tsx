@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { temModulo, vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 /**
  * O corpo da oficina: quatro ferramentas, cada uma com o estado dela à vista.
@@ -35,6 +36,7 @@ export function OficinaDeMarketing({
   imoveisParaCarrossel,
   videosDisponiveis,
   videosNoMes,
+  ramo,
 }: {
   artesFeitas: number;
   artesHoje: { usadas: number; teto: number };
@@ -46,8 +48,17 @@ export function OficinaDeMarketing({
   imoveisParaCarrossel: ImovelCurto[];
   videosDisponiveis: number;
   videosNoMes: number;
+  /**
+   * O ramo da conta (30/10/2026, revisão): vídeo do imóvel, carrossel do
+   * imóvel e o link do site de imóveis só existem com o módulo do ramo. Na
+   * imobiliária, a oficina de sempre.
+   */
+  ramo: Ramo;
 }) {
   const restamHoje = Math.max(0, artesHoje.teto - artesHoje.usadas);
+  const comVideo = temModulo(ramo, "videoDeImovel");
+  const comCatalogo = temModulo(ramo, "catalogoDeImoveis");
+  const comSite = temModulo(ramo, "siteDeImoveis");
 
   return (
     <div className="space-y-5">
@@ -62,8 +73,14 @@ export function OficinaDeMarketing({
               <h2 className="font-display text-titulo text-fluid-lg">Criar arte</h2>
             </div>
             <p className="text-fluid-sm text-apoio max-w-md text-pretty">
-              Post, story ou anúncio montado da ficha real do imóvel — com a sua
-              marca, a chamada certa e a ressalva de imagem ilustrativa.
+              {comCatalogo ? (
+                <>
+                  Post, story ou anúncio montado da ficha real do imóvel — com a sua
+                  marca, a chamada certa e a ressalva de imagem ilustrativa.
+                </>
+              ) : (
+                `Post, story ou anúncio sobre ${vocabularioDoRamo(ramo).oferta.plural} — com a sua marca e a chamada certa.`
+              )}
             </p>
             <p className="text-fluid-xs text-tenue tabular-nums">
               {artesFeitas > 0 ? `${artesFeitas} já criadas · ` : ""}
@@ -104,103 +121,113 @@ export function OficinaDeMarketing({
       </section>
 
       {/* ---- A segunda de produção, ainda sem histórico próprio ---- */}
-      <section className="cartao min-w-0 p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2.5">
-              <span className="bg-acento-lavado text-acento flex size-9 shrink-0 items-center justify-center rounded-xl">
-                <IconePlay />
-              </span>
-              <h2 className="font-display text-titulo text-fluid-lg">Criar vídeo</h2>
+      {comVideo && (
+        <section className="cartao min-w-0 p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-2.5">
+                <span className="bg-acento-lavado text-acento flex size-9 shrink-0 items-center justify-center rounded-xl">
+                  <IconePlay />
+                </span>
+                <h2 className="font-display text-titulo text-fluid-lg">Criar vídeo</h2>
+              </div>
+              <p className="text-fluid-sm text-apoio max-w-md text-pretty">
+                Um Reel montado das fotos do imóvel, com movimento de câmera por tipo de
+                plano e legenda queimada. Sai mudo, para você pôr o áudio em alta do
+                Instagram na hora de postar.
+              </p>
+              <p className="text-fluid-xs text-tenue tabular-nums">
+                {videosDisponiveis > 0
+                  ? `${videosDisponiveis} de ${videosNoMes} disponíveis este mês`
+                  : "Seus vídeos do mês acabaram"}
+              </p>
             </div>
-            <p className="text-fluid-sm text-apoio max-w-md text-pretty">
-              Um Reel montado das fotos do imóvel, com movimento de câmera por
-              tipo de plano e legenda queimada. Sai mudo, para você pôr o áudio
-              em alta do Instagram na hora de postar.
-            </p>
-            <p className="text-fluid-xs text-tenue tabular-nums">
-              {videosDisponiveis > 0
-                ? `${videosDisponiveis} de ${videosNoMes} disponíveis este mês`
-                : "Seus vídeos do mês acabaram"}
-            </p>
+            <Link
+              href="/corretor/marketing/video"
+              className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-medium transition-colors sm:w-auto"
+            >
+              Criar vídeo
+            </Link>
           </div>
-          <Link
-            href="/corretor/marketing/video"
-            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-medium transition-colors sm:w-auto"
-          >
-            Criar vídeo
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ---- As de vez em quando ---- */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Ferramenta
-          icone={<IconeCarrossel />}
-          titulo="Carrossel do Instagram"
-          descricao="Os slides e a legenda de um post, montados das fotos e da ficha."
-          nota={
-            imoveisProntos > 0
-              ? `${imoveisProntos} de ${imoveisTotal} imóveis prontos`
-              : "Nenhum imóvel com foto ainda"
-          }
-        >
-          {imoveisParaCarrossel.length > 0 ? (
-            <ul className="space-y-1">
-              {imoveisParaCarrossel.slice(0, 3).map((i) => (
-                <li key={i.slug}>
-                  <Link
-                    href={`/corretor/imoveis/${i.slug}/carrossel`}
-                    /*
-                     * `min-w-0` no item de flex, e o lugar EMPILHA no celular.
-                     * Sem os dois, "Centro Comercial Jubran, Barueri" com
-                     * `shrink-0` empurrava o cartão para 434px num viewport de
-                     * 390 — item de flex tem `min-width: auto`, então texto
-                     * que não quebra transborda em vez de espremer. É a mesma
-                     * armadilha da barra de seleção em lote, e ela só apareceu
-                     * medindo `scrollWidth` contra `clientWidth`.
-                     */
-                    className="text-fluid-xs text-corpo hover:text-titulo hover:bg-fundo/60 -mx-2 flex min-h-11 min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-2 linha-abre"
-                  >
-                    <span className="min-w-0 truncate">{i.nome}</span>
-                    <span className="text-tenue min-w-0 truncate sm:shrink-0">{i.lugar}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-fluid-xs text-tenue">
-              Cadastre uma foto num imóvel para montar o carrossel dele.
-            </p>
+      {(comCatalogo || comSite) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {comCatalogo && (
+            <Ferramenta
+              icone={<IconeCarrossel />}
+              titulo="Carrossel do Instagram"
+              descricao="Os slides e a legenda de um post, montados das fotos e da ficha."
+              nota={
+                imoveisProntos > 0
+                  ? `${imoveisProntos} de ${imoveisTotal} imóveis prontos`
+                  : "Nenhum imóvel com foto ainda"
+              }
+            >
+              {imoveisParaCarrossel.length > 0 ? (
+                <ul className="space-y-1">
+                  {imoveisParaCarrossel.slice(0, 3).map((i) => (
+                    <li key={i.slug}>
+                      <Link
+                        href={`/corretor/imoveis/${i.slug}/carrossel`}
+                        /*
+                         * `min-w-0` no item de flex, e o lugar EMPILHA no celular.
+                         * Sem os dois, "Centro Comercial Jubran, Barueri" com
+                         * `shrink-0` empurrava o cartão para 434px num viewport de
+                         * 390 — item de flex tem `min-width: auto`, então texto
+                         * que não quebra transborda em vez de espremer. É a mesma
+                         * armadilha da barra de seleção em lote, e ela só apareceu
+                         * medindo `scrollWidth` contra `clientWidth`.
+                         */
+                        className="text-fluid-xs text-corpo hover:text-titulo hover:bg-fundo/60 linha-abre -mx-2 flex min-h-11 min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-2"
+                      >
+                        <span className="min-w-0 truncate">{i.nome}</span>
+                        <span className="text-tenue min-w-0 truncate sm:shrink-0">
+                          {i.lugar}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-fluid-xs text-tenue">
+                  Cadastre uma foto num imóvel para montar o carrossel dele.
+                </p>
+              )}
+            </Ferramenta>
           )}
-        </Ferramenta>
 
-        <Ferramenta
-          icone={<IconeElo />}
-          titulo="Seu link de indicação"
-          descricao="Todo cliente que chega por ele fica vinculado a você por 30 dias."
-          nota={temSlug ? "Ativo" : "Falta o seu link pessoal"}
-        >
-          {temSlug ? (
-            <>
-              <code className="text-fluid-xs text-corpo bg-fundo/60 border-linha block truncate rounded-lg border px-2.5 py-2">
-                {linkDeIndicacao}
-              </code>
-              <Link
-                href="/corretor/links"
-                className="text-fluid-xs text-acento-suave hover:text-titulo mt-2 inline-flex min-h-11 items-center underline underline-offset-4"
-              >
-                Links por imóvel
-              </Link>
-            </>
-          ) : (
-            <p className="text-fluid-xs text-alerta">
-              Sua conta ainda não tem link pessoal, então o cliente que chegar
-              pelo site não fica vinculado a você. Peça a quem administra.
-            </p>
+          {comSite && (
+            <Ferramenta
+              icone={<IconeElo />}
+              titulo="Seu link de indicação"
+              descricao="Todo cliente que chega por ele fica vinculado a você por 30 dias."
+              nota={temSlug ? "Ativo" : "Falta o seu link pessoal"}
+            >
+              {temSlug ? (
+                <>
+                  <code className="text-fluid-xs text-corpo bg-fundo/60 border-linha block truncate rounded-lg border px-2.5 py-2">
+                    {linkDeIndicacao}
+                  </code>
+                  <Link
+                    href="/corretor/links"
+                    className="text-fluid-xs text-acento-suave hover:text-titulo mt-2 inline-flex min-h-11 items-center underline underline-offset-4"
+                  >
+                    Links por imóvel
+                  </Link>
+                </>
+              ) : (
+                <p className="text-fluid-xs text-alerta">
+                  Sua conta ainda não tem link pessoal, então o cliente que chegar pelo
+                  site não fica vinculado a você. Peça a quem administra.
+                </p>
+              )}
+            </Ferramenta>
           )}
-        </Ferramenta>
-      </div>
+        </div>
+      )}
 
       {/* ---- O passo seguinte à peça pronta ---- */}
       <section className="cartao p-5 sm:p-6">
@@ -210,11 +237,13 @@ export function OficinaDeMarketing({
               <span className="bg-acento-lavado text-acento flex size-9 shrink-0 items-center justify-center rounded-xl">
                 <IconeMegafone />
               </span>
-              <h2 className="font-display text-titulo text-fluid-lg">Disparar campanha</h2>
+              <h2 className="font-display text-titulo text-fluid-lg">
+                Disparar campanha
+              </h2>
             </div>
             <p className="text-fluid-sm text-apoio max-w-md text-pretty">
-              Levar a peça para a sua lista no WhatsApp, com o espaçamento que
-              protege o seu número.
+              Levar a peça para a sua lista no WhatsApp, com o espaçamento que protege o
+              seu número.
             </p>
           </div>
           <Link

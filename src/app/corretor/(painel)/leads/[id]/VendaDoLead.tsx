@@ -11,7 +11,18 @@ import type { EtapaFunil } from "@/lib/types";
  *  - qualquer outra etapa: um link discreto (venda pode chegar antes de o
  *    cartão andar).
  */
-export function VendaDoLead({ leadId, etapa, vendas }: { leadId: string; etapa: EtapaFunil; vendas: VendaNaTela[] }) {
+export function VendaDoLead({
+  leadId,
+  etapa,
+  vendas,
+  comImoveis = true,
+}: {
+  leadId: string;
+  etapa: EtapaFunil;
+  vendas: VendaNaTela[];
+  /** Ramo que vende imóvel (30/10/2026, revisão): "unidade" e "VGV" são jargão dele. */
+  comImoveis?: boolean;
+}) {
   const registrar = `/corretor/financeiro/nova?lead=${leadId}`;
 
   if (vendas.length > 0) {
@@ -45,7 +56,9 @@ export function VendaDoLead({ leadId, etapa, vendas }: { leadId: string; etapa: 
         <div>
           <h2 className="text-fluid-base text-titulo font-bold">Negócio fechado. Registre a venda</h2>
           <p className="text-fluid-sm text-corpo mt-1">
-            Valor, unidade e comissão. Sem isso a venda não entra no seu VGV nem no extrato.
+            {comImoveis
+              ? "Valor, unidade e comissão. Sem isso a venda não entra no seu VGV nem no extrato."
+              : "Valor e comissão. Sem isso a venda não entra no seu ranking de vendas nem no extrato."}
           </p>
         </div>
         <Link

@@ -290,7 +290,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/listasVivas.ts": { categoria: "plataforma", motivo: "por lista: só leads do corretor dono dela" },
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },
   "src/lib/whatsapp/sonda.ts": { categoria: "plataforma", motivo: "diagnóstico do provedor por instância, em tabela global" },
-  "src/lib/auth/pedidoDeLinkDeSenha.ts": { categoria: "plataforma", motivo: "a própria pessoa pede o link: acha UMA ficha (pelo e-mail ou pelo login da sessão) e registra o pedido e lê o nome no grupo dela" },
+  "src/lib/auth/pedidoDeLinkDeSenha.ts": { categoria: "plataforma", motivo: "a própria pessoa pede o link: acha UMA ficha (pelo e-mail ou pelo login da sessão) e registra o pedido e lê o nome no grupo dela; sem ficha, só um login de administradores_da_plataforma, com o pedido como evento da plataforma (30/10/2026)" },
   "src/lib/auth/emailDoLogin.ts": { categoria: "plataforma", motivo: "o Auth é global: traduz UM nome de usuário no e-mail de login (email_do_usuario, 0235), sem ler tabela de grupo" },
   "src/lib/auth/validadeDaSenhaNoServidor.ts": { categoria: "plataforma", motivo: "o Auth é global: grava a data da troca de senha no app_metadata de UM usuário (o da sessão), sem ler tabela de grupo" },
   "src/lib/auth/links.ts": { categoria: "plataforma", motivo: "o Auth é global (um e-mail, um login na plataforma): gera o link de UM usuário pelo e-mail, sem ler tabela de grupo" },

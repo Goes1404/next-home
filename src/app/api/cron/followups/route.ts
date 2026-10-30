@@ -1,6 +1,6 @@
 import { ehContaSoWhatsapp } from "@/lib/whatsapp/contaSoWhatsapp";
 import { timingSafeEqual } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { getEmpreendimentos } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PROMPT_VERSAO } from "@/lib/whatsapp/aiAgent";
@@ -28,7 +28,9 @@ import {
   marcarConversaAtendida,
   lerConversaPersistida,
   situacaoDaConversa,
+  haAudioTranscrevendo,
 } from "@/lib/whatsapp/repositorio";
+import { MARCADOR_ENCALHADO_MS } from "@/lib/whatsapp/transcricaoNoGrupo";
 import { registrarInteracao } from "@/lib/whatsapp/telemetria";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
@@ -183,6 +185,24 @@ async function agendarLembretesDeVisita(
       .maybeSingle();
     if (jaTem) continue;
 
+    /*
+     * O pedido de confirmação desta visita já saiu (0246): ele É o lembrete
+     * (revisão de 30/10/2026). O pedido também grava um `lembrete_visita`
+     * enviado, mas DEPOIS do envio e sem desfazer nada se falhar — sem esta
+     * conferência, a linha perdida fazia a IA mandar o lembrete por cima, e
+     * o cliente recebia as duas perguntas. O carimbo da visita é o claim do
+     * pedido, gravado antes do envio: é a fonte segura.
+     */
+    const { data: confirmacaoPedida } = await supabase
+      .from("visitas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("inicio", lead.visita_agendada_em!)
+      .not("confirmacao_pedida_em", "is", null)
+      .limit(1)
+      .maybeSingle();
+    if (confirmacaoPedida) continue;
+
     const { data: instancia } = await supabase
       .from("corretor_whatsapp_instancias")
       .select("id")
@@ -251,6 +271,24 @@ async function agendarPosVisita(
       .limit(1)
       .maybeSingle();
     if (jaTem) continue;
+
+    /*
+     * O pedido de confirmação desta visita já saiu (0246): ele É o lembrete
+     * (revisão de 30/10/2026). O pedido também grava um `lembrete_visita`
+     * enviado, mas DEPOIS do envio e sem desfazer nada se falhar — sem esta
+     * conferência, a linha perdida fazia a IA mandar o lembrete por cima, e
+     * o cliente recebia as duas perguntas. O carimbo da visita é o claim do
+     * pedido, gravado antes do envio: é a fonte segura.
+     */
+    const { data: confirmacaoPedida } = await supabase
+      .from("visitas")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("inicio", lead.visita_agendada_em!)
+      .not("confirmacao_pedida_em", "is", null)
+      .limit(1)
+      .maybeSingle();
+    if (confirmacaoPedida) continue;
 
     const { data: instancia } = await supabase
       .from("corretor_whatsapp_instancias")
@@ -491,8 +529,21 @@ async function responderAtrasada(
    */
   const { historico, pendentes } = separarRajada(historicoCompleto);
   // A view garante que a última fala é do cliente; lista vazia aqui só
-  // aconteceria numa corrida com o webhook. Não inventar resposta.
+  // aconteceria numa corrida com o webhook. Não inventar resposta. O áudio
+  // ainda com o marcador de transcrição não é fala (`historicoRecente` o
+  // tira): se ele é tudo o que o cliente mandou, a lista fica vazia e a
+  // varredura não responde a um placeholder (revisão de 30/10/2026).
   if (pendentes.length === 0) return "pulada";
+  // Áudio recente ainda transcrevendo: o webhook está cuidando dele e vai
+  // responder com o texto; responder agora seria falar por cima.
+  if (
+    await haAudioTranscrevendo({
+      conversaId: conversa.id,
+      desde: new Date(Date.now() - MARCADOR_ENCALHADO_MS),
+    })
+  ) {
+    return "pulada";
+  }
 
   const turno = await executarTurnoDeAtendimento({
     quemPaga: { corretorId: instancia.corretor_id, grupoId: instancia.grupo_id },
@@ -678,28 +729,34 @@ export async function GET(req: NextRequest) {
     console.error("[match]", e);
     return 0;
   });
-  /*
-   * A nota do lead (0248, 30/10/2026): refaz as vencidas (6h) de até 100
-   * leads por tique. É o que faz o lead que sumiu ESFRIAR sem evento
-   * nenhum. Sem IA (só a régua de `notaDoLead.ts`), nada sai para ninguém.
-   */
-  const notasRefeitas = await recalcularNotasPendentes(supabase).catch((e) => {
-    console.error("[nota do lead]", e);
-    return 0;
-  });
   const senhasVencendo = await avisarSenhasVencendo(supabase).catch((e) => {
     console.error("[senha vencendo]", e);
     return 0;
   });
-  // Resumo diário das mensalidades em aberto para quem administra a
-  // plataforma (29/10/2026, 0239): só às 9h, no primeiro tique da hora.
-  await avisarCobrancasDoDia().catch((e) => {
-    console.error("[cobranças do dia]", e);
-  });
-  // Contas em risco de cancelamento (29/10/2026): também às 9h, no primeiro
-  // tique da hora; só contagens por conta (sinaisDeRisco.ts).
-  await avisarRiscosDoDia().catch((e) => {
-    console.error("[riscos do dia]", e);
+  /*
+   * DEPOIS da resposta (revisão de 30/10/2026): a nota do lead e os avisos
+   * diários da plataforma não falam com cliente nem com corretor, e rodavam
+   * em série ANTES da janela e da trava — 100 UPDATEs da nota, o laço de
+   * cobrança por grupo e o de risco comiam o tempo do tique (`maxDuration`
+   * 60 s) que é dos follow-ups. Em `after` eles não seguram o resto.
+   *
+   * - A nota do lead (0248): refaz as vencidas (6 h) de até `NOTAS_POR_TIQUE`
+   *   leads. É o que faz o lead que sumiu ESFRIAR sem evento nenhum. Sem IA
+   *   (só a régua de `notaDoLead.ts`), nada sai para ninguém.
+   * - Resumo das mensalidades e contas em risco (0239), para quem administra
+   *   a plataforma: no primeiro tique a partir das 9h, uma vez por dia (a
+   *   reivindicação mora em `avisosDaPlataforma.ts`).
+   */
+  after(async () => {
+    await recalcularNotasPendentes(createServiceClient()).catch((e) => {
+      console.error("[nota do lead]", e);
+    });
+    await avisarCobrancasDoDia().catch((e) => {
+      console.error("[cobranças do dia]", e);
+    });
+    await avisarRiscosDoDia().catch((e) => {
+      console.error("[riscos do dia]", e);
+    });
   });
   // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.
@@ -752,7 +809,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, leadsDoGmail, notasRefeitas, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -804,7 +861,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas, notasRefeitas });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
   } finally {
     await destravarDisparo("followups", dono);
   }

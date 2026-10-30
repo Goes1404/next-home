@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { useRamoDoPainel, useRotuloDaEtapa } from "@/lib/ramos/RamoDoPainel";
 import { maiuscula, temModulo, vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
@@ -19,12 +19,7 @@ import { PONTO_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { BuscaLeads } from "@/app/corretor/(painel)/_componentes/BuscaLeads";
 import type { FiltroLeads } from "@/lib/corretorSessao";
 import { recalcularRolagem } from "@/components/motion/lenis";
-import {
-  ETAPAS_FUNIL,
-  ETAPA_LABEL,
-  type EtapaFunil,
-  type Lead,
-} from "@/lib/types";
+import { ETAPAS_FUNIL, type EtapaFunil, type Lead } from "@/lib/types";
 
 type Filtro = "todos" | "hoje" | "novos" | "conversa" | "visitas" | "frios";
 
@@ -90,8 +85,12 @@ export function ListaLeads({
   // e o filtro por empreendimento só existe com o catálogo de imóveis.
   const { ramo } = useRamoDoPainel();
   const compromissos = maiuscula(vocabularioDoRamo(ramo).compromisso.plural);
-  const chips = CHIPS.map((c) => (c.valor === "visitas" ? { ...c, label: compromissos } : c));
+  const chips = CHIPS.map((c) =>
+    c.valor === "visitas" ? { ...c, label: compromissos } : c,
+  );
   const temCatalogo = temModulo(ramo, "catalogoDeImoveis");
+  // "Visita marcada" vira "Reunião marcada"... (30/10/2026, revisão).
+  const rotuloDaEtapa = useRotuloDaEtapa();
 
   const filtro = (params.get("filtro") ?? "todos") as Filtro;
   const etapaFiltro = params.get("etapa") ?? "";
@@ -184,7 +183,6 @@ export function ListaLeads({
     );
   }
 
-
   /**
    * Ações de arquivo em lote. Uma função só porque as três diferem apenas
    * na chamada e no verbo — e porque o pós-processamento (limpar seleção,
@@ -221,7 +219,7 @@ export function ListaLeads({
       // tela não pode anunciar 15 quando foram 12.
       avisar(
         res.movidos === ids.length
-          ? `${res.movidos} lead${res.movidos === 1 ? "" : "s"} para “${ETAPA_LABEL[etapa]}”.`
+          ? `${res.movidos} lead${res.movidos === 1 ? "" : "s"} para “${rotuloDaEtapa(etapa)}”.`
           : `${res.movidos} de ${ids.length} movidos — os demais mudaram de dono. Recarregue a lista.`,
       );
       setSelecionados(new Set());
@@ -256,7 +254,7 @@ export function ListaLeads({
           comportamento, e o termo sobrevive à troca de aba. Ela gruda logo
           abaixo do cabeçalho, e sobe junto quando ele sai de cena ao rolar
           (`--painel-topo-visivel`, ver CabecalhoDoPainel). */}
-      <div className="sticky top-[var(--painel-topo-visivel)] z-30 -mx-4 bg-fundo/95 px-4 pt-4 pb-2 backdrop-blur-md transition-[top] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
+      <div className="bg-fundo/95 sticky top-[var(--painel-topo-visivel)] z-30 -mx-4 px-4 pt-4 pb-2 backdrop-blur-md transition-[top] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:mx-0 sm:px-0 md:static md:bg-transparent md:backdrop-blur-none">
         <div className="flex gap-2">
           <BuscaLeads className="flex-1" />
           <button
@@ -271,7 +269,7 @@ export function ListaLeads({
           >
             Filtros
             {filtrosAvancadosAtivos > 0 && (
-              <span className="bg-acento flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold text-sobre-cor tabular-nums">
+              <span className="bg-acento text-sobre-cor flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums">
                 {filtrosAvancadosAtivos}
               </span>
             )}
@@ -288,8 +286,10 @@ export function ListaLeads({
           return (
             <button
               key={valor}
-              onClick={() => atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })}
-              className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
+              onClick={() =>
+                atualizarUrl({ filtro: valor === "todos" ? "" : valor, etapa: "" })
+              }
+              className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium whitespace-nowrap transition-colors ${
                 ativo
                   ? "bg-acento text-sobre-cor"
                   : "bg-superficie text-apoio hover:bg-elevado hover:text-corpo"
@@ -309,7 +309,7 @@ export function ListaLeads({
           type="button"
           onClick={() => atualizarUrl({ ordem: maisQuentes ? "" : "quentes" })}
           aria-pressed={maisQuentes}
-          className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors ${
+          className={`flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors ${
             maisQuentes
               ? "border-perigo-linha bg-perigo-lavado text-perigo"
               : "border-linha-forte text-apoio hover:text-corpo"
@@ -326,7 +326,7 @@ export function ListaLeads({
             <select
               value={corretorFiltro}
               onChange={(e) => atualizarUrl({ corretor: e.target.value })}
-              className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+              className="text-fluid-xs border-linha-forte bg-campo text-corpo min-h-11 rounded-lg border px-3 py-2"
             >
               {/* Vazio = os MEUS, também para o gestor (hotfix de 19/10/2026): a
                   equipe inteira é um pedido explícito, nunca o padrão. */}
@@ -339,30 +339,30 @@ export function ListaLeads({
               ))}
             </select>
           )}
-{temCatalogo && (
-          <select
-            value={empreendimentoFiltro}
-            onChange={(e) => atualizarUrl({ empreendimento: e.target.value })}
-            aria-label="Filtrar por empreendimento"
-            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
-          >
-            <option value="">Todos os empreendimentos</option>
-            {empreendimentos.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nome}
-              </option>
-            ))}
-          </select>
+          {temCatalogo && (
+            <select
+              value={empreendimentoFiltro}
+              onChange={(e) => atualizarUrl({ empreendimento: e.target.value })}
+              aria-label="Filtrar por empreendimento"
+              className="text-fluid-xs border-linha-forte bg-campo text-corpo min-h-11 rounded-lg border px-3 py-2"
+            >
+              <option value="">Todos os empreendimentos</option>
+              {empreendimentos.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
           )}
           <select
             value={etapaFiltro}
             onChange={(e) => atualizarUrl({ etapa: e.target.value, filtro: "" })}
-            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+            className="text-fluid-xs border-linha-forte bg-campo text-corpo min-h-11 rounded-lg border px-3 py-2"
           >
             <option value="">Todas as etapas</option>
             {ETAPAS_FUNIL.map((etapa: EtapaFunil) => (
               <option key={etapa} value={etapa}>
-                {ETAPA_LABEL[etapa]}
+                {rotuloDaEtapa(etapa)}
               </option>
             ))}
           </select>
@@ -371,14 +371,14 @@ export function ListaLeads({
             value={dataDe}
             onChange={(e) => atualizarUrl({ de: e.target.value })}
             aria-label="Chegou a partir de"
-            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+            className="text-fluid-xs border-linha-forte bg-campo text-corpo min-h-11 rounded-lg border px-3 py-2"
           />
           <input
             type="date"
             value={dataAte}
             onChange={(e) => atualizarUrl({ ate: e.target.value })}
             aria-label="Chegou até"
-            className="text-fluid-xs min-h-11 rounded-lg border border-linha-forte bg-campo px-3 py-2 text-corpo"
+            className="text-fluid-xs border-linha-forte bg-campo text-corpo min-h-11 rounded-lg border px-3 py-2"
           />
         </div>
       )}
@@ -396,21 +396,41 @@ export function ListaLeads({
       )}
 
       {semNenhumLead ? (
-        <div className="cartao mt-8 p-6">
-          <p className="text-fluid-sm text-corpo">
-            Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário preenchido a
-            partir dele chega aqui com seu nome.
-          </p>
-          <Link
-            href="/corretor/links"
-            className="text-fluid-sm mt-3 inline-block font-medium text-acento-suave link-acao"
-          >
-            Pegar meus links →
-          </Link>
-        </div>
+        // Os links pessoais são do catálogo de imóveis (30/10/2026, revisão):
+        // sem ele, o caminho é trazer a carteira pela importação.
+        temCatalogo ? (
+          <div className="cartao mt-8 p-6">
+            <p className="text-fluid-sm text-corpo">
+              Nenhum contato ainda. Compartilhe seu link pessoal — todo formulário
+              preenchido a partir dele chega aqui com seu nome.
+            </p>
+            <Link
+              href="/corretor/links"
+              className="text-fluid-sm text-acento-suave link-acao mt-3 inline-block font-medium"
+            >
+              Pegar meus links →
+            </Link>
+          </div>
+        ) : (
+          <div className="cartao mt-8 p-6">
+            <p className="text-fluid-sm text-corpo">
+              Nenhum contato ainda. Traga sua carteira por planilha, contatos ou
+              conversa exportada do WhatsApp — e quem escrever para o seu número entra
+              aqui sozinho.
+            </p>
+            <Link
+              href="/corretor/importar"
+              className="text-fluid-sm text-acento-suave link-acao mt-3 inline-block font-medium"
+            >
+              Importar contatos →
+            </Link>
+          </div>
+        )
       ) : leads.length === 0 ? (
         <div className="cartao mt-8 p-6 text-center">
-          <p className="text-fluid-sm text-apoio">Nenhum lead encontrado neste filtro.</p>
+          <p className="text-fluid-sm text-apoio">
+            Nenhum lead encontrado neste filtro.
+          </p>
         </div>
       ) : (
         <div
@@ -466,7 +486,7 @@ export function ListaLeads({
               96px do iPhone comum para cima. É uma barra temporária, que só
               existe enquanto há seleção. */}
           <div className="mx-auto flex w-full max-w-[84rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 px-1 md:px-4">
-            <p className="text-fluid-sm shrink-0 whitespace-nowrap text-corpo">
+            <p className="text-fluid-sm text-corpo shrink-0 whitespace-nowrap">
               {selecionados.size} selecionado(s)
             </p>
             <div className="flex flex-1 flex-wrap justify-end gap-2">
@@ -478,15 +498,15 @@ export function ListaLeads({
                 Limpar
               </button>
               {!verArquivados && (
-              <button
-                type="button"
-                onClick={() => setEscolhendoEtapa((v) => !v)}
-                aria-expanded={escolhendoEtapa}
-                disabled={movendoLote}
-                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-colors disabled:opacity-60"
-              >
-                {movendoLote ? "Movendo…" : "Mover para…"}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setEscolhendoEtapa((v) => !v)}
+                  aria-expanded={escolhendoEtapa}
+                  disabled={movendoLote}
+                  className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-colors disabled:opacity-60"
+                >
+                  {movendoLote ? "Movendo…" : "Mover para…"}
+                </button>
               )}
               {/* Na lista ARQUIVADOS as ações são outras: restaurar e
                   excluir. Mandar mensagem para quem foi arquivado seria o
@@ -508,16 +528,16 @@ export function ListaLeads({
                   >
                     Restaurar
                   </button>
-                  {(
-                  <button
-                    type="button"
-                    onClick={() => setConfirmandoExclusao(true)}
-                    disabled={movendoLote}
-                    className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
-                  >
-                    Excluir
-                  </button>
-                  )}
+                  {
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoExclusao(true)}
+                      disabled={movendoLote}
+                      className="text-fluid-sm border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center rounded-lg border px-3 whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
+                    >
+                      Excluir
+                    </button>
+                  }
                 </>
               ) : (
                 <>
@@ -536,7 +556,7 @@ export function ListaLeads({
                     {movendoLote ? "…" : "Arquivar"}
                   </button>
                   {/* Excluir direto, sem arquivar antes (02/10/2026). */}
-                  {(
+                  {
                     <button
                       type="button"
                       onClick={() => setConfirmandoExclusao(true)}
@@ -545,16 +565,18 @@ export function ListaLeads({
                     >
                       Excluir
                     </button>
-                  )}
+                  }
                   <button
                     type="button"
                     // O envio em massa é a LISTA DE TRANSMISSÃO, com todas as
                     // regras dela (Fase 0): o botão abre o assistente com os
                     // leads já marcados, em vez de um segundo caminho.
                     onClick={() =>
-                      router.push(`/corretor/campanhas?leads=${[...selecionados].slice(0, 300).join(",")}`)
+                      router.push(
+                        `/corretor/campanhas?leads=${[...selecionados].slice(0, 300).join(",")}`,
+                      )
                     }
-                    className="text-fluid-sm bg-acento hover:bg-acento-hover flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap text-sobre-cor transition-colors"
+                    className="text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 items-center rounded-lg px-4 font-medium whitespace-nowrap transition-colors"
                   >
                     Enviar mensagem
                   </button>
@@ -574,7 +596,8 @@ export function ListaLeads({
           {confirmandoExclusao && (
             <div className="border-perigo-linha bg-perigo-lavado mx-auto mt-3 w-full max-w-[84rem] rounded-lg border px-3 py-3 md:px-4">
               <p className="text-fluid-sm text-titulo font-medium">
-                Excluir {selecionados.size} lead{selecionados.size === 1 ? "" : "s"} para sempre?
+                Excluir {selecionados.size} lead{selecionados.size === 1 ? "" : "s"}{" "}
+                para sempre?
               </p>
               <p className="text-fluid-xs text-apoio mt-1">
                 Vai junto a conversa no WhatsApp, as tarefas e o que a IA anotou sobre
@@ -617,8 +640,11 @@ export function ListaLeads({
                   disabled={movendoLote}
                   className="text-fluid-xs border-linha bg-superficie text-corpo hover:border-acento-linha hover:text-titulo flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 font-medium transition-colors disabled:opacity-60"
                 >
-                  <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${PONTO_ETAPA[etapa]}`} />
-                  {ETAPA_LABEL[etapa]}
+                  <span
+                    aria-hidden
+                    className={`h-2.5 w-2.5 rounded-full ${PONTO_ETAPA[etapa]}`}
+                  />
+                  {rotuloDaEtapa(etapa)}
                 </button>
               ))}
             </div>
@@ -633,7 +659,6 @@ export function ListaLeads({
         polegar, com a barra de seleção como terceira. A notícia continua
         sobrevivendo ao sumiço da barra, que era o motivo de ela existir.
       */}
-
     </div>
   );
 }

@@ -130,3 +130,20 @@ describe("o que entra na conta", () => {
     expect(lerMetaDigitada("-3")).toBe("invalida");
   });
 });
+
+describe("rótulos das medidas no ramo (30/10/2026, revisão)", () => {
+  it("imobiliária: o mesmo objeto de sempre", async () => {
+    const { rotulosDaMedida, ROTULO_DA_MEDIDA } = await import("./placarDaEquipe");
+    expect(rotulosDaMedida("imobiliaria")).toBe(ROTULO_DA_MEDIDA);
+    expect(rotulosDaMedida(null)).toBe(ROTULO_DA_MEDIDA);
+  });
+
+  it("outros ramos: o compromisso deles e o ranking de vendas", async () => {
+    const { rotulosDaMedida } = await import("./placarDaEquipe");
+    const r = rotulosDaMedida("saude");
+    expect(r.visitas.plural).toBe("Consultas");
+    expect(r.visitas.explicacao).not.toMatch(/corretor|visita/i);
+    expect(r.vendas.explicacao).not.toContain("VGV");
+    expect(r.propostas.plural).toBe("Propostas");
+  });
+});

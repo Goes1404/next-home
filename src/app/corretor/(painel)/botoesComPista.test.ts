@@ -19,7 +19,8 @@ import { describe, expect, it } from "vitest";
 const PAINEL = join(process.cwd(), "src/app/corretor/(painel)");
 
 const TOLERADOS: Record<string, { n: number; motivo: string }> = {
-  "GavetaLateral.tsx": { n: 4, motivo: "itens de menu: a própria gaveta é a pista" },
+  // 30/10/2026: +2 com o grupo "Conta e ajuda" (mesmos itens de menu, um nível abaixo).
+  "GavetaLateral.tsx": { n: 6, motivo: "itens de menu: a própria gaveta é a pista" },
   "NavPainel.tsx": { n: 2, motivo: "itens de menu e o botão de recolher, na lateral" },
   "BalaoConsultor.tsx": { n: 1, motivo: "o mascote é o botão" },
   "layout.tsx": { n: 3, motivo: "selo da Astro, logotipo da imobiliária na barra da empresa e pular para o conteúdo" },

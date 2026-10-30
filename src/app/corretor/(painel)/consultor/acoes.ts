@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { temModulo } from "@/lib/ramos/ramos";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { buscarExemplosFewShot } from "@/lib/whatsapp/aprendizadoContinuo";
@@ -73,6 +74,9 @@ export async function enviarMensagemDoConsultor(params: {
 }): Promise<EstadoDoChatConsultor | { erro: string }> {
   const corretor = await getCorretorLogado();
   if (!corretor) return { erro: "Sessão expirada. Entre de novo." };
+  // O consultor responde com o catálogo de imóveis e o crédito imobiliário:
+  // fora do ramo com catálogo ele não existe (30/10/2026, revisão).
+  if (!temModulo(corretor.ramo, "catalogoDeImoveis")) return { erro: "O consultor não está disponível nesta conta." };
 
   const texto = params.texto.trim();
   if (!texto) return { erro: "Escreva a sua pergunta." };

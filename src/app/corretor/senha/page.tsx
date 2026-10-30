@@ -3,6 +3,7 @@ import { COR_DA_BARRA_DO_ACESSO } from "../ComportamentoDeApp";
 import { FormularioSenha } from "./FormularioSenha";
 import { getEmailLogado } from "@/lib/corretorSessao";
 import { sairEReceberNovoLink } from "./acoes";
+import { sair } from "../actions";
 import { LinkDaFolha, TelaDeAcesso } from "../TelaDeAcesso";
 
 export const metadata: Metadata = {
@@ -52,7 +53,7 @@ export default async function SenhaPage({
         {pedido === "falhou" && (
           <p className="text-perigo mt-2">
             Não deu para mandar o link agora. Tente de novo em alguns minutos, ou peça a quem administra a
-            imobiliária para reenviar o convite.
+            sua conta para reenviar o convite.
           </p>
         )}
         <form action={sairEReceberNovoLink} className="mt-3">
@@ -66,7 +67,33 @@ export default async function SenhaPage({
       </>
     ) : motivo === "vencida" ? (
       // A troca a cada 90 dias (29/10/2026): o login e o painel mandam para cá.
-      <p>Sua senha completou 90 dias. Por segurança, crie uma nova para continuar.</p>
+      // Sem rodapé "Voltar ao painel" (o painel mandaria de volta), então a
+      // saída fica aqui: quem não sabe a senha atual (esqueceu, ou só entra
+      // com o Google) recebe o link no e-mail da conta, ou sai e pede pelo
+      // "Esqueci a senha".
+      <>
+        <p>Sua senha completou 90 dias. Por segurança, crie uma nova para continuar.</p>
+        <p className="mt-2">
+          Não lembra a senha atual, ou entra só com o Google? Mandamos um link para o e-mail desta conta e saímos do
+          painel; crie a senha nova pelo link.
+        </p>
+        <form action={sairEReceberNovoLink} className="mt-3">
+          <button
+            type="submit"
+            className="bg-acento text-sobre-cor hover:bg-acento-hover text-fluid-sm min-h-11 w-full rounded-full px-5 py-2.5 font-semibold transition-colors"
+          >
+            Sair e receber novo link
+          </button>
+        </form>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <LinkDaFolha href="/corretor/esqueci-a-senha">Esqueci a senha</LinkDaFolha>
+          <form action={sair} data-sair>
+            <button type="submit" className="text-fluid-sm underline underline-offset-4">
+              Sair
+            </button>
+          </form>
+        </div>
+      </>
     ) : undefined;
 
   return (

@@ -76,6 +76,12 @@ function podeGuardar(url, origem) {
   return null;
 }
 
+/** A navegação é do painel (`/corretor` ou `/corretor/...`)? */
+function ehNavegacaoDoPainel(url, origem) {
+  const u = new URL(url, origem);
+  return u.pathname === "/corretor" || u.pathname.indexOf("/corretor/") === 0;
+}
+
 /** O corpo da rota de dados é dele mesmo? Só então ele vai para uma caixa. */
 function usuarioDosDados(corpo) {
   return corpo && corpo.versao === 1 && typeof corpo.usuarioId === "string" && corpo.usuarioId ? corpo.usuarioId : null;
@@ -171,6 +177,10 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("message", (event) => {
   const dados = event.data || {};
   if (dados.tipo === "limpar-dados") event.waitUntil(apagarCaixas(null));
+  // A página sem controlador (fora do escopo) pede a renovação por aqui: o
+  // worker faz o pedido e guarda como se a página o tivesse feito (30/10/2026).
+  else if (dados.tipo === "renovar-dados")
+    event.waitUntil(tratarDados(new Request(self.location.origin + ROTA_DOS_DADOS, { cache: "no-store", credentials: "same-origin" })).catch(() => {}));
   else if (dados.tipo === "sessao" && typeof dados.usuarioId === "string") event.waitUntil(apagarCaixas(dados.usuarioId));
 });
 
@@ -182,6 +192,9 @@ self.addEventListener("fetch", (event) => {
     else if (tipo === "casca") event.respondWith(tratarCasca(event));
     return;
   }
+  // Escopo `/corretor` (30/10/2026) casa por prefixo também com
+  // `/corretores/...` (o site público): navegação fora do painel não é nossa.
+  if (!ehNavegacaoDoPainel(event.request.url, self.location.origin)) return;
   event.respondWith(
     (async () => {
       try {
