@@ -10,7 +10,8 @@ import {
   type MensagemRecebida,
   type MidiaRecebida,
 } from "./conversa";
-import type { Tratadores } from "./executar";
+import type { ContextoDoCentral, Tratadores } from "./executar";
+import type { ReferenciaDaMidia } from "./midia";
 import type { Remetente } from "./identificar";
 
 const CAROL: Remetente = { tipo: "pessoa", corretorId: "c1", grupoId: "g1", papel: "corretor", nome: "Carolini Maia", imobiliaria: "Next Home" };
@@ -360,5 +361,148 @@ describe("foto (onda 1)", () => {
     expect(cena.estado().proposta).not.toBeNull();
     expect(await responderNoCentral(foto("sim"), cena.deps)).toEqual(["Li a foto."]);
     expect(executar).not.toHaveBeenCalled();
+  });
+});
+
+describe("documento e planilha (onda 2)", () => {
+  const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60, 7)]).toString("base64");
+  const REF: ReferenciaDaMidia = { id: "m-foto", remoteJid: "5511987654321@s.whatsapp.net", tipo: "imageMessage", conteudo: { mediaKey: "chave", url: "u" } };
+  const CSV = Buffer.from("nome;telefone\nBruno;11 98888-1111\n").toString("base64");
+  const arquivo = (nome: string, extra: Partial<MensagemRecebida> = {}) =>
+    msg("", {
+      tipo: "imagem",
+      mensagemId: `m-${nome}`,
+      documento: true,
+      arquivo: { nome, mimeType: null, tamanho: 2000 },
+      ...extra,
+    });
+
+  /** Um importar_planilha e um documentos_do_lead de teste, que guardam o contexto que receberam. */
+  function tratadoresQueEspiam() {
+    const contextos: ContextoDoCentral[] = [];
+    const executar = vi.fn(async () => ({ ok: true, texto: "feito" }));
+    const tratadores: Tratadores = {
+      consultas: {},
+      acoes: {
+        importar_planilha: {
+          preparar: async (ctx) => {
+            contextos.push(ctx);
+            return { tipo: "proposta", resumo: "Importar 1 cliente", dados: { novos: 1, _linhas: [{ nome: "Bruno", telefone: "5511988881111" }] } };
+          },
+          executar,
+        },
+        documentos_do_lead: {
+          preparar: async (ctx) => {
+            contextos.push(ctx);
+            return ctx.midia?.tipo === "foto"
+              ? { tipo: "proposta", resumo: "Guardar o RG", dados: { leadId: "j1", _midia: ctx.midia.referencia } }
+              : { tipo: "resposta", resultado: { erro: "sem foto" } };
+          },
+          executar,
+        },
+      },
+    };
+    return { contextos, executar, tratadores };
+  }
+
+  it("onda 1: planilha segue 'ainda não', sem baixar", async () => {
+    const baixar = vi.fn(async (): Promise<MidiaRecebida> => ({ ok: true, base64: CSV, mimeType: "text/csv" }));
+    const { deps } = montar({ onda: 1, midia: baixar });
+    expect(await responderNoCentral(arquivo("leads.csv"), deps)).toEqual([TEXTOS.semArquivo]);
+    expect(baixar).not.toHaveBeenCalled();
+  });
+
+  it("onda 2: a planilha vai ao tratador sem passar pelo cérebro; arquivo e linhas fora do histórico e do registro", async () => {
+    const { contextos, tratadores, executar } = tratadoresQueEspiam();
+    const { deps, espioes, estado } = montar({ onda: 2, tratadores, midia: { ok: true, base64: CSV, mimeType: "audio/ogg" } });
+    const [resposta] = await responderNoCentral(arquivo("leads.csv"), deps);
+    expect(resposta).toMatch(/Importar 1 cliente/);
+    expect(espioes.pensou).toEqual([]);
+    expect(contextos[0].midia).toEqual({ tipo: "planilha", nome: "leads.csv", formato: "csv", base64: CSV });
+    expect(estado().historico[0]).toMatchObject({ papel: "pessoa", texto: "[planilha] leads.csv" });
+    expect(estado().proposta?.itens[0].dados._linhas).toBeDefined();
+    expect(JSON.stringify(estado().historico)).not.toContain(CSV);
+    expect(espioes.comandos[0]).toMatchObject({ ferramentas: [{ nome: "importar_planilha", argumentos: {} }] });
+    expect(JSON.stringify(espioes.comandos)).not.toContain(CSV);
+    expect(JSON.stringify(espioes.comandos)).not.toContain("_linhas");
+    expect(JSON.stringify(espioes.comandos)).not.toContain("98888");
+
+    // O "sim" roda com as linhas guardadas na proposta.
+    await responderNoCentral(msg("sim"), deps);
+    expect(executar).toHaveBeenCalledWith(expect.anything(), { novos: 1, _linhas: [{ nome: "Bruno", telefone: "5511988881111" }] });
+    expect(JSON.stringify(espioes.comandos[1].proposta)).not.toContain("_linhas");
+  });
+
+  it("onda 2: PDF e outros arquivos seguem 'ainda não', sem baixar", async () => {
+    const baixar = vi.fn(async (): Promise<MidiaRecebida> => ({ ok: true, base64: CSV, mimeType: "application/pdf" }));
+    const { deps, espioes } = montar({ onda: 2, midia: baixar });
+    expect(await responderNoCentral(arquivo("rg.pdf", { arquivo: { nome: "rg.pdf", mimeType: "application/pdf", tamanho: 1000 } }), deps)).toEqual([
+      TEXTOS.semArquivoNaOnda2,
+    ]);
+    expect(baixar).not.toHaveBeenCalled();
+    expect(espioes.comandos[0]).toMatchObject({ erro: "arquivo_tipo" });
+  });
+
+  it("onda 2: planilha grande não é baixada; .xls antigo e PDF renomeado são recusados pelos bytes", async () => {
+    const baixar = vi.fn(async (): Promise<MidiaRecebida> => ({ ok: true, base64: CSV, mimeType: "text/csv" }));
+    const grande = montar({ onda: 2, midia: baixar });
+    expect(
+      await responderNoCentral(arquivo("leads.xlsx", { arquivo: { nome: "leads.xlsx", mimeType: null, tamanho: 6 * 1024 * 1024 } }), grande.deps),
+    ).toEqual([TEXTOS.planilhaRecusada]);
+    expect(baixar).not.toHaveBeenCalled();
+
+    const XLS = Buffer.concat([Buffer.from([0xd0, 0xcf, 0x11, 0xe0]), Buffer.alloc(40, 1)]).toString("base64");
+    const antigo = montar({ onda: 2, midia: { ok: true, base64: XLS, mimeType: "application/vnd.ms-excel" } });
+    expect(await responderNoCentral(arquivo("leads.xls"), antigo.deps)).toEqual([TEXTOS.planilhaXls]);
+
+    const PDF = Buffer.from("%PDF-1.7 qualquer coisa").toString("base64");
+    const renomeado = montar({ onda: 2, midia: { ok: true, base64: PDF, mimeType: "text/csv" } });
+    expect(await responderNoCentral(arquivo("leads.csv"), renomeado.deps)).toEqual([TEXTOS.planilhaRecusada]);
+    expect(renomeado.espioes.comandos[0]).toMatchObject({ erro: "planilha_formato" });
+  });
+
+  it("onda 2: foto de documento leva a referência ao tratador; a resposta 'é do João' acha a foto no histórico", async () => {
+    const { contextos, tratadores } = tratadoresQueEspiam();
+    const cena = montar({
+      onda: 2,
+      tratadores,
+      midia: { ok: true, base64: JPEG, mimeType: "image/jpeg" },
+      pensar: async (e) => {
+        // Na foto, o cérebro pergunta de quem é; no texto seguinte, anexa.
+        if (!e.imagem) await e.executar("documentos_do_lead", { lead: "João", o_que: "anexar" });
+        return { ok: true, texto: e.imagem ? "De qual cliente é?" : "ok", chamadas: [], modelo: "m", tokensEntrada: 1, tokensSaida: 1, custoUsd: 0 };
+      },
+    });
+    expect(await responderNoCentral(msg("", { tipo: "imagem", mensagemId: "m-foto", midia: REF }), cena.deps)).toEqual(["De qual cliente é?"]);
+    const sistemaDaFoto = cena.espioes.pensou[0].sistema;
+    expect(sistemaDaFoto).toMatch(/NUNCA use cadastrar_lead_da_foto/);
+    expect(sistemaDaFoto).toMatch(/documentos_do_lead com o_que "anexar"/);
+    expect(cena.estado().historico[0]).toMatchObject({ texto: "[foto]", midia: REF });
+    expect(JSON.stringify(cena.estado())).not.toContain(JPEG);
+
+    const [resposta] = await responderNoCentral(msg("é o RG do João"), cena.deps);
+    expect(resposta).toMatch(/Guardar o RG/);
+    expect(contextos[0].midia).toEqual({ tipo: "foto", referencia: REF, dica: "é o RG do João" });
+    expect(cena.espioes.pensou[1].sistema).toMatch(/foto há pouco/);
+    // A referência fica na proposta (até o sim), nunca no registro.
+    expect(cena.estado().proposta?.itens[0].dados._midia).toEqual(REF);
+    expect(JSON.stringify(cena.espioes.comandos)).not.toContain("chave");
+    expect(JSON.stringify(cena.espioes.comandos)).not.toContain(JPEG);
+
+    // Confirmado, a foto sai do histórico: não vai a outro cliente depois.
+    await responderNoCentral(msg("sim"), cena.deps);
+    expect(cena.estado().historico.some((h) => h.midia)).toBe(false);
+    expect(JSON.stringify(cena.espioes.comandos)).not.toContain("chave");
+  });
+
+  it("onda 1: a foto não guarda referência nem chega ao tratador como documento", async () => {
+    const { contextos, tratadores } = tratadoresQueEspiam();
+    const cena = montar({ onda: 1, tratadores, midia: { ok: true, base64: JPEG, mimeType: "image/jpeg" } });
+    await responderNoCentral(msg("rg do joão", { tipo: "imagem", mensagemId: "m-foto", midia: REF }), cena.deps);
+    expect(cena.espioes.pensou[0].sistema).toMatch(/guardar documento pelo WhatsApp ainda não chegou/);
+    expect(cena.estado().historico[0].midia).toBeUndefined();
+    await responderNoCentral(msg("é do João"), cena.deps);
+    expect(contextos).toEqual([]);
+    expect(cena.espioes.pensou[1].sistema).not.toMatch(/foto há pouco/);
   });
 });

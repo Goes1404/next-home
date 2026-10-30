@@ -12581,6 +12581,18 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   ganharam `quem` opcional (padrão `"ia"`, sem mudança). Armadilha: a linha
   `expect(Object.keys(TRATADORES.acoes)).toEqual([])` do `ferramentas.test.ts`
   reprovava toda ação da onda 1 mesmo com `ONDA_ATUAL = 0`; saiu.
+- **Onda 2, frente I (documentos, lembrete, planilha), 30/10/2026** —
+  [[documentos-lembrete-e-planilha-pelo-central]]: `tratadores/documentos.ts`.
+  O "sim" chega noutra mensagem, então a foto de documento viaja pela
+  REFERÊNCIA da mensagem do WhatsApp (chaves da mídia, sem miniatura;
+  `central/midia.ts`) e é baixada de novo no "sim"; chave de `dados` com "_"
+  (`_midia`, `_linhas`) fica na proposta e sai do registro (`paraORegistro`).
+  Lembrete = anotação com lembrete do painel (`criarLembretePeloCentral`); o
+  envio pelo central (4.7) é trocar o canal de `processarLembretesDeAnotacao`.
+  Planilha: só a que parece planilha é baixada (5 MB, tipo pelos bytes), sem
+  cérebro; "já existia" é no grupo. Link de documentos: miolo único
+  `garantirLinkDeDocumentos` (a ficha passou a usá-lo) e sai pelo número do
+  corretor só para quem já conversa com ele.
 
 ## Suporte e contato da Astro (29/10/2026)
 

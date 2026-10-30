@@ -10,6 +10,7 @@ import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { pensar } from "./cerebro";
 import { responderNoCentral, type Dependencias, type EstadoDoCentral, type MensagemRecebida } from "./conversa";
 import { identificarRemetente, type OpcaoDeImobiliaria } from "./identificar";
+import { documentoDaMensagem, referenciaDaMensagem } from "./midia";
 import { esquecerCentral, lerCentral } from "./numeroDoCentral";
 import type { Proposta } from "./proposta";
 import type { Json } from "@/lib/supabase/types";
@@ -70,13 +71,27 @@ export function lerMensagemDoCentral(payload: Payload): MensagemRecebida | null 
   const lid = ehLid ? jid : null;
 
   const m = data.message ?? {};
-  const texto: string = m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || "";
-  const tipo = m.audioMessage ? "audio" : m.imageMessage || m.documentMessage ? "imagem" : "texto";
+  // Arquivo com legenda chega embrulhado (`documentWithCaptionMessage`).
+  const doc = documentoDaMensagem(m);
+  const texto: string = m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || doc?.caption || "";
+  const tipo = m.audioMessage ? "audio" : m.imageMessage || doc ? "imagem" : "texto";
   if (tipo === "texto" && !texto.trim()) return null;
+  // Como baixar a foto ou o arquivo de novo no "sim" (anexar documento, onda
+  // 2): só as chaves da mídia, nunca o conteúdo nem a miniatura.
+  const referencia = tipo === "imagem" ? referenciaDaMensagem(data) : null;
+  const midia = referencia ? { midia: referencia } : {};
   // Arquivo (PDF, planilha, foto mandada "como documento") segue no tipo
-  // "imagem" do registro, mas a conversa não o baixa: é da onda 2.
-  if (tipo === "imagem" && !m.imageMessage) return { mensagemId, telefone, lid, tipo, texto, documento: true };
-  return { mensagemId, telefone, lid, tipo, texto };
+  // "imagem" do registro. A conversa só baixa a planilha, e só com a onda 2.
+  if (tipo === "imagem" && !m.imageMessage) {
+    const tamanho = Number(doc?.fileLength?.low ?? doc?.fileLength);
+    const arquivo = {
+      nome: typeof doc?.fileName === "string" ? doc.fileName : typeof doc?.title === "string" ? doc.title : null,
+      mimeType: typeof doc?.mimetype === "string" ? doc.mimetype : null,
+      tamanho: Number.isFinite(tamanho) && tamanho > 0 ? tamanho : null,
+    };
+    return { mensagemId, telefone, lid, tipo, texto, documento: true, arquivo, ...midia };
+  }
+  return { mensagemId, telefone, lid, tipo, texto, ...midia };
 }
 
 function dependenciasReais(instanceName: string, payload: Payload): Dependencias {
@@ -163,7 +178,8 @@ function dependenciasReais(instanceName: string, payload: Payload): Dependencias
       return r.sucesso && r.textoTranscrito.trim() ? r.textoTranscrito.trim() : null;
     },
     // Mesmo caminho do áudio: a Evolution decifra pela mensagem inteira. Nunca
-    // a `url` do webhook, que é o arquivo cifrado do WhatsApp.
+    // a `url` do webhook, que é o arquivo cifrado do WhatsApp. Serve à foto e,
+    // na onda 2, à planilha mandada como arquivo.
     baixarImagem: () =>
       baixarMidiaDoProvedor({ instanceName, messageId: payload.data?.key?.id, mensagemCompleta: payload.data }),
     pensar,
