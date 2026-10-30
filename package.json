@@ -28,7 +28,8 @@
     "perf": "tsx scripts/perf/medir.ts",
     "bundle:teto": "node scripts/bundleTeto.mjs",
     "observatorio:consultor": "tsx scripts/observatorioConsultor.ts",
-    "eval:consultor": "tsx --conditions=react-server scripts/eval/casosDoConsultor.ts"
+    "eval:consultor": "tsx --conditions=react-server scripts/eval/casosDoConsultor.ts",
+    "eval:central": "tsx --conditions=react-server scripts/eval/rodarEvalDoCentral.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

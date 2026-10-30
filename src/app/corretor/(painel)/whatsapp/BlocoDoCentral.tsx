@@ -24,7 +24,7 @@ export async function BlocoDoCentral() {
       <h2 className="text-fluid-base font-bold text-titulo">Comandos pelo WhatsApp</h2>
       <p className="text-fluid-sm text-apoio mt-1">
         Mande mensagem para {telefoneFormatado(central.telefone)} e peça em texto ou áudio: &quot;quais visitas tenho
-        hoje?&quot;, &quot;me mostra o lead do final 4321&quot;. Nada muda no CRM sem o seu &quot;sim&quot;.
+        hoje?&quot;, &quot;como está a Ana Paula?&quot;. Nada muda no CRM sem o seu &quot;sim&quot;.
       </p>
       <p className="text-fluid-xs text-apoio mt-2">
         {whatsapp
