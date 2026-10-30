@@ -155,8 +155,11 @@ export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
   }
 
   const quemPaga = { corretorId: pedido.corretorId, grupoId: pedido.grupoId };
-  // Sem foto de referência, como o Estúdio quando o corretor não escolhe uma:
-  // a ficha entra como fatos e a ressalva diz que é ilustrativa. Sem imóvel,
+  // A foto do imóvel como base, como o Estúdio quando o corretor escolhe uma
+  // (30/10/2026: o post do Dom Parque pelo central saiu sem nada do prédio de
+  // verdade). Sem foto no catálogo, ou se ela não baixar, segue como antes.
+  const base = imovel ? await fotoDeBaseDoImovel(supabase, pedido.grupoId, imovel.id ?? pedido.empreendimentoId) : null;
+  // A ficha entra como fatos e a ressalva diz que é ilustrativa. Sem imóvel,
   // nada de ficha e o ofício é o livre (a régua do `turno.ts`).
   const traduzido = await traduzirPedido({
     pedido: pedido.texto,
@@ -173,6 +176,7 @@ export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
   const resultado = await gerarImagem({
     prompt: montarPedido(prompt, receitaPor("livre")),
     textosNaCena: frase ? [frase] : textosEntreAspas(prompt),
+    ...(base ? { referencias: [{ bytes: base.bytes, mime: base.mime }] } : {}),
     largura: formato.largura,
     altura: formato.altura,
     qualidade: "low",
@@ -207,11 +211,47 @@ export async function gerarArtePeloCentral(pedido: QuemPedeAArte & {
     url,
     largura: medida?.largura ?? formato.largura,
     altura: medida?.altura ?? formato.altura,
-    referenciaUrl: null,
+    referenciaUrl: base?.url ?? null,
     latenciaMs: resultado.latenciaMs,
     empreendimentoId: imovel ? (imovel.id ?? pedido.empreendimentoId) : null,
   });
 
   const ressalva = !imovel ? "nao_se_aplica" : marcada.carimbada ? "aplicada" : "falhou";
   return { ok: true, url, imagemId: imagem?.id ?? null, ressalva };
+}
+
+/** Teto da foto de base (a foto do catálogo já vem reduzida; isto é só trava). */
+const TETO_DA_FOTO_DE_BASE = 8 * 1024 * 1024;
+
+/**
+ * A primeira foto do imóvel no catálogo (a mesma ordem da vitrine), lida no
+ * grupo de quem pediu. `null` sem foto, com download que falhou ou grande
+ * demais: a arte sai como antes, sem base.
+ */
+export async function fotoDeBaseDoImovel(
+  supabase: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+  empreendimentoId: string | null | undefined,
+): Promise<{ bytes: Buffer; mime: string; url: string } | null> {
+  if (!empreendimentoId) return null;
+  try {
+    const { data } = await supabase
+      .from("midias")
+      .select("url")
+      .eq("grupo_id", grupoId)
+      .eq("empreendimento_id", empreendimentoId)
+      .eq("tipo", "foto")
+      .order("ordem")
+      .limit(1)
+      .maybeSingle();
+    if (!data?.url) return null;
+    const res = await fetch(data.url);
+    if (!res.ok) return null;
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > TETO_DA_FOTO_DE_BASE) return null;
+    return { bytes, mime: res.headers.get("content-type") || "image/jpeg", url: data.url };
+  } catch (erro) {
+    console.warn("[central] foto do imóvel não serviu de base; segue sem:", erro instanceof Error ? erro.message : erro);
+    return null;
+  }
 }

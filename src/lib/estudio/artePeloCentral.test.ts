@@ -126,6 +126,47 @@ describe("arte do Estúdio pelo central", () => {
     expect(r.ok && r.url).toBe(`https://cdn.exemplo/${uploads[0].caminho}`);
   });
 
+  it("com foto no catálogo, a primeira foto do imóvel vai como base (como o Estúdio); foto de outro grupo nunca", async () => {
+    banco = bancoFalso({
+      empreendimentos: [linhaDoImovel("e1", G)],
+      midias: [
+        { grupo_id: "g2", empreendimento_id: "e1", tipo: "foto", ordem: 0, url: "https://fotos/alheia.jpg" },
+        { grupo_id: G, empreendimento_id: "e1", tipo: "foto", ordem: 2, url: "https://fotos/segunda.jpg" },
+        { grupo_id: G, empreendimento_id: "e1", tipo: "foto", ordem: 1, url: "https://fotos/vitta.jpg" },
+      ],
+    });
+    const chamadas: string[] = [];
+    globalThis.fetch = vi.fn(async (url: string) => {
+      chamadas.push(String(url));
+      if (String(url).startsWith("https://fotos/")) return new Response(PNG, { headers: { "content-type": "image/png" } });
+      ordem.push("gerador");
+      return new Response(JSON.stringify({ data: [{ b64_json: PNG.toString("base64") }], usage: { input_tokens: 50, output_tokens: 196 } }), {
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+    expect(await gerarArtePeloCentral(pedido)).toMatchObject({ ok: true });
+    expect(chamadas[0]).toBe("https://fotos/vitta.jpg");
+    // Com referência, o gerador usa a edição (a foto vai junto), não a criação do zero.
+    expect(chamadas.some((u) => /images\/edits/.test(u))).toBe(true);
+    expect(registrarImagem).toHaveBeenCalledWith(expect.objectContaining({ referenciaUrl: "https://fotos/vitta.jpg" }));
+  });
+
+  it("foto do catálogo que não baixa: a arte sai como antes, sem base", async () => {
+    banco = bancoFalso({
+      empreendimentos: [linhaDoImovel("e1", G)],
+      midias: [{ grupo_id: G, empreendimento_id: "e1", tipo: "foto", ordem: 0, url: "https://fotos/quebrada.jpg" }],
+    });
+    globalThis.fetch = vi.fn(async (url: string) => {
+      if (String(url).startsWith("https://fotos/")) return new Response("", { status: 404 });
+      ordem.push("gerador");
+      return new Response(JSON.stringify({ data: [{ b64_json: PNG.toString("base64") }], usage: { input_tokens: 50, output_tokens: 196 } }), {
+        headers: { "content-type": "application/json" },
+      });
+    }) as never;
+    expect(await gerarArtePeloCentral(pedido)).toMatchObject({ ok: true });
+    expect(registrarImagem).toHaveBeenCalledWith(expect.objectContaining({ referenciaUrl: null }));
+  });
+
   it("cota de arte do plano esgotada: recusa sem chamar IA nenhuma", async () => {
     limiteOk = false;
     expect(await gerarArtePeloCentral(pedido)).toEqual({ ok: false, erro: "Seu plano tem 30 artes por mês e elas acabaram. Voltam no dia 1º." });
