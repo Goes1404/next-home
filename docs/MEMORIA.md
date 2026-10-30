@@ -12605,6 +12605,16 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   período em UTC (lead das 21h-24h do último dia cai no mês seguinte); o
   central conta em SP. `whatsapp_da_equipe` só lista: avisar cada um é envio
   (ação com "sim" sobre `avisarPeloCentral`, rodada futura).
+- **Onda 2, frente H (financeiro e gestão), 30/10/2026** —
+  [[financeiro-e-gestao-pelo-numero-central]]: `tratadores/financeiro.ts`
+  (`registrar_venda`, `lancar_no_caixa`, `informar_gasto_de_anuncio`,
+  `redistribuir_leads`). **`salvar_venda` (0232) não serve à chave de
+  serviço** (grupo e registrador vêm da sessão): `financeiro/vendaPeloCentral.ts`
+  refaz venda, divisão e parcela com as contas da tela. A comissão vem da
+  última venda (imóvel → corretor → imobiliária) e o resumo diz de onde.
+  "Parados" = régua de 15 dias da administração. Mês fechado sem sessão:
+  `recusaDoMesFechadoNoGrupo`. Armadilha de teste: o `bancoFalso` devolve a
+  linha viva no `select`; capture o "antes" antes de gravar.
 
 ## Suporte e contato da Astro (29/10/2026)
 
