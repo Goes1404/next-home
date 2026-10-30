@@ -12721,6 +12721,16 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   **Armadilha:** o worker de vídeo roda no GitHub Actions sem as chaves da
   Evolution; quem manda o vídeo pronto é o tique dos follow-ups
   (`video/entregaPeloCentral.ts`, marca `briefing.centralEntregueEm`).
+- **Arte com frase e arte livre pelo central (30/10/2026, conversa da
+  Bruna)** — [[arte-e-video-pelo-numero-central]]: a frase pedida por áudio
+  se perdia (`gerar_arte` só tinha imóvel/formato) e pedido sem imóvel virava
+  "use o Midjourney". Agora `texto_na_arte` vai ao gerador como ditado
+  intacto (`textosNaCena: [frase]`, fora do tradutor: se ele reescrever, vale
+  a instrução literal do `promptFinal`) e aparece no resumo da proposta;
+  `pedido` entra no texto do tradutor. Sem imóvel = arte livre como na tela
+  (sem ficha, domínio livre, sem ressalva, galeria sem imóvel; cota igual).
+  **Limite:** o gerador não garante grafia (F0: 2/2 com aspas, 3/4 solto);
+  a entrega pede para conferir a frase. Frase > 160 = pede para encurtar.
 
 - **30/10/2026, primeiro dia no ar:** o central caiu 6 s depois das
   boas-vindas (o WhatsApp fechou a sessão do número novo). Mensagem sem

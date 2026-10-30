@@ -1,6 +1,6 @@
 ---
 title: Arte e vídeo pelo número central
-aliases: [gerar_arte, criar_video, resposta com arquivo, artePeloCentral, videoPeloCentral, entregaPeloCentral, enviarRespostaDoCentral]
+aliases: [gerar_arte, criar_video, resposta com arquivo, artePeloCentral, videoPeloCentral, entregaPeloCentral, enviarRespostaDoCentral, texto_na_arte, frase na arte, arte livre pelo central]
 tags: [whatsapp, midia, decisao]
 type: decisao
 status: seedling
@@ -19,7 +19,7 @@ codigo:
 fonte: onda 3 do número central, Frente M (30/10/2026)
 created: 2026-10-30
 updated: 2026-10-30
-summary: gerar_arte (16) e criar_video (32) são AÇÃO com "sim" (gastam cota; sem desfazer). A arte é a geração do Estúdio sem sessão (artePeloCentral espelha /api/imagens/gerar, nas mesmas guardas) e volta como ARQUIVO; se passar de 25 s, o "sim" responde "te mando em instantes" e a mesma geração é entregue em after(). O vídeo entra na fila video_jobs marcado origem central; como o worker roda no GitHub Actions sem as chaves da Evolution, quem manda o vídeo pronto é o tique dos follow-ups (5 min). A conversa ganhou resposta com arquivo genérica (RespostaDoCentral.arquivos/depois; só URL, marca "[imagem]" no histórico e no registro).
+summary: gerar_arte (16) e criar_video (32) são AÇÃO com "sim" (gastam cota; sem desfazer). A arte é a geração do Estúdio sem sessão (artePeloCentral espelha /api/imagens/gerar, nas mesmas guardas) e volta como ARQUIVO; se passar de 25 s, o "sim" responde "te mando em instantes" e a mesma geração é entregue em after(). O vídeo entra na fila video_jobs marcado origem central; como o worker roda no GitHub Actions sem as chaves da Evolution, quem manda o vídeo pronto é o tique dos follow-ups (5 min). A conversa ganhou resposta com arquivo genérica (RespostaDoCentral.arquivos/depois; só URL, marca "[imagem]" no histórico e no registro). Desde a conversa da Bruna (30/10): texto_na_arte vai ao gerador como texto DITADO intacto (textosNaCena, sem passar pelo tradutor; o gerador não garante a grafia, a entrega pede para conferir) e pedido livre sem imóvel vira arte livre (como a tela: sem ficha, domínio livre, sem ressalva).
 ---
 # Arte e vídeo pelo número central
 
@@ -76,6 +76,40 @@ corretor encaminhar"). Onda 3; `ONDA_ATUAL` segue 0.
   leem o código dela (`receitas.test.ts`, `limitesNoPontoDeGeracao.test.ts`,
   `quandoAIaResponde.test.ts`). `artePeloCentral.ts` entrou nas duas
   últimas (limite antes do tradutor e do gerador; suspensão).
+
+### Frase na arte e arte livre (conversa da Bruna, 30/10/2026)
+
+Em produção: "cria uma arte do Dom Parque Barueri, coloca a frase: Visite e
+ganhe um champanhe somente este final de semana" (por áudio) saiu SEM a
+frase — a ferramenta só tinha `imovel`/`formato`. E "uma imagem futurística
+de um prédio flutuante" sem imóvel virou "use o Midjourney". A ferramenta
+ganhou `texto_na_arte` e `pedido` (5955b97c); o caminho até o gerador:
+
+- `preparar`: `fraseDaArte` só tira espaço e aspas das pontas (nada muda
+  dentro); frase > 160 caracteres = pergunta "pode encurtar?" (nunca
+  corta). `pedido` aparado em 400. O pedido do tradutor vira
+  `Post do X para redes sociais. O que mostrar: <pedido>. Com o texto
+  "<frase>" escrito na arte, exatamente assim.`; `dados.textoNaArte` guarda a
+  frase. Resumo: `Gerar com IA um post do Dom Parque Barueri com a frase
+  "…" e te mandar…` (pedido livre aparece entre parênteses).
+- `gerarArtePeloCentral({ textoNaArte })`: com frase, `textosNaCena:
+  [frase]` (só ela) — o `promptFinal` do `gerarImagem` acrescenta "escreva
+  exatamente este texto, caractere por caractere". **A frase NÃO depende do
+  tradutor**: se ele reescrever ("VISITE E GANHE CHAMPANHE"), vale a
+  instrução literal. Sem frase, o ditado é o da tela (`textosEntreAspas` do
+  prompt traduzido).
+- **Limite**: o gerador não garante texto legível (F0: 2 em 2 entre aspas e
+  soletrado; 3 em 4 solto). É o melhor caminho que a tela tem; texto exato
+  por código só a ressalva (`carimbo.ts`). Por isso a entrega com frase diz
+  "Confira a frase antes de publicar".
+- **Arte livre** (sem `imovel`, com `pedido` ou frase): não lê o catálogo;
+  `empreendimentoId: null` → sem ficha, `dominio: "livre"`, sem carimbo
+  (`ressalva: "nao_se_aplica"`, a régua da rota), galeria sem imóvel. Cota,
+  teto, suspensão e consumo iguais (o gatilho da 0214 conta qualquer linha de
+  `imagens_geradas`). Sem imóvel, pedido nem frase = pergunta. Imóvel citado
+  e ambíguo/desconhecido continua pergunta/erro (não cai para arte livre).
+- Proposta antiga (sem `textoNaArte`) continua executando: o "sim" lê os
+  campos com tolerância.
 
 ## Vídeo (32)
 

@@ -31,7 +31,7 @@ const imovel = (id: string, nome: string, extra: Partial<ImovelDoCatalogo> = {})
   ...extra,
 });
 
-const CATALOGO = [imovel("e1", "Vitta Residencial"), imovel("e2", "Royal Park I"), imovel("e3", "Royal Park II")];
+const CATALOGO = [imovel("e1", "Vitta Residencial"), imovel("e2", "Royal Park I"), imovel("e3", "Royal Park II"), imovel("e4", "Dom Parque Barueri")];
 const URL_DA_ARTE = "https://exemplo.supabase.co/storage/v1/object/public/empreendimentos/corretores/c1/criacoes/abc.png";
 
 function montar(arte: () => Promise<ResultadoDaArte> = async () => ({ ok: true, url: URL_DA_ARTE, imagemId: "i1", ressalva: "aplicada" })) {
@@ -136,6 +136,97 @@ describe("gerar_arte", () => {
     });
     expect(feito.resultados[0].arquivos).toEqual([{ tipo: "imagem", url: URL_DA_ARTE }]);
     expect(feito.desfaziveis).toEqual([]);
+  });
+});
+
+// ── A frase e o pedido livre (conversa da Bruna, 30/10/2026) ────────────────
+
+const FRASE = "Visite e ganhe um champanhe somente este final de semana";
+
+describe("gerar_arte: a frase na arte e a arte livre", () => {
+  it("preparar mostra a frase no resumo, guarda-a intacta e NÃO gera nem gasta", async () => {
+    const { tratadores, espioes } = montar();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    const r = (await executor.executar("gerar_arte", { imovel: "Dom Parque Barueri", formato: "post", texto_na_arte: FRASE })) as Record<string, unknown>;
+    expect(r.proposto).toBe(true);
+    expect(espioes.gerou).toEqual([]);
+    const [item] = executor.itensPropostos;
+    expect(item.resumo).toContain(`post do Dom Parque Barueri com a frase "${FRASE}"`);
+    expect(item.resumo).toContain("consome cota de IA");
+    expect(item.dados).toMatchObject({ imovelId: "e4", textoNaArte: FRASE });
+    // O tradutor recebe a frase entre aspas (a convenção do ditado da tela).
+    expect(item.dados.pedido).toContain(`"${FRASE}"`);
+  });
+
+  it("aspas que o cérebro pôs em volta saem; dentro da frase nada muda", async () => {
+    const { tratadores } = montar();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    await executor.executar("gerar_arte", { imovel: "Vitta", texto_na_arte: '  “Últimas unidades: ENTRADA em 60x!”  ' });
+    expect(executor.itensPropostos[0].dados.textoNaArte).toBe("Últimas unidades: ENTRADA em 60x!");
+  });
+
+  it('"sim": a frase chega ao gerador exatamente como pedida, e a entrega pede para conferir', async () => {
+    const { tratadores, espioes } = montar();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    await executor.executar("gerar_arte", { imovel: "Dom Parque", texto_na_arte: FRASE });
+    const r = await tratadores.acoes.gerar_arte.executar(ctx, executor.itensPropostos[0].dados);
+    expect(espioes.gerou).toHaveLength(1);
+    expect(espioes.gerou[0]).toMatchObject({ empreendimentoId: "e4", textoNaArte: FRASE });
+    expect(r.texto).toMatch(/^Pronto, o post do Dom Parque Barueri\./);
+    expect(r.texto).toContain("Confira a frase");
+  });
+
+  it("pedido livre sem imóvel: arte livre, sem ler o catálogo; o 'sim' gera sem imóvel", async () => {
+    const { tratadores, espioes } = montar();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    const r = (await executor.executar("gerar_arte", { pedido: "imagem futurística de um prédio flutuante" })) as Record<string, unknown>;
+    expect(r.proposto).toBe(true);
+    expect(espioes.catalogoDe).toEqual([]);
+    expect(espioes.gerou).toEqual([]);
+    const [item] = executor.itensPropostos;
+    expect(item.resumo).toMatch(/^Gerar com IA um post \(imagem futurística de um prédio flutuante\) e te mandar a imagem/);
+    expect(item.resumo).not.toMatch(/Midjourney|DALL/);
+    expect(item.dados).toMatchObject({ imovelId: null, imovelNome: null, textoNaArte: null });
+    expect(item.dados.pedido).toBe("Post para redes sociais. O que mostrar: imagem futurística de um prédio flutuante.");
+
+    const feito = await tratadores.acoes.gerar_arte.executar(ctx, item.dados);
+    expect(espioes.gerou).toEqual([{ corretorId: "c1", grupoId: G, empreendimentoId: null, formato: "quadrado", texto: item.dados.pedido }]);
+    expect(feito).toMatchObject({ ok: true, texto: expect.stringMatching(/^Pronto, o post\. É só encaminhar/), arquivos: [{ tipo: "imagem", url: URL_DA_ARTE }] });
+  });
+
+  it("arte livre também confere a cota antes de propor", async () => {
+    const { tratadores, esgotarArte } = montar();
+    esgotarArte();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    expect(await executor.executar("gerar_arte", { pedido: "prédio flutuante" })).toMatchObject({ erro: expect.stringContaining("acabaram") });
+    expect(executor.itensPropostos).toEqual([]);
+  });
+
+  it("sem imóvel, pedido nem frase: pergunta; imóvel ambíguo com frase: pergunta; frase longa: pede para encurtar", async () => {
+    const { tratadores, espioes } = montar();
+    const executor = criarExecutor(ctx, { consultas: {}, acoes: tratadores.acoes }, 3);
+    expect(await executor.executar("gerar_arte", { formato: "post" })).toMatchObject({ pergunta: expect.any(String) });
+    expect(await executor.executar("gerar_arte", { imovel: "Royal", texto_na_arte: FRASE })).toMatchObject({ pergunta: expect.any(String) });
+    expect(await executor.executar("gerar_arte", { imovel: "Vitta", texto_na_arte: "x".repeat(161) })).toMatchObject({
+      pergunta: expect.stringContaining("encurtar"),
+    });
+    expect(executor.itensPropostos).toEqual([]);
+    expect(espioes.gerou).toEqual([]);
+  });
+
+  it("pela conversa: a proposta mostra a frase e o 'sim' a leva intacta", async () => {
+    const { tratadores, espioes } = montar();
+    const c = conversa(tratadores);
+    c.deps.pensar = async (e) => {
+      await e.executar("gerar_arte", { imovel: "Dom Parque Barueri", texto_na_arte: FRASE });
+      return { ok: true, texto: "ok", chamadas: [{ nome: "gerar_arte", argumentos: {} }], modelo: "m", tokensEntrada: 1, tokensSaida: 1, custoUsd: 0.01 } as never;
+    };
+    const [proposta] = await responderNoCentral(c.msg("cria uma arte do Dom Parque Barueri com a frase"), c.deps);
+    expect(proposta).toContain(`Gerar com IA um post do Dom Parque Barueri com a frase "${FRASE}"`);
+    expect(espioes.gerou).toEqual([]);
+    const r = await responderNoCentralComArquivos(c.msg("sim"), c.deps);
+    expect(r.arquivos).toEqual([{ tipo: "imagem", url: URL_DA_ARTE }]);
+    expect(espioes.gerou[0]).toMatchObject({ textoNaArte: FRASE });
   });
 });
 
