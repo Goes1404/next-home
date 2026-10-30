@@ -6,7 +6,8 @@ voltarem. Este arquivo é a fonte da retomada: a tarefa agendada lê daqui o
 que falta. **Atualize a coluna Estado a cada frente juntada.**
 
 Desenho: `docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md`.
-Base de todas as frentes: commit `ec5c9dfc` (contrato `preparar` → "sim" →
+Migration do central renumerada para **0249** (a 0248 de `main` é a IA no
+atendimento, de outra sessão). Base de todas as frentes: commit `ec5c9dfc` (contrato `preparar` → "sim" →
 `executar` → `desfazer` em `src/lib/central/executar.ts`; `resolverLead`;
 um arquivo por frente em `src/lib/central/tratadores/`).
 
@@ -35,11 +36,11 @@ um arquivo por frente em `src/lib/central/tratadores/`).
 
 | Frente | Arquivo | Ferramentas | Estado |
 |---|---|---|---|
-| A · Consultas | `tratadores/consultas.ts` | `consultar_lead`, `quem_ligar_hoje` (reaproveitar `getFilaDeTrabalho`/`montarResumoDoDia` sem sessão) | em andamento |
+| A · Consultas | `tratadores/consultas.ts` | `consultar_lead`, `quem_ligar_hoje` (reaproveitar `getFilaDeTrabalho`/`montarResumoDoDia` sem sessão) | juntada (30/10) |
 | B · Leads | `tratadores/leads.ts` | `cadastrar_lead` (telefone inteiro; regra de lead de outro corretor; desfazer arquiva), `atualizar_lead` (desfazer restaura) | em andamento |
 | C · Agenda | `tratadores/agenda.ts` | `visita` (marcar/remarcar/cancelar; datas da agenda por WhatsApp; desfazer restaura), `agenda_pessoal` (reunião só gestor; desfazer remove) | em andamento |
-| D · Controle | `tratadores/controle.ts` | `ia_do_cliente` (resumo é leitura; ligar/desligar com desfazer), `desfazer` (último comando confirmado em 24 h, ordem inversa, marca `desfeito_em`) | em andamento |
-| E · Foto | `tratadores/foto.ts` + conversa/webhook/cerebro | `cadastrar_lead_da_foto` delegando a `ACOES_LEADS.cadastrar_lead`; imagem ao cérebro só com a onda ligada | em andamento |
+| D · Controle | `tratadores/controle.ts` | `ia_do_cliente` (resumo é leitura; ligar/desligar com desfazer), `desfazer` (último comando confirmado em 24 h, ordem inversa, marca `desfeito_em`) | juntada (30/10) |
+| E · Foto | `tratadores/foto.ts` + conversa/webhook/cerebro | `cadastrar_lead_da_foto` delegando a `ACOES_LEADS.cadastrar_lead`; imagem ao cérebro só com a onda ligada | juntada (30/10) |
 
 ## Onda 2 (próximas; abrir só depois de a onda 1 estar juntada e verde)
 
