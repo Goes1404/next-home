@@ -39,6 +39,21 @@ export interface EntradaAudio {
   segundos?: number | null;
   /** O corretor dono do número: quem paga a transcrição (livro do consumo, 0233). */
   quemPaga: QuemPagaAIa;
+  /**
+   * Termos que podem aparecer na fala (nomes de imóveis, jargão da casa). Vai
+   * como dica ao modelo da OpenAI: no número central, "me manda a ficha do
+   * lead mais quente" saiu "limanja fica do líder mais quente" (30/10/2026).
+   */
+  vocabulario?: string;
+}
+
+/** A dica de vocabulário tem teto: o `prompt` da transcrição é curto. */
+export const TETO_DO_VOCABULARIO = 600;
+
+export function promptDaTranscricao(vocabulario?: string): string {
+  const base = "Transcrição literal de um áudio de WhatsApp em português do Brasil.";
+  const termos = (vocabulario ?? "").replace(/\s+/g, " ").trim().slice(0, TETO_DO_VOCABULARIO);
+  return termos ? `${base} Termos que podem aparecer: ${termos}.` : base;
 }
 
 /**
@@ -201,7 +216,7 @@ export function duracaoCobrada(base64: string, declarados: number | null): numbe
   return Math.max(1, Math.round((base64.length * 3) / 4 / 2000));
 }
 
-async function transcreverComOpenAI(base64: string, mimeType: string, segundos: number): Promise<Tentativa> {
+async function transcreverComOpenAI(base64: string, mimeType: string, segundos: number, vocabulario?: string): Promise<Tentativa> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, erro: "sem_api_key" };
   try {
@@ -214,7 +229,7 @@ async function transcreverComOpenAI(base64: string, mimeType: string, segundos: 
     form.append("language", "pt");
     form.append("response_format", "json");
     // Mesma ideia do prompt do Gemini: pedir literalidade, sem assunto.
-    form.append("prompt", "Transcrição literal de um áudio de WhatsApp em português do Brasil.");
+    form.append("prompt", promptDaTranscricao(vocabulario));
     const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -310,7 +325,7 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
   const duracao = duracaoCobrada(base64, segundos);
 
   const motores: Array<{ nome: "openai" | "groq" | "gemini"; tentar: () => Promise<Tentativa> }> = [
-    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType, duracao) },
+    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType, duracao, entrada.vocabulario) },
     {
       nome: "groq",
       tentar: async () => {

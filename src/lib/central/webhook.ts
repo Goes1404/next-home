@@ -32,6 +32,7 @@ import type { ArquivoDaResposta } from "./executar";
 import { tratarMensagemDoGrupoNoCentral, type DependenciasDoGrupo, type LinhaDaEquipe, type MensagemDeGrupo } from "./grupo";
 import { identificarRemetente, type OpcaoDeImobiliaria } from "./identificar";
 import { documentoDaMensagem, referenciaDaMensagem } from "./midia";
+import { vocabularioDoCentral } from "./vocabulario";
 import { esquecerCentral, lerCentral, type CentralDaPlataforma } from "./numeroDoCentral";
 import type { Proposta } from "./proposta";
 import { variantesDoTelefone } from "./telefone";
@@ -241,6 +242,8 @@ function dependenciasReais(instanceName: string, payload: Payload): Dependencias
         mimeType: midia.mimeType,
         segundos: Number(payload.data?.message?.audioMessage?.seconds) || undefined,
         quemPaga,
+        // O jargão do CRM e os nomes dos imóveis da casa como dica.
+        vocabulario: await vocabularioDoCentral(supabase, quemPaga.grupoId),
       });
       return r.sucesso && r.textoTranscrito.trim() ? r.textoTranscrito.trim() : null;
     },
