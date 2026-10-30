@@ -88,7 +88,7 @@ juntada, ou dividir os arquivos antes de lançar as duas juntas.
 |---|---|---|---|
 | L · Listas | `tratadores/listas.ts` | `montar_lista` (quantos, quantos nunca falaram, quantos cabem hoje no primeiro contato; sai do número de quem pediu; fila de hoje), `acompanhar_lista` (ver, pausar, retomar) | em andamento (30/10) |
 | M · Arte e vídeo | `tratadores/estudio.ts` | `gerar_arte` (Estúdio), `criar_video` (criador de vídeo); devolver como arquivo exige envio de mídia pelo central | em andamento (30/10) |
-| N · O que vai ao cliente | `tratadores/cliente.ts` | `mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens` (sai do número do corretor, com as travas anti-bloqueio de hoje) | em andamento (30/10) |
+| N · O que vai ao cliente | `tratadores/cliente.ts` | `mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens` (sai do número do corretor, com as travas anti-bloqueio de hoje) | juntada (30/10) |
 | O · Saúde do número | `tratadores/saude.ts` | `saude_do_numero` (conexão e limite atual; níveis 10→15→20 ainda não existem) | juntada (30/10) |
 
 Como na onda 1 e 2: criar os arquivos vazios e ligá-los em `tratadores/index.ts`
