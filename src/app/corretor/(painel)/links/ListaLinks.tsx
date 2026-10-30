@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { linkPessoalDoImovel, mensagemDoLinkDoImovel } from "@/lib/imovelPublico/linkPessoal";
 
 export type ItemLink = {
   slug: string;
@@ -88,8 +89,9 @@ export function ListaLinks({
       ) : (
         <ul className="mt-6 space-y-3">
           {filtrados.map((item) => {
-            const link = item.link ?? `${baseUrl}/empreendimentos/${item.slug}?corretor=${slugCorretor}`;
-            const mensagem = `Olá! Separei este empreendimento pra você: ${item.nome}, em ${item.bairro}, ${item.cidade}.\n\n${link}`;
+            // A mesma montagem do "me manda meu link" do número central.
+            const link = item.link ?? linkPessoalDoImovel({ enderecoDoCliente: baseUrl, slug: item.slug, corretorSlug: slugCorretor });
+            const mensagem = mensagemDoLinkDoImovel({ nome: item.nome, bairro: item.bairro, cidade: item.cidade, link });
             /*
              * O link de ANÚNCIO é diferente dos outros dois de propósito:
              * ele NÃO atribui a quem copiou — no clique, o sistema sorteia

@@ -135,9 +135,10 @@ export async function removerDocumentoAnexadoPeloCentral(
 
 // ── Link de documentos ao cliente ──────────────────────────────────────────
 
-type Canal = {
+export type Canal = {
   conversa: NonNullable<Awaited<ReturnType<typeof lerConversaPersistida>>>;
-  instancia: { id: string; instance_name: string };
+  /** `conectado_em` vai junto para a cota do número (envio por iniciativa, onda 3). */
+  instancia: { id: string; instance_name: string; conectado_em: string };
 };
 
 /**
@@ -148,11 +149,16 @@ type Canal = {
  * para sair nem com lead que passou a outro número. Sem conversa, não é o
  * central que abre o primeiro contato: isso segue as regras anti-bloqueio do
  * primeiro contato, e o corretor manda pelo painel.
+ *
+ * Exportado para o que vai ao cliente pela onda 3 (`envioAoClientePeloCentral`):
+ * as mesmas travas, com a frase de "sem conversa" de quem chama (o link de
+ * documentos aponta a Documentação; o material, o painel).
  */
-async function canalComOCliente(
+export async function canalComOCliente(
   supabase: Supa,
   p: { grupoId: string; corretorId: string; leadId: string },
   agora: Date,
+  semConversa = "Esse cliente ainda não conversou com você pelo WhatsApp. Mande o link pela ficha dele, no painel (Documentação).",
 ): Promise<Canal | { erro: string }> {
   const { data: conversaDoLead } = await supabase
     .from("whatsapp_conversas")
@@ -163,9 +169,7 @@ async function canalComOCliente(
     .limit(1)
     .maybeSingle();
   const conversa = conversaDoLead ? await lerConversaPersistida(conversaDoLead.id) : null;
-  if (!conversa) {
-    return { erro: "Esse cliente ainda não conversou com você pelo WhatsApp. Mande o link pela ficha dele, no painel (Documentação)." };
-  }
+  if (!conversa) return { erro: semConversa };
   const silencio = silencioDaConversa(situacaoDaConversa(conversa));
   if (silencio && silencio.motivo !== "ia_desligada_na_conversa") return { erro: "Seu número não fala mais com esse cliente." };
 
@@ -181,7 +185,7 @@ async function canalComOCliente(
   if (instancia.bloqueado_ate && new Date(instancia.bloqueado_ate) > agora) {
     return { erro: "Seu número está em pausa de proteção agora. Tente mais tarde." };
   }
-  return { conversa, instancia: { id: instancia.id, instance_name: instancia.instance_name } };
+  return { conversa, instancia: { id: instancia.id, instance_name: instancia.instance_name, conectado_em: instancia.conectado_em } };
 }
 
 /** Antes da proposta: dá para mandar? (só leitura; o envio confere tudo de novo). */

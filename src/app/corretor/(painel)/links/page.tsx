@@ -6,6 +6,7 @@ import { getCorretorLogado, getMeusDestaques } from "@/lib/corretorSessao";
 import { getEmpreendimentos } from "@/lib/queries";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { caminhoDaFichaPublica } from "@/lib/imovelPublico/link";
+import { linkDoPortfolio, linkPessoalDoImovel } from "@/lib/imovelPublico/linkPessoal";
 import { lerBaseDoLinkDoImovel } from "@/lib/imovelPublico/ler";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -56,7 +57,7 @@ export default async function LinksPage() {
             <p className="text-fluid-sm mt-1 text-apoio">
               Para quando o cliente ainda não sabe o que procura.
             </p>
-            <CopiarLink link={`${enderecoDoCliente}/?corretor=${corretor.slug}`} />
+            <CopiarLink link={linkDoPortfolio({ enderecoDoCliente, corretorSlug: corretor.slug })} />
           </section>
 
           <section className="mt-10">
@@ -80,7 +81,14 @@ export default async function LinksPage() {
             bairro: e.bairro,
             cidade: e.cidade,
             ...(semSite
-              ? { link: `${enderecoDoCliente}${caminhoDaFichaPublica(base.grupoSlug!, e.slug, corretor.slug)}` }
+              ? {
+                  link: linkPessoalDoImovel({
+                    enderecoDoCliente,
+                    slug: e.slug,
+                    corretorSlug: corretor.slug,
+                    caminhoDaFicha: caminhoDaFichaPublica(base.grupoSlug!, e.slug, corretor.slug),
+                  }),
+                }
               : {}),
           }))}
           slugCorretor={corretor.slug}
