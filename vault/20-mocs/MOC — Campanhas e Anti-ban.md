@@ -25,6 +25,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[trocar-numero-zera-reputacao]]
 - [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]] ⚠️ o WhatsApp restringiu um número por lista fria; a lista agora tira número sem WhatsApp e para sozinha (0171-0172, 07/10)
 - [[primeiro-contato-tem-teto-proprio]] ⚠️ o WhatsApp do Ramos caiu após 48 primeiros contatos com a mesma foto; primeiro contato tem teto de 10/dia e 30/semana, nada nos 7 dias depois de conectar ou cair, e vai sem foto (0217, 26/10); desde 0222 um contador só por corretor em lista, ✨, aviso de imóvel novo e roleta; 0223 tira do corretor a gravação de mensagens (27/10)
+- [[o-que-vai-ao-cliente-pelo-numero-central]] — o central não abre primeiro contato: o que vai ao cliente exige fala dele na conversa com aquele número, e iniciativa nossa gasta a cota do número (onda 3, 30/10)
 - [[aquecimento-do-numero-pelo-uso]] ⚠️ o limite diário segue o uso da última semana, não a idade (0158, 03/10); desde 09/10 os limites só podem ser apertados, nunca afrouxados
 - [[saude-do-numero-pelo-central]] — o central diz a cota da lista e as vagas de primeiro contato com as MESMAS funções do disparador (contagem que falha vale zero), e quanto da lista fica para amanhã pela conta da tela (onda 3, frente O, 30/10)
 - [[texto-da-lista-conferido-antes-de-sair]] ⚠️ cada mensagem só sai abaixo de 0,70 de semelhança com as do número; o A/B também é reescrito (0173, 08/10)

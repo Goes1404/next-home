@@ -12668,6 +12668,25 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   teste: `calcularLimiteDoDia` usa `Date.now()` e a própria chave; fixe o
   relógio (`vi.useFakeTimers({ toFake: ["Date"] })`) e troque
   `createServiceClient`.
+- **Onda 3, frente N (o que vai ao cliente), 30/10/2026** —
+  [[o-que-vai-ao-cliente-pelo-numero-central]]: `tratadores/cliente.ts`
+  (`mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens`). Todo
+  envio ao cliente passa por `crm/envioAoClientePeloCentral.ts`: número do
+  PRÓPRIO corretor (gestor não usa número alheio), só lead dele, nunca quem
+  pediu para sair, recusa clara com o número desconectado/em pausa, e
+  **primeiro contato não sai pelo central** (exige fala do CLIENTE na conversa
+  com aquele número; lista não respondida não conta). Cliente esperando
+  resposta = sem cota; senão `reservarCotaCampanha`, como o botão ✨. Nada de
+  texto ditado: link pessoal + mensagem da tela Links (montagem única em
+  `imovelPublico/linkPessoal.ts`), mídias do catálogo, `mensagemParaCliente`
+  e a mensagem pronta casada pelo TÍTULO. Seleção grava por
+  `gravarLinkDoCliente` (saiu de `linksAcoes.ts`); desfazer expira a página só
+  se não foi aberta. Proposta: só a que o corretor montou na ficha (a
+  ferramenta não tem valor/condição; criar pelo central pede esses campos na
+  declaração). Diferença consciente: o link de documentos da Frente I não
+  passa pela cota. Armadilha: dependência padrão que LÊ a exportação de
+  `repositorio` na carga quebra testes que fingem o módulo sem ela
+  (`agenda.test.ts`): embrulhe em arrow.
 
 ## Suporte e contato da Astro (29/10/2026)
 
