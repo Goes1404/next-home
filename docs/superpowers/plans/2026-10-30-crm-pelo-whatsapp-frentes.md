@@ -38,11 +38,11 @@ um arquivo por frente em `src/lib/central/tratadores/`).
 |---|---|---|---|
 | A · Consultas | `tratadores/consultas.ts` | `consultar_lead`, `quem_ligar_hoje` (reaproveitar `getFilaDeTrabalho`/`montarResumoDoDia` sem sessão) | juntada (30/10) |
 | B · Leads | `tratadores/leads.ts` | `cadastrar_lead` (telefone inteiro; regra de lead de outro corretor; desfazer arquiva), `atualizar_lead` (desfazer restaura) | juntada (30/10) |
-| C · Agenda | `tratadores/agenda.ts` | `visita` (marcar/remarcar/cancelar; datas da agenda por WhatsApp; desfazer restaura), `agenda_pessoal` (reunião só gestor; desfazer remove) | em andamento |
+| C · Agenda | `tratadores/agenda.ts` | `visita` (marcar/remarcar/cancelar; datas da agenda por WhatsApp; desfazer restaura), `agenda_pessoal` (reunião só gestor; desfazer remove) | juntada (30/10) |
 | D · Controle | `tratadores/controle.ts` | `ia_do_cliente` (resumo é leitura; ligar/desligar com desfazer), `desfazer` (último comando confirmado em 24 h, ordem inversa, marca `desfeito_em`) | juntada (30/10) |
 | E · Foto | `tratadores/foto.ts` + conversa/webhook/cerebro | `cadastrar_lead_da_foto` delegando a `ACOES_LEADS.cadastrar_lead`; imagem ao cérebro só com a onda ligada | juntada (30/10) |
 
-## Onda 2 (próximas; abrir só depois de a onda 1 estar juntada e verde)
+## Onda 2 (próximas; a onda 1 está juntada e verde desde 30/10: pode abrir)
 
 | Frente | Arquivo | Ferramentas |
 |---|---|---|

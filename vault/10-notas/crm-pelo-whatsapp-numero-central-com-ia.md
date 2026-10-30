@@ -83,4 +83,23 @@ Plano da onda 0: `docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fun
   `/plataforma/central`, e o gestor ligar o interruptor. Sem a 0249 o código
   não quebra (o central só não existe).
 
+## Onda 1 construída, desligada (30/10/2026)
+
+Cinco frentes em paralelo (painel em
+`docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-frentes.md`), todas
+juntadas e verdes; `ONDA_ATUAL` segue 0, então tudo responde "ainda não sei"
+até o dono ligar.
+
+- Contrato da ação: `preparar` (resolve o lead, devolve resumo + ids ou uma
+  pergunta; nunca grava) → "sim" → `executar` (só os dados resolvidos) →
+  `desfazer` (24 h, gravado em `central_comandos.desfazer`).
+- Consultas: [[central-le-sem-sessao-e-sem-rls]]. Leads:
+  [[central-cadastra-e-atualiza-lead]]. Agenda: [[agenda-pelo-numero-central]].
+  IA do cliente e desfaz: [[central-ia-do-cliente-e-desfazer]]. Foto:
+  [[foto-no-numero-central]].
+- A migration do central virou **0249** (a 0248 de `main` é a IA no
+  atendimento, de outra sessão no mesmo dia).
+- Armadilha: rodar `vitest` com filtro de pasta (`src/lib/grupos`) também pega
+  as cópias em `.claude/worktrees/`; use `--dir src`.
+
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].
