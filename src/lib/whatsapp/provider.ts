@@ -640,6 +640,22 @@ function tipoMidiaDoProvedor(tipo: TipoMidiaWhatsapp): "image" | "video" | "docu
  * vez de só não ser passado: legenda de novo tem de ser decisão
  * consciente, não descuido de chamador.
  */
+/**
+ * O destino como o provedor espera: um JID de conversa privada
+ * (`…@s.whatsapp.net` ou `…@lid`) passa como veio; qualquer outra coisa é
+ * telefone e é normalizada.
+ *
+ * Existe pelo número central (30/10/2026, primeiro dia no ar): a resposta
+ * montada a partir do telefone confirmava o envio e não aparecia na conversa
+ * de quem escreveu. Responder no MESMO endereço de onde a mensagem veio é o
+ * caminho que não depende de como o WhatsApp endereça aquela conta.
+ */
+export function destinoDoEnvio(telefoneOuJid: string): string | null {
+  const t = telefoneOuJid.trim();
+  if (/^[0-9]+(:[0-9]+)?@(s\.whatsapp\.net|lid)$/i.test(t)) return t;
+  return normalizarTelefoneBr(t);
+}
+
 export async function enviarMidiaWhatsapp(params: {
   instanceName: string;
   telefone: string;
@@ -648,7 +664,7 @@ export async function enviarMidiaWhatsapp(params: {
 }): Promise<ResultadoEnvio> {
   const { instanceName, telefone, tipo, url } = params;
 
-  const numero = normalizarTelefoneBr(telefone);
+  const numero = destinoDoEnvio(telefone);
   if (!numero || !url.trim() || !instanceName) {
     return { enviado: false, motivo: "dados_invalidos" };
   }
@@ -733,7 +749,7 @@ export async function enviarMensagemWhatsapp(params: {
 }): Promise<ResultadoEnvio> {
   const { instanceName, telefone, texto } = params;
 
-  const numero = normalizarTelefoneBr(telefone);
+  const numero = destinoDoEnvio(telefone);
   if (!numero || !texto.trim() || !instanceName) {
     return { enviado: false, motivo: "dados_invalidos" };
   }

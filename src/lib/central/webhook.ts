@@ -347,7 +347,7 @@ export async function enviarRespostaDoCentral(
       // Resposta que não sai é silêncio para quem pediu (30/10/2026, primeiro
       // dia no ar): o motivo do provedor tem de ficar no log. Só os 4 últimos
       // dígitos do destino.
-      if (!r.enviado) console.warn("[central] resposta não saiu para …" + telefone.slice(-4) + ":", r.motivo, r.detalhe ?? "");
+      if (!r.enviado) console.warn("[central] resposta não saiu para …" + telefone.replace(/\D/g, "").slice(-4) + ":", r.motivo, r.detalhe ?? "");
     }
     for (const a of arquivos) {
       const r = await enviarMidiaWhatsapp({ instanceName, telefone, tipo: tipoNoProvedor(a), url: a.url });
@@ -432,8 +432,17 @@ export async function tratarWebhookDoCentral(req: NextRequest, payload: Payload)
   }
 
   const resposta = await responderNoCentralComArquivos(mensagem, dependenciasReais(central.instanceName, payload));
-  if (mensagem.telefone) {
-    await enviarRespostaDoCentral({ instanceName: central.instanceName, telefone: mensagem.telefone }, resposta);
+  // A resposta volta no MESMO endereço de onde a mensagem veio (o JID, `@lid`
+  // ou número). Montada a partir do telefone, ela era confirmada pelo
+  // provedor e não aparecia na conversa de quem escreveu (30/10/2026).
+  const destino = /@(s\.whatsapp\.net|lid)$/i.test(jid) ? jid : mensagem.telefone;
+  console.info(
+    "[central] mensagem de …" + (mensagem.telefone ?? "").slice(-4),
+    "endereço:", /@lid$/i.test(jid) ? "lid" : "número",
+    "| respostas:", resposta.textos.length,
+  );
+  if (destino) {
+    await enviarRespostaDoCentral({ instanceName: central.instanceName, telefone: destino }, resposta);
   }
   return NextResponse.json({
     ok: true,
