@@ -1,4 +1,4 @@
--- 0248: o número central da plataforma, onda 0 (30/10/2026).
+-- 0249: o número central da plataforma, onda 0 (30/10/2026).
 --
 -- Desenho: docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md.
 -- Plano:   docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fundacao.md.
@@ -40,7 +40,7 @@ create table if not exists public.central_da_plataforma (
 );
 
 comment on table public.central_da_plataforma is
-  'O número de WhatsApp da plataforma que conversa com a equipe (0248). Global: não pertence a grupo nem a corretor.';
+  'O número de WhatsApp da plataforma que conversa com a equipe (0249). Global: não pertence a grupo nem a corretor.';
 
 alter table public.central_da_plataforma enable row level security;
 revoke all on public.central_da_plataforma from anon;
@@ -51,7 +51,7 @@ alter table public.grupos
   add column if not exists central_whatsapp_ativo boolean not null default false;
 
 comment on column public.grupos.central_whatsapp_ativo is
-  'O gestor ligou os comandos pelo WhatsApp (número central) para a equipe (0248).';
+  'O gestor ligou os comandos pelo WhatsApp (número central) para a equipe (0249).';
 
 -- ── Busca de quem escreve pelo telefone ──────────────────────────────────
 create index if not exists corretores_whatsapp_ativos_idx
@@ -67,7 +67,7 @@ create table if not exists public.central_escolha_de_grupo (
 );
 
 comment on table public.central_escolha_de_grupo is
-  'Quem está em duas imobiliárias escolhe por qual fala com o central (0248). Global porque o telefone atravessa os grupos.';
+  'Quem está em duas imobiliárias escolhe por qual fala com o central (0249). Global porque o telefone atravessa os grupos.';
 
 alter table public.central_escolha_de_grupo enable row level security;
 revoke all on public.central_escolha_de_grupo from anon;
@@ -183,7 +183,7 @@ create table if not exists public.central_tentativas (
 );
 
 comment on table public.central_tentativas is
-  'Quem escreveu ao central e não foi atendido (0248). Nunca o texto; o telefone em hash.';
+  'Quem escreveu ao central e não foi atendido (0249). Nunca o texto; o telefone em hash.';
 
 alter table public.central_tentativas enable row level security;
 revoke all on public.central_tentativas from anon;

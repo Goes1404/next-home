@@ -12552,13 +12552,13 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
 - Armadilha a lembrar: o WhatsApp do corretor também está no sistema; sem
   ignorar o número central em toda instância de corretor, a IA do corretor e
   a do central entram em laço.
-- **Onda 0 construída (30/10/2026)**: `src/lib/central/`, migration 0248,
+- **Onda 0 construída (30/10/2026)**: `src/lib/central/`, migration 0249,
   `/plataforma/central`, interruptor do gestor em WhatsApp da equipe, bloco no
   WhatsApp do corretor, aviso de queda pelo central, retenção de 30 dias,
   `npm run eval:central`. O webhook desvia o central logo depois de ler
   `instanceName` (antes de `resolverInstancia`, que daria 404). Primeiro uso
   de `tools` da OpenAI no repo (`cerebro.ts`). Só a ajuda funciona; o resto
-  responde "ainda não sei". Sem a 0248 aplicada o código não quebra.
+  responde "ainda não sei". Sem a 0249 aplicada o código não quebra.
 
 ## Suporte e contato da Astro (29/10/2026)
 

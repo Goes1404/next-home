@@ -1,5 +1,5 @@
 /*
- * O número central da plataforma (0248) e o webhook do WhatsApp.
+ * O número central da plataforma (0249) e o webhook do WhatsApp.
  *
  * 1. A instância do central desvia para `tratarWebhookDoCentral` antes de
  *    qualquer lógica de corretor (senão `resolverInstancia` dá 404).

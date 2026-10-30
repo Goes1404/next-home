@@ -28,7 +28,7 @@ export async function conectarCentral(modo: "codigo" | "qr"): Promise<ResultadoD
   const { error } = await supabase
     .from("central_da_plataforma")
     .upsert({ instance_name: INSTANCIA_DO_CENTRAL, telefone }, { onConflict: "instance_name" });
-  if (error) return { ok: false, erro: "Não consegui registrar o número central. A migration 0248 foi aplicada?" };
+  if (error) return { ok: false, erro: "Não consegui registrar o número central. A migration 0249 foi aplicada?" };
   esquecerCentral();
 
   const r = await obterQrCodeInstancia(INSTANCIA_DO_CENTRAL, modo === "codigo" ? telefone : null);

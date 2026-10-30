@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
     const instanceName = payload.instance || payload.instanceName || "";
 
     /*
-     * O número central da plataforma (0248) não é instância de corretor:
+     * O número central da plataforma (0249) não é instância de corretor:
      * `resolverInstancia` não o acharia (404). Desvia aqui, antes de grupo,
      * conexão e de toda a lógica de corretor (`centralInvisivel.test.ts`).
      */
@@ -501,7 +501,7 @@ export async function POST(req: NextRequest) {
     }
 
     /*
-     * O número central da plataforma (0248) é invisível para a instância do
+     * O número central da plataforma (0249) é invisível para a instância do
      * corretor. O WhatsApp do corretor também está ligado aqui: a conversa
      * dele com o central apareceria como se o central fosse um cliente, e a
      * IA do corretor responderia ao central, que responderia de volta

@@ -29,7 +29,7 @@ um arquivo por frente em `src/lib/central/tratadores/`).
   sessão; sem nome de modelo.
 - Quem junta (a sessão principal): merge do branch do worktree na
   `ccr-c2c56589-a2yhl2`, `tsc` + `vitest --dir src` + `lintTeto`, push na
-  branch. Produção só com o dono (migration 0248 ainda pendente).
+  branch. Produção só com o dono (migration 0249 ainda pendente).
 
 ## Onda 1 (lançadas em 30/10/2026)
 

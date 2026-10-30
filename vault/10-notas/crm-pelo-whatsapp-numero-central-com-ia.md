@@ -8,7 +8,7 @@ custou: medio
 codigo:
   - docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md
   - docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fundacao.md
-  - supabase/migrations/0248_central_da_plataforma.sql
+  - supabase/migrations/0249_central_da_plataforma.sql
   - src/lib/central/
   - src/app/plataforma/central/
   - scripts/eval/rodarEvalDoCentral.ts
@@ -79,8 +79,8 @@ Plano da onda 0: `docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fun
   `/api/cron/limpar-artes-ia`.
 - Eval: `npm run eval:central` (100 casos em `eval/golden/central.json`). Ainda
   não rodou: o container não tem `OPENAI_API_KEY`. A escolha do modelo sai dele.
-- Para ligar: aplicar a 0248, pôr o chip num celular, conectar em
-  `/plataforma/central`, e o gestor ligar o interruptor. Sem a 0248 o código
+- Para ligar: aplicar a 0249, pôr o chip num celular, conectar em
+  `/plataforma/central`, e o gestor ligar o interruptor. Sem a 0249 o código
   não quebra (o central só não existe).
 
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].

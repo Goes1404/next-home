@@ -115,7 +115,7 @@ export default async function AdminWhatsappPage() {
     // fora da tela da equipe. A sessão do gestor lê a marca; a chave de
     // serviço acima não recorta nada sozinha.
     idsDeContasOcultas(supabase),
-    // Comandos pelo WhatsApp (0248): a chave de serviço, recortada pelo id do
+    // Comandos pelo WhatsApp (0249): a chave de serviço, recortada pelo id do
     // grupo do gestor, como na confirmação automática da Agenda.
     createServiceClient().from("grupos").select("central_whatsapp_ativo").eq("id", equipe.grupoId).maybeSingle(),
     lerCentral(),

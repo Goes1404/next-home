@@ -4,7 +4,7 @@ import { lerCentral } from "@/lib/central/numeroDoCentral";
 import { linkDoCentral, telefoneFormatado } from "@/lib/central/constantes";
 
 /**
- * Comandos pelo WhatsApp (0248; plano da onda 0, Task 8): com o recurso
+ * Comandos pelo WhatsApp (0249; plano da onda 0, Task 8): com o recurso
  * ligado pelo gestor e o central conectado, o corretor vê o número e o link
  * para começar. O central reconhece pelo WhatsApp do perfil, então o número
  * dele aparece aqui para conferir.

@@ -1,5 +1,5 @@
 /**
- * O número central da plataforma (0248). Puro, para servir também às telas.
+ * O número central da plataforma (0249). Puro, para servir também às telas.
  *
  * O telefone padrão é o chip comprado em 30/10/2026; `CENTRAL_TELEFONE` no
  * ambiente troca sem deploy de código (chip novo depois de um bloqueio).

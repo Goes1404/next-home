@@ -6,7 +6,7 @@ import { Interruptor } from "@/app/corretor/(painel)/marketing/impulsionamentos/
 import { configurarCentralWhatsapp } from "./acoes";
 
 /**
- * O liga/desliga dos comandos pelo WhatsApp (0248), para o gestor. Salva na
+ * O liga/desliga dos comandos pelo WhatsApp (0249), para o gestor. Salva na
  * hora; se falhar, volta.
  */
 export function ComandosPeloWhatsapp({ ligado }: { ligado: boolean }) {

@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       console.error("[cron] limpeza das mensagens barradas falhou", error);
     }
     // Carona: o texto dos comandos do central e as tentativas de número
-    // desconhecido guardam 30 dias (0248).
+    // desconhecido guardam 30 dias (0249).
     let registroDoCentral: { textos: number; tentativas: number } | null = null;
     try {
       registroDoCentral = await limparRegistroDoCentral();

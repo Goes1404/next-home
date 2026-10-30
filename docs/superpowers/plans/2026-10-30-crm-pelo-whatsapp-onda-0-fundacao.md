@@ -17,7 +17,7 @@
 
 ## Global Constraints
 
-- **Migration nova:** `supabase/migrations/0248_central_da_plataforma.sql`. A última hoje é 0247; conferir em `origin/main` e em `RESERVADOS` (`src/lib/migrations.test.ts:44-58`) antes de criar. Ela deve ser:
+- **Migration nova:** `supabase/migrations/0249_central_da_plataforma.sql`. A última hoje é 0247; conferir em `origin/main` e em `RESERVADOS` (`src/lib/migrations.test.ts:44-58`) antes de criar. Ela deve ser:
   - aditiva, com `begin; set local lock_timeout = '5s'; … commit;`;
   - aplicada em produção ANTES do deploy (skill local `aplicar-migration-producao`).
 - **Tabela por grupo:** `grupo_id`, os três gatilhos e a policy restritiva, copiando o bloco de `supabase/migrations/0204_roleta_dos_anuncios.sql:41-66`.
@@ -51,11 +51,11 @@
 
 ### Task 0: Branch de trabalho
 
-- [ ] Criar a branch a partir de `origin/main` atualizada. Conferir que 0248 está livre (`ls supabase/migrations | tail`, `git log origin/main --oneline -5`).
+- [ ] Criar a branch a partir de `origin/main` atualizada. Conferir que 0249 está livre (`ls supabase/migrations | tail`, `git log origin/main --oneline -5`).
 
-### Task 1: Migration 0248 — central, chave por imobiliária, estado e registro
+### Task 1: Migration 0249 — central, chave por imobiliária, estado e registro
 
-**Files:** `supabase/migrations/0248_central_da_plataforma.sql`, `src/lib/supabase/types.ts`, `src/lib/grupos/tabelasDoGrupo.ts`
+**Files:** `supabase/migrations/0249_central_da_plataforma.sql`, `src/lib/supabase/types.ts`, `src/lib/grupos/tabelasDoGrupo.ts`
 
 - [ ] `central_da_plataforma` (global, uma linha por número):
   - `id`;
@@ -284,7 +284,7 @@ O número desconecta **do sistema** (Evolution), mas o WhatsApp continua no celu
 
 - [ ] Retenção: no cron diário existente, apagar `central_comandos.texto` com mais de 30 dias (os números ficam) e `central_tentativas` com mais de 30 dias. Teste da função pura que monta o corte.
 - [ ] `npx tsc --noEmit -p .`, `npx vitest run --dir src`, `node scripts/lintTeto.mjs`, `npx next build`, `node scripts/bundleTeto.mjs`.
-- [ ] Migration 0248 aplicada em produção antes do deploy. Variável `CENTRAL_MODELO` cadastrada na Vercel.
+- [ ] Migration 0249 aplicada em produção antes do deploy. Variável `CENTRAL_MODELO` cadastrada na Vercel.
 - [ ] Ponta a ponta com o chip real, depois do deploy:
   1. conectar o 11 96867-1127 pela tela da plataforma;
   2. ligar o recurso na Next Home;

@@ -163,7 +163,7 @@ export async function configurarConfirmacaoAutomatica(ligada: boolean): Promise<
 }
 
 /**
- * Comandos pelo WhatsApp (0248; plano da onda 0, Task 8): ligado, o número
+ * Comandos pelo WhatsApp (0249; plano da onda 0, Task 8): ligado, o número
  * central atende a equipe desta imobiliária. Desligado (padrão), o central
  * fica em silêncio para quem é daqui, e o aviso de queda sai só por e-mail.
  */

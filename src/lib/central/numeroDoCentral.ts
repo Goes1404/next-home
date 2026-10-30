@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { mesmoTelefone } from "./telefone";
 
 /**
- * O número central da plataforma (0248), lido de `central_da_plataforma`.
+ * O número central da plataforma (0249), lido de `central_da_plataforma`.
  *
  * Toda mensagem que chega a QUALQUER instância passa por aqui, então a
  * leitura fica em memória por 60 s. Sem central cadastrado, devolve `null`

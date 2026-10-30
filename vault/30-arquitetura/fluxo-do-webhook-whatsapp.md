@@ -15,7 +15,7 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
-0. **Número central** (0248, 30/10) — se a `instanceName` é a do central
+0. **Número central** (0249, 30/10) — se a `instanceName` é a do central
    da plataforma, o evento inteiro vai para `tratarWebhookDoCentral`
    (`src/lib/central/webhook.ts`), com o mesmo segredo global, e nada abaixo
    roda. Numa instância de corretor, mensagem cujo remetente é o número

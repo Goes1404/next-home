@@ -17,7 +17,7 @@ const ROTULO: Record<string, { texto: string; classe: string }> = {
 };
 
 /**
- * O número central da plataforma (0248; onda 0). Conecta o chip, mostra o
+ * O número central da plataforma (0249; onda 0). Conecta o chip, mostra o
  * estado e quantas imobiliárias ligaram o recurso.
  *
  * A guarda aqui, e não só no layout (layout não re-executa entre rotas

@@ -18,7 +18,7 @@ import type { Json } from "@/lib/supabase/types";
 const comoJson = (v: unknown): Json => JSON.parse(JSON.stringify(v ?? null)) as Json;
 
 /**
- * O webhook do número central da plataforma (0248; plano da onda 0, Task 7).
+ * O webhook do número central da plataforma (0249; plano da onda 0, Task 7).
  *
  * `route.ts` desvia para cá logo depois de ler `instanceName`, antes de toda
  * a lógica de corretor: `resolverInstancia` não acharia o central (não é de

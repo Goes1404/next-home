@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { bancoFalso, type BancoFalso } from "../../../../../../test/bancoFalso";
 
 /**
- * Comandos pelo WhatsApp (0248): só o gestor liga, e só no grupo dele. A
+ * Comandos pelo WhatsApp (0249): só o gestor liga, e só no grupo dele. A
  * chave de serviço enxerga todos os grupos; o id vem da guarda, nunca do
  * navegador.
  */
