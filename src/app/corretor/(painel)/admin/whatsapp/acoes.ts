@@ -133,6 +133,35 @@ export async function configurarPuloDeCorretorDesconectado(
   };
 }
 
+/**
+ * Confirmação automática de visita (0246, 29/10/2026): com a opção ligada,
+ * o sistema pede a confirmação ao cliente sozinho, até 24h antes, com as
+ * travas do lembrete de véspera. Desligada (padrão), só pelo toque do
+ * corretor na Agenda.
+ */
+export async function configurarConfirmacaoAutomatica(ligada: boolean): Promise<{ ok?: string; erro?: string }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const { error } = await createServiceClient()
+    .from("grupos")
+    .update({ confirmacao_visita_automatica: ligada })
+    .eq("id", guarda.corretor.grupoId);
+  if (error) {
+    return {
+      erro: /confirmacao_visita_automatica/.test(error.message)
+        ? "A confirmação automática ainda não foi ativada no banco."
+        : "Não foi possível salvar agora.",
+    };
+  }
+  revalidatePath("/corretor/agenda");
+  return {
+    ok: ligada
+      ? "Ligada: a confirmação é pedida sozinha até 24h antes de cada visita."
+      : "Desligada: a confirmação só sai pelo toque do corretor.",
+  };
+}
+
 type Servico = ReturnType<typeof createServiceClient>;
 
 /** A lista de grupos guardada no grupo do gestor (0234), se for deste número. */

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { lerRamo, type Ramo } from "@/lib/ramos/ramos";
 import { padraoDoEmail } from "@/lib/plataforma/dadosDoGrupo";
 import { situacaoDaCobranca, type SituacaoDaCobranca } from "@/lib/planos/cobranca";
 import { mesEmSaoPaulo, situacaoDaCota, tetoDeRespostasDaIa, type SituacaoDaCota } from "@/lib/planos/cotaDaIa";
@@ -27,6 +28,10 @@ export type ResumoDeGrupo = {
   nome: string;
   slug: string;
   tipo: Grupo["tipo"];
+  /** O ramo do negócio (0244): o selo da lista e o que personaliza o CRM. */
+  ramo: Ramo;
+  /** O texto do ramo "outro". */
+  ramoDescricao: string | null;
   plano: Grupo["plano"];
   situacao: Grupo["situacao"];
   criadoEm: string;
@@ -73,6 +78,7 @@ async function contarDoGrupo(
     criado_em: string;
     dia_do_vencimento: number;
     teto_respostas_ia: number | null;
+    teste_ate: string | null;
   },
 ) {
   const grupoId = grupo.id;
@@ -116,6 +122,7 @@ async function contarDoGrupo(
       diaDoVencimento: grupo.dia_do_vencimento,
       competenciasPagas: (pagamentos.data ?? []).map((p) => p.competencia),
       hoje: new Date(),
+      testeAte: grupo.teste_ate,
     }),
   };
 }
@@ -127,7 +134,7 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
   const servico = createServiceClient();
   const { data, error } = await servico
     .from("grupos")
-    .select("id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, creci, teto_respostas_ia")
+    .select("id, nome, slug, tipo, ramo, ramo_descricao, plano, situacao, criado_em, dia_do_vencimento, mensalidade, creci, teto_respostas_ia, teste_ate")
     .order("criado_em", { ascending: true });
   if (error) throw new Error(`Falha ao listar os grupos: ${error.message}`);
 
@@ -137,6 +144,8 @@ export async function listarGruposDaPlataforma(_prova: { userId: string }): Prom
       nome: g.nome,
       slug: g.slug,
       tipo: g.tipo,
+      ramo: lerRamo(g.ramo),
+      ramoDescricao: g.ramo_descricao ?? null,
       plano: g.plano,
       situacao: g.situacao,
       criadoEm: g.criado_em,
@@ -173,6 +182,9 @@ export type CadastroDeGrupo = ResumoDeGrupo & {
   pagamentos: PagamentoRegistrado[];
   /** Os endereços do site do grupo (0201), o principal primeiro. */
   enderecos: EnderecoDoGrupo[];
+  /** Cliente e assinatura no Asaas (0241); `null` = cobrança automática desligada. */
+  asaasClienteId: string | null;
+  asaasAssinaturaId: string | null;
 };
 
 export type EnderecoDoGrupo = { host: string; tipo: "proprio" | "gratuito"; principal: boolean };
@@ -199,7 +211,7 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
   const { data: g, error } = await servico
     .from("grupos")
     .select(
-      "id, nome, slug, tipo, plano, situacao, criado_em, dia_do_vencimento, mensalidade, teto_respostas_ia, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
+      "id, nome, slug, tipo, ramo, ramo_descricao, plano, situacao, criado_em, dia_do_vencimento, mensalidade, teto_respostas_ia, teste_ate, asaas_cliente_id, asaas_assinatura_id, contato_cobranca_nome, contato_cobranca_email, contato_cobranca_telefone, razao_social, documento, creci, creci_tipo, encarregado_lgpd_nome, encarregado_lgpd_email, cancelado_em, dados_apagados_em, copia_final_apagada_em, falha_ao_apagar, tentativa_de_apagar_em",
     )
     .eq("id", grupoId)
     .maybeSingle();
@@ -224,6 +236,8 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
     nome: g.nome,
     slug: g.slug,
     tipo: g.tipo,
+    ramo: lerRamo(g.ramo),
+    ramoDescricao: g.ramo_descricao ?? null,
     plano: g.plano,
     situacao: g.situacao,
     criadoEm: g.criado_em,
@@ -251,6 +265,8 @@ export async function lerGrupoDaPlataforma(_prova: { userId: string }, grupoId: 
       observacao: p.observacao,
     })),
     enderecos: (enderecos ?? []).map((e) => ({ host: e.host, tipo: e.tipo, principal: e.principal })),
+    asaasClienteId: g.asaas_cliente_id,
+    asaasAssinaturaId: g.asaas_assinatura_id,
     ...(await contarDoGrupo(servico, g)),
   };
 }

@@ -4,7 +4,9 @@ import { RedistribuirCarteira } from "./RedistribuirCarteira";
 import { SeletorDono } from "./SeletorDono";
 import { TogglePausa } from "./TogglePausa";
 import { EtiquetaEtapa, dataHora } from "@/app/corretor/(painel)/_componentes/CartaoLead";
-import { getEquipeAtiva, getPaginaDeLeads } from "@/lib/corretorSessao";
+import { getEmpreendimentosParaFiltro, getEquipeAtiva, getPaginaDeLeads } from "@/lib/corretorSessao";
+import { lerRegrasDoGrupo } from "@/lib/crm/regrasDoGrupo";
+import { RegrasDeDistribuicao } from "./RegrasDeDistribuicao";
 import { CARTEIRA_EQUIPE } from "@/lib/carteiraDaVisao";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
@@ -25,12 +27,12 @@ export const metadata: Metadata = { title: "Leads da equipe" };
 export default async function EquipePage() {
   // A policy já impede um corretor comum de ler lead alheio; isto impede que
   // ele veja uma tela quebrada e meia-vazia com a promessa de outra coisa.
-  await exigirGestorNaPagina();
+  const gestor = await exigirGestorNaPagina();
 
   const supabase = await createClient();
   const equipe = await getEquipeAtiva();
 
-  const [agregado, primeiraPagina, { data: orfaos }] = await Promise.all([
+  const [agregado, primeiraPagina, { data: orfaos }, regras, imoveis] = await Promise.all([
     getAgregadoDaEquipe(equipe),
     // Visão da EQUIPE: sem o pedido explícito, getPaginaDeLeads devolve só
     // a carteira de quem abriu o painel (hotfix de 19/10), e esta seção — a
@@ -45,15 +47,26 @@ export default async function EquipePage() {
       .is("corretor_id", null)
       .order("created_at", { ascending: false })
       .limit(20),
+    // As regras de distribuição (0246); `null` antes da migration.
+    lerRegrasDoGrupo(gestor.grupoId),
+    getEmpreendimentosParaFiltro(),
   ]);
 
   return (
     <div className="space-y-10">
       <div>
         <CabecalhoDeTela secao="Administração" titulo="Leads da equipe" descricao={<>{agregado.total} contato{agregado.total === 1 ? "" : "s"} no total. A distribuição
-          automática entrega o lead a quem recebeu menos nos últimos 30 dias.</>} />
+          automática entrega o lead a quem recebeu menos nos últimos 30 dias, depois das suas regras.</>} />
       </div>
 
+
+      {regras && (
+        <RegrasDeDistribuicao
+          regras={regras}
+          equipe={equipe.map((c) => ({ id: c.id, nome: c.nome }))}
+          imoveis={imoveis}
+        />
+      )}
 
       <RedistribuirCarteira
         equipe={agregado.porCorretor.map((linha) => ({

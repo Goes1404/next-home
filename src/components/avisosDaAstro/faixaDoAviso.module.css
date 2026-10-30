@@ -1,0 +1,140 @@
+/*
+ * A faixa de um aviso da Astro (0242, 29/10/2026): fina, abaixo do
+ * cabeçalho do painel e na prévia de /plataforma/avisos.
+ *
+ * Cor pelo tipo: importante = âmbar (tokens de alerta), manutenção = azul
+ * (tokens de info), novidade = o azul da marca Astro (fixo, como o
+ * SeloAstro: é a voz da plataforma, não a cor do grupo nem a do módulo).
+ * A entrada e a saída mexem só em transform e opacity; com movimento
+ * reduzido, nada se mexe.
+ */
+
+.faixa {
+  --cor-do-icone: var(--color-alerta);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--color-alerta-linha);
+  background: var(--color-alerta-lavado);
+  border-radius: 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  animation: entrar 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.importante {
+  --cor-do-icone: var(--color-alerta);
+  border-color: var(--color-alerta-linha);
+  background: var(--color-alerta-lavado);
+}
+
+.manutencao {
+  --cor-do-icone: var(--color-info);
+  border-color: var(--color-info-linha);
+  background: var(--color-info-lavado);
+}
+
+.novidade {
+  --cor-do-icone: #7f9fd0;
+  border-color: rgb(79 125 196 / 0.4);
+  background: rgb(47 94 168 / 0.16);
+}
+
+:global(:root[data-tema="claro"]) .novidade {
+  --cor-do-icone: #244c8c;
+  background: rgb(47 94 168 / 0.08);
+}
+
+@media (prefers-color-scheme: light) {
+  :global(:root:not([data-tema="escuro"])) .novidade {
+    --cor-do-icone: #244c8c;
+    background: rgb(47 94 168 / 0.08);
+  }
+}
+
+.icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0.125rem;
+  border-radius: 0.625rem;
+  color: var(--cor-do-icone);
+  background: color-mix(in srgb, var(--cor-do-icone) 16%, transparent);
+}
+
+.conteudo {
+  min-width: 0;
+  flex: 1;
+  padding-block: 0.375rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--color-titulo);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--cor-do-icone) 70%, transparent);
+  white-space: nowrap;
+}
+
+.seta {
+  display: inline-block;
+  transition: transform 160ms ease-out;
+}
+
+.link:hover .seta {
+  transform: translateX(2px);
+}
+
+.fechar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  color: var(--color-apoio);
+  cursor: pointer;
+  transition: opacity 160ms ease-out;
+}
+
+.fechar:hover {
+  color: var(--color-titulo);
+  background: var(--color-vidro);
+}
+
+.saindo {
+  animation: sair 160ms ease-in both;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sair {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faixa,
+  .saindo {
+    animation: none;
+  }
+  .seta {
+    transition: none;
+  }
+}

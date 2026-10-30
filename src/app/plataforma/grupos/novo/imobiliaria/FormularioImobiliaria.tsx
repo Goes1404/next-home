@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { lerRamo, vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { mascararCnpj } from "@/lib/plataforma/documentos";
 import {
@@ -11,9 +12,11 @@ import {
   type FormularioDaImobiliaria,
 } from "@/lib/plataforma/tiposDeConta";
 import { criarImobiliaria } from "../../../acoes";
-import { Campo, CartaoDoConvite, type Criado } from "../componentes";
+import { Campo, CartaoDoConvite, SeletorDeRamo, type Criado } from "../componentes";
 
 const VAZIO: FormularioDaImobiliaria = {
+  ramo: "imobiliaria",
+  ramoDescricao: "",
   nomeFantasia: "",
   slug: "",
   razaoSocial: "",
@@ -40,6 +43,8 @@ export function FormularioImobiliaria({ inicial }: { inicial?: Partial<Formulari
   const [erro, setErro] = useState<string | null>(null);
   const [criado, setCriado] = useState<Criado | null>(null);
   const [pendente, iniciar] = useTransition();
+  // O documento profissional do ramo escolhido (0244).
+  const documento = vocabularioDoRamo(lerRamo(dados.ramo)).documento;
 
   const mudar = (k: keyof FormularioDaImobiliaria, valor: string) =>
     setDados((d) => {
@@ -64,7 +69,7 @@ export function FormularioImobiliaria({ inicial }: { inicial?: Partial<Formulari
       dica={opcoes.dica}
       ajuda={opcoes.ajuda}
       inputMode={opcoes.inputMode}
-      value={dados[k]}
+      value={dados[k] ?? ""}
       onChange={(v) => {
         if (k === "slug") setSlugEditado(true);
         if (k === "mensalidade") setMensalidadeEditada(true);
@@ -121,10 +126,21 @@ export function FormularioImobiliaria({ inicial }: { inicial?: Partial<Formulari
     >
       <fieldset className="cartao grid gap-3 p-5 sm:grid-cols-2">
         <legend className="text-fluid-sm text-titulo px-1 font-bold">A imobiliária</legend>
+        <SeletorDeRamo
+          ramo={dados.ramo ?? "imobiliaria"}
+          descricao={dados.ramoDescricao ?? ""}
+          aoMudarRamo={(v) => mudar("ramo", v)}
+          aoMudarDescricao={(v) => mudar("ramoDescricao", v)}
+        />
         {campo("nomeFantasia", "Nome fantasia", { dica: "Imobiliária Silva" })}
         {campo("razaoSocial", "Razão social", { dica: "Silva Negócios Imobiliários Ltda" })}
         {campo("cnpj", "CNPJ", { dica: "00.000.000/0000-00", inputMode: "numeric", transformar: mascararCnpj })}
-        {campo("creciJ", "CRECI-J", { dica: "Número do CRECI da empresa" })}
+        {/* O registro do ramo (0244): CRECI na imobiliária; nos outros, opcional. */}
+        {campo(
+          "creciJ",
+          documento.obrigatorio ? "CRECI-J" : `${documento.rotulo} (opcional)`,
+          documento.obrigatorio ? { dica: "Número do CRECI da empresa" } : { dica: "Em branco, a ficha fica como \"Não informado\"" },
+        )}
         <div className="sm:col-span-2">
           {campo("slug", "Endereço do site", {
             dica: "imobiliaria-silva",

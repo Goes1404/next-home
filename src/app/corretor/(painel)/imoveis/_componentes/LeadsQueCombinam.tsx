@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { getCorretorLogado } from "@/lib/corretorSessao";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
-import { compatibilidade, ordenarCompativeis, perfilDoLead } from "@/lib/crm/compatibilidade";
-import { getParametrosCredito } from "@/lib/credito/parametros";
+import { lerLeadsQueCombinam } from "./lerLeadsQueCombinam";
 import { ReabrirPerdidos } from "./ReabrirPerdidos";
 import type { Empreendimento } from "@/lib/types";
 
@@ -28,34 +25,10 @@ const MOSTRAR = 5;
  * Devolve `null` quando ninguém combina: cartão vazio vira paisagem.
  */
 export async function LeadsQueCombinam({ imovel }: { imovel: Empreendimento }) {
-  const corretor = await getCorretorLogado();
-  if (!corretor) return null;
-
-  const supabase = await createClient();
-  const [{ data }, { data: dossies }, credito] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("id, nome, telefone, etapa, regiao_interesse, dormitorios_min, orcamento_max, renda_mensal")
-      .eq("corretor_id", corretor.id)
-      .is("arquivado_em", null)
-      .is("nao_contatar_em", null)
-      .neq("etapa", "fechado")
-      .limit(1000),
-    // RLS recorta pelos leads que o corretor enxerga.
-    supabase.from("lead_observacoes_ia").select("lead_id, orcamento_max").not("orcamento_max", "is", null).limit(2000),
-    getParametrosCredito(corretor.grupoId),
-  ]);
-  const dossiePorLead = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
-
-  const alvo = {
-    cidade: imovel.cidade,
-    bairro: imovel.bairro,
-    precoAPartir: imovel.precoAPartir,
-    dormitorios: imovel.tipologias.map((t) => t.dormitorios),
-  };
-  const combinam = ordenarCompativeis(data ?? [], (l) =>
-    compatibilidade(perfilDoLead(l, dossiePorLead.get(l.id), credito), alvo),
-  );
+  // A mesma leitura da página inteira (29/10/2026): o cartão e a lista
+  // contam igual, com a pontuação do match.
+  const combinam = await lerLeadsQueCombinam(imovel);
+  if (!combinam) return null;
   const ativos = combinam.filter((l) => l.etapa !== "perdido");
   const perdidos = combinam.filter((l) => l.etapa === "perdido").map((l) => l.id);
   if (ativos.length === 0 && perdidos.length === 0) return null;
@@ -88,13 +61,21 @@ export async function LeadsQueCombinam({ imovel }: { imovel: Empreendimento }) {
               >
                 {nomeParaExibir(l)}
               </Link>
-              <span className="text-fluid-xs text-apoio">{l.compat.motivos.join(" · ")}</span>
+              <span className="text-fluid-xs text-apoio">{l.match.motivos.join(" · ")}</span>
             </li>
           ))}
         </ul>
       )}
       {ativos.length > MOSTRAR && (
         <p className="text-fluid-xs text-apoio">e mais {ativos.length - MOSTRAR}</p>
+      )}
+      {ativos.length > 0 && (
+        <Link
+          href={`/corretor/imoveis/${imovel.slug}/leads-que-combinam`}
+          className="min-h-11 inline-flex items-center text-fluid-xs font-semibold text-corpo underline underline-offset-2"
+        >
+          Ver todos, com os motivos
+        </Link>
       )}
 
       {perdidos.length > 0 && (

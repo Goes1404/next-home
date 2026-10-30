@@ -7,9 +7,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
 import { sair } from "@/app/corretor/actions";
 import {
-  ITENS_DA_CONTA,
+  itensDaConta,
   destinoAtivo,
   gruposVisiveis,
   moduloAtivo,
@@ -91,7 +92,9 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
   const atual = usePathname();
   const aberta = useGavetaAberta(atual);
   const montado = useMontado();
-  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo);
+  // O ramo da conta (0244) esconde os módulos que não são dele e renomeia pelo vocabulário.
+  const { ramo } = useRamoDoPainel();
+  const grupos = gruposVisiveis(ehGestor, tipoDoGrupo, ramo);
   const dono = destinoAtivo(atual);
   const modulo = moduloAtivo(atual);
   const marcas = useContadoresDoMenu();
@@ -259,7 +262,7 @@ export function GavetaLateral({ ehGestor, tipoDoGrupo }: { ehGestor: boolean; ti
             de perigo, porque é o único que tira a pessoa daqui. */}
         <div className="border-linha border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           <ul className="space-y-0.5">
-            {ITENS_DA_CONTA.map((item) => {
+            {itensDaConta(ehGestor).map((item) => {
               const Icone = item.icone;
               return (
                 <li key={item.href}>

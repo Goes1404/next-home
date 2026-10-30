@@ -81,7 +81,13 @@ export const MIMES_ACEITOS = [
   "image/webp",
   "image/heic",
 ] as const;
-export const IMOVEIS_NA_SELECAO = 3;
+/**
+ * Quantos imóveis cabem numa seleção. Eram 3 até 29/10/2026; a vitrine
+ * (0245) leva os 5 que mais combinam da ficha ("Imóveis que combinam") e
+ * mais um que o corretor queira somar. Acima disso vira catálogo, que o
+ * cliente já tem no site.
+ */
+export const IMOVEIS_NA_SELECAO = 6;
 
 export function caminhoDoLink(tipo: TipoDeLink, token: string): string {
   return `/${tipo}/${token}`;

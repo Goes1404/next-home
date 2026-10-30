@@ -26,8 +26,8 @@ export default function PrivacidadeDaAstro() {
       atualizadaEm={ATUALIZADA_EM}
       introducao={
         <p>
-          Esta política vale para o CRM da {nome} (site e app), usado por imobiliárias e corretores para atender
-          clientes. Ela explica que dados guardamos, para quê, onde ficam e como pedir para apagar.
+          Esta política vale para o CRM da {nome} (site e app), usado por empresas e profissionais (imobiliárias,
+          corretoras de seguros, escritórios e outros negócios) para atender clientes. Ela explica que dados guardamos, para quê, onde ficam e como pedir para apagar.
         </p>
       }
     >
@@ -41,8 +41,8 @@ export default function PrivacidadeDaAstro() {
             Para os dados da sua <strong>conta</strong> (quem usa o CRM), a {nome} é a controladora.
           </li>
           <li>
-            Para os dados dos <strong>clientes</strong> que a imobiliária ou o corretor atende pelo CRM, quem decide
-            é a imobiliária ou o corretor (controlador). A {nome} só guarda e processa esses dados para o CRM
+            Para os dados dos <strong>clientes</strong> que a empresa ou o profissional atende pelo CRM, quem decide
+            é a empresa ou o profissional (controlador). A {nome} só guarda e processa esses dados para o CRM
             funcionar, como operadora, nos termos da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
           </li>
         </ul>
@@ -50,13 +50,13 @@ export default function PrivacidadeDaAstro() {
 
       <SecaoLegal titulo="Que dados guardamos">
         <p>
-          <strong>Da sua conta:</strong> nome, e-mail, telefone, CRECI, foto, a imobiliária a que você pertence e os
+          <strong>Da sua conta:</strong> nome, e-mail, telefone, registro profissional (como o CRECI), foto, a empresa a que você pertence e os
           registros de acesso e de uso (por exemplo, quando você entrou e o que alterou).
         </p>
         <p>
           <strong>Dos clientes atendidos:</strong> nome, telefone, e-mail, as mensagens e áudios trocados no
-          WhatsApp conectado ao CRM, os imóveis de interesse, as visitas, as propostas e os documentos que o corretor
-          anexar.
+          WhatsApp conectado ao CRM, o que o cliente procura (como os imóveis de interesse), os agendamentos, as propostas e os
+          documentos que a equipe anexar.
         </p>
         <p>
           <strong>Do uso do app:</strong> dados técnicos do aparelho e do navegador necessários para o login e para
@@ -66,12 +66,12 @@ export default function PrivacidadeDaAstro() {
 
       <SecaoLegal titulo="Para que usamos">
         <ul>
-          <li>Fazer o CRM funcionar: organizar leads, conversas, agenda, imóveis e vendas.</li>
+          <li>Fazer o CRM funcionar: organizar leads, conversas, agenda, catálogo e vendas.</li>
           <li>
-            Responder os clientes no WhatsApp com a assistente de inteligência artificial, quando a imobiliária ou o
-            corretor a liga.
+            Responder os clientes no WhatsApp com a assistente de inteligência artificial, quando a empresa ou o
+            profissional a liga.
           </li>
-          <li>Enviar avisos e notificações sobre leads, visitas e a conta.</li>
+          <li>Enviar avisos e notificações sobre leads, agendamentos e a conta.</li>
           <li>Cobrar a assinatura, dar suporte e manter a segurança do serviço.</li>
         </ul>
       </SecaoLegal>
@@ -83,10 +83,10 @@ export default function PrivacidadeDaAstro() {
           <li>Vercel, que hospeda o site e o app.</li>
           <li>OpenAI, que processa as mensagens para a assistente responder e para transcrever áudios.</li>
           <li>
-            O WhatsApp, pela conexão que o próprio corretor faz com o número dele. Essa conexão não é um serviço do
+            O WhatsApp, pela conexão que o próprio usuário faz com o número dele. Essa conexão não é um serviço do
             WhatsApp nem da Meta.
           </li>
-          <li>Os serviços que a imobiliária escolher ligar, como Gmail e anúncios da Meta.</li>
+          <li>Os serviços que a empresa escolher ligar, como Gmail e anúncios da Meta.</li>
         </ul>
         <p>
           Como alguns desses serviços ficam fora do Brasil, há transferência internacional de dados, feita com
@@ -96,7 +96,7 @@ export default function PrivacidadeDaAstro() {
 
       <SecaoLegal titulo="Por quanto tempo">
         <p>
-          Enquanto a conta da imobiliária ou do corretor estiver ativa. Quando a assinatura é cancelada, os dados
+          Enquanto a conta da empresa ou do profissional estiver ativa. Quando a assinatura é cancelada, os dados
           ficam bloqueados por 90 dias, para o caso de a conta voltar ou de os dados serem exportados, e depois são
           apagados. Registros que a lei obriga a guardar, como os de cobrança, ficam pelo prazo da lei.
         </p>
@@ -104,7 +104,7 @@ export default function PrivacidadeDaAstro() {
 
       <SecaoLegal titulo="Segurança">
         <p>
-          Cada imobiliária só enxerga os próprios dados, e o gestor não lê as conversas dos corretores pelo CRM. O
+          Cada empresa só enxerga os próprios dados, e o gestor não lê as conversas da equipe pelo CRM. O
           acesso é por login e senha, a conexão é criptografada e as ações importantes ficam registradas.
         </p>
       </SecaoLegal>
@@ -112,7 +112,7 @@ export default function PrivacidadeDaAstro() {
       <SecaoLegal titulo="Seus direitos">
         <p>
           Você pode pedir a confirmação, o acesso, a correção, a portabilidade ou a exclusão dos seus dados, e revogar
-          um consentimento. Se você é cliente de uma imobiliária, o pedido vai primeiro para ela; nós ajudamos a
+          um consentimento. Se você é cliente de uma empresa que usa o CRM, o pedido vai primeiro para ela; nós ajudamos a
           cumprir.
         </p>
         <p>

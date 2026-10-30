@@ -154,8 +154,12 @@ describe("listarGruposDaPlataforma", () => {
       "mensalidade",
       "nome",
       "plano",
+      // O ramo do negócio (0244): o selo da lista.
+      "ramo",
+      "ramo_descricao",
       "situacao",
       "slug",
+      "teste_ate",
       "teto_respostas_ia",
       "tipo",
     ]);
@@ -169,6 +173,9 @@ describe("listarGruposDaPlataforma", () => {
         nome: "Next Home",
         slug: "next-home",
         tipo: "imobiliaria",
+        // Linha sem a coluna (mock de antes da 0244) = imobiliária.
+        ramo: "imobiliaria",
+        ramoDescricao: null,
         plano: "custo",
         situacao: "ativo",
         criadoEm: "2026-10-01T00:00:00Z",
@@ -189,6 +196,8 @@ describe("listarGruposDaPlataforma", () => {
         nome: "Fulana Corretora",
         slug: "fulana",
         tipo: "independente",
+        ramo: "imobiliaria",
+        ramoDescricao: null,
         plano: "essencial",
         situacao: "suspenso",
         criadoEm: "2026-10-10T00:00:00Z",

@@ -5,20 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#08132a">
 <title>Sem conexão · Astro Soluções</title>
+<!--
+  Mostrada pelo sw-painel.js quando a navegação falha sem rede. Desde
+  29/10/2026 (segunda leva) ela também mostra, SÓ PARA LEITURA, a agenda de
+  hoje e os leads recentes que o service worker guardou para o usuário atual
+  (/api/painel/offline). Nada de conversa ou mensagem. Sem dado guardado, é
+  a tela "Sem conexão" de antes.
+-->
 <style>
   *{box-sizing:border-box;margin:0}
-  html,body{height:100%;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
-  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;padding:2rem 1.75rem;
-    background:radial-gradient(60% 45% at 50% 38%,rgba(47,94,168,.45),transparent 70%),#08132a;color:#fff;text-align:center;
+  html,body{min-height:100%;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;
+    padding:calc(2rem + env(safe-area-inset-top)) 1.75rem calc(2rem + env(safe-area-inset-bottom));
+    background:radial-gradient(60% 45% at 50% 38%,rgba(47,94,168,.45),transparent 70%),#08132a;background-attachment:fixed;color:#fff;text-align:center;
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   svg{width:5.5rem;height:5.5rem}
   h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-top:.5rem}
   p{max-width:20rem;line-height:1.5;color:rgba(255,255,255,.72)}
   button{margin-top:.75rem;min-height:3rem;padding:0 1.75rem;border:0;border-radius:999px;background:#2f5ea8;color:#fff;font:600 1rem system-ui,sans-serif;cursor:pointer}
   button:active{background:#244c8c}
+  /* Com dados guardados: página de leitura, não mais a tela centrada. */
+  body.com-dados{justify-content:flex-start;align-items:stretch;text-align:left;padding:0 0 calc(1.5rem + env(safe-area-inset-bottom))}
+  .faixa{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    padding:calc(.75rem + env(safe-area-inset-top)) 1rem .75rem;background:#b45309;color:#fff;font-weight:600;font-size:.95rem}
+  .faixa button{margin:0;min-height:2.5rem;padding:0 1rem;background:rgba(255,255,255,.18);font-size:.875rem}
+  .conteudo{width:100%;max-width:40rem;margin:0 auto;padding:1rem}
+  .nota{max-width:none;font-size:.85rem;margin:.25rem 0 1rem}
+  section{background:rgba(255,255,255,.06);border:1px solid rgba(169,193,224,.18);border-radius:1rem;padding:1rem;margin-bottom:1rem}
+  h2{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+  ul{list-style:none;padding:0}
+  li{display:flex;gap:.75rem;padding:.6rem 0;border-top:1px solid rgba(169,193,224,.12);line-height:1.35}
+  li:first-child{border-top:0}
+  .hora{flex:0 0 3.25rem;font-weight:600;color:#a9c1e0}
+  .nome{font-weight:600;color:#fff;overflow-wrap:anywhere}
+  .apoio{display:block;font-size:.85rem;color:rgba(255,255,255,.65)}
+  a{color:#a9c1e0}
+  .vazio{color:rgba(255,255,255,.6);font-size:.9rem}
 </style>
 </head>
 <body>
+  <div id="sem-dados">
   <svg viewBox="0 0 64 64" aria-hidden="true">
     <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b3a6b"/><stop offset="1" stop-color="#0a1830"/></linearGradient></defs>
     <rect width="64" height="64" rx="14" fill="url(#g)" stroke="rgba(169,193,224,.3)" stroke-width=".6"/>
@@ -29,6 +55,45 @@
   <h1>Sem conexão</h1>
   <p>O app precisa de internet para mostrar seus leads e conversas. Confira o Wi-Fi ou os dados móveis.</p>
   <button type="button" onclick="location.reload()">Tentar de novo</button>
-  <script>window.addEventListener("online",function(){location.reload()});</script>
+  </div>
+  <script>
+  window.addEventListener("online",function(){location.reload()});
+  (function(){
+    var FUSO={timeZone:"America/Sao_Paulo"};
+    function hora(iso){try{return new Date(iso).toLocaleTimeString("pt-BR",Object.assign({hour:"2-digit",minute:"2-digit"},FUSO));}catch(e){return "";}}
+    function data(iso){try{return new Date(iso).toLocaleDateString("pt-BR",Object.assign({day:"2-digit",month:"2-digit"},FUSO));}catch(e){return "";}}
+    function hojeSP(){try{return new Intl.DateTimeFormat("en-CA",Object.assign({year:"numeric",month:"2-digit",day:"2-digit"},FUSO)).format(new Date());}catch(e){return "";}}
+    // Tudo por textContent: nome de lead nunca vira HTML.
+    function el(tag,classe,texto){var e=document.createElement(tag);if(classe)e.className=classe;if(texto!=null)e.textContent=texto;return e;}
+    function mostrar(d){
+      if(!d||d.versao!==1)return;
+      document.body.className="com-dados";
+      document.getElementById("sem-dados").remove();
+      var faixa=el("div","faixa");faixa.setAttribute("role","status");
+      faixa.appendChild(el("span",null,"Sem conexão · só leitura"));
+      var b=el("button",null,"Tentar de novo");b.type="button";b.onclick=function(){location.reload();};faixa.appendChild(b);
+      document.body.appendChild(faixa);
+      var c=el("main","conteudo");
+      c.appendChild(el("p","nota","Guardado em "+data(d.geradoEm)+" às "+hora(d.geradoEm)+". Para mudar algo, volte quando a internet voltar."));
+      var ag=el("section");var ehHoje=d.dia===hojeSP();
+      ag.appendChild(el("h2",null,ehHoje?"Agenda de hoje":"Agenda de "+data(d.dia+"T12:00:00-03:00")));
+      if(!d.agenda||!d.agenda.length){ag.appendChild(el("p","vazio","Nada marcado."));}
+      else{var ul=el("ul");d.agenda.forEach(function(i){var li=el("li");li.appendChild(el("span","hora",hora(i.inicio)));li.appendChild(el("span","nome",i.texto));ul.appendChild(li);});ag.appendChild(ul);}
+      c.appendChild(ag);
+      var ld=el("section");ld.appendChild(el("h2",null,"Leads recentes"));
+      if(!d.leads||!d.leads.length){ld.appendChild(el("p","vazio","Nenhum lead guardado."));}
+      else{var ul2=el("ul");d.leads.forEach(function(l){var li=el("li");var box=el("span");box.appendChild(el("span","nome",l.nome));
+        var apoio=el("span","apoio");
+        if(l.telefone){var a=el("a",null,l.telefone);a.href="tel:"+String(l.telefone).replace(/[^\d+]/g,"");apoio.appendChild(a);}
+        var extra=[l.etapa,l.criadoEm?"chegou "+data(l.criadoEm):""].filter(Boolean).join(" · ");
+        if(extra)apoio.appendChild(document.createTextNode((l.telefone?" · ":"")+extra));
+        box.appendChild(apoio);li.appendChild(box);ul2.appendChild(li);});ld.appendChild(ul2);}
+      c.appendChild(ld);
+      document.body.appendChild(c);
+    }
+    if(!window.fetch)return;
+    fetch("/api/painel/offline",{credentials:"same-origin"}).then(function(r){return r.ok?r.json():null;}).then(mostrar).catch(function(){});
+  })();
+  </script>
 </body>
 </html>

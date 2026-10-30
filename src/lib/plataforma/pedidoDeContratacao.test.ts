@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   errosDoPasso,
+  errosDoTesteGratis,
   formularioDaImobiliariaDoPedido,
   formularioDoIndependenteDoPedido,
   hrefDeContratar,
@@ -11,6 +12,7 @@ import {
   mascararWhatsapp,
   mensagemDoPedidoParaAstro,
   PLANO_CONTRATAVEL,
+  planoParaORamo,
   resumoDoPlano,
   totalMensal,
   validarPedido,
@@ -114,6 +116,9 @@ describe("validarPedido", () => {
     expect(r).toEqual({
       ok: true,
       pedido: {
+        // Pedido sem o campo (de antes da 0244) = imobiliária.
+        ramo: "imobiliaria",
+        ramoDescricao: null,
         plano: "imobiliaria",
         usuarios: 5,
         nome: "Ana Paula Souza",
@@ -121,10 +126,25 @@ describe("validarPedido", () => {
         email: "ana@imob.com.br",
         imobiliaria: "Imob Sol",
         creci: null,
+        documento: null,
         cidade: "Barueri",
         uf: "SP",
       },
     });
+  });
+
+  it("CPF ou CNPJ opcional (0241): limpo para dígitos, e torto recusa", () => {
+    const cpf = validarPedido({ ...BOM, documento: "529.982.247-25" });
+    expect(cpf.ok && cpf.pedido.documento).toBe("52998224725");
+    const cnpj = validarPedido({ ...BOM, documento: "11.444.777/0001-61" });
+    expect(cnpj.ok && cnpj.pedido.documento).toBe("11444777000161");
+    expect(validarPedido({ ...BOM, documento: "111.111.111-11" })).toMatchObject({ ok: false, erros: { documento: expect.any(String) } });
+    expect(validarPedido({ ...BOM, documento: "123" })).toMatchObject({ ok: false, erros: { documento: expect.any(String) } });
+  });
+
+  it("o teste grátis pede o CRECI", () => {
+    expect(errosDoTesteGratis({ creci: null })).toEqual({ creci: expect.stringContaining("CRECI") });
+    expect(errosDoTesteGratis({ creci: "1-F" })).toEqual({});
   });
 
   it("autônomo: usuários viram 1 e o nome da imobiliária é ignorado", () => {
@@ -187,6 +207,8 @@ describe("mensagem e pré-preenchimento", () => {
 
   it("imobiliária: a pessoa é o contato e o primeiro gestor; mensalidade pelos usuários", () => {
     expect(formularioDaImobiliariaDoPedido(gravado)).toEqual({
+      ramo: "imobiliaria",
+      ramoDescricao: "",
       nomeFantasia: "Imob Sol",
       slug: "imob-sol",
       creciJ: "12345-J",
@@ -203,6 +225,8 @@ describe("mensagem e pré-preenchimento", () => {
 
   it("independente: plano e mensalidade do pedido", () => {
     expect(formularioDoIndependenteDoPedido({ ...gravado, plano: "profissional", imobiliaria: null, creci: null })).toEqual({
+      ramo: "imobiliaria",
+      ramoDescricao: "",
       nome: "Ana Paula Souza",
       slug: "ana-paula-souza",
       creciF: "",
@@ -218,3 +242,73 @@ describe("mensagem e pré-preenchimento", () => {
     expect(hrefDeCriarConta({ ...gravado, plano: "essencial" })).toBe(`/plataforma/grupos/novo/independente?pedido=${gravado.id}`);
   });
 });
+
+describe("o ramo do negócio (0244, 29/10/2026)", () => {
+  it("o passo 1 pede o ramo antes do plano", () => {
+    expect(errosDoPasso(1, { ...BOM, ramo: "" })).toEqual({ ramo: expect.stringContaining("ramo") });
+    expect(errosDoPasso(1, { ...BOM, ramo: "seguros" })).toEqual({});
+  });
+
+  it("Outro exige o texto, e o pedido guarda o texto limpo", () => {
+    expect(errosDoPasso(1, { ...BOM, ramo: "outro", ramoDescricao: " " })).toEqual({
+      ramoDescricao: expect.any(String),
+    });
+    const r = validarPedido({ ...BOM, ramo: "outro", ramoDescricao: "  Clínica  veterinária " });
+    expect(r.ok && r.pedido).toMatchObject({ ramo: "outro", ramoDescricao: "Clínica veterinária" });
+  });
+
+  it("ramo da lista não guarda descrição", () => {
+    const r = validarPedido({ ...BOM, ramo: "advocacia", ramoDescricao: "lixo" });
+    expect(r.ok && r.pedido).toMatchObject({ ramo: "advocacia", ramoDescricao: null });
+  });
+
+  it("pedido sem o campo (página velha) continua valendo como imobiliária", () => {
+    const r = validarPedido(BOM);
+    expect(r.ok && r.pedido.ramo).toBe("imobiliaria");
+  });
+
+  it("o plano de equipe se chama Empresa fora da imobiliária; os ids não mudam", () => {
+    expect(planoParaORamo("imobiliaria", "imobiliaria")).toBe(PLANO_CONTRATAVEL.imobiliaria);
+    expect(planoParaORamo("imobiliaria", "seguros").nome).toBe("Empresa");
+    expect(planoParaORamo("imobiliaria", "seguros").preco).toBe(PRECO_POR_USUARIO_DA_IMOBILIARIA);
+    expect(sp(resumoDoPlano("imobiliaria", 2, "advocacia"))).toBe("Empresa, 2 usuários (R$ 254 por mês)");
+    expect(sp(resumoDoPlano("imobiliaria", 2))).toBe("Imobiliária, 2 usuários (R$ 254 por mês)");
+    expect(planoParaORamo("essencial", "advocacia").resumo).not.toMatch(/corretor|imóve/i);
+  });
+
+  it("o nome da empresa é pedido com a palavra do ramo", () => {
+    const r = validarPedido({ ...BOM, ramo: "advocacia", imobiliaria: "" });
+    expect(!r.ok && r.erros.imobiliaria).toBe("Informe o nome da empresa.");
+    const imob = validarPedido({ ...BOM, imobiliaria: "" });
+    expect(!imob.ok && imob.erros.imobiliaria).toBe("Informe o nome da imobiliária.");
+  });
+
+  it("teste grátis: CRECI só na imobiliária; nos outros, o registro é opcional", () => {
+    expect(errosDoTesteGratis({ creci: null, ramo: "imobiliaria" })).toEqual({ creci: expect.stringContaining("CRECI") });
+    expect(errosDoTesteGratis({ creci: null, ramo: "advocacia" })).toEqual({});
+    expect(errosDoTesteGratis({ creci: null, ramo: "seguros" })).toEqual({});
+  });
+
+  it("a mensagem para a Astro diz o ramo (só quando não é imobiliária)", () => {
+    const pedido = { plano: "essencial" as const, usuarios: 1, nome: "Ana Souza", imobiliaria: null, cidade: "Barueri", uf: "SP" as const };
+    expect(mensagemDoPedidoParaAstro({ ...pedido, ramo: "outro", ramoDescricao: "Pet shop" })).toContain("Ramo: Pet shop.");
+    expect(mensagemDoPedidoParaAstro({ ...pedido, ramo: "imobiliaria", ramoDescricao: null })).not.toContain("Ramo:");
+  });
+
+  it("o pré-preenchimento da plataforma leva o ramo do pedido", () => {
+    expect(formularioDaImobiliariaDoPedido({ ...gravadoDoRamo, ramo: "seguros" })).toMatchObject({ ramo: "seguros", ramoDescricao: "" });
+    expect(
+      formularioDoIndependenteDoPedido({ ...gravadoDoRamo, plano: "essencial", ramo: "outro", ramo_descricao: "Pet shop" }),
+    ).toMatchObject({ ramo: "outro", ramoDescricao: "Pet shop" });
+  });
+});
+
+const gravadoDoRamo = {
+  plano: "imobiliaria",
+  usuarios: 2,
+  nome: "Ana Souza",
+  whatsapp: "5511987654321",
+  email: "ana@x.com.br",
+  imobiliaria: "Silva Seguros",
+  creci: null,
+};

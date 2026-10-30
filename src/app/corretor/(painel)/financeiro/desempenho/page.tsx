@@ -18,6 +18,7 @@ import { idsDeContasOcultas } from "@/lib/corretores/contaOculta";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
 import { Suspense } from "react";
 import { MetasDaEquipe } from "./MetasDaEquipe";
+import { MetasDaEquipeDoGestor } from "./MetasDaEquipeDoGestor";
 
 export const metadata: Metadata = { title: "Desempenho" };
 
@@ -214,6 +215,11 @@ export default async function DesempenhoPage({
 
           <Suspense fallback={null}>
             <MetasDaEquipe equipe={equipe.map((c) => ({ id: c.id, nome: c.nome }))} />
+          </Suspense>
+
+          {/* Metas de visitas, propostas e vendas, definidas aqui (0246). */}
+          <Suspense fallback={null}>
+            <MetasDaEquipeDoGestor grupoId={corretor.grupoId} equipe={equipe.map((c) => ({ id: c.id, nome: c.nome }))} />
           </Suspense>
 
           <section className="space-y-2">

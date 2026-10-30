@@ -37,16 +37,18 @@ import { formatarVisitaSP, instrucaoDoFollowup } from "@/lib/whatsapp/followupTe
 import { formatarLembreteWhatsapp } from "@/lib/crm/lembretes";
 import { processarLembretesDeTarefa } from "@/lib/crm/lembretesDeTarefa";
 import { cobrarVisitas } from "@/lib/agenda/confirmacao";
+import { pedirConfirmacoesAutomaticas } from "@/lib/agenda/confirmacaoAutomatica";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
 import { enviarResumosDoDia } from "@/lib/crm/enviarResumoDoDia";
 import { enviarRelatoriosDasAvaliacoes } from "@/lib/crm/enviarRelatorioDasAvaliacoes";
 import { alertarLeadsSemContato } from "@/lib/crm/alertaSemContato";
 import { alertarClientesSemResposta } from "@/lib/crm/alertaSemResposta";
 import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
+import { avisarLeadsQueCombinam } from "@/lib/notificacoes/leadsQueCombinam";
 import { lembrarVisitasDaProximaHora } from "@/lib/notificacoes/lembreteDeVisita";
 import { avisarLeadsParados } from "@/lib/notificacoes/leadParado";
 import { avisarSenhasVencendo } from "@/lib/notificacoes/senhaVencendo";
-import { avisarCobrancasDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
+import { avisarCobrancasDoDia, avisarRiscosDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
@@ -666,6 +668,15 @@ export async function GET(req: NextRequest) {
     console.error("[lead parado]", e);
     return 0;
   });
+  /*
+   * Imóvel publicado ou atualizado → "N leads seus combinam" no celular de
+   * cada corretor (29/10/2026, 0245). Só notificação ao corretor, a
+   * qualquer hora; a trava de repetição é a da 0245.
+   */
+  const avisosDeMatch = await avisarLeadsQueCombinam(supabase).catch((e) => {
+    console.error("[match]", e);
+    return 0;
+  });
   const senhasVencendo = await avisarSenhasVencendo(supabase).catch((e) => {
     console.error("[senha vencendo]", e);
     return 0;
@@ -674,6 +685,11 @@ export async function GET(req: NextRequest) {
   // plataforma (29/10/2026, 0239): só às 9h, no primeiro tique da hora.
   await avisarCobrancasDoDia().catch((e) => {
     console.error("[cobranças do dia]", e);
+  });
+  // Contas em risco de cancelamento (29/10/2026): também às 9h, no primeiro
+  // tique da hora; só contagens por conta (sinaisDeRisco.ts).
+  await avisarRiscosDoDia().catch((e) => {
+    console.error("[riscos do dia]", e);
   });
   // Distribuição em grupo é um aviso operacional, não campanha: deve sair
   // mesmo fora da janela comercial, assim que a roleta definiu o dono.
@@ -716,7 +732,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -728,6 +744,16 @@ export async function GET(req: NextRequest) {
     await agendarLembretesDeVisita(supabase);
     await agendarPosVisita(supabase);
     await agendarPedidoDeIndicacao(supabase);
+    /*
+     * Confirmação automática de visita (0246, 29/10/2026), só nos grupos que
+     * ligaram a opção. Antes da fila: o pedido sai e cancela o lembrete de
+     * véspera pendente da mesma conversa, e o cliente não recebe os dois.
+     * Mesmas travas do lembrete (janela, expediente, IA desligada, cota).
+     */
+    const confirmacoesPedidas = await pedirConfirmacoesAutomaticas(supabase).catch((e) => {
+      console.error("[confirmação automática de visita]", e);
+      return 0;
+    });
     /*
      * O primeiro contato automático com lead de portal SAIU em 03/10/2026
      * (plano de ativação, regra N1): a IA só responde. O lead de portal
@@ -758,7 +784,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
   } finally {
     await destravarDisparo("followups", dono);
   }

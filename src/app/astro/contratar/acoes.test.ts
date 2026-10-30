@@ -27,6 +27,15 @@ vi.mock("@/lib/notificacoes/push", () => ({
   },
 }));
 
+let testes: { pedido: Record<string, unknown> }[] = [];
+let respostaDoTeste: Record<string, unknown> = { ok: true, grupoId: "g-novo", fimDoTeste: "2026-11-05", emailEnviado: true };
+vi.mock("@/lib/plataforma/testeGratis", () => ({
+  iniciarTesteGratis: async (pedido: Record<string, unknown>) => {
+    testes.push({ pedido });
+    return respostaDoTeste;
+  },
+}));
+
 const { enviarPedidoDeContratacao } = await import("./acoes");
 
 let proximoIp = 0;
@@ -74,6 +83,11 @@ describe("enviarPedidoDeContratacao", () => {
     expect(pedidos()).toHaveLength(1);
     const { id: _id, consentimento_em, ...linha } = pedidos()[0];
     expect(linha).toEqual({
+      // Envio sem o campo (página de antes da 0244) = imobiliária.
+      ramo: "imobiliaria",
+      // Sem cookie de indicação (0247).
+      codigo_de_indicacao: null,
+      ramo_descricao: null,
       plano: "imobiliaria",
       usuarios: 4,
       nome: "Ana Paula Souza",
@@ -81,6 +95,7 @@ describe("enviarPedidoDeContratacao", () => {
       email: "ana@imob.com.br",
       imobiliaria: "Imob Sol",
       creci: null,
+      documento: null,
       cidade: "Barueri",
       uf: "SP",
     });
@@ -190,5 +205,47 @@ describe("enviarPedidoDeContratacao", () => {
     expect(com.ok && com.whatsappDaAstro).toMatch(/^https:\/\/wa\.me\/5511900001111\?text=/);
     expect(com.ok && decodeURIComponent(com.whatsappDaAstro!.split("text=")[1])).toContain("Imob Sol");
     vi.unstubAllEnvs();
+  });
+});
+
+/** O teste grátis pelo assistente (29/10/2026, 0241): a conta nasce em `iniciarTesteGratis` (testado à parte). */
+describe("enviarPedidoDeContratacao: teste grátis", () => {
+  beforeEach(() => {
+    testes = [];
+    respostaDoTeste = { ok: true, grupoId: "g-novo", fimDoTeste: "2026-11-05", emailEnviado: true };
+  });
+
+  it("pede o CRECI antes de começar, sem gravar nada", async () => {
+    const r = await enviarPedidoDeContratacao({ ...ENVIO, modo: "teste" });
+    expect(r).toMatchObject({ ok: false, erros: { creci: expect.stringContaining("CRECI") } });
+    expect(testes).toHaveLength(0);
+    expect(pedidos()).toHaveLength(0);
+  });
+
+  it("com o CRECI, começa o teste com o pedido limpo e devolve até quando vai (sem link nenhum)", async () => {
+    const r = await enviarPedidoDeContratacao({ ...ENVIO, creci: " 1234-J ", documento: "11.444.777/0001-61", modo: "teste" });
+    expect(testes).toHaveLength(1);
+    expect(testes[0].pedido).toMatchObject({ creci: "1234-J", documento: "11444777000161", email: "ana@imob.com.br" });
+    expect(r).toMatchObject({ ok: true, teste: { fimDoTeste: "2026-11-05", emailEnviado: true, email: "ana@imob.com.br" } });
+    // O pedido do teste é gravado por `iniciarTesteGratis` (com a marca), não pelo caminho do pedido comum.
+    expect(pedidos()).toHaveLength(0);
+  });
+
+  it("recusa do teste volta com o campo marcado", async () => {
+    respostaDoTeste = { ok: false, erro: "Já existe um teste grátis para este e-mail.", campo: "email" };
+    const r = await enviarPedidoDeContratacao({ ...ENVIO, creci: "1234-J", modo: "teste" });
+    expect(r).toEqual({ ok: false, erro: "Já existe um teste grátis para este e-mail.", erros: { email: "Já existe um teste grátis para este e-mail." } });
+  });
+
+  it("CPF/CNPJ torto recusa antes do teste", async () => {
+    const r = await enviarPedidoDeContratacao({ ...ENVIO, creci: "1234-J", documento: "123", modo: "teste" });
+    expect(r).toMatchObject({ ok: false, erros: { documento: expect.any(String) } });
+    expect(testes).toHaveLength(0);
+  });
+
+  it("robô no modo teste não cria conta", async () => {
+    const r = await enviarPedidoDeContratacao({ ...ENVIO, creci: "1234-J", site: "http://spam", modo: "teste" });
+    expect(r.ok).toBe(true);
+    expect(testes).toHaveLength(0);
   });
 });

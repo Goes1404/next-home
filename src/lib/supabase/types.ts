@@ -315,6 +315,7 @@ export type Database = {
         Row: {
           grupo_id: string
           aberto_em: string | null
+          codigo: string | null
           corretor_id: string
           created_at: string
           dados: Json
@@ -326,6 +327,7 @@ export type Database = {
         Insert: {
           grupo_id?: string
           aberto_em?: string | null
+          codigo?: string | null
           corretor_id: string
           created_at?: string
           dados?: Json
@@ -337,6 +339,7 @@ export type Database = {
         Update: {
           grupo_id?: string
           aberto_em?: string | null
+          codigo?: string | null
           corretor_id?: string
           created_at?: string
           dados?: Json
@@ -344,6 +347,133 @@ export type Database = {
           lead_id?: string
           tipo?: "documentos" | "selecao" | "proposta" | "portal"
           token?: string
+        }
+        Relationships: []
+      }
+      // 0245 (29/10/2026): portais, aviso de "leads que combinam" e vitrine.
+      integracoes_de_portais: {
+        Row: {
+          id: string
+          grupo_id: string
+          portal: "grupo_olx" | "generico"
+          token: string
+          ativo: boolean
+          criado_em: string
+          token_trocado_em: string | null
+        }
+        Insert: {
+          id?: string
+          grupo_id: string
+          portal: "grupo_olx" | "generico"
+          token: string
+          ativo?: boolean
+          criado_em?: string
+          token_trocado_em?: string | null
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          portal?: "grupo_olx" | "generico"
+          token?: string
+          ativo?: boolean
+          criado_em?: string
+          token_trocado_em?: string | null
+        }
+        Relationships: []
+      }
+      portais_recebimentos: {
+        Row: {
+          id: number
+          grupo_id: string
+          integracao_id: string
+          id_externo: string | null
+          lead_id: string | null
+          status: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe: string | null
+          recebido_em: string
+        }
+        Insert: {
+          id?: never
+          grupo_id?: string
+          integracao_id: string
+          id_externo?: string | null
+          lead_id?: string | null
+          status: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe?: string | null
+          recebido_em?: string
+        }
+        Update: {
+          id?: never
+          grupo_id?: string
+          integracao_id?: string
+          id_externo?: string | null
+          lead_id?: string | null
+          status?: "criado" | "deduplicado" | "repetido" | "ignorado" | "erro"
+          detalhe?: string | null
+          recebido_em?: string
+        }
+        Relationships: []
+      }
+      avisos_de_match: {
+        Row: {
+          id: string
+          grupo_id: string
+          empreendimento_id: string
+          corretor_id: string
+          leads: number
+          avisado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          empreendimento_id: string
+          corretor_id: string
+          leads: number
+          avisado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          empreendimento_id?: string
+          corretor_id?: string
+          leads?: number
+          avisado_em?: string
+        }
+        Relationships: []
+      }
+      vitrine_visualizacoes: {
+        Row: {
+          id: number
+          grupo_id: string
+          token: string
+          lead_id: string
+          corretor_id: string
+          empreendimento_id: string | null
+          visitante: string | null
+          dia: string
+          criado_em: string
+        }
+        Insert: {
+          id?: never
+          grupo_id?: string
+          token: string
+          lead_id: string
+          corretor_id: string
+          empreendimento_id?: string | null
+          visitante?: string | null
+          dia: string
+          criado_em?: string
+        }
+        Update: {
+          id?: never
+          grupo_id?: string
+          token?: string
+          lead_id?: string
+          corretor_id?: string
+          empreendimento_id?: string | null
+          visitante?: string | null
+          dia?: string
+          criado_em?: string
         }
         Relationships: []
       }
@@ -912,6 +1042,7 @@ export type Database = {
       /** 0114 — a venda (F1 do módulo financeiro). */
       pagamentos_do_grupo: {
         Row: {
+          asaas_pagamento_id: string | null
           competencia: string
           created_at: string
           grupo_id: string
@@ -922,6 +1053,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          asaas_pagamento_id?: string | null
           competencia: string
           created_at?: string
           grupo_id: string
@@ -932,6 +1064,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          asaas_pagamento_id?: string | null
           competencia?: string
           created_at?: string
           grupo_id?: string
@@ -1281,6 +1414,12 @@ export type Database = {
           observacao: string | null
           grupo_criado_id: string | null
           atualizado_em: string
+          documento: string | null
+          codigo_de_indicacao: string | null
+          teste_gratis: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao: string | null
         }
         Insert: {
           id?: string
@@ -1299,6 +1438,12 @@ export type Database = {
           observacao?: string | null
           grupo_criado_id?: string | null
           atualizado_em?: string
+          documento?: string | null
+          codigo_de_indicacao?: string | null
+          teste_gratis?: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Update: {
           id?: string
@@ -1316,6 +1461,206 @@ export type Database = {
           status?: "novo" | "em_contato" | "convertido" | "descartado"
           observacao?: string | null
           grupo_criado_id?: string | null
+          atualizado_em?: string
+          documento?: string | null
+          codigo_de_indicacao?: string | null
+          teste_gratis?: boolean
+          /** 0244: ramo do negócio escolhido no assistente. */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
+        }
+        Relationships: []
+      }
+      /**
+       * 0240 — chamados de suporte (painel) e contato (site) com a Astro
+       * (29/10/2026). Global (sem `grupo_id`; a origem fica em
+       * `grupo_origem_id`); só a chave de serviço.
+       */
+      /** 0247 — indique e ganhe: qual conta indicou qual (global). */
+      indicacoes: {
+        Row: {
+          id: string
+          criado_em: string
+          codigo: string
+          grupo_indicador_id: string
+          grupo_indicado_id: string
+          pedido_id: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          codigo: string
+          grupo_indicador_id: string
+          grupo_indicado_id: string
+          pedido_id?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          codigo?: string
+          grupo_indicador_id?: string
+          grupo_indicado_id?: string
+          pedido_id?: string | null
+        }
+        Relationships: []
+      }
+      /** 0247 — crédito do indique e ganhe (global). */
+      creditos_de_indicacao: {
+        Row: {
+          id: string
+          criado_em: string
+          indicacao_id: string
+          grupo_beneficiado_id: string
+          pagamento_id: string | null
+          percentual: number
+          meses: number
+          valor_estimado: number | null
+          descricao: string
+          aplicado_em: string | null
+          aplicado_por: string | null
+          observacao: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          indicacao_id: string
+          grupo_beneficiado_id: string
+          pagamento_id?: string | null
+          percentual: number
+          meses: number
+          valor_estimado?: number | null
+          descricao: string
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          observacao?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          indicacao_id?: string
+          grupo_beneficiado_id?: string
+          pagamento_id?: string | null
+          percentual?: number
+          meses?: number
+          valor_estimado?: number | null
+          descricao?: string
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          observacao?: string | null
+        }
+        Relationships: []
+      }
+      /** 0247 — aceite do termo de adesão pela conta (do grupo). */
+      aceites_do_termo_de_adesao: {
+        Row: {
+          id: string
+          grupo_id: string
+          corretor_id: string
+          user_id: string
+          versao: string
+          aceito_em: string
+          nome_no_aceite: string
+          email_no_aceite: string | null
+          ip_hash: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          corretor_id: string
+          user_id: string
+          versao: string
+          aceito_em?: string
+          nome_no_aceite: string
+          email_no_aceite?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          corretor_id?: string
+          user_id?: string
+          versao?: string
+          aceito_em?: string
+          nome_no_aceite?: string
+          email_no_aceite?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      acessos_de_suporte: {
+        Row: {
+          id: string
+          criado_em: string
+          admin_user_id: string
+          grupo_alvo_id: string
+          motivo: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          admin_user_id: string
+          grupo_alvo_id: string
+          motivo?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          admin_user_id?: string
+          grupo_alvo_id?: string
+          motivo?: string | null
+        }
+        Relationships: []
+      }
+      chamados_de_suporte: {
+        Row: {
+          id: string
+          criado_em: string
+          origem: "site" | "painel"
+          assunto: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem: string
+          nome: string
+          email: string | null
+          whatsapp: string | null
+          grupo_origem_id: string | null
+          corretor_origem_id: string | null
+          consentimento_em: string | null
+          status: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          origem: "site" | "painel"
+          assunto: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem: string
+          nome: string
+          email?: string | null
+          whatsapp?: string | null
+          grupo_origem_id?: string | null
+          corretor_origem_id?: string | null
+          consentimento_em?: string | null
+          status?: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          origem?: "site" | "painel"
+          assunto?: "duvida" | "problema" | "financeiro" | "sugestao" | "comercial"
+          mensagem?: string
+          nome?: string
+          email?: string | null
+          whatsapp?: string | null
+          grupo_origem_id?: string | null
+          corretor_origem_id?: string | null
+          consentimento_em?: string | null
+          status?: "novo" | "em_atendimento" | "resolvido"
+          resposta_interna?: string | null
           atualizado_em?: string
         }
         Relationships: []
@@ -1431,6 +1776,98 @@ export type Database = {
           mes?: string
           meta_comissao?: number
           comissao_por_venda?: number | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0246 — a meta do mês de cada corretor, definida pelo gestor. Só o servidor. */
+      metas_da_equipe: {
+        Row: {
+          grupo_id: string
+          corretor_id: string
+          mes: string
+          meta_visitas: number | null
+          meta_propostas: number | null
+          meta_vendas: number | null
+          definida_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          grupo_id?: string
+          corretor_id: string
+          mes: string
+          meta_visitas?: number | null
+          meta_propostas?: number | null
+          meta_vendas?: number | null
+          definida_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          grupo_id?: string
+          corretor_id?: string
+          mes?: string
+          meta_visitas?: number | null
+          meta_propostas?: number | null
+          meta_vendas?: number | null
+          definida_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      /** 0246 — as regras de distribuição do gestor, em ordem. Só o servidor. */
+      regras_distribuicao: {
+        Row: {
+          id: string
+          grupo_id: string
+          ordem: number
+          ativa: boolean
+          nome: string
+          criterio: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes: string[]
+          valor_min: number | null
+          valor_max: number | null
+          origens: string[]
+          max_leads_parados: number | null
+          corretores: string[]
+          criada_por: string | null
+          created_at: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id: string
+          ordem?: number
+          ativa?: boolean
+          nome: string
+          criterio: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes?: string[]
+          valor_min?: number | null
+          valor_max?: number | null
+          origens?: string[]
+          max_leads_parados?: number | null
+          corretores?: string[]
+          criada_por?: string | null
+          created_at?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          ordem?: number
+          ativa?: boolean
+          nome?: string
+          criterio?: "regiao" | "faixa_valor" | "origem" | "desempenho"
+          regioes?: string[]
+          valor_min?: number | null
+          valor_max?: number | null
+          origens?: string[]
+          max_leads_parados?: number | null
+          corretores?: string[]
+          criada_por?: string | null
           created_at?: string
           atualizado_em?: string
         }
@@ -1775,6 +2212,9 @@ export type Database = {
           resumo_diario_em: string | null
           relatorio_avaliacoes_em: string | null
           resumo_fim_de_semana: boolean
+          /** 0246: o resumo da semana no WhatsApp do gestor (ligado por padrão). */
+          relatorio_semanal_whatsapp: boolean
+          relatorio_semanal_whatsapp_em: string | null
           resumo_hora: number
           em_pausa: boolean
           email: string | null
@@ -1808,6 +2248,8 @@ export type Database = {
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
+          relatorio_semanal_whatsapp?: boolean
+          relatorio_semanal_whatsapp_em?: string | null
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
@@ -1841,6 +2283,8 @@ export type Database = {
           resumo_diario_em?: string | null
           relatorio_avaliacoes_em?: string | null
           resumo_fim_de_semana?: boolean
+          relatorio_semanal_whatsapp?: boolean
+          relatorio_semanal_whatsapp_em?: string | null
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
@@ -2018,6 +2462,52 @@ export type Database = {
         Relationships: [
         ]
       }
+      /**
+       * 0242 — avisos da Astro para o painel de todos os clientes
+       * (29/10/2026). Global (sem `grupo_id`); só a chave de serviço.
+       */
+      avisos_aos_clientes: {
+        Row: {
+          id: string
+          criado_em: string
+          criado_por: string | null
+          titulo: string
+          texto: string
+          tipo: "novidade" | "manutencao" | "importante"
+          link: string | null
+          publico: "todos" | "gestores"
+          inicio_em: string
+          fim_em: string | null
+          encerrado_em: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          titulo: string
+          texto: string
+          tipo: "novidade" | "manutencao" | "importante"
+          link?: string | null
+          publico?: "todos" | "gestores"
+          inicio_em?: string
+          fim_em?: string | null
+          encerrado_em?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          titulo?: string
+          texto?: string
+          tipo?: "novidade" | "manutencao" | "importante"
+          link?: string | null
+          publico?: "todos" | "gestores"
+          inicio_em?: string
+          fim_em?: string | null
+          encerrado_em?: string | null
+        }
+        Relationships: []
+      }
       administradores_da_plataforma: {
         Row: {
           criado_em: string
@@ -2035,7 +2525,10 @@ export type Database = {
       }
       grupos: {
         Row: {
+          asaas_assinatura_id: string | null
+          asaas_cliente_id: string | null
           cancelado_em: string | null
+          codigo_de_indicacao: string | null
           contato_cobranca_email: string | null
           contato_cobranca_nome: string | null
           contato_cobranca_telefone: string | null
@@ -2086,6 +2579,8 @@ export type Database = {
           grupos_whatsapp_instancia: string | null
           grupos_whatsapp_lidos_em: string | null
           pular_corretor_whatsapp_desconectado: boolean
+          /** 0246: o pedido de confirmação de visita sai sozinho (opt-in). */
+          confirmacao_visita_automatica: boolean
           padrao_nome_grupo_leads: string | null
           texto_aviso_grupo_leads: string | null
           id: string
@@ -2095,14 +2590,21 @@ export type Database = {
           razao_social: string | null
           situacao: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teste_ate: string | null
           teto_respostas_ia: number | null
           teto_artes: number | null
           teto_videos: number | null
           teto_mensagens_lista: number | null
           tipo: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao: string | null
         }
         Insert: {
+          asaas_assinatura_id?: string | null
+          asaas_cliente_id?: string | null
           cancelado_em?: string | null
+          codigo_de_indicacao?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null
@@ -2153,6 +2655,7 @@ export type Database = {
           grupos_whatsapp_instancia?: string | null
           grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          confirmacao_visita_automatica?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null
           id?: string
@@ -2162,14 +2665,21 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug: string
+          teste_ate?: string | null
           teto_respostas_ia?: number | null
           teto_artes?: number | null
           teto_videos?: number | null
           teto_mensagens_lista?: number | null
           tipo: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Update: {
+          asaas_assinatura_id?: string | null
+          asaas_cliente_id?: string | null
           cancelado_em?: string | null
+          codigo_de_indicacao?: string | null
           contato_cobranca_email?: string | null
           contato_cobranca_nome?: string | null
           contato_cobranca_telefone?: string | null
@@ -2220,6 +2730,7 @@ export type Database = {
           grupos_whatsapp_instancia?: string | null
           grupos_whatsapp_lidos_em?: string | null
           pular_corretor_whatsapp_desconectado?: boolean
+          confirmacao_visita_automatica?: boolean
           padrao_nome_grupo_leads?: string | null
           texto_aviso_grupo_leads?: string | null
           id?: string
@@ -2229,11 +2740,15 @@ export type Database = {
           razao_social?: string | null
           situacao?: "ativo" | "suspenso" | "encerrado"
           slug?: string
+          teste_ate?: string | null
           teto_respostas_ia?: number | null
           teto_artes?: number | null
           teto_videos?: number | null
           teto_mensagens_lista?: number | null
           tipo?: "imobiliaria" | "independente"
+          /** 0244: ramo do negócio (vocabulário, módulos, IA). */
+          ramo?: "imobiliaria" | "seguros" | "advocacia" | "contabilidade" | "saude" | "educacao" | "varejo" | "servicos" | "outro"
+          ramo_descricao?: string | null
         }
         Relationships: []
       }
@@ -4103,6 +4618,10 @@ export type Database = {
           passada_em: string | null
           cobrada_em: string | null
           lembrete_1h_para: string | null
+          /** 0246: o pedido de confirmação saiu; o cliente pediu para remarcar. */
+          confirmacao_pedida_em: string | null
+          confirmacao_pedida_por: "corretor" | "automatica" | null
+          remarcacao_pedida_em: string | null
           respondida_em: string | null
           passada_por: string | null
           criada_por_usuario: string | null
@@ -4121,6 +4640,9 @@ export type Database = {
           passada_em?: string | null
           cobrada_em?: string | null
           lembrete_1h_para?: string | null
+          confirmacao_pedida_em?: string | null
+          confirmacao_pedida_por?: "corretor" | "automatica" | null
+          remarcacao_pedida_em?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -4139,6 +4661,9 @@ export type Database = {
           passada_em?: string | null
           cobrada_em?: string | null
           lembrete_1h_para?: string | null
+          confirmacao_pedida_em?: string | null
+          confirmacao_pedida_por?: "corretor" | "automatica" | null
+          remarcacao_pedida_em?: string | null
           respondida_em?: string | null
           passada_por?: string | null
           criada_por_usuario?: string | null
@@ -4788,6 +5313,28 @@ export type Database = {
       marcar_repasse_pago: {
         Args: { p_venda: string; p_corretor: string; p_data: string | null }
         Returns: boolean
+      }
+      /** 0246 — leads parados (48h sem contato nosso) de um corretor. Só a chave de serviço. */
+      leads_parados_do_corretor: {
+        Args: { p_corretor: string }
+        Returns: number
+      }
+      /** 0246 — "quem receberia este lead?", só para o gestor, sem gravar. */
+      simular_distribuicao: {
+        Args: {
+          p_empreendimento: string | null
+          p_bairro: string | null
+          p_cidade: string | null
+          p_regiao: string | null
+          p_valor: number | null
+          p_canal: string | null
+        }
+        Returns: {
+          corretor_id: string
+          nome: string
+          regra_id: string | null
+          regra_nome: string | null
+        }[]
       }
       ranking_vgv: {
         Args: { p_inicio: string; p_fim: string }

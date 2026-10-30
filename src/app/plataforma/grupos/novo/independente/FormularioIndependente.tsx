@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { lerRamo, vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { mascararCpf } from "@/lib/plataforma/documentos";
 import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
@@ -13,9 +14,11 @@ import {
   type FormularioDoIndependente,
 } from "@/lib/plataforma/tiposDeConta";
 import { criarCorretorIndependente } from "../../../acoes";
-import { Campo, CartaoDoConvite, CLASSE_DO_CAMPO, type Criado } from "../componentes";
+import { Campo, CartaoDoConvite, SeletorDeRamo, CLASSE_DO_CAMPO, type Criado } from "../componentes";
 
 const VAZIO: FormularioDoIndependente = {
+  ramo: "imobiliaria",
+  ramoDescricao: "",
   nome: "",
   slug: "",
   cpf: "",
@@ -40,6 +43,8 @@ export function FormularioIndependente({ inicial }: { inicial?: Partial<Formular
   const [erro, setErro] = useState<string | null>(null);
   const [criado, setCriado] = useState<Criado | null>(null);
   const [pendente, iniciar] = useTransition();
+  // O documento profissional do ramo escolhido (0244).
+  const documento = vocabularioDoRamo(lerRamo(dados.ramo)).documento;
 
   const mudar = (k: keyof FormularioDoIndependente, valor: string) =>
     setDados((d) => {
@@ -63,7 +68,7 @@ export function FormularioIndependente({ inicial }: { inicial?: Partial<Formular
       dica={opcoes.dica}
       ajuda={opcoes.ajuda}
       inputMode={opcoes.inputMode}
-      value={dados[k]}
+      value={dados[k] ?? ""}
       onChange={(v) => {
         if (k === "slug") setSlugEditado(true);
         if (k === "mensalidade") setMensalidadeEditada(true);
@@ -120,9 +125,20 @@ export function FormularioIndependente({ inicial }: { inicial?: Partial<Formular
     >
       <fieldset className="cartao grid gap-3 p-5 sm:grid-cols-2">
         <legend className="text-fluid-sm text-titulo px-1 font-bold">O corretor</legend>
+        <SeletorDeRamo
+          ramo={dados.ramo ?? "imobiliaria"}
+          descricao={dados.ramoDescricao ?? ""}
+          aoMudarRamo={(v) => mudar("ramo", v)}
+          aoMudarDescricao={(v) => mudar("ramoDescricao", v)}
+        />
         <div className="sm:col-span-2">{campo("nome", "Nome completo", { dica: "Nome e sobrenome" })}</div>
         {campo("cpf", "CPF", { dica: "000.000.000-00", inputMode: "numeric", transformar: mascararCpf })}
-        {campo("creciF", "CRECI-F", { dica: "Número do CRECI" })}
+        {/* O registro do ramo (0244): CRECI na imobiliária; nos outros, opcional. */}
+        {campo(
+          "creciF",
+          documento.obrigatorio ? "CRECI-F" : `${documento.rotulo} (opcional)`,
+          documento.obrigatorio ? { dica: "Número do CRECI" } : { dica: "Em branco, a ficha fica como \"Não informado\"" },
+        )}
         {campo("whatsapp", "WhatsApp", { tipo: "tel", inputMode: "tel", dica: "(11) 98765-4321" })}
         {campo("email", "E-mail", { tipo: "email", inputMode: "email", dica: "email@docorretor.com" })}
         <div className="sm:col-span-2">

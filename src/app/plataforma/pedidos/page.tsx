@@ -145,7 +145,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Busc
                   )}
                 </dl>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <a
                     href={conversa}
                     target="_blank"

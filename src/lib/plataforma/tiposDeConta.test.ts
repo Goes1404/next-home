@@ -61,6 +61,9 @@ describe("imobiliária", () => {
     expect(r.dados.grupo).toMatchObject({ tipo: "imobiliaria", plano: "imobiliaria", nome: "Imobiliária Silva" });
     expect(r.dados.grupo.primeiro.email).toBe("ana@silva.com.br");
     expect(r.dados.cadastro).toEqual({
+      // Formulário sem o campo (de antes da 0244) = imobiliária.
+      ramo: "imobiliaria",
+      ramo_descricao: null,
       razao_social: "Silva Negócios Imobiliários Ltda",
       documento: "11222333000181",
       creci: "12345-J",
@@ -106,6 +109,8 @@ describe("corretor independente", () => {
     });
     expect(grupo.contato).toEqual({ nome: "Beto Corretor", email: "beto@gmail.com", telefone: "5511912345678" });
     expect(cadastro).toEqual({
+      ramo: "imobiliaria",
+      ramo_descricao: null,
       razao_social: null,
       documento: "52998224725",
       creci: "98765-F",
@@ -130,5 +135,32 @@ describe("corretor independente", () => {
     expect(validarIndependente({ ...INDEPENDENTE, plano: "imobiliaria" }).ok).toBe(false);
     expect(validarIndependente({ ...INDEPENDENTE, plano: "custo" }).ok).toBe(false);
     expect(validarIndependente({ ...INDEPENDENTE, creciF: "" }).ok).toBe(false);
+  });
+});
+
+describe("o ramo da conta (0244, 29/10/2026)", () => {
+  it("advocacia com equipe: grava o ramo e cria sem CRECI (a ficha leva o marcador)", () => {
+    const r = validarImobiliaria({ ...IMOBILIARIA, ramo: "advocacia", creciJ: "" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.dados.cadastro).toMatchObject({ ramo: "advocacia", ramo_descricao: null, creci: null, creci_tipo: null });
+    expect(r.dados.grupo.primeiro.creci).toBe("Não informado");
+  });
+
+  it("o registro digitado vale como documento do grupo", () => {
+    const r = validarIndependente({ ...INDEPENDENTE, ramo: "advocacia", creciF: "OAB/SP 123" });
+    expect(r.ok && r.dados.cadastro).toMatchObject({ creci: "OAB/SP 123", creci_tipo: "F" });
+  });
+
+  it("Outro sem texto recusa; imobiliária continua exigindo o CRECI", () => {
+    expect(validarIndependente({ ...INDEPENDENTE, ramo: "outro", ramoDescricao: "" })).toMatchObject({ ok: false });
+    expect(validarIndependente({ ...INDEPENDENTE, ramo: "outro", ramoDescricao: "Pet shop" })).toMatchObject({
+      ok: true,
+      dados: { cadastro: { ramo: "outro", ramo_descricao: "Pet shop" } },
+    });
+    expect(validarImobiliaria({ ...IMOBILIARIA, ramo: "imobiliaria", creciJ: "" })).toEqual({
+      ok: false,
+      erro: "Informe o CRECI-J da imobiliária.",
+    });
   });
 });

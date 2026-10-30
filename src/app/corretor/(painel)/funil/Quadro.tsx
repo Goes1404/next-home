@@ -39,8 +39,10 @@ import {
   GRUPO_LABEL,
   etapasDoGrupo,
   type EtapaFunil,
+  type GrupoFunil,
   type Lead,
 } from "@/lib/types";
+import { useRotuloDaEtapa, useRotuloDoGrupoDoFunil } from "@/lib/ramos/RamoDoPainel";
 import { gravarModoDoFunil, type ModoDoFunil } from "./modoDoFunil";
 
 /**
@@ -106,12 +108,17 @@ type Coluna = {
   link: string;
 };
 
-function colunasDoModo(modo: ModoDoFunil): Coluna[] {
+function colunasDoModo(
+  modo: ModoDoFunil,
+  // Os rótulos no vocabulário do ramo (0244); na imobiliária, os de sempre.
+  rotuloDaEtapa: (e: EtapaFunil) => string = (e) => ETAPA_LABEL[e],
+  rotuloDoGrupo: (g: GrupoFunil) => string = (g) => GRUPO_LABEL[g],
+): Coluna[] {
   if (modo === "completo") {
     return ETAPAS_FUNIL.map((e) => ({
       chave: e,
       etapas: [e],
-      rotulo: ETAPA_LABEL[e],
+      rotulo: rotuloDaEtapa(e),
       borda: BORDA_ETAPA[e],
       regua: REGUA_ETAPA[e],
       link: `/corretor/leads?etapa=${e}`,
@@ -120,7 +127,7 @@ function colunasDoModo(modo: ModoDoFunil): Coluna[] {
   return GRUPOS_FUNIL.map((g) => ({
     chave: g,
     etapas: etapasDoGrupo(g),
-    rotulo: GRUPO_LABEL[g],
+    rotulo: rotuloDoGrupo(g),
     borda: BORDA_GRUPO[g],
     regua: BARRA_GRUPO[g],
     link: `/corretor/leads?grupo=${g}`,
@@ -177,7 +184,11 @@ export function Quadro({
 }) {
   const [leadDossie, setLeadDossie] = useState<Lead | null>(null);
   const [modo, setModo] = useState<ModoDoFunil>(modoInicial);
-  const colunas = useMemo(() => colunasDoModo(modo), [modo]);
+  const rotuloDaEtapa = useRotuloDaEtapa();
+  const rotuloDoGrupo = useRotuloDoGrupoDoFunil();
+  // As funções mudam a cada render; o ramo não muda na sessão, então o modo basta.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const colunas = useMemo(() => colunasDoModo(modo, rotuloDaEtapa, rotuloDoGrupo), [modo]);
 
   function trocarModo(novo: ModoDoFunil) {
     setModo(novo);
@@ -619,6 +630,8 @@ function Cartao({
   onSoltar: (evento: React.PointerEvent<HTMLElement>) => void;
   onCancelar: () => void;
 }) {
+  // A etapa no vocabulário do ramo (0244).
+  const rotuloDaEtapa = useRotuloDaEtapa();
   const nomeDaCasa = useNomeDaCasa();
   const whatsapp = linkWhatsappLead(lead, nomeDaCasa);
   const parado = diasParado(lead);
@@ -701,7 +714,7 @@ function Cartao({
       <p className="text-fluid-xs text-tenue mt-1 flex flex-wrap items-center gap-x-1 gap-y-1">
         {mostrarEtapa && (
           <span className={`rounded-full px-2 py-0.5 font-medium ${ETIQUETA_ETAPA[lead.etapa]}`}>
-            {ETAPA_LABEL[lead.etapa]}
+            {rotuloDaEtapa(lead.etapa)}
           </span>
         )}
         <ContagemDeTentativas lead={lead} />
@@ -753,7 +766,7 @@ function Cartao({
         >
           {ETAPAS_FUNIL.map((etapa) => (
             <option key={etapa} value={etapa}>
-              {ETAPA_LABEL[etapa]}
+              {rotuloDaEtapa(etapa)}
             </option>
           ))}
         </select>

@@ -1,7 +1,7 @@
 {
   "name": "Astro Soluções",
   "short_name": "Astro CRM",
-  "description": "CRM com IA no WhatsApp para imobiliárias e corretores.",
+  "description": "CRM com IA no WhatsApp para empresas que vendem e atendem pelo WhatsApp.",
   "lang": "pt-BR",
   "id": "/corretor",
   "start_url": "/corretor",

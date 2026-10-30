@@ -421,6 +421,73 @@
   cursor: pointer;
 }
 
+/*
+ * "Para quem é" (29/10/2026, 0244): um cartão por ramo, link inteiro para o
+ * assistente com o ramo marcado (`/astro/contratar?ramo=<id>`). Mesma família
+ * do `.plano` (borda fina, raio grande, sombra só por opacidade no hover).
+ */
+.ramoCartao {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  /* No celular, ícone em cima e nome embaixo: lado a lado, "Contabilidade"
+     não cabia na meia largura. */
+  flex-direction: column;
+  min-height: 100%;
+  gap: 0.6rem;
+  align-items: flex-start;
+  border-radius: 1.25rem;
+  border: 1px solid var(--linha);
+  background: #fff;
+  padding: 0.85rem 0.9rem;
+  transition: border-color 180ms;
+}
+@media (min-width: 640px) {
+  .ramoCartao {
+    flex-direction: row;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.1rem 1.2rem;
+  }
+  .ramoIcone {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+}
+.ramoCartao::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 24px 48px -28px rgb(15 37 71 / 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms var(--saida);
+}
+@media (hover: hover) {
+  .ramoCartao:hover {
+    border-color: #b9c8de;
+  }
+  .ramoCartao:hover::after {
+    opacity: 1;
+  }
+}
+.ramoCartao:focus-visible {
+  outline: 3px solid var(--azul);
+  outline-offset: 3px;
+}
+.ramoIcone {
+  display: grid;
+  flex-shrink: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: var(--papel);
+  color: var(--azul);
+}
+
 .fechamento {
   background: var(--marinho);
   color: #fff;

@@ -5,7 +5,9 @@ import { EditorAvatar } from "./EditorAvatar";
 import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { AjustesDoResumo } from "./AjustesDoResumo";
+import { AjusteDoRelatorioSemanal } from "./AjusteDoRelatorioSemanal";
 import { AtivarNotificacoes } from "../_componentes/AtivarNotificacoes";
+import { ANCORA_DOS_AVISOS } from "@/lib/crm/primeirosPassosDoInicio";
 import { TextoDaPrevia } from "./TextoDaPrevia";
 import { CaixaDoGmail } from "./CaixaDoGmail";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -13,6 +15,7 @@ import { gmailConfigurado } from "@/lib/inbound/gmailCaixa";
 import { integracaoLiberada } from "@/lib/grupos/integracoes";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 
 export const metadata: Metadata = { title: "Meu perfil" };
@@ -36,6 +39,12 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
     .maybeSingle();
   // Texto da prévia do link (0188). À parte: antes da migration a coluna não
   // existe, a consulta falha e o campo aparece travado em vez de quebrar a tela.
+  // O resumo semanal no WhatsApp (0246): à parte pelo mesmo motivo — antes da
+  // migration a coluna não existe, e o ajuste só não aparece.
+  const { data: semanal } =
+    corretor.papel === "gestor"
+      ? await supabase.from("corretores").select("relatorio_semanal_whatsapp").eq("id", corretor.id).maybeSingle()
+      : { data: null };
   const { data: previa, error: erroPrevia } = await supabase
     .from("corretores")
     .select("chamada_do_link")
@@ -70,14 +79,15 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
         <EditorAvatar nome={corretor.nome} fotoUrl={corretor.fotoUrl} />
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-acento-lavado border border-acento-linha px-2.5 py-0.5 text-fluid-xs font-semibold text-acento-suave">
-            CRECI {corretor.creci}
+            {/* O documento profissional no vocabulário do ramo (0244): CRECI, SUSEP, OAB... */}
+            {vocabularioDoRamo(corretor.ramo).documento.rotulo} {corretor.creci}
           </span>
           <span className="rounded-full bg-ok-lavado border border-ok-linha px-2.5 py-0.5 text-fluid-xs font-medium text-ok">
             Perfil Público Ativo
           </span>
         </div>
         <p className="text-fluid-xs mt-2 text-apoio">
-          O CRECI é gerenciado pela administração da {marca.nome}.
+          O {vocabularioDoRamo(corretor.ramo).documento.rotulo} é gerenciado pela administração da {marca.nome}.
         </p>
       </div>
 
@@ -114,13 +124,22 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
         />
       </div>
 
-      <div className="mt-6">
+      {/* A âncora é o destino do passo "Ligar os avisos no celular" do
+          Início (ANCORA_DOS_AVISOS, 29/10/2026). */}
+      <div id={ANCORA_DOS_AVISOS} className="mt-6 scroll-mt-24">
         <AtivarNotificacoes sempreVisivel />
       </div>
 
       <div className="cartao mt-6 p-6 sm:p-7">
         <AjustesDoResumo hora={prefs?.resumo_hora ?? 8} fimDeSemana={prefs?.resumo_fim_de_semana ?? false} />
       </div>
+
+      {/* O resumo da semana no WhatsApp, só do gestor (0246). Sem a coluna, some. */}
+      {corretor.papel === "gestor" && semanal && (
+        <div className="cartao mt-6 p-6 sm:p-7">
+          <AjusteDoRelatorioSemanal ligado={semanal.relatorio_semanal_whatsapp} />
+        </div>
+      )}
     </div>
   );
 }

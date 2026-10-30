@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { linkWhatsappPara } from "@/lib/site";
 import type { ItemDaAgenda } from "@/lib/agenda/itens";
+import { podePedirConfirmacao } from "@/lib/agenda/confirmacaoDaVisita";
+import { PedirConfirmacao } from "./PedirConfirmacao";
 import {
   etiquetasDoPreparo,
   objecaoEmAberto,
@@ -36,6 +38,7 @@ export function CartaoDaVisita({
   vistaDe,
   semFicha = false,
   semMoldura = false,
+  agoraIso,
 }: {
   visita: VisitaDaAgenda;
   preparo: DadosDoPreparo;
@@ -46,6 +49,8 @@ export function CartaoDaVisita({
   semFicha?: boolean;
   /** Dentro da gaveta ou da coluna de detalhe da Agenda, que já são a moldura. */
   semMoldura?: boolean;
+  /** O "agora" da página: com ele, o cartão oferece "Pedir confirmação" (0246). */
+  agoraIso?: string;
 }) {
   const quando = new Date(visita.inicio);
   const hora = HORA.format(quando);
@@ -58,6 +63,25 @@ export function CartaoDaVisita({
   const feitaPorOutro = vistaDe !== undefined && visita.corretorId !== undefined && visita.corretorId !== vistaDe;
   const leadDeOutro = vistaDe !== undefined && Boolean(visita.donoDoLeadId) && visita.donoDoLeadId !== vistaDe;
   const linkDaFicha = leadDeOutro ? `/corretor/agenda/visita/${visita.id}` : `/corretor/leads/${visita.leadId}`;
+  /*
+   * Confirmação pelo WhatsApp (0246): o pedido sai do número do DONO do lead,
+   * então o botão só aparece para quem faz a visita E é o dono. A régua de
+   * quando pode é a mesma do servidor (`podePedirConfirmacao`).
+   */
+  const ehMinhaEDoMeuLead = vistaDe !== undefined && visita.corretorId === vistaDe && visita.donoDoLeadId === vistaDe;
+  const podePedir =
+    agoraIso !== undefined &&
+    ehMinhaEDoMeuLead &&
+    podePedirConfirmacao(
+      {
+        inicio: visita.inicio,
+        status: visita.status ?? "marcada",
+        confirmadaPeloCliente: visita.confirmadaPeloCliente,
+        confirmacaoPedidaEm: visita.confirmacaoPedidaEm ?? null,
+        remarcacaoPedidaEm: visita.remarcacaoPedidaEm ?? null,
+      },
+      new Date(agoraIso),
+    ).pode;
 
   return (
     <article className={semMoldura ? undefined : "cartao p-5"}>
@@ -75,9 +99,17 @@ export function CartaoDaVisita({
             <p className="text-fluid-xs mt-0.5 font-medium text-acento">Visita recebida do gestor</p>
           )}
         </div>
-        {visita.confirmadaPeloCliente ? (
+        {visita.remarcacaoPedidaEm ? (
+          <span className="text-fluid-xs rounded-full bg-alerta-lavado px-2.5 py-1 font-semibold text-alerta">
+            Pediu para remarcar
+          </span>
+        ) : visita.confirmadaPeloCliente ? (
           <span className="text-fluid-xs rounded-full bg-ok-lavado px-2.5 py-1 font-semibold text-ok">
             Confirmada pelo cliente
+          </span>
+        ) : visita.confirmacaoPedidaEm ? (
+          <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
+            Confirmação pedida
           </span>
         ) : (
           <span className="text-fluid-xs rounded-full bg-etapa-visita-lavado px-2.5 py-1 font-medium text-etapa-visita">
@@ -107,6 +139,12 @@ export function CartaoDaVisita({
           {resumoCurto(preparo.resumoExecutivo) && (
             <p className="text-fluid-xs mt-2 text-apoio">{resumoCurto(preparo.resumoExecutivo)}</p>
           )}
+        </div>
+      )}
+
+      {podePedir && (
+        <div className="mt-4">
+          <PedirConfirmacao visitaId={visita.id} />
         </div>
       )}
 

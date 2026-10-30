@@ -1,6 +1,7 @@
 import type { SVGProps } from "react";
 
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+import { RAMO_PADRAO, temModulo, vocabularioDoRamo, type ModuloDoRamo, type Ramo, type Vocabulario } from "@/lib/ramos/ramos";
 
 /**
  * Mapa de navegação do painel — uma fonte só para a barra lateral, a gaveta
@@ -57,6 +58,14 @@ export type SubItemNav = {
    * hoje só a Administração usa (Equipe · Negócio · Sistema).
    */
   secao?: string;
+  /**
+   * Módulo de um ramo só (29/10/2026, 0244): some do menu das contas cujo
+   * ramo não o tem (o catálogo de imóveis, por exemplo, só existe para a
+   * imobiliária). Esconder não é bloquear, como em `equipe`.
+   */
+  modulo?: ModuloDoRamo;
+  /** O rótulo no vocabulário do ramo; ausente = `label` (o da imobiliária). */
+  rotuloDoRamo?: (v: Vocabulario) => string;
 };
 
 export type ItemNav = {
@@ -69,6 +78,10 @@ export type ItemNav = {
   gestor?: boolean;
   /** Ferramenta de equipe: some do menu do corretor independente (ver `SubItemNav`). */
   equipe?: boolean;
+  /** Módulo de um ramo só (ver `SubItemNav`). */
+  modulo?: ModuloDoRamo;
+  /** O rótulo no vocabulário do ramo (ver `SubItemNav`). */
+  rotuloDoRamo?: (v: Vocabulario) => string;
   /**
    * As telas de dentro deste destino.
    *
@@ -146,6 +159,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
         href: "/corretor/imoveis",
         label: "Imóveis",
         icone: IconePredio,
+        // O catálogo é de imóvel (tipologias, torres, entrega): só a
+        // imobiliária o vê (0244). Ver `ramos.ts` sobre não reaproveitá-lo.
+        modulo: "catalogoDeImoveis",
         // A fila de cadastro virou sub-rota justamente porque o menu estava no
         // teto; era alcançável só pelo cartão da tela de Imóveis.
         subitens: [
@@ -163,7 +179,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * (04/09/2026, decisão do usuário): o link É por imóvel, e é aqui
            * que se olha imóvel. A rota não muda, então nada salvo quebra.
            */
-          { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink },
+          { href: "/corretor/links", label: "Links por imóvel", icone: IconeLink, modulo: "catalogoDeImoveis" },
         ],
       },
     ],
@@ -199,7 +215,14 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/financeiro/fiscal", label: "Fiscal", icone: IconeExtrato, gestor: true },
           { href: "/corretor/financeiro/contador", label: "Contador", icone: IconeExtrato, gestor: true },
           { href: "/corretor/financeiro/assistente", label: "Alertas e IA", icone: IconeRobo, gestor: true },
-          { href: "/corretor/financeiro/ranking", label: "Ranking de VGV", icone: IconeTrofeu, equipe: true },
+          {
+            href: "/corretor/financeiro/ranking",
+            label: "Ranking de VGV",
+            icone: IconeTrofeu,
+            equipe: true,
+            // VGV é jargão de imóvel; nos outros ramos é "Ranking de vendas".
+            rotuloDoRamo: (v) => v.ranking,
+          },
           { href: "/corretor/financeiro/desempenho", label: "Desempenho", icone: IconeGrafico, gestor: true, equipe: true },
         ],
       },
@@ -264,7 +287,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * tudo o que serve para divulgar fica junto. As rotas não mudam.
            */
           { href: "/corretor/imoveis/criar-imagem", label: "Criar arte", icone: IconePaleta },
-          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete },
+          { href: "/corretor/marketing/video", label: "Criar vídeo", icone: IconeClaquete, modulo: "videoDeImovel" },
           // "Modelos" saiu do menu em 30/09/2026: é um botão dentro das
           // Listas de transmissão, onde os modelos são usados.
           { href: "/corretor/campanhas", label: "Listas de transmissão", icone: IconeAntena },
@@ -302,10 +325,12 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe", equipe: true },
           { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe", equipe: true },
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
-          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio" },
-          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio" },
-          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio" },
-          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio" },
+          { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio", modulo: "construtoras" },
+          { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio", modulo: "parceirosDeImoveis" },
+          // 29/10/2026 (0245): leads do ZAP, Viva Real e OLX direto no CRM — só de imobiliária.
+          { href: "/corretor/admin/portais", label: "Portais", icone: IconeTomada, secao: "Negócio", modulo: "catalogoDeImoveis" },
+          { href: "/corretor/admin/precos", label: "Preços", icone: IconeEtiqueta, secao: "Negócio", modulo: "precosDoCatalogo" },
+          { href: "/corretor/admin/credito", label: "Crédito", icone: IconeBanco, secao: "Negócio", modulo: "creditoImobiliario" },
           { href: "/corretor/admin/assistente", label: "Assistente", icone: IconeRobo, secao: "Sistema" },
         ],
       },
@@ -327,7 +352,20 @@ export const GRUPOS_NAV: GrupoNav[] = [
 export const ITENS_DA_CONTA: ItemNav[] = [
   { href: "/corretor/perfil", label: "Meu perfil", icone: IconePessoa },
   { href: "/corretor/senha", label: "Trocar senha", icone: IconeChave },
+  // 29/10/2026 (0240): falar com a equipe da Astro é assunto da conta, não
+  // do trabalho do dia; mora com perfil e senha, no avatar e no pé da gaveta.
+  // 29/10/2026 (0247): o indique e ganhe é desconto na mensalidade da
+  // CONTA, assunto de quem a administra; a central de ajuda é para todos e
+  // vem antes do suporte (ler um artigo resolve antes de abrir um chamado).
+  { href: "/corretor/indique", label: "Indique e ganhe", icone: IconePresente, gestor: true },
+  { href: "/ajuda", label: "Ajuda", icone: IconeLivro },
+  { href: "/corretor/suporte", label: "Suporte da Astro", icone: IconeBoia },
 ];
+
+/** Os itens do menu da conta que esta pessoa vê (o do gestor some para o corretor). */
+export function itensDaConta(ehGestor: boolean): ItemNav[] {
+  return ITENS_DA_CONTA.filter((item) => ehGestor || !item.gestor);
+}
 
 /**
  * Os destinos do polegar, na barra inferior do celular (mais o botão Menu).
@@ -382,16 +420,39 @@ export function ehPasta(item: ItemNav): boolean {
  * banco; para o independente nem isso: o desenho (§10) não bloqueia função
  * por tipo de grupo, e a tela de equipe continua abrindo por endereço.
  */
-export function gruposVisiveis(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo): GrupoNav[] {
+export function gruposVisiveis(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo, ramo: Ramo = RAMO_PADRAO): GrupoNav[] {
   const temEquipe = tipoDoGrupo === "imobiliaria";
-  const ve = (alvo: { gestor?: boolean; equipe?: boolean }) =>
-    (!alvo.gestor || ehGestor) && (!alvo.equipe || temEquipe);
+  // O ramo (0244, 29/10/2026) também só esconde e renomeia: o módulo que não
+  // é do ramo some, e o rótulo vira o do vocabulário dele. Na imobiliária
+  // nada muda (o vocabulário dela é o texto de sempre e ela tem todos os
+  // módulos) — `navegacao.test.ts` confere que o menu sai idêntico.
+  const vocabulario = vocabularioDoRamo(ramo);
+  const ve = (alvo: { gestor?: boolean; equipe?: boolean; modulo?: ModuloDoRamo }) =>
+    (!alvo.gestor || ehGestor) && (!alvo.equipe || temEquipe) && (!alvo.modulo || temModulo(ramo, alvo.modulo));
+  const rotular = <T extends { label: string; rotuloDoRamo?: (v: Vocabulario) => string }>(alvo: T): T => {
+    if (!alvo.rotuloDoRamo) return alvo;
+    const label = alvo.rotuloDoRamo(vocabulario);
+    return label === alvo.label ? alvo : { ...alvo, label };
+  };
   return GRUPOS_NAV.map((g) => ({
     ...g,
     itens: g.itens
       .filter(ve)
-      .map((i) => (i.subitens ? { ...i, subitens: i.subitens.filter(ve) } : i)),
+      .map(rotular)
+      .map((i) => (i.subitens ? { ...i, subitens: i.subitens.filter(ve).map(rotular) } : i)),
   })).filter((g) => g.itens.length > 0);
+}
+
+/**
+ * A barra do polegar do ramo (29/10/2026). Na imobiliária é `ATALHOS_MOBILE`,
+ * o mesmo array de sempre. Nos outros ramos Imóveis não existe: o terceiro
+ * destino vira o Assistente (a IA do WhatsApp), que é tópico próprio — o
+ * `destinoAtivo` acende ele certo, sem outra regra.
+ */
+export function atalhosMobile(ramo: Ramo = RAMO_PADRAO): ItemNav[] {
+  if (temModulo(ramo, "catalogoDeImoveis")) return ATALHOS_MOBILE;
+  const assistente = GRUPOS_NAV.flatMap((g) => g.itens).find((i) => i.href === "/corretor/whatsapp");
+  return [...ATALHOS_MOBILE.filter((i) => !i.modulo || temModulo(ramo, i.modulo)), ...(assistente ? [assistente] : [])];
 }
 
 /**
@@ -491,6 +552,7 @@ const MODULO_POR_DESTINO: Record<string, Modulo> = {
   "/corretor/whatsapp": "whatsapp",
   "/corretor/perfil": "conta",
   "/corretor/senha": "conta",
+  "/corretor/suporte": "conta",
   "/corretor/admin": "admin",
 };
 
@@ -665,6 +727,38 @@ function IconeChave(p: SVGProps<SVGSVGElement>) {
       <rect x="4.5" y="10.5" width="15" height="9.5" rx="2" />
       <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
       <circle cx="12" cy="15.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconeBoia(p: SVGProps<SVGSVGElement>) {
+  // Boia salva-vidas: o sinal de "ajuda" que não se confunde com a conversa.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M6 6l3.5 3.5M14.5 14.5 18 18M18 6l-3.5 3.5M9.5 14.5 6 18" />
+    </svg>
+  );
+}
+
+function IconePresente(p: SVGProps<SVGSVGElement>) {
+  // Uma caixa de presente com laço: o "ganhe" do indique e ganhe.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <rect x="4" y="9" width="16" height="11" rx="1.5" />
+      <path d="M3 9h18M12 9v11" />
+      <path d="M12 9c-1.5-3.5-5.5-4-5.5-1.5S10 9 12 9Zm0 0c1.5-3.5 5.5-4 5.5-1.5S14 9 12 9Z" />
+    </svg>
+  );
+}
+
+function IconeLivro(p: SVGProps<SVGSVGElement>) {
+  // Livro aberto: a central de ajuda (ler), diferente da boia (falar com alguém).
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z" />
+      <path d="M12 6.5v13" />
     </svg>
   );
 }
@@ -929,6 +1023,15 @@ function IconeBanco(p: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" {...traco} {...p}>
       <path d="M3 9l9-5 9 5H3z" />
       <path d="M5 9v8M9.5 9v8M14.5 9v8M19 9v8M3 20h18" />
+    </svg>
+  );
+}
+
+function IconeTomada(p: SVGProps<SVGSVGElement>) {
+  // Plugue: a integração que liga o portal ao CRM.
+  return (
+    <svg viewBox="0 0 24 24" {...traco} {...p}>
+      <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8zM12 17v4" />
     </svg>
   );
 }

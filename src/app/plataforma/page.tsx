@@ -5,12 +5,27 @@ import type { EstadoDaCobranca } from "@/lib/planos/cobranca";
 import { listarGruposDaPlataforma, type ResumoDeGrupo } from "@/lib/plataforma/grupos";
 import { FILTROS_DE_TIPO, hrefDoFiltro, lerFiltroDeTipo, separarPorTipo } from "@/lib/plataforma/listaPorTipo";
 import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
+import { lerContasSemUso } from "@/lib/plataforma/atividade";
+import { contarChamadosAbertos, contarChamadosNovos } from "@/lib/plataforma/chamados";
+import {
+  calcularPainel,
+  filtrarPorIndicador,
+  FILTROS_DE_INDICADOR,
+  hrefDaLista,
+  lerFiltroDeIndicador,
+} from "@/lib/plataforma/painelDeNumeros";
 import { contarPedidosNovos } from "@/lib/plataforma/pedidos";
 import { lerSaudeDosGrupos } from "@/lib/plataforma/saude";
+import { contasEmRisco, type RiscoDaConta } from "@/lib/plataforma/riscoDeCancelamento";
+import { lerRiscosDasContas } from "@/lib/plataforma/sinaisDeRisco";
+import { SeloDoRisco } from "./SeloDoRisco";
 import { AtivarAvisosDaPlataforma } from "./AtivarAvisosDaPlataforma";
 import { CustoDaIa } from "./CustoDaIa";
+import { PainelDeNumeros } from "./PainelDeNumeros";
 import { SaudeNoCartao } from "./SaudeDoGrupo";
 import { SeloDoTipo } from "./SeloDoTipo";
+import { IconeDoRamo } from "@/lib/ramos/IconeDoRamo";
+import { nomeDoRamo } from "@/lib/ramos/ramos";
 import { UsoDaIa } from "./UsoDaIa";
 
 export const metadata: Metadata = { title: "Contas" };
@@ -24,6 +39,7 @@ const SITUACAO: Record<ResumoDeGrupo["situacao"], { rotulo: string; classe: stri
 
 /** A mensalidade na lista (fase 2C); o plano de custo não é cobrado e fica sem etiqueta. */
 const COBRANCA: Partial<Record<EstadoDaCobranca, { rotulo: string; classe: string }>> = {
+  teste: { rotulo: "Teste grátis", classe: "bg-campo text-titulo border-linha-forte" },
   em_dia: { rotulo: "Mensalidade em dia", classe: "bg-ok-lavado text-ok border-ok-linha" },
   pendente: { rotulo: "Mensalidade vencida", classe: "bg-alerta-lavado text-alerta border-alerta-linha" },
   suspenso: { rotulo: "Suspenso por cobrança", classe: "bg-perigo-lavado text-perigo border-perigo-linha" },
@@ -57,7 +73,7 @@ function Numero({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
   );
 }
 
-type Busca = Promise<{ tipo?: string | string[] }>;
+type Busca = Promise<{ tipo?: string | string[]; ver?: string | string[] }>;
 
 /**
  * A lista de contas da plataforma, em duas seções: imobiliárias e corretores
@@ -65,16 +81,42 @@ type Busca = Promise<{ tipo?: string | string[] }>;
  * A guarda aqui, e não só no layout, porque layout não re-executa entre
  * rotas irmãs; e é dela que sai a prova que a leitura pede.
  *
- * O filtro é `?tipo=` (links, funciona sem JS).
+ * O filtro é `?tipo=` (links, funciona sem JS). Em cima, o painel de números
+ * (29/10/2026); cada número leva à lista filtrada por `?ver=`.
  */
 export default async function PlataformaPage({ searchParams }: { searchParams: Busca }) {
   const prova = await exigirAdminDaPlataformaNaPagina();
-  const filtro = lerFiltroDeTipo((await searchParams).tipo);
-  const grupos = await listarGruposDaPlataforma(prova);
-  const saudes = await lerSaudeDosGrupos(prova, grupos);
-  // Os pedidos do assistente da página de vendas (29/10/2026).
-  const pedidosNovos = await contarPedidosNovos(prova);
-  const { imobiliarias, independentes } = separarPorTipo(grupos);
+  const busca = await searchParams;
+  const filtro = lerFiltroDeTipo(busca.tipo);
+  const ver = lerFiltroDeIndicador(busca.ver);
+  const agora = new Date();
+  // Em paralelo (29/10/2026): as contas, os pedidos do assistente da página
+  // de vendas e os chamados do painel e do site (0240). As contagens de
+  // pedido e chamado não dependem da lista.
+  const [grupos, pedidosNovos, chamadosNovos, chamadosAbertos] = await Promise.all([
+    listarGruposDaPlataforma(prova),
+    contarPedidosNovos(prova),
+    contarChamadosNovos(prova),
+    contarChamadosAbertos(prova),
+  ]);
+  // A saúde (custo da IA) e o "sem uso há 7 dias" partem da lista, juntos.
+  // O risco de cancelamento (29/10/2026) entra no mesmo lote: só contagens
+  // por conta, depois da guarda desta página (sinaisDeRisco.ts).
+  const [saudes, semUso, riscos] = await Promise.all([
+    lerSaudeDosGrupos(prova, grupos, agora),
+    lerContasSemUso(prova, grupos, agora),
+    lerRiscosDasContas(agora),
+  ]);
+  const riscoPorConta = new Map<string, RiscoDaConta>((riscos ?? []).map((r) => [r.grupoId, r.risco]));
+  const emRiscoOrdenadas = riscos ? contasEmRisco(riscos) : [];
+  const emRisco = riscos ? new Set(emRiscoOrdenadas.map((r) => r.grupoId)) : null;
+  const custos = Object.fromEntries(
+    Object.entries(saudes).map(([id, s]) => [id, { custoBrl: s.custo.custoBrl, alerta: s.custo.alerta }]),
+  );
+  const painel = calcularPainel({ contas: grupos, custos, semUso, agora });
+  // O cabeçalho conta todas; as seções mostram só as do indicador escolhido.
+  const total = separarPorTipo(grupos);
+  const { imobiliarias, independentes } = separarPorTipo(filtrarPorIndicador(grupos, ver, { semUso, custos, emRisco }));
 
   const secoes = [
     {
@@ -82,14 +124,14 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
       id: "imobiliarias",
       titulo: "Imobiliárias",
       lista: imobiliarias,
-      vazio: "Nenhuma imobiliária cadastrada ainda.",
+      vazio: ver ? "Nenhuma imobiliária neste filtro." : "Nenhuma imobiliária cadastrada ainda.",
     },
     {
       tipo: "independente" as const,
       id: "independentes",
       titulo: "Corretores independentes",
       lista: independentes,
-      vazio: "Nenhum corretor independente cadastrado ainda.",
+      vazio: ver ? "Nenhum corretor independente neste filtro." : "Nenhum corretor independente cadastrado ainda.",
     },
   ].filter((secao) => filtro === "todos" || filtro === secao.tipo);
 
@@ -100,7 +142,14 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
     const independente = g.tipo === "independente";
     return (
       <li key={g.id} className="cartao flex min-w-0 flex-col gap-4 p-5">
-        <SeloDoTipo tipo={g.tipo} grupoId={g.id} />
+        <div className="flex flex-wrap items-center gap-2">
+          <SeloDoTipo tipo={g.tipo} grupoId={g.id} />
+          {/* O ramo do negócio (0244): o que personaliza o CRM do cliente. */}
+          <span className="text-fluid-xs border-linha text-apoio inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1">
+            <IconeDoRamo ramo={g.ramo} className="size-3.5 shrink-0" />
+            {nomeDoRamo(g.ramo, g.ramoDescricao)}
+          </span>
+        </div>
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="text-titulo text-fluid-lg font-medium break-words">
@@ -115,8 +164,17 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
             {cobranca && (
               <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${cobranca.classe}`}>{cobranca.rotulo}</span>
             )}
+            <SeloDoRisco risco={riscoPorConta.get(g.id)} />
           </div>
         </div>
+        {/* Os motivos do risco (29/10/2026), só quando há risco. */}
+        {riscoPorConta.get(g.id) && riscoPorConta.get(g.id)!.nivel !== "baixo" && (
+          <ul className="text-fluid-xs text-corpo -mt-2 list-disc space-y-0.5 pl-5">
+            {riscoPorConta.get(g.id)!.motivos.map((m) => (
+              <li key={m.chave}>{m.texto}</li>
+            ))}
+          </ul>
+        )}
 
         <div className="border-linha border-t pt-4">
           <SaudeNoCartao saude={saude} />
@@ -172,57 +230,89 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
         <p className="text-fluid-xs text-apoio tracking-[0.16em] uppercase">Plataforma</p>
         <h1 className="font-display text-titulo text-fluid-2xl mt-1">Contas</h1>
         <p className="text-fluid-sm text-apoio mt-2">
-          {imobiliarias.length} {imobiliarias.length === 1 ? "imobiliária" : "imobiliárias"} e {independentes.length}{" "}
-          {independentes.length === 1 ? "corretor independente" : "corretores independentes"}.
+          {total.imobiliarias.length} {total.imobiliarias.length === 1 ? "imobiliária" : "imobiliárias"} e{" "}
+          {total.independentes.length}{" "}
+          {total.independentes.length === 1 ? "corretor independente" : "corretores independentes"}.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {/* O que pede resposta agora (30/10/2026): os botões com contador saíram
+          do topo para a navegação; o aviso de novos fica aqui. */}
+      {((pedidosNovos ?? 0) > 0 || (chamadosNovos ?? 0) > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {(pedidosNovos ?? 0) > 0 && (
+            <Link href="/plataforma/pedidos" className="text-fluid-sm border-acento bg-acento-lavado text-titulo flex min-h-11 items-center gap-2 rounded-xl border px-4 font-medium">
+              {pedidosNovos} {pedidosNovos === 1 ? "pedido de contratação novo" : "pedidos de contratação novos"}
+            </Link>
+          )}
+          {(chamadosNovos ?? 0) > 0 && (
+            <Link href="/plataforma/suporte" className="text-fluid-sm border-acento bg-acento-lavado text-titulo flex min-h-11 items-center gap-2 rounded-xl border px-4 font-medium">
+              {chamadosNovos} {chamadosNovos === 1 ? "chamado novo" : "chamados novos"}
+            </Link>
+          )}
+        </div>
+      )}
+
+      <PainelDeNumeros painel={painel} pedidosNovos={pedidosNovos} chamadosAbertos={chamadosAbertos} />
+
+      {/* Risco de cancelamento (29/10/2026): as contas que pedem uma ligação
+          da Astro, com o motivo principal. O mesmo cálculo do aviso das 9h. */}
+      <section aria-labelledby="titulo-risco" className="cartao flex flex-col gap-3 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="titulo-risco" className="text-fluid-sm text-titulo font-bold">
+            Risco de cancelamento
+          </h2>
+          {emRiscoOrdenadas.length > 0 && (
+            <Link href={hrefDaLista({ tipo: filtro, ver: "risco" })} className="text-fluid-sm text-acento-suave inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+              Ver as {emRiscoOrdenadas.length} na lista
+            </Link>
+          )}
+        </div>
+        {riscos === null ? (
+          <p className="text-fluid-sm text-apoio">Não medido agora (a leitura falhou; tente de novo).</p>
+        ) : emRiscoOrdenadas.length === 0 ? (
+          <p className="text-fluid-sm text-apoio">Nenhuma conta com risco médio ou alto hoje.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {emRiscoOrdenadas.slice(0, 5).map((c) => (
+              <li key={c.grupoId} className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <Link href={`/plataforma/grupos/${c.grupoId}`} className="text-fluid-sm text-titulo min-w-0 break-words underline-offset-4 hover:underline">
+                  {c.nome}
+                  <span className="text-apoio"> · {c.risco.motivos[0]?.texto}</span>
+                </Link>
+                <SeloDoRisco risco={c.risco} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* As áreas (pedidos, suporte, indicações…) moram na navegação da casca
+          desde 30/10/2026; aqui ficam só os atalhos de criar conta, que no
+          computador também estão na barra lateral. */}
+      <div className="flex flex-wrap gap-2 lg:hidden">
         <Link
           href="/plataforma/grupos/novo/imobiliaria"
           className="text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor flex min-h-11 items-center justify-center rounded-xl px-4 font-medium"
         >
-          Nova imobiliária
+          Nova conta de equipe
         </Link>
         <Link
           href="/plataforma/grupos/novo/independente"
           className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
         >
-          Novo corretor independente
-        </Link>
-        <Link
-          href="/plataforma/pedidos"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center gap-2 px-4 font-medium"
-        >
-          Pedidos de contratação
-          {pedidosNovos !== null && pedidosNovos > 0 && (
-            <span className="bg-acento text-sobre-cor text-fluid-xs rounded-full px-2 py-0.5 font-bold">
-              {pedidosNovos} {pedidosNovos === 1 ? "novo" : "novos"}
-            </span>
-          )}
-        </Link>
-        <Link
-          href="/plataforma/acessos"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Buscar acesso
-        </Link>
-        <Link
-          href="/plataforma/administradores"
-          className="text-fluid-sm botao-secundario text-titulo flex min-h-11 items-center justify-center px-4 font-medium"
-        >
-          Administradores
+          Novo profissional autônomo
         </Link>
       </div>
 
       {/* Os atendimentos da Astro no celular do ADM (29/10/2026, 0239). */}
       <AtivarAvisosDaPlataforma />
 
-      <nav aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">
+      <nav id="contas" aria-label="Filtrar por tipo" className="flex scroll-mt-4 flex-wrap gap-2">
         {FILTROS_DE_TIPO.map((f) => (
           <Link
             key={f.valor}
-            href={hrefDoFiltro(f.valor)}
+            href={ver ? hrefDaLista({ tipo: f.valor, ver }) : hrefDoFiltro(f.valor)}
             aria-current={filtro === f.valor ? "page" : undefined}
             className={`text-fluid-sm flex min-h-11 items-center rounded-full border px-4 ${
               filtro === f.valor ? "border-acento bg-acento-lavado text-titulo font-bold" : "border-linha-forte text-corpo"
@@ -231,6 +321,16 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
             {f.rotulo}
           </Link>
         ))}
+        {ver && (
+          <Link
+            href={hrefDaLista({ tipo: filtro })}
+            className="text-fluid-sm border-acento bg-acento-lavado text-titulo flex min-h-11 items-center gap-2 rounded-full border px-4"
+          >
+            {FILTROS_DE_INDICADOR[ver]}
+            <span aria-hidden>×</span>
+            <span className="sr-only">(tirar o filtro)</span>
+          </Link>
+        )}
       </nav>
 
       {secoes.map((secao) => (
@@ -242,7 +342,7 @@ export default async function PlataformaPage({ searchParams }: { searchParams: B
           {secao.lista.length === 0 ? (
             <p className="cartao text-fluid-sm text-apoio p-5">{secao.vazio}</p>
           ) : (
-            <ul className="grid gap-4 md:grid-cols-2">{secao.lista.map(cartao)}</ul>
+            <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{secao.lista.map(cartao)}</ul>
           )}
         </section>
       ))}

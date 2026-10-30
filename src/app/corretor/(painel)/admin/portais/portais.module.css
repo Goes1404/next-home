@@ -1,0 +1,170 @@
+/* Integração com portais (29/10/2026). Só os tokens de cor do tema: os dois
+   temas saem certos sem regra própria. */
+
+.lista {
+  display: grid;
+  gap: 1rem;
+}
+
+.cartao {
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .cartao {
+    padding: 1.25rem;
+  }
+}
+
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.titulo {
+  font-weight: 700;
+  color: var(--color-titulo);
+  font-size: 1rem;
+}
+
+.seloLigado,
+.seloDesligado {
+  border-radius: 999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--color-linha-forte);
+}
+
+.seloLigado {
+  color: var(--color-ok);
+  border-color: var(--color-ok-linha);
+  background: var(--color-ok-lavado);
+}
+
+.seloDesligado {
+  color: var(--color-apoio);
+}
+
+.rotulo {
+  font-size: 0.75rem;
+  color: var(--color-apoio);
+}
+
+.url {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  font-size: 0.8125rem;
+  color: var(--color-corpo);
+  background: var(--color-campo);
+  border: 1px solid var(--color-linha);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.botao,
+.botaoPrimario,
+.botaoDiscreto {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.botaoPrimario {
+  background: var(--color-acento);
+  color: var(--color-sobre-cor);
+  font-weight: 700;
+}
+
+.botaoPrimario:hover {
+  background: var(--color-acento-hover);
+}
+
+.botao {
+  border: 1px solid var(--color-linha-forte);
+  color: var(--color-corpo);
+}
+
+.botao:hover {
+  border-color: var(--color-acento-linha);
+}
+
+.botaoDiscreto {
+  color: var(--color-apoio);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.botao:disabled,
+.botaoPrimario:disabled,
+.botaoDiscreto:disabled {
+  opacity: 0.6;
+}
+
+.apoio {
+  font-size: 0.75rem;
+  color: var(--color-apoio);
+}
+
+.detalhes summary {
+  cursor: pointer;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-corpo);
+}
+
+.passos {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-corpo);
+}
+
+.exemplo {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  max-width: 100%;
+  font-size: 0.75rem;
+  color: var(--color-corpo);
+  background: var(--color-campo);
+  border: 1px solid var(--color-linha);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.ok,
+.erro {
+  font-size: 0.8125rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-linha-forte);
+}
+
+.ok {
+  color: var(--color-ok);
+  border-color: var(--color-ok-linha);
+}
+
+.erro {
+  color: var(--color-perigo);
+}

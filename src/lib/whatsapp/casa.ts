@@ -20,6 +20,7 @@ import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import type { LinksDoImovel } from "@/lib/imovelPublico/link";
 import { site } from "@/lib/site";
 import type { TomVozBot } from "./types";
+import { lerRamo, limparDescricaoDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 export const TONS_DA_ASSISTENTE: readonly TomVozBot[] = [
   "consultivo_alto_padrao",
@@ -63,6 +64,15 @@ export interface IdentidadeDaCasa {
    * o grupo 1 nunca preenche, e o prompt dele fica byte a byte o mesmo.
    */
   links?: LinksDoImovel;
+  /**
+   * O ramo do negócio do grupo (0244, 29/10/2026) — SÓ quando não é
+   * imobiliária. Ausente = imobiliária, e o prompt é o de sempre, byte a
+   * byte (`construirPromptSistema`); presente, o prompt é o do ramo
+   * (`promptDoRamo.ts`).
+   */
+  ramo?: Exclude<Ramo, "imobiliaria">;
+  /** O texto do ramo "outro" ("Clínica veterinária"). */
+  ramoDescricao?: string | null;
 }
 
 /** As colunas de `grupos` que a casa lê. */
@@ -72,6 +82,9 @@ export interface LinhaDaCasa {
   ia_nome_assistente: string | null;
   ia_regiao: string | null;
   ia_tom: string | null;
+  /** 0244: ausente (banco antes dela) = imobiliária. */
+  ramo?: string | null;
+  ramo_descricao?: string | null;
 }
 
 /**
@@ -129,7 +142,15 @@ export function casaDoGrupo(linha: LinhaDaCasa | null, grupoId: string): Identid
 
   const nomeDaCasa = limparCampoDaCasa(linha.ia_nome_da_casa, TAMANHO_MAXIMO.nomeDaCasa);
   const regiao = limparCampoDaCasa(linha.ia_regiao, TAMANHO_MAXIMO.regiao);
+  // O ramo só entra na casa quando NÃO é imobiliária (e nunca na Next Home):
+  // a casa da imobiliária fica com as mesmas chaves de antes da 0244.
+  const ramo = grupoId === GRUPO_NEXT_HOME_ID ? "imobiliaria" : lerRamo(linha.ramo);
+  const doRamo =
+    ramo === "imobiliaria"
+      ? {}
+      : { ramo, ramoDescricao: ramo === "outro" ? limparDescricaoDoRamo(linha.ramo_descricao) : null };
   return {
+    ...doRamo,
     nomeDaCasa: nomeDaCasa ?? padrao.nomeDaCasa,
     // A região configurada troca as três frases de uma vez: sobrar o
     // exemplo "Alphaville, Osasco" com outra região seria pior que nada.

@@ -4,6 +4,7 @@ import { cache } from "react";
 import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
+import { lerRamo, limparDescricaoDoRamo, RAMO_PADRAO, type Ramo } from "@/lib/ramos/ramos";
 import {
   filtrarContasOcultas,
   filtroForaDasContasOcultas,
@@ -61,6 +62,14 @@ export type CorretorSessao = CorretorPerfil & {
    * navegação, mas as rotas continuam abrindo (§10 do desenho).
    */
   tipoDoGrupo: TipoDoGrupo;
+  /**
+   * O ramo do negócio do grupo (0244, 29/10/2026): o vocabulário, os módulos
+   * do menu e o selo da barra da empresa. Como o tipo, só governa o que se
+   * MOSTRA; erro na leitura vale "imobiliaria", o painel de sempre.
+   */
+  ramo: Ramo;
+  /** O texto livre do ramo "outro" ("Clínica veterinária"); `null` nos demais. */
+  ramoDescricao: string | null;
 };
 
 /**
@@ -125,6 +134,8 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
     // A linha lida tem de ser a do PRÓPRIO grupo: se um dia uma policy
     // deixar ler outro, o menu não pega o tipo do vizinho.
     tipoDoGrupo: tipoDoGrupo && tipoDoGrupo.id === data.grupo_id ? tipoDoGrupo.tipo : "imobiliaria",
+    ramo: tipoDoGrupo && tipoDoGrupo.id === data.grupo_id ? tipoDoGrupo.ramo : RAMO_PADRAO,
+    ramoDescricao: tipoDoGrupo && tipoDoGrupo.id === data.grupo_id ? tipoDoGrupo.ramoDescricao : null,
   };
 });
 
@@ -140,14 +151,30 @@ export const getCorretorLogado = cache(async function getCorretorLogado(): Promi
  */
 async function lerTipoDoGrupo(
   supabase: Awaited<ReturnType<typeof createClient>>,
-): Promise<{ id: string; tipo: TipoDoGrupo } | null> {
+): Promise<{ id: string; tipo: TipoDoGrupo; ramo: Ramo; ramoDescricao: string | null } | null> {
   try {
-    const { data, error } = await supabase
+    // O ramo (0244) vem na mesma leitura. Antes da 0244 aplicada a coluna
+    // não existe (42703, ou o 42501 do grant por coluna da 0196): aí lê o
+    // tipo como antes e o ramo fica "imobiliaria" — o menu do independente
+    // não pode cair por causa do ramo.
+    const comRamo = await supabase
       .from("grupos")
-      .select("id, tipo")
-      .maybeSingle<{ id: string; tipo: string }>();
-    if (error || !data) return null;
-    return { id: data.id, tipo: data.tipo === "independente" ? "independente" : "imobiliaria" };
+      .select("id, tipo, ramo, ramo_descricao")
+      .maybeSingle<{ id: string; tipo: string; ramo?: string | null; ramo_descricao?: string | null }>();
+    let linha = comRamo.data;
+    if (comRamo.error) {
+      const soTipo = await supabase.from("grupos").select("id, tipo").maybeSingle<{ id: string; tipo: string }>();
+      if (soTipo.error) return null;
+      linha = soTipo.data;
+    }
+    if (!linha) return null;
+    const ramo = lerRamo(linha.ramo);
+    return {
+      id: linha.id,
+      tipo: linha.tipo === "independente" ? "independente" : "imobiliaria",
+      ramo,
+      ramoDescricao: ramo === "outro" ? limparDescricaoDoRamo(linha.ramo_descricao) : null,
+    };
   } catch {
     return null;
   }

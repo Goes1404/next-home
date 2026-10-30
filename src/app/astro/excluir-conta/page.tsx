@@ -22,21 +22,21 @@ export default function ExcluirConta() {
       atualizadaEm="28 de outubro de 2026"
       introducao={<p>Como pedir a exclusão da sua conta no CRM da {nome} (site e app Android), e o que acontece com os dados.</p>}
     >
-      <SecaoLegal titulo="Se você é corretor de uma imobiliária">
+      <SecaoLegal titulo="Se você faz parte da equipe de uma empresa">
         <ul>
           <li>
-            Peça ao gestor da sua imobiliária para encerrar o seu acesso. Ele faz isso em Administração, Contas, no
+            Peça ao gestor da sua empresa para encerrar o seu acesso. Ele faz isso em Administração, Contas, no
             próprio CRM.
           </li>
-          <li>Os leads e as conversas de trabalho pertencem à imobiliária e continuam com ela.</li>
+          <li>Os leads e as conversas de trabalho pertencem à empresa e continuam com ela.</li>
           <li>
             Para apagar também o seu login e os seus dados pessoais de cadastro, peça à {nome}: <ContatoDaAstro />.
-            Informe o e-mail de login e o nome da imobiliária.
+            Informe o e-mail de login e o nome da empresa.
           </li>
         </ul>
       </SecaoLegal>
 
-      <SecaoLegal titulo="Se você é corretor autônomo ou dono da conta da imobiliária">
+      <SecaoLegal titulo="Se você é autônomo ou dono da conta da empresa">
         <ul>
           <li>
             Peça o cancelamento e a exclusão à {nome}: <ContatoDaAstro />. Envie o pedido do e-mail de login da conta,

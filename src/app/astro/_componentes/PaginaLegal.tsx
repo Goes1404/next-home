@@ -59,7 +59,7 @@ export function ContatoDaAstro() {
   const { email } = dadosDaEmpresa();
   const whatsapp = linkDoWhatsAppDaAstro(undefined, "Olá! Tenho um pedido sobre os meus dados no CRM da Astro Soluções.");
   if (!email && !whatsapp) {
-    return <>pelo gestor da sua imobiliária, que encaminha o pedido à {MARCA_DA_PLATAFORMA.nome}</>;
+    return <>pelo gestor da sua empresa, que encaminha o pedido à {MARCA_DA_PLATAFORMA.nome}</>;
   }
   return (
     <>
@@ -95,6 +95,9 @@ export function RodapeLegal() {
           {cnpj ? `, CNPJ ${cnpj}` : ""}
         </span>
         <nav aria-label="Documentos" className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/astro/contato" className="underline underline-offset-4 hover:text-[var(--azul)]">
+            Fale com a Astro
+          </Link>
           <Link href="/astro/privacidade" className="underline underline-offset-4 hover:text-[var(--azul)]">
             Privacidade
           </Link>

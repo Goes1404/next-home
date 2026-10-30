@@ -12,6 +12,7 @@ import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icon
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { redirect } from "next/navigation";
+import { NavFaixaDaPlataforma, NavLateralDaPlataforma } from "./NavDaPlataforma";
 
 /** Em `astroimob.vercel.app` o ícone é o da Astro Soluções; nos outros endereços, como sempre foi. */
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,7 +48,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
       <ComportamentoDeApp />
       <FontesDaAstroNoDocumento />
       <header className="border-linha bg-fundo/85 pt-safe sticky top-0 z-40 border-b">
-        <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
+        <div className="mx-auto flex w-full max-w-[96rem] items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/plataforma" className="font-display text-titulo shrink-0 text-lg">
               <MarcaAstro selo="size-7" destaque="text-apoio font-normal" />
@@ -57,12 +58,6 @@ export default async function PlataformaLayout({ children }: { children: React.R
             <span className="text-fluid-xs text-apoio hidden truncate tracking-[0.16em] uppercase sm:inline">Plataforma</span>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              href="/plataforma/administradores"
-              className="text-fluid-sm text-apoio hover:bg-vidro hover:text-titulo hidden min-h-11 items-center rounded-xl px-3 transition-colors sm:flex"
-            >
-              Administradores
-            </Link>
             <SeletorTema />
             <form action={sair} data-sair>
               <button
@@ -76,11 +71,19 @@ export default async function PlataformaLayout({ children }: { children: React.R
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[84rem] flex-1 px-4 pt-6 pb-16 md:px-8">
-        <p className="text-fluid-sm text-apoio border-linha mb-6 rounded-xl border px-4 py-3">
-          Esta área mostra cadastro e números, nunca conversas nem fichas.
-        </p>
-        {children}
+      {/* Computador (30/10/2026): barra lateral com as áreas + o conteúdo ao
+          lado, usando a largura da tela; celular: faixa de atalhos no topo. */}
+      <div className="mx-auto grid w-full max-w-[96rem] flex-1 gap-8 px-4 pt-6 pb-16 md:px-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="hidden lg:block">
+          <NavLateralDaPlataforma />
+        </aside>
+        <div className="min-w-0">
+          <NavFaixaDaPlataforma />
+          <p className="text-fluid-sm text-apoio border-linha mb-6 rounded-xl border px-4 py-3">
+            Esta área mostra cadastro e números, nunca conversas nem fichas.
+          </p>
+          {children}
+        </div>
       </div>
     </main>
   );

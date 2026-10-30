@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FaixaCobranca } from "./_componentes/FaixaCobranca";
 import { FaixaConexao } from "./_componentes/FaixaConexao";
 import { FaixaCotaDaIa } from "./_componentes/FaixaCotaDaIa";
+import { FaixaAvisosDaAstro } from "./_componentes/FaixaAvisosDaAstro";
 import { FaixaLimitesDoPlano } from "./_componentes/FaixaLimitesDoPlano";
 import { FundoDoPainel } from "./_componentes/FundoDoPainel";
 import { LuzDosCartoes } from "./_componentes/LuzDosCartoes";
@@ -17,9 +19,12 @@ import { BalaoConsultor } from "./BalaoConsultor";
 import { CabecalhoDoPainel } from "./_componentes/CabecalhoDoPainel";
 import { COOKIE_MENU_LATERAL, lerMenuRecolhido } from "./_componentes/menuLateral";
 import { CromaDoModulo } from "./CromaDoModulo";
+import { BotaoBuscaRapida } from "./_componentes/busca/BotaoBuscaRapida";
+import { SincronizarOffline } from "./_componentes/SincronizarOffline";
 import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { MenuDaConta } from "./MenuDaConta";
+import { RamoDoPainelProvider } from "@/lib/ramos/RamoDoPainel";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { MARCA_DA_PLATAFORMA, rotuloDaConta } from "@/lib/marcaDaPlataforma";
@@ -31,6 +36,9 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { iniciais } from "@/lib/format";
 import { cadastroEstaPendente } from "@/lib/corretores/cadastroPendente";
 import { createClient } from "@/lib/supabase/server";
+import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { contaAceitouTermoDeAdesao } from "@/lib/termos/aceiteDoTermoDeAdesao";
+import { CAMINHO_DO_TERMO_DE_ADESAO, TERMO_DE_ADESAO_OBRIGATORIO, precisaAceitarTermoDeAdesao } from "@/lib/termos/termoDeAdesao";
 
 /**
  * Título das abas e ícone do painel. A Next Home (grupo 1) fica como sempre
@@ -96,24 +104,40 @@ export default async function PainelLayout({
     const { data: ehAdmin } = await supabase.rpc("eh_admin_da_plataforma");
     if (ehAdmin === true) redirect("/plataforma");
   }
-  // Termos de uso no primeiro acesso (limites do plano, 0198): quem não aceitou a
-  // O aceite dos termos está temporariamente desativado; a página e a action
-  // continuam preservadas para reativação posterior.
-  // Termos de uso no primeiro acesso (fase 2D, 0198): quem não aceitou a
-  // versão vigente vai ler e aceitar antes de qualquer tela. A página dos
-  // termos mora FORA deste grupo (senão seria redirecionada para si mesma),
-  // e entrar, recuperar, criar e trocar senha também: nada disso passa por
-  // aqui (trocar a senha provisória não pode esperar o aceite).
+  // Termos de USO no primeiro acesso (fase 2D, 0198): DESLIGADOS desde
+  // 23/10/2026. Pediam aceite de TODA pessoa do painel e travaram a entrada
+  // da equipe recém-criada da Aretz (senha provisória → termos → só depois o
+  // painel). A página e a action continuam preservadas.
+  //
+  // Termo de ADESÃO (0247, 29/10/2026): o contrato da CONTA, só para o
+  // GESTOR (e o profissional independente, gestor do próprio grupo), uma vez
+  // por versão e por conta; corretor nunca é parado, e a conta da casa (Next
+  // Home) fica de fora. A página mora FORA deste grupo (senão seria
+  // redirecionada para si mesma), como as de entrar e trocar senha. Erro ao
+  // ler o aceite NÃO tranca o painel (`contaAceitouTermoDeAdesao`).
+  if (TERMO_DE_ADESAO_OBRIGATORIO && corretor && corretor.papel === "gestor" && corretor.grupoId !== GRUPO_NEXT_HOME_ID) {
+    const sessao = await createClient();
+    const contaJaAceitou = await contaAceitouTermoDeAdesao(sessao, corretor.grupoId);
+    if (precisaAceitarTermoDeAdesao({ papel: corretor.papel, ehContaDaCasa: false, contaJaAceitou })) {
+      redirect(CAMINHO_DO_TERMO_DE_ADESAO);
+    }
+  }
   const marca = await marcaDoPainel();
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
   // padrão de antes (imobiliária), que só esconde o que já escondia.
   const tipoDoGrupo = corretor?.tipoDoGrupo ?? "imobiliaria";
+  // O ramo da conta (0244, 29/10/2026): todo login cai no MESMO painel
+  // (`/corretor`), e é o ramo que o faz ser o CRM daquele negócio —
+  // vocabulário, módulos do menu e o selo da barra. Sem sessão, imobiliária.
+  const ramo = corretor?.ramo ?? "imobiliaria";
+  const ramoDescricao = corretor?.ramoDescricao ?? null;
   // A lateral do computador nasce do jeito que a pessoa deixou (ver menuLateral.ts).
   const menuRecolhido = lerMenuRecolhido(guardados.get(COOKIE_MENU_LATERAL)?.value);
 
   return (
     <MarcaDoPainelProvider marca={{ nome: marca.nome, wordmark: marca.wordmark, logoUrl: marca.logoUrl }}>
+    <RamoDoPainelProvider ramo={ramo} descricao={ramoDescricao}>
     <CromaDoModulo className={`${FONTES_DA_ASTRO} bg-fundo relative isolate flex min-h-svh flex-1 flex-col`}>
       {/*
         A aurora e o grão, fixos atrás de todo o painel (24/09/2026). São o
@@ -154,14 +178,14 @@ export default async function PainelLayout({
                 <span aria-hidden className="bg-linha-forte mx-1.5 h-6 w-px shrink-0 sm:mx-2.5" />
                 <Link
                   href="/"
-                  title={`${rotuloDaConta(tipoDoGrupo)}: ${marca.nome}`}
+                  title={`${rotuloDaConta(tipoDoGrupo, ramo, ramoDescricao)}: ${marca.nome}`}
                   className="flex min-w-0 items-center gap-2.5"
                 >
                   <span className="font-display text-titulo min-w-0 truncate text-lg">
                     <LogoDoPainel marca={marca} destaque="text-acento-suave" />
                   </span>
                   <span className="border-linha text-apoio hidden shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] tracking-[0.08em] uppercase md:inline">
-                    {rotuloDaConta(tipoDoGrupo)}
+                    {rotuloDaConta(tipoDoGrupo, ramo, ramoDescricao)}
                   </span>
                 </Link>
               </>
@@ -169,6 +193,9 @@ export default async function PainelLayout({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Busca rápida (29/10/2026): lupa no celular, "Buscar ⌘K" no
+                computador. A paleta só é baixada no primeiro uso. */}
+            {corretor && <BotaoBuscaRapida ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} />}
             <SeletorTema />
 
             {corretor && (
@@ -176,6 +203,7 @@ export default async function PainelLayout({
                 nome={corretor.nome}
                 fotoUrl={corretor.fotoUrl}
                 iniciais={iniciais(corretor.nome)}
+                ehGestor={ehGestor}
                 formularioSair={
                   <form action={sair} data-sair>
                     <button
@@ -200,6 +228,12 @@ export default async function PainelLayout({
 
       {corretor ? (
         <>
+          {/* Os avisos da Astro para todos os clientes (0242, 29/10/2026):
+              logo abaixo do cabeçalho, atrás do próprio Suspense para o
+              painel nunca esperar por eles. `null` sem aviso no ar. */}
+          <Suspense fallback={null}>
+            <FaixaAvisosDaAstro papel={corretor.papel} />
+          </Suspense>
           {/*
             Enquanto o número está fora do ar, nada mais no painel está
             acontecendo de verdade — por isso a faixa vem antes do conteúdo,
@@ -213,8 +247,11 @@ export default async function PainelLayout({
           {/* Artes, vídeos e mensagens de lista do plano (limites do plano): idem. */}
           <FaixaLimitesDoPlano />
           {/* A mensalidade do grupo (fase 2C): vencida ou em atraso, para
-              todos. `null` com a cobrança em dia ou isenta. */}
-          <FaixaCobranca />
+              todos. `null` com a cobrança em dia ou isenta. Em Suspense
+              (0241): o botão do gestor consulta o Asaas, e a tela não espera. */}
+          <Suspense fallback={null}>
+            <FaixaCobranca />
+          </Suspense>
 
           {/*
             A coluna de conteúdo fica em 1fr e a da lateral em `auto`: quem
@@ -237,6 +274,9 @@ export default async function PainelLayout({
             e sem URL. Ele mesmo se cala na tela do consultor.
           */}
           <BalaoConsultor />
+          {/* Guarda a agenda de hoje e os leads recentes para o app sem
+              internet (29/10/2026). Não desenha nada. */}
+          <SincronizarOffline />
         </>
       ) : (
         <div className="mx-auto w-full max-w-2xl px-4 py-12">
@@ -244,6 +284,7 @@ export default async function PainelLayout({
         </div>
       )}
     </CromaDoModulo>
+    </RamoDoPainelProvider>
     </MarcaDoPainelProvider>
   );
 }

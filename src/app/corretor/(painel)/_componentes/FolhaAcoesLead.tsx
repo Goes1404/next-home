@@ -10,7 +10,8 @@ import { linkWhatsappLead } from "./CartaoLead";
 import { useNomeDaCasa } from "./NomeDaCasa";
 import { BotaoMensagemPelaIA } from "./MensagemPelaIA";
 import { cn } from "@/lib/utils";
-import { ETAPAS_FUNIL, ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
+import { ETAPAS_FUNIL, type EtapaFunil, type Lead } from "@/lib/types";
+import { useRotuloDaEtapa } from "@/lib/ramos/RamoDoPainel";
 
 /**
  * A folha de ações do lead — o "toque longo" do celular, em versão explícita.
@@ -28,6 +29,8 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
   const router = useRouter();
   const [movendo, iniciarTransicao] = useTransition();
   const { falhar } = useAvisos();
+  // A etapa no vocabulário do ramo (0244).
+  const rotuloDaEtapa = useRotuloDaEtapa();
   const whatsapp = linkWhatsappLead(lead, useNomeDaCasa());
 
   useEffect(() => {
@@ -131,7 +134,7 @@ export function FolhaAcoesLead({ lead, onFechar }: { lead: Lead; onFechar: () =>
                     movendo && !atual && "opacity-60",
                   )}
                 >
-                  {ETAPA_LABEL[etapa]}
+                  {rotuloDaEtapa(etapa)}
                   {atual && <Check className="h-4 w-4" />}
                 </button>
               </li>

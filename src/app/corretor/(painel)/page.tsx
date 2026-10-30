@@ -1,5 +1,6 @@
 import { Suspense, type SVGProps } from "react";
 import Link from "next/link";
+import { temModulo, vocabularioDoRamo, type ModuloDoRamo, type Ramo } from "@/lib/ramos/ramos";
 import { CopiarLink } from "./CopiarLink";
 import { FilaAgora } from "./_componentes/FilaAgora";
 import { ListasSugeridasBloco } from "./_componentes/ListasSugeridas";
@@ -19,6 +20,7 @@ import { Esqueleto, EsqueletoCartao, AvisoDeCarregamento } from "./_componentes/
 import { HeroInicio } from "./_componentes/HeroInicio";
 import { PrimeirosPassos } from "./_componentes/PrimeirosPassos";
 import { AtivarNotificacoes } from "./_componentes/AtivarNotificacoes";
+import { InstalarNoIphone } from "./_componentes/InstalarNoIphone";
 import { ControlesRapidos } from "./_componentes/ControlesRapidos";
 import { QuemEstaEsperando } from "./_componentes/graficos/QuemEstaEsperando";
 import { HojeNaAgenda } from "./_componentes/HojeNaAgenda";
@@ -57,19 +59,36 @@ import {
  * `largo` faz o cartão ocupar as duas colunas: o destaque vai para a IA, que
  * é o que diferencia este painel.
  */
-const ATALHOS: {
+type Atalho = {
   href: string;
   titulo: string;
   texto: string;
   icone: (p: SVGProps<SVGSVGElement>) => React.ReactElement;
   largo?: boolean;
-}[] = [
-  { href: "/corretor/pessoas", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
-  { href: "/corretor/imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio },
-  { href: "/corretor/whatsapp", titulo: "Minha IA", texto: "atende, qualifica e marca visita enquanto você não está", icone: IconeRobo, largo: true },
-  { href: "/corretor/imoveis/criar-imagem", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
-  { href: "/corretor/links", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink },
-];
+  /** Só aparece no ramo que tem o módulo (0244, 29/10/2026). */
+  modulo?: ModuloDoRamo;
+};
+
+/**
+ * Os atalhos no vocabulário do ramo (29/10/2026). Na imobiliária o texto é o
+ * de sempre, letra por letra ("marca visita"); nos outros ramos o catálogo e
+ * os links por imóvel saem, e a IA "marca reunião", "marca consulta"...
+ */
+function atalhosDoRamo(ramo: Ramo): Atalho[] {
+  const v = vocabularioDoRamo(ramo);
+  const todos: Atalho[] = [
+    { href: "/corretor/pessoas", titulo: "Leads", texto: "quem falou com você, do mais recente ao mais antigo", icone: IconePessoas },
+    { href: "/corretor/imoveis", titulo: "Imóveis", texto: "fotos, textos e preços do catálogo", icone: IconePredio, modulo: "catalogoDeImoveis" },
+    { href: "/corretor/whatsapp", titulo: "Minha IA", texto: `atende, qualifica e marca ${v.compromisso.singular} enquanto você não está`, icone: IconeRobo, largo: true },
+    { href: "/corretor/imoveis/criar-imagem", titulo: "Criar arte", texto: "peça pronta para publicar, conversando com a IA", icone: IconeMegafone },
+    { href: "/corretor/links", titulo: "Meus links", texto: "link atribuído de cada imóvel e do anúncio", icone: IconeLink, modulo: "catalogoDeImoveis" },
+  ];
+  const visiveis = todos.filter((a) => !a.modulo || temModulo(ramo, a.modulo));
+  if (visiveis.length === todos.length) return visiveis;
+  // Sem o catálogo sobram dois cartões estreitos: lado a lado, e o largo embaixo
+  // (na ordem de antes, o largo no meio deixaria um buraco em cada linha).
+  return [...visiveis.filter((a) => !a.largo), ...visiveis.filter((a) => a.largo)];
+}
 
 /**
  * A tela inicial do painel — uma FILA, não um relatório (roadmap F3).
@@ -114,6 +133,16 @@ export default async function PainelInicio({
         imediato e o cartão chega quando a contagem responde — sem segurar o
         resto da tela.
       */}
+      {/*
+        Os primeiros passos do cliente novo, no TOPO (29/10/2026): até a
+        conta estar pronta, é a coisa mais útil da tela. Uma leva de
+        contagens atrás do próprio Suspense, sem esqueleto: some quando tudo
+        está feito (ou foi ocultado), e aí não há o que reservar.
+      */}
+      <Suspense fallback={null}>
+        <PrimeirosPassos />
+      </Suspense>
+
       <Suspense fallback={<EsqueletoCartao linhas={3} />}>
         <BlocoDoHero nome={nomeNaSaudacao} />
       </Suspense>
@@ -146,13 +175,11 @@ export default async function PainelInicio({
         <ControlesRapidos />
       </Suspense>
 
+      {/* Como instalar o app no iPhone (29/10/2026): só no Safari do iOS, fora do app. */}
+      <InstalarNoIphone />
+
       {/* Avisos no celular: some quando já estão ligados neste aparelho. */}
       <AtivarNotificacoes />
-
-      {/* Some quando tudo está configurado: não segura a tela com esqueleto. */}
-      <Suspense fallback={null}>
-        <PrimeirosPassos corretorId={corretor.id} />
-      </Suspense>
 
       {/*
         Cada bloco busca o próprio dado atrás do seu `<Suspense>`, em vez de a
@@ -176,6 +203,8 @@ export default async function PainelInicio({
         link é o que o corretor distribui, e o contador é a resposta de quem
         usou. Separados em cartões distantes, o número perdia a causa.
       */}
+      {/* O link pessoal leva ao site de IMÓVEIS: só no ramo que tem o site (0244). */}
+      {temModulo(corretor.ramo, "siteDeImoveis") ? (
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="cartao p-5 sm:p-6">
           <p className="text-fluid-sm text-titulo font-medium">Seu link pessoal</p>
@@ -190,9 +219,10 @@ export default async function PainelInicio({
           <BlocoDeCliques />
         </Suspense>
       </section>
+      ) : null}
 
       <section aria-label="Atalhos" className="grid grid-cols-2 gap-3 md:gap-4">
-        {ATALHOS.map((a) => {
+        {atalhosDoRamo(corretor.ramo).map((a) => {
           const Icone = a.icone;
           return (
             <Link
@@ -279,8 +309,10 @@ async function BlocoDaFila() {
 }
 
 async function BlocoDoHero({ nome }: { nome: string }) {
-  const contagens = await getContagemPorEtapa();
-  return <HeroInicio nome={nome} contagens={contagens} />;
+  const [contagens, corretor] = await Promise.all([getContagemPorEtapa(), getCorretorLogado()]);
+  // "Visitas" na imobiliária; "reuniões", "consultas"... no vocabulário dos outros ramos (0244).
+  const compromisso = vocabularioDoRamo(corretor?.ramo).compromisso;
+  return <HeroInicio nome={nome} contagens={contagens} compromisso={compromisso} />;
 }
 
 async function BlocoDoFunil() {

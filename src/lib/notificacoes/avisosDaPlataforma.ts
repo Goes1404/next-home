@@ -1,8 +1,10 @@
 import "server-only";
 import { after } from "next/server";
 import { lerCobrancaDoGrupo } from "@/lib/planos/cobrancaDoGrupo";
+import { resumoDosRiscos } from "@/lib/plataforma/riscoDeCancelamento";
+import { lerRiscosDasContas } from "@/lib/plataforma/sinaisDeRisco";
 import { createServiceClient } from "@/lib/supabase/service";
-import { notificarAdminsDaPlataforma } from "./push";
+import { notificarAdminsDaPlataforma, type Notificacao } from "./push";
 import { horaEMinutoEmSP } from "./relogio";
 import { resumoDasCobrancas, type CobrancaParaAviso } from "./regrasDosAvisosDaPlataforma";
 
@@ -26,6 +28,15 @@ function depoisDaResposta(fn: () => Promise<unknown>): void {
   } catch {
     // Sem requisição em curso: não há resposta para esperar; o aviso não sai.
   }
+}
+
+/**
+ * Um atendimento novo (contato pelo site, suporte pelo painel; 0240,
+ * 29/10/2026) no celular dos administradores, depois da resposta. Quem chama
+ * monta o texto; ele nunca leva telefone, e-mail nem dado de lead.
+ */
+export function avisarAtendimento(n: Notificacao): void {
+  depoisDaResposta(() => notificarAdminsDaPlataforma(createServiceClient(), n));
 }
 
 /** Conta criada pela plataforma (avisa o OUTRO ADM; quem criou também recebe). */
@@ -86,5 +97,26 @@ export async function avisarCobrancasDoDia(agora: Date = new Date()): Promise<nu
   const resumo = resumoDasCobrancas(lista);
   if (!resumo) return 0;
   await notificarAdminsDaPlataforma(servico, { ...resumo, url: "/plataforma", tag: "cobrancas-do-dia" });
+  return 1;
+}
+
+/**
+ * O alerta diário de risco de cancelamento (29/10/2026), no mesmo tique e na
+ * mesma hora do resumo das mensalidades: às 9h de São Paulo, no primeiro
+ * tique da hora. Uma notificação com as contas de risco médio ou alto (até
+ * três nomes e o motivo principal de cada uma; a lista inteira, com os
+ * motivos, está em `/plataforma?ver=risco`). Sem conta em risco, ou sem
+ * conseguir medir, não avisa. Devolve 1 se avisou.
+ *
+ * Os sinais saem de `lerRiscosDasContas` (laço por grupo, só contagens).
+ */
+export async function avisarRiscosDoDia(agora: Date = new Date()): Promise<number> {
+  const { hora, minuto } = horaEMinutoEmSP(agora);
+  if (hora !== 9 || minuto >= 5) return 0;
+  const riscos = await lerRiscosDasContas(agora);
+  if (!riscos) return 0;
+  const resumo = resumoDosRiscos(riscos);
+  if (!resumo) return 0;
+  await notificarAdminsDaPlataforma(createServiceClient(), { ...resumo, url: "/plataforma?ver=risco", tag: "riscos-do-dia" });
   return 1;
 }

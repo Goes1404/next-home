@@ -21,6 +21,7 @@ const BOTAO_SECUNDARIO =
 /** Classes por extenso: montada em tempo de execução, a classe não existiria. */
 const ESTADO: Record<EstadoDaCobranca, { rotulo: string; classe: string }> = {
   isento: { rotulo: "Isento (preço de custo)", classe: "bg-campo text-apoio border-linha-forte" },
+  teste: { rotulo: "Teste grátis", classe: "bg-campo text-titulo border-linha-forte" },
   em_dia: { rotulo: "Em dia", classe: "bg-ok-lavado text-ok border-ok-linha" },
   pendente: { rotulo: "Vencida", classe: "bg-alerta-lavado text-alerta border-alerta-linha" },
   suspenso: { rotulo: "Suspenso", classe: "bg-perigo-lavado text-perigo border-perigo-linha" },
@@ -106,6 +107,16 @@ export function CobrancaDoGrupo({
           <dt className="text-apoio text-fluid-xs">Próximo vencimento</dt>
           <dd className="text-titulo">{dataCompleta(cobranca.proximoVencimento)}</dd>
         </div>
+        {cobranca.fimDoTeste && (
+          <div className="col-span-2 sm:col-span-3">
+            <dt className="text-apoio text-fluid-xs">Teste grátis</dt>
+            <dd className="text-titulo">
+              {cobranca.estado === "teste"
+                ? `Acaba em ${dataCompleta(cobranca.fimDoTeste)} (${cobranca.diasDeTesteRestantes === 1 ? "1 dia restante" : `${cobranca.diasDeTesteRestantes} dias restantes`}). Sem pagamento, suspende no mesmo dia.`
+                : `Acabou em ${dataCompleta(cobranca.fimDoTeste)}.`}
+            </dd>
+          </div>
+        )}
         {cobranca.competenciaEmAberto && cobranca.vencimento && (
           <div className="col-span-2 sm:col-span-3">
             <dt className="text-apoio text-fluid-xs">Em aberto</dt>

@@ -4,15 +4,18 @@ import { join } from "node:path";
 import {
   ATALHOS_MOBILE,
   GRUPOS_NAV,
+  atalhosMobile,
   ITENS_DA_CONTA,
   destinoAtivo,
   gruposVisiveis,
   itemAtivo,
+  itensDaConta,
   moduloAtivo,
   moduloDaSecao,
   rotaAtiva,
   subitensDe,
 } from "./navegacao";
+import { RAMOS } from "@/lib/ramos/ramos";
 
 describe("mapa de navegação (três destinos no polegar, e é de propósito)", () => {
   it("a barra do polegar leva no máximo 3 destinos", () => {
@@ -107,7 +110,27 @@ describe("mapa de navegação (três destinos no polegar, e é de propósito)", 
     const itens = gruposVisiveis(true, "imobiliaria").flatMap((g) => g.itens);
     expect(itens.some((i) => i.href === "/corretor/perfil")).toBe(false);
     expect(itens.some((i) => i.href === "/corretor/senha")).toBe(false);
-    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual(["/corretor/perfil", "/corretor/senha"]);
+    expect(ITENS_DA_CONTA.map((i) => i.href)).toEqual([
+      "/corretor/perfil",
+      "/corretor/senha",
+      "/corretor/indique",
+      "/ajuda",
+      "/corretor/suporte",
+    ]);
+    // Indique e ganhe (0247) e Ajuda também moram no avatar, fora do menu.
+    expect(itens.some((i) => i.href === "/corretor/indique" || i.href === "/ajuda")).toBe(false);
+    // O suporte da Astro (29/10/2026) também mora no avatar, fora do menu.
+    expect(itens.some((i) => i.href === "/corretor/suporte")).toBe(false);
+  });
+
+  it("o indique e ganhe (0247) só aparece no menu da conta do gestor; a ajuda, para todos", () => {
+    const doGestor = itensDaConta(true).map((i) => i.href);
+    const doCorretor = itensDaConta(false).map((i) => i.href);
+    expect(doGestor).toContain("/corretor/indique");
+    expect(doCorretor).not.toContain("/corretor/indique");
+    expect(doGestor).toContain("/ajuda");
+    expect(doCorretor).toContain("/ajuda");
+    expect(doCorretor).toContain("/corretor/suporte");
   });
 
   it("gestor vê exatamente um destino a mais, e é Administração", () => {
@@ -162,6 +185,7 @@ describe("moduloAtivo — a chave do color coding", () => {
      */
     expect(moduloAtivo("/corretor/links")).toBe("imoveis");
     expect(moduloAtivo("/corretor/senha")).toBe("conta");
+    expect(moduloAtivo("/corretor/suporte")).toBe("conta");
   });
 
   it("sub-rota profunda mantém a cor do módulo", () => {
@@ -384,7 +408,9 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // Parceiros (espelho de vendas) entrou no mesmo dia, na segunda rodada.
     // 30/09/2026: 12 → 9, em três seções. SLA e Eventos viraram seções da
     // Visão geral; Anúncios foi para Anúncios pagos.
-    expect(subitensDe("/corretor/admin")).toHaveLength(9);
+    // 29/10/2026: 9 → 10, "Portais" (captação direta do ZAP, Viva Real e
+    // OLX, 0245) em Negócio.
+    expect(subitensDe("/corretor/admin")).toHaveLength(10);
     expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
       "Equipe",
       "Negócio",
@@ -579,6 +605,7 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
           "/corretor/admin/whatsapp",
           "/corretor/admin/construtoras",
           "/corretor/admin/parceiros",
+          "/corretor/admin/portais",
           "/corretor/admin/precos",
           "/corretor/admin/credito",
           "/corretor/admin/assistente",
@@ -610,5 +637,86 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
         expect(gruposVisiveis(ehGestor, tipo).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
       }
     }
+  });
+});
+
+describe("menu pelo ramo da conta (0244, 29/10/2026)", () => {
+  /*
+   * "Todo login vai redirecionar para o CRM da tipagem da conta": a rota é a
+   * mesma (`/corretor`), e é o ramo que esconde o que não é do negócio e
+   * renomeia pelo vocabulário. A imobiliária tem de sair IDÊNTICA.
+   */
+  const DE_IMOBILIARIA = [
+    "/corretor/imoveis",
+    "/corretor/links",
+    "/corretor/marketing/video",
+    "/corretor/admin/construtoras",
+    "/corretor/admin/parceiros",
+    "/corretor/admin/precos",
+    "/corretor/admin/credito",
+  ];
+  const enderecos = (ehGestor: boolean, tipo: "imobiliaria" | "independente", ramo: (typeof RAMOS)[number]) =>
+    gruposVisiveis(ehGestor, tipo, ramo).flatMap((g) => g.itens.flatMap((i) => [i.href, ...(i.subitens ?? []).map((s) => s.href)]));
+
+  it("imobiliária explícita = o menu de sempre (sem ramo)", () => {
+    for (const ehGestor of [true, false]) {
+      for (const tipo of ["imobiliaria", "independente"] as const) {
+        expect(gruposVisiveis(ehGestor, tipo, "imobiliaria")).toEqual(gruposVisiveis(ehGestor, tipo));
+      }
+    }
+    expect(atalhosMobile("imobiliaria")).toBe(ATALHOS_MOBILE);
+    expect(atalhosMobile()).toBe(ATALHOS_MOBILE);
+  });
+
+  it("a imobiliária ainda vê o catálogo, o crédito e o Ranking de VGV", () => {
+    const visiveis = enderecos(true, "imobiliaria", "imobiliaria");
+    for (const href of DE_IMOBILIARIA) expect(visiveis).toContain(href);
+    const ranking = gruposVisiveis(true, "imobiliaria", "imobiliaria")
+      .flatMap((g) => g.itens.flatMap((i) => i.subitens ?? []))
+      .find((s) => s.href === "/corretor/financeiro/ranking");
+    expect(ranking?.label).toBe("Ranking de VGV");
+  });
+
+  it("os outros ramos não veem os módulos de imobiliária", () => {
+    for (const ramo of RAMOS.filter((r) => r !== "imobiliaria")) {
+      for (const ehGestor of [true, false]) {
+        const visiveis = enderecos(ehGestor, "imobiliaria", ramo);
+        for (const href of DE_IMOBILIARIA) expect(visiveis, `${ramo}: ${href}`).not.toContain(href);
+        // O que é de todo negócio continua.
+        for (const href of ["/corretor", "/corretor/pessoas", "/corretor/funil", "/corretor/agenda", "/corretor/whatsapp", "/corretor/financeiro"]) {
+          expect(visiveis, `${ramo}: ${href}`).toContain(href);
+        }
+      }
+    }
+  });
+
+  it("o ranking fala a língua do ramo", () => {
+    const ranking = gruposVisiveis(false, "imobiliaria", "advocacia")
+      .flatMap((g) => g.itens.flatMap((i) => i.subitens ?? []))
+      .find((s) => s.href === "/corretor/financeiro/ranking");
+    expect(ranking?.label).toBe("Ranking de vendas");
+  });
+
+  it("sem o catálogo, a barra do polegar troca Imóveis pelo Assistente", () => {
+    for (const ramo of RAMOS.filter((r) => r !== "imobiliaria")) {
+      const hrefs = atalhosMobile(ramo).map((i) => i.href);
+      expect(hrefs).toEqual(["/corretor", "/corretor/pessoas", "/corretor/whatsapp"]);
+    }
+  });
+
+  it("o teto de sete destinos vale para todo ramo", () => {
+    for (const ramo of RAMOS) {
+      for (const tipo of ["imobiliaria", "independente"] as const) {
+        expect(gruposVisiveis(true, tipo, ramo).flatMap((g) => g.itens).length).toBeLessThanOrEqual(7);
+      }
+    }
+  });
+
+  it("os componentes do menu leem o ramo do painel", () => {
+    const raiz = join(__dirname, "..");
+    for (const arquivo of ["NavPainel.tsx", "GavetaLateral.tsx"]) {
+      expect(readFileSync(join(raiz, arquivo), "utf8")).toMatch(/gruposVisiveis\(ehGestor, tipoDoGrupo, ramo\)/);
+    }
+    expect(readFileSync(join(raiz, "NavMobileBottom.tsx"), "utf8")).toContain("atalhosMobile(useRamoDoPainel().ramo)");
   });
 });

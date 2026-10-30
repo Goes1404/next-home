@@ -7,6 +7,7 @@ import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { podeCancelar, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
+import { lerFaturaEmAberto, variaveisDoAsaasFaltando } from "@/lib/cobranca/asaas";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { lerAcessosDoGrupo, lerGrupoDaPlataforma } from "@/lib/plataforma/grupos";
 import { ROTULO_DO_PLANO, ROTULO_DO_TIPO } from "@/lib/plataforma/rotulosDoGrupo";
@@ -20,6 +21,7 @@ import { UsoDaIa } from "../../UsoDaIa";
 import { tirarLogoDoGrupoNaPlataforma, trocarLogoDoGrupo } from "../../acoes";
 import { CancelamentoDoGrupo } from "./CancelamentoDoGrupo";
 import { CobrancaDoGrupo } from "./CobrancaDoGrupo";
+import { CobrancaAutomatica } from "./CobrancaAutomatica";
 import { EnderecosDoGrupo } from "./EnderecosDoGrupo";
 import { FormularioDadosDoGrupo } from "./FormularioDadosDoGrupo";
 import { FormularioLimitesDoPlano } from "./FormularioLimitesDoPlano";
@@ -27,6 +29,10 @@ import { FormularioTetoDaIa } from "./FormularioTetoDaIa";
 import { FormularioNovoAcesso } from "./FormularioNovoAcesso";
 import { AcessosDoGrupo } from "./AcessosDoGrupo";
 import { SituacaoEPlanoDoGrupo } from "./SituacaoEPlanoDoGrupo";
+import { RamoDoGrupo } from "./RamoDoGrupo";
+import { NegocioDoGrupo } from "./NegocioDoGrupo";
+import { lerNegocioDoGrupo } from "@/lib/plataforma/indicacoes";
+import { lerRiscoDaConta } from "@/lib/plataforma/sinaisDeRisco";
 
 export const metadata: Metadata = { title: "Grupo" };
 
@@ -52,6 +58,14 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
   // A logo do CRM do grupo (0208). A Next Home usa o logotipo da instalação.
   const marca = grupo.id === GRUPO_NEXT_HOME_ID ? null : await lerMarcaDoCrm(grupo.id);
   const acessos = await lerAcessosDoGrupo(prova, grupo.id);
+  // Relacionamento (0247, 29/10/2026): termo de adesão, indicações e o risco
+  // de cancelamento, em paralelo; falha de cada um só apaga a parte dele.
+  const [negocio, risco] = await Promise.all([lerNegocioDoGrupo(prova, grupo.id), lerRiscoDaConta(grupo.id, agora)]);
+  // A cobrança automática (0241): a fatura em aberto vem do Asaas na hora;
+  // falha do Asaas só esconde o link (lerFaturaEmAberto devolve null).
+  const faltandoNoAsaas = variaveisDoAsaasFaltando();
+  const fatura =
+    faltandoNoAsaas.length === 0 && grupo.asaasAssinaturaId ? await lerFaturaEmAberto(grupo.asaasAssinaturaId) : null;
 
   return (
     <section className="flex max-w-3xl flex-col gap-6">
@@ -64,9 +78,19 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         </div>
         <h1 className="font-display text-titulo text-fluid-2xl mt-1 break-words">{grupo.nome}</h1>
         <p className="text-fluid-sm text-apoio mt-1 break-all">{grupo.slug}</p>
+        {/* A visão de suporte (0243, 29/10/2026): só números, com o acesso registrado. */}
+        <Link
+          href={`/plataforma/grupos/${grupo.id}/suporte`}
+          prefetch={false}
+          className="text-fluid-sm botao-secundario text-titulo mt-3 inline-flex min-h-11 items-center px-4 font-medium"
+        >
+          Abrir visão de suporte
+        </Link>
       </div>
 
       <SaudeNoDetalhe saude={saude} agora={agora} />
+
+      <NegocioDoGrupo grupoId={grupo.id} negocio={negocio} risco={risco} ehContaDaCasa={grupo.id === GRUPO_NEXT_HOME_ID} />
 
       <dl className="cartao text-fluid-sm grid grid-cols-2 gap-x-4 gap-y-3 p-5 sm:grid-cols-3">
         <div>
@@ -129,6 +153,13 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         planoFixo={grupo.id === GRUPO_NEXT_HOME_ID}
       />
 
+      <RamoDoGrupo
+        grupoId={grupo.id}
+        ramo={grupo.ramo}
+        descricao={grupo.ramoDescricao}
+        fixo={grupo.id === GRUPO_NEXT_HOME_ID}
+      />
+
       <FormularioNovoAcesso grupoId={grupo.id} />
 
       <AcessosDoGrupo acessos={acessos} />
@@ -167,6 +198,16 @@ export default async function GrupoPage({ params }: { params: Promise<{ id: stri
         pagamentos={grupo.pagamentos}
         suspensoManual={grupo.situacao === "suspenso"}
         hoje={diaEmSP(new Date())}
+      />
+
+      <CobrancaAutomatica
+        grupoId={grupo.id}
+        faltando={faltandoNoAsaas}
+        isento={grupo.plano === "custo"}
+        assinaturaId={grupo.asaasAssinaturaId}
+        fatura={fatura}
+        mensalidade={grupo.mensalidade}
+        temDocumento={Boolean(grupo.documento)}
       />
 
       {marca && (

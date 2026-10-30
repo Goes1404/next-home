@@ -10,6 +10,10 @@ const EM_DIA: SituacaoDaCobranca = {
   diasDeAtraso: 0,
   suspendeEm: null,
   proximoVencimento: "2026-11-10",
+  fimDoTeste: null,
+  diasDeTesteRestantes: 0,
+  testeTerminouSemPagamento: false,
+  emAberto: [],
 };
 
 function sinais(sobre: Partial<SinaisDeSaude> = {}): SinaisDeSaude {

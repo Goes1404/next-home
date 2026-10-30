@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { entrar } from "@/app/corretor/actions";
+import { EntrarComGoogle } from "./EntrarComGoogle";
 import { BotaoDeAcesso, CampoDeAcesso, CLASSE_DO_FORMULARIO, ErroDeAcesso } from "../CampoDeAcesso";
 
 // Os campos (rótulo flutuante, ícone, olho da senha) e o botão são os das
@@ -122,6 +123,7 @@ export function FormularioLogin({ next }: { next?: string }) {
       {estado?.erro && <ErroDeAcesso>{estado.erro}</ErroDeAcesso>}
 
       <BotaoDeAcesso enviando="Entrando…">Entrar</BotaoDeAcesso>
+      <EntrarComGoogle next={next} />
     </form>
   );
 }

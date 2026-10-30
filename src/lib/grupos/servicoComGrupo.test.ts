@@ -94,6 +94,8 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/crm/linkPublico.ts": { categoria: "por-id", validadoPor: '.eq("token", token)', motivo: "é a leitura do link pelo token: devolve o grupo do link a quem chama" },
   "src/lib/financeiro/acessoContador.ts": { categoria: "por-id", validadoPor: "tokenComFormatoValido", motivo: "token do contador; devolve o grupo do link a quem chama" },
   "src/lib/crm/eventosDoLink.ts": { categoria: "helper", motivo: "grava o evento do link cujo token quem chama acabou de validar" },
+  "src/lib/crm/visualizacoesDaVitrine.ts": { categoria: "helper", motivo: "vitrine (0245, 29/10/2026): grava a visualização do link cujo token quem chama acabou de validar (lerLinkPublico, rota do clique); o grupo vem do carimbo pelo token" },
+  "src/app/s/[site]/(institucional)/v/[codigo]/route.ts": { categoria: "por-id", validadoPor: '.eq("codigo", codigo)', motivo: "link curto da vitrine (0245): a leitura pelo código sorteado só devolve o token, e a seleção confere token e validade" },
 
   // ── Portas de entrada públicas e webhooks: grupo explícito ou credencial ──
   "src/app/api/clique-whatsapp/route.ts": { categoria: "por-id", validadoPor: "siteDaRequisicao", motivo: "grava no grupo do site; corretor do corpo só vale se for do grupo" },
@@ -101,6 +103,10 @@ const MAPA: Record<string, Entrada> = {
   "src/app/wa/route.ts": { categoria: "por-id", validadoPor: "siteDaRequisicao", motivo: "porteiro: sorteia e grava o clique no grupo do site" },
   "src/app/wa/[campanha]/route.ts": { categoria: "por-id", validadoPor: "siteDaRequisicao", motivo: "porteiro: imóvel e sorteio dentro do grupo do site" },
   "src/app/api/webhooks/meta/route.ts": { categoria: "por-id", validadoPor: "assinaturaValida", motivo: "assinatura da Meta; integração presa ao grupo 1 até a fase 7" },
+  "src/app/api/webhooks/asaas/route.ts": { categoria: "por-id", validadoPor: "tokenDoAsaasValido", motivo: "token do webhook do Asaas (0241, 29/10/2026) conferido antes da chave; o grupo sai da assinatura/cliente do pagamento gravados em grupos" },
+  "src/app/api/webhooks/portais/[portal]/route.ts": { categoria: "por-id", validadoPor: '.eq("token", token)', motivo: "webhook dos portais (0245, 29/10/2026): o token sorteado da URL decide a integração e o grupo; nada do corpo escolhe grupo" },
+  "src/lib/portais/receberLead.ts": { categoria: "helper", motivo: "grava o lead do portal na integração que a rota validou pelo token; leituras e recibo com o grupo dela" },
+  "src/lib/inbound/gravarLeadsRecebidos.ts": { categoria: "helper", motivo: "miolo comum do e-mail e dos portais (29/10/2026): grupo explícito de quem chama; leituras com grupo_id (portas.test.ts)" },
   "src/app/api/webhooks/whatsapp/route.ts": { categoria: "por-id", validadoPor: "resolverInstancia", motivo: "a instância (com o segredo dela) decide o corretor e o grupo da mensagem" },
   "src/lib/whatsapp/repositorio.ts": { categoria: "helper", motivo: "parte da instância que o webhook validou pelo segredo; a palavra-chave filtra o grupo dela" },
   "src/lib/inbound/processarEmail.ts": { categoria: "helper", motivo: "grupo explícito de quem chama (portal = grupo 1; Gmail = grupo da conta); leituras com grupo_id (portas.test.ts)" },
@@ -123,6 +129,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/_componentes/acoesVisitaCombinada.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/admin/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "toda escrita pela chave filtra o grupo do gestor" },
   "src/app/corretor/(painel)/admin/anuncios/ContaDaMeta.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "a única leitura pela chave (cliques) filtra o grupo do gestor; Meta só no grupo 1" },
+  "src/app/corretor/(painel)/admin/portais/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "liga, troca o token e desliga a integração com portais (0245) só no grupo do gestor" },
+  "src/app/corretor/(painel)/admin/portais/page.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "lê o token e os recibos dos portais (0245) só do grupo do gestor" },
   "src/app/corretor/(painel)/admin/parceiros/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "trocar o link confere o grupo do gestor (L16)" },
   "src/app/corretor/(painel)/admin/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "derrubar o número confere o grupo do gestor (L16)" },
   "src/app/corretor/(painel)/conversas/acoes.ts": { categoria: "por-id", validadoPor: "exigirSessao", motivo: "a conversa é lida pela sessão; a chave só assina URL de documento dela" },
@@ -136,9 +144,18 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/leads/[id]/documentacaoAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/gmailAcoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/app/corretor/(painel)/perfil/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/suporte/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "chamado com a Astro (0240): nome, ficha e grupo saem da sessão; a chave conta e insere chamados do corretor da sessão e lê o nome do grupo dele" },
+  "src/app/corretor/(painel)/suporte/meusChamados.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "lista só os chamados com corretor_origem_id do corretor da sessão (0240)" },
   "src/app/corretor/(painel)/agenda/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/indique/page.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "indique e ganhe (0247, 29/10/2026): código e nome pela linha do grupo da sessão; indicações e créditos (tabelas globais) filtrados pelas colunas do grupo da sessão; das contas indicadas, só nome e situação" },
+  "src/app/corretor/termo-de-adesao/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "termo de adesão (0247, 29/10/2026): lê a linha do grupo da sessão (plano, mensalidade, documento) e o aceite desse grupo" },
+  "src/app/corretor/termo-de-adesao/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "termo de adesão (0247, 29/10/2026): só o gestor da sessão grava o aceite do PRÓPRIO grupo; ficha lida por id e grupo da sessão; hash do IP e navegador dos cabeçalhos da requisição" },
   "src/app/corretor/(painel)/agenda/page.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/agenda/acoesConfirmacao.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "pedido de confirmação da visita (0246): visita, lead e conversa lidos no grupo da sessão, só da visita que o corretor da sessão faz" },
+  "src/app/corretor/(painel)/financeiro/desempenho/metasAcoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "metas da equipe (0246): corretores conferidos contra a equipe da sessão; toda escrita leva o grupo do gestor" },
+  "src/app/corretor/(painel)/admin/leads/regrasAcoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "regras de distribuição (0246): quem recebe conferido contra a equipe da sessão; toda leitura e escrita leva o grupo do gestor" },
   "src/app/corretor/(painel)/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/lib/crm/estadoDosPrimeirosPassos.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "primeiros passos do Início (29/10/2026): a chave só CONTA os aparelhos com aviso (inscricoes_push, sem grant para a sessão) do corretor da sessão; o resto é contado pela sessão" },
 
   // ── Helpers: o id chega por parâmetro de quem chama ──────────────────────
   // Nada aqui valida: a prova mora em quem importa. A guarda `helper` cobra
@@ -164,6 +181,8 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/impulsionamentos.ts": { categoria: "helper", motivo: "lead e corretor da mensagem que o webhook validou" },
   "src/lib/whatsapp/midiaRecebida.ts": { categoria: "helper", motivo: "mídia da mensagem que o webhook validou, guardada na pasta do lead" },
   "src/lib/whatsapp/respostaAosFollowups.ts": { categoria: "helper", motivo: "conversa em atendimento, validada por quem chama" },
+  "src/lib/agenda/respostaDaConfirmacao.ts": { categoria: "helper", motivo: "resposta ao pedido de confirmação (0246) na conversa que o webhook validou pela instância" },
+  "src/lib/agenda/pedidoDeConfirmacao.ts": { categoria: "helper", motivo: "pedido de confirmação de UMA visita (0246) no grupo que quem chama provou (sessão do corretor ou a linha da varredura); toda leitura filtra esse grupo" },
   "src/lib/whatsapp/primeiroContatoNoEnvio.ts": { categoria: "helper", motivo: "conta e libera o primeiro contato do corretor que quem chama já resolveu (instância, dono da lista, sorteado da roleta)" },
   "src/lib/whatsapp/telemetria.ts": { categoria: "helper", motivo: "grava a interação da conversa que quem chama atendeu" },
   "src/lib/planos/consumoDaIa.ts": { categoria: "plataforma", motivo: "só INSERE a linha do livro do consumo (0233), uma por chamada paga; nunca lê. O grupo vem do corretor pelo carimbo, que confere o grupo informado contra ele" },
@@ -172,7 +191,10 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/sites/siteDoGrupo.ts": { categoria: "helper", motivo: "lê o site editável do grupo que quem chama provou (gestor da sessão ou o grupo que o endereço resolveu); UMA linha pelo id" },
   "src/lib/marcaDoCrm/gravarLogo.ts": { categoria: "helper", motivo: "grava a logo do grupo que quem chama provou (gestor da sessão ou operador da plataforma); só toca a linha e a pasta desse grupo" },
   "src/lib/whatsapp/casaDoGrupo.ts": { categoria: "helper", motivo: "identidade da IA (nome da casa, região, tom) do grupo que quem chama validou; lê UMA linha de grupos pelo id" },
+  "src/lib/cobranca/webhookDoAsaas.ts": { categoria: "helper", motivo: "recebe o cliente da chave da rota que conferiu o token do Asaas; acha UM grupo pela assinatura/cliente do pagamento e grava o pagamento só nele (0241)" },
+  "src/lib/plataforma/criarConta.ts": { categoria: "helper", motivo: "núcleo da criação de conta (29/10/2026): confere a própria prova antes de escrever (a guarda da plataforma de novo, ou o pedido do teste grátis relido pela chave) e só toca o grupo que acabou de criar" },
   "src/lib/planos/cobrancaDoGrupo.ts": { categoria: "helper", motivo: "cobrança do grupo que quem chama validou (instância do webhook ou do disparador, sessão do painel); toda leitura filtra o grupo (fase 2C)" },
+  "src/lib/indicacoes/indicacao.ts": { categoria: "helper", motivo: "indique e ganhe (0247, 29/10/2026): recebe o cliente da chave de quem já provou o grupo (teste grátis que acabou de criar a conta, conversão do pedido e registro do pagamento depois da guarda da plataforma, webhook do Asaas pelo token); lê e grava só as linhas das duas contas da indicação" },
   "src/lib/planos/usoDaIa.ts": { categoria: "helper", motivo: "cota da IA do grupo que quem chama validou (instância do webhook, sessão, guarda da plataforma); toda leitura filtra o grupo" },
 
   // ── Telas da equipe: toda leitura filtra o grupo do gestor ────────────────
@@ -185,10 +207,13 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/agenda/conversaDeAgenda.ts": { categoria: "helper", motivo: "estado da conversa do corretor que quem chama já resolveu" },
   "src/app/corretor/(painel)/_componentes/acoesDaVisitaPassada.ts": { categoria: "equipe", motivo: "resposta da visita pelo corretor da sessão (responder_visita confere quem fez)" },
   "src/lib/agenda/lerEquipe.ts": { categoria: "equipe", motivo: "agenda da equipe para o gestor; toda leitura filtra o grupo da sessão" },
+  "src/lib/financeiro/metasDaEquipeDados.ts": { categoria: "equipe", motivo: "placar das metas do mês (0246): metas, visitas, etapas e donos lidos só no grupo da sessão" },
+  "src/lib/crm/regrasDoGrupo.ts": { categoria: "equipe", motivo: "regras de distribuição (0246) do grupo do gestor da sessão" },
   "src/lib/financeiro/primeirasRespostas.ts": { categoria: "equipe", motivo: "horários da primeira resposta da equipe, só do grupo do gestor" },
   "src/app/corretor/(painel)/admin/page.tsx": { categoria: "equipe", motivo: "Visão geral do gestor (L17)" },
   "src/app/corretor/(painel)/admin/whatsapp/page.tsx": { categoria: "equipe", motivo: "WhatsApp da equipe (L17)" },
   "src/app/corretor/(painel)/marketing/impulsionamentos/DistribuicaoDaEquipe.tsx": { categoria: "equipe", motivo: "distribuição de leads da equipe: status dos números e grupos de leads do grupo do gestor" },
+  "src/app/corretor/(painel)/admin/_componentes/AcessosDoSuporte.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "acessos do suporte da Astro (0243): a chave lê acessos_de_suporte só do grupo do gestor da sessão" },
   "src/app/corretor/(painel)/admin/_componentes/ProntidaoDaEquipe.tsx": { categoria: "equipe", motivo: "Prontidão da equipe (L17)" },
   "src/app/corretor/(painel)/admin/_componentes/UsoDasNovidades.tsx": { categoria: "equipe", motivo: "uso das ferramentas novas pela equipe" },
   "src/app/corretor/(painel)/marketing/impulsionamentos/page.tsx": { categoria: "equipe", motivo: "anúncios pagos: campanhas e falas por lead do grupo" },
@@ -206,7 +231,9 @@ const MAPA: Record<string, Entrada> = {
   "src/app/api/cron/followups/route.ts": { categoria: "plataforma", motivo: "follow-ups e respostas atrasadas por conversa, cada uma com a instância do próprio corretor" },
   "src/lib/crm/leadsSemRetorno.ts": { categoria: "plataforma", motivo: "lista das 18h por grupo com o envio ligado; cada leitura filtra o grupo da vez e a lista vai só aos gestores desse grupo" },
   "src/lib/notificacoes/leadNovo.ts": { categoria: "plataforma", motivo: "aviso por lead, ao corretor dono dele" },
+  "src/lib/notificacoes/leadsQueCombinam.ts": { categoria: "cruza-conjuntos", lados: ["empreendimentos", "leads"], motivo: "imóvel publicado/atualizado só cruza com leads do grupo dele, e cada corretor é avisado só dos próprios (0245)" },
   "src/lib/notificacoes/lembreteDeVisita.ts": { categoria: "plataforma", motivo: "lembrete por visita, a quem a faz; visita e lead do mesmo grupo (0224)" },
+  "src/lib/agenda/confirmacaoAutomatica.ts": { categoria: "plataforma", motivo: "confirmação automática (0246): visita a visita, cada uma no próprio grupo (lido na volta do laço dos grupos que ligaram a opção)" },
   "src/lib/notificacoes/leadParado.ts": { categoria: "plataforma", motivo: "aviso por lead, ao corretor dono dele; dono e grupo conferidos no claim" },
   "src/lib/notificacoes/senhaVencendo.ts": { categoria: "plataforma", motivo: "aviso por ficha, ao próprio corretor da ficha" },
   "src/lib/notificacoes/clienteRespondeu.ts": { categoria: "plataforma", motivo: "aviso por lead, só se o dono é o do número que o webhook validou, no mesmo grupo" },
@@ -237,6 +264,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/grupos.ts": { categoria: "plataforma-admin", motivo: "lista de grupos com contagens; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/saude.ts": { categoria: "plataforma-admin", motivo: "saúde e custo da IA dos grupos da lista (telemetria só AGREGADA por rpc, 0211, nunca ia_interacoes linha a linha); recebe a prova de exigirAdminDaPlataforma*" },
   "src/app/plataforma/cobrancaAcoes.ts": { categoria: "plataforma-admin", motivo: "registra e remove pagamento, ajusta mensalidade e vencimento e suspende ou reativa o grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (fase 2C)" },
+  "src/app/plataforma/cobrancaAutomaticaAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e desliga a cobrança automática (Asaas) de UM grupo (0241); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/enderecosAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e tira o endereço do site de UM grupo (0201); a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso, edita o cadastro dele, muda o plano e redefine a senha de um acesso; a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
@@ -244,11 +272,25 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
   "src/app/plataforma/pedidosAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status, observação e conta criada de UM pedido (tabela global, 0238); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/lib/plataforma/chamados.ts": { categoria: "plataforma-admin", motivo: "lista e conta chamados_de_suporte (tabela global, 0240) e lê o nome das contas de origem para o link; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/lib/plataforma/avisosAosClientes.ts": { categoria: "plataforma-admin", motivo: "lista avisos_aos_clientes (tabela global, 0242) para /plataforma/avisos; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/avisosAosClientesAcoes.ts": { categoria: "plataforma-admin", motivo: "publica e encerra UM aviso da Astro aos clientes (tabela global, 0242, sem dado de grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/app/plataforma/suporteAcoes.ts": { categoria: "plataforma-admin", motivo: "muda status e anotação interna de UM chamado (tabela global, 0240); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
 
   // ── Porta pública da página de vendas, sem grupo ─────────────────────────
+  "src/app/auth/google/route.ts": { categoria: "plataforma", motivo: "volta do Entrar com Google: o Auth é global; só APAGA o usuário que o próprio Google acabou de criar sem ficha (sem ler tabela de grupo pela chave)" },
   "src/app/api/plataforma/notificacoes/route.ts": { categoria: "plataforma-admin", motivo: "liga/desliga o aviso no aparelho do PRÓPRIO administrador da plataforma (0239); guarda antes da chave, tabela global" },
+  "src/lib/plataforma/atividade.ts": { categoria: "plataforma-admin", motivo: "contas sem uso há 7 dias: leads só CONTADOS (head: true) por conta e o último login do Auth casado pela ficha; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/lib/plataforma/visaoDeSuporte.ts": { categoria: "plataforma-admin", motivo: "visão de suporte de UMA conta (0243): confere o acesso registrado do próprio administrador, conta leads e visitas (head: true) e lê a equipe e o status do WhatsApp; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/visaoDeSuporteAcoes.ts": { categoria: "plataforma-admin", motivo: "registra o acesso à visão de suporte em acessos_de_suporte (tabela global, 0243) e em admin_eventos do grupo; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/avisosAcoes.ts": { categoria: "plataforma-admin", motivo: "teste dos avisos da plataforma: guarda antes da chave; manda aos aparelhos dos administradores (0239)" },
+  "src/lib/plataforma/sinaisDeRisco.ts": { categoria: "agrega-por-grupo", motivo: "risco de cancelamento (29/10/2026): laço de grupos; por conta, só CONTAGENS (leads com head: true, chamados abertos) e datas (logins do Auth, quedas do WhatsApp, cobrança), cada leitura filtrada pelo grupo da volta" },
+  "src/lib/plataforma/indicacoes.ts": { categoria: "plataforma-admin", motivo: "indicações e créditos (tabelas globais, 0247) de todas as contas e o negócio de UMA conta (código, quem indicou, créditos, aceite do termo de adesão); recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },
+  "src/app/plataforma/indicacoesAcoes.ts": { categoria: "plataforma-admin", motivo: "marca UM crédito de indicação como aplicado (tabela global, 0247) e grava o evento no grupo beneficiado; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/lib/notificacoes/avisosDaPlataforma.ts": { categoria: "agrega-por-grupo", motivo: "resumo diário das mensalidades para os administradores (cron): lê a lista de grupos e a cobrança de cada um pela conta do painel; conta nova e suspensão avisam com o nome de UM grupo" },
+  "src/lib/plataforma/avisosVigentes.ts": { categoria: "plataforma", motivo: "faixa do painel (0242, 29/10/2026): lê os avisos da Astro no ar em avisos_aos_clientes, tabela GLOBAL sem dado de grupo nenhum; o público (papel) é filtrado por quem desenha a faixa, com a sessão" },
+  "src/app/astro/contato/acoes.ts": { categoria: "plataforma", motivo: "Fale com a Astro /astro/contato (29/10/2026): só INSERE o contato em chamados_de_suporte (tabela global, 0240; quem escreve ainda não tem grupo) e conta contatos do mesmo WhatsApp para o limite; o aviso aos administradores sai por avisarAtendimento, sem ler tabela de grupo nenhum" },
+  "src/lib/plataforma/testeGratis.ts": { categoria: "plataforma", motivo: "teste grátis do /astro/contratar (0241, 29/10/2026): conta pedidos/grupos/fichas do mesmo e-mail, WhatsApp ou documento (só contagens), insere UM pedido e cria a conta pelo núcleo criarConta, que relê esse pedido como prova; marca o pedido e grava o evento do grupo recém-criado" },
   "src/app/astro/contratar/acoes.ts": { categoria: "plataforma", motivo: "assistente /astro/contratar (29/10/2026): só INSERE o pedido em pedidos_de_contratacao (tabela global, 0238; nasce antes do grupo) e conta pedidos do mesmo WhatsApp para o limite; depois avisa no celular os administradores da plataforma (fichas lidas por user_id deles), sem ler tabela de grupo nenhum" },
 };
 
@@ -360,6 +402,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/app/corretor/(painel)/_componentes/FaixaLimitesDoPlano.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; os limites do plano são os do grupo dele (limites do plano)" },
   "src/app/corretor/(painel)/admin/_componentes/UsoDoPlano.tsx": { validadoPor: "getCorretorLogado", motivo: "gestor da sessão; o uso do plano é o do grupo dele (limites do plano)" },
   "src/app/corretor/(painel)/campanhas/page.tsx": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; as mensagens de lista que restam são as do grupo dele (limites do plano)" },
+  "src/app/plataforma/grupos/[id]/suporte/page.tsx": { validadoPor: "exigirAdminDaPlataformaNaPagina", motivo: "operador da plataforma; lê os limites do plano de UM grupo, o do id da rota (visão de suporte, 0243)" },
   "src/app/plataforma/grupos/[id]/page.tsx": { validadoPor: "exigirAdminDaPlataformaNaPagina", motivo: "operador da plataforma; lê a logo de UM grupo, o do id da rota" },
   "src/lib/imovelPublico/ficha.ts": { validadoPor: "lerGrupoPorSlug", motivo: "o grupo sai do slug da URL pública; catálogo, marca e corretor são lidos com o id dele" },
   "src/lib/marcaDoCrm/doPainel.ts": { validadoPor: "getCorretorLogado", motivo: "a marca é a do grupo do corretor da sessão" },
@@ -569,10 +612,21 @@ function dentroDaLeituraRecortada(codigo: string, leitura: Leitura): boolean {
  */
 const FILTRA_GRUPO = /\.(eq|in)\(\s*["']grupo_id["']/;
 
+/**
+ * Tabelas GLOBAIS (sem `grupo_id`, `tabelasDoGrupo.ts`) que guardam o grupo
+ * da linha noutra coluna: filtrar por ela é filtrar o grupo (29/10/2026, o
+ * risco de cancelamento conta os chamados abertos de cada conta).
+ */
+const COLUNA_DO_GRUPO_NAS_GLOBAIS: Record<string, RegExp> = {
+  chamados_de_suporte: /\.(eq|in)\(\s*["']grupo_origem_id["']/,
+  acessos_de_suporte: /\.(eq|in)\(\s*["']grupo_alvo_id["']/,
+};
+
 /** As leituras do arquivo que não filtram o grupo (nem passam pela leitura recortada). */
 function leiturasSemGrupo(codigo: string, ignorar: string[] = []): string[] {
   return leiturasDe(codigo)
     .filter((l) => !ignorar.includes(l.tabela))
+    .filter((l) => !(COLUNA_DO_GRUPO_NAS_GLOBAIS[l.tabela]?.test(l.cadeia) ?? false))
     // A linha da própria imobiliária em `grupos` é recortada pelo id dela.
     .filter((l) => !(l.tabela === "grupos" && /\.eq\(\s*["']id["']/.test(l.cadeia)))
     .filter((l) => !FILTRA_GRUPO.test(l.cadeia) && !dentroDaLeituraRecortada(codigo, l))

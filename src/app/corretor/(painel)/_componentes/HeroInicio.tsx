@@ -1,4 +1,4 @@
-import { fraseDoHero, resumoDaCarteira, saudacaoDoDia } from "@/lib/crm/heroDoInicio";
+import { fraseDoHero, resumoDaCarteira, saudacaoDoDia, type CompromissoDoHero } from "@/lib/crm/heroDoInicio";
 import type { EtapaFunil } from "@/lib/types";
 import { IconeBalao, IconeCalendarioCheck, IconeMarcaFechado } from "./iconesDoHero";
 
@@ -19,10 +19,13 @@ export function HeroInicio({
   nome,
   contagens,
   agora = new Date(),
+  compromisso,
 }: {
   nome: string;
   contagens: Partial<Record<EtapaFunil, number>>;
   agora?: Date;
+  /** O compromisso no vocabulário do ramo (0244); ausente = "visita", o de sempre. */
+  compromisso?: CompromissoDoHero;
 }) {
   const r = resumoDaCarteira(contagens);
   const saudacao = saudacaoDoDia(agora);
@@ -62,7 +65,7 @@ export function HeroInicio({
             {nome}
             <span className="text-acento">.</span>
           </h1>
-          <p className="text-apoio mt-3 max-w-md text-base leading-snug md:text-lg">{fraseDoHero(r)}</p>
+          <p className="text-apoio mt-3 max-w-md text-base leading-snug md:text-lg">{fraseDoHero(r, compromisso)}</p>
         </div>
 
         {/* O medidor. `role="img"` com o texto inteiro: leitor de tela lê o
@@ -112,7 +115,7 @@ export function HeroInicio({
       {/* Três pílulas. Quebram linha em vez de rolar (naoRolaDeLado). */}
       <ul className="relative mt-6 grid grid-cols-3 gap-2 md:gap-3">
         <Pilula icone={<IconeBalao className="size-5" />} numero={r.emConversa} rotulo="em conversa" />
-        <Pilula icone={<IconeCalendarioCheck className="size-5" />} numero={r.visitas} rotulo="visitas" />
+        <Pilula icone={<IconeCalendarioCheck className="size-5" />} numero={r.visitas} rotulo={compromisso?.plural ?? "visitas"} />
         <Pilula icone={<IconeMarcaFechado className="size-5" />} numero={r.fechados} rotulo="fechados" />
       </ul>
     </section>

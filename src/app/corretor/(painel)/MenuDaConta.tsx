@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ITENS_DA_CONTA, rotaAtiva } from "./_componentes/navegacao";
+import { itensDaConta, rotaAtiva } from "./_componentes/navegacao";
 
 /**
  * O menu do avatar — onde Conta passou a morar.
@@ -27,11 +27,14 @@ export function MenuDaConta({
   fotoUrl,
   iniciais,
   formularioSair,
+  ehGestor = false,
 }: {
   nome: string;
   fotoUrl: string | null;
   iniciais: string;
   formularioSair: React.ReactNode;
+  /** O gestor vê também os itens da conta marcados `gestor` (indique e ganhe). */
+  ehGestor?: boolean;
 }) {
   const rota = usePathname();
   const [abertoEm, setAbertoEm] = useState<string | null>(null);
@@ -87,7 +90,7 @@ export function MenuDaConta({
           role="menu"
           className="border-linha bg-elevado shadow-painel-alto absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border p-1.5"
         >
-          {ITENS_DA_CONTA.map((item) => {
+          {itensDaConta(ehGestor).map((item) => {
             const Icone = item.icone;
             const atual = rotaAtiva(rota, item.href);
             return (

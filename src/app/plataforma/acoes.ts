@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { MENSAGEM_EMAIL_EM_USO, MENSAGEM_ENDERECO_DE_ACESSO } from "@/lib/corretores/acessoDaConta";
-import { convidarCorretorDoGrupo, limparEmail } from "@/lib/corretores/convite";
+import { limparEmail } from "@/lib/corretores/convite";
 import { ehEmailDeAcesso, normalizarParaEmail } from "@/lib/corretores/credenciaisIniciais";
 import { creciPendenteDoCadastro } from "@/lib/corretores/cadastroPendente";
 import { erroDaSenha } from "@/lib/auth/politicaDeSenha";
@@ -12,7 +12,6 @@ import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
 import { apagarEm, podeCancelar, podeDesfazerCancelamento, rotinaDeApagarLigada } from "@/lib/grupos/encerramentoRegras";
 import {
   ehUuid,
-  padraoDoEmail,
   validarDadosDoGrupo,
   validarNovoGrupo,
   type DadosDoGrupo,
@@ -26,9 +25,10 @@ import {
   type FormularioDaImobiliaria,
   type FormularioDoIndependente,
 } from "@/lib/plataforma/tiposDeConta";
-import { ACAO_GRUPO_DESFEITO, ORDEM_DO_DESFAZER, type PassoQueFalhou } from "@/lib/plataforma/desfazerGrupo";
+import { apagarLogin, criarContaComPrimeiroAcesso, emailEmFicha, slugDeCorretorLivre } from "@/lib/plataforma/criarConta";
 import { lerTetoDigitado } from "@/lib/planos/cotaDaIa";
 import { ehPlano } from "@/lib/plataforma/rotulosDoGrupo";
+import { validarRamo } from "@/lib/ramos/ramos";
 import { COLUNA_DO_TETO, lerLimiteDigitado, RECURSOS, type Recurso } from "@/lib/planos/limitesDoPlano";
 import { gravarLogoDoGrupo, tirarLogoDoGrupo, type ResultadoDaLogo } from "@/lib/marcaDoCrm/gravarLogo";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -46,8 +46,6 @@ import type { Json } from "@/lib/supabase/types";
  * Nada aqui lê conversa, ficha nem lead (§4): cadastro do grupo e do
  * primeiro acesso, e mais nada (`servicoComGrupo.test.ts`, `plataforma-admin`).
  */
-
-type Servico = ReturnType<typeof createServiceClient>;
 
 export type ResultadoNovoGrupo =
   | { ok: true; grupoId: string; email: string; enviado: boolean; url?: string }
@@ -249,148 +247,6 @@ export async function redefinirSenhaDoAcesso(
   return { ok: true, nome: ficha.nome, sessoesEncerradas: !erroSessoes };
 }
 
-/**
- * O e-mail já é de alguma ficha (de qualquer grupo)? A plataforma não chama
- * `email_de_acesso_livre` (0192), que é do gestor: a mesma pergunta vai pela
- * chave de serviço, e só a contagem volta. Conferir antes de criar o grupo
- * poupa criar e desfazer; o Auth ainda recusa e-mail com login no convite.
- *
- * Sem diferença de maiúsculas: fichas gravadas antes da normalização têm
- * "Beto@Gmail.com", e o digitado chega em minúsculas.
- */
-async function emailEmFicha(servico: Servico, email: string): Promise<boolean> {
-  const { count, error } = await servico
-    .from("corretores")
-    .select("id", { count: "exact", head: true })
-    .ilike("email", padraoDoEmail(email));
-  if (error) {
-    // "Não sei" não vira "em uso": o Auth decide no convite.
-    console.error("[plataforma] falha ao conferir o e-mail nas fichas:", error.message);
-    return false;
-  }
-  return (count ?? 0) > 0;
-}
-
-/**
- * Primeiro slug de corretor livre a partir do nome, olhando TODOS os grupos
- * (o slug de corretor é global até a fase 3). É a regra de
- * `slug_de_corretor_livre` (0192), que exige gestor; o operador não é, então
- * a pergunta vai pela chave de serviço. Erro na conferência não vira
- * "livre": o slug sai com o sufixo de tempo.
- */
-async function slugDeCorretorLivre(servico: Servico, nome: string): Promise<string> {
-  const base = normalizarParaEmail(nome) || "corretor";
-  for (let sufixo = 0; sufixo < 50; sufixo++) {
-    const slug = sufixo === 0 ? base : `${base}-${sufixo + 1}`;
-    const { count, error } = await servico
-      .from("corretores")
-      .select("id", { count: "exact", head: true })
-      .eq("slug", slug);
-    if (error) {
-      console.error("[plataforma] falha ao conferir slug de corretor livre:", error.message);
-      break;
-    }
-    if ((count ?? 0) === 0) return slug;
-  }
-  return `${base}-${Date.now().toString(36)}`;
-}
-
-/**
- * Desfaz um grupo recém-criado que não chegou ao fim (ficha ou convite
- * falharam), na ordem de `ORDEM_DO_DESFAZER`, e deixa UM evento da
- * plataforma dizendo que a tentativa existiu.
- *
- * O login: o convite já apaga o usuário que criou quando o vínculo falha;
- * aqui só se apaga o que ficou VINCULADO a esta ficha, ou o login que o
- * convite não conseguiu conferir (`loginNaoConferido`) — e este só depois de
- * conferir de novo que ele não é de ficha nenhuma. Um login de outra ficha
- * (o Auth reaproveita convite pendente) nunca é apagado.
- */
-async function desfazerGrupo(
-  servico: Servico,
-  tentativa: {
-    grupoId: string;
-    slug: string;
-    passo: PassoQueFalhou;
-    operador: string;
-    corretorId?: string;
-    loginNaoConferido?: string;
-  },
-): Promise<void> {
-  const { grupoId } = tentativa;
-  if (tentativa.corretorId) {
-    const { data: ficha } = await servico
-      .from("corretores")
-      .select("user_id")
-      .eq("id", tentativa.corretorId)
-      .eq("grupo_id", grupoId)
-      .maybeSingle();
-    if (ficha?.user_id) await apagarLogin(servico, ficha.user_id);
-  }
-  if (tentativa.loginNaoConferido) await apagarLoginSemFicha(servico, tentativa.loginNaoConferido);
-
-  let desfeito = true;
-  for (const { tabela, coluna } of ORDEM_DO_DESFAZER) {
-    // Com a tabela numa união, o supabase-js não acha coluna em comum para o
-    // `eq`; o par tabela/coluna de cada linha é conferido no banco
-    // (`plataforma.db.test.ts` apaga pela mesma constante).
-    const apagar = servico.from(tabela).delete() as unknown as {
-      eq: (coluna: string, valor: string) => PromiseLike<{ error: { message: string } | null }>;
-    };
-    const { error } = await apagar.eq(coluna, grupoId);
-    if (error) {
-      // Parar aqui: apagar o grupo com linhas dele ainda vivas bateria na
-      // chave estrangeira do mesmo jeito. O endereço fica preso, e o log diz qual.
-      console.error(`[plataforma] grupo ${grupoId} não foi desfeito por inteiro (${tabela}): ${error.message}`);
-      desfeito = false;
-      break;
-    }
-  }
-
-  // Depois dos deletes: o evento é da plataforma (sem grupo), então não sai
-  // junto com os do grupo. Sem e-mail e sem nome — o endereço e o passo bastam.
-  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
-    grupo_id: null,
-    acao: ACAO_GRUPO_DESFEITO,
-    ator_id: null,
-    ator_plataforma_user_id: tentativa.operador,
-    alvo_corretor_id: null,
-    detalhes: { origem: "plataforma", slug: tentativa.slug, passo: tentativa.passo, desfeito },
-  });
-  if (erroDoEvento) {
-    console.error(`[plataforma] evento do grupo desfeito (${tentativa.slug}) não gravado: ${erroDoEvento.message}`);
-  }
-}
-
-async function apagarLogin(servico: Servico, userId: string): Promise<void> {
-  const { error } = await servico.auth.admin.deleteUser(userId);
-  if (error) console.error(`[plataforma] login do grupo desfeito não apagado: ${error.message}`);
-}
-
-/**
- * Apaga o login que o convite devolveu e não conseguiu conferir — só se,
- * agora, ele não for de ficha nenhuma. Se a conferência falhar de novo, fica:
- * apagar o login de outra pessoa é pior que deixar um órfão.
- */
-async function apagarLoginSemFicha(servico: Servico, userId: string): Promise<void> {
-  const { count, error } = await servico
-    .from("corretores")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
-  if (error) {
-    console.error(`[plataforma] login do convite não conferido de novo; mantido: ${error.message}`);
-    return;
-  }
-  if ((count ?? 0) === 0) await apagarLogin(servico, userId);
-}
-
-function erroDoCriarGrupo(error: { message: string; code?: string }): string {
-  if (error.code === "23505") return "Esse endereço já é de outro grupo. Escolha outro.";
-  console.error("[plataforma] criar_grupo falhou:", error.message);
-  // Pode ter falhado só a resposta, com o grupo já criado: tentar de novo
-  // às cegas bateria no endereço repetido e pareceria culpa dele.
-  return "Não foi possível confirmar a criação do grupo. Antes de tentar de novo, confira na lista de grupos se ele já aparece.";
-}
 
 /**
  * Cria o grupo e o primeiro acesso numa operação só: `criar_grupo` (grupo,
@@ -426,93 +282,21 @@ export async function criarCorretorIndependente(form: FormularioDoIndependente):
 }
 
 /**
- * O miolo comum: confere a guarda (a validação do pedido, pura, já rodou) e
- * cria. Fica aqui, e não nas três entradas, para a guarda estar antes da
- * chave de serviço num lugar só.
+ * O miolo comum das três entradas: confere a guarda (a validação do pedido,
+ * pura, já rodou) e cria pelo núcleo de `criarConta.ts`, com a prova da
+ * guarda (`origem: "plataforma"`). O núcleo confere a sessão de novo antes
+ * da chave: ninguém o chama "como plataforma" sem ser.
  */
 async function criarGrupoValidado(d: NovoGrupoValidado, cadastro?: CadastroDoGrupo): Promise<ResultadoNovoGrupo> {
   const guarda = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in guarda) return { ok: false, erro: guarda.erro };
 
-  const servico = createServiceClient();
-  if (await emailEmFicha(servico, d.primeiro.email)) return { ok: false, erro: MENSAGEM_EMAIL_EM_USO };
-
-  const { data: grupoId, error: erroGrupo } = await servico.rpc("criar_grupo", {
-    p_nome: d.nome,
-    p_slug: d.slug,
-    p_tipo: d.tipo,
-    p_plano: d.plano,
-    p_contato: d.contato,
-    p_criado_por: guarda.userId,
-  });
-  if (erroGrupo || !grupoId) {
-    return { ok: false, erro: erroDoCriarGrupo(erroGrupo ?? { message: "sem id" }) };
-  }
-
-  if (cadastro) {
-    // Documento, CRECI, mensalidade e vencimento: colunas que `criar_grupo` não recebe.
-    const { data: gravado, error: erroCadastro } = await servico
-      .from("grupos")
-      .update(cadastro)
-      .eq("id", grupoId)
-      .select("id");
-    if (erroCadastro || !gravado || gravado.length === 0) {
-      console.error("[plataforma] falha ao gravar o cadastro do grupo:", erroCadastro?.message);
-      await desfazerGrupo(servico, { grupoId, slug: d.slug, passo: "cadastro", operador: guarda.userId });
-      return { ok: false, erro: "Não foi possível gravar os dados do grupo agora; o grupo foi desfeito. Tente de novo." };
-    }
-  }
-
-  const slug = await slugDeCorretorLivre(servico, d.primeiro.nome);
-  // Pela chave de serviço não há sessão para o gatilho tirar o grupo: ele vai explícito.
-  const { data: ficha, error: erroFicha } = await servico
-    .from("corretores")
-    .insert({
-      nome: d.primeiro.nome,
-      creci: d.primeiro.creci,
-      whatsapp: d.primeiro.whatsapp,
-      slug,
-      ativo: true,
-      papel: "gestor",
-      grupo_id: grupoId,
-    })
-    .select("id")
-    .single();
-  if (erroFicha || !ficha) {
-    console.error("[plataforma] falha ao criar a ficha do primeiro acesso:", erroFicha?.message);
-    await desfazerGrupo(servico, { grupoId, slug: d.slug, passo: "ficha", operador: guarda.userId });
-    return { ok: false, erro: "Não foi possível criar o primeiro acesso agora; o grupo foi desfeito. Tente de novo." };
-  }
-
-  const convite = await convidarCorretorDoGrupo({
-    grupoId,
-    corretorId: ficha.id,
-    email: d.primeiro.email,
-    ator: { plataformaUserId: guarda.userId },
-    slug,
-  });
-  if (!convite.ok) {
-    await desfazerGrupo(servico, {
-      grupoId,
-      slug: d.slug,
-      passo: "convite",
-      operador: guarda.userId,
-      corretorId: ficha.id,
-      loginNaoConferido: convite.loginNaoConferido,
-    });
-    return { ok: false, erro: convite.erro };
-  }
-
+  const r = await criarContaComPrimeiroAcesso({ origem: "plataforma", userId: guarda.userId }, d, cadastro);
+  if (!r.ok) return r;
   revalidatePath("/plataforma");
   // Conta nova no celular dos ADMs (29/10/2026, "todos os atendimentos").
   avisarContaNova(d.nome, d.tipo);
-  return {
-    ok: true,
-    grupoId,
-    email: d.primeiro.email,
-    enviado: convite.enviado,
-    ...(convite.url ? { url: convite.url } : {}),
-  };
+  return r;
 }
 
 export type ResultadoDadosDoGrupo = { ok: true } | { ok: false; erro: string };
@@ -774,6 +558,79 @@ export async function mudarPlanoDoGrupo(
       console.error(`[plataforma] evento ${evento.acao} (${grupoId}) não gravado: ${erroDoEvento.message}`, evento.detalhes);
     }
   }
+
+  revalidatePath("/plataforma");
+  revalidatePath(`/plataforma/grupos/${grupoId}`);
+  return { ok: true };
+}
+
+export type ResultadoMudancaDeRamo = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Muda o ramo do negócio do grupo (pedido do dono, 29/10/2026, 0244): o ramo
+ * personaliza o CRM do cliente (vocabulário, módulos do menu, IA do
+ * WhatsApp). Só a plataforma muda; o logado lê (grant da 0244) e não escreve.
+ * Nada é apagado ao trocar: o catálogo de imóveis de quem sai da imobiliária
+ * só some do menu, e volta se o ramo voltar.
+ *
+ * A Next Home é imobiliária e fica imobiliária (o prompt dela é o de sempre).
+ * O evento `ramo_do_grupo_alterado` entra no CHECK na 0244; antes dela o
+ * insert falha, o log diz, e o ramo muda mesmo assim (como `plano_alterado`).
+ */
+export async function mudarRamoDoGrupo(
+  grupoId: string,
+  pedido: { ramo: string; ramoDescricao: string },
+): Promise<ResultadoMudancaDeRamo> {
+  const guarda = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in guarda) return { ok: false, erro: guarda.erro };
+  if (!ehUuid(grupoId)) return { ok: false, erro: "Grupo não encontrado." };
+  if (grupoId === GRUPO_NEXT_HOME_ID) return { ok: false, erro: "A Next Home fica no ramo imobiliária." };
+  const validado = validarRamo(pedido?.ramo, pedido?.ramoDescricao);
+  if (!validado.ok) return { ok: false, erro: validado.erro };
+  const { ramo, ramoDescricao } = validado.dados;
+
+  const servico = createServiceClient();
+  const { data: antes, error: erroLeitura } = await servico
+    .from("grupos")
+    .select("ramo, ramo_descricao")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (erroLeitura) {
+    console.error(`[plataforma] ramo do grupo ${grupoId} não lido: ${erroLeitura.message}`);
+    return { ok: false, erro: "Não foi possível mudar o ramo agora. Tente de novo." };
+  }
+  if (!antes) return { ok: false, erro: "Grupo não encontrado." };
+  // Copiado antes do update: a linha lida não é reaproveitada depois da escrita.
+  const ramoAntes = antes.ramo;
+  if (ramoAntes === ramo && (antes.ramo_descricao ?? null) === ramoDescricao) {
+    return { ok: false, erro: "O grupo já está neste ramo." };
+  }
+
+  const { data, error } = await servico
+    .from("grupos")
+    .update({ ramo, ramo_descricao: ramoDescricao })
+    .eq("id", grupoId)
+    .select("id");
+  if (error) {
+    console.error(`[plataforma] ramo do grupo ${grupoId} não gravado: ${error.message}`);
+    return { ok: false, erro: "Não foi possível mudar o ramo agora. Tente de novo." };
+  }
+  if (!data || data.length === 0) return { ok: false, erro: "Grupo não encontrado." };
+
+  const { error: erroDoEvento } = await servico.from("admin_eventos").insert({
+    grupo_id: grupoId,
+    acao: "ramo_do_grupo_alterado",
+    ator_id: null,
+    ator_plataforma_user_id: guarda.userId,
+    alvo_corretor_id: null,
+    detalhes: {
+      origem: "plataforma",
+      antes: ramoAntes,
+      depois: ramo,
+      ...(ramoDescricao ? { descricao: ramoDescricao } : {}),
+    },
+  });
+  if (erroDoEvento) console.error(`[plataforma] evento ramo_do_grupo_alterado (${grupoId}) não gravado: ${erroDoEvento.message}`);
 
   revalidatePath("/plataforma");
   revalidatePath(`/plataforma/grupos/${grupoId}`);

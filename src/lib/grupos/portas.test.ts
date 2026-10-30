@@ -361,6 +361,9 @@ describe("/api/clique-whatsapp", () => {
  */
 const PORTAS: { arquivo: string; funcoes?: string[] }[] = [
   { arquivo: "src/lib/inbound/processarEmail.ts" },
+  { arquivo: "src/lib/inbound/gravarLeadsRecebidos.ts" },
+  { arquivo: "src/lib/portais/receberLead.ts" },
+  { arquivo: "src/lib/notificacoes/leadsQueCombinam.ts" },
   { arquivo: "src/lib/inbound/gmailCaixa.ts" },
   { arquivo: "src/app/api/webhooks/meta/route.ts" },
   { arquivo: "src/lib/metaAds.ts" },

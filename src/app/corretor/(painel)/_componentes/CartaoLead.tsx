@@ -66,6 +66,8 @@ const PORTAL: Record<string, { label: string; cor: string }> = {
   vivareal: { label: "VivaReal", cor: "#e84c3d" },
   olx: { label: "OLX", cor: "#6e0ad6" },
   imovelweb: { label: "Imovelweb", cor: "#e67e22" },
+  // 29/10/2026: webhook do Canal Pro, que não diz qual dos três portais.
+  grupo_olx: { label: "ZAP/Viva/OLX", cor: "#6e0ad6" },
   meta_ads: { label: "Meta Ads", cor: "#0066ff" },
   site_direto: { label: "Site direto", cor: "#00806c" },
 };

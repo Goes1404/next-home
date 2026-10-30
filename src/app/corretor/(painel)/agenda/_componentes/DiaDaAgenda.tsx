@@ -40,9 +40,13 @@ function textosDoItem(item: ItemDaAgenda, modo: "minha" | "equipe"): { titulo: s
       const situacao =
         item.status && item.status !== "marcada"
           ? (STATUS[item.status] ?? "Visita")
-          : item.confirmadaPeloCliente
-            ? "confirmada"
-            : "a confirmar";
+          : item.remarcacaoPedidaEm
+            ? "pediu para remarcar"
+            : item.confirmadaPeloCliente
+              ? "confirmada"
+              : item.confirmacaoPedidaEm
+                ? "confirmação pedida"
+                : "a confirmar";
       return { titulo: item.nome, apoio: [`Visita · ${situacao}`, item.imovel?.nome].filter(Boolean).join(" · ") };
     }
     case "compromisso": {
@@ -201,7 +205,13 @@ function DetalheDoItem({
   if (item.tipo === "visita") {
     return (
       <div className="space-y-3">
-        <CartaoDaVisita visita={item} preparo={preparo} vistaDe={modo === "minha" ? vistaDe : undefined} semMoldura />
+        <CartaoDaVisita
+          visita={item}
+          preparo={preparo}
+          vistaDe={modo === "minha" ? vistaDe : undefined}
+          agoraIso={modo === "minha" ? agora.toISOString() : undefined}
+          semMoldura
+        />
         {modo === "equipe" && (
           <p className="text-fluid-xs text-apoio">
             Com {item.corretorNome ?? "o corretor"} · {STATUS[item.status ?? "marcada"] ?? "Marcada"}

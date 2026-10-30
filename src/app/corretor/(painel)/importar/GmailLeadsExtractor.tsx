@@ -41,6 +41,7 @@ const PORTAL_INFO: Record<
   vivareal: { label: "VivaReal", cor: "#e84c3d", icone: <Home className="h-4 w-4" /> },
   olx: { label: "OLX", cor: "#6e0ad6", icone: <Tag className="h-4 w-4" /> },
   imovelweb: { label: "Imovelweb", cor: "#e67e22", icone: <Building className="h-4 w-4" /> },
+  grupo_olx: { label: "Canal Pro (ZAP/Viva/OLX)", cor: "#6e0ad6", icone: <Tag className="h-4 w-4" /> },
   meta_ads: {
     label: "Meta Ads (Insta/FB)",
     cor: "#0066ff",

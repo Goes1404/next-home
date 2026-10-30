@@ -39,8 +39,15 @@ import { ehEmailDeAcesso } from "./credenciaisIniciais";
 /** Para onde vai quem abre o link: criar a própria senha. */
 export const DESTINO_DO_LINK = "/corretor/definir-senha";
 
-/** Quem agiu: um corretor-gestor do grupo, ou um operador da plataforma. */
-export type AtorDoAcesso = { corretorId: string } | { plataformaUserId: string };
+/**
+ * Quem agiu: um corretor-gestor do grupo, um operador da plataforma, ou o
+ * sistema no teste grátis (29/10/2026, 0241: sem login; o pedido de
+ * contratação que originou a conta fica no evento).
+ */
+export type AtorDoAcesso =
+  | { corretorId: string }
+  | { plataformaUserId: string }
+  | { sistema: "teste-gratis"; pedidoId: string };
 
 export type ResultadoDoLink = { ok: true; enviado: boolean; url?: string } | { ok: false; erro: string };
 
@@ -78,7 +85,10 @@ export async function registrarEventoDeAcesso(
     ator_plataforma_user_id: "plataformaUserId" in evento.ator ? evento.ator.plataformaUserId : null,
     acao: evento.acao,
     alvo_corretor_id: evento.alvoCorretorId,
-    detalhes: evento.detalhes ?? {},
+    detalhes:
+      "sistema" in evento.ator
+        ? { ...(evento.detalhes ?? {}), origem: evento.ator.sistema, pedido_id: evento.ator.pedidoId }
+        : (evento.detalhes ?? {}),
   });
   if (error) {
     console.error(`[acesso] evento ${evento.acao} não gravado (corretor ${evento.alvoCorretorId}): ${error.message}`);

@@ -41,6 +41,14 @@ describe("o painel carrega por rota só o que a rota usa", () => {
     expect(balao).toMatch(/dynamic\(\(\) => import\("\.\/PainelDoConsultor"\)/);
   });
 
+  it("a busca rápida (no cabeçalho, em toda rota) só baixa a paleta no primeiro uso", () => {
+    const botao = ler("app/corretor/(painel)/_componentes/busca/BotaoBuscaRapida.tsx");
+    expect(botao).toMatch(/dynamic\(\(\) => import\("\.\/PaletaDeBusca"\)/);
+    expect(botao).not.toMatch(/from "\.\/PaletaDeBusca"/);
+    // A paleta busca pela rota da sessão, sem o supabase-js no navegador.
+    expect(ler("app/corretor/(painel)/_componentes/busca/PaletaDeBusca.tsx")).not.toMatch(/lib\/supabase/);
+  });
+
   it("a sessão do painel é verificada localmente, não com uma ida ao Auth por página", () => {
     const sessao = ler("lib/corretorSessao.ts");
     expect(sessao).not.toContain("getUser(");

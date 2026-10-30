@@ -43,6 +43,7 @@ const {
   criarImobiliaria,
   editarDadosDoGrupo,
   mudarPlanoDoGrupo,
+  mudarRamoDoGrupo,
   redefinirSenhaDoAcesso,
 } = await import("./acoes");
 const { MENSAGEM_EMAIL_EM_USO } = await import("@/lib/corretores/acessoDaConta");
@@ -922,6 +923,52 @@ describe("mudar o plano do grupo (29/10/2026)", () => {
   it("grupo que não existe não grava evento", async () => {
     const r = await mudarPlanoDoGrupo("00000000-0000-4000-8000-0000000000ff", { plano: "profissional", voltarLimitesAoPadrao: false });
     expect(r).toEqual({ ok: false, erro: "Grupo não encontrado." });
+    expect(banco.tabelas.admin_eventos).toEqual([]);
+  });
+});
+
+describe("mudar o ramo do grupo (0244, 29/10/2026)", () => {
+  const G1 = "00000000-0000-4000-8000-0000000000e1";
+  const NEXT_HOME = "00000000-0000-0000-0000-000000000001";
+
+  beforeEach(() => {
+    banco.tabelas.grupos.push(
+      { id: G1, ramo: "imobiliaria", ramo_descricao: null },
+      { id: NEXT_HOME, ramo: "imobiliaria", ramo_descricao: null },
+    );
+  });
+  const grupo = (id: string) => banco.tabelas.grupos.find((g) => g.id === id)!;
+
+  it("muda o ramo e registra quem mudou, de qual para qual", async () => {
+    expect(await mudarRamoDoGrupo(G1, { ramo: "advocacia", ramoDescricao: "" })).toEqual({ ok: true });
+    expect(grupo(G1)).toMatchObject({ ramo: "advocacia", ramo_descricao: null });
+    expect(banco.tabelas.admin_eventos).toEqual([
+      expect.objectContaining({
+        grupo_id: G1,
+        acao: "ramo_do_grupo_alterado",
+        ator_plataforma_user_id: OPERADOR,
+        detalhes: { origem: "plataforma", antes: "imobiliaria", depois: "advocacia" },
+      }),
+    ]);
+  });
+
+  it("Outro exige o texto e guarda o texto limpo", async () => {
+    expect((await mudarRamoDoGrupo(G1, { ramo: "outro", ramoDescricao: " " })).ok).toBe(false);
+    expect(await mudarRamoDoGrupo(G1, { ramo: "outro", ramoDescricao: " Pet  shop " })).toEqual({ ok: true });
+    expect(grupo(G1)).toMatchObject({ ramo: "outro", ramo_descricao: "Pet shop" });
+  });
+
+  it("mesmo ramo, ramo fora da lista, a Next Home e quem não é administrador não mudam nada", async () => {
+    expect(await mudarRamoDoGrupo(G1, { ramo: "imobiliaria", ramoDescricao: "" })).toEqual({
+      ok: false,
+      erro: "O grupo já está neste ramo.",
+    });
+    expect((await mudarRamoDoGrupo(G1, { ramo: "astronautica", ramoDescricao: "" })).ok).toBe(false);
+    expect((await mudarRamoDoGrupo(NEXT_HOME, { ramo: "seguros", ramoDescricao: "" })).ok).toBe(false);
+    guarda = { erro: "Esta ação é restrita a quem administra a plataforma." };
+    expect((await mudarRamoDoGrupo(G1, { ramo: "seguros", ramoDescricao: "" })).ok).toBe(false);
+    expect(grupo(G1).ramo).toBe("imobiliaria");
+    expect(grupo(NEXT_HOME).ramo).toBe("imobiliaria");
     expect(banco.tabelas.admin_eventos).toEqual([]);
   });
 });

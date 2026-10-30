@@ -32,13 +32,26 @@ export async function lerCasaDoGrupo(grupoId: string): Promise<IdentidadeDaCasa>
 async function lerCasaSemLinks(grupoId: string): Promise<IdentidadeDaCasa> {
   try {
     const servico = createServiceClient();
-    const completa = await comRetentativa("casa do grupo", () =>
+    // Com o ramo (0244). Antes dela aplicada a coluna não existe (42703): aí
+    // lê a casa como antes, e a IA fica com o prompt da imobiliária.
+    const comRamo = await comRetentativa("casa do grupo", () =>
       servico
         .from("grupos")
-        .select("nome, ia_nome_da_casa, ia_nome_assistente, ia_regiao, ia_tom")
+        .select("nome, ia_nome_da_casa, ia_nome_assistente, ia_regiao, ia_tom, ramo, ramo_descricao")
         .eq("id", grupoId)
         .maybeSingle(),
     );
+    if (!comRamo.error) return casaDoGrupo((comRamo.data as LinhaDaCasa | null) ?? null, grupoId);
+    const completa =
+      comRamo.error.code === "42703"
+        ? await comRetentativa("casa do grupo", () =>
+            servico
+              .from("grupos")
+              .select("nome, ia_nome_da_casa, ia_nome_assistente, ia_regiao, ia_tom")
+              .eq("id", grupoId)
+              .maybeSingle(),
+          )
+        : comRamo;
     if (!completa.error) return casaDoGrupo((completa.data as LinhaDaCasa | null) ?? null, grupoId);
 
     if (completa.error.code === "42703") {

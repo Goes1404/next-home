@@ -5,6 +5,7 @@ import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import { ehUuid } from "@/lib/plataforma/dadosDoGrupo";
 import { ehStatusDoPedido } from "@/lib/plataforma/pedidoDeContratacao";
 import { createServiceClient } from "@/lib/supabase/service";
+import { registrarIndicacaoDoPedido } from "@/lib/indicacoes/indicacao";
 
 /**
  * O andamento de um pedido de contratação (29/10/2026): status, observação
@@ -52,6 +53,16 @@ export async function atualizarPedido(
     return { ok: false, erro: ERRO_GENERICO };
   }
   if (!data || data.length === 0) return { ok: false, erro: "Pedido não encontrado." };
+
+  // Indique e ganhe (0247): o pedido que trouxe código liga a conta criada à
+  // que indicou. Sem o cookie do visitante (o daqui seria o do administrador).
+  // Converter de novo não duplica (uma indicação por conta indicada).
+  if (status === "convertido" && grupo) {
+    const indicacao = await registrarIndicacaoDoPedido(servico, { pedidoId: id, grupoIndicadoId: grupo });
+    if (indicacao.resultado === "falhou") {
+      console.error(`[plataforma] indicação do pedido ${id} não registrada: ${indicacao.motivo}`);
+    }
+  }
 
   console.info(`[plataforma] pedido ${id} → ${status} por ${guarda.userId}`);
   revalidatePath("/plataforma/pedidos");

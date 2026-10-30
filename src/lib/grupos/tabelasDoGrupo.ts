@@ -34,6 +34,34 @@ export const TABELAS_GLOBAIS = [
   // Aparelhos dos administradores da plataforma com aviso ligado (0239,
   // 29/10/2026): o dono do aparelho é o usuário do Auth, acima dos grupos.
   "inscricoes_push_da_plataforma",
+  // Chamados de suporte e contato com a Astro (0240, 29/10/2026): o contato
+  // do site não tem grupo, e o do painel é conversa da imobiliária COM a
+  // Astro, não dado dela. O grupo de onde veio fica em `grupo_origem_id`
+  // (não `grupo_id`, pelo mesmo motivo dos pedidos). Só a chave de serviço
+  // lê e escreve.
+  "chamados_de_suporte",
+  // Acessos da visão de suporte da plataforma (0243, 29/10/2026): o acesso
+  // é um ato da Astro SOBRE a conta, não dado dela. O grupo acessado fica em
+  // `grupo_alvo_id` (não `grupo_id`, pelo mesmo motivo dos chamados). Só a
+  // chave de serviço lê e escreve; o gestor vê os do grupo dele pela chave
+  // filtrada pela sessão.
+  "acessos_de_suporte",
+  // Avisos da Astro para o painel de todos os clientes (0242, 29/10/2026):
+  // o recado é da plataforma e vale para todos os grupos; o público é
+  // recortado por papel (todos ou só gestores), nunca por grupo. Só a chave
+  // de serviço lê e escreve.
+  "avisos_aos_clientes",
+  // Indique e ganhe (0247, 29/10/2026): a linha liga DUAS contas (quem
+  // indicou e quem foi indicada), então não cabe num grupo só. Os grupos
+  // ficam em `grupo_indicador_id` e `grupo_indicado_id` (não `grupo_id`,
+  // pelo mesmo motivo dos chamados). Só a chave de serviço lê e escreve; o
+  // gestor vê as do grupo dele pela chave filtrada pela sessão.
+  "indicacoes",
+  // O crédito do indique e ganhe (0247, 29/10/2026): ato da Astro sobre a
+  // conta que indicou (desconto a aplicar), gerado pelo pagamento de OUTRA
+  // conta. A conta beneficiada fica em `grupo_beneficiado_id`. Só a chave de
+  // serviço lê e escreve.
+  "creditos_de_indicacao",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
@@ -66,6 +94,11 @@ export const CHAVES_UNICAS_GLOBAIS = {
   links_do_cliente_pkey: "token sorteado do link do cliente",
   corretor_agenda_token_key: "token sorteado da agenda .ics",
   parceiros_token_key: "token sorteado da página do parceiro",
+  // 0245 (29/10/2026): o token da URL do webhook dos portais diz o grupo
+  // (a chave do Grupo OLX é por CRM, não por cliente), e o código curto da
+  // vitrine (`/v/<codigo>`) não tem grupo no caminho.
+  integracoes_de_portais_token_key: "token sorteado do webhook dos portais",
+  links_do_cliente_codigo_key: "código curto sorteado da vitrine (/v/<codigo>)",
   // Ids que a Meta emite: únicos na Meta inteira, e a integração é só do
   // grupo 1 até a fase 7, que escopa a métrica por grupo.
   leads_meta_lead_id_key: "id do lead na Meta; upsert do webhook (fase 7)",

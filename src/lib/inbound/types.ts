@@ -3,6 +3,9 @@ export type PortalOrigem =
   | "vivareal"
   | "olx"
   | "imovelweb"
+  // 29/10/2026: lead do webhook do Canal Pro (ZAP, Viva Real e OLX numa URL
+  // só). O payload do Grupo OLX não diz de qual dos três portais veio.
+  | "grupo_olx"
   | "meta_ads"
   | "site_direto"
   | "email_outro";

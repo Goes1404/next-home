@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bancoFalso, type BancoFalso } from "../../../../../test/bancoFalso";
+import { bancoFalso, leiturasSemGrupo, type BancoFalso } from "../../../../../test/bancoFalso";
 
 /**
  * O relatório semanal roda pela chave de serviço, que enxerga todos os
@@ -28,6 +28,15 @@ vi.mock("@/lib/admin/relatorioSemanal", () => ({
   acharNoticias: () => [],
   assuntoDoRelatorio: () => "Relatório",
   corpoDoRelatorio: ({ numeros }: { numeros: unknown }) => ({ texto: JSON.stringify(numeros), html: "" }),
+}));
+
+// O resumo no WhatsApp (0246) sai pelo canal dos avisos ao corretor.
+const noWhatsapp: { para: string; texto: string }[] = [];
+vi.mock("@/lib/crm/avisoAoCorretor", () => ({
+  avisarCorretor: async (_s: unknown, para: string, texto: string) => {
+    noWhatsapp.push({ para, texto });
+    return true;
+  },
 }));
 
 const { GET } = await import("./route");
@@ -95,5 +104,81 @@ describe("/api/cron/relatorio-semanal", () => {
       campanhaEntregues: 1,
       campanhaRespostas: 1,
     });
+  });
+});
+
+/*
+ * O resumo da semana no WhatsApp do gestor (0246, 29/10/2026): só para quem
+ * deixou ligado, com os números do PRÓPRIO grupo, uma vez por semana.
+ */
+describe("/api/cron/relatorio-semanal no WhatsApp do gestor", () => {
+  const diasAtras = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
+
+  beforeEach(() => {
+    enviados.length = 0;
+    noWhatsapp.length = 0;
+    banco = bancoFalso({
+      grupos: [{ id: GRUPO_A }, { id: GRUPO_B }],
+      corretores: [
+        { id: "gestor-a", nome: "Ana Souza", email: "ana@a", user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_A, relatorio_semanal_whatsapp: true, relatorio_semanal_whatsapp_em: null },
+        { id: "gestor-a2", nome: "Alice", email: null, user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_A, relatorio_semanal_whatsapp: false, relatorio_semanal_whatsapp_em: null },
+        { id: "corretor-a", nome: "Caio", email: null, user_id: null, papel: "corretor", ativo: true, grupo_id: GRUPO_A },
+        { id: "gestor-b", nome: "Bia", email: "bia@b", user_id: null, papel: "gestor", ativo: true, grupo_id: GRUPO_B, relatorio_semanal_whatsapp: true, relatorio_semanal_whatsapp_em: null },
+      ],
+      leads: [
+        // Grupo A: 2 na semana, 1 na anterior.
+        { id: "l1", created_at: diasAtras(2), arquivado_em: null, grupo_id: GRUPO_A },
+        { id: "l2", created_at: diasAtras(3), arquivado_em: null, grupo_id: GRUPO_A },
+        { id: "l3", created_at: diasAtras(10), arquivado_em: null, grupo_id: GRUPO_A },
+        // Grupo B: 5 na semana — não podem aparecer para a Ana.
+        ...[1, 2, 3, 4, 5].map((i) => ({ id: `b${i}`, created_at: diasAtras(2), arquivado_em: null, grupo_id: GRUPO_B })),
+      ],
+      visitas: [
+        { inicio: diasAtras(2), status: "realizada", grupo_id: GRUPO_A },
+        { inicio: diasAtras(9), status: "realizada", grupo_id: GRUPO_A },
+        { inicio: diasAtras(9), status: "cancelada", grupo_id: GRUPO_A },
+        { inicio: diasAtras(2), status: "realizada", grupo_id: GRUPO_B },
+      ],
+      vendas: [
+        { valor_venda: 450_000, data_venda: diasAtras(2).slice(0, 10), status: "ativa", grupo_id: GRUPO_A },
+        { valor_venda: 900_000, data_venda: diasAtras(2).slice(0, 10), status: "ativa", grupo_id: GRUPO_B },
+      ],
+      corretor_whatsapp_instancias: [],
+      whatsapp_funil_metricas: [],
+      whatsapp_resposta_metricas: [],
+      whatsapp_campanhas_fila: [],
+      empreendimentos: [],
+    });
+  });
+
+  it("vai a quem deixou ligado, com os números do grupo dele, comparados com a semana anterior", async () => {
+    const resposta = await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    expect(resposta.status).toBe(200);
+    expect(noWhatsapp.map((m) => m.para).sort()).toEqual(["gestor-a", "gestor-b"]);
+
+    const daAna = noWhatsapp.find((m) => m.para === "gestor-a")!.texto;
+    expect(daAna).toContain("Leads novos: *2* · ↑ 1 (1 na anterior)");
+    expect(daAna).toContain("Visitas feitas: *1* · igual à anterior");
+    expect(daAna).toContain("Vendas: *1* (R$ 450 mil) · ↑ 1 (0 na anterior)");
+    expect(daAna).not.toContain("900");
+
+    const daBia = noWhatsapp.find((m) => m.para === "gestor-b")!.texto;
+    expect(daBia).toContain("Leads novos: *5*");
+    // O e-mail continua saindo como antes.
+    expect(enviados.map((e) => e.para).sort()).toEqual(["ana@a", "bia@b"]);
+  });
+
+  it("uma vez por semana: o segundo disparo da mesma manhã não repete", async () => {
+    await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    expect(noWhatsapp.filter((m) => m.para === "gestor-a")).toHaveLength(1);
+    expect(banco.tabelas.corretores.find((c) => c.id === "gestor-a")?.relatorio_semanal_whatsapp_em).toBeTruthy();
+  });
+
+  it("toda leitura de corretores, leads, visitas e vendas filtra o grupo", async () => {
+    await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
+    for (const tabela of ["corretores", "leads", "visitas", "vendas"]) {
+      expect(leiturasSemGrupo(banco, tabela), tabela).toEqual([]);
+    }
   });
 });

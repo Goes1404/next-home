@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { copiarTexto } from "@/lib/ui/copiarTexto";
+import { CONFIG_DOS_RAMOS, RAMO_DESCRICAO_MAXIMO, RAMO_DESCRICAO_MINIMO, RAMOS } from "@/lib/ramos/ramos";
 
 /** O que os dois formulários (imobiliária e independente) compartilham. */
 
@@ -45,6 +46,49 @@ export function Campo({
       />
       {ajuda && <span className="text-tenue">{ajuda}</span>}
     </label>
+  );
+}
+
+/**
+ * O ramo do negócio da conta (29/10/2026, 0244): a lista de `RAMOS` e, no
+ * "Outro", o texto livre. É o ramo que personaliza o CRM do cliente
+ * (vocabulário, módulos do menu, a IA do WhatsApp).
+ */
+export function SeletorDeRamo({
+  ramo,
+  descricao,
+  aoMudarRamo,
+  aoMudarDescricao,
+}: {
+  ramo: string;
+  descricao: string;
+  aoMudarRamo: (ramo: string) => void;
+  aoMudarDescricao: (texto: string) => void;
+}) {
+  return (
+    <>
+      <label className="text-fluid-xs text-apoio flex min-w-0 flex-col gap-1">
+        Ramo do negócio
+        <select name="ramo" value={ramo} onChange={(e) => aoMudarRamo(e.target.value)} className={CLASSE_DO_CAMPO}>
+          {RAMOS.map((r) => (
+            <option key={r} value={r}>
+              {CONFIG_DOS_RAMOS[r].rotulo}
+            </option>
+          ))}
+        </select>
+        <span className="text-tenue">Personaliza o vocabulário, o menu e a IA do cliente.</span>
+      </label>
+      {ramo === "outro" && (
+        <Campo
+          rotulo="Qual ramo?"
+          name="ramoDescricao"
+          value={descricao}
+          onChange={aoMudarDescricao}
+          dica="Clínica veterinária"
+          ajuda={`De ${RAMO_DESCRICAO_MINIMO} a ${RAMO_DESCRICAO_MAXIMO} caracteres.`}
+        />
+      )}
+    </>
   );
 }
 
