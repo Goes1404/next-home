@@ -183,6 +183,49 @@ Em texto e, quando ajuda, uma imagem com o gráfico [dono].
     contatos ainda posso hoje?". O nível do número (10 → 15 → 20 por dia)
     depende do trabalho de níveis por resultado, ainda não feito.
 
+### 3.7 Acrescentadas na revisão do painel (30/10/2026) [dono]
+
+Comparando as telas do painel com a lista acima, o dono acrescentou:
+
+21. **Reuniões, bloqueios e anotações.** "Bloqueia minha tarde de sexta",
+    "reunião de equipe terça 9h" (só gestor), "anota: ligar pro cartório".
+    A agenda por mensagem de hoje já faz bloqueio e reunião.
+22. **Simular financiamento.** "Quanto fica a parcela de 450 mil com renda de
+    8 mil?": usa o simulador de crédito da plataforma.
+23. **Quem combina com o imóvel.** "Quem pode querer o Vitta?": leads com
+    perfil para aquele imóvel (o inverso do 11), com a oferta de montar uma
+    lista (14).
+24. **Meta e comissão.** "Quanto falta pra minha meta?", "quanto tenho a
+    receber de comissão?".
+25. **Informar gasto de anúncio.** "Gastei 300 no anúncio do Vitta": atualiza
+    o gasto da campanha em Anúncios pagos. Em 29/10, 13 de 19 anúncios
+    estavam sem valor; é o que mais falta para a tela medir custo.
+26. **Lançar no caixa** (gestor). "Lança despesa de 1.200 de aluguel."
+27. **Resultado do mês** (gestor). "Como fechou o mês?": receita, despesas,
+    comissões e resultado, com os mesmos números da tela Resultado do mês.
+28. **Atualizar imóvel** (gestor). "O 2 dorms do Vitta subiu para 480 mil",
+    "vendeu a unidade 32": preço e disponibilidade.
+29. **Importar planilha.** O corretor manda a planilha de leads (Excel ou CSV)
+    no WhatsApp; a IA mostra quantos entram, quantos já existiam e quantos
+    têm telefone inválido, e cadastra depois do "sim".
+30. **WhatsApp da equipe** (gestor). "Quem está com o WhatsApp desconectado?":
+    lista e manda a cada um, pelo central, o passo para reconectar.
+31. **Seleção e proposta.** "Monta uma seleção de 3 imóveis pro João", "gera
+    a proposta do Vitta pra Maria": cria a página com link (as que já
+    existem para o cliente) e manda ao cliente pelo número do corretor,
+    depois do "sim".
+32. **Criar vídeo do imóvel.** "Faz um vídeo do Vitta para o Reels": usa o
+    criador de vídeo da plataforma.
+33. **Meu link e mensagens prontas.** "Me manda meu link do Vitta"; "usa a
+    mensagem pronta de boas-vindas pro João" (sai do número do corretor,
+    depois do "sim").
+
+**Fica no painel, de propósito** [minha]: configurações (assistente, portais,
+tabela de preços, construtoras, parceiros, SLA), perfil e senha, o detalhe
+fiscal e contábil. São raros e pedem tela; pelo WhatsApp o risco de erro é
+maior que o ganho. Também ficaram fora, por decisão do dono: recado livre ao
+cliente, cadastrar imóvel por foto e convidar ou desativar usuário.
+
 ## 4. Como funciona por dentro
 
 ### 4.1 O número
@@ -345,9 +388,9 @@ seguinte começa com o que a anterior ensinou. Ordem aprovada pelo dono.
 | Onda | O que a Next Home recebe | Capacidades (seção 3) |
 |---|---|---|
 | **0 · Fundação** | O número 11 96867-1127 conectado como instância da plataforma; no painel, a chave que liga o recurso por imobiliária, o link `wa.me` e o número que o central reconhece; reconhece quem escreve (4.2) e dá boas-vindas; entende texto e áudio (foto responde "ainda não sei"); responde "o que você sabe fazer?" e "ainda não sei"; avisa quando a IA está indisponível (7.2); registra todo comando (4.6) | 19 (ajuda) |
-| **1 · Leads e agenda** | O uso de todo dia | 1, 2, 3, 4, 6, 7, 18, 19 (desfazer) |
-| **2 · Imóveis, relatórios e avisos** | O gestor passa a ver valor; o central começa a mandar mensagem por conta própria (avisos de 4.7, com a escolha de horário no painel, e lembretes); o central passa a funcionar em grupos da equipe (4.1) | 5, 8, 9, 10, 11, 12, 13 |
-| **3 · Listas e imagens** | O que mexe com clientes e com o risco de bloqueio, por último | 14, 15, 16, 17, 20 |
+| **1 · Leads e agenda** | O uso de todo dia | 1, 2, 3, 4, 6, 7, 18, 19 (desfazer), 21 |
+| **2 · Imóveis, relatórios e avisos** | O gestor passa a ver valor; o central começa a mandar mensagem por conta própria (avisos de 4.7, com a escolha de horário no painel, e lembretes); o central passa a funcionar em grupos da equipe (4.1) | 5, 8, 9, 10, 11, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29, 30 |
+| **3 · Listas, imagens e o que vai ao cliente** | O que mexe com clientes e com o risco de bloqueio, por último | 14, 15, 16, 17, 20, 31, 32, 33 |
 
 - A agenda pelo WhatsApp de hoje (que responde no número do próprio
   corretor) passa para o central na onda 1. Durante a onda, as duas portas

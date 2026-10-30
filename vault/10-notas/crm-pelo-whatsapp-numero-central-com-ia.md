@@ -12,7 +12,7 @@ codigo:
 fonte: conversa de desenho com o dono, 30/10/2026 (skill doc-coauthoring, dois testes com leitor sem contexto)
 created: 2026-10-30
 updated: 2026-10-30
-summary: Um número de WhatsApp da plataforma (11 96867-1127) com uma IA que deixa corretores e gestores operarem o CRM inteiro em linguagem natural (texto, áudio, foto), sempre com proposta e "sim" antes de mudar algo. 20 capacidades, piloto na Next Home em 4 ondas. Ainda não construído.
+summary: Um número de WhatsApp da plataforma (11 96867-1127) com uma IA que deixa corretores e gestores operarem o CRM inteiro em linguagem natural (texto, áudio, foto), sempre com proposta e "sim" antes de mudar algo. 33 capacidades, piloto na Next Home em 4 ondas. Ainda não construído.
 ---
 # CRM pelo WhatsApp — o número central com IA
 

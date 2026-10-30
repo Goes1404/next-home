@@ -12545,7 +12545,7 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
 
 - O dono comprou o chip **11 96867-1127** para um número da plataforma com IA
   que deixa corretor e gestor operarem o CRM pelo WhatsApp (texto, áudio,
-  foto). 20 capacidades; **sempre** proposta e "sim" antes de mudar algo;
+  foto). 33 capacidades; **sempre** proposta e "sim" antes de mudar algo;
   piloto na Next Home em 4 ondas. Ainda não construído.
 - Base que já existe: agenda por mensagem (`src/lib/agenda/comandos/`) e
   retorno pelo grupo (`src/lib/crm/retornoPeloGrupo/`).
