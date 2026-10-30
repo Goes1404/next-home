@@ -10,6 +10,8 @@ import { ehMarcadorDeAudio } from "@/lib/whatsapp/transcricaoNoGrupo";
 import { cn } from "@/lib/utils";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { temModulo } from "@/lib/ramos/ramos";
 import { MOTIVOS_DA_AVALIACAO, type MotivoDaAvaliacao } from "@/lib/whatsapp/motivosDaAvaliacao";
 import {
   avaliarInteracao,
@@ -277,6 +279,8 @@ export function Chat({
   onRemover: (mensagemId: string) => void;
 }) {
   const [texto, setTexto] = useState("");
+  // O consultor de imóveis só existe no ramo com catálogo (30/10/2026, revisão).
+  const comConsultor = temModulo(useRamoDoPainel().ramo, "catalogoDeImoveis");
 
   /*
    * A última fala do CLIENTE é o que vai para o consultor.
@@ -564,7 +568,7 @@ export function Chat({
           </span>
         </button>
 
-        {ultimaDoCliente && (
+        {comConsultor && ultimaDoCliente && (
           <Link
             href={`/corretor/consultor?pergunta=${encodeURIComponent(ultimaDoCliente.conteudo.slice(0, 400))}`}
             title="Perguntar ao consultor"

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import { definirVisitaEm } from "@/app/corretor/actions";
+import { useVocabulario } from "@/lib/ramos/RamoDoPainel";
 
 /** Formato que o `<input type="datetime-local">` exige, em hora local. */
 function paraInputLocal(iso: string | null): string {
@@ -21,11 +22,13 @@ export function CampoVisita({ leadId, quando }: { leadId: string; quando: string
   const [valor, setValor] = useState(paraInputLocal(quando));
   const [salvando, iniciarTransicao] = useTransition();
   const { falhar } = useAvisos();
+  // "Data da reunião", "Data do atendimento" nos outros ramos (30/10/2026).
+  const compromisso = useVocabulario().compromisso;
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       <label className="text-fluid-xs text-tenue" htmlFor={`visita-${leadId}`}>
-        Data da visita
+        Data {compromisso.genero === "f" ? "da" : "do"} {compromisso.singular}
       </label>
       <input
         id={`visita-${leadId}`}

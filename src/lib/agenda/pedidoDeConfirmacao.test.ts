@@ -119,6 +119,13 @@ describe("o toque do corretor", () => {
     expect(cotas).toBe(0);
   });
 
+  it("o texto ao cliente usa o vocabulário do ramo do grupo (30/10/2026)", async () => {
+    banco.tabelas.grupos[0].ramo = "seguros";
+    expect(await peloCorretor("v1")).toMatchObject({ enviado: true });
+    expect(envios[0].texto).toContain("confirmar nossa reunião");
+    expect(envios[0].texto).not.toContain("visita");
+  });
+
   it("um pedido por data: o segundo toque não manda de novo", async () => {
     await peloCorretor("v1");
     const segundo = await peloCorretor("v1");

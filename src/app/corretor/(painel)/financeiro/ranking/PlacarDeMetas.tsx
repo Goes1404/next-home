@@ -10,10 +10,13 @@ import {
   oQueFalta,
   placarDoCorretor,
   porcento,
-  ROTULO_DA_MEDIDA,
+  rotulosDaMedida,
   type LinhaDoPlacar,
 } from "@/lib/financeiro/placarDaEquipe";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
+import { vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
+
+type RotulosDaMedida = ReturnType<typeof rotulosDaMedida>;
 import { BarraDoPlacar } from "./BarraDoPlacar";
 
 const MEDALHA = ["🥇", "🥈", "🥉"];
@@ -30,12 +33,14 @@ const MEDALHA = ["🥇", "🥈", "🥉"];
 export async function PlacarDeMetas({
   corretor,
 }: {
-  corretor: { id: string; grupoId: string; papel: string };
+  corretor: { id: string; grupoId: string; papel: string; ramo?: Ramo | null };
 }) {
   const hoje = hojeEmSaoPaulo();
   const mes = mesAtual(hoje);
   const { inicio, fim } = intervaloDo("mes", hoje);
   const gestor = corretor.papel === "gestor";
+  // "Reuniões", "Consultas"... no lugar de "Visitas" nos outros ramos (30/10/2026).
+  const rotulos = rotulosDaMedida(corretor.ramo);
 
   const placar = await montarOPlacar(corretor.grupoId, mes, inicio, fim);
   if (placar === null) return null;
@@ -44,7 +49,7 @@ export async function PlacarDeMetas({
       <section className="cartao p-4 sm:p-5">
         <h2 className="text-fluid-base text-titulo font-medium">Metas do mês</h2>
         <p className="text-fluid-sm text-apoio mt-1">
-          Defina as metas de visitas, propostas e vendas de cada corretor e o placar aparece aqui para a equipe.
+          Defina as metas de {rotulos.visitas.plural.toLowerCase()}, propostas e vendas de cada {vocabularioDoRamo(corretor.ramo).equipe.singular} e o placar aparece aqui para a equipe.
         </p>
         <Link
           href="/corretor/financeiro/desempenho#metas-da-equipe"
@@ -74,11 +79,11 @@ export async function PlacarDeMetas({
           {placar.map((l) => (
             <li key={l.corretorId} className="cartao space-y-2 p-3 sm:p-4">
               <CabecalhoDaLinha linha={l} />
-              {l.posicao !== null ? <BarrasDasMedidas linha={l} ritmo={ritmo} /> : <p className="text-fluid-xs text-tenue">Sem meta neste mês.</p>}
+              {l.posicao !== null ? <BarrasDasMedidas linha={l} ritmo={ritmo} rotulos={rotulos} /> : <p className="text-fluid-xs text-tenue">Sem meta neste mês.</p>}
             </li>
           ))}
         </ol>
-        <Legenda />
+        <Legenda rotulos={rotulos} />
       </section>
     );
   }
@@ -94,7 +99,7 @@ export async function PlacarDeMetas({
           <p className="text-fluid-sm text-titulo font-medium">
             Você está em {minha.posicao}º de {participantes} · {porcento(minha.geral)} das metas
           </p>
-          <BarrasDasMedidas linha={minha} ritmo={ritmo} />
+          <BarrasDasMedidas linha={minha} ritmo={ritmo} rotulos={rotulos} />
           <p className="text-fluid-xs text-apoio">{oQueFalta(minha.metas, minha.feito) ?? "Metas do mês batidas. 🎉"}</p>
         </div>
       ) : (
@@ -122,7 +127,7 @@ export async function PlacarDeMetas({
           ))}
         </ol>
       )}
-      <Legenda />
+      <Legenda rotulos={rotulos} />
     </section>
   );
 }
@@ -170,13 +175,13 @@ function CabecalhoDaLinha({ linha }: { linha: LinhaDoPlacar }) {
   );
 }
 
-function BarrasDasMedidas({ linha, ritmo }: { linha: LinhaDoPlacar; ritmo: number }) {
+function BarrasDasMedidas({ linha, ritmo, rotulos }: { linha: LinhaDoPlacar; ritmo: number; rotulos: RotulosDaMedida }) {
   return (
     <dl className="grid gap-2 sm:grid-cols-3">
       {MEDIDAS.filter((m) => linha.metas[m] !== null).map((m) => (
         <div key={m} className="min-w-0 space-y-1">
           <dt className="text-fluid-xs text-apoio flex justify-between gap-2">
-            <span>{ROTULO_DA_MEDIDA[m].plural}</span>
+            <span>{rotulos[m].plural}</span>
             <span className="text-titulo tabular-nums">
               {linha.feito[m]} de {linha.metas[m]}
             </span>
@@ -185,7 +190,7 @@ function BarrasDasMedidas({ linha, ritmo }: { linha: LinhaDoPlacar; ritmo: numbe
             <BarraDoPlacar
               progresso={linha.porMedida[m] ?? 0}
               ritmo={ritmo}
-              rotulo={`${ROTULO_DA_MEDIDA[m].plural}: ${linha.feito[m]} de ${linha.metas[m]}`}
+              rotulo={`${rotulos[m].plural}: ${linha.feito[m]} de ${linha.metas[m]}`}
             />
           </dd>
         </div>
@@ -194,10 +199,10 @@ function BarrasDasMedidas({ linha, ritmo }: { linha: LinhaDoPlacar; ritmo: numbe
   );
 }
 
-function Legenda() {
+function Legenda({ rotulos }: { rotulos: RotulosDaMedida }) {
   return (
     <p className="text-fluid-xs text-tenue">
-      O traço na barra é onde o mês está: quem está antes dele está atrasado. {MEDIDAS.map((m) => ROTULO_DA_MEDIDA[m].explicacao).join(" ")}
+      O traço na barra é onde o mês está: quem está antes dele está atrasado. {MEDIDAS.map((m) => rotulos[m].explicacao).join(" ")}
     </p>
   );
 }

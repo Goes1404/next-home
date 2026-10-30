@@ -27,6 +27,8 @@
  * disputa motiva, a carteira de cada um continua de cada um.
  */
 
+import { RAMO_PADRAO, lerRamo, maiuscula, vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
+
 export const MEDIDAS = ["visitas", "propostas", "vendas"] as const;
 export type Medida = (typeof MEDIDAS)[number];
 
@@ -47,6 +49,26 @@ export const ROTULO_DA_MEDIDA: Record<Medida, { plural: string; singular: string
     explicacao: "Vendas registradas no mês (a mesma conta do ranking de VGV).",
   },
 };
+
+/**
+ * Os rótulos das medidas no vocabulário do ramo (30/10/2026, revisão):
+ * "Reuniões", "Consultas"... no lugar de "Visitas", e o ranking de vendas no
+ * lugar do de VGV. Na imobiliária devolve `ROTULO_DA_MEDIDA`, o mesmo objeto.
+ */
+export function rotulosDaMedida(ramo: Ramo | null | undefined): typeof ROTULO_DA_MEDIDA {
+  if (lerRamo(ramo) === RAMO_PADRAO) return ROTULO_DA_MEDIDA;
+  const v = vocabularioDoRamo(ramo);
+  const compromissos = maiuscula(v.compromisso.plural);
+  return {
+    ...ROTULO_DA_MEDIDA,
+    visitas: {
+      plural: compromissos,
+      singular: v.compromisso.singular,
+      explicacao: `${compromissos} do mês que aconteceram (ou que já passaram e esperam a resposta do ${v.equipe.singular}).`,
+    },
+    vendas: { ...ROTULO_DA_MEDIDA.vendas, explicacao: `Vendas registradas no mês (a mesma conta do ${v.ranking.toLowerCase()}).` },
+  };
+}
 
 /** Quantos o corretor comum vê no pódio do placar. */
 export const TOPO = 3;

@@ -23,9 +23,14 @@
  * - (em qualquer navegador) cobre a tela com o véu da Astro ao enviar um
  *   `<form data-sair>` — a saída animada da conta (29/10/2026) — e manda o
  *   service worker apagar os dados do app sem internet (`limpar-dados`;
- *   a tela de login manda de novo, ver `LimparSaida`);
- * - registra o service worker do painel (`sw-painel.js`), que mostra a tela
- *   "sem conexão" da Astro no lugar da página do Chrome. Ele já era o das
+ *   a tela de login manda de novo, ver `LimparSaida`). Vai ao `controller`
+ *   E ao worker ativo de cada registro do painel (30/10/2026): a página
+ *   pode não ter controlador, e a mensagem não pode se perder;
+ * - registra o service worker do painel (`sw-painel.js`) com escopo
+ *   `"/corretor"` — o `start_url` do app. Com o escopo antigo `"/corretor/"`
+ *   o Início ficava sem controlador (ver `src/lib/painel/swDoPainel.ts`, que
+ *   explica por que o registro antigo não é desfeito). Ele mostra a tela
+ *   "sem conexão" da Astro no lugar da página do Chrome e é o das
  *   notificações; registrar de novo é idempotente.
  */
 export const SCRIPT_DE_APP = `try{
@@ -33,7 +38,7 @@ export const SCRIPT_DE_APP = `try{
     var f=e.target;
     if(f&&f.hasAttribute&&f.hasAttribute("data-sair")){
       document.documentElement.setAttribute("data-saindo","");
-      try{var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(c)c.postMessage({tipo:"limpar-dados"});}catch(x){}
+      try{var s=navigator.serviceWorker,m={tipo:"limpar-dados"};if(s){if(s.controller)s.controller.postMessage(m);if(s.getRegistrations)s.getRegistrations().then(function(rs){rs.forEach(function(r){var a=r.active;if(a&&a!==s.controller&&/[/]corretor[/]?$/.test(r.scope))a.postMessage(m);});}).catch(function(){});}}catch(x){}
     }
   },true);
   var app=window.matchMedia&&(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches);
@@ -53,7 +58,7 @@ export const SCRIPT_DE_APP = `try{
       },true);
     }
     if("serviceWorker" in navigator){
-      window.addEventListener("load",function(){navigator.serviceWorker.register("/sw-painel.js",{scope:"/corretor/"}).catch(function(){});});
+      window.addEventListener("load",function(){navigator.serviceWorker.register("/sw-painel.js",{scope:"/corretor"}).catch(function(){});});
     }
   }
 }catch(e){}`;

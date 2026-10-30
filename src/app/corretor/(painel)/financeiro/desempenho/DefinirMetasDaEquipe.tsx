@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { MEDIDAS, ROTULO_DA_MEDIDA, type Medida, type MetasDoMes } from "@/lib/financeiro/placarDaEquipe";
+import { MEDIDAS, rotulosDaMedida, type Medida, type MetasDoMes } from "@/lib/financeiro/placarDaEquipe";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { maiuscula, vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { salvarMetasDaEquipe, type LinhaDeMetaDigitada } from "./metasAcoes";
 
 type Mes = { chave: string; rotulo: string; metas: Record<string, MetasDoMes> };
@@ -17,6 +19,22 @@ function paraTexto(m: MetasDoMes | undefined): Record<Medida, string> {
     propostas: m?.propostas ? String(m.propostas) : "",
     vendas: m?.vendas ? String(m.vendas) : "",
   };
+}
+
+/**
+ * A linha de um corretor no mês, com fallback (30/10/2026, revisão): o
+ * estado do formulário nasce UMA vez com a equipe daquele momento; quem
+ * entra na equipe depois de um `router.refresh()` não tinha linha e a tela
+ * quebrava ao ler `doMes[id][medida]`. Sem linha guardada, vale a meta que
+ * veio do servidor (ou vazio).
+ */
+export function linhaDaMeta(
+  valores: Record<string, Record<string, Record<Medida, string>> | undefined>,
+  meses: Mes[],
+  chaveDoMes: string,
+  corretorId: string,
+): Record<Medida, string> {
+  return valores[chaveDoMes]?.[corretorId] ?? paraTexto(meses.find((m) => m.chave === chaveDoMes)?.metas[corretorId]);
 }
 
 /**
@@ -39,10 +57,19 @@ export function DefinirMetasDaEquipe({
   const [valores, setValores] = useState<Record<string, Record<string, Record<Medida, string>>>>(() =>
     Object.fromEntries(meses.map((m) => [m.chave, Object.fromEntries(equipe.map((c) => [c.id, paraTexto(m.metas[c.id])]))])),
   );
-  const doMes = valores[mes];
+  // O vocabulário do ramo (30/10/2026, revisão): "Reuniões", "Consultor"...
+  const { ramo } = useRamoDoPainel();
+  const rotulos = rotulosDaMedida(ramo);
+  const colunaDaEquipe = maiuscula(vocabularioDoRamo(ramo).equipe.singular);
+
+  const linhaDe = (v: typeof valores, chaveDoMes: string, corretorId: string) => linhaDaMeta(v, meses, chaveDoMes, corretorId);
+  const doMes = Object.fromEntries(equipe.map((c) => [c.id, linhaDe(valores, mes, c.id)])) as Record<string, Record<Medida, string>>;
 
   const mudar = (corretorId: string, medida: Medida, valor: string) =>
-    setValores((v) => ({ ...v, [mes]: { ...v[mes], [corretorId]: { ...v[mes][corretorId], [medida]: valor.replace(/\D/g, "").slice(0, 4) } } }));
+    setValores((v) => ({
+      ...v,
+      [mes]: { ...v[mes], [corretorId]: { ...linhaDe(v, mes, corretorId), [medida]: valor.replace(/\D/g, "").slice(0, 4) } },
+    }));
 
   const copiarParaTodos = () => {
     const modelo = equipe.map((c) => doMes[c.id]).find((l) => MEDIDAS.some((m) => l[m] !== ""));
@@ -50,7 +77,10 @@ export function DefinirMetasDaEquipe({
     setValores((v) => ({
       ...v,
       [mes]: Object.fromEntries(
-        equipe.map((c) => [c.id, MEDIDAS.some((m) => v[mes][c.id][m] !== "") ? v[mes][c.id] : { ...modelo }]),
+        equipe.map((c) => {
+          const atual = linhaDe(v, mes, c.id);
+          return [c.id, MEDIDAS.some((m) => atual[m] !== "") ? atual : { ...modelo }];
+        }),
       ),
     }));
   };
@@ -76,7 +106,7 @@ export function DefinirMetasDaEquipe({
             Metas da equipe
           </h2>
           <p className="text-fluid-xs text-apoio mt-1">
-            Quantas {MEDIDAS.map((m) => ROTULO_DA_MEDIDA[m].plural.toLowerCase()).join(", ")} você espera de cada um no mês.
+            Quantas {MEDIDAS.map((m) => rotulos[m].plural.toLowerCase()).join(", ")} você espera de cada um no mês.
             Vazio = sem meta. A equipe vê o placar no Ranking (cada um vê os próprios números e o pódio).
           </p>
         </div>
@@ -102,10 +132,10 @@ export function DefinirMetasDaEquipe({
         <table className="w-full table-fixed border-separate border-spacing-y-1.5">
           <thead>
             <tr className="text-fluid-xs text-tenue text-left">
-              <th className="font-medium">Corretor</th>
+              <th className="font-medium">{colunaDaEquipe}</th>
               {MEDIDAS.map((m) => (
                 <th key={m} className="w-16 text-center font-medium sm:w-24">
-                  {ROTULO_DA_MEDIDA[m].plural}
+                  {rotulos[m].plural}
                 </th>
               ))}
             </tr>
@@ -118,7 +148,7 @@ export function DefinirMetasDaEquipe({
                   <td key={m} className="px-1">
                     <input
                       inputMode="numeric"
-                      aria-label={`${ROTULO_DA_MEDIDA[m].plural} de ${c.nome}`}
+                      aria-label={`${rotulos[m].plural} de ${c.nome}`}
                       value={doMes[c.id][m]}
                       onChange={(e) => mudar(c.id, m, e.target.value)}
                       className={campo}

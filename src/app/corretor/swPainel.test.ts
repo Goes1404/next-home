@@ -218,6 +218,20 @@ describe("sw-painel.js: dados do app sem internet", () => {
     expect([...sw.armazem.keys()].filter((n) => n.startsWith("astro-dados-"))).toEqual([]);
   });
 
+  it("renovar-dados (página sem controlador): o worker pede e guarda sozinho", async () => {
+    const sw = carregar({ rede: async () => dadosDe("usuario-a") });
+    await sw.mensagem({ tipo: "renovar-dados" });
+    expect(sw.rede).toHaveBeenCalledWith(new URL(ROTA_DOS_DADOS_OFFLINE, ORIGEM).href);
+    expect([...sw.armazem.keys()]).toEqual([sw.api.caixaDoUsuario("usuario-a")]);
+  });
+
+  it("escopo /corretor: navegação do site público (/corretores/...) passa direto", async () => {
+    const sw = carregar({ rede: async () => new Response("pagina") });
+    expect(await sw.pedir("/corretores/fulano", "navigate")).toBeNull();
+    expect(await sw.pedir("/corretor", "navigate")).not.toBeNull();
+    expect(await sw.pedir("/corretor/leads", "navigate")).not.toBeNull();
+  });
+
   it("conversa e busca passam direto, sem cache", async () => {
     const sw = carregar({ rede: async () => new Response("[]") });
     expect(await sw.pedir("/api/painel/busca?q=ana")).toBeNull();

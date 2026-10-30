@@ -1,4 +1,6 @@
+import { notFound } from "next/navigation";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { temModulo } from "@/lib/ramos/ramos";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { Mascote } from "@/components/marca/Mascote";
@@ -21,6 +23,8 @@ export default async function ConsultorPage({
 }) {
   const corretor = await getCorretorLogado();
   if (!corretor) return null;
+  // Consultor de imóveis (catálogo + crédito imobiliário): só no ramo com catálogo.
+  if (!temModulo(corretor.ramo, "catalogoDeImoveis")) notFound();
 
   const [conversas, credito, params] = await Promise.all([
     listarConversas(),

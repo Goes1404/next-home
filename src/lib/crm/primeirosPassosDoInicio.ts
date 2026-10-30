@@ -21,6 +21,7 @@
  */
 
 import { passosDoCorretor } from "./primeirosPassos";
+import { RAMO_PADRAO, lerRamo, temModulo, vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 export type EstadoDoInicio = {
   papel: "gestor" | "corretor";
@@ -36,6 +37,12 @@ export type EstadoDoInicio = {
   corretoresAtivos: number | null;
   /** Leads de quem vê (corretor) ou do grupo (gestor). */
   leads: number | null;
+  /**
+   * O ramo da conta (30/10/2026, revisão). Sem catálogo de imóveis no ramo,
+   * o passo do primeiro imóvel não existe; o texto usa o vocabulário dele.
+   * Ausente = imobiliária (o texto de sempre).
+   */
+  ramo?: Ramo | null;
 };
 
 export type IdDoPasso = "whatsapp" | "perfil" | "avisos" | "imovel" | "equipe" | "lead";
@@ -51,7 +58,8 @@ export type PassoDoInicio = {
 /** A âncora do cartão de avisos no perfil (`perfil/page.tsx`). */
 export const ANCORA_DOS_AVISOS = "avisos-no-celular";
 
-export function cuidaDoCatalogo(e: Pick<EstadoDoInicio, "papel" | "tipoDoGrupo">): boolean {
+export function cuidaDoCatalogo(e: Pick<EstadoDoInicio, "papel" | "tipoDoGrupo" | "ramo">): boolean {
+  if (!temModulo(e.ramo ?? RAMO_PADRAO, "catalogoDeImoveis")) return false;
   return e.papel === "gestor" || e.tipoDoGrupo === "independente";
 }
 
@@ -67,11 +75,21 @@ export function passosDoInicio(e: EstadoDoInicio): PassoDoInicio[] {
     leads: e.leads ?? 0,
   });
   const whatsapp = doCorretor.find((p) => p.id === "whatsapp")!;
+  const imobiliaria = lerRamo(e.ramo) === RAMO_PADRAO;
+  const equipe = vocabularioDoRamo(e.ramo).equipe.singular;
   const perfil = doCorretor.find((p) => p.id === "perfil")!;
 
   const passos: (PassoDoInicio | null)[] = [
     e.whatsappConectado === null ? null : { ...whatsapp, id: "whatsapp", feito: e.whatsappConectado },
-    { ...perfil, id: "perfil", titulo: "Completar seu perfil", porque: "Foto e uma apresentação curta: é o que o cliente vê na sua página e nos links que você manda." },
+    {
+      ...perfil,
+      id: "perfil",
+      titulo: "Completar seu perfil",
+      // "Sua página" é o link pessoal do site de imóveis: só existe com ele.
+      porque: temModulo(e.ramo ?? RAMO_PADRAO, "siteDeImoveis")
+        ? "Foto e uma apresentação curta: é o que o cliente vê na sua página e nos links que você manda."
+        : "Foto e uma apresentação curta: é como a equipe e os clientes reconhecem você no atendimento.",
+    },
     e.aparelhosComAviso === null
       ? null
       : {
@@ -95,7 +113,9 @@ export function passosDoInicio(e: EstadoDoInicio): PassoDoInicio[] {
       : {
           id: "equipe",
           titulo: "Convidar a equipe",
-          porque: "Cada corretor com o próprio acesso recebe e atende os leads que forem dele.",
+          porque: imobiliaria
+            ? "Cada corretor com o próprio acesso recebe e atende os leads que forem dele."
+            : `Cada ${equipe} com o próprio acesso recebe e atende os leads que forem dele.`,
           href: "/corretor/admin/contas",
           feito: e.corretoresAtivos > 1,
         },

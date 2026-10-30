@@ -6,6 +6,7 @@ import { AVANCO_ETAPA } from "./etapas";
 import { cn } from "@/lib/utils";
 import { BotaoAcao } from "./BotaoAcao";
 import { PROXIMA_ETAPA, type EtapaFunil } from "@/lib/types";
+import { useAcaoDaProximaEtapa } from "@/lib/ramos/RamoDoPainel";
 
 /**
  * O botão de um toque — a única coisa que o corretor precisa apertar para o
@@ -36,9 +37,12 @@ export function BotaoAvancar({
   tamanho?: "normal" | "compacto";
   className?: string;
 }) {
-  const proxima = PROXIMA_ETAPA[etapa];
+  const doRamo = useAcaoDaProximaEtapa();
+  const padrao = PROXIMA_ETAPA[etapa];
   // Fechado e perdido não avançam: um botão ali seria armadilha.
-  if (!proxima) return null;
+  if (!padrao) return null;
+  // "Marquei reunião" no lugar de "Marquei visita" nos outros ramos (30/10/2026).
+  const proxima = { ...padrao, acao: doRamo(etapa, padrao.acao) };
 
   return (
     <BotaoAcao

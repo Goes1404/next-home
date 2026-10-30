@@ -1,4 +1,5 @@
-import { souGestor } from "@/lib/corretorSessao";
+import { getCorretorLogado } from "@/lib/corretorSessao";
+import { recursosDeImoveis } from "@/lib/grupos/ramo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -60,8 +61,13 @@ export default async function FichaLeadPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [lead, gestor] = await Promise.all([getLeadDetalhado(id), souGestor()]);
+  const [lead, corretorDaSessao] = await Promise.all([getLeadDetalhado(id), getCorretorLogado()]);
   if (!lead) notFound();
+  const gestor = corretorDaSessao?.papel === "gestor";
+  // O ramo da conta (30/10/2026, revisão): o que é de imóvel (catálogo,
+  // pedido do site de imóveis, a pergunta ao consultor de imóveis) só
+  // aparece para quem vende imóvel.
+  const comImoveis = recursosDeImoveis(corretorDaSessao?.ramo);
 
   const supabase = await createClient();
   const [tarefas, timeline, touchpoints, preferencias, { data: empreendimentos }, { data: notasDoLead }, vendas] =
@@ -70,7 +76,7 @@ export default async function FichaLeadPage({
       getTimelineDoLead(id),
       getTouchpointsDoLead(id),
       getPreferenciasDoLead(id),
-      supabase.from("empreendimentos").select("id, nome").order("nome"),
+      comImoveis ? supabase.from("empreendimentos").select("id, nome").order("nome") : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
       // Anotações vinculadas (0100): sem esta leitura, a nota escrita sobre o
       // lead só existiria na página de Anotações — dado gravado sem tela na
       // ficha é a régua do historico_envios de novo. Abertas primeiro.
@@ -243,7 +249,7 @@ export default async function FichaLeadPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
-          <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} />
+          <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} comImoveis={comImoveis} />
           <OrigemJornada touchpoints={touchpoints} />
           <PreferenciasContato leadId={lead.id} preferencias={preferencias} naoContatarEm={lead.naoContatarEm} />
           <Qualificacao
@@ -259,7 +265,7 @@ export default async function FichaLeadPage({
             empreendimentos={empreendimentos ?? []}
           />
 
-          <PedidoDoSite leadId={lead.id} />
+          {comImoveis && <PedidoDoSite leadId={lead.id} />}
           <Documentacao
             leadId={lead.id}
             nome={lead.nome}
@@ -271,7 +277,7 @@ export default async function FichaLeadPage({
           <ImoveisQueCombinam leadId={lead.id} telefone={lead.telefone} />
           <LinksDoCliente leadId={lead.id} telefone={lead.telefone} />
           <Indicacoes leadId={lead.id} />
-          <AtalhoDoConsultor lead={lead} />
+          {comImoveis && <AtalhoDoConsultor lead={lead} />}
           <div id="proximas-acoes" className="scroll-mt-24">
             <ProximasAcoes leadId={lead.id} tarefas={tarefas} />
           </div>

@@ -1,6 +1,7 @@
 import { ETIQUETA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { linkWhatsappPara, site } from "@/lib/site";
 import { ETAPA_LABEL, type EtapaFunil, type Lead } from "@/lib/types";
+import { rotulosDeEtapaDoRamo, type Ramo } from "@/lib/ramos/ramos";
 import { TETO_SEM_RESPOSTA, descreverContagem, nivelDaContagem } from "@/lib/crm/higieneDaBase";
 
 /**
@@ -95,10 +96,16 @@ function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
   );
 }
 
-export function EtiquetaEtapa({ etapa }: { etapa: EtapaFunil }) {
+/**
+ * A etapa como etiqueta. `ramo` (30/10/2026, revisão): "Reunião marcada" no
+ * lugar de "Visita marcada" nos outros ramos. Sem ramo, a imobiliária. Puro
+ * (sem hook): serve à página de servidor e ao componente de cliente.
+ */
+export function EtiquetaEtapa({ etapa, ramo }: { etapa: EtapaFunil; ramo?: Ramo | null }) {
+  const doRamo: Partial<Record<EtapaFunil, string>> = rotulosDeEtapaDoRamo(ramo);
   return (
     <span className={`text-fluid-xs rounded-full px-2.5 py-1 font-medium ${ETIQUETA_ETAPA[etapa]}`}>
-      {ETAPA_LABEL[etapa]}
+      {doRamo[etapa] ?? ETAPA_LABEL[etapa]}
     </span>
   );
 }

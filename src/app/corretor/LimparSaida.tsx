@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { ehChaveDasRecentes } from "@/lib/painel/buscaRapida";
+import { avisarServiceWorkers } from "@/lib/painel/swDoPainel";
 
 /**
  * Desfaz o véu da saída animada (`html[data-saindo]`, globals.css) quando a
@@ -18,8 +20,20 @@ import { useEffect } from "react";
 export function LimparSaida() {
   useEffect(() => {
     try {
-      navigator.serviceWorker?.controller?.postMessage({ tipo: "limpar-dados" });
+      // Ao worker ATIVO de cada registro do painel, não só ao `controller`:
+      // a página de login pode não ter controlador (ver `swDoPainel.ts`).
+      void avisarServiceWorkers({ tipo: "limpar-dados" });
       window.sessionStorage.removeItem("astro:offline-renovado-em");
+    } catch {
+      /* sem storage de sessão */
+    }
+    try {
+      // As buscas recentes (nomes de clientes) de quem usou este aparelho.
+      const local = window.localStorage;
+      for (let i = local.length - 1; i >= 0; i--) {
+        const chave = local.key(i);
+        if (ehChaveDasRecentes(chave)) local.removeItem(chave!);
+      }
     } catch {
       /* sem service worker ou sem storage: nada guardado para limpar */
     }

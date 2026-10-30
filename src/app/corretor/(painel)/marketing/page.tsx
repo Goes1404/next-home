@@ -9,6 +9,7 @@ import { getSaldo } from "@/lib/video/fila";
 import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
+import { temModulo } from "@/lib/ramos/ramos";
 import { OficinaDeMarketing } from "./OficinaDeMarketing";
 
 export const metadata: Metadata = { title: "Marketing" };
@@ -41,10 +42,12 @@ export default async function PaginaMarketing() {
   const corretor = await getCorretorLogado();
   if (!corretor) return null; // o layout já mostra o aviso de conta sem vínculo
 
+  // Sem catálogo de imóveis no ramo (30/10/2026, revisão), nem lê o catálogo.
+  const comCatalogo = temModulo(corretor.ramo, "catalogoDeImoveis");
   const [imagens, teto, catalogo, saldoVideo] = await Promise.all([
     getMinhasImagens(),
     getTetoDeHoje(corretor.id),
-    getEmpreendimentosDoPainel(),
+    comCatalogo ? getEmpreendimentosDoPainel() : Promise.resolve([] as Awaited<ReturnType<typeof getEmpreendimentosDoPainel>>),
     getSaldo(corretor.id),
   ]);
 
@@ -80,19 +83,22 @@ export default async function PaginaMarketing() {
         }))}
         videosDisponiveis={saldoVideo.disponiveis}
         videosNoMes={saldoVideo.cotaMensal}
+        ramo={corretor.ramo}
       />
 
       <Suspense fallback={null}>
         <OrigemDosLeads />
       </Suspense>
 
-      <p className="text-fluid-xs text-tenue">
-        Nada do que sai daqui entra no catálogo do imóvel nem aparece no site.
-        Quem decide publicar é você.{" "}
-        <Link href="/corretor/imoveis" className="text-acento-suave underline underline-offset-4">
-          Ver imóveis
-        </Link>
-      </p>
+      {comCatalogo && (
+        <p className="text-fluid-xs text-tenue">
+          Nada do que sai daqui entra no catálogo do imóvel nem aparece no site.
+          Quem decide publicar é você.{" "}
+          <Link href="/corretor/imoveis" className="text-acento-suave underline underline-offset-4">
+            Ver imóveis
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

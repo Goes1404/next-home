@@ -4,7 +4,8 @@ import { useOptimistic, useTransition } from "react";
 import { moverEtapa } from "@/app/corretor/actions";
 import { ETIQUETA_ETAPA } from "@/app/corretor/(painel)/_componentes/etapas";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
-import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
+import { useRotuloDaEtapa } from "@/lib/ramos/RamoDoPainel";
+import { ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 
 /**
  * Mover o lead de etapa direto da ficha — o mesmo `moverEtapa` do quadro.
@@ -24,6 +25,8 @@ export function SeletorEtapa({ leadId, etapa }: { leadId: string; etapa: EtapaFu
   const [, iniciar] = useTransition();
   const [etapaVisivel, verEtapa] = useOptimistic(etapa);
   const { avisar, falhar } = useAvisos();
+  // "Reunião marcada" no lugar de "Visita marcada" nos outros ramos (30/10/2026).
+  const rotulo = useRotuloDaEtapa();
 
   return (
     <label className="inline-flex items-center gap-2">
@@ -55,7 +58,7 @@ export function SeletorEtapa({ leadId, etapa }: { leadId: string; etapa: EtapaFu
       >
         {ETAPAS_FUNIL.map((e) => (
           <option key={e} value={e} className="bg-superficie text-corpo">
-            {ETAPA_LABEL[e]}
+            {rotulo(e)}
           </option>
         ))}
       </select>

@@ -25,6 +25,7 @@ import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { MenuDaConta } from "./MenuDaConta";
 import { RamoDoPainelProvider } from "@/lib/ramos/RamoDoPainel";
+import { temModulo } from "@/lib/ramos/ramos";
 import { LogoDoPainel, MarcaDoPainelProvider } from "./_componentes/NomeDaCasa";
 import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { MARCA_DA_PLATAFORMA, rotuloDaConta } from "@/lib/marcaDaPlataforma";
@@ -195,7 +196,7 @@ export default async function PainelLayout({
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Busca rápida (29/10/2026): lupa no celular, "Buscar ⌘K" no
                 computador. A paleta só é baixada no primeiro uso. */}
-            {corretor && <BotaoBuscaRapida ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} />}
+            {corretor && <BotaoBuscaRapida ehGestor={ehGestor} tipoDoGrupo={tipoDoGrupo} usuarioId={corretor.id} />}
             <SeletorTema />
 
             {corretor && (
@@ -273,7 +274,9 @@ export default async function PainelLayout({
             conversa aberta em Pessoas continua aberta em Imóveis, sem store
             e sem URL. Ele mesmo se cala na tela do consultor.
           */}
-          <BalaoConsultor />
+          {/* O consultor conhece os imóveis publicados e o crédito imobiliário
+              (30/10/2026, revisão): só existe para o ramo com catálogo. */}
+          {temModulo(ramo, "catalogoDeImoveis") && <BalaoConsultor />}
           {/* Guarda a agenda de hoje e os leads recentes para o app sem
               internet (29/10/2026). Não desenha nada. */}
           <SincronizarOffline />

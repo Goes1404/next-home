@@ -6,6 +6,9 @@ import { leadsQueCombinam, temPressaDeMudar, type Match } from "@/lib/crm/matchD
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import type { Empreendimento } from "@/lib/types";
 
+/** Quantos ids por consulta de dossiês (o `in` vai na URL). */
+const LOTE_DE_IDS = 200;
+
 export type LeadQueCombina = {
   id: string;
   nome: string;
@@ -30,7 +33,7 @@ export async function lerLeadsQueCombinam(imovel: Empreendimento): Promise<LeadQ
   if (!corretor || !imovel.id) return null;
 
   const supabase = await createClient();
-  const [{ data }, { data: dossies }, credito] = await Promise.all([
+  const [{ data }, credito] = await Promise.all([
     supabase
       .from("leads")
       .select(
@@ -41,13 +44,25 @@ export async function lerLeadsQueCombinam(imovel: Empreendimento): Promise<LeadQ
       .is("nao_contatar_em", null)
       .neq("etapa", "fechado")
       .limit(1000),
-    // RLS recorta pelos leads que o corretor enxerga.
-    supabase
-      .from("lead_observacoes_ia")
-      .select("lead_id, orcamento_max, orcamento_min, urgencia_mudanca")
-      .limit(2000),
     getParametrosCredito(corretor.grupoId),
   ]);
+  /*
+   * Os dossiês SÓ dos leads lidos acima (30/10/2026, revisão). Antes vinham
+   * os 2000 primeiros que a RLS abria — para o gestor, os do grupo inteiro:
+   * os do próprio corretor podiam ficar de fora do corte e o match perdia o
+   * orçamento e a pressa que a IA anotou. Em lotes, para a URL do PostgREST
+   * não passar do tamanho que os proxies aceitam.
+   */
+  const ids = (data ?? []).map((l) => l.id);
+  const lotes: string[][] = [];
+  for (let i = 0; i < ids.length; i += LOTE_DE_IDS) lotes.push(ids.slice(i, i + LOTE_DE_IDS));
+  const dossies = (
+    await Promise.all(
+      lotes.map((lote) =>
+        supabase.from("lead_observacoes_ia").select("lead_id, orcamento_max, orcamento_min, urgencia_mudanca").in("lead_id", lote),
+      ),
+    )
+  ).flatMap((r) => r.data ?? []);
   const dossiePorLead = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
   const numero = (v: number | string | null | undefined) => (v != null && Number(v) > 0 ? Number(v) : null);
 

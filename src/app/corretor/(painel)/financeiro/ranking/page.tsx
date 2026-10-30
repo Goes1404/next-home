@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { vocabularioDoRamo } from "@/lib/ramos/ramos";
 import { getRankingVgv } from "@/lib/financeiro/dados";
 import { intervaloDo, lerPeriodo, nomeDoMes, PERIODOS } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
@@ -17,7 +18,11 @@ function ultimoDiaDoMes(mes: string): string {
   return `${mes}-${String(new Date(Date.UTC(a, m, 0)).getUTCDate()).padStart(2, "0")}`;
 }
 
-export const metadata: Metadata = { title: "Ranking de VGV" };
+/** O título no vocabulário do ramo ("Ranking de vendas" fora da imobiliária, 30/10/2026). */
+export async function generateMetadata(): Promise<Metadata> {
+  const corretor = await getCorretorLogado();
+  return { title: vocabularioDoRamo(corretor?.ramo).ranking };
+}
 
 const MEDALHA = ["🥇", "🥈", "🥉"];
 
@@ -79,7 +84,7 @@ export default async function RankingPage({
     <div className="space-y-4">
       <CabecalhoDeTela
         secao="Financeiro"
-        titulo="Ranking de VGV"
+        titulo={vocabularioDoRamo(corretor.ramo).ranking}
         descricao="Quem mais vendeu na equipe e o placar das metas do mês. Todos veem as posições; a comissão de cada um continua privada."
       />
 

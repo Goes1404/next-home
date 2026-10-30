@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { ETAPA_LABEL, GRUPO_LABEL, type EtapaFunil, type GrupoFunil } from "@/lib/types";
-import { RAMO_PADRAO, rotuloDoGrupoVisita, rotulosDeEtapaDoRamo, vocabularioDoRamo, type Ramo, type Vocabulario } from "./ramos";
+import { RAMO_PADRAO, acoesDeEtapaDoRamo, rotuloDoGrupoVisita, rotulosDeEtapaDoRamo, vocabularioDoRamo, type Ramo, type Vocabulario } from "./ramos";
 
 /**
  * O ramo da conta para os componentes de cliente do painel (29/10/2026).
@@ -47,4 +47,13 @@ export function useRotuloDaEtapa(): (etapa: EtapaFunil) => string {
 export function useRotuloDoGrupoDoFunil(): (grupo: GrupoFunil) => string {
   const visita = rotuloDoGrupoVisita(useContext(Contexto).ramo);
   return (grupo) => (grupo === "visita" && visita ? visita : GRUPO_LABEL[grupo]);
+}
+
+/**
+ * O ato do botão de um toque (`PROXIMA_ETAPA[etapa].acao`) no vocabulário do
+ * ramo ("Marquei reunião"). Recebe a etapa ATUAL do lead.
+ */
+export function useAcaoDaProximaEtapa(): (etapaAtual: EtapaFunil, acaoPadrao: string) => string {
+  const extras: Partial<Record<EtapaFunil, string>> = acoesDeEtapaDoRamo(useContext(Contexto).ramo);
+  return (etapaAtual, acaoPadrao) => extras[etapaAtual] ?? acaoPadrao;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useVocabulario } from "@/lib/ramos/RamoDoPainel";
+import { useRamoDoPainel, useVocabulario } from "@/lib/ramos/RamoDoPainel";
 import { maiuscula } from "@/lib/ramos/ramos";
 import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import Link from "next/link";
@@ -196,6 +196,7 @@ export function TabelaLeads({
 }) {
   // A coluna de quem cuida do lead no vocabulário do ramo (0244): "Corretor" na imobiliária.
   const vocabulario = useVocabulario();
+  const { ramo } = useRamoDoPainel();
   // Um lead aberto por vez: abrir outro fecha o anterior. Com 50 linhas,
   // vários abertos ao mesmo tempo recriariam o pergaminho que esta tabela
   // veio substituir.
@@ -247,7 +248,7 @@ export function TabelaLeads({
                       {lead.nome}
                     </span>
                     <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
-                      <EtiquetaEtapa etapa={lead.etapa} />
+                      <EtiquetaEtapa etapa={lead.etapa} ramo={ramo} />
                       <NotaDoLeadChip nota={lead.nota} />
                       <ContagemDeTentativas lead={lead} />
                       <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
@@ -380,6 +381,7 @@ function FragmentoLinha({
   // A régua de cor soma uma coluna; o gestor soma a de "Corretor". O colSpan
   // da linha expandida acompanha as duas.
   const totalColunas = gestor ? 8 : 7;
+  const { ramo } = useRamoDoPainel();
 
   return (
     <>
@@ -423,7 +425,7 @@ function FragmentoLinha({
         )}
         <td className="px-3 py-2.5">
           <div className="flex flex-wrap items-center gap-1.5">
-            <EtiquetaEtapa etapa={lead.etapa} />
+            <EtiquetaEtapa etapa={lead.etapa} ramo={ramo} />
             <NotaDoLeadChip nota={lead.nota} />
             <ContagemDeTentativas lead={lead} />
           </div>

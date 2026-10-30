@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   ACOES_RAPIDAS,
+  CHAVE_DAS_RECENTES,
   MAXIMO_DE_RECENTES,
+  acoesRapidasDoRamo,
+  chaveDasRecentes,
+  ehChaveDasRecentes,
   buscarNoPainel,
   consultasDeConversas,
   consultasDeLeads,
@@ -141,5 +145,39 @@ describe("busca rápida: telas, recentes e teclado", () => {
 
   it("mescla por id respeitando o teto", () => {
     expect(mesclarPorId([[{ id: "a" }, { id: "b" }], [{ id: "a" }, { id: "c" }]], 2)).toEqual([{ id: "a" }, { id: "b" }]);
+  });
+});
+
+describe("busca rápida: o ramo da conta e o aparelho compartilhado (30/10/2026)", () => {
+  it("imobiliária: as mesmas ações de sempre (o mesmo array)", () => {
+    expect(acoesRapidasDoRamo("imobiliaria")).toBe(ACOES_RAPIDAS);
+    expect(acoesRapidasDoRamo(null)).toBe(ACOES_RAPIDAS);
+  });
+
+  it("outros ramos: sem cadastro no catálogo, e o compromisso do ramo", () => {
+    const seguros = acoesRapidasDoRamo("seguros");
+    expect(seguros.map((a) => a.href)).not.toContain("/corretor/imoveis/novo");
+    expect(seguros.map((a) => a.titulo)).toContain("Nova reunião");
+    expect(seguros.map((a) => a.titulo)).not.toContain("Nova visita");
+    expect(acoesRapidasDoRamo("varejo").map((a) => a.titulo)).toContain("Novo atendimento");
+  });
+
+  it("sem catálogo, a busca nem consulta imóveis; a etapa sai no vocabulário do ramo", async () => {
+    const { cliente, consultas } = gravador({
+      leads: [{ id: "l1", nome: "Ana", telefone: null, etapa: "visita_agendada" }],
+      empreendimentos: [{ id: "e1", nome: "Solar", slug: "solar" }],
+    });
+    const r = await buscarNoPainel(cliente, { termo: "ana", recorte: { tipo: "meus", corretorId: "c1" }, corretorId: "c1", foraDasOcultas: null, ramo: "seguros" });
+    expect(consultas.some((c) => c.tabela === "empreendimentos")).toBe(false);
+    expect(r.imoveis).toEqual([]);
+    expect(r.leads[0].detalhe).toBe("Reunião marcada");
+  });
+
+  it("buscas recentes: uma chave por usuário, e a limpeza reconhece todas (a antiga também)", () => {
+    expect(chaveDasRecentes("u1")).not.toBe(chaveDasRecentes("u2"));
+    expect(ehChaveDasRecentes(chaveDasRecentes("u1"))).toBe(true);
+    expect(ehChaveDasRecentes(CHAVE_DAS_RECENTES)).toBe(true);
+    expect(ehChaveDasRecentes("astro:primeiros-passos-ocultos:u1")).toBe(false);
+    expect(ehChaveDasRecentes(null)).toBe(false);
   });
 });

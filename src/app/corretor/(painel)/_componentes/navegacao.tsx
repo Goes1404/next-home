@@ -258,7 +258,9 @@ export const GRUPOS_NAV: GrupoNav[] = [
            * Assistente por decisão do usuário: é uma das IAs da casa, e é aqui
            * que se procura por ela. Continua também na bolha de toda tela.
            */
-          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor },
+          // Só com catálogo de imóveis (30/10/2026, revisão): o consultor
+          // responde "que imóvel serve?" com o catálogo e o crédito imobiliário.
+          { href: "/corretor/consultor", label: "Consultor", icone: IconeConsultor, modulo: "catalogoDeImoveis" },
         ],
       },
       {

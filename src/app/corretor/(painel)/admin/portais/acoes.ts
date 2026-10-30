@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { exigirGestorNaAcao } from "@/lib/guardas";
+import { recursosDeImoveis } from "@/lib/grupos/ramo";
 import { createServiceClient } from "@/lib/supabase/service";
 import { gerarTokenDoPortal, type IntegracaoDePortal } from "@/lib/portais/formatos";
 
 type Resultado = { ok?: string; erro?: string };
+
+const SEM_PORTAIS = "A captação dos portais de imóveis não faz parte desta conta.";
 
 const INTEGRACOES: readonly IntegracaoDePortal[] = ["grupo_olx", "generico"];
 
@@ -21,6 +24,9 @@ export async function gerarUrlDoPortal(portal: IntegracaoDePortal): Promise<Resu
   const guarda = await exigirGestorNaAcao();
   if ("erro" in guarda) return { erro: guarda.erro };
   if (!INTEGRACOES.includes(portal)) return { erro: "Portal desconhecido." };
+  // Portais de imóveis (ZAP, Viva Real, OLX) são de imobiliária (30/10/2026,
+  // revisão): a tela some nos outros ramos, e a action recusa igual.
+  if (!recursosDeImoveis(guarda.corretor.ramo)) return { erro: SEM_PORTAIS };
   const grupoId = guarda.corretor.grupoId;
   const supabase = createServiceClient();
 
@@ -54,6 +60,9 @@ export async function desligarPortal(portal: IntegracaoDePortal): Promise<Result
   const guarda = await exigirGestorNaAcao();
   if ("erro" in guarda) return { erro: guarda.erro };
   if (!INTEGRACOES.includes(portal)) return { erro: "Portal desconhecido." };
+  // Portais de imóveis (ZAP, Viva Real, OLX) são de imobiliária (30/10/2026,
+  // revisão): a tela some nos outros ramos, e a action recusa igual.
+  if (!recursosDeImoveis(guarda.corretor.ramo)) return { erro: SEM_PORTAIS };
   const { error } = await createServiceClient()
     .from("integracoes_de_portais")
     .update({ ativo: false })

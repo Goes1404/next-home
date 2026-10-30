@@ -35,6 +35,7 @@ export async function GET(req: Request) {
     recorte,
     corretorId: corretor.id,
     foraDasOcultas,
+    ramo: corretor.ramo,
   });
   return Response.json(resposta, { headers: SEM_CACHE });
 }

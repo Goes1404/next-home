@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { inscricaoDoPainel, registrarSwDoPainel } from "@/lib/painel/swDoPainel";
 import { enviarNotificacaoDeTeste } from "./acoesDasNotificacoes";
 import type { ResultadoDoTeste } from "./resultadoDoTeste";
 
@@ -56,8 +57,8 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
         return vivo && setEstado(ehIphoneForaDoApp() ? "iphone_fora_do_app" : "sem_suporte");
       }
       if (Notification.permission === "denied") return vivo && setEstado("bloqueada");
-      const reg = await navigator.serviceWorker.getRegistration("/corretor/");
-      const inscricao = await reg?.pushManager.getSubscription();
+      // Olha o registro novo (`/corretor`) e o antigo (`/corretor/`): ver `swDoPainel.ts`.
+      const inscricao = await inscricaoDoPainel();
       if (vivo) setEstado(inscricao ? "ligada" : "desligada");
     })().catch(() => vivo && setEstado("desligada"));
     return () => {
@@ -71,10 +72,9 @@ export function AtivarNotificacoes({ sempreVisivel = false }: { sempreVisivel?: 
     try {
       const permissao = await Notification.requestPermission();
       if (permissao !== "granted") return setEstado(permissao === "denied" ? "bloqueada" : "desligada");
-      const reg = await navigator.serviceWorker.register("/sw-painel.js", { scope: "/corretor/" });
-      await navigator.serviceWorker.ready;
+      const reg = await registrarSwDoPainel();
       const inscricao =
-        (await reg.pushManager.getSubscription()) ??
+        (await inscricaoDoPainel()) ??
         (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveEmBytes(CHAVE) }));
       const resp = await fetch("/api/notificacoes", {
         method: "POST",

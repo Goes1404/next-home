@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { useGuardadoNoAparelho } from "@/lib/navegador/guardadoNoAparelho";
 import {
-  ACOES_RAPIDAS,
-  CHAVE_DAS_RECENTES,
+  acoesRapidasDoRamo,
+  chaveDasRecentes,
   MINIMO_PARA_BUSCAR,
   RESPOSTA_VAZIA,
   filtrarAtalhos,
@@ -19,15 +19,20 @@ import {
   type RespostaDaBusca,
   type ResultadoDaBusca,
 } from "@/lib/painel/buscaRapida";
-import { ITENS_DA_CONTA, gruposVisiveis, moduloAtivo } from "../navegacao";
+import { useRamoDoPainel } from "@/lib/ramos/RamoDoPainel";
+import { temModulo, type Ramo } from "@/lib/ramos/ramos";
+import { gruposVisiveis, itensDaConta, moduloAtivo } from "../navegacao";
 
 /** Espera da digitação antes de ir ao servidor. */
 const ESPERA_MS = 220;
 
 type Estado = "parado" | "buscando" | "pronto" | "erro";
 
-/** As telas do menu (só as que esta pessoa vê) viram atalhos da busca. */
-function atalhosDoMenu(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo): Atalho[] {
+/**
+ * As telas do menu (só as que esta pessoa vê, no ramo da conta) viram
+ * atalhos da busca. Exportada para o teste (`paletaDeBusca.test.ts`).
+ */
+export function atalhosDoMenu(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo, ramo: Ramo): Atalho[] {
   const saida: Atalho[] = [];
   const vistos = new Set<string>();
   const por = (a: Atalho) => {
@@ -35,7 +40,7 @@ function atalhosDoMenu(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo): Atalho[] {
     vistos.add(a.href);
     saida.push(a);
   };
-  for (const grupo of gruposVisiveis(ehGestor, tipoDoGrupo)) {
+  for (const grupo of gruposVisiveis(ehGestor, tipoDoGrupo, ramo)) {
     for (const item of grupo.itens) {
       if (item.subitens?.length) {
         for (const sub of item.subitens) por({ tipo: "pagina", href: sub.href, titulo: sub.label, detalhe: item.label });
@@ -44,8 +49,9 @@ function atalhosDoMenu(ehGestor: boolean, tipoDoGrupo: TipoDoGrupo): Atalho[] {
       }
     }
   }
-  for (const item of ITENS_DA_CONTA) por({ tipo: "pagina", href: item.href, titulo: item.label, detalhe: "Conta" });
-  return [...ACOES_RAPIDAS, ...saida];
+  // Só os itens da conta que esta pessoa vê ("Indique e ganhe" é do gestor).
+  for (const item of itensDaConta(ehGestor)) por({ tipo: "pagina", href: item.href, titulo: item.label, detalhe: "Conta" });
+  return [...acoesRapidasDoRamo(ramo), ...saida];
 }
 
 const ROTULO: Record<ResultadoDaBusca["tipo"], string> = {
@@ -74,12 +80,16 @@ export function PaletaDeBusca({
   aoFechar,
   ehGestor,
   tipoDoGrupo,
+  usuarioId,
 }: {
   aberta: boolean;
   aoFechar: () => void;
   ehGestor: boolean;
   tipoDoGrupo: TipoDoGrupo;
+  /** As buscas recentes são guardadas por usuário (celular compartilhado). */
+  usuarioId: string;
 }) {
+  const { ramo } = useRamoDoPainel();
   const router = useRouter();
   const atual = usePathname();
   const modulo = moduloAtivo(atual);
@@ -89,9 +99,9 @@ export function PaletaDeBusca({
   const [resposta, setResposta] = useState<RespostaDaBusca>(RESPOSTA_VAZIA);
   const [estado, setEstado] = useState<Estado>("parado");
   const [ativo, setAtivo] = useState(0);
-  const [guardadas, guardar] = useGuardadoNoAparelho(CHAVE_DAS_RECENTES);
+  const [guardadas, guardar] = useGuardadoNoAparelho(chaveDasRecentes(usuarioId));
   const recentes = useMemo(() => lerRecentes(guardadas), [guardadas]);
-  const atalhos = useMemo(() => atalhosDoMenu(ehGestor, tipoDoGrupo), [ehGestor, tipoDoGrupo]);
+  const atalhos = useMemo(() => atalhosDoMenu(ehGestor, tipoDoGrupo, ramo), [ehGestor, tipoDoGrupo, ramo]);
 
   const limpo = termo.trim();
   const vaiAoServidor = limpo.length >= MINIMO_PARA_BUSCAR;
@@ -248,7 +258,7 @@ export function PaletaDeBusca({
               setAtivo(0);
               if (e.target.value.trim().length < MINIMO_PARA_BUSCAR) setEstado("parado");
             }}
-            placeholder="Nome, telefone, imóvel ou tela"
+            placeholder={temModulo(ramo, "catalogoDeImoveis") ? "Nome, telefone, imóvel ou tela" : "Nome, telefone ou tela"}
             role="combobox"
             aria-expanded={lista.length > 0}
             aria-controls={`${idBase}-lista`}

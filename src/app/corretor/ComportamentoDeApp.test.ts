@@ -59,9 +59,45 @@ describe("comportamento de app", () => {
     expect(fs.existsSync("public/offline.html")).toBe(true);
   });
 
-  it("sair da conta manda o service worker apagar os dados guardados", () => {
-    expect(SCRIPT_DE_APP).toContain('postMessage({tipo:"limpar-dados"})');
-    expect(fs.readFileSync("src/app/corretor/LimparSaida.tsx", "utf8")).toContain('postMessage({ tipo: "limpar-dados" })');
+  /*
+   * Mudança consciente (30/10/2026): o "limpar-dados" ia só ao `controller`,
+   * que é nulo no Início (`/corretor`, fora do escopo antigo `/corretor/`).
+   * Agora vai também ao worker ATIVO de cada registro do painel.
+   */
+  it("sair da conta manda o service worker apagar os dados, mesmo sem controlador", async () => {
+    const recebidas: string[] = [];
+    const worker = (nome: string) => ({ postMessage: (m: { tipo: string }) => recebidas.push(`${nome}:${m.tipo}`) });
+    let aoSair: ((e: unknown) => void) | null = null;
+    const documento = {
+      documentElement: { setAttribute: () => {} },
+      querySelector: () => null,
+      addEventListener: (nome: string, f: (e: unknown) => void) => {
+        if (nome === "submit") aoSair = f;
+      },
+    };
+    const navegador = {
+      serviceWorker: {
+        controller: null,
+        getRegistrations: async () => [
+          { scope: "https://x.app/corretor", active: worker("novo") },
+          { scope: "https://x.app/corretor/", active: worker("antigo") },
+          { scope: "https://x.app/outro/", active: worker("alheio") },
+        ],
+      },
+    };
+    const janela = { matchMedia: () => ({ matches: false }), addEventListener: () => {} };
+    new Function("window", "document", "matchMedia", "navigator", SCRIPT_DE_APP)(janela, documento, janela.matchMedia, navegador);
+    aoSair!({ target: { hasAttribute: (k: string) => k === "data-sair" } });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(recebidas.sort()).toEqual(["antigo:limpar-dados", "novo:limpar-dados"]);
+    expect(fs.readFileSync("src/app/corretor/LimparSaida.tsx", "utf8")).toContain('avisarServiceWorkers({ tipo: "limpar-dados" })');
+  });
+
+  it("o worker é registrado no escopo do start_url (/corretor), não em /corretor/", () => {
+    expect(SCRIPT_DE_APP).toContain('{scope:"/corretor"}');
+    expect(SCRIPT_DE_APP).not.toContain('scope:"/corretor/"');
+    const manifesto = JSON.parse(fs.readFileSync("public/astro.webmanifest", "utf8"));
+    expect(manifesto.start_url).toBe("/corretor");
   });
 });
 

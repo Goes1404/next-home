@@ -447,6 +447,17 @@ export function rotulosDeEtapaDoRamo(ramo: Ramo | null | undefined): Partial<Rec
 }
 
 /**
+ * O ATO do botão de um toque (`PROXIMA_ETAPA.acao`) que fala de visita, no
+ * ramo (30/10/2026, revisão): "Marquei reunião", "Ele compareceu". Na
+ * imobiliária devolve `{}`: "Marquei visita" e "Ele visitou" de sempre.
+ */
+export function acoesDeEtapaDoRamo(ramo: Ramo | null | undefined): Partial<Record<"qualificado" | "visita_agendada", string>> {
+  const r = lerRamo(ramo);
+  if (r === "imobiliaria") return {};
+  return { qualificado: `Marquei ${vocabularioDoRamo(r).compromisso.singular}`, visita_agendada: "Ele compareceu" };
+}
+
+/**
  * O rótulo da coluna "Visita" do funil agrupado (`GRUPO_LABEL.visita`) no
  * ramo: "Reunião", "Consulta". `null` na imobiliária (o de sempre).
  */

@@ -1,4 +1,5 @@
 import { lerRespostaAoLembrete, type LeituraDoLembrete } from "@/lib/whatsapp/followupTexto";
+import { vocabularioDoRamo, type Ramo } from "@/lib/ramos/ramos";
 
 /**
  * Confirmação de visita pelo WhatsApp (0246, 29/10/2026) — a régua, pura.
@@ -91,12 +92,19 @@ export function textoDoPedidoDeConfirmacao(p: {
   /** O nome do que vai ser visitado, do cadastro; `null` sem ele. */
   lugar: string | null;
   agora: Date;
+  /**
+   * O ramo da conta (30/10/2026, revisão): "nossa reunião", "nosso
+   * atendimento". Ausente ou imobiliária = "nossa visita", o texto de sempre.
+   */
+  ramo?: Ramo | null;
 }): string {
   const nome = p.cliente?.trim().split(/\s+/)[0];
+  const compromisso = vocabularioDoRamo(p.ramo).compromisso;
+  const nosso = `${compromisso.genero === "f" ? "nossa" : "nosso"} ${compromisso.singular}`;
   const saudacao = nome && !/^whatsapp$/i.test(nome) ? `Oi, ${nome}!` : "Oi!";
   const lugar = p.lugar?.trim() ? ` no ${p.lugar.trim()}` : "";
   return (
-    `${saudacao} Aqui é ${p.corretor.trim().split(/\s+/)[0]}. Passando para confirmar nossa visita ${quandoDaVisita(p.inicio, p.agora)}${lugar}. ` +
+    `${saudacao} Aqui é ${p.corretor.trim().split(/\s+/)[0]}. Passando para confirmar ${nosso} ${quandoDaVisita(p.inicio, p.agora)}${lugar}. ` +
     `Posso contar com você? Responda *confirmo* ou, se precisar, *remarcar*.`
   );
 }
