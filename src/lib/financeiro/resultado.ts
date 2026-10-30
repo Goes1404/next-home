@@ -1,4 +1,12 @@
-import { ROTULO_CATEGORIA, somarMeses, type Categoria, type Movimento } from "./caixa";
+import {
+  movimentosDo,
+  ROTULO_CATEGORIA,
+  somarMeses,
+  type Categoria,
+  type LancamentoDoCaixa,
+  type Movimento,
+  type VendaDoCaixa,
+} from "./caixa";
 import { centavos } from "./venda";
 
 /**
@@ -122,6 +130,44 @@ export function somarResultados(lista: ResultadoDoMes[], rotulo: string): Result
     resultado,
     margem: receitaCorretagem + outrasReceitas > 0 ? resultado / (receitaCorretagem + outrasReceitas) : null,
     temMovimento: lista.some((r) => r.temMovimento),
+  };
+}
+
+/**
+ * O que a tela lê para mostrar `mes`: doze meses até ele e o ano dele
+ * inteiro (o acumulado). `ate` é o primeiro dia do mês seguinte, exclusivo.
+ */
+export function janelaDoResultado(mes: string): { meses: string[]; desde: string; ate: string } {
+  const meses = mesesAte(mes, 12);
+  const desde = `${meses[0] < `${mes.slice(0, 4)}-01` ? meses[0] : `${mes.slice(0, 4)}-01`}-01`;
+  const ate = `${somarMeses(`${mes}-01`, 1).slice(0, 7)}-01`;
+  return { meses, desde, ate };
+}
+
+/**
+ * Os números da tela Resultado do mês a partir do que ela leu: o mês, o
+ * anterior, o acumulado do ano e a série de doze meses. Mora aqui, e não na
+ * página, para o número central dizer os MESMOS números ("como fechou o
+ * mês?"): duas contas do resultado divergiriam no primeiro centavo.
+ */
+export function resultadosDoMes(
+  lancamentos: LancamentoDoCaixa[],
+  vendas: VendaDoCaixa[],
+  mes: string,
+): { doMes: ResultadoDoMes; anterior: ResultadoDoMes; acumulado: ResultadoDoMes; serie: ResultadoDoMes[] } {
+  const { meses, ate } = janelaDoResultado(mes);
+  const movimentos = movimentosDo(
+    lancamentos.filter((l) => l.pagoEm !== null && l.pagoEm < ate),
+    vendas,
+  );
+  return {
+    doMes: resultadoDoMes(movimentos, mes),
+    anterior: resultadoDoMes(movimentos, somarMeses(`${mes}-01`, -1).slice(0, 7)),
+    acumulado: somarResultados(
+      mesesAte(mes, Number(mes.slice(5, 7))).map((m) => resultadoDoMes(movimentos, m)),
+      mes.slice(0, 4),
+    ),
+    serie: meses.map((m) => resultadoDoMes(movimentos, m)),
   };
 }
 

@@ -12593,6 +12593,18 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   unidade por `chaveDaUnidade`. O "sim" não grava se o valor mudou desde a
   proposta. Armadilha: o banco falso devolve a MESMA linha que depois é
   atualizada; capture o "antes" em valores antes do `update`.
+- **Onda 2, frente G (relatórios), 30/10/2026** — [[relatorios-pelo-numero-central]]:
+  `tratadores/relatorios.ts`, cinco consultas com a MESMA conta das telas
+  (`desempenhoPorCorretor`, `calcularRitmoDoCorretor` + `extratoDo`,
+  `resultadosDoMes`, `resumirImpulsionamentos`, `leads_parados_do_corretor`).
+  Leituras do financeiro ganharam miolo com cliente e recorte (`lerVendas`
+  refaz a policy de `vendas`: corretor vê as que registrou e as em que
+  participa); a conta do Resultado do mês saiu da página. Armadilha:
+  `taxas_da_equipe` e `ranking_vgv` dão `sem_sessao` pela chave de serviço
+  (`lerTaxasDaEquipe` é a mesma conta em TS). A tela Desempenho conta o
+  período em UTC (lead das 21h-24h do último dia cai no mês seguinte); o
+  central conta em SP. `whatsapp_da_equipe` só lista: avisar cada um é envio
+  (ação com "sim" sobre `avisarPeloCentral`, rodada futura).
 
 ## Suporte e contato da Astro (29/10/2026)
 

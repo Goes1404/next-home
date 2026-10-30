@@ -1,6 +1,8 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/types";
 import type { Categoria, LancamentoDoCaixa, SaldoInformado, TipoMovimento } from "./caixa";
 import type { AvulsaParaReceita } from "./receitaBase";
 
@@ -63,19 +65,33 @@ export async function getCaixa(hoje: string): Promise<LeituraDoCaixa> {
   return { ok: true, lancamentos, saldo };
 }
 
+export type LeituraDosPagos =
+  | { ok: true; lancamentos: LancamentoDoCaixa[] }
+  | { ok: false; motivo: "sem_tabela" | "erro" };
+
 /** Lançamentos PAGOS entre duas datas (inclusive), para o resultado do mês. */
-export async function getLancamentosPagos(
+export async function getLancamentosPagos(desde: string, ate: string): Promise<LeituraDosPagos> {
+  return lerLancamentosPagos(await createClient(), desde, ate);
+}
+
+/**
+ * O miolo de `getLancamentosPagos`, com o cliente por parâmetro. Sem sessão
+ * (o número central, pela chave de serviço) quem recorta é `grupoId`: a RLS
+ * que deixava só o gestor do grupo ver o caixa não vale para a chave.
+ */
+export async function lerLancamentosPagos(
+  supabase: SupabaseClient<Database>,
   desde: string,
   ate: string,
-): Promise<{ ok: true; lancamentos: LancamentoDoCaixa[] } | { ok: false; motivo: "sem_tabela" | "erro" }> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  grupoId?: string,
+): Promise<LeituraDosPagos> {
+  let q = supabase
     .from("caixa_lancamentos")
     .select("id, tipo, categoria, descricao, valor, vencimento, pago_em, recorrencia_id, competencia")
     .gte("pago_em", desde)
-    .lte("pago_em", ate)
-    .order("pago_em")
-    .limit(5000);
+    .lte("pago_em", ate);
+  if (grupoId) q = q.eq("grupo_id", grupoId);
+  const { data, error } = await q.order("pago_em").limit(5000);
   if (error) {
     if (error.code === "PGRST205" || error.code === "42P01") return { ok: false, motivo: "sem_tabela" };
     console.error("[resultado] falha ao ler lançamentos:", error.message);

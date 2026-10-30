@@ -1,6 +1,14 @@
 import "server-only";
 
-import { getLeadsLeves, getMeta, getTaxasDaEquipe, type VendaNaTela } from "./dados";
+import {
+  getLeadsLeves,
+  getMeta,
+  getTaxasDaEquipe,
+  type LeadLeve,
+  type LeituraDaMeta,
+  type TaxasDaEquipe,
+  type VendaNaTela,
+} from "./dados";
 import { repasseDoPeriodo } from "./extrato";
 import { diasNoMes, diasRestantesNoMes, intervaloDo, mesAtual } from "./periodo";
 import {
@@ -33,6 +41,21 @@ function dataMenosDias(hoje: string, dias: number): string {
 }
 
 /**
+ * De onde o ritmo lê. O painel lê pela sessão (a RLS recorta); o número
+ * central passa as mesmas leituras sem sessão, recortadas à mão pelo grupo
+ * e pelo corretor identificados (`lerMeta`, `lerLeadsLeves`,
+ * `lerTaxasDaEquipe`). A conta é uma só: `calcularRitmoDoCorretor`.
+ */
+export type FontesDoRitmo = {
+  meta: (corretorId: string, mes: string) => Promise<LeituraDaMeta | null>;
+  /** Os leads desde a data; o ritmo fica só com os do corretor. */
+  leadsLeves: (desde: string) => Promise<LeadLeve[]>;
+  taxasDaEquipe: (desde: string) => Promise<TaxasDaEquipe | null>;
+};
+
+const PELA_SESSAO: FontesDoRitmo = { meta: getMeta, leadsLeves: getLeadsLeves, taxasDaEquipe: getTaxasDaEquipe };
+
+/**
  * `vendas` pode vir já lida (Extrato) ou como função: no Início, a tela
  * mais aberta do painel, as vendas só são buscadas se existir meta.
  */
@@ -40,16 +63,24 @@ export async function getRitmoDoCorretor(
   corretorId: string,
   vendasOuLeitor: VendaNaTela[] | (() => Promise<VendaNaTela[]>),
 ): Promise<RitmoDoCorretor> {
-  const hoje = hojeEmSaoPaulo();
+  return calcularRitmoDoCorretor(PELA_SESSAO, corretorId, vendasOuLeitor);
+}
+
+export async function calcularRitmoDoCorretor(
+  fontes: FontesDoRitmo,
+  corretorId: string,
+  vendasOuLeitor: VendaNaTela[] | (() => Promise<VendaNaTela[]>),
+  hoje: string = hojeEmSaoPaulo(),
+): Promise<RitmoDoCorretor> {
   const mes = mesAtual(hoje);
-  const leitura = await getMeta(corretorId, mes);
+  const leitura = await fontes.meta(corretorId, mes);
   if (!leitura) return { estado: "sem_migracao" };
   if (!leitura.meta) return { estado: "sem_meta", estimativaAnterior: leitura.estimativaAnterior };
 
   const desde = dataMenosDias(hoje, DIAS_DE_HISTORICO);
   const [leads, equipe, vendas] = await Promise.all([
-    getLeadsLeves(desde),
-    getTaxasDaEquipe(desde),
+    fontes.leadsLeves(desde),
+    fontes.taxasDaEquipe(desde),
     typeof vendasOuLeitor === "function" ? vendasOuLeitor() : Promise.resolve(vendasOuLeitor),
   ]);
   const meus = leads.filter((l) => l.corretorId === corretorId);

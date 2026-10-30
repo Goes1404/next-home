@@ -1,7 +1,9 @@
 import { ETAPAS_DE_VISITA_EM_DIANTE as VISITA_EM_DIANTE } from "@/lib/types";
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/types";
 import type { FormaRecebimento, Pagador, Parcela } from "./parcelas";
 import { vgvCreditado, type StatusVenda } from "./venda";
 
@@ -15,7 +17,24 @@ import { vgvCreditado, type StatusVenda } from "./venda";
  *
  * Nomes de corretor e imóvel vêm em consultas separadas, não em embed: o
  * types.ts é mantido à mão e não declara as relações das tabelas novas.
+ *
+ * ## Sem sessão (número central, 30/10/2026)
+ *
+ * O central roda com a chave de serviço, que ignora a RLS e enxerga todos os
+ * grupos. Por isso as leituras têm um miolo (`lerVendas`, `lerMeta`,
+ * `lerLeadsLeves`, `lerTaxasDaEquipe`) que recebe o cliente e um `Recorte`
+ * — o grupo e, para o corretor, ele mesmo —, e refaz à mão o que a RLS
+ * recortava calada. As funções `get*` do painel só passam o cliente da
+ * sessão, sem recorte: para o painel nada muda.
  */
+
+type Cliente = SupabaseClient<Database>;
+
+/**
+ * O que a RLS recortava, explícito para quem lê sem sessão: o grupo sempre;
+ * `corretorId` quando quem pergunta é corretor (o gestor vê o grupo todo).
+ */
+export type Recorte = { grupoId: string; corretorId?: string | null };
 
 export type ParticipanteNaTela = {
   corretorId: string;
@@ -113,20 +132,34 @@ function faltaATabela(erro: { code?: string; message?: string } | null): boolean
 }
 
 async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
+  return montarCom(await createClient(), linhas);
+}
+
+/**
+ * Participantes, parcelas e nomes das vendas já lidas. Com `recorte` (sem
+ * sessão), toda leitura filtra o grupo, e o nome do lead só vem dos leads do
+ * corretor quando quem pergunta é corretor: é o que a RLS de `leads` mostra
+ * a ele.
+ */
+async function montarCom(supabase: Cliente, linhas: LinhaVenda[], recorte?: Recorte): Promise<VendaNaTela[]> {
   if (linhas.length === 0) return [];
-  const supabase = await createClient();
   const ids = linhas.map((l) => l.id);
+  const doGrupo = <Q extends { eq(coluna: "grupo_id", valor: string): Q }>(q: Q): Q =>
+    recorte ? q.eq("grupo_id", recorte.grupoId) : q;
 
   const [{ data: parts }, { data: pcs }] = await Promise.all([
-    supabase
-      .from("venda_participantes")
-      .select("venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor, repasse_pago_em, forma_recebimento")
-      .in("venda_id", ids),
-    supabase
-      .from("venda_parcelas")
-      .select("id, venda_id, numero, valor, pagador, vence_em, recebida_em, cancelada_em")
-      .in("venda_id", ids)
-      .order("numero"),
+    doGrupo(
+      supabase
+        .from("venda_participantes")
+        .select("venda_id, corretor_id, parte_percentual, repasse_percentual, repasse_valor, repasse_pago_em, forma_recebimento")
+        .in("venda_id", ids),
+    ),
+    doGrupo(
+      supabase
+        .from("venda_parcelas")
+        .select("id, venda_id, numero, valor, pagador, vence_em, recebida_em, cancelada_em")
+        .in("venda_id", ids),
+    ).order("numero"),
   ]);
   const participantes = (parts ?? []) as LinhaParticipante[];
   const parcelas = (pcs ?? []) as LinhaParcela[];
@@ -135,14 +168,16 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
   const idsImoveis = [...new Set(linhas.map((l) => l.empreendimento_id).filter((v): v is string => Boolean(v)))];
   const idsLeads = [...new Set(linhas.map((l) => l.lead_id).filter((v): v is string => Boolean(v)))];
 
+  const leadsVisiveis = () => {
+    const q = doGrupo(supabase.from("leads").select("id, nome").in("id", idsLeads));
+    return recorte?.corretorId ? q.eq("corretor_id", recorte.corretorId) : q;
+  };
   const [{ data: corretores }, { data: imoveis }, { data: leads }] = await Promise.all([
-    supabase.from("corretores").select("id, nome").in("id", idsCorretores),
+    doGrupo(supabase.from("corretores").select("id, nome").in("id", idsCorretores)),
     idsImoveis.length
-      ? supabase.from("empreendimentos").select("id, nome, construtora").in("id", idsImoveis)
+      ? doGrupo(supabase.from("empreendimentos").select("id, nome, construtora").in("id", idsImoveis))
       : Promise.resolve({ data: [] as { id: string; nome: string; construtora: string | null }[] }),
-    idsLeads.length
-      ? supabase.from("leads").select("id, nome").in("id", idsLeads)
-      : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+    idsLeads.length ? leadsVisiveis() : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
   ]);
 
   const nomeCorretor = new Map((corretores ?? []).map((c) => [c.id, c.nome as string]));
@@ -202,17 +237,51 @@ async function montar(linhas: LinhaVenda[]): Promise<VendaNaTela[]> {
 const TETO_DA_LISTA = 200;
 
 export async function getVendas(filtro: { inicio?: string; fim?: string } = {}): Promise<LeituraDeVendas> {
-  const supabase = await createClient();
+  return lerVendas(await createClient(), filtro);
+}
+
+/**
+ * O miolo de `getVendas`, com o cliente por parâmetro. Com `recorte` (sem
+ * sessão), refaz a policy de SELECT de `vendas` (0114): o gestor vê as do
+ * grupo; o corretor, as que registrou e as em que participa. O teto de 200
+ * vale depois do recorte, como com a RLS.
+ */
+export async function lerVendas(
+  supabase: Cliente,
+  filtro: { inicio?: string; fim?: string } = {},
+  recorte?: Recorte,
+): Promise<LeituraDeVendas> {
   let q = supabase.from("vendas").select(COLUNAS).order("data_venda", { ascending: false }).limit(TETO_DA_LISTA);
   if (filtro.inicio) q = q.gte("data_venda", filtro.inicio);
   if (filtro.fim) q = q.lte("data_venda", filtro.fim);
+  if (recorte) {
+    q = q.eq("grupo_id", recorte.grupoId);
+    if (recorte.corretorId) {
+      // "Participa?" é a `participa_da_venda` da policy, feita aqui em duas leituras.
+      const { data: minhas, error } = await supabase
+        .from("venda_participantes")
+        .select("venda_id")
+        .eq("grupo_id", recorte.grupoId)
+        .eq("corretor_id", recorte.corretorId)
+        .limit(1000);
+      if (error) {
+        if (faltaATabela(error)) return { ok: false, motivo: "sem_tabela" };
+        console.error("[vendas] falha ao listar participações:", error.message);
+        return { ok: false, motivo: "erro" };
+      }
+      const ids = [...new Set((minhas ?? []).map((m) => m.venda_id))];
+      q = ids.length
+        ? q.or(`corretor_id.eq.${recorte.corretorId},id.in.(${ids.join(",")})`)
+        : q.eq("corretor_id", recorte.corretorId);
+    }
+  }
   const { data, error } = await q;
   if (error) {
     if (faltaATabela(error)) return { ok: false, motivo: "sem_tabela" };
     console.error("[vendas] falha ao listar:", error.message);
     return { ok: false, motivo: "erro" };
   }
-  return { ok: true, vendas: await montar((data ?? []) as LinhaVenda[]) };
+  return { ok: true, vendas: await montarCom(supabase, (data ?? []) as LinhaVenda[], recorte) };
 }
 
 export async function getVenda(id: string): Promise<VendaNaTela | null> {
@@ -313,6 +382,51 @@ export type TaxasDaEquipe = {
   docParaVenda: number | null;
 };
 
+/**
+ * As taxas da equipe SEM sessão: a `taxas_da_equipe` (0192) recusa quem não
+ * tem sessão (`sem_sessao`), e é ela que a meta usa como reserva quando o
+ * corretor ainda não tem histórico. Mesma conta da função, em duas leituras
+ * do grupo: leads desde `desde` (visita = data marcada ou etapa de visita em
+ * diante) e vendas ativas desde `desde`, com o repasse médio dos
+ * participantes. Mudou a função no banco, muda aqui (teste em
+ * `src/lib/central/tratadores/relatorios.test.ts`).
+ */
+export async function lerTaxasDaEquipe(supabase: Cliente, grupoId: string, desde: string): Promise<TaxasDaEquipe | null> {
+  const [{ data: leads, error: erroLeads }, { data: vendas, error: erroVendas }] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id, visita_agendada_em, etapa")
+      .eq("grupo_id", grupoId)
+      .gte("created_at", desde)
+      .limit(TETO_DE_LEADS),
+    supabase
+      .from("vendas")
+      .select("id, valor_venda")
+      .eq("grupo_id", grupoId)
+      .eq("status", "ativa")
+      .gte("data_venda", desde)
+      .limit(TETO_DE_LEADS),
+  ]);
+  if (erroLeads || erroVendas) return null;
+  const ids = (vendas ?? []).map((v) => v.id);
+  const { data: parts } = ids.length
+    ? await supabase.from("venda_participantes").select("repasse_valor").eq("grupo_id", grupoId).in("venda_id", ids)
+    : { data: [] as { repasse_valor: number | string }[] };
+
+  const media = (ns: number[], casas: number) =>
+    ns.length ? Math.round((ns.reduce((s, n) => s + n, 0) / ns.length) * 10 ** casas) / 10 ** casas : null;
+  const ls = leads ?? [];
+  const avancados = ls.filter((l) => ["proposta", "documentacao", "fechado"].includes(l.etapa));
+  return {
+    leads: ls.length,
+    visitas: ls.filter((l) => l.visita_agendada_em !== null || ETAPAS_DE_VISITA.has(l.etapa)).length,
+    vendas: ids.length,
+    repasseMedio: media((parts ?? []).map((p) => Number(p.repasse_valor)), 2),
+    ticketMedio: media((vendas ?? []).map((v) => Number(v.valor_venda)), 2),
+    docParaVenda: avancados.length ? Math.round((avancados.filter((l) => l.etapa === "fechado").length / avancados.length) * 10_000) / 10_000 : null,
+  };
+}
+
 export async function getTaxasDaEquipe(desde: string): Promise<TaxasDaEquipe | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("taxas_da_equipe", { p_desde: desde });
@@ -334,18 +448,26 @@ export type MetaDoMes = { metaComissao: number; comissaoPorVenda: number | null 
  * A meta do mês. Sem linha no mês, herda a ESTIMATIVA de comissão por venda
  * do mês mais recente: o valor de uma venda não muda porque o mês virou.
  */
-export async function getMeta(
+export type LeituraDaMeta = { meta: MetaDoMes | null; estimativaAnterior: number | null };
+
+export async function getMeta(corretorId: string, mes: string): Promise<LeituraDaMeta | null> {
+  return lerMeta(await createClient(), corretorId, mes);
+}
+
+/** O miolo de `getMeta`; com `grupoId` (sem sessão), a leitura fica no grupo. */
+export async function lerMeta(
+  supabase: Cliente,
   corretorId: string,
   mes: string,
-): Promise<{ meta: MetaDoMes | null; estimativaAnterior: number | null } | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  grupoId?: string,
+): Promise<LeituraDaMeta | null> {
+  let q = supabase
     .from("metas_corretor")
     .select("mes, meta_comissao, comissao_por_venda")
     .eq("corretor_id", corretorId)
-    .lte("mes", mes)
-    .order("mes", { ascending: false })
-    .limit(6);
+    .lte("mes", mes);
+  if (grupoId) q = q.eq("grupo_id", grupoId);
+  const { data, error } = await q.order("mes", { ascending: false }).limit(6);
   if (error) return null;
   const linhas = data ?? [];
   const doMes = linhas.find((l) => l.mes === mes);
@@ -378,13 +500,30 @@ const TETO_DE_LEADS = 5000;
  * o de origem.
  */
 export async function getLeadsLeves(desde: string): Promise<LeadLeve[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
+  return lerLeadsLeves(await createClient(), desde);
+}
+
+/**
+ * O miolo de `getLeadsLeves`. Com `recorte` (sem sessão): o grupo, e o
+ * corretor quando é ele quem pergunta (a RLS de `leads` mostra a ele só os
+ * dele). `ate` (exclusivo) fecha o período no banco: com `desde` e `ate` no
+ * horário de São Paulo, conta o mês de São Paulo.
+ */
+export async function lerLeadsLeves(
+  supabase: Cliente,
+  desde: string,
+  recorte?: Recorte & { ate?: string },
+): Promise<LeadLeve[]> {
+  let q = supabase
     .from("leads")
     .select("id, corretor_id, empreendimento_id, imovel_interesse_id, created_at, visita_agendada_em, etapa")
-    .gte("created_at", desde)
-    .order("created_at", { ascending: false })
-    .limit(TETO_DE_LEADS);
+    .gte("created_at", desde);
+  if (recorte) {
+    q = q.eq("grupo_id", recorte.grupoId);
+    if (recorte.corretorId) q = q.eq("corretor_id", recorte.corretorId);
+    if (recorte.ate) q = q.lt("created_at", recorte.ate);
+  }
+  const { data } = await q.order("created_at", { ascending: false }).limit(TETO_DE_LEADS);
   return (data ?? []).map((l) => ({
     id: l.id,
     corretorId: l.corretor_id,
