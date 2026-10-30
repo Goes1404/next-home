@@ -58,6 +58,12 @@ horário no painel e o central em grupos da equipe (4.1) também são da onda 2,
 mas mexem em cron, telas e webhook: ficam para a sessão principal, depois de
 F a I.
 
+## Concluído em 30/10/2026
+
+Ondas 1, 2, fase 2b e onda 3 juntadas e verdes na `ccr-c2c56589-a2yhl2`
+(tsc, 6.793 testes, lintTeto, build). Tudo atrás de `ONDA_ATUAL = 0`. A tarefa
+agendada de retomada foi desligada.
+
 ## Migrations que o dono roda no SQL Editor
 
 - `0249_central_da_plataforma.sql` (tabelas do central).
@@ -86,8 +92,8 @@ juntada, ou dividir os arquivos antes de lançar as duas juntas.
 
 | Frente | Arquivo | Ferramentas | Estado |
 |---|---|---|---|
-| L · Listas | `tratadores/listas.ts` | `montar_lista` (quantos, quantos nunca falaram, quantos cabem hoje no primeiro contato; sai do número de quem pediu; fila de hoje), `acompanhar_lista` (ver, pausar, retomar) | em andamento (30/10) |
-| M · Arte e vídeo | `tratadores/estudio.ts` | `gerar_arte` (Estúdio), `criar_video` (criador de vídeo); devolver como arquivo exige envio de mídia pelo central | em andamento (30/10) |
+| L · Listas | `tratadores/listas.ts` | `montar_lista` (quantos, quantos nunca falaram, quantos cabem hoje no primeiro contato; sai do número de quem pediu; fila de hoje), `acompanhar_lista` (ver, pausar, retomar) | juntada (30/10) |
+| M · Arte e vídeo | `tratadores/estudio.ts` | `gerar_arte` (Estúdio), `criar_video` (criador de vídeo); devolver como arquivo exige envio de mídia pelo central | juntada (30/10) |
 | N · O que vai ao cliente | `tratadores/cliente.ts` | `mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens` (sai do número do corretor, com as travas anti-bloqueio de hoje) | juntada (30/10) |
 | O · Saúde do número | `tratadores/saude.ts` | `saude_do_numero` (conexão e limite atual; níveis 10→15→20 ainda não existem) | juntada (30/10) |
 

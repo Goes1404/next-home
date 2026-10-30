@@ -102,4 +102,21 @@ até o dono ligar.
 - Armadilha: rodar `vitest` com filtro de pasta (`src/lib/grupos`) também pega
   as cópias em `.claude/worktrees/`; use `--dir src`.
 
+## Ondas 2, 2b e 3 construídas, desligadas (30/10/2026)
+
+As 33 capacidades têm tratador; `ONDA_ATUAL` segue 0. Notas das frentes:
+[[central-imoveis-do-catalogo]], [[relatorios-pelo-numero-central]],
+[[financeiro-e-gestao-pelo-numero-central]],
+[[documentos-lembrete-e-planilha-pelo-central]],
+[[avisos-espontaneos-pelo-numero-central]],
+[[numero-central-em-grupos-da-equipe]],
+[[lista-de-transmissao-pelo-numero-central]],
+[[arte-e-video-pelo-numero-central]],
+[[o-que-vai-ao-cliente-pelo-numero-central]], [[saude-do-numero-pelo-central]].
+
+Para ligar: rodar 0249 e 0250 no SQL Editor, conectar o chip em
+`/plataforma/central`, rodar `npm run eval:central` com chave real e escolher
+`CENTRAL_MODELO`, o gestor ligar o interruptor, e subir `ONDA_ATUAL` uma onda
+por vez.
+
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].
