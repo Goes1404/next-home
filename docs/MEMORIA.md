@@ -12537,3 +12537,18 @@ Nota: [[aba-campanhas-virou-uma-lista-so]].
   --write` reformata o arquivo inteiro (diff de 900 linhas). Edite à mão.
 - Prévia de componente do painel sem login: página temporária em
   `src/app/auth/<nome>/` (fora do reescrito de site), `next dev`, Playwright.
+
+## Desenho do CRM pelo WhatsApp — número central com IA (30/10/2026)
+
+Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
+`docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md`.
+
+- O dono comprou o chip **11 96867-1127** para um número da plataforma com IA
+  que deixa corretor e gestor operarem o CRM pelo WhatsApp (texto, áudio,
+  foto). 20 capacidades; **sempre** proposta e "sim" antes de mudar algo;
+  piloto na Next Home em 4 ondas. Ainda não construído.
+- Base que já existe: agenda por mensagem (`src/lib/agenda/comandos/`) e
+  retorno pelo grupo (`src/lib/crm/retornoPeloGrupo/`).
+- Armadilha a lembrar: o WhatsApp do corretor também está no sistema; sem
+  ignorar o número central em toda instância de corretor, a IA do corretor e
+  a do central entram em laço.
