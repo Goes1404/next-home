@@ -33,6 +33,9 @@ describe("lerMensagemDoCentral", () => {
     expect(de({ audioMessage: { seconds: 5 } })?.tipo).toBe("audio");
     expect(de({ imageMessage: { caption: "ficha" } })).toMatchObject({ tipo: "imagem", texto: "ficha" });
     expect(de({ documentMessage: { fileName: "leads.xlsx" } })?.tipo).toBe("imagem");
+    // Arquivo é marcado para não ser baixado como foto (onda 2); foto não.
+    expect(de({ documentMessage: { fileName: "rg.pdf" } })?.documento).toBe(true);
+    expect(de({ imageMessage: { caption: "ficha" } })?.documento).toBeUndefined();
   });
 
   it("vazio ou sem id: nada a tratar", () => {

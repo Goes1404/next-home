@@ -51,8 +51,30 @@ export type ResultadoDoCerebro =
     }
   | { ok: false; indisponivel: true; motivo: string; chamadas: ChamadaFeita[]; custoUsd: number };
 
+/**
+ * A foto que o corretor mandou (onda 1, capacidade 3), já baixada e conferida
+ * pela conversa (tipo e tamanho). Vai só nesta mensagem: nunca entra no
+ * histórico guardado nem no registro.
+ */
+export type ImagemDoCerebro = { base64: string; mimeType: "image/jpeg" | "image/png" | "image/webp" };
+
+/**
+ * `high`, não `low`: com `low` a foto chega ao modelo em 512 px, e um print de
+ * conversa (720×1600) vira letra de 5 px, telefone ilegível. O que a foto
+ * precisa entregar é justamente o número inteiro. Medida da OpenAI: um print
+ * desses dá ~8 blocos de 512 px, ~1.450 tokens de entrada por volta (centavos
+ * no gpt-4.1, dentro dos R$ 0,05–0,15 por comando da spec 7.1), contra 85 do
+ * `low`. Contado pelo `prompt_tokens` de cada volta, como o resto.
+ */
+export const DETALHE_DA_FOTO = "high" as const;
+
+type ParteDoConteudo =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string; detail: typeof DETALHE_DA_FOTO } };
+
 type MensagemDaApi =
-  | { role: "system" | "user"; content: string }
+  | { role: "system"; content: string }
+  | { role: "user"; content: string | ParteDoConteudo[] }
   | { role: "assistant"; content: string | null; tool_calls?: ChamadaDaApi[] }
   | { role: "tool"; tool_call_id: string; content: string };
 
@@ -62,6 +84,8 @@ export type EntradaDoCerebro = {
   sistema: string;
   historico: MensagemDoHistorico[];
   mensagem: string;
+  /** A foto desta mensagem; `mensagem` leva a legenda. */
+  imagem?: ImagemDoCerebro;
   ferramentas: DeclaracaoDeFerramenta[];
   /** Roda a ferramenta pedida. Nunca deve lançar; o erro vira resultado. */
   executar: (nome: string, argumentos: Record<string, unknown>) => Promise<unknown>;
@@ -83,6 +107,15 @@ function custoUsd(modelo: string, entrada: number, saida: number): number {
   return (entrada * preco.entrada + saida * preco.saida) / 1_000_000;
 }
 
+/** Sem foto, o texto puro (o corpo de sempre); com foto, a legenda e a imagem em data URL. */
+function conteudoDaMensagem(e: EntradaDoCerebro): string | ParteDoConteudo[] {
+  if (!e.imagem) return e.mensagem;
+  return [
+    { type: "text", text: e.mensagem },
+    { type: "image_url", image_url: { url: `data:${e.imagem.mimeType};base64,${e.imagem.base64}`, detail: DETALHE_DA_FOTO } },
+  ];
+}
+
 export async function pensar(e: EntradaDoCerebro): Promise<ResultadoDoCerebro> {
   const chamadas: ChamadaFeita[] = [];
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -100,7 +133,7 @@ export async function pensar(e: EntradaDoCerebro): Promise<ResultadoDoCerebro> {
       (h): MensagemDaApi =>
         h.papel === "pessoa" ? { role: "user", content: h.texto } : { role: "assistant", content: h.texto },
     ),
-    { role: "user", content: e.mensagem },
+    { role: "user", content: conteudoDaMensagem(e) },
   ];
   const tools = e.ferramentas.map((f) => ({
     type: "function" as const,

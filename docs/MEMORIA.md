@@ -12592,3 +12592,19 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - 30/10/2026: /plataforma no desktop ganhou barra lateral (NavDaPlataforma.tsx); a linha de 8 botões sem flex-wrap vazava.
 - 30/10/2026: `relatorio-semanal` REAGENDADO no pg_cron (segundas 11h UTC) por causa do resumo no WhatsApp (0246); o e-mail do relatório só sai com `RELATORIO_SEMANAL_POR_EMAIL=sim` (segue desligado, decisão de 03/09). Fundo animado: em toque (`hover: none`) o painel e a tela de acesso ficam parados.
 - 30/10/2026 (0248, aplicada): IA no atendimento — áudio transcrito depois de gravar a mensagem (marcador AUDIO_TRANSCREVENDO, teto diário por grupo com IA calada), resumo da conversa + próximo passo em cache no lead (refaz no máx. a cada 10 min, teto 300/dia/grupo), nota do lead 0-100 por regras (`notaDoLead.ts`, quente ≥70, morno ≥40) recalculada no webhook, no cron (100/tique, a cada 6 h) e ao abrir a ficha. Tetos e pesos provisórios, a validar com o dono.
+
+
+## Foto no número central, onda 1 (30/10/2026)
+
+Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
+- Foto vai ao cérebro como `image_url` em data URL, `detail: "high"` (`low`
+  = 512 px, telefone de print ilegível). Nunca no histórico nem no registro:
+  `[foto] <legenda>`.
+- **`baixarMidiaDoProvedor` sem `mimetype` devolve `audio/ogg`**: o tipo da
+  foto sai dos primeiros bytes (JPEG/PNG/WEBP), teto 5 MB. `documentMessage`
+  não é baixado (onda 2).
+- `cadastrar_lead_da_foto` delega ao `cadastrar_lead` da Frente B; sem ele,
+  "ainda não sei".
+- A guarda de `ferramentas.test.ts` exigia `TRATADORES.acoes` vazio: quebrava
+  com qualquer tratador de onda 1, mesmo desligado. A linha saiu; o laço que
+  cobra `onda > ONDA_ATUAL` ficou.
