@@ -38,8 +38,13 @@ describe("catálogo do número central", () => {
   });
 
   it("o central não escreve em tabela do CRM", () => {
+    // Recursivo: os tratadores das ondas (`tratadores/`) também. Ação da onda 1
+    // grava pelas funções de domínio que já existem (cadastro, visita, ficha),
+    // nunca direto nas tabelas do CRM daqui.
     const dir = "src/lib/central";
-    const fontes = readdirSync(dir).filter((a) => a.endsWith(".ts") && !a.endsWith(".test.ts") && a !== "bancoFalso.ts");
+    const fontes = (readdirSync(dir, { recursive: true }) as string[]).filter(
+      (a) => a.endsWith(".ts") && !a.endsWith(".test.ts") && !a.endsWith("bancoFalso.ts"),
+    );
     const proibidas = /from\("(leads|visitas|whatsapp_conversas|whatsapp_mensagens|lead_tarefas|anotacoes|vendas)"\)[\s\S]{0,80}?\.(insert|update|upsert|delete)\(/;
     for (const a of fontes) expect(readFileSync(join(dir, a), "utf8"), a).not.toMatch(proibidas);
   });
