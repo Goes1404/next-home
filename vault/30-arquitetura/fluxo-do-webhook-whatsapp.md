@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-29
+updated: 2026-10-30
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -15,6 +15,12 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
 
 `/api/webhooks/whatsapp` (`maxDuration = 60`):
 
+0. **Número central** (0248, 30/10) — se a `instanceName` é a do central
+   da plataforma, o evento inteiro vai para `tratarWebhookDoCentral`
+   (`src/lib/central/webhook.ts`), com o mesmo segredo global, e nada abaixo
+   roda. Numa instância de corretor, mensagem cujo remetente é o número
+   central sai com `ignored: "central"` antes da IA (senão as duas IAs
+   conversam em laço) ([[crm-pelo-whatsapp-numero-central-com-ia]]).
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
    **Antes disso, o descarte de grupo** (`@g.us`, transmissão, status) sai com
    200 "ignored". Única exceção (27/10): `messages.upsert` não `fromMe` num
