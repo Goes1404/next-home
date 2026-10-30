@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import { DIAS_ATE_ESQUECER, retornoDasListas } from "@/lib/whatsapp/listaDeTransmissao";
 import { createClient } from "@/lib/supabase/server";
 import { CORRETOR_NENHUM } from "@/lib/carteiraDaVisao";
@@ -209,7 +211,31 @@ export async function getFilaDeTrabalho(
    */
   corretorId?: string | null,
 ): Promise<ItemFila[]> {
-  const supabase = await createClient();
+  return montarFilaDeTrabalho(await createClient(), tarefas, agora, corretorId);
+}
+
+type Cliente = SupabaseClient<Database>;
+
+/**
+ * O miolo da fila, com o cliente de QUEM CHAMA (número central, 30/10/2026).
+ *
+ * O painel chega aqui pela sessão (`getFilaDeTrabalho`), e a RLS recorta o
+ * grupo. O número central não tem sessão: roda com a chave de serviço, que
+ * enxerga todos os grupos, e passa `semSessao` com o grupo de quem foi
+ * identificado. Toda consulta abaixo já recorta pelo corretor (o `dono`); a
+ * única que dependia SÓ da RLS é a das sugestões de mensagem, que sem sessão
+ * passa a filtrar o grupo e o corretor da conversa. Com sessão, nada muda.
+ */
+export async function montarFilaDeTrabalho(
+  supabase: Cliente,
+  tarefas: Tarefa[],
+  agora: Date,
+  corretorId: string | null | undefined,
+  semSessao?: { grupoId: string },
+): Promise<ItemFila[]> {
+  // Sem sessão e sem corretor não existe recorte nenhum: a chave de serviço
+  // devolveria os lembretes do banco inteiro. Fila vazia, nunca a de todos.
+  if (semSessao && !corretorId) return [];
   /*
    * A fila é o trabalho de QUEM ABRIU o painel, inclusive do gestor: a RLS
    * dele enxerga a equipe inteira, e a fila do Início virava a carteira de
@@ -261,12 +287,27 @@ export async function getFilaDeTrabalho(
         .limit(INDIVIDUAIS_POR_TIPO)
     : Promise.resolve({ data: [] as { id: string; telefone: string; created_at: string }[] });
 
-  const consultaSugestoes = supabase
-    .from("whatsapp_followups")
-    .select("id, tipo, texto_sugerido, conversa_id, sugerido_em")
-    .eq("status", "sugerido")
-    .order("sugerido_em", { ascending: false })
-    .limit(INDIVIDUAIS_POR_TIPO);
+  /*
+   * A tabela não tem corretor: com sessão, quem recorta é a RLS. Sem sessão
+   * não há RLS, e esta consulta traria as sugestões de todos os grupos, por
+   * isso ela filtra o grupo e o corretor da conversa (a mesma junção do
+   * resumo do dia, `visitasSemRetorno`).
+   */
+  const consultaSugestoes = semSessao
+    ? supabase
+        .from("whatsapp_followups")
+        .select("id, tipo, texto_sugerido, conversa_id, sugerido_em, conversa:whatsapp_conversas!inner(corretor_id)")
+        .eq("grupo_id", semSessao.grupoId)
+        .eq("conversa.corretor_id", dono)
+        .eq("status", "sugerido")
+        .order("sugerido_em", { ascending: false })
+        .limit(INDIVIDUAIS_POR_TIPO)
+    : supabase
+        .from("whatsapp_followups")
+        .select("id, tipo, texto_sugerido, conversa_id, sugerido_em")
+        .eq("status", "sugerido")
+        .order("sugerido_em", { ascending: false })
+        .limit(INDIVIDUAIS_POR_TIPO);
 
   /*
    * As listas que voltaram algo (Fase 3): itens enviados nos últimos 14

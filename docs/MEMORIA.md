@@ -12559,6 +12559,12 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   `instanceName` (antes de `resolverInstancia`, que daria 404). Primeiro uso
   de `tools` da OpenAI no repo (`cerebro.ts`). Só a ajuda funciona; o resto
   responde "ainda não sei". Sem a 0248 aplicada o código não quebra.
+- **Onda 1, consultas (`consultar_lead`, `quem_ligar_hoje`)**: o central lê
+  pela chave de serviço, sem RLS. A fila do Início ganhou o miolo
+  `montarFilaDeTrabalho(cliente, …, semSessao)` (as sugestões de mensagem só
+  eram recortadas pela RLS); `lerResumoDoLead` NÃO serve ao central (lê a
+  conversa só pelo lead e mostraria ao gestor a conversa alheia, 0134).
+  Nota: [[central-le-sem-sessao-e-sem-rls]].
 
 ## Suporte e contato da Astro (29/10/2026)
 
