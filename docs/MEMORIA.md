@@ -12559,6 +12559,15 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   `instanceName` (antes de `resolverInstancia`, que daria 404). Primeiro uso
   de `tools` da OpenAI no repo (`cerebro.ts`). Só a ajuda funciona; o resto
   responde "ainda não sei". Sem a 0248 aplicada o código não quebra.
+- **Onda 1, frente C (agenda), 30/10/2026** — [[agenda-pelo-numero-central]]:
+  `tratadores/agenda.ts` (visita e agenda_pessoal). O "quando" do central é
+  lido por código (`agenda/quandoEmTexto.ts`), sem segunda chamada de IA;
+  "sexta à tarde" pergunta a hora (bloqueio usa 13h–18h). Escrita em
+  `agenda/agendaPorMensagem.ts` (confere grupo/dono de novo no "sim") e
+  `anotacoes/anotacaoPessoal.ts`. `agendarVisitaLead`/`cancelarVisitaLead`
+  ganharam `quem` opcional (padrão `"ia"`, sem mudança). Armadilha: a linha
+  `expect(Object.keys(TRATADORES.acoes)).toEqual([])` do `ferramentas.test.ts`
+  reprovava toda ação da onda 1 mesmo com `ONDA_ATUAL = 0`; saiu.
 
 ## Suporte e contato da Astro (29/10/2026)
 
