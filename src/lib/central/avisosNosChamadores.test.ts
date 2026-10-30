@@ -70,6 +70,9 @@ function portao(c: Consulta, grupoLigado = true): Resposta | null {
     return { data: [{ whatsapp: "5511990000001", ativo: true, grupo_id: GRUPO }], error: null };
   }
   if (c.tabela === "grupos") return { data: [{ central_whatsapp_ativo: grupoLigado }], error: null };
+  // A pessoa já escreveu ao central (`canalDoAviso.jaConversou`); a conversa
+  // em si começa vazia, e o aviso cria a linha do histórico.
+  if (c.tabela === "central_estado" && c.colunas === "id") return { data: [{ id: "e-c1" }], error: null };
   if (c.tabela === "central_estado") return { data: null, error: null };
   return null;
 }
@@ -201,7 +204,8 @@ describe("resumo do dia", () => {
         arquivado_em: null,
         created_at: new Date(as(7).getTime() - 3_600_000).toISOString(),
       })),
-      central_estado: [],
+      // Os dois já escreveram ao central (só quem já escreveu recebe aviso por ele).
+      central_estado: ["ana", "bruno"].map((id) => ({ id: `e-${id}`, corretor_id: id, grupo_id: GRUPO, historico: [], atualizado_em: "2026-10-30T09:00:00.000Z" })),
     });
   });
 
@@ -210,7 +214,7 @@ describe("resumo do dia", () => {
     expect(estado.envios.map((e) => e.instanceName)).toEqual(["numero-da-ana"]);
     expect(estado.envios[0].texto).toMatch(/^Bom dia, Ana! Seu dia:/);
     expect(estado.notificacoes.map((n) => n.corretorId)).toEqual(["ana"]);
-    expect(banco.tabelas.central_estado).toEqual([]);
+    expect(banco.tabelas.central_estado.every((l) => (l.historico as unknown[]).length === 0)).toBe(true);
   });
 
   it("onda 2: sai pelo central para os dois (o Bruno sem o número conectado também) e entra no histórico", async () => {
@@ -273,7 +277,7 @@ describe("lembrete da anotação", () => {
       corretor_whatsapp_instancias: [{ corretor_id: "ana", instance_name: "numero-da-ana", status_conexao: "conectado" }],
       corretores: [{ id: "ana", grupo_id: GRUPO, ativo: true, whatsapp: "5511990000001" }],
       grupos: [{ id: GRUPO, central_whatsapp_ativo: true }],
-      central_estado: [],
+      central_estado: [{ id: "e-ana", corretor_id: "ana", grupo_id: GRUPO, historico: [], atualizado_em: "2026-10-30T09:00:00.000Z" }],
     });
   });
 

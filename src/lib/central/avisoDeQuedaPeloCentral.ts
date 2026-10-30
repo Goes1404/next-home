@@ -28,6 +28,22 @@ export function montarWhatsappDeQueda(aviso: AvisoDaConexao, p: { nome: string; 
   ].join("\n");
 }
 
+/**
+ * Só queda recente vai pelo central (30/10/2026, o primeiro dia no ar). O
+ * aviso por e-mail nunca saiu sem a chave do provedor, então quedas de
+ * semanas atrás seguiam "sem aviso": ao conectar, o central mandaria na hora,
+ * de um número novo, avisos velhos a quem nunca falou com ele — o padrão que
+ * faz o WhatsApp derrubar número novo. Queda antiga fica para o painel e o
+ * e-mail.
+ */
+export const QUEDA_RECENTE_PELO_CENTRAL_MS = 24 * 60 * 60 * 1000;
+
+export function quedaRecenteParaOCentral(caiuEm: string | null, agora: Date): boolean {
+  if (!caiuEm) return false;
+  const quando = Date.parse(caiuEm);
+  return Number.isFinite(quando) && agora.getTime() - quando <= QUEDA_RECENTE_PELO_CENTRAL_MS;
+}
+
 export function montarWhatsappDeVolta(nome: string): string {
   const primeiro = nome.trim().split(/\s+/)[0] || nome;
   return `${primeiro}, seu WhatsApp voltou a conectar. Está tudo funcionando de novo.`;

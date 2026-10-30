@@ -67,12 +67,19 @@ beforeEach(() => {
       { id: "caio", grupo_id: GRUPO, ativo: false, whatsapp: "5511990000003" },
       { id: "davi", grupo_id: GRUPO, ativo: true, whatsapp: null },
     ],
-    central_estado: [],
+    // A Ana já escreveu ao central; só quem já escreveu recebe aviso por ele.
+    central_estado: [{ id: "e-ana", corretor_id: "ana", grupo_id: GRUPO, historico: [], atualizado_em: "2026-10-30T10:00:00.000Z" }],
   });
 });
 
 describe("canalDoAviso (a decisão)", () => {
-  const ligado = { onda: 2, central: { statusConexao: "conectado" }, grupoLigado: true, pessoa: { ativo: true, whatsapp: "55119" } };
+  const ligado = {
+    onda: 2,
+    central: { statusConexao: "conectado" },
+    grupoLigado: true,
+    pessoa: { ativo: true, whatsapp: "55119" },
+    jaConversou: true,
+  };
 
   it("onda 2, central conectado, recurso ligado e pessoa ativa: pelo central", () => {
     expect(canalDoAviso(ligado)).toBe("central");
@@ -87,6 +94,8 @@ describe("canalDoAviso (a decisão)", () => {
     expect(canalDoAviso({ ...ligado, pessoa: { ativo: false, whatsapp: "55119" } })).toBe("hoje");
     expect(canalDoAviso({ ...ligado, pessoa: { ativo: true, whatsapp: null } })).toBe("hoje");
     expect(canalDoAviso({ ...ligado, pessoa: null })).toBe("hoje");
+    // Quem nunca escreveu ao central não recebe nada por ele (número novo não puxa conversa).
+    expect(canalDoAviso({ ...ligado, jaConversou: false })).toBe("hoje");
   });
 });
 
@@ -130,6 +139,13 @@ describe("avisoPeloCentral", () => {
   it("envio que falha devolve false (o chamador manda pelo canal de hoje) e não suja o histórico", async () => {
     estado.envioOk = false;
     expect(await avisoPeloCentral(banco.cliente as never, "ana", "oi", AGORA)).toBe(false);
+    expect(banco.tabelas.central_estado.find((l) => l.corretor_id === "ana")?.historico).toEqual([]);
+  });
+
+  it("quem nunca escreveu ao central: canal de hoje, sem envio", async () => {
+    banco.tabelas.central_estado.length = 0;
+    expect(await avisoPeloCentral(banco.cliente as never, "ana", "oi", AGORA)).toBe(false);
+    expect(estado.envios).toEqual([]);
     expect(banco.tabelas.central_estado).toEqual([]);
   });
 
@@ -143,6 +159,7 @@ describe("registrarAvisoNoHistorico", () => {
   it("acrescenta à conversa que já existe, sem perder a proposta nem as falas recentes", async () => {
     const recente = { papel: "pessoa", texto: "quem ligar hoje?", em: new Date(AGORA.getTime() - 5 * 60_000).toISOString() };
     const velha = { papel: "pessoa", texto: "oi", em: new Date(AGORA.getTime() - 2 * 3_600_000).toISOString() };
+    banco.tabelas.central_estado.length = 0;
     banco.tabelas.central_estado.push({
       corretor_id: "ana",
       grupo_id: GRUPO,
@@ -159,6 +176,7 @@ describe("registrarAvisoNoHistorico", () => {
   });
 
   it("só grava se a conversa não mudou desde a leitura (troca condicional por atualizado_em)", async () => {
+    banco.tabelas.central_estado.length = 0;
     banco.tabelas.central_estado.push({ corretor_id: "ana", historico: [], atualizado_em: "2026-10-30T10:55:00.000Z" });
     await registrarAvisoNoHistorico(banco.cliente as never, "ana", "Lembrete", AGORA);
     const update = banco.consultas.find((c) => c.tabela === "central_estado" && c.operacao === "update");
@@ -169,6 +187,11 @@ describe("registrarAvisoNoHistorico", () => {
 describe("corretoresComAvisoPeloCentral (lista extra do resumo do dia)", () => {
   it("onda 2: pessoas ativas, com WhatsApp, dos grupos com o recurso ligado", async () => {
     expect(await corretoresComAvisoPeloCentral(banco.cliente as never)).toEqual(["ana"]);
+  });
+
+  it("sem conversa com o central, ninguém entra na lista", async () => {
+    banco.tabelas.central_estado.length = 0;
+    expect(await corretoresComAvisoPeloCentral(banco.cliente as never)).toEqual([]);
   });
 
   it("onda abaixo de 2 ou central fora: lista vazia, sem consulta", async () => {

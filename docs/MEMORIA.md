@@ -12722,6 +12722,14 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   Evolution; quem manda o vídeo pronto é o tique dos follow-ups
   (`video/entregaPeloCentral.ts`, marca `briefing.centralEntregueEm`).
 
+- **30/10/2026, primeiro dia no ar:** o central caiu 6 s depois das
+  boas-vindas (o WhatsApp fechou a sessão do número novo). Mensagem sem
+  registro em `central_comandos` nem em `central_tentativas` = número fora,
+  olhe `central_da_plataforma.status_conexao`. Duas travas novas: aviso de
+  queda pelo central só para queda das últimas 24 h (havia 4 avisos de
+  outubro presos porque o e-mail não sai sem `RESEND_API_KEY`), e aviso
+  espontâneo pelo central só para quem já escreveu a ele (`jaConversou`).
+
 ## Suporte e contato da Astro (29/10/2026)
 
 Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)

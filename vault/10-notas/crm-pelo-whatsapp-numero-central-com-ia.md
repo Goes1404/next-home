@@ -126,4 +126,22 @@ em `/plataforma/central`. Para recuar uma onda: baixar `ONDA_ATUAL` e
 publicar. A guarda de `ferramentas.test.ts` passou a cobrar que toda
 ferramenta ligada tenha tratador, e que na onda 0 nada rode.
 
+## Primeiro dia no ar (30/10/2026): o central caiu em minutos
+
+- O dono conectou o chip e ligou a Next Home; o central respondeu as
+  boas-vindas às 11:05:50 e o WhatsApp **fechou a conexão às 11:05:56**
+  (`central_da_plataforma.status_conexao = desconectado`). Depois disso nada
+  chega: mensagens sem registro nem tentativa = o número caiu, não o código.
+- Armadilha achada no diagnóstico: 4 corretores com o WhatsApp caído desde
+  9–23/10 nunca tiveram o aviso de queda marcado (o e-mail não sai sem
+  `RESEND_API_KEY`, e o tique tenta a cada minuto). Com o central ligado, ele
+  mandaria na hora 4 avisos velhos, de número novo, a quem nunca falou com
+  ele. Correção: só queda das últimas 24 h vai pelo central
+  (`quedaRecenteParaOCentral`).
+- Regra nova dos avisos espontâneos (`canalDoAviso.jaConversou`): o central
+  só fala por conta própria com quem já escreveu a ele (tem linha em
+  `central_estado`). Os outros recebem pelo canal de hoje.
+- Número novo: reconectar e usar devagar (conversas iniciadas pela equipe)
+  antes de qualquer envio por conta própria em volume.
+
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].

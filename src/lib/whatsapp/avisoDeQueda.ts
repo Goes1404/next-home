@@ -1,7 +1,7 @@
 import "server-only";
 
 import { enviarEmail } from "@/lib/email";
-import { avisarPeloCentral, montarWhatsappDeQueda } from "@/lib/central/avisoDeQuedaPeloCentral";
+import { avisarPeloCentral, montarWhatsappDeQueda, quedaRecenteParaOCentral } from "@/lib/central/avisoDeQuedaPeloCentral";
 import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
@@ -247,12 +247,13 @@ export async function avisarQuedaSeNecessario(
      * O segundo canal (30/10/2026): o WhatsApp do corretor pelo número
      * central da plataforma. O número caiu DO SISTEMA, mas o WhatsApp segue
      * no celular, e a mensagem chega. Também cobre quem não tem e-mail.
-     * Nunca sai pela instância do corretor, que está caída.
+     * Nunca sai pela instância do corretor, que está caída. Só para queda
+     * recente (`quedaRecenteParaOCentral`): aviso velho de número novo é o
+     * que derruba o central.
      */
-    const peloCentral = await avisarPeloCentral(
-      data.corretor_id,
-      montarWhatsappDeQueda(aviso, { nome: corretor.nome, urlPainel }),
-    );
+    const peloCentral = quedaRecenteParaOCentral(data.desconectado_em ?? data.sessao_caida_em, agora)
+      ? await avisarPeloCentral(data.corretor_id, montarWhatsappDeQueda(aviso, { nome: corretor.nome, urlPainel }))
+      : { enviado: false };
 
     /*
      * A marca é gravada quando PELO MENOS UM canal saiu: um aviso por queda,

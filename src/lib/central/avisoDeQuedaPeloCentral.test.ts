@@ -12,7 +12,9 @@ vi.mock("@/lib/whatsapp/provider", () => ({
   }),
 }));
 
-const { avisarPeloCentral, corretorAvisadoDaQueda, montarWhatsappDeQueda, montarWhatsappDeVolta } = await import("./avisoDeQuedaPeloCentral");
+const { avisarPeloCentral, corretorAvisadoDaQueda, montarWhatsappDeQueda, montarWhatsappDeVolta, quedaRecenteParaOCentral } = await import(
+  "./avisoDeQuedaPeloCentral"
+);
 const { esquecerCentral } = await import("./numeroDoCentral");
 
 function cenario(p: { central?: "conectado" | "desconectado" | null; ligado?: boolean; ativo?: boolean }) {
@@ -88,5 +90,20 @@ describe("avisoDeQueda.ts usa os dois canais", () => {
     expect(codigo).toMatch(/if \(enviouEmail \|\| peloCentral\.enviado\)/);
     expect(codigo).not.toMatch(/não tem e-mail[^\n]*\n\s*\);\n\s*return;/);
     expect(codigo).toMatch(/avisarPeloCentral\(\s*data\.corretor_id/);
+    // Só queda recente vai pelo central.
+    expect(codigo).toMatch(/quedaRecenteParaOCentral\([^)]*\)\s*\n?\s*\?\s*await avisarPeloCentral/);
+  });
+});
+
+describe("quedaRecenteParaOCentral", () => {
+  const agora = new Date("2026-10-30T14:00:00Z");
+  it("queda de agora há pouco vai pelo central", () => {
+    expect(quedaRecenteParaOCentral("2026-10-30T13:50:00Z", agora)).toBe(true);
+    expect(quedaRecenteParaOCentral("2026-10-29T14:00:00Z", agora)).toBe(true);
+  });
+  it("queda de dias atrás (o aviso que nunca saiu por e-mail) não vai", () => {
+    expect(quedaRecenteParaOCentral("2026-10-29T13:59:00Z", agora)).toBe(false);
+    expect(quedaRecenteParaOCentral("2026-10-09T23:04:03Z", agora)).toBe(false);
+    expect(quedaRecenteParaOCentral(null, agora)).toBe(false);
   });
 });

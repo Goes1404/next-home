@@ -36,19 +36,27 @@ export type Canal = "central" | "hoje";
 
 /**
  * A decisão, pura: só pelo central com a onda ligada, o central conectado, o
- * recurso ligado na imobiliária (`central_whatsapp_ativo`) e a pessoa ativa,
- * com WhatsApp no perfil. Qualquer outra coisa é o canal de hoje.
+ * recurso ligado na imobiliária (`central_whatsapp_ativo`), a pessoa ativa,
+ * com WhatsApp no perfil, e que JÁ ESCREVEU ao central (`jaConversou`: tem
+ * linha em `central_estado`). Qualquer outra coisa é o canal de hoje.
+ *
+ * O `jaConversou` veio do primeiro dia no ar (30/10/2026): o central caiu
+ * minutos depois de conectar, e o número novo puxar conversa com a equipe
+ * inteira (resumo das 8h para todos) é o padrão que faz o WhatsApp derrubar
+ * número novo. O central só fala por conta própria com quem já falou com ele.
  */
 export function canalDoAviso(e: {
   onda: number;
   central: Pick<CentralDaPlataforma, "statusConexao"> | null;
   grupoLigado: boolean;
   pessoa: { ativo: boolean | null; whatsapp: string | null } | null;
+  jaConversou: boolean;
 }): Canal {
   if (e.onda < ONDA_DOS_AVISOS) return "hoje";
   if (e.central?.statusConexao !== "conectado") return "hoje";
   if (!e.grupoLigado) return "hoje";
   if (!e.pessoa?.ativo || !e.pessoa.whatsapp) return "hoje";
+  if (!e.jaConversou) return "hoje";
   return "central";
 }
 
@@ -76,9 +84,18 @@ export async function destinoPeloCentral(
       .eq("id", corretorId)
       .maybeSingle();
     if (!pessoa?.grupo_id) return null;
-    const { data: grupo } = await supabase.from("grupos").select("central_whatsapp_ativo").eq("id", pessoa.grupo_id).maybeSingle();
+    const [{ data: grupo }, { data: conversa }] = await Promise.all([
+      supabase.from("grupos").select("central_whatsapp_ativo").eq("id", pessoa.grupo_id).maybeSingle(),
+      supabase.from("central_estado").select("id").eq("corretor_id", corretorId).eq("grupo_id", pessoa.grupo_id).limit(1).maybeSingle(),
+    ]);
 
-    const canal = canalDoAviso({ onda, central, grupoLigado: grupo?.central_whatsapp_ativo === true, pessoa });
+    const canal = canalDoAviso({
+      onda,
+      central,
+      grupoLigado: grupo?.central_whatsapp_ativo === true,
+      pessoa,
+      jaConversou: Boolean(conversa),
+    });
     return canal === "central" && pessoa.whatsapp ? { instanceName: central.instanceName, telefone: pessoa.whatsapp } : null;
   } catch (err) {
     console.warn("[aviso pelo central] canal não lido; vai pelo de hoje:", err);
@@ -169,7 +186,8 @@ export async function registrarAvisoNoHistorico(supabase: Supa, corretorId: stri
  * conectado: com o central, o número do corretor deixa de ser o canal, e o
  * corretor cujo WhatsApp caiu é justamente quem mais precisa do aviso.
  * Pessoas ativas, com WhatsApp no perfil, das imobiliárias com o recurso
- * ligado. Onda desligada ou central fora: lista vazia, sem consulta.
+ * ligado, que já escreveram ao central (`canalDoAviso`). Onda desligada ou
+ * central fora: lista vazia, sem consulta.
  */
 export async function corretoresComAvisoPeloCentral(supabase: Supa, onda: number = ONDA_ATUAL): Promise<string[]> {
   if (onda < ONDA_DOS_AVISOS) return [];
@@ -185,7 +203,15 @@ export async function corretoresComAvisoPeloCentral(supabase: Supa, onda: number
       .in("grupo_id", ids)
       .eq("ativo", true)
       .not("whatsapp", "is", null);
-    return (pessoas ?? []).map((p) => p.id);
+    const candidatos = (pessoas ?? []).map((p) => p.id);
+    if (candidatos.length === 0) return [];
+    const { data: conversas } = await supabase
+      .from("central_estado")
+      .select("corretor_id")
+      .in("grupo_id", ids)
+      .in("corretor_id", candidatos);
+    const jaConversaram = new Set((conversas ?? []).map((c) => c.corretor_id));
+    return candidatos.filter((id) => jaConversaram.has(id));
   } catch (err) {
     console.warn("[aviso pelo central] lista do resumo não lida:", err);
     return [];
