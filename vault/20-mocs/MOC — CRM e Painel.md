@@ -149,6 +149,7 @@ F0–F6.
 - [[agenda-visitas-com-historico]] — visita com linha própria espelhada do lead, trava de 60 min, IA lê ocupados de visitas, tela Visitas virou Agenda (0224, 27/10, não publicada)
 - [[agenda-por-mensagem-do-corretor]] — módulo puro que lê "visita com a Ana sábado 10h" do corretor/gestor e devolve o pedido peneirado em -03:00; sim/não sem IA; textos de confirmação (27/10, sem integração)
 - [[agenda-da-equipe-reunioes-e-cobranca]] — gestor vê a equipe com números do mês, visita passada a outro corretor, reunião/bloqueio que travam a IA, cobrança "aconteceu?" e comandos pelo WhatsApp (0225–0227, 27/10, não publicada)
+- [[agenda-pelo-numero-central]] — visita, bloqueio, reunião (só gestor) e anotação pelo número central: "quando" lido por código, data vaga vira pergunta, desfazer volta a visita ao estado anterior (onda 1, frente C, 30/10, atrás de ONDA_ATUAL = 0)
 - [[notificacao-no-celular-do-corretor]] — lead novo e avisos chegam como notificação no celular; o WhatsApp para si mesmo não toca (20/10)
 - [[aviso-ao-corretor-diz-o-que-fazer]] — alertas do atendimento e resumo do dia: o que fazer primeiro, ficha numa linha, carência por motivo (20/10)
 - [[metragem-da-planta-nao-tinha-campo]] — editor do imóvel sem campo de metragem; planta nova nascia com 80 m² inventados (20/10)

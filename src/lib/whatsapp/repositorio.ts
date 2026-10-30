@@ -1243,6 +1243,13 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
 }
 
 /**
+ * Quem mexeu na visita, para a linha do tempo dizer a verdade. O padrão é a
+ * IA do cliente (a conversa); o número central passa o corretor que pediu e
+ * confirmou com "sim" (onda 1 do CRM pelo WhatsApp).
+ */
+export type QuemMexeuNaVisita = { por: "ia" } | { por: "central"; corretorId: string };
+
+/**
  * O cliente confirmou um horário com a IA: vira compromisso de verdade —
  * data no lead E etapa do funil, o mesmo efeito de o corretor marcar à mão.
  *
@@ -1266,7 +1273,11 @@ export function validarDataVisita(dataHoraISO: string, agora: Date = new Date())
  * Corretor sem grade configurada continua como antes: aceita qualquer
  * horário. Hoje isso vale para todos.
  */
-export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promise<boolean> {
+export async function agendarVisitaLead(
+  leadId: string,
+  dataVisita: Date,
+  quem: QuemMexeuNaVisita = { por: "ia" },
+): Promise<boolean> {
   const supabase = createServiceClient();
   const { data: antes } = await supabase
     .from("leads")
@@ -1295,7 +1306,7 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
 
   if (data === true && antes?.etapa) {
     const { data: depois } = await supabase.from("leads").select("etapa").eq("id", leadId).maybeSingle();
-    if (depois?.etapa) await registrarEtapaAutomatica(leadId, antes.etapa, depois.etapa, "ia");
+    if (depois?.etapa) await registrarEtapaAutomatica(leadId, antes.etapa, depois.etapa, quem.por);
   }
 
   /*
@@ -1308,12 +1319,27 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
     await apagarLembretesPendentesDeVisita(supabase, leadId);
     const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
       lead_id: leadId,
-      corretor_id: null,
+      corretor_id: quem.por === "central" ? quem.corretorId : null,
       tipo: "visita",
-      conteudo: `O cliente remarcou a visita pela conversa: de ${rotuloDaVisita(anterior)} para ${rotuloDaVisita(dataVisita)}.`,
-      detalhes: { de: anterior.toISOString(), para: dataVisita.toISOString(), por: "ia" },
+      conteudo:
+        quem.por === "central"
+          ? `Visita remarcada pelo número central: de ${rotuloDaVisita(anterior)} para ${rotuloDaVisita(dataVisita)}.`
+          : `O cliente remarcou a visita pela conversa: de ${rotuloDaVisita(anterior)} para ${rotuloDaVisita(dataVisita)}.`,
+      detalhes: { de: anterior.toISOString(), para: dataVisita.toISOString(), por: quem.por },
     });
     if (erroTimeline) console.error("[visita] falha ao registrar a remarcação:", erroTimeline.message);
+  }
+
+  // Pelo central a primeira marcação também entra na linha do tempo, como no painel.
+  if (data === true && !anterior && quem.por === "central") {
+    const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
+      lead_id: leadId,
+      corretor_id: quem.corretorId,
+      tipo: "visita",
+      conteudo: `Visita marcada pelo número central para ${rotuloDaVisita(dataVisita)}.`,
+      detalhes: { para: dataVisita.toISOString(), por: quem.por },
+    });
+    if (erroTimeline) console.error("[visita] falha ao registrar a marcação:", erroTimeline.message);
   }
 
   return data === true;
@@ -1330,7 +1356,10 @@ export async function agendarVisitaLead(leadId: string, dataVisita: Date): Promi
  *
  * Devolve a data desmarcada, ou null quando não havia visita (nada a fazer).
  */
-export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
+export async function cancelarVisitaLead(
+  leadId: string,
+  quem: QuemMexeuNaVisita = { por: "ia" },
+): Promise<Date | null> {
   const supabase = createServiceClient();
   const { data: lead } = await supabase
     .from("leads")
@@ -1355,20 +1384,23 @@ export async function cancelarVisitaLead(leadId: string): Promise<Date | null> {
 
   const desmarcada = new Date(lead.visita_agendada_em);
   await apagarLembretesPendentesDeVisita(supabase, leadId);
-  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "em_conversa", "ia");
+  if (voltaEtapa) await registrarEtapaAutomatica(leadId, "visita_agendada", "em_conversa", quem.por);
   const { error: erroTimeline } = await supabase.from("lead_interacoes").insert({
     lead_id: leadId,
-    corretor_id: null,
+    corretor_id: quem.por === "central" ? quem.corretorId : null,
     tipo: "visita",
-    conteudo: `O cliente desmarcou pela conversa a visita de ${rotuloDaVisita(desmarcada)}.`,
-    detalhes: { desmarcada: desmarcada.toISOString(), por: "ia" },
+    conteudo:
+      quem.por === "central"
+        ? `Visita de ${rotuloDaVisita(desmarcada)} desmarcada pelo número central.`
+        : `O cliente desmarcou pela conversa a visita de ${rotuloDaVisita(desmarcada)}.`,
+    detalhes: { desmarcada: desmarcada.toISOString(), por: quem.por },
   });
   if (erroTimeline) console.error("[visita] falha ao registrar o cancelamento:", erroTimeline.message);
   return desmarcada;
 }
 
 /** O lembrete de véspera ainda não enviado era da data velha. */
-async function apagarLembretesPendentesDeVisita(
+export async function apagarLembretesPendentesDeVisita(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
 ): Promise<void> {
@@ -1527,7 +1559,7 @@ export async function avancarLeadParaQualificado(leadId: string | null): Promise
 }
 
 /** Quem moveu o lead no funil sem o corretor arrastar o cartão. */
-export type QuemMudouAEtapa = "ia" | "lista" | "corretor_no_whatsapp";
+export type QuemMudouAEtapa = "ia" | "lista" | "corretor_no_whatsapp" | "central";
 
 const ROTULO_DA_ETAPA: Record<string, string> = {
   novo: "Novo",
@@ -1546,6 +1578,7 @@ const QUEM_MUDOU: Record<QuemMudouAEtapa, string> = {
   ia: "Etapa alterada pela IA",
   lista: "Etapa alterada pelo envio da lista de transmissão",
   corretor_no_whatsapp: "Etapa alterada porque você respondeu pelo WhatsApp",
+  central: "Etapa alterada pelo seu pedido ao número central",
 };
 
 /**

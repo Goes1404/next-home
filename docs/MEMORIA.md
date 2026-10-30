@@ -12572,6 +12572,15 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   Telefone de lead de outro corretor: não duplica e diz o dono. Desfazer
   arquiva o cadastrado e só volta campo que ainda está como o central deixou.
   Nota: [[central-cadastra-e-atualiza-lead]].
+- **Onda 1, frente C (agenda), 30/10/2026** — [[agenda-pelo-numero-central]]:
+  `tratadores/agenda.ts` (visita e agenda_pessoal). O "quando" do central é
+  lido por código (`agenda/quandoEmTexto.ts`), sem segunda chamada de IA;
+  "sexta à tarde" pergunta a hora (bloqueio usa 13h–18h). Escrita em
+  `agenda/agendaPorMensagem.ts` (confere grupo/dono de novo no "sim") e
+  `anotacoes/anotacaoPessoal.ts`. `agendarVisitaLead`/`cancelarVisitaLead`
+  ganharam `quem` opcional (padrão `"ia"`, sem mudança). Armadilha: a linha
+  `expect(Object.keys(TRATADORES.acoes)).toEqual([])` do `ferramentas.test.ts`
+  reprovava toda ação da onda 1 mesmo com `ONDA_ATUAL = 0`; saiu.
 
 ## Suporte e contato da Astro (29/10/2026)
 

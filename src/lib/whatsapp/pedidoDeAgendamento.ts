@@ -154,7 +154,8 @@ function ocorrenciaNoMes(ano: number, mes: number, diaSemana: number, qual: "pri
   return ultimoDia - ((doUltimo - diaSemana + 7) % 7);
 }
 
-function dataPelaOrdemNoMes(texto: string, agora: Date): { ano: number; mes: number; dia: number } | null {
+/** Texto já em minúsculas e sem acento. Também lê o "quando" do número central (`agenda/quandoEmTexto.ts`). */
+export function dataPelaOrdemNoMes(texto: string, agora: Date): { ano: number; mes: number; dia: number } | null {
   const m = ORDEM_NO_MES.exec(texto);
   if (!m) return null;
   const qual = m[1].startsWith("ultim") ? "ultimo" : "primeiro";
