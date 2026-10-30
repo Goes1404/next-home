@@ -12565,6 +12565,13 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   eram recortadas pela RLS); `lerResumoDoLead` NÃO serve ao central (lê a
   conversa só pelo lead e mostraria ao gestor a conversa alheia, 0134).
   Nota: [[central-le-sem-sessao-e-sem-rls]].
+- **Onda 1, leads (`cadastrar_lead`, `atualizar_lead`)**: toda escrita vai por
+  `src/lib/crm/leadPeloCentral.ts`; o miolo de `cadastrarPelaPalavraChave`
+  virou `localizarTelefoneNoGrupo`. Lead nasce `painel/manual` (trazido pelo
+  corretor, sem notificação de lead novo), `consentimento_lgpd = false`.
+  Telefone de lead de outro corretor: não duplica e diz o dono. Desfazer
+  arquiva o cadastrado e só volta campo que ainda está como o central deixou.
+  Nota: [[central-cadastra-e-atualiza-lead]].
 
 ## Suporte e contato da Astro (29/10/2026)
 
