@@ -1,4 +1,5 @@
 import { AINDA_NAO, ONDA_ATUAL, ferramenta, textoDaAjuda } from "./ferramentas";
+import type { MidiaDoPedido } from "./midia";
 import type { ItemDaProposta } from "./proposta";
 import { TRATADORES_DAS_ONDAS } from "./tratadores";
 
@@ -17,6 +18,13 @@ export type ContextoDoCentral = {
   papel: "corretor" | "gestor";
   nome: string;
   imobiliaria: string;
+  /**
+   * A foto (documento) ou a planilha que veio com o pedido (onda 2), posta
+   * pela conversa, nunca pela IA. Só existe enquanto a mensagem é tratada:
+   * quem precisa dela depois do "sim" guarda nos `dados` a referência (foto)
+   * ou o que já leu (planilha), nunca o arquivo.
+   */
+  midia?: MidiaDoPedido;
 };
 
 export type Consulta = (ctx: ContextoDoCentral, argumentos: Record<string, unknown>) => Promise<unknown>;

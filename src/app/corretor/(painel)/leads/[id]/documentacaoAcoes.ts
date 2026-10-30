@@ -4,14 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCorretorLogado } from "@/lib/corretorSessao";
-import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { autorizarEnvio, conferirArquivoEnviado } from "@/lib/crm/envioAutorizado";
-import {
-  caminhoDoLink,
-  mensagemParaCliente,
-  nomeSeguro,
-  problemaDoArquivo,
-} from "@/lib/crm/linksDoCliente";
+import { nomeSeguro, problemaDoArquivo } from "@/lib/crm/linksDoCliente";
+import { garantirLinkDeDocumentos } from "@/lib/crm/linkDeDocumentos";
 import {
   ehFase,
   itensIniciais,
@@ -272,37 +267,26 @@ export async function reabrirDocumento(documentoId: string): Promise<Resultado> 
 export type LinkDosDocumentos = { url: string; mensagem: string } | { erro: string };
 
 /**
- * O link para o cliente mandar os documentos da fase. Um link VÁLIDO da fase
- * é devolvido em vez de criar outro: o cliente guarda o endereço, e o que
- * ele abre mostra sempre a lista do lead como está agora (com os recusados).
- * Sem lista gravada, ela nasce aqui pelo perfil — pedir documento sem lista
- * seria pedir nada.
+ * O link para o cliente mandar os documentos da fase. A montagem (link válido
+ * reaproveitado, lista que nasce pelo perfil) é a mesma do número central:
+ * `garantirLinkDeDocumentos`. Aqui fica a regra da porta: o lead é do
+ * corretor da sessão.
  */
 export async function linkDosDocumentos(leadId: string, fase: string, perfil: string | null): Promise<LinkDosDocumentos> {
   if (!ehFase(fase)) return { erro: "Fase desconhecida." };
   const r = await leadDoCorretor(leadId);
   if ("erro" in r) return { erro: r.erro ?? "Lead não encontrado." };
-  const doc = await lerDocumentacaoDoLead(createServiceClient(), leadId);
-  const daFase = doc.fases[fase];
-  if (!daFase.gravada) {
-    const itens = daFase.itens.length > 0 ? daFase.itens : itensIniciais(fase, perfil);
-    const res = await gravarLista(leadId, r.corretor.id, fase, itens, fase === "financiamento" ? perfil : null);
-    if (res.erro) return { erro: res.erro };
-  }
-  const primeiroNome = r.lead.nome.trim().split(/\s+/)[0] || null;
-  if (daFase.link?.valido) {
-    const url = `${await lerEnderecoDoCliente(r.corretor.grupoId)}${caminhoDoLink("documentos", daFase.link.token)}`;
-    return { url, mensagem: mensagemParaCliente({ tipo: "documentos", primeiroNome, url }) };
-  }
-  const { data, error } = await r.supabase
-    .from("links_do_cliente")
-    .insert({ tipo: "documentos", lead_id: leadId, corretor_id: r.corretor.id, dados: { fase } })
-    .select("token")
-    .single();
-  if (error || !data) return { erro: "Não foi possível criar o link agora." };
-  revalidar(leadId);
-  const url = `${await lerEnderecoDoCliente(r.corretor.grupoId)}${caminhoDoLink("documentos", data.token)}`;
-  return { url, mensagem: mensagemParaCliente({ tipo: "documentos", primeiroNome, url }) };
+  const link = await garantirLinkDeDocumentos(createServiceClient(), {
+    leadId,
+    nomeDoLead: r.lead.nome,
+    corretorId: r.corretor.id,
+    grupoId: r.corretor.grupoId,
+    fase,
+    perfil,
+  });
+  if ("erro" in link) return { erro: link.erro };
+  if (link.criado) revalidar(leadId);
+  return { url: link.url, mensagem: link.mensagem };
 }
 
 export type ArquivoParaZip = { url: string; nome: string };

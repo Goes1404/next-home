@@ -2,6 +2,7 @@ import "server-only";
 
 import { registrarConsumoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { precoDoModelo } from "@/lib/planos/custoDaIa";
+import type { ReferenciaDaMidia } from "./midia";
 
 /**
  * O cérebro do número central (spec 4.3): um cliente da OpenAI com
@@ -29,7 +30,12 @@ export const ORCAMENTO_PADRAO_MS = 25_000;
  */
 export const MODELO_PADRAO = "gpt-4.1";
 
-export type MensagemDoHistorico = { papel: "pessoa" | "central"; texto: string; em: string };
+/**
+ * `midia` (onda 2): a referência da foto que a pessoa mandou nesta fala, para
+ * o "é do João" da mensagem seguinte anexar o documento. Nunca vai ao modelo:
+ * só `papel` e `texto` entram na conversa com a API.
+ */
+export type MensagemDoHistorico = { papel: "pessoa" | "central"; texto: string; em: string; midia?: ReferenciaDaMidia };
 
 export type DeclaracaoDeFerramenta = {
   nome: string;

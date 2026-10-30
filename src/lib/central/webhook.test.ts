@@ -38,6 +38,45 @@ describe("lerMensagemDoCentral", () => {
     expect(de({ imageMessage: { caption: "ficha" } })?.documento).toBeUndefined();
   });
 
+  it("arquivo: nome, tipo e tamanho declarados; com legenda chega embrulhado", () => {
+    const de = (message: object) => lerMensagemDoCentral(base({ key: { id: "E", remoteJid: "5511987654321@s.whatsapp.net" }, message }));
+    expect(de({ documentMessage: { fileName: "leads.xlsx", mimetype: "application/octet-stream", fileLength: "20480" } })).toMatchObject({
+      documento: true,
+      arquivo: { nome: "leads.xlsx", mimeType: "application/octet-stream", tamanho: 20480 },
+    });
+    expect(
+      de({ documentWithCaptionMessage: { message: { documentMessage: { fileName: "clientes.csv", caption: "importa", fileLength: { low: 900, high: 0 } } } } }),
+    ).toMatchObject({ tipo: "imagem", texto: "importa", documento: true, arquivo: { nome: "clientes.csv", tamanho: 900 } });
+  });
+
+  it("referência da mídia para baixar de novo: as chaves, sem miniatura nem legenda", () => {
+    const m = lerMensagemDoCentral(
+      base({
+        key: { id: "F", remoteJid: "5511987654321@s.whatsapp.net" },
+        message: {
+          imageMessage: {
+            caption: "rg do joão",
+            url: "https://mmg.whatsapp.net/abc",
+            directPath: "/v/abc",
+            mediaKey: "Q2hhdmU=",
+            mimetype: "image/jpeg",
+            fileLength: "1234",
+            jpegThumbnail: "/9j/4AAQSkZJRgABAQ",
+          },
+        },
+      }),
+    );
+    expect(m?.midia).toEqual({
+      id: "F",
+      remoteJid: "5511987654321@s.whatsapp.net",
+      tipo: "imageMessage",
+      conteudo: { url: "https://mmg.whatsapp.net/abc", directPath: "/v/abc", mediaKey: "Q2hhdmU=", mimetype: "image/jpeg", fileLength: "1234" },
+    });
+    expect(JSON.stringify(m?.midia)).not.toContain("/9j/");
+    // Sem as chaves da mídia não há como baixar de novo: sem referência.
+    expect(lerMensagemDoCentral(base({ key: { id: "G", remoteJid: "5511987654321@s.whatsapp.net" }, message: { imageMessage: {} } }))?.midia).toBeUndefined();
+  });
+
   it("vazio ou sem id: nada a tratar", () => {
     expect(lerMensagemDoCentral(base({ key: { id: "D", remoteJid: "5511987654321@s.whatsapp.net" }, message: { conversation: "  " } }))).toBeNull();
     expect(lerMensagemDoCentral(base({ key: { remoteJid: "5511987654321@s.whatsapp.net" }, message: { conversation: "oi" } }))).toBeNull();

@@ -12615,6 +12615,18 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   "Parados" = régua de 15 dias da administração. Mês fechado sem sessão:
   `recusaDoMesFechadoNoGrupo`. Armadilha de teste: o `bancoFalso` devolve a
   linha viva no `select`; capture o "antes" antes de gravar.
+- **Onda 2, frente I (documentos, lembrete, planilha), 30/10/2026** —
+  [[documentos-lembrete-e-planilha-pelo-central]]: `tratadores/documentos.ts`.
+  O "sim" chega noutra mensagem, então a foto de documento viaja pela
+  REFERÊNCIA da mensagem do WhatsApp (chaves da mídia, sem miniatura;
+  `central/midia.ts`) e é baixada de novo no "sim"; chave de `dados` com "_"
+  (`_midia`, `_linhas`) fica na proposta e sai do registro (`paraORegistro`).
+  Lembrete = anotação com lembrete do painel (`criarLembretePeloCentral`); o
+  envio pelo central (4.7) é trocar o canal de `processarLembretesDeAnotacao`.
+  Planilha: só a que parece planilha é baixada (5 MB, tipo pelos bytes), sem
+  cérebro; "já existia" é no grupo. Link de documentos: miolo único
+  `garantirLinkDeDocumentos` (a ficha passou a usá-lo) e sai pelo número do
+  corretor só para quem já conversa com ele.
 
 ## Suporte e contato da Astro (29/10/2026)
 
