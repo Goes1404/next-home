@@ -100,3 +100,4 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[foto-no-numero-central]] — foto vai ao cérebro como imagem (detail high, tipo pelos bytes, 5 MB), nunca ao histórico; cadastrar_lead_da_foto delega ao cadastrar_lead (onda 1, 30/10)
 - [[central-ia-do-cliente-e-desfazer]] — central, onda 1: ligar/desligar/resumo da IA de um cliente (só no número de quem pede) e o "desfaz" de 24 h
 - [[documentos-lembrete-e-planilha-pelo-central]] — central, onda 2: foto de documento pela referência (baixada de novo no "sim"), lembrete = anotação do painel, planilha lida na hora; chaves "_" fora do registro (30/10)
+- [[avisos-espontaneos-pelo-numero-central]] — resumo, lead novo, visita e lembrete pelo central atrás de um ponto só (`avisoPeloCentral`; onda ≥ 2 + central conectado + recurso ligado), aviso no histórico do central, antecedência da visita por pessoa (0250) (fase 2b, frente J, 30/10)

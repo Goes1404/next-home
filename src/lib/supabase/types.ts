@@ -2383,6 +2383,8 @@ export type Database = {
           /** 0246: o resumo da semana no WhatsApp do gestor (ligado por padrão). */
           relatorio_semanal_whatsapp: boolean
           relatorio_semanal_whatsapp_em: string | null
+          /** 0250: minutos de antecedência do lembrete de visita (padrão 60). */
+          antecedencia_visita_min: number
           resumo_hora: number
           em_pausa: boolean
           email: string | null
@@ -2418,6 +2420,7 @@ export type Database = {
           resumo_fim_de_semana?: boolean
           relatorio_semanal_whatsapp?: boolean
           relatorio_semanal_whatsapp_em?: string | null
+          antecedencia_visita_min?: number
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null
@@ -2453,6 +2456,7 @@ export type Database = {
           resumo_fim_de_semana?: boolean
           relatorio_semanal_whatsapp?: boolean
           relatorio_semanal_whatsapp_em?: string | null
+          antecedencia_visita_min?: number
           resumo_hora?: number
           em_pausa?: boolean
           email?: string | null

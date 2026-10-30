@@ -2,6 +2,7 @@ import { CAMBIO_PADRAO_USD_BRL } from "@/lib/planos/custoDaIa";
 import type { ChamadaFeita, EntradaDoCerebro, ImagemDoCerebro, MensagemDoHistorico, ResultadoDoCerebro } from "./cerebro";
 import { criarExecutor, executarProposta, TRATADORES, type ContextoDoCentral, type FeitoDesfazivel, type Tratadores } from "./executar";
 import { declaracoesPara, EXEMPLOS_POR_ONDA, ferramenta, ONDA_ATUAL } from "./ferramentas";
+import { aparar } from "./historico";
 import type { OpcaoDeImobiliaria, Remetente } from "./identificar";
 import {
   bytesDoBase64,
@@ -29,8 +30,9 @@ import { hashDoTelefone, telefoneCanonico } from "./telefone";
  * tratador direto para a proposta.
  */
 
-export const JANELA_DO_HISTORICO_MS = 30 * 60 * 1000;
-const MAXIMO_NO_HISTORICO = 20;
+// A janela e o teto do histórico moram em `historico.ts`: os avisos
+// espontâneos (4.7) escrevem no mesmo histórico sem carregar a conversa.
+export { JANELA_DO_HISTORICO_MS } from "./historico";
 
 export const TEXTOS = {
   cota: "A cota de IA do mês da sua imobiliária acabou; fale com o gestor.",
@@ -209,11 +211,6 @@ export function montarSistema(
 
 function centavos(custoUsd: number): number {
   return Math.round(custoUsd * CAMBIO_PADRAO_USD_BRL * 100);
-}
-
-function aparar(historico: MensagemDoHistorico[], agora: Date): MensagemDoHistorico[] {
-  const limite = agora.getTime() - JANELA_DO_HISTORICO_MS;
-  return historico.filter((m) => Date.parse(m.em) >= limite).slice(-MAXIMO_NO_HISTORICO);
 }
 
 /** Teto da foto lida (bytes decodificados). Foto do WhatsApp passa raramente de 1 MB. */

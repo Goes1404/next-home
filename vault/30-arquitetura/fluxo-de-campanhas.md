@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
-updated: 2026-10-27
+updated: 2026-10-30
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -102,6 +102,13 @@ Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
      do Início, com Enviar e Dispensar (status `sugerido`, 0147);
    - `reengajamento`: item antigo é descartado. O agendamento saiu do
      webhook e do disparador.
+
+Desde 30/10/2026 `processarLembretesDeAnotacao` mora em
+`src/lib/crm/lembretesDeAnotacao.ts` (e roda ANTES da janela, com
+`processarLembretesDeTarefa`). Com o número central ligado (onda ≥ 2),
+resumo do dia, lead novo, visita na próxima hora (antecedência por pessoa,
+0250) e o lembrete da anotação saem pelo central; o ponto único é
+`avisoPeloCentral` ([[avisos-espontaneos-pelo-numero-central]]).
 
 Desde 03/10/2026 a IA só responde ([[a-ia-so-responde]]): saíram o
 primeiro contato automático com lead de portal (`abrirConversasDePortal`) e

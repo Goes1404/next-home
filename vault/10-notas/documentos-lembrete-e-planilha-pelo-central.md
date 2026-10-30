@@ -75,7 +75,9 @@ número do PRÓPRIO corretor. Sem hora ("amanhã", "sexta à tarde") pergunta.
 **Gancho para 4.7** (sessão principal): trocar o envio de
 `processarLembretesDeAnotacao` (`src/app/api/cron/followups/route.ts`) para
 o número central (instância de `lerCentral()`) quando o grupo tiver o
-central ligado, mantendo o claim por `lembrete_enviado_em`.
+central ligado, mantendo o claim por `lembrete_enviado_em`. **Feito pela
+Frente J** (30/10): a função foi para `src/lib/crm/lembretesDeAnotacao.ts`
+e passa por `avisoPeloCentral` ([[avisos-espontaneos-pelo-numero-central]]).
 
 ## Planilha (29)
 

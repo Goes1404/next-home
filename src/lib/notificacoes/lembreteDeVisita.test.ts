@@ -10,7 +10,8 @@ vi.mock("@/lib/notificacoes/push", () => ({
 }));
 
 const { lembrarVisitasDaProximaHora } = await import("./lembreteDeVisita");
-const { deveLembrarVisita, notificacaoDoLembreteDeVisita } = await import("./regrasDeVisita");
+const { antecedenciaDoLembrete, deveLembrarVisita, notificacaoDoLembreteDeVisita, textoDaAntecedencia, whatsappDoLembreteDeVisita } =
+  await import("./regrasDeVisita");
 
 // 29/10/2026 10:00 em São Paulo.
 const AGORA = new Date("2026-10-29T13:00:00Z");
@@ -43,6 +44,33 @@ describe("regra do lembrete de visita", () => {
     );
   });
 
+  it("a antecedência escolhida muda a janela; fora da lista, o padrão", () => {
+    expect(deveLembrarVisita({ inicio: daqui(58), lembradoPara: null, agora: AGORA, antecedenciaMin: 30 })).toBe(false);
+    expect(deveLembrarVisita({ inicio: daqui(30), lembradoPara: null, agora: AGORA, antecedenciaMin: 30 })).toBe(true);
+    expect(deveLembrarVisita({ inicio: daqui(118), lembradoPara: null, agora: AGORA, antecedenciaMin: 120 })).toBe(true);
+    expect(antecedenciaDoLembrete(90)).toBe(90);
+    expect(antecedenciaDoLembrete(45)).toBe(60);
+    expect(antecedenciaDoLembrete(null)).toBe(60);
+    expect(antecedenciaDoLembrete(undefined)).toBe(60);
+  });
+
+  it("o título diz quanto falta, em hora e meia hora", () => {
+    const titulo = (min: number) => notificacaoDoLembreteDeVisita({ lead: { nome: "A", telefone: null }, inicio: daqui(min), agora: AGORA }).titulo;
+    expect(titulo(55)).toBe("Visita em 1 hora");
+    expect(titulo(88)).toBe("Visita em 1h30");
+    expect(titulo(117)).toBe("Visita em 2 horas");
+    expect(titulo(14)).toBe("Visita em 14 min");
+    expect(textoDaAntecedencia(15)).toBe("15 minutos");
+    expect(textoDaAntecedencia(60)).toBe("1 hora");
+    expect(textoDaAntecedencia(90)).toBe("1h30");
+    expect(textoDaAntecedencia(120)).toBe("2 horas");
+  });
+
+  it("no WhatsApp, o link da ficha no lugar do toque", () => {
+    const texto = whatsappDoLembreteDeVisita({ lead: { nome: "Ana Prado", telefone: null }, inicio: daqui(60), agora: AGORA, linkDaFicha: "https://x/corretor/leads/L1" });
+    expect(texto).toBe("*Visita em 1 hora*\nAna Prado às 11:00.\nhttps://x/corretor/leads/L1");
+  });
+
   it("não usa a marca de casa nenhuma no texto", () => {
     const n = notificacaoDoLembreteDeVisita({ lead: { nome: "Ana", telefone: null }, inicio: daqui(60), agora: AGORA });
     expect(`${n.titulo} ${n.corpo}`).not.toMatch(/next home/i);
@@ -62,10 +90,16 @@ function visita(extra: Record<string, unknown> = {}) {
   };
 }
 
-function cenario(visitas: unknown[], claim: unknown[] = [{ id: "v1" }], erroLeitura: string | null = null) {
+function cenario(
+  visitas: unknown[],
+  claim: unknown[] = [{ id: "v1" }],
+  erroLeitura: string | null = null,
+  antecedencias: Resposta = { data: [], error: null },
+) {
   return supabaseFalso((c: Consulta): Resposta => {
     if (c.tabela === "visitas" && c.acao === "select") return { data: visitas, error: erroLeitura ? { message: erroLeitura } : null };
     if (c.tabela === "visitas" && c.acao === "update") return { data: claim, error: null };
+    if (c.tabela === "corretores") return antecedencias;
     return { data: null, error: null };
   });
 }
@@ -78,7 +112,9 @@ describe("lembrarVisitasDaProximaHora", () => {
     const leitura = consultas[0];
     expect(filtro(leitura, "eq")).toEqual(["status", "marcada"]);
     expect(filtro(leitura, "gt")).toEqual(["inicio", AGORA.toISOString()]);
-    expect(filtro(leitura, "lte")).toEqual(["inicio", daqui(60)]);
+    // A janela lida é a da maior antecedência possível (0250); cada visita é
+    // conferida contra a de quem a faz (padrão 60 min).
+    expect(filtro(leitura, "lte")).toEqual(["inicio", daqui(120)]);
 
     const claim = consultas.find((c) => c.acao === "update")!;
     expect(claim.valores).toEqual({ lembrete_1h_para: visita().inicio });
@@ -116,6 +152,28 @@ describe("lembrarVisitasDaProximaHora", () => {
     expect(await lembrarVisitasDaProximaHora(cliente, AGORA)).toBe(0);
     expect(consultas.some((c) => c.acao === "update")).toBe(false);
     expect(notificacoes).toHaveLength(0);
+  });
+
+  it("respeita a antecedência que a pessoa escolheu (0250)", async () => {
+    const meiaHora = { data: [{ id: "c1", antecedencia_visita_min: 30 }], error: null };
+    // Visita daqui a 58 min com lembrete de 30 min: ainda não.
+    expect(await lembrarVisitasDaProximaHora(cenario([visita()], [{ id: "v1" }], null, meiaHora).cliente, AGORA)).toBe(0);
+    // Daqui a 28 min: agora sim, com o título do que falta.
+    const perto = visita({ inicio: daqui(28) });
+    expect(await lembrarVisitasDaProximaHora(cenario([perto], [{ id: "v1" }], null, meiaHora).cliente, AGORA)).toBe(1);
+    expect(notificacoes.map((n) => n.n.titulo)).toEqual(["Visita em 28 min"]);
+  });
+
+  it("antecedência de 2 horas: lembra a visita daqui a 1h55", async () => {
+    const duasHoras = { data: [{ id: "c1", antecedencia_visita_min: 120 }], error: null };
+    expect(await lembrarVisitasDaProximaHora(cenario([visita({ inicio: daqui(115) })], [{ id: "v1" }], null, duasHoras).cliente, AGORA)).toBe(1);
+    expect(notificacoes.map((n) => n.n.titulo)).toEqual(["Visita em 2 horas"]);
+  });
+
+  it("sem a coluna da 0250 (42703), todos no padrão de 1 hora", async () => {
+    const semColuna = { data: null, error: { message: "column corretores.antecedencia_visita_min does not exist", code: "42703" } } as Resposta;
+    expect(await lembrarVisitasDaProximaHora(cenario([visita()], [{ id: "v1" }], null, semColuna).cliente, AGORA)).toBe(1);
+    expect(await lembrarVisitasDaProximaHora(cenario([visita({ inicio: daqui(90) })], [{ id: "v1" }], null, semColuna).cliente, AGORA)).toBe(0);
   });
 
   it("sem a coluna da 0236 a leitura falha e nada sai", async () => {

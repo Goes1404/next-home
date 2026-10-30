@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCorretorLogado } from "@/lib/corretorSessao";
+import { ANTECEDENCIAS_DO_LEMBRETE_MIN, textoDaAntecedencia } from "@/lib/notificacoes/regrasDeVisita";
 
 /**
  * Hora do resumo do dia e se ele sai no fim de semana (0121). Grava só a
@@ -50,4 +51,28 @@ export async function salvarRelatorioSemanalNoWhatsapp(ligado: boolean): Promise
   return {
     ok: ligado ? "Toda segunda de manhã o resumo da semana chega no seu WhatsApp." : "Resumo da semana no WhatsApp desligado.",
   };
+}
+
+/**
+ * Quanto antes da visita o lembrete chega (0250, spec 4.7; padrão 1 hora).
+ * Grava só a própria linha, pela sessão; o grant da 0250 cobre só esta
+ * coluna. A lista é fechada (a mesma do CHECK do banco).
+ */
+export async function salvarAntecedenciaDoAvisoDeVisita(minutos: number): Promise<{ ok?: string; erro?: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  const min = Number(minutos);
+  if (!(ANTECEDENCIAS_DO_LEMBRETE_MIN as readonly number[]).includes(min)) return { erro: "Escolha uma das opções da lista." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("corretores")
+    .update({ antecedencia_visita_min: min })
+    .eq("id", corretor.id)
+    .select("id");
+  // Código no ar antes da 0250: a coluna não existe e o ajuste espera.
+  if (error?.code === "42703") return { erro: "Esse ajuste ainda não está disponível." };
+  if (error || !data || data.length === 0) return { erro: "Não foi possível salvar agora." };
+  revalidatePath("/corretor/perfil");
+  return { ok: `O lembrete da visita chega ${textoDaAntecedencia(min)} antes.` };
 }

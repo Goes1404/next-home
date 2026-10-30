@@ -6,6 +6,8 @@ import { FormularioPerfil } from "./FormularioPerfil";
 import { FundoLink } from "./FundoLink";
 import { AjustesDoResumo } from "./AjustesDoResumo";
 import { AjusteDoRelatorioSemanal } from "./AjusteDoRelatorioSemanal";
+import { AjusteDoAvisoDeVisita } from "./AjusteDoAvisoDeVisita";
+import { antecedenciaDoLembrete } from "@/lib/notificacoes/regrasDeVisita";
 import { AtivarNotificacoes } from "../_componentes/AtivarNotificacoes";
 import { ANCORA_DOS_AVISOS } from "@/lib/crm/primeirosPassosDoInicio";
 import { TextoDaPrevia } from "./TextoDaPrevia";
@@ -45,6 +47,14 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
     corretor.papel === "gestor"
       ? await supabase.from("corretores").select("relatorio_semanal_whatsapp").eq("id", corretor.id).maybeSingle()
       : { data: null };
+  // A antecedência do lembrete de visita (0250): à parte pelo mesmo motivo —
+  // antes da migration a coluna não existe, e o ajuste só não aparece (o
+  // lembrete segue no padrão de 1 hora).
+  const { data: avisoDeVisita } = await supabase
+    .from("corretores")
+    .select("antecedencia_visita_min")
+    .eq("id", corretor.id)
+    .maybeSingle();
   const { data: previa, error: erroPrevia } = await supabase
     .from("corretores")
     .select("chamada_do_link")
@@ -133,6 +143,12 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
       <div className="cartao mt-6 p-6 sm:p-7">
         <AjustesDoResumo hora={prefs?.resumo_hora ?? 8} fimDeSemana={prefs?.resumo_fim_de_semana ?? false} />
       </div>
+
+      {avisoDeVisita && (
+        <div className="cartao mt-6 p-6 sm:p-7">
+          <AjusteDoAvisoDeVisita minutos={antecedenciaDoLembrete(avisoDeVisita.antecedencia_visita_min)} />
+        </div>
+      )}
 
       {/* O resumo da semana no WhatsApp, só do gestor (0246). Sem a coluna, some. */}
       {corretor.papel === "gestor" && semanal && (

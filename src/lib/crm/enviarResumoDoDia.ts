@@ -3,6 +3,7 @@ import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { nomeParaExibir } from "@/lib/leads/nomeExibido";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
+import { corretoresComAvisoPeloCentral } from "@/lib/central/avisos";
 import { cadastradoPeloCorretor, origemLegivel } from "@/lib/notificacoes/leadNovo";
 import { medirEspera, tempoDeEspera } from "@/lib/crm/quemEstaEsperando";
 import {
@@ -34,6 +35,11 @@ function limitesDoDiaSP(dia: string): { inicio: string; fim: string } {
  * e só vale se o campo ainda não é hoje. Dois tiques concorrentes não
  * mandam o resumo duas vezes. Falha de envio NÃO devolve o claim — resumo
  * perdido é um dia sem resumo; resumo repetido a cada 5 min é spam.
+ *
+ * Com o número central ligado (onda 2, spec 4.7), o resumo sai pelo central
+ * (`avisarCorretor` com `espontaneo`), e quem está sem o próprio número
+ * conectado também entra na lista. A hora e a marca do dia são as mesmas:
+ * um resumo por pessoa por dia, qualquer que seja o canal.
  */
 export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Promise<number> {
   const hoje = diaEmSP(agora);
@@ -41,14 +47,17 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
     .from("corretor_whatsapp_instancias")
     .select("corretor_id, instance_name, status_conexao")
     .eq("status_conexao", "conectado");
-  if (!instancias || instancias.length === 0) return 0;
+  // Onda desligada: lista vazia sem consulta nenhuma, e o laço é o de sempre.
+  const peloCentral = await corretoresComAvisoPeloCentral(supabase);
+  const corretores = [...new Set([...(instancias ?? []).map((i) => i.corretor_id), ...peloCentral])];
+  if (corretores.length === 0) return 0;
 
   let enviados = 0;
-  for (const inst of instancias) {
+  for (const corretorId of corretores) {
     const { data: corretor } = await supabase
       .from("corretores")
       .select("id, nome, whatsapp, ativo, grupo_id, resumo_diario_em, resumo_hora, resumo_fim_de_semana")
-      .eq("id", inst.corretor_id)
+      .eq("id", corretorId)
       .maybeSingle();
     if (!corretor?.ativo || !corretor.whatsapp) continue;
     if (
@@ -74,8 +83,9 @@ export async function enviarResumosDoDia(supabase: Supa, agora = new Date()): Pr
     );
     if (!texto) continue;
 
-    // Pelos dois canais: o WhatsApp para o próprio número não toca (0203).
-    if (await avisarCorretor(supabase, corretor.id, texto)) enviados++;
+    // Pelos dois canais: o WhatsApp para o próprio número não toca (0203);
+    // pelo central (onda 2), toca.
+    if (await avisarCorretor(supabase, corretor.id, texto, "/corretor", { espontaneo: true })) enviados++;
     else console.warn("[resumo do dia] não saiu:", corretor.id);
   }
   return enviados;

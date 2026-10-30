@@ -3,6 +3,8 @@ import type { createServiceClient } from "@/lib/supabase/service";
 import { notificarCorretor } from "@/lib/notificacoes/push";
 import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
+import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
+import { avisoPeloCentral } from "@/lib/central/avisos";
 
 type Supa = ReturnType<typeof createServiceClient>;
 
@@ -37,13 +39,26 @@ export function textoDoLeadNovo(l: { nome: string | null; telefone: string | nul
 }
 
 /**
+ * O mesmo aviso no WhatsApp, pelo número central (spec 4.7): a notificação
+ * leva à ficha pelo toque; no WhatsApp, quem leva é o link.
+ */
+export function whatsappDoLeadNovo(
+  l: { nome: string | null; telefone: string | null; origem: string | null; anuncio_origem: string | null },
+  linkDaFicha: string,
+): string {
+  return `*Lead novo*\n${textoDoLeadNovo(l)}\n${linkDaFicha}`;
+}
+
+/**
  * Notificação de lead novo no celular do corretor dono (0203).
  *
  * Vale para lead que CHEGOU (WhatsApp, site, anúncio, portal), não para o
  * que o próprio corretor cadastrou (importação, painel, palavra-chave). O
  * claim `aviso_lead_novo_em` é gravado antes do envio: dois tiques não
  * avisam duas vezes, e o atalho do webhook não repete o do tique.
- * Só notificação: o WhatsApp do próprio número não avisa ninguém.
+ * Só notificação: o WhatsApp do próprio número não avisa ninguém. Com o
+ * número central ligado para o dono (onda 2, `avisoPeloCentral`), o aviso
+ * também vai pelo central, que toca; a notificação continua igual.
  */
 export async function avisarLeadsNovos(supabase: Supa, agora = new Date(), somenteLeadId?: string): Promise<number> {
   const desde = new Date(agora.getTime() - JANELA_MIN * 60_000).toISOString();
@@ -96,7 +111,13 @@ export async function avisarLeadsNovos(supabase: Supa, agora = new Date(), somen
       url: `/corretor/leads/${l.id}`,
       tag: `lead-${l.id}`,
     });
-    if (n > 0) avisados++;
+    const peloCentral = await avisoPeloCentral(
+      supabase,
+      l.corretor_id!,
+      whatsappDoLeadNovo(l, linkDoPainel(l.grupo_id, `/corretor/leads/${l.id}`)),
+      agora,
+    );
+    if (n > 0 || peloCentral) avisados++;
   }
   return avisados;
 }

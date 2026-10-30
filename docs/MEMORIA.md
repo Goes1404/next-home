@@ -12627,6 +12627,20 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   cérebro; "já existia" é no grupo. Link de documentos: miolo único
   `garantirLinkDeDocumentos` (a ficha passou a usá-lo) e sai pelo número do
   corretor só para quem já conversa com ele.
+- **Fase 2b, frente J (avisos espontâneos), 30/10/2026** —
+  [[avisos-espontaneos-pelo-numero-central]]: resumo do dia, lead novo, visita
+  na próxima hora e lembrete da anotação saem pelo central só com onda ≥ 2,
+  central conectado, `central_whatsapp_ativo` e pessoa ativa com WhatsApp. Um
+  ponto decide (`central/avisos.ts`, `avisoPeloCentral`: `false` = chamador
+  segue como hoje; onda < 2 não lê nada). Só esses quatro: `avisarCorretor`
+  sem `{ espontaneo: true }` não muda (alertas de conversa pelo central fariam
+  tocar a cada fala). O aviso entra em `central_estado.historico` como fala do
+  central (troca condicional em `atualizado_em`; contexto só na janela de 30
+  min). Antecedência da visita por pessoa: **0250** (`antecedencia_visita_min`,
+  padrão 60; sem a coluna, 60 e o ajuste some do perfil). A hora do resumo já
+  existia (`resumo_hora`, 0121). `processarLembretesDeAnotacao` saiu da rota
+  para `crm/lembretesDeAnotacao.ts`. Janela/teto do histórico em
+  `central/historico.ts` (importar `conversa.ts` carrega todos os tratadores).
 
 ## Suporte e contato da Astro (29/10/2026)
 

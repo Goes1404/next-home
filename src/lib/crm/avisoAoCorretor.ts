@@ -5,6 +5,7 @@ import { notificarCorretor } from "@/lib/notificacoes/push";
 import { lerMarcaDoCrm } from "@/lib/marcaDoCrm/ler";
 import { NOME_SEM_LEITURA } from "@/lib/marcaDoCrm/marca";
 import { site } from "@/lib/site";
+import { avisoPeloCentral } from "@/lib/central/avisos";
 
 type Supa = ReturnType<typeof createServiceClient>;
 
@@ -19,16 +20,27 @@ type Supa = ReturnType<typeof createServiceClient>;
  *   leads de anúncio em três dias com o aviso "chegando" (20/10/2026).
  * - Notificação no celular (Web Push, 0203), que não depende do WhatsApp e
  *   é a que de fato chama a atenção. `url` é para onde o toque leva.
+ *
+ * `espontaneo`: é um dos avisos do desenho do número central (spec 4.7 —
+ * hoje, só o resumo do dia passa por aqui). Com o central ligado para a
+ * pessoa, o WhatsApp sai PELO CENTRAL e toca; senão (ou se o central falhar
+ * no minuto), sai como sempre. A notificação no celular não muda. Os demais
+ * avisos (alertas de conversa, reuniões…) não passam `espontaneo` e ficam no
+ * canal de hoje: avisos demais pelo central é o anti-objetivo 6.2.
  */
 export async function avisarCorretor(
   supabase: Supa,
   corretorId: string,
   texto: string,
   url = "/corretor",
+  opcoes: { espontaneo?: boolean } = {},
 ): Promise<boolean> {
   const nomeDaCasa = await nomeDaCasaDoCorretor(supabase, corretorId);
+  const porWhatsappHoje = () => avisarPorWhatsapp(supabase, corretorId, texto);
   const [porWhatsapp, porNotificacao] = await Promise.all([
-    avisarPorWhatsapp(supabase, corretorId, texto),
+    opcoes.espontaneo
+      ? avisoPeloCentral(supabase, corretorId, texto).then((peloCentral) => peloCentral || porWhatsappHoje())
+      : porWhatsappHoje(),
     notificarCorretor(supabase, corretorId, { ...notificacaoDoTexto(texto, nomeDaCasa), url }),
   ]);
   return porWhatsapp || porNotificacao > 0;
