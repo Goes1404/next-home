@@ -371,6 +371,49 @@ async function cadastrarLeadDeConvite(
   return data.id;
 }
 
+export type TelefoneNoGrupo =
+  | { onde: "na_dele"; leadId: string }
+  | { onde: "de_outro_corretor"; leadId: string }
+  | { onde: "em_nenhuma" }
+  | { onde: "nao_sei" };
+
+/**
+ * Em que carteira do grupo o telefone já é lead (regra N6). É o miolo de
+ * `cadastrarPelaPalavraChave`, separado para o cadastro pelo número central
+ * (`src/lib/crm/leadPeloCentral.ts`, 30/10/2026) seguir a MESMA regra: as
+ * duas portas que cadastram pelo WhatsApp não podem discordar sobre o que é
+ * "lead de outro corretor".
+ *
+ * A carteira de quem pede vale com arquivado junto (arquivar não apaga a
+ * pessoa); as outras, só dentro do grupo (L10): fora dele o número é tratado
+ * como novo, para ninguém descobrir cliente de outra empresa. Erro na leitura
+ * das outras carteiras é `nao_sei`: cadastrar sem saber poderia duplicar a
+ * pessoa em duas carteiras, e o lado seguro é não cadastrar.
+ */
+export async function localizarTelefoneNoGrupo(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: { corretorId: string; grupoId: string; telefoneCliente: string },
+): Promise<TelefoneNoGrupo> {
+  const proprio = await encontrarLeadCadastrado(supabase, params);
+  if (proprio) return { onde: "na_dele", leadId: proprio };
+
+  const { data: alheio, error: erroAlheio } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("grupo_id", params.grupoId)
+    .in("telefone_e164", candidatosTelefone(params.telefoneCliente))
+    .neq("corretor_id", params.corretorId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (erroAlheio) {
+    console.error("[cadastro] falha ao conferir outras carteiras:", erroAlheio.message);
+    return { onde: "nao_sei" };
+  }
+  if (alheio) return { onde: "de_outro_corretor", leadId: alheio.id };
+  return { onde: "em_nenhuma" };
+}
+
 export type CadastroPelaPalavraChave =
   | { desfecho: "ja_e_lead"; leadId: string }
   | { desfecho: "cadastrado"; leadId: string }
@@ -415,25 +458,10 @@ export async function cadastrarPelaPalavraChave(params: {
 }): Promise<CadastroPelaPalavraChave> {
   const supabase = createServiceClient();
 
-  const proprio = await encontrarLeadCadastrado(supabase, params);
-  if (proprio) return { desfecho: "ja_e_lead", leadId: proprio };
-
-  const { data: alheio, error: erroAlheio } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("grupo_id", params.grupoId)
-    .in("telefone_e164", candidatosTelefone(params.telefoneCliente))
-    .neq("corretor_id", params.corretorId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (erroAlheio) {
-    // Sem saber se o número é de outro corretor, cadastrar poderia duplicar a
-    // pessoa em duas carteiras. O lado seguro é não cadastrar.
-    console.error("[palavra-chave] falha ao conferir outras carteiras:", erroAlheio.message);
-    return { desfecho: "falhou" };
-  }
-  if (alheio) return { desfecho: "lead_de_outro_corretor", leadId: alheio.id };
+  const carteira = await localizarTelefoneNoGrupo(supabase, params);
+  if (carteira.onde === "na_dele") return { desfecho: "ja_e_lead", leadId: carteira.leadId };
+  if (carteira.onde === "de_outro_corretor") return { desfecho: "lead_de_outro_corretor", leadId: carteira.leadId };
+  if (carteira.onde === "nao_sei") return { desfecho: "falhou" };
 
   const agora = new Date().toISOString();
   const { data, error } = await supabase
