@@ -12568,3 +12568,4 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - `sw-painel.js` agora guarda dados por usuário e apaga ao sair/login/401; nunca conversas.
 - Nota: [[multi-ramo-portais-gestor-e-negocio-da-astro]].
 - 30/10/2026: /plataforma no desktop ganhou barra lateral (NavDaPlataforma.tsx); a linha de 8 botões sem flex-wrap vazava.
+- 30/10/2026: `relatorio-semanal` REAGENDADO no pg_cron (segundas 11h UTC) por causa do resumo no WhatsApp (0246); o e-mail do relatório só sai com `RELATORIO_SEMANAL_POR_EMAIL=sim` (segue desligado, decisão de 03/09). Fundo animado: em toque (`hover: none`) o painel e a tela de acesso ficam parados.

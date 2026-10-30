@@ -83,3 +83,5 @@ Ver também [[cobranca-asaas-e-teste-gratis]], [[contratar-plano-pela-pagina-da-
 
 ## Desktop da plataforma (30/10/2026)
 - A linha de 8 botões no topo de /plataforma (`sm:flex-row` sem `flex-wrap`) vazava no computador. Agora a casca (`plataforma/layout.tsx`) tem barra lateral no lg+ e faixa rolável no celular, com a lista única em `NavDaPlataforma.tsx`. Pedidos/chamados novos viraram aviso no topo de Contas.
+- 30/10/2026: o cron `relatorio-semanal` foi reagendado (segundas 8h SP) para o resumo no WhatsApp; o e-mail do relatório só com `RELATORIO_SEMANAL_POR_EMAIL=sim`.
+- 30/10/2026: fundo animado em toque (`hover: none`) fica parado no painel e na tela de acesso; no computador a deriva ficou mais lenta.
