@@ -28,9 +28,14 @@ Desenho completo: `docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md
   anti-bloqueio de hoje. O central só conversa com a equipe.
 - Modelo de IA de primeira linha com chamada de ferramentas; sem PIN; registro
   só interno; desfazer até 24 h; proposta válida por 1 h.
-- Piloto na Next Home, em ondas: 0 fundação → 1 leads e agenda → 2 imóveis,
-  relatórios e avisos → 3 listas e imagens. Sem teto de custo no piloto;
-  lançamento é decisão do dono.
+- Piloto na Next Home, em ondas sem tempo mínimo: 0 fundação → 1 leads e
+  agenda → 2 imóveis, relatórios, avisos e grupos → 3 listas e imagens.
+  Lançamento é decisão do dono.
+- Os comandos contam na cota mensal de IA da imobiliária e podem suspendê-la.
+- Cada pessoa escolhe no painel o horário do resumo e a antecedência do aviso
+  de visita (padrão 8h e 1 h). Registro guarda o texto por 30 dias.
+- O central pode ficar em grupos só da equipe e responde quando mencionado;
+  dado de lead vai para o privado de quem pediu.
 
 ## Para lembrar (achados do desenho)
 

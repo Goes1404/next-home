@@ -207,8 +207,18 @@ Em texto e, quando ajuda, uma imagem com o gráfico [dono].
   atendimento do corretor responderia ao central, que responderia de volta
   (laço). Toda instância de corretor ignora o número central: não cria lead,
   não cria conversa, não aciona IA.
-- O central só trata conversa privada. Mensagem de grupo é ignorada, e se
-  alguém o adicionar a um grupo ele sai [minha].
+- **O central pode ficar em grupos da equipe** e responde quando é
+  mencionado ("@central como está o mês?") [dono]. Regras [minha]:
+  - só em grupo em que **todos os participantes são da equipe da mesma
+    imobiliária**; em grupo com cliente ou gente de fora, ele sai;
+  - o autor é reconhecido como no privado (número ou `whatsapp_lid`, como o
+    retorno pelo grupo já faz) e vale a permissão dele;
+  - o que é dado de um lead (consulta de lead, proposta de mudança,
+    relatório do corretor) é respondido **no privado de quem pediu**, com
+    "te respondi no privado" no grupo, porque no painel o corretor só vê os
+    próprios leads; informação de imóvel, ajuda e relatório do gestor
+    (pedido pelo gestor) podem ser respondidos no grupo;
+  - mensagem de grupo sem menção ao central é ignorada.
 
 ### 4.2 Quem está falando
 
@@ -294,8 +304,8 @@ Em texto e, quando ajuda, uma imagem com o gráfico [dono].
   sair só pode ser pausada, não desfeita.
 - Todo comando fica registrado (quem, texto ou transcrição, ferramentas
   chamadas, proposta, confirmação, resultado, custo e tempo), **só para
-  análise interna**, sem tela no painel por enquanto [dono]. O texto fica 90
-  dias; depois, só os números (7.2). Exceções: de número desconhecido e de
+  análise interna**, sem tela no painel por enquanto [dono]. O texto fica 30
+  dias [dono]; depois, só os números (7.2). Exceções: de número desconhecido e de
   usuário desativado, só a tentativa (número e hora), nunca o texto (4.2).
 
 ### 4.7 Avisos espontâneos
@@ -305,8 +315,10 @@ Em texto e, quando ajuda, uma imagem com o gráfico [dono].
   número do próprio corretor para ele mesmo, e o celular não toca
   (`avisarCorretor`). A notificação web continua.
 - Cada aviso pode ser respondido ali mesmo ("marca visita com ele amanhã").
-- Horários [minha]: resumo do dia às 8h (com os leads parados dentro dele);
-  lead novo na hora; visita 1 hora antes; lembrete na hora pedida.
+- Horários: **cada pessoa escolhe no painel** o horário do resumo do dia e a
+  antecedência do aviso de visita, com padrão de 8h e 1 hora [dono]. Lead
+  novo sai na hora; lembrete, na hora pedida; leads parados vão dentro do
+  resumo [minha].
 - "Lead parado" pelo central vai só para o corretor dono do lead. A lista de
   leads sem retorno que o central da imobiliária manda ao gestor às 18h
   continua como está (4.1) [minha].
@@ -315,10 +327,13 @@ Em texto e, quando ajuda, uma imagem com o gráfico [dono].
 
 - Cada comando registra o custo com uma finalidade nova (`comando`) em
   `registrarConsumoDaIa`.
-- **No piloto não há teto de custo nem limite diário por pessoa** [dono]: o
-  custo real medido na Next Home define o teto do lançamento. Os comandos não
-  entram na conta que suspende a IA da imobiliária (`lerCotaDaIa`), para o
-  piloto não parar no meio [minha].
+- **No piloto não há teto próprio nem limite diário por pessoa** [dono]: o
+  custo real medido na Next Home define o teto do lançamento.
+- **Os comandos contam na cota mensal de IA da imobiliária e podem
+  suspendê-la** [dono], como qualquer uso de IA (`lerCotaDaIa`,
+  `grupoSuspenso`). Com a cota esgotada, o central responde "a cota de IA do
+  mês acabou; fale com o gestor" em vez de ficar mudo [minha]. Isso vale
+  também para a IA que atende os clientes, que divide a mesma cota.
 
 ## 5. Ondas de entrega
 
@@ -331,16 +346,16 @@ seguinte começa com o que a anterior ensinou. Ordem aprovada pelo dono.
 |---|---|---|
 | **0 · Fundação** | O número 11 96867-1127 conectado como instância da plataforma; no painel, a chave que liga o recurso por imobiliária, o link `wa.me` e o número que o central reconhece; reconhece quem escreve (4.2) e dá boas-vindas; entende texto e áudio (foto responde "ainda não sei"); responde "o que você sabe fazer?" e "ainda não sei"; avisa quando a IA está indisponível (7.2); registra todo comando (4.6) | 19 (ajuda) |
 | **1 · Leads e agenda** | O uso de todo dia | 1, 2, 3, 4, 6, 7, 18, 19 (desfazer) |
-| **2 · Imóveis, relatórios e avisos** | O gestor passa a ver valor; o central começa a mandar mensagem por conta própria (avisos de 4.7 e lembretes) | 5, 8, 9, 10, 11, 12, 13 |
+| **2 · Imóveis, relatórios e avisos** | O gestor passa a ver valor; o central começa a mandar mensagem por conta própria (avisos de 4.7, com a escolha de horário no painel, e lembretes); o central passa a funcionar em grupos da equipe (4.1) | 5, 8, 9, 10, 11, 12, 13 |
 | **3 · Listas e imagens** | O que mexe com clientes e com o risco de bloqueio, por último | 14, 15, 16, 17, 20 |
 
 - A agenda pelo WhatsApp de hoje (que responde no número do próprio
   corretor) passa para o central na onda 1. Durante a onda, as duas portas
   funcionam; a antiga sai quando a maioria dos corretores da Next Home tiver
   marcado visita pelo central [minha].
-- Cada onda fica pelo menos 2 semanas em uso antes da próxima começar, para
-  o registro de comandos mostrar onde a IA erra [minha]. A duração total do
-  piloto e o momento do lançamento são decisão do dono.
+- A próxima onda começa assim que a anterior estiver pronta e funcionando,
+  sem tempo mínimo [dono]. A duração total do piloto e o momento do
+  lançamento são decisão do dono.
 - A capacidade 20 (saúde do número) depende dos níveis de primeiro contato
   por resultado (10 → 15 → 20 por dia), que ainda não existem. Se eles não
   estiverem prontos na onda 3, ela mostra só a conexão e o limite atual.
@@ -400,7 +415,7 @@ número real [dono].
 | Número do corretor desatualizado no perfil | O passo de entrada (4.1) mostra no painel o número que o central reconhece |
 | Laço entre a IA do corretor e o central (4.1) | O número central é ignorado por toda instância de corretor; teste de guarda e um teste ponta a ponta com as duas pontas falsas antes da onda 0 |
 | Desfazer depois que outra pessoa mudou o mesmo lead | O desfazer não reverte campo que alguém mudou depois; avisa o que não pôde voltar [minha] |
-| Transcrições guardadas no registro (LGPD) | O registro guarda texto por 90 dias e depois só os números (quem, quando, ferramenta, custo) [minha] |
+| Transcrições guardadas no registro (LGPD) | O registro guarda texto por 30 dias e depois só os números (quem, quando, ferramenta, custo) [dono] |
 
 ### 7.3 Restrições da casa
 
@@ -454,6 +469,6 @@ número real [dono].
   - instância de corretor ignora o número central (sem lead, conversa nem IA).
 - **Onda 0 primeiro** (seção 5): identificação, cérebro, registro e ajuda,
   sem nenhuma ação que grave. O mecanismo de proposta e "sim" é construído e
-  testado aqui, mas só é usado de verdade na onda 1. A onda 1 começa depois
-  das 2 semanas da onda 0 (seção 5), com o registro mostrando que o central
-  reconheceu pelo nome cada corretor ativo da Next Home que escreveu.
+  testado aqui, mas só é usado de verdade na onda 1. A onda 1 começa quando a
+  onda 0 estiver funcionando (seção 5), com o registro mostrando que o
+  central reconheceu pelo nome cada corretor ativo da Next Home que escreveu.
