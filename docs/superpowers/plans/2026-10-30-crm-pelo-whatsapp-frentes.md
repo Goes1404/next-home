@@ -64,6 +64,10 @@ Ondas 1, 2, fase 2b e onda 3 juntadas e verdes na `ccr-c2c56589-a2yhl2`
 (tsc, 6.793 testes, lintTeto, build). Tudo atrás de `ONDA_ATUAL = 0`. A tarefa
 agendada de retomada foi desligada.
 
+Publicado em produção em 30/10/2026: `/api/versao` → `2f1064a9c8d1`
+(nexthomeimoveis.com e astroimob.vercel.app). Central ainda sem chip
+conectado e em `ONDA_ATUAL = 0`.
+
 ## Migrations que o dono roda no SQL Editor
 
 - `0249_central_da_plataforma.sql` (tabelas do central).
