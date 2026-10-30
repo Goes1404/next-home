@@ -190,7 +190,7 @@ describe("/api/cron/relatorio-semanal sem a chave do e-mail", () => {
   it("não manda e-mail quando RELATORIO_SEMANAL_POR_EMAIL não é sim (padrão desde 03/09)", async () => {
     vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "");
     enviados.length = 0;
-    const resp = await GET(new Request("http://x/api/cron/relatorio-semanal", { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }));
+    const resp = await GET(new NextRequest("http://localhost/api/cron/relatorio-semanal"));
     const corpo = await resp.json();
     expect(enviados).toHaveLength(0);
     expect(corpo.enviados ?? 0).toBe(0);
