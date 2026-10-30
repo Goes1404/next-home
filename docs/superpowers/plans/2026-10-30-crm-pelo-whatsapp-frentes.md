@@ -44,12 +44,12 @@ um arquivo por frente em `src/lib/central/tratadores/`).
 
 ## Onda 2 (próximas; a onda 1 está juntada e verde desde 30/10: pode abrir)
 
-| Frente | Arquivo | Ferramentas |
-|---|---|---|
-| F · Imóveis | `tratadores/imoveis.ts` | `informacao_de_imovel`, `imoveis_para_o_lead`, `leads_para_o_imovel`, `simular_financiamento`, `atualizar_imovel` (gestor) |
-| G · Relatórios | `tratadores/relatorios.ts` | `relatorio_do_corretor`, `meta_e_comissao`, `relatorio_da_equipe` (gestor), `resultado_do_mes` (gestor), `whatsapp_da_equipe` (gestor) |
-| H · Financeiro e gestão | `tratadores/financeiro.ts` | `registrar_venda`, `lancar_no_caixa` (gestor), `informar_gasto_de_anuncio`, `redistribuir_leads` (gestor) |
-| I · Documentos, lembretes e planilha | `tratadores/documentos.ts` | `documentos_do_lead`, `lembrete` (precisa de envio agendado pelo central), `importar_planilha` |
+| Frente | Arquivo | Ferramentas | Estado |
+|---|---|---|---|
+| F · Imóveis | `tratadores/imoveis.ts` | `informacao_de_imovel`, `imoveis_para_o_lead`, `leads_para_o_imovel`, `simular_financiamento`, `atualizar_imovel` (gestor) | em andamento (30/10) |
+| G · Relatórios | `tratadores/relatorios.ts` | `relatorio_do_corretor`, `meta_e_comissao`, `relatorio_da_equipe` (gestor), `resultado_do_mes` (gestor), `whatsapp_da_equipe` (gestor) | em andamento (30/10) |
+| H · Financeiro e gestão | `tratadores/financeiro.ts` | `registrar_venda`, `lancar_no_caixa` (gestor), `informar_gasto_de_anuncio`, `redistribuir_leads` (gestor) | em andamento (30/10) |
+| I · Documentos, lembretes e planilha | `tratadores/documentos.ts` | `documentos_do_lead`, `lembrete` (precisa de envio agendado pelo central), `importar_planilha` | em andamento (30/10) |
 
 Cada frente nova: criar o arquivo com `CONSULTAS_X`/`ACOES_X` e ligá-lo em
 `tratadores/index.ts` ANTES de lançar os agentes (como em `ec5c9dfc`), para
