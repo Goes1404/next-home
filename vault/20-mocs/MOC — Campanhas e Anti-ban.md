@@ -55,4 +55,5 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[comparacao-de-campanhas-por-um-criterio-so]] — ordem e "melhor" pelo mesmo critério (visita → qualificado → cliente), amostra mínima de 5, quem gastou sem trazer ninguém aparece (30/09)
 - [[totais-dos-anuncios-contam-e-dividem-o-mesmo]] — contagem e custo do topo usam só as campanhas com gasto; degraus com custo de cada um (30/09)
 - [[lista-de-transmissao-visivel-e-controlavel]] — gaveta de quem recebeu, pausar/retomar/cancelar por lista (0153), linha na ficha, contexto da lista para a IA, guarda de 24h de conversa do corretor, recorte por canal/anúncio e visitas/vendas depois (03/10)
+- [[lista-de-transmissao-pelo-numero-central]] — "manda o Vitta pra quem quer Barueri até 600 mil" pelo central: proposta com pessoas, nunca falaram e cabem hoje (contas da tela e do disparador); o "sim" só enfileira, pelo número de quem pediu; desfazer cancela se nada saiu, senão só pausa (onda 3, frente L, 30/10)
 - [[roleta-dos-anuncios]] — lead de anúncio vai para o próximo da lista do dono; o número novo chama o cliente na hora (20/10)

@@ -5,7 +5,7 @@ tags: [campanhas, anti-ban, arquitetura]
 type: nota
 status: evergreen
 custou: medio
-codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
+codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/listaPeloCentral.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
 created: 2026-09-05
 updated: 2026-10-30
 fonte: leitura do código + docs/MEMORIA.md
@@ -33,6 +33,12 @@ summary: Criação monta a fila com agendado_para (e guarda o critério); a list
   (`variarSemRepetir`), um item por vez, e só sai texto abaixo de 0,70 de
   semelhança com as mensagens do número ([[fila-parada-tres-causas]],
   [[texto-da-lista-conferido-antes-de-sair]]). `{nome}` vira o primeiro nome.
+
+Três lugares criam lista e fila (guarda em `listaDeTransmissao.test.ts`):
+o assistente da tela, a lista viva e, desde 30/10/2026, o número central
+(`listaPeloCentral.ts`, onda 3), que repete o `criarCampanha` pela chave de
+serviço, sempre pelo número de quem pediu, e só enfileira: o envio é deste
+disparador ([[lista-de-transmissao-pelo-numero-central]]).
 
 ## Disparo (`campaignDispatcher.ts`)
 

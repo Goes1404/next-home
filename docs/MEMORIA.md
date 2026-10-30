@@ -12656,6 +12656,24 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   não vê histórico nem proposta do privado (senão repetiria no grupo o que
   foi dito a sós), sem boas-vindas e sem ler "sim". `route.ts` não mudou: o
   desvio do central já vem antes do descarte de grupo.
+- **Onda 3, frente L (listas), 30/10/2026** —
+  [[lista-de-transmissao-pelo-numero-central]]: `tratadores/listas.ts`
+  (`montar_lista`, `acompanhar_lista`) + `whatsapp/listaPeloCentral.ts`. O
+  central NÃO envia: o "sim" grava lista e fila como a tela e o disparador
+  manda com todas as travas. `criarCampanha` não serve (sessão) e não dá
+  para refatorar (meia dúzia de guardas leem o código de `campanhas/acoes.ts`):
+  o domínio novo repete o passo a passo com as mesmas peças, e a guarda
+  `listaPeloCentral.test.ts` cobra a ordem; ele entrou na lista de quem pode
+  inserir lista/fila (`listaDeTransmissao.test.ts`). Sempre o número, a
+  carteira e as listas de quem pediu, também o gestor. Proposta: pessoas
+  (régua da tela + recorte por região/faixa/dorms declarados; com imóvel, só
+  quem combina; palavra desconhecida vira lugar e estreita), nunca falaram
+  (`quemNuncaFalou` = `nuncaFalouComOCorretor` em lote, com os cadastros do
+  mesmo telefone), cabem hoje no primeiro contato (vagas do disparador) e
+  saem hoje (estimativa com cota, fila de outras listas e relógio). Desfazer:
+  pausa, conta o que saiu (envio sem comprovante conta); nada → cancela,
+  algo → fica pausada. Armadilhas: `bancoFalso` sem `rpc`/`count` e sem o
+  `grupo_id` do gatilho; `"mil".startsWith("mi")` virou 600 milhões.
 
 ## Suporte e contato da Astro (29/10/2026)
 
