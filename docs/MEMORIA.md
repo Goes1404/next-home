@@ -12753,6 +12753,14 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   outubro presos porque o e-mail não sai sem `RESEND_API_KEY`), e aviso
   espontâneo pelo central só para quem já escreveu a ele (`jaConversou`).
 
+- **Chip novo do central (30/10):** o WhatsApp segurou tudo o que o sistema
+  mandava (provedor confirmava com `key.id`, nada aparecia nem no celular do
+  chip; o celular mandava normal). Não é endereço/JID: a resposta já ia ao JID
+  recebido. Central passou a usar o número do dono; troca de chip pela tela.
+- **Melhorias da conversa da Bruna (30/10):** trava do "sim" falso
+  (`semPedidoDeSimFalso`), filtros reais da lista, frase e foto de base na
+  arte, vocabulário no áudio, `leads_mais_quentes`.
+
 ## Suporte e contato da Astro (29/10/2026)
 
 Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)

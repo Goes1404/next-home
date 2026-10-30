@@ -144,4 +144,23 @@ ferramenta ligada tenha tratador, e que na onda 0 nada rode.
 - Número novo: reconectar e usar devagar (conversas iniciadas pela equipe)
   antes de qualquer envio por conta própria em volume.
 
+## Melhorias da primeira conversa real (Bruna, 30/10/2026)
+
+- **"Responda sim" falso:** a IA pedia confirmação sem chamar ferramenta e o
+  "sim" caía no vazio. Regra no sistema + trava `semPedidoDeSimFalso`
+  (conversa.ts): sem proposta de verdade, a frase sai da resposta.
+- **Filtros da lista** viraram campos (`etapas`, `respondeu`,
+  `parado_ha_dias`, região, orçamento, dormitórios, imóvel); `para_quem` não
+  filtra mais. Zero vem com o motivo por filtro.
+- **Arte:** `texto_na_arte` (frase exata) e `pedido` (arte livre); a primeira
+  foto do imóvel no catálogo vai como base, como no Estúdio
+  (`fotoDeBaseDoImovel`). Nunca indicar serviço de fora.
+- **Áudio:** dica de vocabulário na transcrição (jargão + imóveis publicados,
+  `central/vocabulario.ts`).
+- **`leads_mais_quentes`:** pela nota do lead (0248).
+- **Número central = número pessoal do dono (11 95008-5875)** por enquanto: o
+  chip novo teve o envio pelo sistema segurado pelo WhatsApp (o celular
+  mandava, o aparelho conectado não, sem aviso). Troca de chip é pelo campo
+  "Número do chip" em `/plataforma/central`.
+
 Ligações: [[primeiro-contato-tem-teto-proprio]], [[fluxo-do-webhook-whatsapp]].
