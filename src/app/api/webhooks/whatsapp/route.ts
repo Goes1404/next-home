@@ -110,6 +110,8 @@ import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
 import { candidatosTelefone, marcarSessaoViva, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ehInstanciaDoCentral, ehNumeroDoCentral } from "@/lib/central/numeroDoCentral";
+import { tratarWebhookDoCentral } from "@/lib/central/webhook";
 
 export const runtime = "nodejs";
 // O buffer de rajada espera ~6s antes de responder, e o ciclo completo
@@ -269,6 +271,15 @@ export async function POST(req: NextRequest) {
 
     // Normalização de payload para suportar Evolution API, Z-API e Meta Cloud API
     const instanceName = payload.instance || payload.instanceName || "";
+
+    /*
+     * O número central da plataforma (0248) não é instância de corretor:
+     * `resolverInstancia` não o acharia (404). Desvia aqui, antes de grupo,
+     * conexão e de toda a lógica de corretor (`centralInvisivel.test.ts`).
+     */
+    if (await ehInstanciaDoCentral(instanceName)) {
+      return tratarWebhookDoCentral(req, payload);
+    }
 
     /*
      * O JID bruto precisa ser lido ANTES de virar só dígitos: é o sufixo que
@@ -487,6 +498,19 @@ export async function POST(req: NextRequest) {
      */
     if (!sender || (!text && !ehAudio)) {
       return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
+    }
+
+    /*
+     * O número central da plataforma (0248) é invisível para a instância do
+     * corretor. O WhatsApp do corretor também está ligado aqui: a conversa
+     * dele com o central apareceria como se o central fosse um cliente, e a
+     * IA do corretor responderia ao central, que responderia de volta
+     * (laço). Vale para o que o corretor manda (`fromMe`) e para o que o
+     * central responde (entrada), ANTES de qualquer caminho que crie lead,
+     * conversa ou acione a IA (`centralInvisivel.test.ts`).
+     */
+    if (await ehNumeroDoCentral(sender)) {
+      return NextResponse.json({ ok: true, ignored: "central" });
     }
 
     /*

@@ -31,7 +31,8 @@ export type FinalidadeDaIa =
   | "agenda"
   | "arte_texto"
   | "arte_imagem"
-  | "video";
+  | "video"
+  | "comando";
 
 export const ROTULO_DA_FINALIDADE: Record<FinalidadeDaIa, string> = {
   atendimento: "Atendimento no WhatsApp",
@@ -52,6 +53,7 @@ export const ROTULO_DA_FINALIDADE: Record<FinalidadeDaIa, string> = {
   arte_texto: "Artes (texto do pedido)",
   arte_imagem: "Artes (imagem gerada)",
   video: "Vídeos",
+  comando: "Comandos pelo WhatsApp (número central)",
 };
 
 /** O rótulo da finalidade; a telemetria antiga (antes da 0233) cai no nome cru. */

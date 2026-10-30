@@ -86,6 +86,168 @@ export type Database = {
   }
   public: {
     Tables: {
+      central_comandos: {
+        Row: {
+          id: string
+          grupo_id: string
+          corretor_id: string
+          mensagem_id: string
+          tipo: "texto" | "audio" | "imagem"
+          texto: string | null
+          ferramentas: Json
+          proposta: Json | null
+          confirmado: boolean | null
+          resultado: string | null
+          erro: string | null
+          custo_centavos: number | null
+          latencia_ms: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          corretor_id: string
+          mensagem_id: string
+          tipo: "texto" | "audio" | "imagem"
+          texto?: string | null
+          ferramentas?: Json
+          proposta?: Json | null
+          confirmado?: boolean | null
+          resultado?: string | null
+          erro?: string | null
+          custo_centavos?: number | null
+          latencia_ms?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          corretor_id?: string
+          mensagem_id?: string
+          tipo?: "texto" | "audio" | "imagem"
+          texto?: string | null
+          ferramentas?: Json
+          proposta?: Json | null
+          confirmado?: boolean | null
+          resultado?: string | null
+          erro?: string | null
+          custo_centavos?: number | null
+          latencia_ms?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      central_da_plataforma: {
+        Row: {
+          id: string
+          instance_name: string
+          telefone: string
+          status_conexao: string
+          conectado_em: string | null
+          desconectado_em: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          instance_name: string
+          telefone: string
+          status_conexao?: string
+          conectado_em?: string | null
+          desconectado_em?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          instance_name?: string
+          telefone?: string
+          status_conexao?: string
+          conectado_em?: string | null
+          desconectado_em?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      central_escolha_de_grupo: {
+        Row: {
+          telefone: string
+          corretor_id: string | null
+          opcoes: Json | null
+          perguntado_em: string | null
+          escolhido_em: string | null
+        }
+        Insert: {
+          telefone: string
+          corretor_id?: string | null
+          opcoes?: Json | null
+          perguntado_em?: string | null
+          escolhido_em?: string | null
+        }
+        Update: {
+          telefone?: string
+          corretor_id?: string | null
+          opcoes?: Json | null
+          perguntado_em?: string | null
+          escolhido_em?: string | null
+        }
+        Relationships: []
+      }
+      central_estado: {
+        Row: {
+          id: string
+          grupo_id: string
+          corretor_id: string
+          historico: Json
+          proposta: Json | null
+          proposta_expira_em: string | null
+          boas_vindas_em: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          grupo_id?: string
+          corretor_id: string
+          historico?: Json
+          proposta?: Json | null
+          proposta_expira_em?: string | null
+          boas_vindas_em?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          grupo_id?: string
+          corretor_id?: string
+          historico?: Json
+          proposta?: Json | null
+          proposta_expira_em?: string | null
+          boas_vindas_em?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      central_tentativas: {
+        Row: {
+          id: string
+          telefone_hash: string
+          motivo: "desconhecido" | "inativo" | "desligado" | "grupo"
+          mensagem_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          telefone_hash: string
+          motivo: "desconhecido" | "inativo" | "desligado" | "grupo"
+          mensagem_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          telefone_hash?: string
+          motivo?: "desconhecido" | "inativo" | "desligado" | "grupo"
+          mensagem_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       ativacoes_em_lead_alheio: {
         Row: {
           grupo_id: string
@@ -2574,6 +2736,7 @@ export type Database = {
           site_instagram: string | null
           site_facebook: string | null
           envio_grupo_leads_ativo: boolean
+          central_whatsapp_ativo: boolean
           envio_grupo_leads_instancia: string | null
           grupos_whatsapp_do_central: Json | null
           grupos_whatsapp_instancia: string | null
@@ -2650,6 +2813,7 @@ export type Database = {
           site_instagram?: string | null
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
+          central_whatsapp_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
           grupos_whatsapp_do_central?: Json | null
           grupos_whatsapp_instancia?: string | null
@@ -2725,6 +2889,7 @@ export type Database = {
           site_instagram?: string | null
           site_facebook?: string | null
           envio_grupo_leads_ativo?: boolean
+          central_whatsapp_ativo?: boolean
           envio_grupo_leads_instancia?: string | null
           grupos_whatsapp_do_central?: Json | null
           grupos_whatsapp_instancia?: string | null

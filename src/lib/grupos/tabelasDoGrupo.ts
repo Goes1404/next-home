@@ -62,6 +62,15 @@ export const TABELAS_GLOBAIS = [
   // conta. A conta beneficiada fica em `grupo_beneficiado_id`. Só a chave de
   // serviço lê e escreve.
   "creditos_de_indicacao",
+  // O número central da plataforma (0248, 30/10/2026): um número de WhatsApp
+  // da Astro que conversa com as equipes de todos os grupos; não é de nenhum.
+  "central_da_plataforma",
+  // A escolha de imobiliária de quem está em duas (0248): a chave é o
+  // telefone, que atravessa os grupos; a escolha aponta para o corretor.
+  "central_escolha_de_grupo",
+  // Quem escreveu ao central e não foi atendido (0248): desconhecido não tem
+  // grupo. Sem texto; telefone em hash.
+  "central_tentativas",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
