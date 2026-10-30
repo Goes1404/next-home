@@ -12656,6 +12656,18 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   não vê histórico nem proposta do privado (senão repetiria no grupo o que
   foi dito a sós), sem boas-vindas e sem ler "sim". `route.ts` não mudou: o
   desvio do central já vem antes do descarte de grupo.
+- **Onda 3, frente O (saúde do número), 30/10/2026** —
+  [[saude-do-numero-pelo-central]]: `tratadores/saude.ts`, `saude_do_numero`
+  só sobre o número de quem pergunta (gestor: o dele). Nenhuma conta nova:
+  conexão por `avaliarSaudeDaConexao` (texto da faixa), cota da lista por
+  `calcularLimiteDoDia` − contador do dia (como a tela), primeiro contato por
+  `contarPrimeirosContatos` + `vagasDePrimeiroContato` montados como o
+  disparador (contagem que falha = 0 vaga), "fica para amanhã" por
+  `previsaoDeTermino`. "conectando" é tratado antes da régua (ela diria "saiu
+  do ar"). Níveis 10→15→20 não existem: responde o limite atual. Armadilha de
+  teste: `calcularLimiteDoDia` usa `Date.now()` e a própria chave; fixe o
+  relógio (`vi.useFakeTimers({ toFake: ["Date"] })`) e troque
+  `createServiceClient`.
 
 ## Suporte e contato da Astro (29/10/2026)
 
