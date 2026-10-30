@@ -73,6 +73,9 @@ export function lerMensagemDoCentral(payload: Payload): MensagemRecebida | null 
   const texto: string = m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || "";
   const tipo = m.audioMessage ? "audio" : m.imageMessage || m.documentMessage ? "imagem" : "texto";
   if (tipo === "texto" && !texto.trim()) return null;
+  // Arquivo (PDF, planilha, foto mandada "como documento") segue no tipo
+  // "imagem" do registro, mas a conversa não o baixa: é da onda 2.
+  if (tipo === "imagem" && !m.imageMessage) return { mensagemId, telefone, lid, tipo, texto, documento: true };
   return { mensagemId, telefone, lid, tipo, texto };
 }
 
@@ -159,6 +162,10 @@ function dependenciasReais(instanceName: string, payload: Payload): Dependencias
       });
       return r.sucesso && r.textoTranscrito.trim() ? r.textoTranscrito.trim() : null;
     },
+    // Mesmo caminho do áudio: a Evolution decifra pela mensagem inteira. Nunca
+    // a `url` do webhook, que é o arquivo cifrado do WhatsApp.
+    baixarImagem: () =>
+      baixarMidiaDoProvedor({ instanceName, messageId: payload.data?.key?.id, mensagemCompleta: payload.data }),
     pensar,
     registrarComando: async (r) => {
       await supabase.from("central_comandos").insert({

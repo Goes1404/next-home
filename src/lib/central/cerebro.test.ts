@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MAXIMO_DE_VOLTAS, pensar, type EntradaDoCerebro } from "./cerebro";
+import { DETALHE_DA_FOTO, MAXIMO_DE_VOLTAS, pensar, type EntradaDoCerebro } from "./cerebro";
 
 type Resposta = { status?: number; corpo: unknown };
 
 function openaiFalsa(respostas: Resposta[]) {
-  const pedidos: { messages: { role: string }[]; tools?: unknown[] }[] = [];
+  const pedidos: { messages: { role: string; content?: unknown }[]; tools?: unknown[] }[] = [];
   const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
     pedidos.push(JSON.parse(String(init?.body)));
     const r = respostas.shift() ?? { corpo: { choices: [{ message: { content: "fim" } }] } };
@@ -103,5 +103,37 @@ describe("pensar", () => {
     ]);
     const r = await pensar(entrada({ fetchImpl }));
     expect(r.chamadas[0].resultado).toEqual({ erro: "Não consegui ler o pedido dessa ação." });
+  });
+
+  it("sem foto, o conteúdo do usuário continua texto puro", async () => {
+    const { fetchImpl, pedidos } = openaiFalsa([texto("ok")]);
+    await pensar(entrada({ fetchImpl, mensagem: "quem ligo hoje?" }));
+    expect(pedidos[0].messages.at(-1)).toEqual({ role: "user", content: "quem ligo hoje?" });
+  });
+
+  it("com foto: legenda e imagem em data URL na mensagem do usuário, e só nela", async () => {
+    const { fetchImpl, pedidos } = openaiFalsa([ferramenta("ajuda", {}), texto("Li a ficha.")]);
+    const registrar = vi.fn(async () => undefined);
+    const r = await pensar(
+      entrada({
+        fetchImpl,
+        registrar,
+        historico: [{ papel: "pessoa", texto: "[foto]", em: "" }],
+        mensagem: "cadastra esse",
+        imagem: { base64: "QUJD", mimeType: "image/png" },
+      }),
+    );
+    expect(r.ok).toBe(true);
+    expect(pedidos[0].messages[1]).toEqual({ role: "user", content: "[foto]" });
+    expect(pedidos[0].messages.at(-1)).toEqual({
+      role: "user",
+      content: [
+        { type: "text", text: "cadastra esse" },
+        { type: "image_url", image_url: { url: "data:image/png;base64,QUJD", detail: DETALHE_DA_FOTO } },
+      ],
+    });
+    // A segunda volta reenvia a mesma conversa (com a foto) e é contada de novo.
+    expect(JSON.stringify(pedidos[1].messages)).toContain("data:image/png;base64,QUJD");
+    expect(registrar).toHaveBeenCalledTimes(2);
   });
 });

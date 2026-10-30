@@ -29,7 +29,6 @@ describe("catálogo do número central", () => {
       const f = FERRAMENTAS.find((x) => x.nome === nome);
       expect(f && f.onda > ONDA_ATUAL, `ação ${nome} ainda não pode existir`).toBe(true);
     }
-    expect(Object.keys(TRATADORES.acoes)).toEqual([]);
   });
 
   it("a ajuda mostra o que já funciona e o que vem depois", () => {

@@ -21,6 +21,9 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    roda. Numa instância de corretor, mensagem cujo remetente é o número
    central sai com `ignored: "central"` antes da IA (senão as duas IAs
    conversam em laço) ([[crm-pelo-whatsapp-numero-central-com-ia]]).
+   Foto ao central (onda 1) é baixada pelo mesmo `baixarMidiaDoProvedor` do
+   áudio e vai ao cérebro como imagem; arquivo (`documentMessage`) não é
+   baixado ([[foto-no-numero-central]]).
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
    **Antes disso, o descarte de grupo** (`@g.us`, transmissão, status) sai com
    200 "ignored". Única exceção (27/10): `messages.upsert` não `fromMe` num

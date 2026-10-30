@@ -12590,3 +12590,18 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - `sw-painel.js` agora guarda dados por usuário e apaga ao sair/login/401; nunca conversas.
 - Nota: [[multi-ramo-portais-gestor-e-negocio-da-astro]].
 - 30/10/2026: /plataforma no desktop ganhou barra lateral (NavDaPlataforma.tsx); a linha de 8 botões sem flex-wrap vazava.
+
+## Foto no número central, onda 1 (30/10/2026)
+
+Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
+- Foto vai ao cérebro como `image_url` em data URL, `detail: "high"` (`low`
+  = 512 px, telefone de print ilegível). Nunca no histórico nem no registro:
+  `[foto] <legenda>`.
+- **`baixarMidiaDoProvedor` sem `mimetype` devolve `audio/ogg`**: o tipo da
+  foto sai dos primeiros bytes (JPEG/PNG/WEBP), teto 5 MB. `documentMessage`
+  não é baixado (onda 2).
+- `cadastrar_lead_da_foto` delega ao `cadastrar_lead` da Frente B; sem ele,
+  "ainda não sei".
+- A guarda de `ferramentas.test.ts` exigia `TRATADORES.acoes` vazio: quebrava
+  com qualquer tratador de onda 1, mesmo desligado. A linha saiu; o laço que
+  cobra `onda > ONDA_ATUAL` ficou.
