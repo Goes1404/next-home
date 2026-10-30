@@ -342,7 +342,13 @@ export async function enviarRespostaDoCentral(
 ): Promise<void> {
   const { instanceName, telefone } = destino;
   const mandar = async (textos: string[], arquivos: ArquivoDaResposta[]) => {
-    for (const texto of textos) await enviarMensagemWhatsapp({ instanceName, telefone, texto });
+    for (const texto of textos) {
+      const r = await enviarMensagemWhatsapp({ instanceName, telefone, texto });
+      // Resposta que não sai é silêncio para quem pediu (30/10/2026, primeiro
+      // dia no ar): o motivo do provedor tem de ficar no log. Só os 4 últimos
+      // dígitos do destino.
+      if (!r.enviado) console.warn("[central] resposta não saiu para …" + telefone.slice(-4) + ":", r.motivo, r.detalhe ?? "");
+    }
     for (const a of arquivos) {
       const r = await enviarMidiaWhatsapp({ instanceName, telefone, tipo: tipoNoProvedor(a), url: a.url });
       if (!r.enviado) console.warn("[central] arquivo não saiu:", r.motivo, r.detalhe ?? "");
