@@ -275,7 +275,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/crm/leadPeloCentral.ts": { categoria: "equipe", motivo: "escritas do central na ficha (cadastro, atualização, desfaz): toda leitura e escrita filtra grupo_id e, para corretor, o dono do lead" },
   "src/lib/agenda/agendaPorMensagem.ts": { categoria: "equipe", motivo: "central, onda 1: visita pedida por mensagem; o lead é lido no grupo de quem foi identificado (corretor: só os dele) antes de marcar, desmarcar ou desfazer; toda leitura filtra grupo_id" },
   "src/lib/anotacoes/anotacaoPessoal.ts": { categoria: "equipe", motivo: "central, onda 1: anotação pessoal do corretor identificado, gravada e apagada só com o grupo e o autor dele" },
-  "src/lib/central/webhook.ts": { categoria: "plataforma", motivo: "o central atende todos os grupos; toda leitura e escrita usa o corretor e o grupo de identificarRemetente, nunca o que a IA escreve (spec 4.2)" },
+  "src/lib/central/webhook.ts": { categoria: "plataforma", motivo: "o central atende todos os grupos; toda leitura e escrita usa o corretor e o grupo de identificarRemetente, nunca o que a IA escreve (spec 4.2). No grupo de WhatsApp (4.1, onda 2) lê os corretores ativos pelos números/lids dos participantes, de qualquer imobiliária, só para conferir que todos são de UMA (grupo.ts) e responder pelo grupo dela" },
   "src/lib/whatsapp/recusaPendente.ts": { categoria: "plataforma", motivo: "repete o logout do número recusado instância a instância; não lê conversa nem junta grupos" },
   "src/lib/whatsapp/listasVivas.ts": { categoria: "plataforma", motivo: "por lista: só leads do corretor dono dela" },
   "src/lib/whatsapp/quedaDoNumero.ts": { categoria: "plataforma", motivo: "protege instância a instância" },

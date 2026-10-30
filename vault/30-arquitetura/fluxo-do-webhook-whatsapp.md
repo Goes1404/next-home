@@ -29,6 +29,14 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    miniatura) para baixar a foto de documento de novo no "sim"; só a
    planilha é baixada na chegada
    ([[documentos-lembrete-e-planilha-pelo-central]]).
+   Grupo (`@g.us`) na instância do central (fase 2b, onda ≥ 2): vai para
+   `tratarMensagemDoGrupoNoCentral` (`src/lib/central/grupo.ts`) — só com
+   menção/citação ao central, só em grupo em que todo participante é
+   corretor ativo de UMA imobiliária com o recurso ligado (participantes da
+   Evolution em cache de 60 s); dado de cliente vai no privado de quem pediu
+   e o grupo ouve "Te mandei no privado". Onda < 2: `ignored:
+   "central_sem_mensagem"`, como antes
+   ([[numero-central-em-grupos-da-equipe]]).
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
    **Antes disso, o descarte de grupo** (`@g.us`, transmissão, status) sai com
    200 "ignored". Única exceção (27/10): `messages.upsert` não `fromMe` num

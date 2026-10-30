@@ -12641,6 +12641,21 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   existia (`resumo_hora`, 0121). `processarLembretesDeAnotacao` saiu da rota
   para `crm/lembretesDeAnotacao.ts`. Janela/teto do histórico em
   `central/historico.ts` (importar `conversa.ts` carrega todos os tratadores).
+- **Fase 2b, frente K (central em grupos da equipe), 30/10/2026** —
+  [[numero-central-em-grupos-da-equipe]]: `central/grupo.ts`, só com onda ≥ 2
+  (antes, grupo segue `central_sem_mensagem`). Responde só a menção
+  (`mentionedJid` com o número OU o `@lid` do central — o lid sai da lista de
+  participantes, pelo número do chip) ou a resposta a mensagem dele, e só se
+  TODO participante for corretor ativo de UMA imobiliária com o recurso
+  ligado; senão silêncio + `central_tentativas` motivo `grupo` (o CHECK da
+  0249 já aceitava). Participantes em cache de 60 s. Onde a resposta aparece:
+  regra única `respostaSoNoPrivado`, pela FERRAMENTA que rodou (anotada pela
+  conversa no `executar`, não pelo texto da IA); só ajuda, imóvel do catálogo,
+  simulação e recusas vão ao grupo; o resto vai ao `corretores.whatsapp` de
+  quem pediu, e o grupo ouve "Te mandei no privado.". No modo grupo o cérebro
+  não vê histórico nem proposta do privado (senão repetiria no grupo o que
+  foi dito a sós), sem boas-vindas e sem ler "sim". `route.ts` não mudou: o
+  desvio do central já vem antes do descarte de grupo.
 
 ## Suporte e contato da Astro (29/10/2026)
 

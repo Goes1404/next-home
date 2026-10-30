@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerMensagemDoCentral } from "./webhook";
+import { lerMensagemDeGrupoNoCentral, lerMensagemDoCentral } from "./webhook";
 
 const base = (data: object) => ({ event: "messages.upsert", data });
 
@@ -80,5 +80,47 @@ describe("lerMensagemDoCentral", () => {
   it("vazio ou sem id: nada a tratar", () => {
     expect(lerMensagemDoCentral(base({ key: { id: "D", remoteJid: "5511987654321@s.whatsapp.net" }, message: { conversation: "  " } }))).toBeNull();
     expect(lerMensagemDoCentral(base({ key: { remoteJid: "5511987654321@s.whatsapp.net" }, message: { conversation: "oi" } }))).toBeNull();
+  });
+});
+
+describe("lerMensagemDeGrupoNoCentral (4.1, onda 2)", () => {
+  const CENTRAL = "5511968671127@s.whatsapp.net";
+
+  it("texto com menção: o grupo, quem escreveu (lid e número) e os mencionados", () => {
+    const g = lerMensagemDeGrupoNoCentral(
+      base({
+        key: { id: "G1", remoteJid: "120363@g.us", participant: "999@lid", participantPn: "5511987654321@s.whatsapp.net" },
+        message: { extendedTextMessage: { text: "@5511968671127 como está o mês?", contextInfo: { mentionedJid: [CENTRAL] } } },
+      }),
+    );
+    expect(g).toMatchObject({
+      grupoJid: "120363@g.us",
+      autor: { telefone: "5511987654321", lid: "999@lid" },
+      mencionados: [CENTRAL],
+      citado: null,
+      mensagem: { mensagemId: "G1", tipo: "texto", texto: "@5511968671127 como está o mês?" },
+    });
+  });
+
+  it("mensagem temporária (embrulhada) e resposta a uma mensagem do central", () => {
+    const g = lerMensagemDeGrupoNoCentral(
+      base({
+        key: { id: "G2", remoteJid: "120363@g.us", participant: "5511987654321@s.whatsapp.net" },
+        message: {
+          ephemeralMessage: {
+            message: { extendedTextMessage: { text: "e amanhã?", contextInfo: { stanzaId: "X", participant: CENTRAL, quotedMessage: {} } } },
+          },
+        },
+      }),
+    );
+    expect(g).toMatchObject({ citado: CENTRAL, mencionados: [], mensagem: { texto: "e amanhã?" } });
+  });
+
+  it("o que o próprio central mandou, privado, transmissão e status não são mensagem de grupo", () => {
+    const msg = { message: { conversation: "oi" } };
+    expect(lerMensagemDeGrupoNoCentral(base({ key: { id: "A", remoteJid: "120363@g.us", fromMe: true }, ...msg }))).toBeNull();
+    expect(lerMensagemDeGrupoNoCentral(base({ key: { id: "A", remoteJid: "5511987654321@s.whatsapp.net" }, ...msg }))).toBeNull();
+    expect(lerMensagemDeGrupoNoCentral(base({ key: { id: "A", remoteJid: "status@broadcast" }, ...msg }))).toBeNull();
+    expect(lerMensagemDeGrupoNoCentral(base({ key: { id: "A", remoteJid: "123@broadcast" }, ...msg }))).toBeNull();
   });
 });

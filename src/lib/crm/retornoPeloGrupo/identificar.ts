@@ -83,7 +83,8 @@ const EMBRULHOS = [
   "documentWithCaptionMessage",
 ] as const;
 
-function desembrulhar(mensagem: unknown): Obj | null {
+// Exportada: o número central em grupos (`central/webhook.ts`) desembrulha igual.
+export function desembrulhar(mensagem: unknown): Obj | null {
   let atual = ehObjeto(mensagem) ? mensagem : null;
   for (let nivel = 0; atual && nivel < 3; nivel++) {
     const embrulho = EMBRULHOS.map((nome) => atual![nome]).find(

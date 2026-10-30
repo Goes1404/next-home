@@ -3,16 +3,25 @@ import "server-only";
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { baixarMidiaDoProvedor, enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
+import {
+  baixarMidiaDoProvedor,
+  enviarMensagemWhatsapp,
+  enviarMensagemWhatsappParaGrupo,
+  listarParticipantesDoGrupo,
+} from "@/lib/whatsapp/provider";
+import { numeroDoJid } from "@/lib/whatsapp/participantesDoGrupo";
+import { desembrulhar } from "@/lib/crm/retornoPeloGrupo/identificar";
 import { transcreverAudioWhatsapp } from "@/lib/whatsapp/audioTranscriber";
 import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { pensar } from "./cerebro";
-import { responderNoCentral, type Dependencias, type EstadoDoCentral, type MensagemRecebida } from "./conversa";
+import { responderNoCentral, responderNoGrupo, type Dependencias, type EstadoDoCentral, type MensagemRecebida } from "./conversa";
+import { tratarMensagemDoGrupoNoCentral, type DependenciasDoGrupo, type LinhaDaEquipe, type MensagemDeGrupo } from "./grupo";
 import { identificarRemetente, type OpcaoDeImobiliaria } from "./identificar";
 import { documentoDaMensagem, referenciaDaMensagem } from "./midia";
-import { esquecerCentral, lerCentral } from "./numeroDoCentral";
+import { esquecerCentral, lerCentral, type CentralDaPlataforma } from "./numeroDoCentral";
 import type { Proposta } from "./proposta";
+import { variantesDoTelefone } from "./telefone";
 import type { Json } from "@/lib/supabase/types";
 
 /** jsonb aceita o que for serializável; o tipo gerado não conhece as nossas formas. */
@@ -25,9 +34,10 @@ const comoJson = (v: unknown): Json => JSON.parse(JSON.stringify(v ?? null)) as 
  * a lógica de corretor: `resolverInstancia` não acharia o central (não é de
  * corretor) e a mensagem levaria 404.
  *
- * Trata `connection.update` (o estado do central) e mensagem privada nova.
- * Grupo e transmissão são ignorados nesta onda. O que o próprio central
- * manda volta como `fromMe` e também é ignorado.
+ * Trata `connection.update` (o estado do central), mensagem privada nova e,
+ * da onda 2 em diante, a menção ao central num grupo só da equipe
+ * (`grupo.ts`). Transmissão e status são sempre ignorados. O que o próprio
+ * central manda volta como `fromMe` e também é ignorado.
  */
 
 function segredoConfere(recebido: string, esperado: string): boolean {
@@ -69,7 +79,11 @@ export function lerMensagemDoCentral(payload: Payload): MensagemRecebida | null 
   const ehLid = /@lid$/i.test(jid);
   const telefone = ehLid ? numeroAlternativo(data) : jid.replace(/\D/g, "") || null;
   const lid = ehLid ? jid : null;
+  return conteudoDaMensagem(data, mensagemId, telefone, lid);
+}
 
+/** Texto, áudio, foto ou arquivo: o mesmo para o privado e para o grupo. */
+function conteudoDaMensagem(data: Payload, mensagemId: string, telefone: string | null, lid: string | null): MensagemRecebida | null {
   const m = data.message ?? {};
   // Arquivo com legenda chega embrulhado (`documentWithCaptionMessage`).
   const doc = documentoDaMensagem(m);
@@ -92,6 +106,46 @@ export function lerMensagemDoCentral(payload: Payload): MensagemRecebida | null 
     return { mensagemId, telefone, lid, tipo, texto, documento: true, arquivo, ...midia };
   }
   return { mensagemId, telefone, lid, tipo, texto, ...midia };
+}
+
+/**
+ * A mensagem de GRUPO que chegou ao central (4.1), ou `null` quando não é
+ * para tratar (não é grupo, é do próprio central, sem id, vazia). Quem
+ * escreveu vem de `participant`/`participantPn`/`participantAlt`/`senderPn`,
+ * como no retorno pelo grupo; a menção, de todo `contextInfo` (a Evolution
+ * copia para `data.contextInfo` em algumas versões; o original mora no tipo
+ * da mensagem). "Mensagens temporárias" chegam embrulhadas.
+ */
+export function lerMensagemDeGrupoNoCentral(payload: Payload): MensagemDeGrupo | null {
+  const data = payload.data ?? {};
+  const key = data.key ?? {};
+  const grupoJid: string = key.remoteJid || payload.remoteJid || "";
+  if (!/@g\.us$/i.test(grupoJid)) return null;
+  if (key.fromMe || payload.fromMe) return null;
+  const mensagemId: string | null = key.id || payload.messageId || null;
+  if (!mensagemId) return null;
+
+  const ids = [key.participant, key.participantPn, key.participantAlt, key.senderPn, data.participant, data.senderPn].filter(
+    (v): v is string => typeof v === "string" && v.trim() !== "",
+  );
+  const telefone = ids.map(numeroDoJid).find((n): n is string => n !== null) ?? null;
+  const lid = ids.find((i) => /^\d+@lid$/i.test(i.trim()))?.trim() ?? null;
+
+  const message: Payload = desembrulhar(data.message) ?? {};
+  const contextos = [data.contextInfo, message.contextInfo, ...Object.values(message).map((v) => (v as Payload | null)?.contextInfo)].filter(
+    (c): c is Payload => typeof c === "object" && c !== null,
+  );
+  const mencionados = [
+    ...new Set(contextos.flatMap((c) => (Array.isArray(c.mentionedJid) ? c.mentionedJid : [])).filter((j): j is string => typeof j === "string")),
+  ];
+  // Resposta a uma mensagem: o autor dela (o central, quando citam o que ele disse).
+  const citado =
+    contextos.map((c) => (c.stanzaId || c.quotedMessage ? c.participant : null)).find((p): p is string => typeof p === "string" && p !== "") ??
+    null;
+
+  const mensagem = conteudoDaMensagem({ ...data, message }, mensagemId, telefone, lid);
+  if (!mensagem) return null;
+  return { grupoJid, mensagem, autor: { telefone, lid }, mencionados, citado };
 }
 
 function dependenciasReais(instanceName: string, payload: Payload): Dependencias {
@@ -217,6 +271,64 @@ async function registrarConexaoDoCentral(instanceName: string, estado: string): 
   esquecerCentral();
 }
 
+/**
+ * Os corretores ATIVOS que têm algum destes números ou lids, de qualquer
+ * imobiliária: é o que mostra que o grupo tem gente de outra. Erro de
+ * leitura é `null`, e o central não fala (falha fechada).
+ */
+async function lerEquipePorContato(e: { numeros: string[]; lids: string[] }): Promise<LinhaDaEquipe[] | null> {
+  const variantes = [...new Set(e.numeros.flatMap(variantesDoTelefone))];
+  const lids = e.lids.filter((l) => /^\d+@lid$/i.test(l));
+  const filtros = [
+    ...(variantes.length > 0 ? [`whatsapp.in.(${variantes.join(",")})`] : []),
+    ...(lids.length > 0 ? [`whatsapp_lid.in.(${lids.join(",")})`] : []),
+  ];
+  if (filtros.length === 0) return [];
+  const supabase = createServiceClient();
+  const { data: corretores, error } = await supabase
+    .from("corretores")
+    .select("id, nome, papel, grupo_id, whatsapp, whatsapp_lid")
+    .or(filtros.join(","))
+    .eq("ativo", true);
+  if (error) return null;
+  if (!corretores || corretores.length === 0) return [];
+  const { data: grupos, error: erroDosGrupos } = await supabase
+    .from("grupos")
+    .select("id, nome, central_whatsapp_ativo")
+    .in("id", [...new Set(corretores.map((c) => c.grupo_id))]);
+  if (erroDosGrupos) return null;
+  const grupoPorId = new Map((grupos ?? []).map((g) => [g.id, g]));
+  return corretores.map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    papel: c.papel,
+    grupoId: c.grupo_id,
+    imobiliaria: grupoPorId.get(c.grupo_id)?.nome ?? "",
+    whatsapp: c.whatsapp,
+    whatsappLid: c.whatsapp_lid,
+    ligado: grupoPorId.get(c.grupo_id)?.central_whatsapp_ativo === true,
+  }));
+}
+
+function dependenciasDoGrupo(central: CentralDaPlataforma, grupoJid: string, payload: Payload): DependenciasDoGrupo {
+  const daConversa = dependenciasReais(central.instanceName, payload);
+  return {
+    telefoneDoCentral: central.telefone,
+    jaTratada: daConversa.jaTratada,
+    participantes: async (jid) => {
+      const r = await listarParticipantesDoGrupo(central.instanceName, jid);
+      return r.erro ? null : r.participantes;
+    },
+    equipe: lerEquipePorContato,
+    registrarTentativa: daConversa.registrarTentativa,
+    // Quem escreveu já foi achado entre os participantes, na imobiliária do
+    // grupo: a conversa não procura de novo (nem pergunta "por qual imobiliária").
+    responder: (m, remetente) => responderNoGrupo(m, { ...daConversa, identificar: async () => remetente }),
+    enviarNoGrupo: async (texto) => (await enviarMensagemWhatsappParaGrupo({ instanceName: central.instanceName, grupoJid, texto })).enviado,
+    enviarNoPrivado: async (telefone, texto) => (await enviarMensagemWhatsapp({ instanceName: central.instanceName, telefone, texto })).enviado,
+  };
+}
+
 export async function tratarWebhookDoCentral(req: NextRequest, payload: Payload): Promise<Response> {
   if (!autenticado(req)) return NextResponse.json({ ok: false, error: "Não autorizado." }, { status: 401 });
   const central = await lerCentral();
@@ -229,6 +341,17 @@ export async function tratarWebhookDoCentral(req: NextRequest, payload: Payload)
     return NextResponse.json({ ok: true, action: "central_conexao", estado });
   }
   if (evento && evento !== "messages.upsert") return NextResponse.json({ ok: true, ignored: evento });
+
+  // Grupo (4.1): só com a onda 2, e a regra inteira mora em `grupo.ts`.
+  // Antes dela, a mesma resposta de sempre para grupo.
+  const jid: string = payload.data?.key?.remoteJid || payload.remoteJid || "";
+  if (/@g\.us$/i.test(jid)) {
+    const decisao = await tratarMensagemDoGrupoNoCentral(lerMensagemDeGrupoNoCentral(payload), dependenciasDoGrupo(central, jid, payload));
+    if (decisao.tipo === "ignorado") {
+      return NextResponse.json({ ok: true, ignored: decisao.motivo === "onda" ? "central_sem_mensagem" : `grupo:${decisao.motivo}` });
+    }
+    return NextResponse.json({ ok: true, action: "central_grupo", noGrupo: decisao.noGrupo, noPrivado: decisao.noPrivado });
+  }
 
   const mensagem = lerMensagemDoCentral(payload);
   if (!mensagem) return NextResponse.json({ ok: true, ignored: "central_sem_mensagem" });

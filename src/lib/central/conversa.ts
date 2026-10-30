@@ -2,6 +2,7 @@ import { CAMBIO_PADRAO_USD_BRL } from "@/lib/planos/custoDaIa";
 import type { ChamadaFeita, EntradaDoCerebro, ImagemDoCerebro, MensagemDoHistorico, ResultadoDoCerebro } from "./cerebro";
 import { criarExecutor, executarProposta, TRATADORES, type ContextoDoCentral, type FeitoDesfazivel, type Tratadores } from "./executar";
 import { declaracoesPara, EXEMPLOS_POR_ONDA, ferramenta, ONDA_ATUAL } from "./ferramentas";
+import { respostaSoNoPrivado } from "./grupo";
 import { aparar } from "./historico";
 import type { OpcaoDeImobiliaria, Remetente } from "./identificar";
 import {
@@ -28,6 +29,12 @@ import { hashDoTelefone, telefoneCanonico } from "./telefone";
  * imagem; com a onda desligada, "ainda não sei". A planilha (onda 2) não
  * passa pelo cérebro: o pedido é óbvio (importar), e a contagem sai do
  * tratador direto para a proposta.
+ *
+ * No grupo da equipe (4.1, fase 2b), a mesma conversa com quatro diferenças:
+ * sem boas-vindas, sem "trocar de imobiliária", sem ler o "sim"/"não" da
+ * proposta pendente (ele acontece no privado), e o cérebro não vê o
+ * histórico nem a proposta do privado. Quem decide se a resposta pode
+ * aparecer no grupo é `respostaSoNoPrivado` (`grupo.ts`).
  */
 
 // A janela e o teto do histórico moram em `historico.ts`: os avisos
@@ -82,7 +89,7 @@ export type Dependencias = {
   agora: () => Date;
   identificar: (e: { telefone: string | null; lid: string | null }) => Promise<Remetente>;
   jaTratada: (mensagemId: string) => Promise<boolean>;
-  registrarTentativa: (e: { telefoneHash: string; motivo: "desconhecido" | "inativo" | "desligado"; mensagemId: string }) => Promise<void>;
+  registrarTentativa: (e: { telefoneHash: string; motivo: "desconhecido" | "inativo" | "desligado" | "grupo"; mensagemId: string }) => Promise<void>;
   lerEscolhaPendente: (telefone: string) => Promise<OpcaoDeImobiliaria[] | null>;
   guardarEscolha: (e: { telefone: string; corretorId: string | null; opcoes: OpcaoDeImobiliaria[] | null }) => Promise<void>;
   cotaEsgotada: (grupoId: string) => Promise<boolean>;
@@ -102,6 +109,12 @@ export type Dependencias = {
   /** A onda em produção; os testes sobem para exercitar ações. */
   onda?: number;
 };
+
+/**
+ * O que responder e onde pode aparecer. `soNoPrivado` sai da regra única de
+ * `grupo.ts`; no privado tanto faz, no grupo decide.
+ */
+export type RespostaDoCentral = { textos: string[]; soNoPrivado: boolean };
 
 export type MensagemRecebida = {
   mensagemId: string;
@@ -311,9 +324,25 @@ function ultimaFoto(historico: MensagemDoHistorico[]): ReferenciaDaMidia | null 
 }
 
 export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias): Promise<string[]> {
+  return (await responder(m, deps, false)).textos;
+}
+
+/**
+ * A mensagem que mencionou o central num grupo só da equipe (4.1). Quem
+ * escreveu já vem identificado em `deps.identificar`, pela imobiliária do
+ * grupo; o webhook manda no grupo ou no privado conforme `soNoPrivado`.
+ */
+export async function responderNoGrupo(m: MensagemRecebida, deps: Dependencias): Promise<RespostaDoCentral> {
+  return responder(m, deps, true);
+}
+
+/** Resposta sem dado de cliente: ajuda, recusa, cota, "não ouvi". */
+const geral = (textos: string[]): RespostaDoCentral => ({ textos, soNoPrivado: false });
+
+async function responder(m: MensagemRecebida, deps: Dependencias, noGrupo: boolean): Promise<RespostaDoCentral> {
   const agora = deps.agora();
   const inicio = agora.getTime();
-  if (await deps.jaTratada(m.mensagemId)) return [];
+  if (await deps.jaTratada(m.mensagemId)) return geral([]);
 
   const remetente = await deps.identificar({ telefone: m.telefone, lid: m.lid });
 
@@ -324,7 +353,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       motivo: remetente.tipo,
       mensagemId: m.mensagemId,
     });
-    return [];
+    return geral([]);
   }
 
   if (remetente.tipo === "escolher") {
@@ -333,10 +362,10 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     const escolhida = pendentes && n ? pendentes[Number(n) - 1] : undefined;
     if (escolhida && remetente.opcoes.some((o) => o.corretorId === escolhida.corretorId)) {
       await deps.guardarEscolha({ telefone: remetente.telefone, corretorId: escolhida.corretorId, opcoes: null });
-      return [`Pronto, agora você está falando pela ${escolhida.nome}. Para mudar, escreva "trocar de imobiliária". Pode pedir.`];
+      return geral([`Pronto, agora você está falando pela ${escolhida.nome}. Para mudar, escreva "trocar de imobiliária". Pode pedir.`]);
     }
     await deps.guardarEscolha({ telefone: remetente.telefone, corretorId: null, opcoes: remetente.opcoes });
-    return [textoDaEscolha(remetente.opcoes)];
+    return geral([textoDaEscolha(remetente.opcoes)]);
   }
 
   const ctx: ContextoDoCentral = {
@@ -363,26 +392,29 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       proposta: paraORegistro(r.proposta ?? null),
     });
 
-  if (m.tipo === "texto" && TROCAR.test(m.texto) && m.telefone) {
+  // No grupo, a imobiliária é a do grupo: não há escolha a trocar.
+  if (!noGrupo && m.tipo === "texto" && TROCAR.test(m.texto) && m.telefone) {
     await deps.guardarEscolha({ telefone: telefoneCanonico(m.telefone), corretorId: null, opcoes: null });
     await registro({ resultado: TEXTOS.trocar }, m.texto);
-    return [TEXTOS.trocar];
+    return geral([TEXTOS.trocar]);
   }
 
   if (await deps.cotaEsgotada(ctx.grupoId)) {
     await registro({ resultado: TEXTOS.cota, erro: "cota" }, m.tipo === "texto" ? m.texto : null);
-    return [TEXTOS.cota];
+    return geral([TEXTOS.cota]);
   }
 
   const estado = await deps.lerEstado(ctx.corretorId);
   const saida: string[] = [];
-  if (!estado.boasVindasEm) {
+  // As boas-vindas são pessoais: no grupo não vão (e ficam para o primeiro
+  // "oi" no privado).
+  if (!estado.boasVindasEm && !noGrupo) {
     saida.push(textoDeBoasVindas(ctx));
     estado.boasVindasEm = agora.toISOString();
     if (m.tipo === "texto" && SAUDACAO.test(m.texto.trim())) {
       await deps.salvarEstado(ctx.corretorId, estado);
       await registro({ resultado: "boas-vindas" }, m.texto);
-      return saida;
+      return geral(saida);
     }
   }
 
@@ -398,15 +430,17 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     if (lida.tipo === "recusa") {
       await deps.salvarEstado(ctx.corretorId, estado);
       await registro({ resultado: lida.texto, erro: lida.erro }, legenda || null);
-      return [...saida, lida.texto];
+      return geral([...saida, lida.texto]);
     }
     // O arquivo vai só no contexto desta chamada; o tratador devolve as
     // linhas lidas nos `dados` (chave "_"), nunca o arquivo.
     const executor = criarExecutor({ ...ctx, midia: lida.planilha }, tratadores, deps.onda ?? ONDA_ATUAL);
     const r = await executor.executar("importar_planilha", {});
-    // Proposta nova substitui a antiga; sem proposta, a antiga cai (outro pedido).
+    // Proposta nova substitui a antiga; sem proposta, a antiga cai (outro
+    // pedido). No grupo a pendente do privado fica: o pedido do grupo não
+    // é resposta a ela.
     const proposta = executor.itensPropostos.length > 0 ? criarProposta(executor.itensPropostos, agora) : null;
-    estado.proposta = proposta;
+    if (proposta || !noGrupo) estado.proposta = proposta;
     const resposta = proposta ? textoDaProposta(proposta) : textoDoResultado(r);
     const pedido = `[planilha] ${lida.planilha.nome}${legenda ? ` ${legenda}` : ""}`;
     estado.historico = aparar(
@@ -415,7 +449,8 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     );
     await deps.salvarEstado(ctx.corretorId, estado);
     await registro({ ferramentas: [{ nome: "importar_planilha", argumentos: {} }], proposta, resultado: resposta }, legenda || null);
-    return [...saida, resposta];
+    const onda = deps.onda ?? ONDA_ATUAL;
+    return { textos: [...saida, resposta], soNoPrivado: respostaSoNoPrivado({ ferramentas: ["importar_planilha"], proposta: Boolean(proposta), onda }) };
   }
 
   if (m.tipo === "imagem") {
@@ -423,7 +458,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     if (lida.tipo === "recusa") {
       await deps.salvarEstado(ctx.corretorId, estado);
       await registro({ resultado: lida.texto, erro: lida.erro }, legenda || null);
-      return [...saida, lida.texto];
+      return geral([...saida, lida.texto]);
     }
     imagem = lida.imagem;
   }
@@ -434,7 +469,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     if (!transcrito) {
       await deps.salvarEstado(ctx.corretorId, estado);
       await registro({ resultado: TEXTOS.semAudio, erro: "transcricao" }, null);
-      return [...saida, TEXTOS.semAudio];
+      return geral([...saida, TEXTOS.semAudio]);
     }
     texto = transcrito;
   }
@@ -442,7 +477,8 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
   // A proposta pendente: "sim" roda, "não" cancela, venceu avisa. O resto vai
   // ao cérebro com a proposta no contexto. Foto é sempre pedido novo: uma
   // legenda "sim" não confirma a proposta de antes sem ninguém ter lido a foto.
-  if (estado.proposta && !imagem) {
+  // No grupo também não: o "sim" é no privado, onde a proposta foi mostrada.
+  if (estado.proposta && !imagem && !noGrupo) {
     const leitura = lerRespostaAProposta(estado.proposta, texto, agora);
     if (leitura.tipo !== "outro") {
       const proposta = estado.proposta;
@@ -468,7 +504,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       );
       await deps.salvarEstado(ctx.corretorId, estado);
       await registro({ proposta, confirmado: leitura.tipo === "confirmar", resultado: resposta, desfazer }, texto);
-      return [...saida, resposta];
+      return { textos: [...saida, resposta], soNoPrivado: true };
     }
   }
 
@@ -479,14 +515,19 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
 
   // Documento (onda 2): a foto desta mensagem, ou a última do histórico, vai
   // ao tratador pela REFERÊNCIA (para anexar depois do "sim"), nunca pela IA.
-  const historico = aparar(estado.historico, agora);
+  // No grupo, o cérebro não vê o privado (histórico e proposta pendente): uma
+  // resposta sem ferramenta não pode repetir ali o que foi dito a sós.
+  const historico = noGrupo ? [] : aparar(estado.historico, agora);
   const fotoDoPedido = documentos ? (imagem ? (m.midia ?? null) : ultimaFoto(historico)) : null;
   const midia: MidiaDoPedido | undefined = fotoDoPedido
     ? { tipo: "foto", referencia: fotoDoPedido, dica: (imagem ? legenda : texto).slice(0, 300) }
     : undefined;
   const executor = criarExecutor(midia ? { ...ctx, midia } : ctx, tratadores, deps.onda ?? ONDA_ATUAL);
+  // O que rodou de fato, anotado aqui e não pelo relato do cérebro: é o que
+  // decide se a resposta pode aparecer no grupo.
+  const usadas: string[] = [];
   const resultado = await deps.pensar({
-    sistema: montarSistema(ctx, agora, propostaNoContexto(estado.proposta, agora), Boolean(imagem), {
+    sistema: montarSistema(ctx, agora, noGrupo ? null : propostaNoContexto(estado.proposta, agora), Boolean(imagem), {
       documentos,
       fotoRecente: Boolean(midia) && !imagem,
     }),
@@ -494,7 +535,10 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
     mensagem: imagem ? legenda || SEM_LEGENDA : texto,
     ...(imagem ? { imagem } : {}),
     ferramentas: declaracoesPara(ctx.papel),
-    executar: executor.executar,
+    executar: (nome, argumentos) => {
+      usadas.push(nome);
+      return executor.executar(nome, argumentos);
+    },
     quemPaga: { corretorId: ctx.corretorId, grupoId: ctx.grupoId },
   });
   const ferramentas = resultado.chamadas.map((c: ChamadaFeita) => ({ nome: c.nome, argumentos: c.argumentos }));
@@ -505,12 +549,13 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       { ferramentas, resultado: TEXTOS.indisponivel, erro: resultado.motivo, custoCentavos: centavos(resultado.custoUsd) },
       noRegistro,
     );
-    return [...saida, TEXTOS.indisponivel];
+    return geral([...saida, TEXTOS.indisponivel]);
   }
 
   // Proposta nova substitui a antiga (correção); sem proposta, a antiga cai.
+  // No grupo, sem proposta nova, a pendente do privado fica como estava.
   const proposta = executor.itensPropostos.length > 0 ? criarProposta(executor.itensPropostos, agora) : null;
-  estado.proposta = proposta;
+  if (proposta || !noGrupo) estado.proposta = proposta;
   const resposta = proposta ? textoDaProposta(proposta) : resultado.texto;
   // A referência da foto fica na fala da pessoa (só com a onda 2), para o
   // "é do João" da próxima mensagem; o modelo só lê `texto`.
@@ -523,5 +568,12 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
   estado.historico = aparar([...estado.historico, daPessoa, { papel: "central", texto: resposta, em: agora.toISOString() }], agora);
   await deps.salvarEstado(ctx.corretorId, estado);
   await registro({ ferramentas, proposta, resultado: resposta, custoCentavos: centavos(resultado.custoUsd) }, noRegistro);
-  return [...saida, resposta];
+  return {
+    textos: [...saida, resposta],
+    soNoPrivado: respostaSoNoPrivado({
+      ferramentas: [...usadas, ...ferramentas.map((f) => f.nome)],
+      proposta: Boolean(proposta),
+      onda: deps.onda ?? ONDA_ATUAL,
+    }),
+  };
 }
