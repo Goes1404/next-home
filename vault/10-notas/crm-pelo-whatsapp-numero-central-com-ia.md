@@ -7,6 +7,7 @@ status: seedling
 custou: medio
 codigo:
   - docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md
+  - docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fundacao.md
   - src/lib/agenda/comandos/
   - src/lib/crm/retornoPeloGrupo/
 fonte: conversa de desenho com o dono, 30/10/2026 (skill doc-coauthoring, dois testes com leitor sem contexto)
@@ -17,6 +18,7 @@ summary: Um número de WhatsApp da plataforma (11 96867-1127) com uma IA que dei
 # CRM pelo WhatsApp — o número central com IA
 
 Desenho completo: `docs/superpowers/specs/2026-10-30-crm-pelo-whatsapp-design.md`.
+Plano da onda 0: `docs/superpowers/plans/2026-10-30-crm-pelo-whatsapp-onda-0-fundacao.md`.
 
 ## Decisões do dono
 
