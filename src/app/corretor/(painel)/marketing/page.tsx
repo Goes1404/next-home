@@ -6,7 +6,7 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { getCorretorLogado } from "@/lib/corretorSessao";
 import { getMinhasImagens, getTetoDeHoje } from "@/lib/imagens/galeria";
 import { getSaldo } from "@/lib/video/fila";
-import { getEmpreendimentosDoPainel } from "@/lib/imoveis/catalogoDoPainel";
+import { getCatalogoResumidoDoPainel, type ImovelResumido } from "@/lib/imoveis/catalogoDoPainel";
 import { lerEnderecoDoCliente } from "@/lib/marcaDoCrm/ler";
 import { linkDeIndicacao } from "@/lib/social/linkDeIndicacao";
 import { temModulo } from "@/lib/ramos/ramos";
@@ -44,17 +44,26 @@ export default async function PaginaMarketing() {
 
   // Sem catálogo de imóveis no ramo (30/10/2026, revisão), nem lê o catálogo.
   const comCatalogo = temModulo(corretor.ramo, "catalogoDeImoveis");
-  const [imagens, teto, catalogo, saldoVideo] = await Promise.all([
+  const [imagens, teto, catalogo, saldoVideo, enderecoDoCliente] = await Promise.all([
     getMinhasImagens(),
     getTetoDeHoje(corretor.id),
-    comCatalogo ? getEmpreendimentosDoPainel() : Promise.resolve([] as Awaited<ReturnType<typeof getEmpreendimentosDoPainel>>),
+    // O catálogo RESUMIDO (30/10/2026): esta tela só conta e lista nomes, e
+    // o completo trazia tipologias, mídias e unidades de todos os imóveis.
+    comCatalogo ? getCatalogoResumidoDoPainel() : Promise.resolve([] as ImovelResumido[]),
     getSaldo(corretor.id),
+    // Em paralelo com o resto: antes era um `await` no meio do JSX, depois
+    // de todas as leituras acima.
+    lerEnderecoDoCliente(corretor.grupoId),
   ]);
 
   const publicados = catalogo.filter((i) => i.publicado !== false);
-  // Só imóvel com foto vira peça. Prometer o contrário é a mesma falha de
-  // botão que não funciona: o corretor clica e descobre que não dava.
-  const comFoto = publicados.filter((i) => i.capa?.url || i.galeria[0]?.url);
+  // "Só imóvel com foto vira peça": o filtro de antes era
+  // `i.capa?.url || i.galeria[0]?.url`, e `capa` NUNCA vem vazia —
+  // `mapEmpreendimento` põe a logo (`CAPA_PADRAO`) no lugar da foto que
+  // falta. Na prática ele deixava passar todo publicado, e é isso que se
+  // mantém aqui, sem a consulta pesada que só servia a esse filtro. Contar
+  // de verdade quem tem foto é decisão de produto (muda os números da tela).
+  const comFoto = publicados;
 
   return (
     <div className="space-y-6">
@@ -74,7 +83,7 @@ export default async function PaginaMarketing() {
         }))}
         imoveisProntos={comFoto.length}
         imoveisTotal={publicados.length}
-        linkDeIndicacao={linkDeIndicacao(corretor.slug, await lerEnderecoDoCliente(corretor.grupoId))}
+        linkDeIndicacao={linkDeIndicacao(corretor.slug, enderecoDoCliente)}
         temSlug={Boolean(corretor.slug)}
         imoveisParaCarrossel={comFoto.slice(0, 6).map((i) => ({
           slug: i.slug,

@@ -128,6 +128,33 @@ const nextConfig: NextConfig = {
     // Morph da capa do card para o hero do empreendimento. Degrada sozinho
     // em navegador sem View Transitions API: a navegação só não anima.
     viewTransition: true,
+
+    /*
+     * Voltar a uma seção do painel visitada há menos de 30 s não vai ao
+     * servidor (30/10/2026, "ainda está muito devagar pra trocar de página").
+     * Todo o painel é dinâmico (cookie no layout raiz), e o padrão do Next 16
+     * para página dinâmica é 0 s: cada toque no menu era uma ida a iad1 e
+     * várias ao banco em ca-central-1, mesmo para a tela de 10 s atrás.
+     *
+     * O que continua fresco, por construção do roteador (conferido em
+     * `server-action-reducer.js`/`refresh-reducer.js` do 16.2): toda Server
+     * Action que chama `revalidatePath`/`revalidateTag` e todo
+     * `router.refresh()` invalidam este cache INTEIRO, de todas as rotas.
+     * O painel não grava nada pelo supabase-js do navegador, então toda
+     * escrita da própria pessoa passa por esse caminho.
+     *
+     * O que pode chegar até 30 s atrasado ao VOLTAR para uma tela: o que
+     * mudou por FORA (lead novo do webhook, mensagem que chegou, colega que
+     * mexeu). Conversas e a gaveta de Pessoas têm polling próprio; o resto
+     * é tela de trabalho em que meio minuto não muda decisão. Voltar com o
+     * botão do aparelho já reusava a tela sem limite de tempo antes disto.
+     *
+     * Não mexe em `static` (prefetch completo, 5 min): ninguém aqui pede
+     * `prefetch={true}`, e por isso nenhum dado do painel fica 5 min velho.
+     */
+    staleTimes: {
+      dynamic: 30,
+    },
   },
 
   async redirects() {

@@ -24,10 +24,30 @@ type Contadores = {
 
 let atual: Contadores | null = null;
 let pedidoDaRota: string | null = null;
+let adiado: ReturnType<typeof setTimeout> | null = null;
 const ouvintes = new Set<() => void>();
+
+/**
+ * Quanto o pedido espera depois de a rota mudar (30/10/2026). O efeito roda
+ * no instante em que a tela nova é montada — com o esqueleto na tela e o
+ * conteúdo da página ainda chegando. Pedir ali punha uma segunda função e
+ * quatro contagens no banco disputando com a própria navegação, no 4G do
+ * celular. Esperando, o conteúdo chega primeiro; e quem toca três seções
+ * seguidas gera UM pedido, o da última, em vez de três.
+ */
+export const ESPERA_DOS_CONTADORES_MS = 1200;
 
 function avisar() {
   for (const ouvir of ouvintes) ouvir();
+}
+
+function agendar(rota: string) {
+  if (pedidoDaRota === rota) return;
+  if (adiado) clearTimeout(adiado);
+  adiado = setTimeout(() => {
+    adiado = null;
+    buscar(rota);
+  }, ESPERA_DOS_CONTADORES_MS);
 }
 
 function buscar(rota: string) {
@@ -71,7 +91,7 @@ export function marcasDosContadores(c: Contadores | null): Record<string, MarcaD
 export function useContadoresDoMenu(): Record<string, MarcaDoMenu> {
   const rota = usePathname();
   useEffect(() => {
-    if (rota) buscar(rota);
+    if (rota) agendar(rota);
   }, [rota]);
   const dados = useSyncExternalStore(
     assinar,

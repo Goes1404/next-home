@@ -85,10 +85,15 @@ export default async function PainelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [corretor, guardados, senhaVencida] = await Promise.all([
+  // A marca do grupo sai na mesma leva (30/10/2026): ela só depende do
+  // corretor (o mesmo `getCorretorLogado`, deduplicado pelo `cache()`), e
+  // esperava em série o termo de adesão abaixo. Num redirect ela só é
+  // descartada — a leitura nunca lança.
+  const [corretor, guardados, senhaVencida, marca] = await Promise.all([
     getCorretorLogado(),
     cookies(),
     senhaDaSessaoVencida(),
+    marcaDoPainel(),
   ]);
   // Senha com mais de 90 dias (29/10/2026): troca antes de qualquer tela.
   // Lido do JWT, sem ida ao Auth; o login já confere, isto pega quem nunca sai.
@@ -123,7 +128,6 @@ export default async function PainelLayout({
       redirect(CAMINHO_DO_TERMO_DE_ADESAO);
     }
   }
-  const marca = await marcaDoPainel();
   const ehGestor = corretor?.papel === "gestor";
   // Sem sessão o painel mostra a tela de conta sem vínculo; o menu segue o
   // padrão de antes (imobiliária), que só esconde o que já escondia.
@@ -241,12 +245,22 @@ export default async function PainelLayout({
             em toda tela. Ela devolve `null` no caminho feliz, que é quase
             sempre (ver FaixaConexao).
           */}
-          <FaixaConexao corretorId={corretor.id} />
+          {/* As três faixas em Suspense (30/10/2026), como a da cobrança e a
+              dos avisos: são `async` e leem o banco, e sem fronteira o painel
+              inteiro (cabeçalho, menu, esqueleto) esperava a mais lenta
+              delas a cada abertura do app. Quase sempre devolvem `null`. */}
+          <Suspense fallback={null}>
+            <FaixaConexao corretorId={corretor.id} />
+          </Suspense>
           {/* A cota de respostas da IA do grupo (fase 2B): gestor a partir de
               80%, todos quando acaba. `null` quase sempre. */}
-          <FaixaCotaDaIa />
+          <Suspense fallback={null}>
+            <FaixaCotaDaIa />
+          </Suspense>
           {/* Artes, vídeos e mensagens de lista do plano (limites do plano): idem. */}
-          <FaixaLimitesDoPlano />
+          <Suspense fallback={null}>
+            <FaixaLimitesDoPlano />
+          </Suspense>
           {/* A mensalidade do grupo (fase 2C): vencida ou em atraso, para
               todos. `null` com a cobrança em dia ou isenta. Em Suspense
               (0241): o botão do gestor consulta o Asaas, e a tela não espera. */}
