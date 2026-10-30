@@ -160,3 +160,4 @@ F0–F6.
 - [[pareamento-depois-de-401-recomeca-a-instancia]] ⚠️ número tirado da conta pelo WhatsApp: toda reconexão dava 401; instância em close é apagada e recriada antes do código, e a tela avisa a recusa (27/10)
 - [[conta-sem-vinculo-tem-botao-de-sair]] — login sem cadastro de corretor ficava preso em "Conta ainda não vinculada"; o cartão ganhou o próprio Sair (29/10)
 - [[central-le-sem-sessao-e-sem-rls]] ⚠️ número central lê pela chave de serviço: reaproveitar sem conferir traria sugestões de todos os grupos (fila) e a conversa alheia ao gestor (resumo do lead); miolo `montarFilaDeTrabalho` (30/10)
+- [[relatorios-pelo-numero-central]] ⚠️ relatórios do central (onda 2, frente G): mesma conta das telas, leituras com recorte (`lerVendas`, `lerMeta`, `calcularRitmoDoCorretor`, `resultadosDoMes`); `taxas_da_equipe` e `ranking_vgv` recusam quem não tem sessão (30/10)

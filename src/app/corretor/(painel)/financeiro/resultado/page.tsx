@@ -3,8 +3,8 @@ import Link from "next/link";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { getVendas } from "@/lib/financeiro/dados";
 import { getLancamentosPagos } from "@/lib/financeiro/caixaDados";
-import { movimentosDo, somarMeses } from "@/lib/financeiro/caixa";
-import { lerMes, mesesAte, resultadoDoMes, somarResultados, type ResultadoDoMes } from "@/lib/financeiro/resultado";
+import { somarMeses } from "@/lib/financeiro/caixa";
+import { janelaDoResultado, lerMes, resultadosDoMes, type ResultadoDoMes } from "@/lib/financeiro/resultado";
 import { nomeDoMes } from "@/lib/financeiro/periodo";
 import { formatarReais, hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { CabecalhoDeTela } from "../../_componentes/CabecalhoDeTela";
@@ -119,9 +119,7 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
   );
 
   // Doze meses até o escolhido, e o ano dele inteiro para o acumulado.
-  const meses = mesesAte(mes, 12);
-  const desde = `${meses[0] < `${mes.slice(0, 4)}-01` ? meses[0] : `${mes.slice(0, 4)}-01`}-01`;
-  const ate = `${somarMeses(`${mes}-01`, 1).slice(0, 7)}-01`;
+  const { desde, ate } = janelaDoResultado(mes);
 
   const [leitura, leituraVendas] = await Promise.all([getLancamentosPagos(desde, ate), getVendas()]);
   if (!leitura.ok) {
@@ -137,18 +135,12 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
     );
   }
 
-  const movimentos = movimentosDo(
-    leitura.lancamentos.filter((l) => l.pagoEm !== null && l.pagoEm < ate),
+  // A mesma conta que o número central usa ("como fechou o mês?").
+  const { doMes, anterior, acumulado, serie } = resultadosDoMes(
+    leitura.lancamentos,
     leituraVendas.ok ? leituraVendas.vendas : [],
+    mes,
   );
-  const doMes = resultadoDoMes(movimentos, mes);
-  const anterior = resultadoDoMes(movimentos, somarMeses(`${mes}-01`, -1).slice(0, 7));
-  const mesesDoAno = mesesAte(mes, Number(mes.slice(5, 7)));
-  const acumulado = somarResultados(
-    mesesDoAno.map((m) => resultadoDoMes(movimentos, m)),
-    mes.slice(0, 4),
-  );
-  const serie = meses.map((m) => resultadoDoMes(movimentos, m));
   const mesAnteriorLink = somarMeses(`${mes}-01`, -1).slice(0, 7);
   const proximoLink = mes < mesAtual ? somarMeses(`${mes}-01`, 1).slice(0, 7) : null;
   const navegar = "text-fluid-sm border-linha text-corpo hover:border-acento-linha inline-flex min-h-11 items-center rounded-xl border px-4";
