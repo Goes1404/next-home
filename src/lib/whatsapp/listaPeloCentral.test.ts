@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => null }));
 
-const { quantosSaemHoje, inicioDeAmanhaEmSaoPaulo } = await import("./listaPeloCentral");
+const { quantosSaemHoje, inicioDeAmanhaEmSaoPaulo, respondeuComoPedido, paradoHaPeloMenos } = await import("./listaPeloCentral");
 
 /*
  * A lista pedida pelo número central (onda 3) repete o `criarCampanha` da
@@ -68,6 +68,38 @@ describe("criar a lista pelo central: as travas da tela, na ordem da tela", () =
   it("o número e a carteira são sempre os de quem pediu (o contexto), nunca um argumento", () => {
     expect(tratador).not.toMatch(/corretorId:\s*(a|d|dados|argumentos)\./);
     expect(tratador.match(/corretorId: ctx\.corretorId/g)?.length ?? 0).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe("os filtros da conversa (conversa da Bruna, 30/10/2026)", () => {
+  it("respondeu: conversa com ESTE corretor, pela 0156 (EXISTS por conversa), em lote", () => {
+    const conversas = corpo("conversasComOCorretor");
+    expect(conversas).toContain('.eq("corretor_id", p.corretorId)');
+    expect(conversas).toContain('rpc("conversas_com_fala_do_cliente"');
+    expect(conversas).toContain("emLotes(");
+    // Erro de leitura não vira "ninguém respondeu": lança, e o tratador diz que não conseguiu.
+    expect(conversas).toMatch(/if \(error\) throw/);
+  });
+
+  it("os filtros correm por cima da régua da tela, nunca no lugar dela", () => {
+    expect(tratador).toContain("publicoDaListaPeloCentral(supabase");
+    expect(tratador).toMatch(/const ids = new Set\(publico\.pessoas\.map/);
+  });
+
+  it("respondeuComoPedido e paradoHaPeloMenos", () => {
+    const agora = new Date("2026-10-30T15:00:00.000Z");
+    const falou = { respondeu: true, ultimoContatoEm: "2026-10-10T15:00:00.000Z" };
+    const calado = { respondeu: false, ultimoContatoEm: null };
+    expect(respondeuComoPedido(falou, "sim")).toBe(true);
+    expect(respondeuComoPedido(falou, "nao")).toBe(false);
+    expect(respondeuComoPedido(calado, "nao")).toBe(true);
+    // Sem leitura, nenhum dos dois aceita.
+    expect(respondeuComoPedido(undefined, "sim")).toBe(false);
+    expect(respondeuComoPedido(undefined, "nao")).toBe(false);
+    expect(paradoHaPeloMenos(falou, 20, agora)).toBe(true);
+    expect(paradoHaPeloMenos(falou, 21, agora)).toBe(false);
+    // Nunca teve contato: é novo, não parado.
+    expect(paradoHaPeloMenos(calado, 1, agora)).toBe(false);
   });
 });
 

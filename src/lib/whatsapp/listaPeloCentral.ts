@@ -246,6 +246,10 @@ export type PessoaDaLista = {
   empreendimentoId: string | null;
   imovelInteresseId: string | null;
   dossie: { orcamento_max: number | string | null; orcamento_min: number | string | null; urgencia_mudanca: string | null } | null;
+  /** Mensagens NOSSAS seguidas sem resposta (0060): a régua do teto de insistência. */
+  tentativasSemResposta: number;
+  /** A nossa última tentativa de contato (0060), parte do "parado há N dias". */
+  ultimaTentativaEm: string | null;
 };
 
 type LinhaDoPerfil = {
@@ -258,10 +262,11 @@ type LinhaDoPerfil = {
   renda_mensal: number | string | null;
   empreendimento_id: string | null;
   imovel_interesse_id: string | null;
+  ultima_tentativa_em: string | null;
 };
 
 const COLUNAS_DO_PERFIL =
-  "id, telefone_e164, regiao_interesse, dormitorios_min, orcamento_max, orcamento_min, renda_mensal, empreendimento_id, imovel_interesse_id";
+  "id, telefone_e164, regiao_interesse, dormitorios_min, orcamento_max, orcamento_min, renda_mensal, empreendimento_id, imovel_interesse_id, ultima_tentativa_em";
 
 /** A pessoa é o telefone, não o cadastro: a chave do telefone para não mandar duas vezes. */
 function chaveDoTelefone(e164: string | null, telefone: string): string {
@@ -276,17 +281,22 @@ function chaveDoTelefone(e164: string | null, telefone: string): string {
  * dias). Por cima, um cadastro por TELEFONE (lista da Rute, 16/10/2026: a
  * pessoa com dois cadastros receberia a mesma lista duas vezes). Lança erro
  * de leitura: quem chama falha fechado, como a tela.
+ *
+ * `protegidas` são as elegíveis que a proteção tirou, no mesmo formato (um
+ * por telefone, sem repetir telefone de quem está livre): NUNCA entram na
+ * lista, servem só para a resposta de "ninguém" dizer quantas o filtro
+ * achou e a proteção tirou (conversa da Bruna, 30/10/2026).
  */
 export async function publicoDaListaPeloCentral(
   supabase: Supa,
   p: { grupoId: string; corretorId: string; filtro: FiltroLeadsCampanha; imovelSlug: string | null },
-): Promise<{ pessoas: PessoaDaLista[]; protegidos: number; duplicados: number }> {
+): Promise<{ pessoas: PessoaDaLista[]; protegidas: PessoaDaLista[]; protegidos: number; duplicados: number }> {
   const leads = await leadsDoCorretor(supabase, p.corretorId);
   const base = leads.filter((l) => elegivel(l, p.filtro, { imovelSlug: p.imovelSlug }));
   const protegidos = await idsProtegidosDeNovaLista(supabase, p.corretorId);
   const livres = base.filter((l) => !protegidos.has(l.id));
 
-  const ids = livres.map((l) => l.id);
+  const ids = base.map((l) => l.id);
   const perfis = new Map<string, LinhaDoPerfil>();
   const dossies = new Map<string, NonNullable<PessoaDaLista["dossie"]>>();
   for (const lote of emLotes(ids)) {
@@ -304,35 +314,74 @@ export async function publicoDaListaPeloCentral(
   }
 
   const vistos = new Set<string>();
-  const pessoas: PessoaDaLista[] = [];
   let duplicados = 0;
-  for (const l of livres) {
-    const perfil = perfis.get(l.id);
-    // Fora do grupo de quem pediu (não deveria acontecer: a carteira é dele).
-    if (!perfil) continue;
-    const chave = chaveDoTelefone(perfil.telefone_e164, l.telefone as string);
-    if (vistos.has(chave)) {
-      duplicados++;
-      continue;
+  // Um por telefone: o primeiro cadastro de cada telefone, na ordem da carteira.
+  const umPorTelefone = (lista: typeof base, contar: boolean): PessoaDaLista[] => {
+    const r: PessoaDaLista[] = [];
+    for (const l of lista) {
+      const perfil = perfis.get(l.id);
+      // Fora do grupo de quem pediu (não deveria acontecer: a carteira é dele).
+      if (!perfil) continue;
+      const chave = chaveDoTelefone(perfil.telefone_e164, l.telefone as string);
+      if (vistos.has(chave)) {
+        if (contar) duplicados++;
+        continue;
+      }
+      vistos.add(chave);
+      r.push({
+        id: l.id,
+        nome: l.nome,
+        telefone: l.telefone as string,
+        telefoneE164: perfil.telefone_e164,
+        etapa: l.etapa,
+        regiaoInteresse: perfil.regiao_interesse,
+        dormitoriosMin: perfil.dormitorios_min,
+        orcamentoMax: perfil.orcamento_max,
+        orcamentoMin: perfil.orcamento_min,
+        rendaMensal: perfil.renda_mensal,
+        empreendimentoId: perfil.empreendimento_id,
+        imovelInteresseId: perfil.imovel_interesse_id,
+        dossie: dossies.get(l.id) ?? null,
+        tentativasSemResposta: l.tentativasSemResposta ?? 0,
+        ultimaTentativaEm: perfil.ultima_tentativa_em ?? null,
+      });
     }
-    vistos.add(chave);
-    pessoas.push({
-      id: l.id,
-      nome: l.nome,
-      telefone: l.telefone as string,
-      telefoneE164: perfil.telefone_e164,
-      etapa: l.etapa,
-      regiaoInteresse: perfil.regiao_interesse,
-      dormitoriosMin: perfil.dormitorios_min,
-      orcamentoMax: perfil.orcamento_max,
-      orcamentoMin: perfil.orcamento_min,
-      rendaMensal: perfil.renda_mensal,
-      empreendimentoId: perfil.empreendimento_id,
-      imovelInteresseId: perfil.imovel_interesse_id,
-      dossie: dossies.get(l.id) ?? null,
-    });
+    return r;
+  };
+  const pessoas = umPorTelefone(livres, true);
+  const protegidas = umPorTelefone(
+    base.filter((l) => protegidos.has(l.id)),
+    false,
+  );
+  return { pessoas, protegidas, protegidos: base.length - livres.length, duplicados };
+}
+
+/** Os cadastros do mesmo telefone de cada pessoa, na carteira do corretor (arquivados também), como `cadastrosDoMesmoTelefone`. */
+async function cadastrosDasPessoas(
+  supabase: Supa,
+  p: { grupoId: string; corretorId: string; pessoas: Pick<PessoaDaLista, "id" | "telefoneE164">[] },
+): Promise<{ cadastrosDe: Map<string, string[]>; ultimaTentativa: Map<string, string> } | null> {
+  const telefones = [...new Set(p.pessoas.map((x) => x.telefoneE164).filter((t): t is string => Boolean(t)))];
+  const cadastrosDoTelefone = new Map<string, string[]>();
+  const ultimaTentativa = new Map<string, string>();
+  for (const lote of emLotes(telefones)) {
+    const { data, error } = await supabase
+      .from("leads")
+      .select("id, telefone_e164, ultima_tentativa_em")
+      .eq("grupo_id", p.grupoId)
+      .eq("corretor_id", p.corretorId)
+      .in("telefone_e164", lote);
+    if (error) return null;
+    for (const l of data ?? []) {
+      if (l.ultima_tentativa_em) ultimaTentativa.set(l.id, l.ultima_tentativa_em);
+      if (!l.telefone_e164) continue;
+      cadastrosDoTelefone.set(l.telefone_e164, [...(cadastrosDoTelefone.get(l.telefone_e164) ?? []), l.id]);
+    }
   }
-  return { pessoas, protegidos: base.length - livres.length, duplicados };
+  const cadastrosDe = new Map(
+    p.pessoas.map((x) => [x.id, [...new Set([x.id, ...(x.telefoneE164 ? (cadastrosDoTelefone.get(x.telefoneE164) ?? []) : [])])]]),
+  );
+  return { cadastrosDe, ultimaTentativa };
 }
 
 /**
@@ -353,24 +402,9 @@ export async function quemNuncaFalou(
   if (p.pessoas.length === 0) return todos;
 
   // Os outros cadastros de cada telefone, como `cadastrosDoMesmoTelefone`.
-  const telefones = [...new Set(p.pessoas.map((x) => x.telefoneE164).filter((t): t is string => Boolean(t)))];
-  const cadastrosDoTelefone = new Map<string, string[]>();
-  for (const lote of emLotes(telefones)) {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("id, telefone_e164")
-      .eq("grupo_id", p.grupoId)
-      .eq("corretor_id", p.corretorId)
-      .in("telefone_e164", lote);
-    if (error) return todos;
-    for (const l of data ?? []) {
-      if (!l.telefone_e164) continue;
-      cadastrosDoTelefone.set(l.telefone_e164, [...(cadastrosDoTelefone.get(l.telefone_e164) ?? []), l.id]);
-    }
-  }
-  const cadastrosDe = new Map(
-    p.pessoas.map((x) => [x.id, [...new Set([x.id, ...(x.telefoneE164 ? (cadastrosDoTelefone.get(x.telefoneE164) ?? []) : [])])]]),
-  );
+  const cadastros = await cadastrosDasPessoas(supabase, p);
+  if (!cadastros) return todos;
+  const { cadastrosDe } = cadastros;
 
   const leadDaConversa = new Map<string, string>();
   for (const lote of emLotes([...new Set([...cadastrosDe.values()].flat())])) {
@@ -398,6 +432,92 @@ export async function quemNuncaFalou(
   const nunca = new Set<string>();
   for (const [id, cadastros] of cadastrosDe) if (!cadastros.some((c) => leadsQueFalaram.has(c))) nunca.add(id);
   return nunca;
+}
+
+export type ConversaDaPessoa = {
+  /** O cliente já escreveu ao menos uma vez numa conversa com ESTE corretor. */
+  respondeu: boolean;
+  /** O último contato (ISO): a última mensagem da conversa, de qualquer lado, ou a nossa última tentativa. `null` = nunca houve. */
+  ultimoContatoEm: string | null;
+};
+
+/**
+ * Os filtros "já respondeu / nunca respondeu" e "parado há N dias" do
+ * `montar_lista` (conversa da Bruna, 30/10/2026), para várias pessoas de uma
+ * vez. A pessoa é o telefone: contam todos os cadastros dele na carteira do
+ * corretor (arquivados também), como em `quemNuncaFalou`.
+ *
+ * - **Respondeu**: alguma conversa do lead COM ESTE CORRETOR
+ *   (`whatsapp_conversas.corretor_id`) tem mensagem com remetente
+ *   `cliente`. A pergunta vai pela `conversas_com_fala_do_cliente` (0156, a
+ *   mesma da tela de Conversas): EXISTS por conversa, que para na primeira
+ *   fala em vez de trazer todas as mensagens.
+ * - **Último contato**: a régua das Listas sugeridas
+ *   (`listasSugeridasDados.ts`): o maior entre `ultima_interacao_em` das
+ *   conversas com o corretor (toda mensagem gravada a toca, dos dois lados,
+ *   lista enviada inclusive) e `leads.ultima_tentativa_em`. Sem nenhum dos
+ *   dois a pessoa nunca teve contato: não está "parada", é nova.
+ *
+ * Lança erro de leitura: sem provar quem respondeu, o filtro não recorta
+ * (quem chama responde que não conseguiu conferir).
+ */
+export async function conversasComOCorretor(
+  supabase: Supa,
+  p: { grupoId: string; corretorId: string; pessoas: Pick<PessoaDaLista, "id" | "telefoneE164" | "ultimaTentativaEm">[] },
+): Promise<Map<string, ConversaDaPessoa>> {
+  const resultado = new Map<string, ConversaDaPessoa>();
+  if (p.pessoas.length === 0) return resultado;
+
+  const cadastros = await cadastrosDasPessoas(supabase, p);
+  if (!cadastros) throw new Error("Falha ao ler os cadastros do mesmo telefone.");
+  const { cadastrosDe, ultimaTentativa } = cadastros;
+  for (const x of p.pessoas) if (x.ultimaTentativaEm) ultimaTentativa.set(x.id, x.ultimaTentativaEm);
+
+  const conversasDoLead = new Map<string, { id: string; ultimaEm: string | null }[]>();
+  for (const lote of emLotes([...new Set([...cadastrosDe.values()].flat())])) {
+    const { data, error } = await supabase
+      .from("whatsapp_conversas")
+      .select("id, lead_id, ultima_interacao_em")
+      .eq("grupo_id", p.grupoId)
+      .eq("corretor_id", p.corretorId)
+      .in("lead_id", lote);
+    if (error) throw new Error(`Falha ao ler as conversas: ${error.message}`);
+    for (const c of data ?? []) {
+      if (!c.lead_id) continue;
+      conversasDoLead.set(c.lead_id, [...(conversasDoLead.get(c.lead_id) ?? []), { id: c.id, ultimaEm: c.ultima_interacao_em ?? null }]);
+    }
+  }
+
+  // O RPC recebe o lote no corpo (não na URL): lotes maiores que o do `in`.
+  const comFala = new Set<string>();
+  const conversaIds = [...conversasDoLead.values()].flat().map((c) => c.id);
+  for (const lote of emLotes(conversaIds, 500)) {
+    const { data, error } = await supabase.rpc("conversas_com_fala_do_cliente", { p_ids: lote });
+    if (error) throw new Error(`Falha ao conferir quem respondeu: ${error.message}`);
+    for (const id of (data ?? []) as string[]) comFala.add(id);
+  }
+
+  for (const [id, ids] of cadastrosDe) {
+    const conversas = ids.flatMap((c) => conversasDoLead.get(c) ?? []);
+    const datas = [...conversas.map((c) => c.ultimaEm), ...ids.map((c) => ultimaTentativa.get(c) ?? null)].filter((d): d is string => Boolean(d));
+    resultado.set(id, {
+      respondeu: conversas.some((c) => comFala.has(c.id)),
+      ultimoContatoEm: datas.length ? datas.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a)) : null,
+    });
+  }
+  return resultado;
+}
+
+/** "Já respondeu" / "nunca respondeu": pessoa sem leitura conta como não lida, e "sim" não a aceita. */
+export function respondeuComoPedido(conversa: ConversaDaPessoa | undefined, respondeu: "sim" | "nao"): boolean {
+  if (!conversa) return false;
+  return respondeu === "sim" ? conversa.respondeu : !conversa.respondeu;
+}
+
+/** Parado há N dias ou mais: houve contato, e o último foi há N dias ou mais. Sem contato nenhum não é "parado" (é novo). */
+export function paradoHaPeloMenos(conversa: ConversaDaPessoa | undefined, dias: number, agora: Date): boolean {
+  if (!conversa?.ultimoContatoEm) return false;
+  return Date.parse(conversa.ultimoContatoEm) <= agora.getTime() - dias * 86_400_000;
 }
 
 // ── Criar a lista (depois do "sim") ──────────────────────────────────────

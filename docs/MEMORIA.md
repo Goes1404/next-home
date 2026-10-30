@@ -12705,6 +12705,19 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   pausa, conta o que saiu (envio sem comprovante conta); nada → cancela,
   algo → fica pausada. Armadilhas: `bancoFalso` sem `rpc`/`count` e sem o
   `grupo_id` do gatilho; `"mil".startsWith("mi")` virou 600 milhões.
+- **Filtros da lista (conversa da Bruna, 30/10/2026)**: "quem já respondeu",
+  "quem parou de responder" davam "ninguém" (palavra desconhecida do
+  `para_quem` virava LUGAR). Agora `montar_lista` usa campos (`regiao`,
+  `orcamento_max`, `dormitorios`, `imovel`, `etapas`, `respondeu`,
+  `parado_ha_dias`); `para_quem` só vai ao resumo; sem filtro = carteira
+  elegível inteira, dito no resumo. Respondeu = fala do `cliente` numa
+  conversa do lead COM ESTE corretor (todos os cadastros do telefone), em
+  lote pela `conversas_com_fala_do_cliente` (0156); "nao" leva o teto de
+  insistência (< 3 sem resposta). Parado = régua das Listas sugeridas
+  (`ultima_interacao_em` da conversa ou `ultima_tentativa_em`; sem contato
+  não é parado). Zero responde `porque` com a contagem de cada filtro e
+  `zerouEm` (a proteção de lista recente entra por último e "não se
+  afrouxa"). Nota: [[lista-de-transmissao-pelo-numero-central]].
 - **Onda 3, frente M (arte e vídeo), 30/10/2026** —
   [[arte-e-video-pelo-numero-central]]: `gerar_arte`/`criar_video` são ação
   com "sim" (gastam cota, sem desfazer). A conversa ganhou **resposta com
