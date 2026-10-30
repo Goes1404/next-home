@@ -1,6 +1,7 @@
 import "server-only";
 
 import { enviarEmail } from "@/lib/email";
+import { avisarPeloCentral, montarWhatsappDeQueda } from "@/lib/central/avisoDeQuedaPeloCentral";
 import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
@@ -194,7 +195,7 @@ export async function varrerQuedasDeNumero(agora: Date = new Date()): Promise<vo
 }
 
 /**
- * Manda o e-mail de queda — no máximo UM por queda.
+ * Manda o aviso de queda (e-mail e WhatsApp pelo central) — no máximo UM por queda.
  *
  * Chamado pelo cron de disparo, que roda a cada minuto: sem a marca em
  * `aviso_queda_enviado_em`, uma queda de três dias viraria mais de quatro
@@ -232,28 +233,35 @@ export async function avisarQuedaSeNecessario(
     if (!corretor) return;
 
     const email = corretor.email ?? (await emailDoLogin(corretor.user_id));
+    const urlPainel = enderecoDoPainel(corretor.grupo_id);
 
-    if (!email) {
-      console.warn(
-        `[aviso-queda] corretor ${data.corretor_id} não tem e-mail no cadastro nem no login — aviso não enviado.`,
-      );
-      return;
+    let enviouEmail = false;
+    if (email) {
+      const { assunto, html, texto } = montarEmailDeQueda(aviso, { nomeCorretor: corretor.nome, urlPainel });
+      enviouEmail = (await enviarEmail({ para: email, assunto, html, texto })).enviado;
+    } else {
+      console.warn(`[aviso-queda] corretor ${data.corretor_id} não tem e-mail no cadastro nem no login.`);
     }
 
-    const { assunto, html, texto } = montarEmailDeQueda(aviso, {
-      nomeCorretor: corretor.nome,
-      urlPainel: enderecoDoPainel(corretor.grupo_id),
-    });
-
-    const resultado = await enviarEmail({ para: email, assunto, html, texto });
+    /*
+     * O segundo canal (30/10/2026): o WhatsApp do corretor pelo número
+     * central da plataforma. O número caiu DO SISTEMA, mas o WhatsApp segue
+     * no celular, e a mensagem chega. Também cobre quem não tem e-mail.
+     * Nunca sai pela instância do corretor, que está caída.
+     */
+    const peloCentral = await avisarPeloCentral(
+      data.corretor_id,
+      montarWhatsappDeQueda(aviso, { nome: corretor.nome, urlPainel }),
+    );
 
     /*
-     * A marca só é gravada quando o e-mail SAIU. Marcar mesmo em falha
-     * transformaria uma indisponibilidade momentânea do provedor de e-mail
-     * em silêncio permanente sobre a queda — que é exatamente o defeito que
-     * este código veio consertar.
+     * A marca é gravada quando PELO MENOS UM canal saiu: um aviso por queda,
+     * somando e-mail e WhatsApp. Marcar mesmo sem nenhum ter saído
+     * transformaria uma indisponibilidade momentânea em silêncio permanente
+     * sobre a queda — que é exatamente o defeito que este código veio
+     * consertar.
      */
-    if (resultado.enviado) {
+    if (enviouEmail || peloCentral.enviado) {
       await supabase
         .from("corretor_whatsapp_instancias")
         .update({ aviso_queda_enviado_em: agora.toISOString() })

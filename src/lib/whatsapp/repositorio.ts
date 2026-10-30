@@ -1,4 +1,6 @@
 import "server-only";
+
+import { avisarVoltaPeloCentral, corretorAvisadoDaQueda } from "@/lib/central/avisoDeQuedaPeloCentral";
 import { alertaLiberado, type MotivoAlerta } from "./brokerNotifier";
 import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 
@@ -2694,6 +2696,9 @@ export async function sincronizarConexaoInstancia(params: {
   const reset = resetPorTrocaDeNumero(params.telefoneAtual, estado.telefone);
   const conectadoEm = reset?.conectado_em ?? params.conectadoEmAtual ?? new Date().toISOString();
 
+  // Houve aviso de queda? Depois de gravar a reconexão, o central confirma
+  // que voltou (30/10/2026).
+  const avisadoDaQueda = await corretorAvisadoDaQueda(params.instanciaId);
   const { error: erroAoConectar } = await supabase
     .from("corretor_whatsapp_instancias")
     .update({
@@ -2737,6 +2742,7 @@ export async function sincronizarConexaoInstancia(params: {
   }
   // Só um número CONFERIDO apaga a recusa anterior (0198).
   if (estado.telefone) await limparRecusaDeNumero(supabase, params.instanciaId);
+  await avisarVoltaPeloCentral(avisadoDaQueda);
 
   if (reset) {
     console.warn(
@@ -2814,6 +2820,9 @@ export async function registrarEventoConexao(params: {
     ? resetPorTrocaDeNumero(instancia.telefone_conectado, params.telefone)
     : null;
 
+  // Houve aviso de queda? Depois de gravar a reconexão, o central confirma
+  // que voltou (30/10/2026).
+  const avisadoDaQueda = conectado ? await corretorAvisadoDaQueda(instancia.id) : null;
   const { error: erroDoEvento } = await supabase
     .from("corretor_whatsapp_instancias")
     .update({
@@ -2859,6 +2868,7 @@ export async function registrarEventoConexao(params: {
     // rodízio do link (ver `sessaoCaida.ts`).
     await liberarFilaDaSessao({ instanciaId: instancia.id, levantarPausa: true });
     await limparRecusaDeNumero(supabase, instancia.id);
+    await avisarVoltaPeloCentral(avisadoDaQueda);
     return;
   }
 
