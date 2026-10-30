@@ -19,7 +19,7 @@ vi.mock("@/lib/whatsapp/provider", async () => {
   return { ...real, enviarMensagemWhatsapp: proibido, enviarMidiaWhatsapp: proibido, enviarMensagemWhatsappParaGrupo: proibido };
 });
 
-const { criarTratadoresDeListas, lerPublico, escolherLista, MENSAGEM_PADRAO_DA_LISTA } = await import("./listas");
+const { criarTratadoresDeListas, lerPedido, escolherLista, MENSAGEM_PADRAO_DA_LISTA } = await import("./listas");
 const { criarExecutor, executarProposta } = await import("../executar");
 const { MOTIVO_DESCONECTADO, quantosSaemHoje } = await import("@/lib/whatsapp/listaPeloCentral");
 const { leadsDoCorretor, idsProtegidosDeNovaLista } = await import("@/lib/whatsapp/publicoDaLista");
@@ -126,9 +126,9 @@ function cenario(mudar: (t: Record<string, Linha[]>) => void = () => {}) {
     ],
     lead_observacoes_ia: [],
     whatsapp_conversas: [
-      { id: "cv1", grupo_id: G, lead_id: "l1" },
-      { id: "cv2", grupo_id: G, lead_id: "l2" },
-      { id: "cv3b", grupo_id: G, lead_id: "l3b" },
+      { id: "cv1", grupo_id: G, corretor_id: "c1", lead_id: "l1", ultima_interacao_em: "2026-10-28T12:00:00.000Z" },
+      { id: "cv2", grupo_id: G, corretor_id: "c1", lead_id: "l2", ultima_interacao_em: "2026-10-01T12:00:00.000Z" },
+      { id: "cv3b", grupo_id: G, corretor_id: "c1", lead_id: "l3b", ultima_interacao_em: "2026-10-05T12:00:00.000Z" },
     ],
     whatsapp_mensagens: [
       { id: "m1", grupo_id: G, conversa_id: "cv1", remetente: "cliente" },
@@ -170,10 +170,14 @@ function cenario(mudar: (t: Record<string, Linha[]>) => void = () => {}) {
   const b = bancoFalso(tabelas);
   // Os primeiros contatos que o corretor já fez (0222): 9 hoje e 12 na semana.
   const primeiros = { hoje: 9, semana: 12 };
-  const rpc = vi.fn(async (_nome: string, a: { p_desde: string }) => ({
-    data: Date.parse(a.p_desde) > AGORA.getTime() - 2 * 86_400_000 ? primeiros.hoje : primeiros.semana,
-    error: null,
-  }));
+  const rpc = vi.fn(async (nome: string, a: { p_desde?: string; p_ids?: string[] }) => {
+    // A 0156: das conversas pedidas, as que têm fala do cliente.
+    if (nome === "conversas_com_fala_do_cliente") {
+      const comFala = new Set(tabelas.whatsapp_mensagens.filter((m) => m.remetente === "cliente").map((m) => m.conversa_id));
+      return { data: (a.p_ids ?? []).filter((id) => comFala.has(id)), error: null };
+    }
+    return { data: Date.parse(a.p_desde ?? "") > AGORA.getTime() - 2 * 86_400_000 ? primeiros.hoje : primeiros.semana, error: null };
+  });
   const cliente = comContagemERpc(b.cliente, rpc);
   const externos = {
     limiteDoDia: vi.fn(async () => ({ limite: 30, motivo: "uso" as const, maiorDiaRecente: 20 })),
@@ -234,24 +238,32 @@ const comoResposta = (p: unknown) => {
   return (p as { resultado: Record<string, unknown> }).resultado;
 };
 
-const PEDIDO = { para_quem: "quem quer Barueri até 600 mil", imovel: "Vitta" };
+const PEDIDO = { regiao: "Barueri", orcamento_max: 600_000, imovel: "Vitta", para_quem: "quem quer Barueri até 600 mil" };
 
-describe("lerPublico: o 'para quem' em critério", () => {
-  it("lugar, faixa e o imóvel fora do lugar", () => {
-    expect(lerPublico("quem quer Barueri até 600 mil", ["Vitra Residencial", "Vitta"])).toEqual({ filtro: "todos", regiao: "barueri", ate: 600_000, dormitorios: null });
-    expect(lerPublico("pros clientes de 2 dorms")).toEqual({ filtro: "todos", regiao: null, ate: null, dormitorios: 2 });
-    expect(lerPublico("quem quer comprar em Alphaville até 1,2 milhão").ate).toBe(1_200_000);
-    expect(lerPublico("quem quer comprar em Alphaville").filtro).toBe("todos");
+describe("lerPedido: os campos da ferramenta, conferidos", () => {
+  it("cada filtro no seu campo; valor estranho vira 'sem esse filtro'", () => {
+    expect(lerPedido({ regiao: "Barueri", orcamento_max: 600_000, dormitorios: 2 })).toEqual({
+      regiao: "Barueri",
+      orcamentoMax: 600_000,
+      dormitorios: 2,
+      etapas: [],
+      respondeu: null,
+      paradoHaDias: null,
+      paraQuem: null,
+    });
+    expect(lerPedido({ orcamento_max: "1,2 milhão" }).orcamentoMax).toBe(1_200_000);
+    expect(lerPedido({ orcamento_max: "600 mil" }).orcamentoMax).toBe(600_000);
+    // Em imóvel, "600" é 600 mil.
+    expect(lerPedido({ orcamento_max: 600 }).orcamentoMax).toBe(600_000);
+    expect(lerPedido({ etapas: ["em_conversa", "qualificado", "inventada"] }).etapas).toEqual(["em_conversa", "qualificado"]);
+    expect(lerPedido({ etapas: "em conversa" }).etapas).toEqual(["em_conversa"]);
+    expect(lerPedido({ respondeu: "não" }).respondeu).toBe("nao");
+    expect(lerPedido({ respondeu: "talvez" }).respondeu).toBeNull();
+    expect(lerPedido({ parado_ha_dias: "15" }).paradoHaDias).toBe(15);
+    expect(lerPedido({ dormitorios: 40, parado_ha_dias: 0 })).toMatchObject({ dormitorios: null, paradoHaDias: null });
   });
-  it("os públicos da tela pelo jeito de dizer", () => {
-    expect(lerPublico("os parados").filtro).toBe("parados_15d");
-    expect(lerPublico("quem não respondeu").filtro).toBe("sem_resposta");
-    expect(lerPublico("os novos").filtro).toBe("novos_sem_contato");
-    expect(lerPublico("os compradores").filtro).toBe("compradores");
-    expect(lerPublico("todo mundo")).toEqual({ filtro: "todos", regiao: null, ate: null, dormitorios: null });
-  });
-  it("palavra que não se entende vira lugar: estreita, nunca alarga", () => {
-    expect(lerPublico("quem gosta de piscina").regiao).toBe("gosta piscina");
+  it("o para_quem só vai para o resumo: palavra desconhecida não vira mais lugar", () => {
+    expect(lerPedido({ para_quem: "quem gosta de piscina" })).toMatchObject({ regiao: null, paraQuem: "quem gosta de piscina" });
   });
 });
 
@@ -302,8 +314,8 @@ describe("montar_lista: a proposta", () => {
 
   it("sem imóvel e sem texto, pergunta o texto; variável sem valor não vira proposta", async () => {
     const c = cenario();
-    expect(comoResposta(await c.montar.preparar(corretor, { para_quem: "quem quer Barueri" }))).toHaveProperty("pergunta");
-    expect(comoResposta(await c.montar.preparar(corretor, { para_quem: "quem quer Barueri", texto: "Saiu no {bairro}!" }))).toHaveProperty("erro");
+    expect(comoResposta(await c.montar.preparar(corretor, { regiao: "Barueri" }))).toHaveProperty("pergunta");
+    expect(comoResposta(await c.montar.preparar(corretor, { regiao: "Barueri", texto: "Saiu no {bairro}!" }))).toHaveProperty("erro");
   });
 
   it("WhatsApp desconectado: resposta clara, sem proposta", async () => {
@@ -326,15 +338,183 @@ describe("montar_lista: a proposta", () => {
     expect(d.externos.conferirNumeros).toHaveBeenCalledWith({ instanceName: "inst-gil", telefones: ["(11) 98181-8181"] });
   });
 
-  it("ninguém no filtro: diz o que entendeu, sem proposta", async () => {
+  it("ninguém no filtro: diz os filtros e qual zerou, sem proposta", async () => {
     const c = cenario();
-    const r = comoResposta(await c.montar.preparar(corretor, { para_quem: "quem quer Santana", imovel: "Vitta" }));
-    expect(String(r.nenhum)).toContain("que querem Santana");
+    const r = comoResposta(await c.montar.preparar(corretor, { regiao: "Santana", imovel: "Vitta" }));
+    expect(String(r.nenhum)).toContain("querem Santana · combinam com o Vitra Residencial");
+    expect(r.porque).toBe("carteira elegível: 8; querem Santana: 0; destes, combinam com o Vitra Residencial: 0; destes, fora por já estarem em outra lista ou terem recebido lista nos últimos 7 dias: 0");
+    expect(r.zerouEm).toBe("querem Santana");
+    expect(String(r.dica)).toContain('"querem Santana"');
   });
 
   it("imóvel ambíguo ou fora do catálogo vira pergunta", async () => {
     const c = cenario();
-    expect(comoResposta(await c.montar.preparar(corretor, { para_quem: "todos", imovel: "Aurora" }))).toHaveProperty("erro");
+    expect(comoResposta(await c.montar.preparar(corretor, { imovel: "Aurora" }))).toHaveProperty("erro");
+  });
+});
+
+/**
+ * Os filtros da conversa da Bruna (30/10/2026): etapa, já respondeu / nunca
+ * respondeu e parado há N dias, por cima das travas de hoje. A carteira:
+ * - l1 em conversa, respondeu (cv1), última mensagem há 2 dias;
+ * - l2 em conversa, só o robô falou (cv2), última mensagem há 29 dias;
+ * - l3 qualificado: quem respondeu foi o cadastro arquivado do mesmo telefone (cv3b, há 25 dias);
+ * - l4 em conversa, sem conversa, nossa última tentativa há 29 dias, 3 mensagens sem resposta (teto);
+ * - l5 em conversa: respondeu, mas na conversa com a COLEGA (c2), não com a Carol;
+ * - l7 em conversa e respondeu (cv7), mas está pendente em outra lista (protegido);
+ * - l6 (pediu para sair) e l10 (fechado) responderam e continuam fora;
+ * - l9 e l11 nunca tiveram contato.
+ */
+function cenarioDaConversa(mudar: (t: Record<string, Linha[]>) => void = () => {}) {
+  return cenario((t) => {
+    const l = (id: string) => t.leads.find((x) => x.id === id)!;
+    Object.assign(l("l1"), { etapa: "em_conversa" });
+    Object.assign(l("l2"), { etapa: "em_conversa" });
+    Object.assign(l("l3"), { etapa: "qualificado" });
+    Object.assign(l("l4"), { etapa: "em_conversa", ultima_tentativa_em: "2026-10-01T12:00:00.000Z", tentativas_sem_resposta: 3 });
+    Object.assign(l("l5"), { etapa: "em_conversa" });
+    Object.assign(l("l6"), { etapa: "em_conversa" });
+    Object.assign(l("l7"), { etapa: "em_conversa" });
+    t.whatsapp_conversas.push(
+      { id: "cv5", grupo_id: G, corretor_id: "c2", lead_id: "l5", ultima_interacao_em: "2026-10-01T12:00:00.000Z" },
+      { id: "cv6", grupo_id: G, corretor_id: "c1", lead_id: "l6", ultima_interacao_em: "2026-10-01T12:00:00.000Z" },
+      { id: "cv7", grupo_id: G, corretor_id: "c1", lead_id: "l7", ultima_interacao_em: "2026-10-01T12:00:00.000Z" },
+      { id: "cv10", grupo_id: G, corretor_id: "c1", lead_id: "l10", ultima_interacao_em: "2026-10-01T12:00:00.000Z" },
+    );
+    t.whatsapp_mensagens.push(
+      { id: "m5", grupo_id: G, conversa_id: "cv5", remetente: "cliente" },
+      { id: "m6", grupo_id: G, conversa_id: "cv6", remetente: "cliente" },
+      { id: "m7", grupo_id: G, conversa_id: "cv7", remetente: "cliente" },
+      { id: "m10", grupo_id: G, conversa_id: "cv10", remetente: "cliente" },
+    );
+    mudar(t);
+  });
+}
+
+const TEXTO = { texto: "Oi! Saiu novidade por aqui, posso te contar?" };
+const quem = (p: Proposta) => [...(p.dados._leadIds as string[])].sort();
+type Rpc = (nome: string, a: unknown) => Promise<{ data: unknown; error: unknown }>;
+const rpcDe = (c: { cliente: unknown }) => (c.cliente as { rpc: ReturnType<typeof vi.fn<Rpc>> }).rpc;
+
+describe("montar_lista: os filtros estruturados", () => {
+  it("etapas: só quem está nas etapas pedidas", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, etapas: ["em_conversa"] }));
+    // l7 também está em conversa, mas protegida: fica de fora e o resumo conta.
+    expect(quem(p)).toEqual(["l1", "l2", "l4", "l5"]);
+    expect(p.resumo).toContain("Filtros: Em conversa.");
+    expect(p.resumo).toContain("1 pessoa ficou de fora por já estarem em outra lista");
+    expect(p.dados.titulo).toBe("Lista · Em conversa");
+  });
+
+  it("respondeu 'sim': fala do cliente na conversa com ESTE corretor, contando o outro cadastro do telefone", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, respondeu: "sim" }));
+    // l3 pelo cadastro arquivado (l3b); l5 só falou com a colega; l6, l7 e l10 continuam fora.
+    expect(quem(p)).toEqual(["l1", "l3"]);
+    expect(p.resumo).toContain("Filtros: já responderam.");
+    expect(p.dados.nuncaFalaram).toBe(0);
+    // Uma pergunta para todas as conversas (0156), não uma por pessoa.
+    const chamadas = rpcDe(c).mock.calls.filter(([nome]) => nome === "conversas_com_fala_do_cliente");
+    expect(chamadas).toHaveLength(1);
+    expect((chamadas[0][1] as { p_ids: string[] }).p_ids).toEqual(expect.arrayContaining(["cv1", "cv2", "cv3b"]));
+  });
+
+  it("respondeu 'nao': nunca respondeu, com o teto de insistência da tela", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, respondeu: "nao" }));
+    // l4 nunca respondeu, mas já levou 3 mensagens seguidas sem resposta: fora.
+    expect(quem(p)).toEqual(["l11", "l2", "l5", "l9"]);
+    expect(p.resumo).toContain("Filtros: nunca responderam.");
+    // O primeiro contato continua com a régua do disparador.
+    expect(p.resumo).toContain("hoje cabem 1 de");
+  });
+
+  it("parado há N dias: o último contato (mensagem de qualquer lado ou nossa tentativa) há N dias ou mais", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, parado_ha_dias: 15 }));
+    // l1 falou há 2 dias; l9 e l11 nunca tiveram contato (são novos, não parados); l5 só com a colega.
+    expect(quem(p)).toEqual(["l2", "l3", "l4"]);
+    expect(p.resumo).toContain("Filtros: parados há 15+ dias.");
+    const q = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, parado_ha_dias: 27 }));
+    expect(quem(q)).toEqual(["l2", "l4"]);
+  });
+
+  it("combinação: os filtros se somam, e o resumo lista todos em português", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(
+      await c.montar.preparar(corretor, {
+        ...TEXTO,
+        etapas: ["em_conversa", "qualificado"],
+        respondeu: "sim",
+        parado_ha_dias: 15,
+        para_quem: "quem ficou em conversa e parou de responder",
+      }),
+    );
+    expect(quem(p)).toEqual(["l3"]);
+    expect(p.resumo).toContain("Filtros: Em conversa ou Qualificado · já responderam · parados há 15+ dias.");
+    expect(p.resumo).toContain('Pedido: "quem ficou em conversa e parou de responder".');
+    expect(p.dados.filtros).toEqual(["Em conversa ou Qualificado", "já responderam", "parados há 15+ dias"]);
+  });
+
+  it("para_quem não filtra: sem filtro vai a carteira elegível inteira, e o resumo diz isso", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, para_quem: "quem gosta de piscina" }));
+    expect(quem(p)).toEqual(["l1", "l11", "l2", "l3", "l4", "l5", "l9"]);
+    expect(p.resumo).toContain("Sem filtro: toda a sua carteira elegível: 7 pessoas.");
+    expect(p.resumo).toContain('Pedido: "quem gosta de piscina".');
+  });
+
+  it("zero: diz por quê, com os números de cada filtro e a trava que zerou", async () => {
+    const c = cenarioDaConversa((t) => (t.leads.find((x) => x.id === "l1")!.etapa = "qualificado"));
+    const r = comoResposta(await c.montar.preparar(corretor, { ...TEXTO, etapas: ["em_conversa"], respondeu: "sim" }));
+    expect(r.nenhum).toBe('Ninguém da sua carteira entra em "Em conversa · já responderam" agora.');
+    expect(r.porque).toBe(
+      "carteira elegível: 8; Em conversa: 4; destes, já responderam: 1; destes, fora por já estarem em outra lista ou terem recebido lista nos últimos 7 dias: 1",
+    );
+    expect(r.zerouEm).toBe("por já estarem em outra lista ou terem recebido lista nos últimos 7 dias");
+    expect(String(r.dica)).toContain("não se afrouxa");
+    expect(c.escritas).toEqual([]);
+  });
+
+  it("zero por filtro: aponta o filtro, e fechado/perdido explicam que não entram", async () => {
+    const c = cenarioDaConversa();
+    const r = comoResposta(await c.montar.preparar(corretor, { ...TEXTO, etapas: ["perdido"] }));
+    expect(r.porque).toBe("carteira elegível: 8; Perdido: 0; destes, fora por já estarem em outra lista ou terem recebido lista nos últimos 7 dias: 0");
+    expect(r.zerouEm).toBe("Perdido");
+    expect(String(r.etapas)).toContain("nunca entram em lista");
+  });
+
+  it("as travas de hoje continuam: quem pediu para sair, fechado, protegido e a carteira da colega nunca entram", async () => {
+    const c = cenarioDaConversa();
+    const p = comoProposta(await c.montar.preparar(corretor, { ...TEXTO, etapas: ["em_conversa", "fechado"], respondeu: "sim" }));
+    // l6 (pediu para sair), l10 (fechado), l7 (outra lista) e x1 (da colega) ficam fora.
+    expect(quem(p)).toEqual(["l1"]);
+    // E o "sim" refaz a régua da tela: quem pediu para sair desde a proposta não entra.
+    c.tabelas.leads.find((x) => x.id === "l1")!.nao_contatar_em = "2026-10-30T14:00:00.000Z";
+    const r = await c.montar.executar(corretor, p.dados);
+    expect(r.ok).toBe(false);
+    expect(c.tabelas.whatsapp_campanhas).toHaveLength(2);
+    expect(envios.total).toBe(0);
+  });
+
+  it("compradores: só 'fechado' com o imóvel, como a tela", async () => {
+    const c = cenarioDaConversa(
+      (t) => (t.leads.find((x) => x.id === "l10")!.empreendimento = { nome: "Vitra Residencial", slug: "vitra-residencial", endereco: null }),
+    );
+    const p = comoProposta(await c.montar.preparar(corretor, { imovel: "Vitta", etapas: ["fechado"] }));
+    expect(quem(p)).toEqual(["l10"]);
+    expect(p.dados.filtro).toBe("compradores");
+    expect(p.resumo).toContain("Filtros: quem comprou no Vitra Residencial.");
+  });
+
+  it("conversa ilegível: não recorta no escuro, responde que não conseguiu", async () => {
+    const c = cenarioDaConversa();
+    const original = rpcDe(c).getMockImplementation()!;
+    rpcDe(c).mockImplementation(async (nome: string, a: unknown) =>
+      nome === "conversas_com_fala_do_cliente" ? { data: null, error: { message: "fora do ar" } } : original(nome, a),
+    );
+    expect(comoResposta(await c.montar.preparar(corretor, { ...TEXTO, respondeu: "sim" }))).toHaveProperty("erro");
   });
 });
 

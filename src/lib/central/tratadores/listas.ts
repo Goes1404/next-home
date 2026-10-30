@@ -2,26 +2,31 @@ import "server-only";
 
 import { FOLGA_ORCAMENTO, perfilDoLead, regiaoCasa } from "@/lib/crm/compatibilidade";
 import { leadsQueCombinam, temPressaDeMudar, type ImovelParaMatch, type PreferenciasDoLead } from "@/lib/crm/matchDeImoveis";
-import type { FiltroLeadsCampanha } from "@/lib/crm/publicoDaCampanha";
+import { TETO_DE_INSISTENCIA } from "@/lib/crm/publicoDaCampanha";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import type { ParametrosCredito } from "@/lib/credito/tipos";
 import { linkPublicoDoImovel } from "@/lib/imovelPublico/ler";
 import { formatarMoedaBRL, normalizarPrecoBRL } from "@/lib/precos/moneyUtils";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ETAPA_LABEL, ETAPAS_FUNIL, type EtapaFunil } from "@/lib/types";
 import { aplicarContexto, variaveisSemValor } from "@/lib/whatsapp/listaDeTransmissao";
 import {
   contextoDoPedido,
+  conversasComOCorretor,
   criarListaPeloCentral,
   desfazerListaPeloCentral,
   EXTERNOS_DA_LISTA,
   listasDoCorretor,
   numerosDaLista,
+  paradoHaPeloMenos,
   pausarListaPeloCentral,
   publicoDaListaPeloCentral,
   quantosSaemHoje,
   quemNuncaFalou,
+  respondeuComoPedido,
   retomarListaPeloCentral,
   situacaoDoNumero,
+  type ConversaDaPessoa,
   type ExternosDaLista,
   type ImovelDaLista,
   type ListaDoCorretor,
@@ -92,6 +97,7 @@ export const MENSAGEM_PADRAO_DA_LISTA =
   "Olá! Tudo bem? Lembrei do seu interesse e acabou de sair uma condição nova no {imovel}, em {bairro}. Quer que eu te mande os detalhes?";
 
 const reais = (n: number) => formatarMoedaBRL(n).replace(/\s/g, " ");
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 function texto(v: unknown, teto: number): string | null {
   if (typeof v !== "string" && typeof v !== "number") return null;
@@ -115,42 +121,36 @@ function normalizar(t: string): string {
 
 const resposta = (resultado: unknown): Preparo => ({ tipo: "resposta", resultado });
 
-// ── Para quem: o filtro em palavras ──────────────────────────────────────
+// ── O pedido: os filtros que a ferramenta declara ────────────────────────
 
-export type PedidoDePublico = {
-  /** O público da tela (`publicoDaCampanha`); sem palavra de público, "todos". */
-  filtro: FiltroLeadsCampanha;
-  /** O lugar pedido ("barueri", "zona sul"), já sem acento e minúsculo. */
+/*
+ * Conversa da Bruna, 30/10/2026: a gestora pediu listas "para quem já
+ * respondeu alguma mensagem", "quem ficou em conversa e parou de responder" e
+ * "quem não respondeu no WhatsApp". O `para_quem` em texto livre só entendia
+ * região, faixa, dormitórios e imóvel, e a palavra desconhecida virava LUGAR:
+ * as quatro tentativas deram "ninguém entra nesse filtro". Agora os filtros
+ * são campos da ferramenta (`ferramentas.ts`) e o `para_quem` só aparece no
+ * resumo, como a pessoa falou; ele não recorta mais nada.
+ */
+
+export type PedidoDaLista = {
+  /** Região ou bairro, como a pessoa falou. */
   regiao: string | null;
-  /** "até 600 mil": o teto do orçamento de quem entra. */
-  ate: number | null;
-  /** "2 dorms": quem pediu até esse número de dormitórios. */
+  /** O teto do orçamento de quem entra, em reais. */
+  orcamentoMax: number | null;
+  /** Quem pediu até esse número de dormitórios. */
   dormitorios: number | null;
+  /** As etapas do funil; vazio = qualquer etapa que a régua da tela aceita. */
+  etapas: EtapaFunil[];
+  /** "sim" = já respondeu alguma mensagem; "nao" = nunca respondeu. */
+  respondeu: "sim" | "nao" | null;
+  /** Sem conversa há pelo menos N dias. */
+  paradoHaDias: number | null;
+  /** O pedido como a pessoa falou: só para o resumo. */
+  paraQuem: string | null;
 };
 
-/** Os públicos da tela, pelo jeito de dizer. A ordem importa: o primeiro que casar vale. */
-const PUBLICOS: [RegExp, FiltroLeadsCampanha][] = [
-  [/\b(compradores|compraram|ja comprou)\b/, "compradores"],
-  [/\b(nao|sem)\s+(respond\w*|resposta|retorn\w*)/, "sem_resposta"],
-  [/\b(parad[oa]s?|esfri\w*)\b/, "parados_15d"],
-  [/\b(novos?|recem\w*|acabaram de chegar|chegaram agora|sem contato)\b/, "novos_sem_contato"],
-];
-
-/** Palavras que não dizem lugar nenhum: o resto do "para quem" é a região. */
-const NAO_E_LUGAR = new Set(
-  (
-    "quem que quer querem queria procura procuram procurando busca buscam buscando interessado interessados interessada interessadas " +
-    "interesse pra para pro pros pras por os as um uns uma umas de do da dos das em no na nos nas com sem e ou ja " +
-    "meu meus minha minhas seu seus sua suas cliente clientes lead leads pessoa pessoas gente galera todo todos toda todas mundo " +
-    "carteira lista transmissao manda mandar envia enviar regiao bairro cidade zona imovel imoveis apartamento apartamentos apto aptos " +
-    "lancamento lancamentos empreendimento ate mil reais valor preco orcamento renda faixa dorm dorms dormitorio dormitorios quarto quartos " +
-    "dias mais menos acima abaixo entre perto proximo morar comprar compra compradores compraram comprou parado parados parada paradas " +
-    "nao respondem responderam resposta retorno retornaram novo novos recem chegar chegaram agora contato esfriaram esfriou"
-  ).split(" "),
-);
-
-const FAIXA = /\bate\s*(?:r\$\s*)?(\d+(?:[.,]\d+)*)\s*(mil|k|milhao|milhoes|mi)?\b/;
-const DORMITORIOS = /(\d{1,2})\s*(?:dorms?\b|dormit\w*|quartos?\b|qts?\b)/;
+const FAIXA = /(\d+(?:[.,]\d+)*)\s*(mil|k|milhao|milhoes|mi)?\b/;
 
 /** "600 mil", "1,2 milhão", "600k", "600" (em imóvel, "até 600" é 600 mil). */
 function valorDaFaixa(numero: string, unidade: string | undefined): number | null {
@@ -163,65 +163,94 @@ function valorDaFaixa(numero: string, unidade: string | undefined): number | nul
   return Math.round(n * (unidade === "mil" || unidade === "k" ? 1000 : 1_000_000));
 }
 
-/**
- * O "para quem" do cérebro, em critério: o público da tela, o lugar, o teto
- * do orçamento e os dormitórios. Palavra que não é público, faixa,
- * dormitório nem o nome do imóvel vira LUGAR, de propósito: na dúvida o
- * filtro estreita (no pior caso ninguém entra e a resposta mostra o que foi
- * entendido), em vez de alargar para a carteira inteira, que é a lista fria
- * que derruba o número.
- */
-export function lerPublico(paraQuem: string, nomesDoImovel: string[] = []): PedidoDePublico {
-  let resto = ` ${normalizar(paraQuem)} `;
-  let ate: number | null = null;
-  const faixa = resto.match(FAIXA);
-  if (faixa) {
-    ate = valorDaFaixa(faixa[1], faixa[2]);
-    resto = resto.replace(faixa[0], " ");
-  }
-  let dormitorios: number | null = null;
-  const dorms = resto.match(DORMITORIOS);
-  if (dorms) {
-    const n = Number(dorms[1]);
-    dormitorios = n >= 1 && n <= 10 ? n : null;
-    resto = resto.replace(dorms[0], " ");
-  }
-  const filtro = PUBLICOS.find(([re]) => re.test(resto))?.[1] ?? "todos";
-  const doImovel = new Set(nomesDoImovel.flatMap((n) => normalizar(n).split(/[^a-z0-9]+/)));
-  const lugar = resto
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length >= 3 && !/^\d+$/.test(t) && !NAO_E_LUGAR.has(t) && !doImovel.has(t));
-  return { filtro, regiao: lugar.length ? lugar.join(" ") : null, ate, dormitorios };
+function orcamentoDoPedido(v: unknown): number | null {
+  if (typeof v === "number") return Number.isFinite(v) && v > 0 ? (v < 10_000 ? Math.round(v * 1000) : Math.round(v)) : null;
+  if (typeof v !== "string") return null;
+  const faixa = normalizar(v).match(FAIXA);
+  return faixa ? valorDaFaixa(faixa[1], faixa[2]) : null;
 }
 
-const ROTULO_DO_PUBLICO: Record<FiltroLeadsCampanha, string> = {
-  todos: "seus clientes",
-  parados_15d: "quem esfriou (15+ dias parado)",
-  novos_sem_contato: "quem acabou de chegar",
-  sem_resposta: "quem foi abordado e não respondeu",
-  compradores: "quem comprou",
-  selecionados: "os escolhidos",
-};
+/** Inteiro entre `min` e `max`; o resto é "sem filtro". */
+function inteiro(v: unknown, min: number, max: number): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v.replace(/\D+/g, "")) : NaN;
+  return Number.isFinite(n) && Math.round(n) >= min && Math.round(n) <= max ? Math.round(n) : null;
+}
+
+function etapasDoPedido(v: unknown): EtapaFunil[] {
+  const lista = Array.isArray(v) ? v : typeof v === "string" ? v.split(/[,;]/) : [];
+  const validas = new Set<string>(ETAPAS_FUNIL);
+  return [...new Set(lista.map((e) => normalizar(String(e)).trim().replace(/\s+/g, "_")).filter((e) => validas.has(e)))] as EtapaFunil[];
+}
+
+function respondeuDoPedido(v: unknown): "sim" | "nao" | null {
+  if (v === true) return "sim";
+  if (v === false) return "nao";
+  const t = normalizar(String(v ?? "")).trim();
+  return t === "sim" ? "sim" : t === "nao" ? "nao" : null;
+}
+
+/** Os argumentos da ferramenta, conferidos: valor fora do esperado vira "sem esse filtro", nunca um lugar. */
+export function lerPedido(a: Record<string, unknown>): PedidoDaLista {
+  return {
+    regiao: texto(a.regiao, 80),
+    orcamentoMax: orcamentoDoPedido(a.orcamento_max),
+    dormitorios: inteiro(a.dormitorios, 1, 10),
+    etapas: etapasDoPedido(a.etapas),
+    respondeu: respondeuDoPedido(a.respondeu),
+    paradoHaDias: inteiro(a.parado_ha_dias, 1, 365),
+    paraQuem: texto(a.para_quem, 200),
+  };
+}
 
 const capitalizar = (t: string) => t.replace(/\b\p{L}/gu, (l) => l.toUpperCase());
 
-/** O público em palavras, para a proposta: é o que a pessoa confere antes do "sim". */
-export function descreverPublico(p: PedidoDePublico, imovel: string | null): string {
-  const partes = [p.filtro === "compradores" && imovel ? `quem comprou no ${imovel}` : ROTULO_DO_PUBLICO[p.filtro]];
-  if (p.regiao) partes.push(`que querem ${capitalizar(p.regiao)}`);
-  if (p.ate) partes.push(`com orçamento até ${reais(p.ate)}`);
-  if (p.dormitorios) partes.push(`que pediram até ${p.dormitorios} ${p.dormitorios === 1 ? "dormitório" : "dormitórios"}`);
-  if (imovel && p.filtro !== "compradores") partes.push(`que combinam com o ${imovel}`);
-  return partes.join(", ");
+/** O nome da etapa como a coluna do funil (`ETAPA_LABEL`); "Leads" sozinho não diz etapa no resumo. */
+const rotuloDaEtapa = (e: EtapaFunil) => (e === "novo" ? "Novos" : ETAPA_LABEL[e]);
+
+/**
+ * Compradores de UM imóvel (o avanço da obra, a única exceção da tela a
+ * "fechado não entra"): etapa só "fechado", com o imóvel.
+ */
+export const pedeCompradores = (p: PedidoDaLista, imovel: string | null) => Boolean(imovel) && p.etapas.length === 1 && p.etapas[0] === "fechado";
+
+/** Cada filtro em português: o mesmo rótulo no resumo e no "por quê" do zero. */
+const ROTULO = {
+  etapas: (p: PedidoDaLista) => p.etapas.map(rotuloDaEtapa).join(" ou "),
+  regiao: (p: PedidoDaLista) => `querem ${capitalizar(p.regiao ?? "")}`,
+  orcamento: (p: PedidoDaLista) => `orçamento até ${reais(p.orcamentoMax ?? 0)}`,
+  dormitorios: (p: PedidoDaLista) => `até ${plural(p.dormitorios ?? 0, "dormitório", "dormitórios")}`,
+  imovel: (imovel: string) => `combinam com o ${imovel}`,
+  compradores: (imovel: string) => `quem comprou no ${imovel}`,
+  respondeu: (r: "sim" | "nao") => (r === "sim" ? "já responderam" : "nunca responderam"),
+  parado: (dias: number) => `parados há ${dias}+ dias`,
+};
+
+/** Os filtros aplicados, em português, na ordem em que recortam: é o que a pessoa confere antes do "sim". */
+export function rotulosDosFiltros(p: PedidoDaLista, imovel: string | null): string[] {
+  const doPerfil = pedeCompradores(p, imovel)
+    ? [ROTULO.compradores(imovel as string)]
+    : [
+        p.etapas.length ? ROTULO.etapas(p) : null,
+        p.regiao ? ROTULO.regiao(p) : null,
+        p.orcamentoMax ? ROTULO.orcamento(p) : null,
+        p.dormitorios ? ROTULO.dormitorios(p) : null,
+        imovel ? ROTULO.imovel(imovel) : null,
+      ];
+  return [...doPerfil, p.respondeu ? ROTULO.respondeu(p.respondeu) : null, p.paradoHaDias ? ROTULO.parado(p.paradoHaDias) : null].filter(
+    (r): r is string => Boolean(r),
+  );
 }
 
 /** O título que a tela de listas mostra: o imóvel e o recorte, curto. */
-export function tituloDaLista(p: PedidoDePublico, imovel: string | null): string {
+export function tituloDaLista(p: PedidoDaLista, imovel: string | null): string {
+  const compradores = pedeCompradores(p, imovel);
   const recorte = [
-    p.filtro !== "todos" ? ROTULO_DO_PUBLICO[p.filtro] : null,
+    compradores ? "quem comprou" : p.etapas.length ? p.etapas.map(rotuloDaEtapa).join("/") : null,
     p.regiao ? capitalizar(p.regiao) : null,
-    p.ate ? `até ${reais(p.ate)}` : null,
+    p.orcamentoMax ? `até ${reais(p.orcamentoMax)}` : null,
     p.dormitorios ? `${p.dormitorios} dorms` : null,
+    p.respondeu ? ROTULO.respondeu(p.respondeu) : null,
+    p.paradoHaDias ? `parados ${p.paradoHaDias}+ dias` : null,
   ].filter(Boolean);
   const titulo = `${imovel ?? "Lista"} · ${recorte.length ? recorte.join(", ") : imovel ? "quem combina" : "seus clientes"}`;
   return titulo.slice(0, 120);
@@ -248,39 +277,130 @@ function preferencias(x: PessoaDaLista, credito: ParametrosCredito): Preferencia
   };
 }
 
-/**
- * O público da tela recortado pelo que a pessoa pediu. Só o que o cliente
- * DISSE conta (a régua de `compatibilidade`): quem não declarou região não
- * entra em "quem quer Barueri"; quem não tem orçamento nem renda não entra
- * em "até 600 mil". Com imóvel, só vai para quem combina com ele
- * (`leadsQueCombinam`, a tela "Leads que combinam"), salvo os compradores
- * dele (o avanço da obra, a única exceção da tela).
- */
-export function recortarPeloPedido(
-  pessoas: PessoaDaLista[],
-  pedido: PedidoDePublico,
-  credito: ParametrosCredito,
-  imovel: ImovelParaMatch | null,
-): PessoaDaLista[] {
+// ── O recorte, passo a passo (o "por quê" do zero) ───────────────────────
+
+/** Um passo do recorte: um filtro pedido (`restam` depois dele) ou uma trava que tira gente (`fora`). */
+export type PassoDoRecorte = { rotulo: string; restam: number; fora: number; trava: boolean };
+
+type Filtro = { rotulo: string; trava?: boolean; passa: (x: PessoaDaLista) => boolean };
+
+function aplicar(pessoas: PessoaDaLista[], filtros: Filtro[], passos: PassoDoRecorte[]): PessoaDaLista[] {
   let r = pessoas;
-  if (pedido.regiao) {
-    const lugar = pedido.regiao;
-    r = r.filter((x) => Boolean(x.regiaoInteresse?.trim()) && regiaoCasa(x.regiaoInteresse as string, { cidade: lugar, bairro: "" }));
+  for (const f of filtros) {
+    const antes = r.length;
+    r = r.filter(f.passa);
+    passos.push({ rotulo: f.rotulo, restam: r.length, fora: antes - r.length, trava: Boolean(f.trava) });
   }
-  if (pedido.ate) {
-    const ate = pedido.ate;
-    r = r.filter((x) => {
-      const pref = preferencias(x, credito);
-      const teto = pref.orcamentoMax ?? pref.tetoPelaRenda ?? null;
-      return teto !== null && teto <= ate * FOLGA_ORCAMENTO;
+  return r;
+}
+
+/**
+ * Os filtros que não leem conversa, na ordem: etapa, região, orçamento,
+ * dormitórios e imóvel. Só o que o cliente DISSE conta (a régua de
+ * `compatibilidade`): quem não declarou região não entra em "quem quer
+ * Barueri"; quem não tem orçamento nem renda não entra em "até 600 mil". Com
+ * imóvel, só vai para quem combina com ele (`leadsQueCombinam`, a tela
+ * "Leads que combinam"), salvo os compradores dele.
+ */
+export function filtrosDoPerfil(p: PedidoDaLista, credito: ParametrosCredito, imovel: ImovelDoCatalogo | null): Filtro[] {
+  // Compradores já vêm recortados pela régua da tela (`elegivel`, filtro "compradores").
+  if (pedeCompradores(p, imovel?.nome ?? null)) return [];
+  const filtros: Filtro[] = [];
+  if (p.etapas.length) {
+    const etapas = new Set<string>(p.etapas);
+    filtros.push({ rotulo: ROTULO.etapas(p), passa: (x) => etapas.has(x.etapa) });
+  }
+  if (p.regiao) {
+    const lugar = p.regiao;
+    filtros.push({
+      rotulo: ROTULO.regiao(p),
+      passa: (x) => Boolean(x.regiaoInteresse?.trim()) && regiaoCasa(x.regiaoInteresse as string, { cidade: lugar, bairro: "" }),
     });
   }
-  if (pedido.dormitorios) {
-    const n = pedido.dormitorios;
-    r = r.filter((x) => Boolean(x.dormitoriosMin) && (x.dormitoriosMin as number) <= n);
+  if (p.orcamentoMax) {
+    const ate = p.orcamentoMax;
+    filtros.push({
+      rotulo: ROTULO.orcamento(p),
+      passa: (x) => {
+        const pref = preferencias(x, credito);
+        const teto = pref.orcamentoMax ?? pref.tetoPelaRenda ?? null;
+        return teto !== null && teto <= ate * FOLGA_ORCAMENTO;
+      },
+    });
   }
-  if (imovel && pedido.filtro !== "compradores") r = leadsQueCombinam(imovel, r, (x) => preferencias(x, credito));
-  return r;
+  if (p.dormitorios) {
+    const n = p.dormitorios;
+    filtros.push({ rotulo: ROTULO.dormitorios(p), passa: (x) => Boolean(x.dormitoriosMin) && (x.dormitoriosMin as number) <= n });
+  }
+  if (imovel) {
+    const match = paraMatch(imovel);
+    filtros.push({ rotulo: ROTULO.imovel(imovel.nome), passa: (x) => leadsQueCombinam(match, [x], (y) => preferencias(y, credito)).length > 0 });
+  }
+  return filtros;
+}
+
+/**
+ * Os filtros que leem a conversa (`conversasComOCorretor`): já respondeu /
+ * nunca respondeu e parado há N dias. "Nunca respondeu" leva junto o TETO DE
+ * INSISTÊNCIA da tela (`sem_resposta` de `publicoDaCampanha`): quem já
+ * recebeu 3 mensagens seguidas sem responder não entra; a quarta não
+ * converte e alimenta denúncia.
+ */
+export function filtrosDaConversa(p: PedidoDaLista, conversas: Map<string, ConversaDaPessoa>, agora: Date): Filtro[] {
+  const filtros: Filtro[] = [];
+  if (p.respondeu) {
+    const respondeu = p.respondeu;
+    filtros.push({ rotulo: ROTULO.respondeu(respondeu), passa: (x) => respondeuComoPedido(conversas.get(x.id), respondeu) });
+    if (respondeu === "nao") {
+      filtros.push({
+        rotulo: `por já terem recebido ${TETO_DE_INSISTENCIA} mensagens seguidas sem responder (teto de insistência)`,
+        trava: true,
+        passa: (x) => x.tentativasSemResposta < TETO_DE_INSISTENCIA,
+      });
+    }
+  }
+  if (p.paradoHaDias) {
+    const dias = p.paradoHaDias;
+    filtros.push({ rotulo: ROTULO.parado(dias), passa: (x) => paradoHaPeloMenos(conversas.get(x.id), dias, agora) });
+  }
+  return filtros;
+}
+
+export const ROTULO_DA_PROTECAO = "por já estarem em outra lista ou terem recebido lista nos últimos 7 dias";
+
+/** Os passos em uma linha: "carteira elegível: 120; Em conversa: 40; destes, já responderam: 12; destes, fora por ...: 12". */
+export function explicarPassos(elegiveis: number, passos: PassoDoRecorte[]): string {
+  return [
+    `carteira elegível: ${elegiveis}`,
+    ...passos.map((s, i) => `${i > 0 ? "destes, " : ""}${s.trava ? `fora ${s.rotulo}: ${s.fora}` : `${s.rotulo}: ${s.restam}`}`),
+  ].join("; ");
+}
+
+/**
+ * A resposta de "ninguém" com o POR QUÊ em números por filtro (conversa da
+ * Bruna, 30/10/2026): sem os números, a IA chutava outro filtro. `zerouEm`
+ * é o passo que levou a zero, para ela sugerir afrouxar o filtro CERTO; se
+ * foi uma trava (proteção de lista recente, teto de insistência), a dica
+ * diz que ela não se afrouxa.
+ */
+export function porQueNinguem(pedido: PedidoDaLista, descricao: string, elegiveis: number, passos: PassoDoRecorte[]): Record<string, unknown> {
+  const zerou = passos.find((s) => s.restam === 0);
+  const dica =
+    elegiveis === 0
+      ? "A carteira elegível está vazia: sem telefone, quem pediu para sair, fechado e perdido não entram em lista."
+      : !zerou
+        ? undefined
+        : zerou.trava
+          ? `Quem zerou foi uma trava que protege o número (fora ${zerou.rotulo}): ela não se afrouxa. Sugira outro filtro ou esperar alguns dias.`
+          : `Quem zerou foi o filtro "${zerou.rotulo}". Sugira afrouxar ou tirar só esse filtro; não ofereça filtro que a lista não tem.`;
+  const foraDeLista = pedido.etapas.some((e) => e === "fechado" || e === "perdido");
+  return {
+    nenhum: `Ninguém da sua carteira entra em "${descricao}" agora.`,
+    porque: explicarPassos(elegiveis, passos),
+    zerouEm: elegiveis === 0 ? "carteira elegível" : zerou?.rotulo,
+    dica,
+    etapas: foraDeLista ? "Fechado e perdido nunca entram em lista; a única exceção é só “Fechado” com um imóvel (os compradores dele)." : undefined,
+  };
 }
 
 function comoImovelDaLista(i: ImovelDoCatalogo): ImovelDaLista {
@@ -308,14 +428,12 @@ async function lerQuemPede(supabase: Supa, ctx: ContextoDoCentral): Promise<{ no
   return { nome: (data?.nome as string | null)?.trim() || ctx.nome, slug: (data?.slug as string | null) ?? null };
 }
 
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
-
 // ── montar_lista (capacidade 14) ─────────────────────────────────────────
 
 function criarMontarLista(deps: DependenciasDeListas): Acao {
   return {
     async preparar(ctx, a) {
-      const paraQuem = texto(a.para_quem, 200) ?? "";
+      const pedido = lerPedido(a);
       const pedidoDoImovel = texto(a.imovel, 160);
       const ditado = textoDaMensagem(a.texto);
       const supabase = deps.banco();
@@ -333,10 +451,8 @@ function criarMontarLista(deps: DependenciasDeListas): Acao {
         if (achado.tipo !== "um") return resposta(respostaDeImovelIncerto(achado, pedidoDoImovel));
         imovel = achado.imovel;
       }
-
-      const pedido = lerPublico(paraQuem, imovel ? [imovel.nome, ...imovel.nomesAlternativos] : []);
-      if (pedido.filtro === "compradores" && !imovel) return resposta({ pergunta: "Compradores de qual imóvel? Peça o nome." });
-      const descricao = descreverPublico(pedido, imovel?.nome ?? null);
+      const compradores = pedeCompradores(pedido, imovel?.nome ?? null);
+      const rotulos = rotulosDosFiltros(pedido, imovel?.nome ?? null);
 
       // 3. O texto: o que a pessoa ditou, ou o padrão da tela para o imóvel.
       const quem = await lerQuemPede(supabase, ctx);
@@ -356,28 +472,42 @@ function criarMontarLista(deps: DependenciasDeListas): Acao {
         });
       }
 
-      // 4. Quem recebe: a régua da tela, recortada pelo pedido.
+      // 4. Quem recebe: a régua da tela (elegível, quem pediu para sair fora,
+      // um por telefone), recortada pelos filtros pedidos. Os filtros correm
+      // também sobre as protegidas, só para o "por quê" dizer quantas o
+      // filtro achou e a proteção tirou; elas nunca entram na lista.
       let publico: Awaited<ReturnType<typeof publicoDaListaPeloCentral>>;
       try {
         publico = await publicoDaListaPeloCentral(supabase, {
           grupoId: ctx.grupoId,
           corretorId: ctx.corretorId,
-          filtro: pedido.filtro,
-          imovelSlug: pedido.filtro === "compradores" && imovel ? imovel.slug : null,
+          filtro: compradores ? "compradores" : "todos",
+          imovelSlug: compradores && imovel ? imovel.slug : null,
         });
       } catch {
         return resposta({ erro: "Não consegui conferir quem recebeu lista nos últimos dias. Tente de novo daqui a pouco." });
       }
+      const elegiveis = [...publico.pessoas, ...publico.protegidas];
       const credito = await deps.parametros(ctx.grupoId);
-      const pessoas = recortarPeloPedido(publico.pessoas, pedido, credito, imovel ? paraMatch(imovel) : null);
-      if (pessoas.length === 0) {
-        return resposta({
-          nenhum: `Ninguém da sua carteira entra em "${descricao}" agora.`,
-          protegidos: publico.protegidos
-            ? `${plural(publico.protegidos, "cliente ficou", "clientes ficaram")} de fora por já estar em outra lista ou ter recebido lista nos últimos 7 dias.`
-            : undefined,
-        });
+      const passos: PassoDoRecorte[] = [];
+      let achadas = aplicar(elegiveis, filtrosDoPerfil(pedido, credito, imovel), passos);
+      // Respondeu e parado leem as conversas: só de quem sobrou, de uma vez.
+      if (achadas.length > 0 && (pedido.respondeu || pedido.paradoHaDias)) {
+        let conversas: Map<string, ConversaDaPessoa>;
+        try {
+          conversas = await conversasComOCorretor(supabase, { grupoId: ctx.grupoId, corretorId: ctx.corretorId, pessoas: achadas });
+        } catch {
+          return resposta({ erro: "Não consegui conferir as conversas dos clientes agora. Tente de novo daqui a pouco." });
+        }
+        achadas = aplicar(achadas, filtrosDaConversa(pedido, conversas, agora), passos);
       }
+      const ids = new Set(publico.pessoas.map((x) => x.id));
+      const pessoas = achadas.filter((x) => ids.has(x.id));
+      const foraPelaProtecao = achadas.length - pessoas.length;
+      passos.push({ rotulo: ROTULO_DA_PROTECAO, restam: pessoas.length, fora: foraPelaProtecao, trava: true });
+
+      const descricao = rotulos.length ? rotulos.join(" · ") : "toda a sua carteira elegível";
+      if (pessoas.length === 0) return resposta(porQueNinguem(pedido, descricao, elegiveis.length, passos));
 
       const plano = await deps.externos.limiteDoPlano(ctx.grupoId, pessoas.length);
       if (!plano.ok) return resposta({ erro: plano.erro });
@@ -398,8 +528,12 @@ function criarMontarLista(deps: DependenciasDeListas): Acao {
 
       const titulo = tituloDaLista(pedido, imovel?.nome ?? null);
       const linhas = [
-        `Lista de transmissão pelo SEU WhatsApp${numero.telefone ? ` (${numero.telefone})` : ""}: ${descricao}.`,
+        `Lista de transmissão pelo SEU WhatsApp${numero.telefone ? ` (${numero.telefone})` : ""}.`,
+        // Sem filtro vai a carteira inteira: o resumo diz isso com todas as letras.
+        rotulos.length ? `Filtros: ${descricao}.` : `Sem filtro: ${descricao}: ${plural(pessoas.length, "pessoa", "pessoas")}.`,
+        pedido.paraQuem ? `Pedido: "${pedido.paraQuem}".` : null,
         `${plural(pessoas.length, "pessoa", "pessoas")}; ${plural(nuncaFalaram, "nunca falou", "nunca falaram")} com você.`,
+        foraPelaProtecao > 0 ? `${plural(foraPelaProtecao, "pessoa ficou", "pessoas ficaram")} de fora ${ROTULO_DA_PROTECAO}.` : null,
         nuncaFalaram > 0
           ? `Primeiro contato tem limite (${PRIMEIRO_CONTATO_POR_DIA} por dia, ${PRIMEIRO_CONTATO_POR_SEMANA} por semana): hoje cabem ${primeiroContatoHoje} de ${nuncaFalaram}.${numero.motivoSemPrimeiroContato ? ` ${numero.motivoSemPrimeiroContato.replace(/^Esta pessoa nunca falou com você\. /, "")}` : ""}`
           : null,
@@ -416,7 +550,8 @@ function criarMontarLista(deps: DependenciasDeListas): Acao {
           imovel: daLista,
           link,
           corretorNome: quem.nome,
-          filtro: pedido.filtro === "compradores" ? "compradores" : "selecionados",
+          filtro: compradores ? "compradores" : "selecionados",
+          filtros: rotulos,
           mensagemBase,
           pessoas: pessoas.length,
           nuncaFalaram,
