@@ -156,10 +156,14 @@ describe("o retorno de cada lista no Início (Fase 3)", () => {
 });
 
 describe("guardas de código (Fase 4)", () => {
-  it("só o assistente e a lista viva criam lista ou fila", () => {
+  it("só o assistente, a lista viva e a lista pedida pelo número central criam lista ou fila", () => {
+    // O central (onda 3, 30/10/2026) repete o `criarCampanha` da tela pela
+    // chave de serviço; `listaPeloCentral.test.ts` cobra que as travas dele
+    // são as mesmas.
     const permitidos = new Set([
       "src/app/corretor/(painel)/campanhas/acoes.ts",
       "src/lib/whatsapp/listasVivas.ts",
+      "src/lib/whatsapp/listaPeloCentral.ts",
     ]);
     const achados: string[] = [];
     const varrer = (dir: string) => {
