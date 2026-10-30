@@ -12656,6 +12656,22 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   não vê histórico nem proposta do privado (senão repetiria no grupo o que
   foi dito a sós), sem boas-vindas e sem ler "sim". `route.ts` não mudou: o
   desvio do central já vem antes do descarte de grupo.
+- **Onda 3, frente M (arte e vídeo), 30/10/2026** —
+  [[arte-e-video-pelo-numero-central]]: `gerar_arte`/`criar_video` são ação
+  com "sim" (gastam cota, sem desfazer). A conversa ganhou **resposta com
+  arquivo** genérica: `ResultadoDaAcao.arquivos`/`depois`, consulta com
+  `arquivos` (vira `arquivosColetados`), `RespostaDoCentral.arquivos`/`depois`;
+  só URL, e no histórico/registro só "[imagem]". O webhook manda texto, depois
+  `enviarMidiaWhatsapp`, e espera o `depois` em `after()`; no grupo o arquivo
+  segue `respostaSoNoPrivado` (`enviarMidiaWhatsappParaGrupo`, novo). Arte =
+  `estudio/artePeloCentral.ts`, a rota `/api/imagens/gerar` ESPELHADA sem
+  sessão (a rota é presa por guardas que leem o código dela); o "sim" espera
+  25 s e, passando, responde "te mando em instantes" e a mesma geração segue
+  no `after` (que vive no teto de 60 s da função: imagem com 40 s de teto).
+  Vídeo = `video/videoPeloCentral.ts` (`briefing.origem = "central"`).
+  **Armadilha:** o worker de vídeo roda no GitHub Actions sem as chaves da
+  Evolution; quem manda o vídeo pronto é o tique dos follow-ups
+  (`video/entregaPeloCentral.ts`, marca `briefing.centralEntregueEm`).
 
 ## Suporte e contato da Astro (29/10/2026)
 

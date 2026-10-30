@@ -50,7 +50,41 @@ export type Preparo =
  * atrás (spec 4.6: até 24 h; lead cadastrado volta arquivado, campos e etapa
  * voltam ao valor anterior). Sem `desfazer`, a ação não tem volta.
  */
-export type ResultadoDaAcao = { ok: boolean; texto: string; desfazer?: Record<string, unknown> };
+export type ResultadoDaAcao = {
+  ok: boolean;
+  texto: string;
+  desfazer?: Record<string, unknown>;
+  /** O que volta como ARQUIVO além do texto (4.5: arte, foto, planta), para o corretor encaminhar. */
+  arquivos?: ArquivoDaResposta[];
+  /**
+   * Trabalho que segue depois da resposta (arte que passou do tempo do
+   * webhook): `texto` já diz "te mando em instantes", e o que esta promessa
+   * entregar sai pelo central por conta própria. Nunca rejeita (quem a cria
+   * transforma a falha em texto).
+   */
+  depois?: Promise<EntregaDepois>;
+};
+
+/**
+ * Um arquivo que o central manda de volta. Sempre por URL (pública ou
+ * assinada), nunca bytes nem base64: a resposta passa pelo registro e pelo
+ * histórico, e o arquivo não pode entrar em nenhum dos dois. Quem tem só o
+ * buffer sobe para o Storage antes e passa a URL. `documento` (PDF) fica de
+ * fora até o provedor ganhar o tipo: hoje ele só manda foto e vídeo nativos.
+ */
+export type ArquivoDaResposta = { tipo: "imagem" | "video"; url: string };
+
+/** O que o trabalho de `depois` entrega quando termina. */
+export type EntregaDepois = { texto: string; arquivos: ArquivoDaResposta[] };
+
+/** Só o que tem forma de arquivo (URL http) passa; o resto some calado. */
+export function arquivosValidos(v: unknown): ArquivoDaResposta[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((a): a is ArquivoDaResposta => {
+    const { tipo, url } = (typeof a === "object" && a !== null ? a : {}) as Partial<ArquivoDaResposta>;
+    return (tipo === "imagem" || tipo === "video") && typeof url === "string" && /^https?:\/\//.test(url);
+  });
+}
 
 export type Acao = {
   preparar: (ctx: ContextoDoCentral, argumentos: Record<string, unknown>) => Promise<Preparo>;
@@ -71,6 +105,12 @@ export const TRATADORES: Tratadores = {
 
 export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = TRATADORES, onda: number = ONDA_ATUAL) {
   const itensPropostos: ItemDaProposta[] = [];
+  /**
+   * Arquivos que uma CONSULTA devolveu (`arquivos` no resultado, ex.: fotos
+   * ou planta do imóvel): saem do que vai ao cérebro, que só fica sabendo
+   * quantos vão junto, e voltam pela conversa como arquivo.
+   */
+  const arquivosColetados: ArquivoDaResposta[] = [];
   const executar = async (nome: string, argumentos: Record<string, unknown>): Promise<unknown> => {
     const f = ferramenta(nome);
     if (!f) return { erro: "Não conheço esse pedido." };
@@ -79,7 +119,13 @@ export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = T
     try {
       if (f.tipo === "consulta") {
         const consulta = tratadores.consultas[nome];
-        return consulta ? await consulta(ctx, argumentos) : { aindaNao: true, mensagem: AINDA_NAO };
+        if (!consulta) return { aindaNao: true, mensagem: AINDA_NAO };
+        const r = await consulta(ctx, argumentos);
+        if (typeof r !== "object" || r === null || !("arquivos" in r)) return r;
+        const { arquivos, ...resto } = r as Record<string, unknown>;
+        const validos = arquivosValidos(arquivos);
+        arquivosColetados.push(...validos);
+        return validos.length > 0 ? { ...resto, arquivosQueVaoJunto: validos.length } : resto;
       }
       const acao = tratadores.acoes[nome];
       if (!acao) return { aindaNao: true, mensagem: AINDA_NAO };
@@ -91,19 +137,22 @@ export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = T
       return { erro: "Não consegui fazer isso agora." };
     }
   };
-  return { executar, itensPropostos };
+  return { executar, itensPropostos, arquivosColetados };
 }
 
 /** Um item feito que tem volta: o que o "desfaz" (24 h) precisa. */
 export type FeitoDesfazivel = { ferramenta: string; resumo: string; desfazer: Record<string, unknown> };
+
+/** O que cada item confirmado devolveu: o texto e, quando houver, o arquivo e a entrega posterior. */
+export type ResultadoExecutado = { ok: boolean; texto: string; arquivos?: ArquivoDaResposta[]; depois?: Promise<EntregaDepois> };
 
 /** Roda os itens de uma proposta confirmada, um por um, com os dados resolvidos no `preparar`. */
 export async function executarProposta(
   ctx: ContextoDoCentral,
   itens: ItemDaProposta[],
   tratadores: Tratadores = TRATADORES,
-): Promise<{ resultados: { ok: boolean; texto: string }[]; desfaziveis: FeitoDesfazivel[] }> {
-  const resultados: { ok: boolean; texto: string }[] = [];
+): Promise<{ resultados: ResultadoExecutado[]; desfaziveis: FeitoDesfazivel[] }> {
+  const resultados: ResultadoExecutado[] = [];
   const desfaziveis: FeitoDesfazivel[] = [];
   for (const item of itens) {
     const acao = tratadores.acoes[item.ferramenta];
@@ -113,7 +162,8 @@ export async function executarProposta(
     }
     try {
       const r = await acao.executar(ctx, item.dados);
-      resultados.push({ ok: r.ok, texto: r.texto });
+      const arquivos = arquivosValidos(r.arquivos);
+      resultados.push({ ok: r.ok, texto: r.texto, ...(arquivos.length ? { arquivos } : {}), ...(r.depois ? { depois: r.depois } : {}) });
       if (r.ok && r.desfazer && acao.desfazer) {
         desfaziveis.push({ ferramenta: item.ferramenta, resumo: item.resumo, desfazer: r.desfazer });
       }

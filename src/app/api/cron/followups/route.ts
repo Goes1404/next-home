@@ -52,6 +52,7 @@ import { avisarCobrancasDoDia, avisarRiscosDoDia } from "@/lib/notificacoes/avis
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
+import { entregarVideosPeloCentral } from "@/lib/video/entregaPeloCentral";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
 import { separarRajada } from "@/lib/whatsapp/rajada";
@@ -716,6 +717,15 @@ export async function GET(req: NextRequest) {
     return 0;
   });
   const reservasLiberadas = await liberarReservasVencidas(supabase).catch(() => 0);
+  /*
+   * O vídeo pedido pelo número central volta por ele quando o worker conclui
+   * (onda 3). O worker roda no GitHub Actions, sem as chaves da Evolution:
+   * quem entrega é este tique. Com a onda desligada não lê nada.
+   */
+  const videosPeloCentral = await entregarVideosPeloCentral(supabase).catch((e) => {
+    console.error("[vídeo pelo central]", e);
+    return 0;
+  });
 
   /*
    * Lembretes do corretor: os das anotações (0100) e os das tarefas da ficha
@@ -742,7 +752,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, notasRefeitas, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, leadsDoGmail, notasRefeitas, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -794,7 +804,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas, notasRefeitas });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas, notasRefeitas });
   } finally {
     await destravarDisparo("followups", dono);
   }

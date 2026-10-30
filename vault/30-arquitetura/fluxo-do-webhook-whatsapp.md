@@ -37,6 +37,11 @@ summary: Autenticação → eventos técnicos → porteiro de lead cadastrado �
    e o grupo ouve "Te mandei no privado". Onda < 2: `ignored:
    "central_sem_mensagem"`, como antes
    ([[numero-central-em-grupos-da-equipe]]).
+   Resposta com arquivo (onda 3): a conversa devolve textos + `arquivos`
+   (URL) + `depois`; `enviarRespostaDoCentral` manda os textos, depois a
+   mídia nativa (`enviarMidiaWhatsapp`), e espera o `depois` (arte que
+   passou de 25 s) em `after()`, anotando no histórico do central. No grupo,
+   o arquivo segue `respostaSoNoPrivado` ([[arte-e-video-pelo-numero-central]]).
 1. **Segredo** — falha fechada sem `CRON_SECRET`/segredo do webhook.
    **Antes disso, o descarte de grupo** (`@g.us`, transmissão, status) sai com
    200 "ignored". Única exceção (27/10): `messages.upsert` não `fromMe` num

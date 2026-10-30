@@ -1,5 +1,6 @@
 import { mesmoNumero, numeroDoJid, type ParticipanteDoGrupo } from "@/lib/whatsapp/participantesDoGrupo";
 import type { MensagemRecebida, RespostaDoCentral } from "./conversa";
+import type { ArquivoDaResposta } from "./executar";
 import { ferramenta, ONDA_ATUAL, textoDaAjuda } from "./ferramentas";
 import type { Remetente } from "./identificar";
 import { hashDoTelefone } from "./telefone";
@@ -235,6 +236,13 @@ export type DependenciasDoGrupo = {
   responder: (m: MensagemRecebida, remetente: Remetente) => Promise<RespostaDoCentral>;
   enviarNoGrupo: (texto: string) => Promise<boolean>;
   enviarNoPrivado: (telefone: string, texto: string) => Promise<boolean>;
+  /**
+   * O arquivo da resposta (foto, arte), como mídia nativa. Segue a MESMA
+   * regra dos textos (`respostaSoNoPrivado`): o arquivo não é mais público
+   * que o texto que o acompanha. Opcionais: sem eles, a resposta é só texto.
+   */
+  enviarArquivoNoGrupo?: (arquivo: ArquivoDaResposta) => Promise<boolean>;
+  enviarArquivoNoPrivado?: (telefone: string, arquivo: ArquivoDaResposta) => Promise<boolean>;
 };
 
 export type DecisaoDoGrupo =
@@ -315,9 +323,15 @@ export async function tratarMensagemDoGrupoNoCentral(
   );
   if (resposta.textos.length === 0) return { tipo: "respondido", noGrupo: 0, noPrivado: 0 };
 
+  // Arquivo vai depois do texto, que é o contexto dele. `depois` (a entrega
+  // que passa do tempo do webhook) não nasce aqui: só sai de um "sim", e o
+  // "sim" é no privado.
+  const arquivos = resposta.arquivos ?? [];
   if (!resposta.soNoPrivado) {
     for (const t of resposta.textos) await deps.enviarNoGrupo(t);
-    return { tipo: "respondido", noGrupo: resposta.textos.length, noPrivado: 0 };
+    let noGrupo = resposta.textos.length;
+    if (deps.enviarArquivoNoGrupo) for (const a of arquivos) if (await deps.enviarArquivoNoGrupo(a)) noGrupo += 1;
+    return { tipo: "respondido", noGrupo, noPrivado: 0 };
   }
 
   // Primeiro o privado; o "te mandei" só depois de mandado, para não ser mentira.
@@ -327,6 +341,7 @@ export async function tratarMensagemDoGrupoNoCentral(
   }
   let enviados = 0;
   for (const t of resposta.textos) if (await deps.enviarNoPrivado(autor.whatsapp, t)) enviados += 1;
+  if (deps.enviarArquivoNoPrivado) for (const a of arquivos) if (await deps.enviarArquivoNoPrivado(autor.whatsapp, a)) enviados += 1;
   await deps.enviarNoGrupo(enviados > 0 ? TEXTOS_DO_GRUPO.noPrivado : TEXTOS_DO_GRUPO.privadoFalhou);
   return { tipo: "respondido", noGrupo: 1, noPrivado: enviados };
 }
