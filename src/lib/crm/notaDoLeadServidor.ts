@@ -30,8 +30,28 @@ type Cliente = SupabaseClient<Database>;
 export const JANELA_DE_FALAS_DIAS = 45;
 /** De quanto em quanto tempo a varredura do tique refaz a nota (o tempo esfria o lead). */
 export const NOTA_VENCE_EM_HORAS = 6;
-/** Quantos leads a varredura refaz por tique (a cada 5 min). */
-export const NOTAS_POR_TIQUE = 100;
+/**
+ * Quantos leads a varredura refaz por tique (a cada 5 min). Eram 100, com
+ * 100 UPDATEs em série antes da janela do tique (revisão de 30/10/2026):
+ * 30 por tique são 8.640 por dia, e a nota vence em 6 h.
+ */
+export const NOTAS_POR_TIQUE = 30;
+/** Falas do cliente que a conta lê por lead (as mais recentes). */
+export const FALAS_POR_LEAD = 40;
+/** Consultas de falas abertas ao mesmo tempo. */
+const FALAS_EM_PARALELO = 6;
+
+/** Roda `fazer` em cada item, no máximo `limite` ao mesmo tempo. */
+async function emLotes<T>(itens: T[], limite: number, fazer: (item: T) => Promise<void>): Promise<void> {
+  let proximo = 0;
+  const trabalhador = async () => {
+    while (proximo < itens.length) {
+      const item = itens[proximo++];
+      await fazer(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limite, itens.length) }, trabalhador));
+}
 
 const DIA = 86_400_000;
 
@@ -53,8 +73,19 @@ export async function recalcularNotas(
   supabase: Cliente,
   leadIds: string[],
   agora: Date = new Date(),
+  opcoes: {
+    /**
+     * `false` = só calcula, para mostrar (revisão de 30/10/2026). A sessão
+     * do painel não grava: ela pode não ler a conversa do lead (ADM, lead
+     * de outro número — 0134) e gravaria uma nota sem os sinais da conversa
+     * ("frio — sumiu") por cima da boa. Quem grava é a chave de serviço:
+     * webhook e tique dos follow-ups.
+     */
+    gravar?: boolean;
+  } = {},
 ): Promise<Map<string, NotaDoLead>> {
   const saida = new Map<string, NotaDoLead>();
+  const semFalasLidas = new Set<string>();
   const ids = [...new Set(leadIds)].filter(Boolean);
   if (ids.length === 0) return saida;
   try {
@@ -75,24 +106,39 @@ export async function recalcularNotas(
     }
 
     const leadDaConversa = new Map((conversas ?? []).map((c) => [c.id, c.lead_id as string]));
+    /*
+     * As falas, UMA CONSULTA POR LEAD (revisão de 30/10/2026). Era uma só,
+     * com `.limit(40 * ids.length)`: com 100 leads pedia 4.000 linhas, e o
+     * PostgREST corta em `max_rows` = 1.000 sem avisar. Os leads cujas falas
+     * ficavam além do corte chegavam com ZERO falas e saíam "frio — sumiu".
+     * Por lead, o teto de 40 é exato e nenhum lead rouba a cota do outro;
+     * a concorrência é limitada para não abrir 100 conexões de uma vez.
+     */
+    const conversasDoLead = new Map<string, string[]>();
+    for (const [conversaId, lead] of leadDaConversa) {
+      conversasDoLead.set(lead, [...(conversasDoLead.get(lead) ?? []), conversaId]);
+    }
     const falas = new Map<string, { em: string; texto: string }[]>();
-    if (leadDaConversa.size > 0) {
-      const { data: mensagens } = await supabase
+    await emLotes([...conversasDoLead], FALAS_EM_PARALELO, async ([lead, conversaIds]) => {
+      const { data: mensagens, error } = await supabase
         .from("whatsapp_mensagens")
         .select("conversa_id, conteudo, created_at")
-        .in("conversa_id", [...leadDaConversa.keys()])
+        .in("conversa_id", conversaIds)
         .eq("remetente", "cliente")
         .gte("created_at", desde)
         .order("created_at", { ascending: false })
-        .limit(40 * ids.length);
-      for (const m of mensagens ?? []) {
-        const lead = leadDaConversa.get(m.conversa_id);
-        if (!lead) continue;
-        const lista = falas.get(lead) ?? [];
-        lista.push({ em: m.created_at, texto: m.conteudo ?? "" });
-        falas.set(lead, lista);
+        .limit(FALAS_POR_LEAD);
+      if (error) {
+        // Sem as falas a nota sairia "sumiu" — pior que não refazer agora.
+        console.warn(`[nota do lead] falas não lidas: ${error.message}`);
+        semFalasLidas.add(lead);
+        return;
       }
-    }
+      falas.set(
+        lead,
+        (mensagens ?? []).map((m) => ({ em: m.created_at, texto: m.conteudo ?? "" })),
+      );
+    });
     const comConversa = new Set(leadDaConversa.values());
     const dossieDo = new Map((dossies ?? []).map((d) => [d.lead_id, d]));
 
@@ -105,6 +151,7 @@ export async function recalcularNotas(
 
     const seteDias = agora.getTime() - 7 * DIA;
     for (const lead of leads) {
+      if (semFalasLidas.has(lead.id)) continue;
       const dele = (falas.get(lead.id) ?? []).sort((a, b) => b.em.localeCompare(a.em));
       const dossie = dossieDo.get(lead.id);
       const base = calcularNotaDoLead(
@@ -127,14 +174,26 @@ export async function recalcularNotas(
     }
 
     const calculadaEm = agora.toISOString();
+    if (opcoes.gravar === false) return saida;
     for (const [id, nota] of saida) {
       const { error } = await supabase
         .from("leads")
         .update({ nota_score: nota.score, nota_label: nota.label, nota_motivo: nota.motivo.slice(0, 200), nota_calculada_em: calculadaEm })
         .eq("id", id);
       if (error) {
+        // Antes da 0248 nenhuma gravação passa: não adianta insistir.
+        if (error.code === "42703") {
+          console.warn(`[nota do lead] não gravou (0248 pendente): ${error.message}`);
+          break;
+        }
+        /*
+         * Um lead que falha não para os outros (revisão de 30/10/2026: era
+         * `break`), e ganha o carimbo mesmo assim — sem ele o lead volta no
+         * topo da varredura a cada tique e trava a fila.
+         */
         console.warn(`[nota do lead] não gravou: ${error.message}`);
-        break;
+        await supabase.from("leads").update({ nota_calculada_em: calculadaEm }).eq("id", id);
+        continue;
       }
     }
   } catch (err) {
@@ -143,8 +202,13 @@ export async function recalcularNotas(
   return saida;
 }
 
-export async function recalcularNotaDoLead(supabase: Cliente, leadId: string, agora?: Date): Promise<NotaDoLead | null> {
-  return (await recalcularNotas(supabase, [leadId], agora)).get(leadId) ?? null;
+export async function recalcularNotaDoLead(
+  supabase: Cliente,
+  leadId: string,
+  agora?: Date,
+  opcoes?: { gravar?: boolean },
+): Promise<NotaDoLead | null> {
+  return (await recalcularNotas(supabase, [leadId], agora, opcoes)).get(leadId) ?? null;
 }
 
 /**

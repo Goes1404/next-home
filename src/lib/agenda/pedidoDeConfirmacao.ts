@@ -1,6 +1,7 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { registrarInteracao } from "@/lib/crm/interacoes";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { dentroDaJanelaDoCorretor } from "@/lib/whatsapp/antiBan";
 import { enviarMensagemWhatsapp } from "@/lib/whatsapp/provider";
 import { podeEnviarPorIniciativa, silencioDaConversa } from "@/lib/whatsapp/quandoAIaResponde";
@@ -134,6 +135,14 @@ export async function pedirConfirmacaoDaVisita(
     if (!dentroDaJanelaDoCorretor(agora, numero.expediente)) return { enviado: false, erro: "Fora do expediente.", pular: true };
     if (!podeEnviarPorIniciativa({ conversa: situacao, numero }).responde) {
       return { enviado: false, erro: "A conversa ou o número não aceitam envio automático." };
+    }
+    /*
+     * Conta suspensa (cobrança ou plataforma) não manda nada automático
+     * (revisão de 30/10/2026) — a mesma regra que cala a IA e a varredura
+     * de respostas atrasadas. O toque do corretor continua: é ele falando.
+     */
+    if (await grupoSuspenso(p.grupoId, agora)) {
+      return { enviado: false, erro: "Conta suspensa: nada automático sai.", pular: true };
     }
   }
 

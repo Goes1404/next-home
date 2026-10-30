@@ -21,7 +21,11 @@ import { TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
 
 describe("decidirTranscricao (teto do dia)", () => {
   it("com a IA atendendo transcreve sempre, mesmo acima do teto", () => {
-    expect(decidirTranscricao({ iaAtende: true, transcricoesHoje: 999, teto: 10, grupoSuspenso: true })).toBe("transcrever");
+    expect(decidirTranscricao({ iaAtende: true, transcricoesHoje: 999, teto: 10, grupoSuspenso: false })).toBe("transcrever");
+  });
+
+  it("grupo suspenso nunca transcreve, nem com a IA ligada (revisão de 30/10/2026)", () => {
+    expect(decidirTranscricao({ iaAtende: true, transcricoesHoje: 0, teto: null, grupoSuspenso: true })).toBe("grupo_suspenso");
   });
 
   it("com a IA calada respeita o teto e a suspensão", () => {
@@ -128,13 +132,13 @@ describe("webhook: a fala do cliente é gravada antes da transcrição", () => {
   const fonte = readFileSync(join(process.cwd(), "src/app/api/webhooks/whatsapp/route.ts"), "utf8");
 
   it("o áudio do cliente entra no banco com o marcador", () => {
-    expect(fonte).toMatch(/if \(ehAudio\) text = fromMe \? await transcreverEsteAudio\(false\) : AUDIO_TRANSCREVENDO;/);
+    expect(fonte).toMatch(/if \(ehAudio\) text = fromMe \? await transcreverEsteAudio\(\{ iaAtende: false \}\) : AUDIO_TRANSCREVENDO;/);
   });
 
   it("a transcrição do cliente vem DEPOIS da guarda de reentrega (o mesmo áudio nunca é pago duas vezes)", () => {
     const gravacao = fonte.indexOf('remetente: "cliente",');
     const reentrega = fonte.indexOf('ignored: "reentrega"');
-    const transcricao = fonte.indexOf("text = await transcreverEsteAudio(iaAtende);");
+    const transcricao = fonte.indexOf("text = await transcreverEsteAudio({ iaAtende, suspenso: suspensoAntes });");
     expect(gravacao).toBeGreaterThan(-1);
     expect(reentrega).toBeGreaterThan(gravacao);
     expect(transcricao).toBeGreaterThan(reentrega);

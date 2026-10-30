@@ -89,12 +89,22 @@ export function decidirResumo(p: {
   resumosHoje: number;
   tetoDoDia?: number;
   semCota: boolean;
+  /**
+   * A última TENTATIVA de gerar, com ou sem sucesso (revisão de 30/10/2026).
+   * O intervalo contava só o resumo gravado: resposta da IA ilegível deixava
+   * o cache como estava, e cada abertura da ficha chamava a IA de novo.
+   */
+  ultimaTentativaEm?: string | null;
 }): DecisaoDoResumo {
   if (!p.ultimaMensagemEm || p.totalDeFalas < 2) return "sem_conversa";
   const novas = !p.cache || new Date(p.ultimaMensagemEm).getTime() > new Date(p.cache.ate).getTime();
   if (!novas && !p.forcar) return "em_dia";
-  if (p.cache) {
-    const desde = p.agora.getTime() - new Date(p.cache.geradoEm).getTime();
+  const ultimaVez = Math.max(
+    p.cache ? new Date(p.cache.geradoEm).getTime() || 0 : 0,
+    p.ultimaTentativaEm ? new Date(p.ultimaTentativaEm).getTime() || 0 : 0,
+  );
+  if (ultimaVez > 0) {
+    const desde = p.agora.getTime() - ultimaVez;
     if (desde < (p.forcar ? INTERVALO_DO_BOTAO_MS : INTERVALO_AUTOMATICO_MS)) return novas ? "espera" : "em_dia";
   }
   if (p.semCota) return "sem_cota";
@@ -196,4 +206,23 @@ export function cacheDaLinha(linhaDoLead: {
   const resumo = lerSaidaDoResumo(linhaDoLead.resumo_conversa);
   if (!resumo || !linhaDoLead.resumo_conversa_em || !linhaDoLead.resumo_conversa_ate) return null;
   return { resumo, geradoEm: linhaDoLead.resumo_conversa_em, ate: linhaDoLead.resumo_conversa_ate };
+}
+
+/**
+ * A última tentativa de resumo gravada no próprio `resumo_conversa`
+ * (`tentativaEm`, revisão de 30/10/2026): sem coluna nova, e o resumo bom
+ * continua lá quando a tentativa falha.
+ */
+export function tentativaDoResumo(resumoConversa: unknown): string | null {
+  const t = (resumoConversa as { tentativaEm?: unknown } | null)?.tentativaEm;
+  return typeof t === "string" && Number.isFinite(new Date(t).getTime()) ? t : null;
+}
+
+/** O `resumo_conversa` com a tentativa carimbada (o resumo anterior, se houver, fica). */
+export function comTentativa(resumoConversa: unknown, em: string): Record<string, unknown> {
+  const base =
+    resumoConversa && typeof resumoConversa === "object" && !Array.isArray(resumoConversa)
+      ? (resumoConversa as Record<string, unknown>)
+      : {};
+  return { ...base, tentativaEm: em };
 }

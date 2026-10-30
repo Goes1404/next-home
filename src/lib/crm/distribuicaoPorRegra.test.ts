@@ -289,3 +289,54 @@ describe("o gatilho da roleta com as regras", () => {
     }
   });
 });
+
+/*
+ * A trava da roleta por grupo (0251, revisão de 30/10/2026): a roleta e a
+ * redistribuição tomam `roleta_leads:<grupo>` em vez da trava global — e,
+ * fora a linha da trava, são cópias exatas das definições anteriores.
+ */
+describe("a trava da roleta é por grupo (0251)", () => {
+  const funcoes = funcoesDasMigrations();
+  const ler = (prefixo: string) => {
+    const arquivo = readdirSync(DIR).find((n) => n.startsWith(prefixo))!;
+    return readFileSync(join(DIR, arquivo), "utf8");
+  };
+  const bloco = (sql: string, inicio: string, fim: string) => {
+    const i = sql.indexOf(inicio);
+    expect(i, inicio).toBeGreaterThanOrEqual(0);
+    return sql.slice(i, sql.indexOf(fim, i) + fim.length);
+  };
+  const TRAVA_GLOBAL = "perform pg_advisory_xact_lock(hashtext('roleta_leads'));";
+
+  it("as duas funções vivas são as da 0251, com a chave do grupo", () => {
+    const roleta = funcoes.get("distribuir_lead()")!;
+    const devolver = funcoes.get("devolver_leads_da_imobiliaria(uuid, uuid)")!;
+    expect(roleta.arquivo.startsWith("0251_")).toBe(true);
+    expect(devolver.arquivo.startsWith("0251_")).toBe(true);
+    expect(roleta.corpo).toContain("pg_advisory_xact_lock(hashtext('roleta_leads:' || new.grupo_id::text))");
+    expect(devolver.corpo).toContain("pg_advisory_xact_lock(hashtext('roleta_leads:' || v_grupo::text))");
+    expect(roleta.corpo).not.toContain(TRAVA_GLOBAL);
+    expect(devolver.corpo).not.toContain(TRAVA_GLOBAL);
+  });
+
+  it("fora a trava, distribuir_lead é byte a byte a da 0246", () => {
+    const fim = "$function$;";
+    const nova = bloco(ler("0251_"), "create or replace function public.distribuir_lead()", fim);
+    const da0246 = bloco(ler("0246_"), "create or replace function public.distribuir_lead()", fim);
+    expect(nova).toBe(
+      da0246.replace(TRAVA_GLOBAL, "perform pg_advisory_xact_lock(hashtext('roleta_leads:' || new.grupo_id::text));"),
+    );
+  });
+
+  it("fora a trava, devolver_leads_da_imobiliaria é byte a byte a da 0216", () => {
+    const inicio = "create or replace function public.devolver_leads_da_imobiliaria(";
+    const nova = bloco(ler("0251_"), inicio, "\n$$;");
+    const da0216 = bloco(ler("0216_"), inicio, "\n$$;");
+    expect(nova).toBe(da0216.replace(TRAVA_GLOBAL, "perform pg_advisory_xact_lock(hashtext('roleta_leads:' || v_grupo::text));"));
+  });
+
+  it("nenhuma outra função viva ainda toma a trava global (todas serializam pela mesma chave)", () => {
+    const comGlobal = [...funcoes.values()].filter((f) => f.corpo.includes("hashtext('roleta_leads')")).map((f) => f.assinatura);
+    expect(comGlobal).toEqual([]);
+  });
+});

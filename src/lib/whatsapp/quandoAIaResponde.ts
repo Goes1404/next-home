@@ -272,3 +272,32 @@ export function registroDoSilencio(
     expediente: numero?.expediente ?? null,
   };
 }
+
+/**
+ * A IA vai responder a este ÁUDIO do cliente? (revisão de 30/10/2026)
+ *
+ * Lida ANTES da transcrição, para decidir se ela passa pelo teto do dia: a
+ * transcrição só fica fora do teto quando a resposta depende do texto. É a
+ * MESMA decisão do turno (`decidirSeAIaResponde`), com o que não depende do
+ * texto — suspensão, cota, expediente, modo do número, co-piloto — e com o
+ * lead de anúncio da Meta já calado pela campanha (o webhook o cala logo
+ * depois, `calarIaNaConversaDeCampanha`). O webhook decide de novo, fresco,
+ * na hora de responder.
+ */
+export function aIaVaiResponderAoAudio(p: {
+  conversa: SituacaoDaConversa;
+  /** Lead que chegou por anúncio da Meta: a campanha cala a IA nele. */
+  anuncioMeta: boolean;
+  numero: ConfigDoNumero;
+  ultimaFalaCorretorEm: string | null;
+  cotaEsgotada: boolean;
+  grupoSuspenso: boolean;
+}): boolean {
+  return decidirSeAIaResponde({
+    conversa: p.anuncioMeta && p.conversa.botAtivo ? { ...p.conversa, botAtivo: false } : p.conversa,
+    numero: p.numero,
+    ultimaFalaCorretorEm: p.ultimaFalaCorretorEm,
+    cotaEsgotada: p.cotaEsgotada,
+    grupoSuspenso: p.grupoSuspenso,
+  }).responde;
+}

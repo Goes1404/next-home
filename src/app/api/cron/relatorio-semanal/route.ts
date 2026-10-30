@@ -7,6 +7,7 @@ import { coletarNumerosDaSemana } from "@/lib/admin/numerosDaSemana";
 import { leituraDoGrupo, type LeituraDoGrupo } from "@/lib/admin/numerosDaEquipe";
 import {
   acharNoticias,
+  deveMontarORelatorio,
   assuntoDoRelatorio,
   corpoDoRelatorio,
   type Achado,
@@ -16,6 +17,7 @@ import { coletarSemanaDoGrupo } from "@/lib/admin/semanaDoGrupo";
 import { avisarCorretor } from "@/lib/crm/avisoAoCorretor";
 import { hojeEmSaoPaulo } from "@/lib/financeiro/venda";
 import { linkDoPainel } from "@/lib/marcaDoCrm/marca";
+import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -94,6 +96,31 @@ async function destinatarios(
   return lista;
 }
 
+type GestorDoResumo = { id: string; relatorio_semanal_whatsapp_em: string | null };
+
+/**
+ * Os gestores do grupo que querem o resumo no WhatsApp e ainda não o
+ * receberam nesta semana. Lido ANTES de montar qualquer número (revisão de
+ * 30/10/2026): grupo sem ninguém para receber não paga a coleta. Erro na
+ * leitura (sem a 0246, por exemplo) é lista vazia — falha fechada.
+ */
+async function gestoresQueQueremOResumo(
+  supabase: ReturnType<typeof createServiceClient>,
+  grupoId: string,
+  agora: Date,
+): Promise<GestorDoResumo[]> {
+  const { data: gestores, error } = await supabase
+    .from("corretores")
+    .select("id, relatorio_semanal_whatsapp, relatorio_semanal_whatsapp_em")
+    .eq("grupo_id", grupoId)
+    .eq("papel", "gestor")
+    .eq("ativo", true);
+  if (error) return [];
+  return (gestores ?? [])
+    .filter((g) => g.relatorio_semanal_whatsapp === true && !jaMandouNaSemana(g.relatorio_semanal_whatsapp_em, agora))
+    .map((g) => ({ id: g.id, relatorio_semanal_whatsapp_em: g.relatorio_semanal_whatsapp_em }));
+}
+
 /**
  * O resumo da semana no WhatsApp de cada gestor do grupo que deixou ligado
  * (0246). Sai pelo canal dos avisos ao corretor (`avisarCorretor`): do
@@ -108,19 +135,16 @@ async function destinatarios(
  */
 async function mandarResumoNoWhatsapp(
   supabase: ReturnType<typeof createServiceClient>,
-  p: { grupoId: string; nomeDaCasa: string; leitura: LeituraDoGrupo; achado: Achado | null },
+  p: {
+    grupoId: string;
+    nomeDaCasa: string;
+    leitura: LeituraDoGrupo;
+    achado: Achado | null;
+    querem: GestorDoResumo[];
+    agora: Date;
+  },
 ): Promise<number> {
-  const { data: gestores, error } = await supabase
-    .from("corretores")
-    .select("id, relatorio_semanal_whatsapp, relatorio_semanal_whatsapp_em")
-    .eq("grupo_id", p.grupoId)
-    .eq("papel", "gestor")
-    .eq("ativo", true);
-  if (error) return 0;
-  const agora = new Date();
-  const querem = (gestores ?? []).filter(
-    (g) => g.relatorio_semanal_whatsapp === true && !jaMandouNaSemana(g.relatorio_semanal_whatsapp_em, agora),
-  );
+  const { querem, agora } = p;
   if (querem.length === 0) return 0;
 
   const semana = await coletarSemanaDoGrupo(p.leitura, hojeEmSaoPaulo(agora), async (corretorId) => {
@@ -159,14 +183,38 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = createServiceClient();
-    const { data: grupos, error } = await supabase.from("grupos").select("id");
+    // Só contas vivas (revisão de 30/10/2026): sem as canceladas, as
+    // encerradas e as suspensas pela plataforma.
+    const { data: grupos, error } = await supabase
+      .from("grupos")
+      .select("id")
+      .eq("situacao", "ativo")
+      .is("cancelado_em", null);
     if (error) throw error;
 
+    const porEmail = process.env.RELATORIO_SEMANAL_POR_EMAIL === "sim";
+    const agora = new Date();
     let enviados = 0;
     let destinatariosTotal = 0;
     let noWhatsapp = 0;
+    let pulados = 0;
     const semDestinatario: string[] = [];
     for (const { id: grupoId } of grupos ?? []) {
+      /*
+       * Antes de coletar os números: alguém recebe? A conta está em dia
+       * (suspensa por atraso não recebe)? O claim por gestor continua em
+       * `mandarResumoNoWhatsapp` — a lista daqui só decide se vale montar.
+       */
+      const querem = await gestoresQueQueremOResumo(supabase, grupoId, agora);
+      const montar = deveMontarORelatorio({
+        gestoresNoWhatsapp: querem.length,
+        porEmail,
+        suspenso: querem.length > 0 || porEmail ? await grupoSuspenso(grupoId, agora) : false,
+      });
+      if (!montar) {
+        pulados++;
+        continue;
+      }
       const leitura = await leituraDoGrupo(supabase, grupoId);
       const numeros = await coletarNumerosDaSemana(leitura);
       const achados = acharNoticias(numeros);
@@ -185,6 +233,8 @@ export async function GET(req: NextRequest) {
         nomeDaCasa,
         leitura,
         achado: achados[0] ?? null,
+        querem,
+        agora,
       }).catch((e) => {
         console.error("[relatorio] resumo no WhatsApp falhou:", e);
         return 0;
@@ -195,7 +245,7 @@ export async function GET(req: NextRequest) {
        * mostrou canal eficiente"); o cron voltou em 30/10/2026 por causa do
        * resumo no WhatsApp. O e-mail só sai com RELATORIO_SEMANAL_POR_EMAIL=sim.
        */
-      if (process.env.RELATORIO_SEMANAL_POR_EMAIL !== "sim") continue;
+      if (!porEmail) continue;
       const para = await destinatarios(supabase, grupoId);
       if (para.length === 0) {
         semDestinatario.push(grupoId);
@@ -211,7 +261,7 @@ export async function GET(req: NextRequest) {
       console.warn("[relatorio] grupo sem gestor com e-mail — relatório não enviado:", semDestinatario.join(", "));
     }
 
-    return NextResponse.json({ ok: true, enviados, destinatarios: destinatariosTotal, semDestinatario, noWhatsapp });
+    return NextResponse.json({ ok: true, enviados, destinatarios: destinatariosTotal, semDestinatario, noWhatsapp, pulados });
   } catch (e) {
     // O relatório não pode derrubar nada — mas também não pode falhar em
     // silêncio, ou volta a ser "ninguém olha".

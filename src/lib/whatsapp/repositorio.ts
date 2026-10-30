@@ -1176,6 +1176,58 @@ export async function ultimaMensagemClienteId(conversaId: string): Promise<strin
 }
 
 /**
+ * Há fala do CLIENTE nesta conversa ainda com o marcador de transcrição,
+ * gravada desde `desde` (revisão de 30/10/2026)? É a rajada esperando o
+ * áudio: a invocação do texto não responde enquanto o áudio anterior não
+ * virou texto. `excetoId` tira a própria fala de quem pergunta. Erro de
+ * leitura devolve `false`: esperar por algo que não se vê seguraria a
+ * resposta à toa.
+ */
+export async function haAudioTranscrevendo(params: {
+  conversaId: string;
+  desde: Date;
+  excetoId?: string | null;
+}): Promise<boolean> {
+  const supabase = createServiceClient();
+  let consulta = supabase
+    .from("whatsapp_mensagens")
+    .select("id")
+    .eq("conversa_id", params.conversaId)
+    .eq("remetente", "cliente")
+    .eq("conteudo", AUDIO_TRANSCREVENDO)
+    .gte("created_at", params.desde.toISOString());
+  if (params.excetoId) consulta = consulta.neq("id", params.excetoId);
+  const { data, error } = await consulta.limit(1);
+  if (error) {
+    console.warn("[audio] não consegui ver se a rajada tem áudio em transcrição:", error.message);
+    return false;
+  }
+  return (data ?? []).length > 0;
+}
+
+/**
+ * A fala do cliente já gravada com este id do provedor — para a reentrega
+ * saber se o áudio ficou com o marcador (invocação anterior morreu no meio
+ * da transcrição). `null` quando não acha ou a leitura falha.
+ */
+export async function falaDoClientePeloProvedor(params: {
+  conversaId: string;
+  providerMessageId: string;
+}): Promise<{ id: string; conteudo: string; criadoEm: string } | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("whatsapp_mensagens")
+    .select("id, conteudo, created_at")
+    .eq("conversa_id", params.conversaId)
+    .eq("remetente", "cliente")
+    .eq("provider_message_id", params.providerMessageId)
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { id: data.id, conteudo: data.conteudo, criadoEm: data.created_at };
+}
+
+/**
  * Carência do alerta ao corretor, POR MOTIVO (20/10/2026). Antes só o lead
  * quente tinha janela (6h, em `alerta_quente_em`); pedido de ligação e de
  * atendimento humano saíam de novo a cada mensagem do cliente, e o
@@ -2034,6 +2086,13 @@ export async function historicoRecente(
      * cópias do mesmo texto divergem no dia em que alguém melhora a frase.
      */
     .neq("conteudo", TEXTO_NAO_GUARDADO)
+    /*
+     * O marcador do áudio ainda em transcrição também não é fala (revisão de
+     * 30/10/2026): no prompt ele virava "o cliente disse: [transcrevendo…]",
+     * e a resposta saía sem o que ele falou. Quem precisa do áudio espera a
+     * transcrição (`esperarTranscricoesDaRajada`) antes de ler isto.
+     */
+    .neq("conteudo", AUDIO_TRANSCREVENDO)
     .order("created_at", { ascending: false })
     .limit(limite);
 

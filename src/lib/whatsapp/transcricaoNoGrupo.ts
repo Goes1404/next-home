@@ -66,8 +66,12 @@ export type DecisaoDaTranscricao = "transcrever" | "teto_do_dia" | "grupo_suspen
 /**
  * Transcreve este áudio?
  *
- * - IA atendendo a conversa: sempre (a resposta depende do texto).
- * - IA calada (ou fala do corretor): só com o grupo em dia e abaixo do teto.
+ * - Grupo suspenso (cobrança): nunca.
+ * - IA atendendo a conversa DE VERDADE (a decisão inteira de
+ *   `decidirSeAIaResponde`, não só o `bot_ativo`): sempre — a resposta
+ *   depende do texto.
+ * - IA calada (expediente, cota, co-piloto, número desligado, ou fala do
+ *   corretor): só abaixo do teto do dia.
  *   Falha na leitura do uso chega aqui como `transcricoesHoje: 0` — a mesma
  *   régua da cota (`usoDaIa.ts`): "não sei" custa centavos, nunca a fala.
  */
@@ -77,8 +81,10 @@ export function decidirTranscricao(p: {
   teto: number | null;
   grupoSuspenso: boolean;
 }): DecisaoDaTranscricao {
-  if (p.iaAtende) return "transcrever";
+  // Grupo suspenso não transcreve nunca: a IA também não atende nele
+  // (`decidirSeAIaResponde`), então não há resposta que dependa do texto.
   if (p.grupoSuspenso) return "grupo_suspenso";
+  if (p.iaAtende) return "transcrever";
   if (p.teto !== null && p.transcricoesHoje >= p.teto) return "teto_do_dia";
   return "transcrever";
 }
@@ -95,4 +101,66 @@ const DESLOCAMENTO_SP_MS = 3 * 3_600_000;
 export function inicioDoDiaEmSaoPaulo(agora: Date = new Date()): Date {
   const local = new Date(agora.getTime() - DESLOCAMENTO_SP_MS);
   return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) + DESLOCAMENTO_SP_MS);
+}
+
+/*
+ * Revisão de 30/10/2026: o marcador não pode prender a conversa.
+ *
+ * 1. ORÇAMENTO: download do áudio + todos os motores cabem em ~30 s
+ *    (`ORCAMENTO_DA_TRANSCRICAO_MS` só para os motores). Antes eram até três
+ *    motores de 15 s cada depois de um download de até 20 s — a invocação
+ *    estourava os 60 s do `maxDuration` com o marcador gravado.
+ * 2. ENCALHADO: marcador mais velho que `MARCADOR_ENCALHADO_MS` é de uma
+ *    invocação que morreu. A reentrega do provedor refaz a transcrição em
+ *    vez de parar na guarda de reentrega; a rajada para de esperar por ele.
+ * 3. RAJADA: o texto que chega enquanto um áudio anterior ainda está sendo
+ *    transcrito ESPERA a transcrição antes de responder — senão responde
+ *    com o marcador no histórico, e a invocação do áudio, absorvida pelo
+ *    debounce, nunca responde ao que o cliente disse no áudio.
+ */
+
+/** Teto de tempo somado dos motores de transcrição. */
+export const ORCAMENTO_DA_TRANSCRICAO_MS = 20_000;
+/** Timeout de cada tentativa de baixar o áudio decifrado (são até duas). */
+export const TIMEOUT_DO_DOWNLOAD_DO_AUDIO_MS = 8_000;
+/** Marcador mais velho que isto não tem mais invocação viva cuidando dele. */
+export const MARCADOR_ENCALHADO_MS = 40_000;
+/** Quanto a resposta da rajada espera, no máximo, por um áudio em transcrição. */
+export const ESPERA_MAXIMA_PELA_TRANSCRICAO_MS = 20_000;
+/** Intervalo entre as consultas enquanto espera. */
+export const INTERVALO_DA_ESPERA_PELA_TRANSCRICAO_MS = 1_500;
+
+/** A linha ainda está com o marcador, e a invocação que o gravou já morreu? */
+export function marcadorEncalhado(p: { conteudo: string | null | undefined; criadoEm: string | null | undefined; agora?: Date }): boolean {
+  if (p.conteudo !== AUDIO_TRANSCREVENDO || !p.criadoEm) return false;
+  const criado = new Date(p.criadoEm).getTime();
+  if (!Number.isFinite(criado)) return false;
+  return (p.agora ?? new Date()).getTime() - criado > MARCADOR_ENCALHADO_MS;
+}
+
+/**
+ * Espera os áudios da rajada saírem do marcador (finding 1 da revisão).
+ *
+ * `haAudioTranscrevendo` consulta o banco: fala do cliente com o marcador,
+ * mais nova que `MARCADOR_ENCALHADO_MS` (a encalhada não segura ninguém), e
+ * que não é a própria fala desta invocação. Devolve `"livre"` quando nada
+ * mais está transcrevendo, ou `"tempo_esgotado"` — e aí a invocação responde
+ * assim mesmo: o marcador nunca entra no histórico (`historicoRecente`), e
+ * silêncio é o pior desfecho.
+ */
+export async function esperarTranscricoesDaRajada(p: {
+  haAudioTranscrevendo: () => Promise<boolean>;
+  dormir: (ms: number) => Promise<unknown>;
+  agora?: () => number;
+  limiteMs?: number;
+  intervaloMs?: number;
+}): Promise<"livre" | "tempo_esgotado" | "nada_a_esperar"> {
+  const agora = p.agora ?? Date.now;
+  const limite = agora() + (p.limiteMs ?? ESPERA_MAXIMA_PELA_TRANSCRICAO_MS);
+  if (!(await p.haAudioTranscrevendo())) return "nada_a_esperar";
+  while (agora() < limite) {
+    await p.dormir(p.intervaloMs ?? INTERVALO_DA_ESPERA_PELA_TRANSCRICAO_MS);
+    if (!(await p.haAudioTranscrevendo())) return "livre";
+  }
+  return "tempo_esgotado";
 }

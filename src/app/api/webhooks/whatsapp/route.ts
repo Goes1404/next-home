@@ -90,12 +90,16 @@ import { lerRespostaAoPedidoDeConfirmacao } from "@/lib/agenda/respostaDaConfirm
 import { instrucaoDaCampanha } from "@/lib/whatsapp/contextoDaCampanha";
 import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/saudacaoAutomatica";
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
-import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
+import { aIaVaiResponderAoAudio, decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
 import { contarUsoDaIaDeHoje, lerCotaDaIa, lerTetoDeTranscricoes } from "@/lib/planos/usoDaIa";
 import {
   AUDIO_TRANSCREVENDO,
+  MARCADOR_ENCALHADO_MS,
+  TIMEOUT_DO_DOWNLOAD_DO_AUDIO_MS,
   decidirTranscricao,
+  esperarTranscricoesDaRajada,
+  marcadorEncalhado,
   textoDoAudioNaoTranscrito,
 } from "@/lib/whatsapp/transcricaoNoGrupo";
 import { recalcularNotaDoLead } from "@/lib/crm/notaDoLeadServidor";
@@ -116,7 +120,9 @@ import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
 import {
   candidatosTelefone,
+  falaDoClientePeloProvedor,
   gravarTranscricaoDoAudio,
+  haAudioTranscrevendo,
   marcarSessaoViva,
   registrarMensagemBarrada,
 } from "@/lib/whatsapp/repositorio";
@@ -704,6 +710,8 @@ export async function POST(req: NextRequest) {
         instanceName: instancia.instanceName,
         messageId: providerMessageId,
         mensagemCompleta: payload.data,
+        // O download entra no orçamento do áudio (ver `transcricaoNoGrupo.ts`).
+        timeoutMs: TIMEOUT_DO_DOWNLOAD_DO_AUDIO_MS,
       });
       if (!baixado.ok) {
         console.warn("[webhook] não consegui baixar o áudio decifrado:", baixado.motivo, baixado.detalhe ?? "");
@@ -713,19 +721,22 @@ export async function POST(req: NextRequest) {
     };
     /*
      * Transcreve o áudio e devolve o texto que fica no lugar da fala
-     * (IA no atendimento, 30/10/2026). Com a IA atendendo, sempre: a resposta
-     * depende do texto. Com a IA calada (ou na fala do corretor), só com o
-     * grupo em dia e abaixo do teto do dia (`decidirTranscricao`).
+     * (IA no atendimento, 30/10/2026). Grupo suspenso: nunca. Com a IA
+     * atendendo DE VERDADE (a decisão inteira, não só o `bot_ativo` —
+     * revisão de 30/10/2026), sempre: a resposta depende do texto. Com a IA
+     * calada (ou na fala do corretor), só abaixo do teto do dia
+     * (`decidirTranscricao`). `suspenso` vem pronto quando quem chama já leu.
      */
-    const transcreverEsteAudio = async (iaAtende: boolean): Promise<string> => {
-      const [transcricoesHoje, teto, suspenso] = iaAtende
-        ? [0, null, false]
-        : await Promise.all([
-            contarUsoDaIaDeHoje(instancia.grupoId, "transcricao_audio"),
-            lerTetoDeTranscricoes(instancia.grupoId),
-            grupoSuspenso(instancia.grupoId),
-          ]);
-      const decisao = decidirTranscricao({ iaAtende, transcricoesHoje, teto, grupoSuspenso: suspenso });
+    const transcreverEsteAudio = async (p: { iaAtende: boolean; suspenso?: boolean }): Promise<string> => {
+      const suspenso = p.suspenso ?? (await grupoSuspenso(instancia.grupoId));
+      const [transcricoesHoje, teto] =
+        p.iaAtende || suspenso
+          ? [0, null]
+          : await Promise.all([
+              contarUsoDaIaDeHoje(instancia.grupoId, "transcricao_audio"),
+              lerTetoDeTranscricoes(instancia.grupoId),
+            ]);
+      const decisao = decidirTranscricao({ iaAtende: p.iaAtende, transcricoesHoje, teto, grupoSuspenso: suspenso });
       if (decisao !== "transcrever") {
         console.info(`[audio] transcrição não feita (${decisao}) no grupo ${instancia.grupoId}`);
         return textoDoAudioNaoTranscrito(decisao);
@@ -751,7 +762,7 @@ export async function POST(req: NextRequest) {
      * reentrega (abaixo) — a gravação não espera a transcrição, e a
      * reentrega do provedor não paga a mesma transcrição de novo.
      */
-    if (ehAudio) text = fromMe ? await transcreverEsteAudio(false) : AUDIO_TRANSCREVENDO;
+    if (ehAudio) text = fromMe ? await transcreverEsteAudio({ iaAtende: false }) : AUDIO_TRANSCREVENDO;
 
     if (!text) {
       return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
@@ -901,7 +912,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const gravacao = await gravarMensagem({
+    let gravacao = await gravarMensagem({
       conversaLiberada: guardaOTextoDaConversa(conversa, instancia),
       conversaId: conversa.id,
       remetente: "cliente",
@@ -920,8 +931,29 @@ export async function POST(req: NextRequest) {
 
     // Reentrega do provedor: a mensagem já foi processada; responder de
     // novo é mandar a mesma resposta duas vezes para o cliente.
+    //
+    // A exceção é o áudio ENCALHADO (revisão de 30/10/2026): a fala ficou
+    // com o marcador porque a invocação que a gravou morreu no meio da
+    // transcrição (o `maxDuration`). Ela não respondeu nada — parar aqui
+    // deixaria o cliente sem resposta e o marcador para sempre. Uma
+    // reentrega por vez refaz (trava por linha); as outras seguem como
+    // reentrega.
+    let falaRefeita = false;
     if (!gravacao.inedita) {
-      return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+      const jaGravada =
+        ehAudio && providerMessageId
+          ? await falaDoClientePeloProvedor({ conversaId: conversa.id, providerMessageId })
+          : null;
+      const refazer =
+        jaGravada !== null &&
+        marcadorEncalhado({ conteudo: jaGravada.conteudo, criadoEm: jaGravada.criadoEm }) &&
+        (await travarDisparo(`retranscricao:${jaGravada.id}`, crypto.randomUUID(), 60));
+      if (!refazer || !jaGravada) {
+        return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+      }
+      console.warn(`[audio] áudio encalhado no marcador refeito pela reentrega na conversa ${conversa.id}`);
+      gravacao = { inedita: true, id: jaGravada.id };
+      falaRefeita = true;
     }
 
     /*
@@ -931,8 +963,34 @@ export async function POST(req: NextRequest) {
      * IA leem a fala transcrita, como antes.
      */
     if (ehAudio) {
-      const iaAtende = Boolean(conversa.leadId) && conversa.botAtivo && !conversa.leadDeOutroCorretor;
-      text = await transcreverEsteAudio(iaAtende);
+      /*
+       * A IA vai MESMO responder? (revisão de 30/10/2026) Só o `bot_ativo`
+       * não basta: grupo suspenso, cota esgotada, fora do expediente,
+       * número desligado e co-piloto calam a IA, e a transcrição passava
+       * sem teto. As entradas da decisão que não dependem do texto são
+       * lidas aqui; a decisão de responder, mais abaixo, lê de novo (o
+       * corretor pode ter falado durante a transcrição). Lead de anúncio da
+       * Meta: a IA vai ser calada pela campanha (abaixo).
+       */
+      // Conversa sem lead (conta só WhatsApp): sem IA, nada a ler aqui.
+      const [ultimaFalaAntes, cotaAntes, suspensoAntes] = conversa.leadId
+        ? await Promise.all([
+            instancia.modoBot === "co_piloto_3min" ? ultimaFalaDoCorretor(conversa.id) : Promise.resolve(null),
+            lerCotaDaIa(instancia.grupoId),
+            grupoSuspenso(instancia.grupoId),
+          ])
+        : [null, null, undefined];
+      const iaAtende =
+        Boolean(conversa.leadId) &&
+        aIaVaiResponderAoAudio({
+          conversa: situacaoDaConversa(conversa),
+          anuncioMeta: Boolean(anuncioMeta),
+          numero: { modo: instancia.modoBot, expediente: instancia.expediente },
+          ultimaFalaCorretorEm: ultimaFalaAntes,
+          cotaEsgotada: cotaAntes?.nivel === "esgotada",
+          grupoSuspenso: suspensoAntes ?? false,
+        });
+      text = await transcreverEsteAudio({ iaAtende, suspenso: suspensoAntes });
       if (gravacao.id) {
         await gravarTranscricaoDoAudio({
           mensagemId: gravacao.id,
@@ -1320,6 +1378,30 @@ export async function POST(req: NextRequest) {
      */
     await dormir(ESPERA_RAJADA_MS);
 
+    /*
+     * Áudio da rajada ainda em transcrição (revisão de 30/10/2026): o
+     * cliente manda um áudio e, 2 s depois, um texto. Sem esperar, a
+     * invocação do texto respondia com o marcador no histórico, e a do
+     * áudio — absorvida pelo debounce logo abaixo, porque o texto é o mais
+     * recente — nunca respondia ao que ele disse. Espera ANTES do debounce:
+     * quando o áudio vira texto, quem responde é o balão mais recente, com
+     * a rajada inteira. Marcador encalhado não segura (só os recentes), e a
+     * espera tem teto — esgotado, responde assim mesmo (o marcador fica fora
+     * do histórico).
+     */
+    const esperaDoAudio = await esperarTranscricoesDaRajada({
+      haAudioTranscrevendo: () =>
+        haAudioTranscrevendo({
+          conversaId: conversa.id,
+          desde: new Date(Date.now() - MARCADOR_ENCALHADO_MS),
+          excetoId: gravacao.id,
+        }),
+      dormir,
+    });
+    if (esperaDoAudio === "tempo_esgotado") {
+      console.warn(`[audio] a rajada esperou o áudio e o tempo acabou na conversa ${conversa.id}`);
+    }
+
     if (providerMessageId) {
       const maisRecente = await ultimaMensagemClienteId(conversa.id);
       if (maisRecente && maisRecente !== providerMessageId) {
@@ -1336,7 +1418,11 @@ export async function POST(req: NextRequest) {
     }
 
     const escopoResposta = `resposta:${conversa.id}`;
-    const donoResposta = providerMessageId ?? `sem-id-${Date.now()}`;
+    // A fala refeita (áudio encalhado) tem dono próprio: a trava é reentrante
+    // para o mesmo dono, e a invocação original, se ainda viva, a detém.
+    const donoResposta = falaRefeita
+      ? `${providerMessageId}:refeita`
+      : (providerMessageId ?? `sem-id-${Date.now()}`);
     if (!(await travarDisparo(escopoResposta, donoResposta, 55))) {
       await registrarInteracao({
         conversaId: conversa.id,

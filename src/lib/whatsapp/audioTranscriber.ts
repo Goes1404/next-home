@@ -20,6 +20,10 @@
  */
 import { groqAudioConfigurado, MODELO_AUDIO_GROQ, transcreverComGroq } from "./groqAudio";
 import { registrarConsumoDaIa, type GastoDaIa, type QuemPagaAIa } from "@/lib/planos/consumoDaIa";
+import { ORCAMENTO_DA_TRANSCRICAO_MS } from "./transcricaoNoGrupo";
+
+/** Menos que isto não dá para um motor responder: nem tenta. */
+const MINIMO_POR_MOTOR_MS = 1_500;
 
 export interface ResultadoAudio {
   textoTranscrito: string;
@@ -39,6 +43,14 @@ export interface EntradaAudio {
   segundos?: number | null;
   /** O corretor dono do número: quem paga a transcrição (livro do consumo, 0233). */
   quemPaga: QuemPagaAIa;
+  /**
+   * Tempo total dos motores somados (padrão `ORCAMENTO_DA_TRANSCRICAO_MS`).
+   * Cada motor ganha no máximo 15 s e nunca mais que o que sobrou; sem
+   * sobra útil, os motores seguintes nem são chamados. Sem isso, três
+   * motores de 15 s depois do download estouravam o `maxDuration` do
+   * webhook com o marcador gravado (revisão de 30/10/2026).
+   */
+  orcamentoMs?: number;
 }
 
 /**
@@ -201,12 +213,17 @@ export function duracaoCobrada(base64: string, declarados: number | null): numbe
   return Math.max(1, Math.round((base64.length * 3) / 4 / 2000));
 }
 
-async function transcreverComOpenAI(base64: string, mimeType: string, segundos: number): Promise<Tentativa> {
+async function transcreverComOpenAI(
+  base64: string,
+  mimeType: string,
+  segundos: number,
+  timeoutMs = 15_000,
+): Promise<Tentativa> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, erro: "sem_api_key" };
   try {
     const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 15_000);
+    const t = setTimeout(() => controller.abort(), timeoutMs);
     const form = new FormData();
     form.append("file", new Blob([Buffer.from(base64, "base64")], { type: mimeType }), `audio.${extensaoDo(mimeType)}`);
     const modelo = process.env.OPENAI_AUDIO_MODEL || "gpt-4o-mini-transcribe";
@@ -232,13 +249,13 @@ async function transcreverComOpenAI(base64: string, mimeType: string, segundos: 
   }
 }
 
-async function transcreverComGemini(base64: string, mimeType: string): Promise<Tentativa> {
+async function transcreverComGemini(base64: string, mimeType: string, timeoutMs = 15_000): Promise<Tentativa> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) return { ok: false, erro: "sem_api_key" };
   const modelo = process.env.GEMINI_AUDIO_MODEL || process.env.GEMINI_MODEL || "gemini-3.5-flash";
   try {
     const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 15_000);
+    const t = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`,
       {
@@ -309,13 +326,17 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
   const segundos = entrada.segundos ?? null;
   const duracao = duracaoCobrada(base64, segundos);
 
-  const motores: Array<{ nome: "openai" | "groq" | "gemini"; tentar: () => Promise<Tentativa> }> = [
-    { nome: "openai", tentar: () => transcreverComOpenAI(base64, mimeType, duracao) },
+  const prazo = Date.now() + (entrada.orcamentoMs ?? ORCAMENTO_DA_TRANSCRICAO_MS);
+  /** O timeout do próximo motor: até 15 s, nunca além do orçamento. */
+  const tempoDoMotor = () => Math.min(15_000, prazo - Date.now());
+
+  const motores: Array<{ nome: "openai" | "groq" | "gemini"; tentar: (timeoutMs: number) => Promise<Tentativa> }> = [
+    { nome: "openai", tentar: (ms) => transcreverComOpenAI(base64, mimeType, duracao, ms) },
     {
       nome: "groq",
-      tentar: async () => {
+      tentar: async (ms) => {
         if (!groqAudioConfigurado()) return { ok: false, erro: "sem_api_key" };
-        const r = await transcreverComGroq(base64, mimeType);
+        const r = await transcreverComGroq(base64, mimeType, ms);
         if (!r.ok && !r.respondeu) return { ok: false, erro: r.erro };
         // A Groq cobra no mínimo 10 s por chamada.
         const gasto: GastoDaIa = {
@@ -325,11 +346,16 @@ export async function transcreverAudioWhatsapp(entrada: EntradaAudio): Promise<R
         return r.ok ? { ok: true, texto: r.texto, gasto } : { ok: false, erro: r.erro, gasto };
       },
     },
-    { nome: "gemini", tentar: () => transcreverComGemini(base64, mimeType) },
+    { nome: "gemini", tentar: (ms) => transcreverComGemini(base64, mimeType, ms) },
   ];
 
   for (const motor of motores) {
-    const r = await motor.tentar();
+    const restante = tempoDoMotor();
+    if (restante < MINIMO_POR_MOTOR_MS) {
+      console.warn(`[audio] orçamento da transcrição esgotado antes do motor ${motor.nome}.`);
+      break;
+    }
+    const r = await motor.tentar(restante);
     if (r.gasto) await registrarConsumoDaIa({ finalidade: "transcricao_audio", quemPaga: entrada.quemPaga }, r.gasto);
     if (!r.ok) {
       if (r.erro !== "sem_api_key") console.warn(`[audio] ${motor.nome} não transcreveu: ${r.erro}`);

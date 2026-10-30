@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { bancoFalso, leiturasSemGrupo, type BancoFalso } from "../../../test/bancoFalso";
 
@@ -41,6 +42,8 @@ vi.mock("@/lib/whatsapp/repositorio", () => ({
   },
 }));
 vi.mock("@/lib/crm/interacoes", () => ({ registrarInteracao: async () => {} }));
+let suspenso = false;
+vi.mock("@/lib/planos/cobrancaDoGrupo", () => ({ grupoSuspenso: async () => suspenso }));
 
 const { pedirConfirmacaoDaVisita } = await import("./pedidoDeConfirmacao");
 const { pedirConfirmacoesAutomaticas } = await import("./confirmacaoAutomatica");
@@ -91,6 +94,7 @@ beforeEach(() => {
   cotas = 0;
   devolvidas = 0;
   situacao = { botAtivo: true, naoContatar: false, leadDeOutroCorretor: false };
+  suspenso = false;
   montar();
 });
 
@@ -218,6 +222,20 @@ describe("a confirmação automática (opt-in do grupo)", () => {
     expect(await pedirConfirmacoesAutomaticas(banco.cliente as never, agora)).toBe(0);
   });
 
+  it("conta suspensa não manda o pedido automático (revisão de 30/10/2026)", async () => {
+    banco.tabelas.grupos[0].confirmacao_visita_automatica = true;
+    suspenso = true;
+    expect(await pedirConfirmacoesAutomaticas(banco.cliente as never, agora)).toBe(0);
+    expect(envios).toHaveLength(0);
+    expect(cotas).toBe(0);
+    expect(banco.tabelas.visitas.find((v) => v.id === "v1")?.confirmacao_pedida_em).toBeNull();
+  });
+
+  it("o toque do corretor continua valendo com a conta suspensa (é ele falando)", async () => {
+    suspenso = true;
+    expect(await peloCorretor("v1")).toMatchObject({ enviado: true });
+  });
+
   it("fora do expediente do corretor, espera", async () => {
     banco.tabelas.grupos[0].confirmacao_visita_automatica = true;
     banco.tabelas.corretor_whatsapp_instancias[0].expediente_inicio = 14;
@@ -236,5 +254,29 @@ describe("a confirmação automática (opt-in do grupo)", () => {
       grupo_id: GRUPO_A,
     });
     expect(await pedirConfirmacoesAutomaticas(banco.cliente as never, agora)).toBe(0);
+  });
+});
+
+/*
+ * O registro do pedido em `whatsapp_followups` sai DEPOIS do envio e só é
+ * logado se falhar. O agendador do lembrete de véspera da IA confere o
+ * carimbo da visita (o claim do pedido, gravado antes do envio): sem isso, a
+ * linha perdida fazia o cliente receber as duas perguntas.
+ */
+describe("o lembrete de véspera da IA respeita o pedido já feito", () => {
+  const cron = readFileSync("src/app/api/cron/followups/route.ts", "utf8");
+  const agendar = cron.slice(cron.indexOf("async function agendarLembretesDeVisita("), cron.indexOf("async function agendarPosVisita("));
+
+  it("pula a visita com confirmacao_pedida_em, antes de inserir o lembrete", () => {
+    const confere = agendar.indexOf('.not("confirmacao_pedida_em", "is", null)');
+    expect(confere).toBeGreaterThan(-1);
+    expect(agendar.slice(agendar.lastIndexOf('.from("visitas")', confere), confere)).toContain('.eq("inicio", lead.visita_agendada_em!)');
+    expect(confere).toBeLessThan(agendar.indexOf('.from("whatsapp_followups").insert('));
+  });
+
+  it("o pedido falhando no registro não muda o carimbo que o agendador lê", async () => {
+    const r = await peloCorretor("v1");
+    expect(r).toMatchObject({ enviado: true });
+    expect(banco.tabelas.visitas.find((v) => v.id === "v1")?.confirmacao_pedida_em).toBe(agora.toISOString());
   });
 });

@@ -5,7 +5,7 @@ import { resumoDosRiscos } from "@/lib/plataforma/riscoDeCancelamento";
 import { lerRiscosDasContas } from "@/lib/plataforma/sinaisDeRisco";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notificarAdminsDaPlataforma, type Notificacao } from "./push";
-import { horaEMinutoEmSP } from "./relogio";
+import { diaEmSaoPaulo, horaEMinutoEmSP } from "./relogio";
 import { resumoDasCobrancas, type CobrancaParaAviso } from "./regrasDosAvisosDaPlataforma";
 
 /**
@@ -63,19 +63,68 @@ export function avisarSituacaoDaConta(grupoId: string, nome: string, para: "susp
   );
 }
 
+/*
+ * Os avisos DIÁRIOS (revisão de 30/10/2026). Eram "às 9h, no primeiro tique
+ * da hora" (`minuto < 5`): o tique é de 5 em 5 min, mas atrasa quando a
+ * fila do pg_cron atrasa ou o tique anterior demora — e o tique das 9h que
+ * caísse às 9h05 pulava o dia inteiro, calado. Agora o aviso sai no
+ * PRIMEIRO tique a partir das 9h (até as 21h), e uma vez por dia: quem
+ * passa primeiro reivindica o dia (`travar_disparo`, a trava da 0024, com o
+ * dia de São Paulo no escopo). Reivindicado e não enviado (falha no meio)
+ * não volta a tentar: aviso a menos custa menos que aviso repetido.
+ */
+
+/** A partir desta hora de São Paulo o aviso do dia pode sair. */
+export const HORA_DOS_AVISOS_DO_DIA = 9;
+/** Depois desta hora o dia passou: o aviso do dia não sai mais. */
+export const FIM_DOS_AVISOS_DO_DIA = 21;
+
+/** Está na faixa de horário dos avisos do dia? (puro) */
+export function horaDosAvisosDoDia(agora: Date): boolean {
+  const { hora } = horaEMinutoEmSP(agora);
+  return hora >= HORA_DOS_AVISOS_DO_DIA && hora < FIM_DOS_AVISOS_DO_DIA;
+}
+
+/** O escopo da reivindicação: um por aviso por dia de São Paulo. */
+export function escopoDoAvisoDoDia(aviso: "cobrancas" | "riscos", agora: Date): string {
+  return `aviso-do-dia:${aviso}:${diaEmSaoPaulo(agora)}`;
+}
+
 /**
- * O resumo diário das mensalidades (no tique dos follow-ups): às 9h de São
- * Paulo, no primeiro tique da hora (minuto < 5, o tique é de 5 em 5 min), uma
- * notificação só com as contas pendentes e as suspensas por atraso. Sem
- * nenhuma, não avisa. Devolve 1 se avisou.
+ * Reivindica o aviso do dia. `true` só para o primeiro tique do dia; erro
+ * no banco é `false` (sem a trava, o aviso poderia sair duas vezes).
+ */
+export async function reivindicarAvisoDoDia(
+  aviso: "cobrancas" | "riscos",
+  agora: Date,
+  servico: ReturnType<typeof createServiceClient> = createServiceClient(),
+): Promise<boolean> {
+  const { data, error } = await servico.rpc("travar_disparo", {
+    p_escopo: escopoDoAvisoDoDia(aviso, agora),
+    p_dono: crypto.randomUUID(),
+    // Mais que um dia: a chave já muda à meia-noite, isto só segura o dia.
+    p_segundos: 36 * 3600,
+  });
+  if (error) {
+    console.warn(`[aviso do dia] ${aviso}: reivindicação falhou: ${error.message}`);
+    return false;
+  }
+  return data === true;
+}
+
+/**
+ * O resumo diário das mensalidades (no tique dos follow-ups): no primeiro
+ * tique a partir das 9h de São Paulo, uma vez por dia
+ * (`reivindicarAvisoDoDia`), uma notificação só com as contas pendentes e
+ * as suspensas por atraso. Sem nenhuma, não avisa. Devolve 1 se avisou.
  *
  * Grupo a grupo pela mesma conta do painel (`lerCobrancaDoGrupo`): o número
  * é o que o cliente vê na faixa de cobrança dele.
  */
 export async function avisarCobrancasDoDia(agora: Date = new Date()): Promise<number> {
-  const { hora, minuto } = horaEMinutoEmSP(agora);
-  if (hora !== 9 || minuto >= 5) return 0;
+  if (!horaDosAvisosDoDia(agora)) return 0;
   const servico = createServiceClient();
+  if (!(await reivindicarAvisoDoDia("cobrancas", agora, servico))) return 0;
   const { data: grupos, error } = await servico
     .from("grupos")
     .select("id, nome")
@@ -102,8 +151,8 @@ export async function avisarCobrancasDoDia(agora: Date = new Date()): Promise<nu
 
 /**
  * O alerta diário de risco de cancelamento (29/10/2026), no mesmo tique e na
- * mesma hora do resumo das mensalidades: às 9h de São Paulo, no primeiro
- * tique da hora. Uma notificação com as contas de risco médio ou alto (até
+ * mesma regra do resumo das mensalidades: o primeiro tique a partir das 9h
+ * de São Paulo, uma vez por dia. Uma notificação com as contas de risco médio ou alto (até
  * três nomes e o motivo principal de cada uma; a lista inteira, com os
  * motivos, está em `/plataforma?ver=risco`). Sem conta em risco, ou sem
  * conseguir medir, não avisa. Devolve 1 se avisou.
@@ -111,8 +160,8 @@ export async function avisarCobrancasDoDia(agora: Date = new Date()): Promise<nu
  * Os sinais saem de `lerRiscosDasContas` (laço por grupo, só contagens).
  */
 export async function avisarRiscosDoDia(agora: Date = new Date()): Promise<number> {
-  const { hora, minuto } = horaEMinutoEmSP(agora);
-  if (hora !== 9 || minuto >= 5) return 0;
+  if (!horaDosAvisosDoDia(agora)) return 0;
+  if (!(await reivindicarAvisoDoDia("riscos", agora))) return 0;
   const riscos = await lerRiscosDasContas(agora);
   if (!riscos) return 0;
   const resumo = resumoDosRiscos(riscos);
