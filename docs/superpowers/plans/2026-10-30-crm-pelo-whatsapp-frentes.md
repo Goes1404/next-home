@@ -49,7 +49,7 @@ um arquivo por frente em `src/lib/central/tratadores/`).
 | F · Imóveis | `tratadores/imoveis.ts` | `informacao_de_imovel`, `imoveis_para_o_lead`, `leads_para_o_imovel`, `simular_financiamento`, `atualizar_imovel` (gestor) | juntada (30/10) |
 | G · Relatórios | `tratadores/relatorios.ts` | `relatorio_do_corretor`, `meta_e_comissao`, `relatorio_da_equipe` (gestor), `resultado_do_mes` (gestor), `whatsapp_da_equipe` (gestor) | juntada (30/10) |
 | H · Financeiro e gestão | `tratadores/financeiro.ts` | `registrar_venda`, `lancar_no_caixa` (gestor), `informar_gasto_de_anuncio`, `redistribuir_leads` (gestor) | juntada (30/10) |
-| I · Documentos, lembretes e planilha | `tratadores/documentos.ts` | `documentos_do_lead`, `lembrete` (precisa de envio agendado pelo central), `importar_planilha` | em andamento (30/10) |
+| I · Documentos, lembretes e planilha | `tratadores/documentos.ts` | `documentos_do_lead`, `lembrete` (precisa de envio agendado pelo central), `importar_planilha` | juntada (30/10) |
 
 Cada frente nova: criar o arquivo com `CONSULTAS_X`/`ACOES_X` e ligá-lo em
 `tratadores/index.ts` ANTES de lançar os agentes (como em `ec5c9dfc`), para
@@ -68,7 +68,7 @@ dono; tudo fica pronto e desligado.
 
 | Frente | Onde | O quê | Estado |
 |---|---|---|---|
-| J · Avisos espontâneos | cron + `src/lib/central/` + tela do perfil | Resumo do dia, lead novo, visita na próxima hora e lembrete (gravado pela Frente I) saindo pelo central (4.7), com o horário do resumo e a antecedência do aviso escolhidos por pessoa no painel (padrão 8h e 1 h). Migration provável (preferências): criar com o próximo número livre e NÃO aplicar (o dono roda no SQL Editor). Respeita `central_whatsapp_ativo` e a cota. | a fazer |
+| J · Avisos espontâneos | cron + `src/lib/central/` + tela do perfil | Resumo do dia, lead novo, visita na próxima hora e lembrete (gravado pela Frente I) saindo pelo central (4.7), com o horário do resumo e a antecedência do aviso escolhidos por pessoa no painel (padrão 8h e 1 h). Migration provável (preferências): criar com o próximo número livre e NÃO aplicar (o dono roda no SQL Editor). Respeita `central_whatsapp_ativo` e a cota. | em andamento (30/10) |
 | K · Central em grupos da equipe | `webhook.ts`/`conversa.ts` do central | Grupo só da equipe (4.1): responde quando mencionado; dado de lead vai no privado de quem pediu; grupo com cliente é ignorado. | a fazer |
 
 J e K mexem em `conversa.ts`/`webhook.ts`: lançar J primeiro e K depois de J
