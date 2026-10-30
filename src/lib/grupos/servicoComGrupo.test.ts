@@ -155,6 +155,7 @@ const MAPA: Record<string, Entrada> = {
   "src/app/corretor/(painel)/financeiro/desempenho/metasAcoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "metas da equipe (0246): corretores conferidos contra a equipe da sessão; toda escrita leva o grupo do gestor" },
   "src/app/corretor/(painel)/admin/leads/regrasAcoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "regras de distribuição (0246): quem recebe conferido contra a equipe da sessão; toda leitura e escrita leva o grupo do gestor" },
   "src/app/corretor/(painel)/whatsapp/acoes.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
+  "src/app/corretor/(painel)/whatsapp/BlocoDoCentral.tsx": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: POR_SESSAO },
   "src/lib/crm/estadoDosPrimeirosPassos.ts": { categoria: "por-id", validadoPor: "getCorretorLogado", motivo: "primeiros passos do Início (29/10/2026): a chave só CONTA os aparelhos com aviso (inscricoes_push, sem grant para a sessão) do corretor da sessão; o resto é contado pela sessão" },
 
   // ── Helpers: o id chega por parâmetro de quem chama ──────────────────────
@@ -272,6 +273,8 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/enderecosAcoes.ts": { categoria: "plataforma-admin", motivo: "liga e tira o endereço do site de UM grupo (0201); a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/acoes.ts": { categoria: "plataforma-admin", motivo: "cria o grupo com o primeiro acesso, edita o cadastro dele, muda o plano e redefine a senha de um acesso; a chave só depois de exigirAdminDaPlataformaNaAcao" },
   "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
+  "src/app/plataforma/centralAcoes.ts": { categoria: "plataforma-admin", motivo: "registra o número central (tabela global, 0248) e pede o pareamento; a chave só depois de exigirAdminDaPlataformaNaAcao (30/10/2026)" },
+  "src/app/plataforma/central/page.tsx": { categoria: "plataforma-admin", motivo: "estado do número central (tabela global) e contagens agregadas (grupos ligados, pedidos e tentativas em 7 dias); a chave só depois de exigirAdminDaPlataformaNaPagina" },
   "src/app/plataforma/administradoresAcoes.ts": { categoria: "plataforma-admin", motivo: "põe e tira logins de administradores_da_plataforma (tabela global, sem grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },

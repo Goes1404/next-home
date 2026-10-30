@@ -4,6 +4,7 @@ import { marcaDoPainel } from "@/lib/marcaDoCrm/doPainel";
 import { createClient } from "@/lib/supabase/server";
 import type { ModoBotWhatsapp, StatusConexaoWhatsapp, TomVozBot } from "@/lib/whatsapp/types";
 import { WhatsappManager } from "./WhatsappManager";
+import { BlocoDoCentral } from "./BlocoDoCentral";
 import { FRASE_NUMERO_EM_OUTRO_GRUPO } from "@/lib/whatsapp/numeroDeUmGrupo";
 import { fixadoPeloGrupoDaLeitura } from "@/lib/whatsapp/casa";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
@@ -113,6 +114,8 @@ export default async function WhatsappPainelPage() {
           ))}
         </div>
       )}
+
+      <BlocoDoCentral />
 
       <WhatsappManager
         corretorNome={corretor.nome}

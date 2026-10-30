@@ -9,6 +9,10 @@ import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoD
 import { motivoDaQueda } from "@/lib/whatsapp/motivoDaQueda";
 import { quandoEmSaoPaulo } from "@/lib/whatsapp/saudeDaConexao";
 import Link from "next/link";
+import { createServiceClient } from "@/lib/supabase/service";
+import { lerCentral } from "@/lib/central/numeroDoCentral";
+import { linkDoCentral, telefoneFormatado } from "@/lib/central/constantes";
+import { ComandosPeloWhatsapp } from "./ComandosPeloWhatsapp";
 
 export const metadata: Metadata = { title: "WhatsApp & IA da equipe" };
 
@@ -78,6 +82,8 @@ export default async function AdminWhatsappPage() {
     { data: pessoas },
     { data: todasListas },
     ocultas,
+    { data: ajusteDoGrupo },
+    central,
   ] = await Promise.all([
     equipe.ler((c) =>
       c
@@ -96,7 +102,7 @@ export default async function AdminWhatsappPage() {
       .eq("grupo_id", equipe.grupoId)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("corretores").select("id, nome, papel").eq("grupo_id", equipe.grupoId),
+    supabase.from("corretores").select("id, nome, papel, whatsapp, ativo").eq("grupo_id", equipe.grupoId),
     /*
      * As listas de transmissão da equipe nos últimos 30 dias (roadmap das
      * listas, Fase 3): só contagens, nunca o texto que foi mandado (0134).
@@ -109,6 +115,10 @@ export default async function AdminWhatsappPage() {
     // fora da tela da equipe. A sessão do gestor lê a marca; a chave de
     // serviço acima não recorta nada sozinha.
     idsDeContasOcultas(supabase),
+    // Comandos pelo WhatsApp (0248): a chave de serviço, recortada pelo id do
+    // grupo do gestor, como na confirmação automática da Agenda.
+    createServiceClient().from("grupos").select("central_whatsapp_ativo").eq("id", equipe.grupoId).maybeSingle(),
+    lerCentral(),
   ]);
   const instancias = semContasOcultas(todasInstancias ?? [], ocultas, (i) => i.corretor_id);
   const interacoes = semContasOcultas(todasInteracoes ?? [], ocultas, (i) => i.corretor_id);
@@ -131,6 +141,13 @@ export default async function AdminWhatsappPage() {
   const statusPorCorretor = new Map((instancias ?? []).map((i) => [i.corretor_id, i.status_conexao]));
 
   const nomePor = new Map((pessoas ?? []).map((p) => [p.id, p.nome]));
+  // O central reconhece cada pessoa pelo WhatsApp do perfil: quem está sem
+  // número cadastrado não é reconhecido e recebe silêncio.
+  const equipeNoCentral = semContasOcultas(
+    (pessoas ?? []).filter((p) => p.ativo),
+    ocultas,
+    (p) => p.id,
+  );
 
   const total = interacoes?.length ?? 0;
   const fallbacks = interacoes?.filter((i) => i.fallback).length ?? 0;
@@ -157,6 +174,44 @@ export default async function AdminWhatsappPage() {
         <CabecalhoDeTela secao="Administração" titulo="WhatsApp da equipe" descricao="Os números da equipe e como a IA está atendendo em cada um deles." />
       </div>
 
+      <section className="cartao p-5">
+        <h2 className="text-fluid-base font-bold text-titulo">Número central</h2>
+        <p className="text-fluid-xs text-apoio mt-1">
+          {central
+            ? `A equipe manda mensagem para ${telefoneFormatado(central.telefone)} e o assistente responde pelo CRM.`
+            : "O número central da plataforma ainda não foi conectado."}
+        </p>
+        <div className="mt-4">
+          <ComandosPeloWhatsapp ligado={ajusteDoGrupo?.central_whatsapp_ativo === true} />
+        </div>
+        {central && ajusteDoGrupo?.central_whatsapp_ativo === true && (
+          <>
+            <p className="text-fluid-xs text-apoio mt-4">
+              O central reconhece cada pessoa pelo WhatsApp do perfil. Quem está sem número não recebe resposta.
+            </p>
+            <ul className="divide-linha mt-2 divide-y">
+              {equipeNoCentral.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="text-fluid-sm text-titulo min-w-0 truncate">{p.nome}</span>
+                  {p.whatsapp ? (
+                    <span className="text-fluid-xs text-apoio tabular-nums">{telefoneFormatado(p.whatsapp)}</span>
+                  ) : (
+                    <Selo ok={false} texto="Sem WhatsApp no perfil" />
+                  )}
+                </li>
+              ))}
+            </ul>
+            <a
+              href={linkDoCentral(central.telefone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex min-h-11 items-center text-fluid-sm font-semibold text-acento-suave underline decoration-transparent underline-offset-4 hover:decoration-current"
+            >
+              Abrir a conversa com o central
+            </a>
+          </>
+        )}
+      </section>
 
       <section className="cartao p-5">
         <h2 className="text-fluid-base font-bold text-titulo">Números da equipe</h2>

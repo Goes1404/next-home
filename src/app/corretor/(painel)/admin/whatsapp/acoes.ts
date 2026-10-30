@@ -162,6 +162,35 @@ export async function configurarConfirmacaoAutomatica(ligada: boolean): Promise<
   };
 }
 
+/**
+ * Comandos pelo WhatsApp (0248; plano da onda 0, Task 8): ligado, o número
+ * central atende a equipe desta imobiliária. Desligado (padrão), o central
+ * fica em silêncio para quem é daqui, e o aviso de queda sai só por e-mail.
+ */
+export async function configurarCentralWhatsapp(ligado: boolean): Promise<{ ok?: string; erro?: string }> {
+  const guarda = await exigirGestorNaAcao();
+  if (guarda.erro !== undefined) return { erro: guarda.erro };
+
+  const { error } = await createServiceClient()
+    .from("grupos")
+    .update({ central_whatsapp_ativo: ligado })
+    .eq("id", guarda.corretor.grupoId);
+  if (error) {
+    return {
+      erro: /central_whatsapp_ativo/.test(error.message)
+        ? "Os comandos pelo WhatsApp ainda não foram ativados no banco."
+        : "Não foi possível salvar agora.",
+    };
+  }
+  revalidatePath("/corretor/admin/whatsapp");
+  revalidatePath("/corretor/whatsapp");
+  return {
+    ok: ligado
+      ? "Ligado: a equipe já pode mandar mensagem para o número central."
+      : "Desligado: o número central não responde mais a equipe.",
+  };
+}
+
 type Servico = ReturnType<typeof createServiceClient>;
 
 /** A lista de grupos guardada no grupo do gestor (0234), se for deste número. */
