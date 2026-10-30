@@ -254,6 +254,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/central/identificar.ts": { categoria: "plataforma", motivo: "acha quem escreve ao central pelo telefone entre todos os grupos (é isso que decide o grupo); devolve só o grupo da pessoa achada, e o resto do central usa esse grupo" },
   "src/lib/central/avisoDeQuedaPeloCentral.ts": { categoria: "plataforma", motivo: "aviso de queda de UM corretor (o da instância caída) pelo número central; lê o próprio corretor e a chave do grupo dele" },
   "src/lib/central/retencao.ts": { categoria: "plataforma", motivo: "retenção de 30 dias do registro do central em todos os grupos: apaga o texto dos comandos e as tentativas antigas, nada mais" },
+  "src/lib/central/tratadores/resolverLead.ts": { categoria: "equipe", motivo: "central, onda 1: acha o lead pelo texto no grupo de quem foi identificado (corretor: só os dele); toda leitura filtra grupo_id" },
   "src/lib/central/webhook.ts": { categoria: "plataforma", motivo: "o central atende todos os grupos; toda leitura e escrita usa o corretor e o grupo de identificarRemetente, nunca o que a IA escreve (spec 4.2)" },
   "src/lib/whatsapp/recusaPendente.ts": { categoria: "plataforma", motivo: "repete o logout do número recusado instância a instância; não lê conversa nem junta grupos" },
   "src/lib/whatsapp/listasVivas.ts": { categoria: "plataforma", motivo: "por lista: só leads do corretor dono dela" },

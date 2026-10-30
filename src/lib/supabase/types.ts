@@ -98,6 +98,8 @@ export type Database = {
           proposta: Json | null
           confirmado: boolean | null
           resultado: string | null
+          desfazer: Json | null
+          desfeito_em: string | null
           erro: string | null
           custo_centavos: number | null
           latencia_ms: number | null
@@ -114,6 +116,8 @@ export type Database = {
           proposta?: Json | null
           confirmado?: boolean | null
           resultado?: string | null
+          desfazer?: Json | null
+          desfeito_em?: string | null
           erro?: string | null
           custo_centavos?: number | null
           latencia_ms?: number | null
@@ -130,6 +134,8 @@ export type Database = {
           proposta?: Json | null
           confirmado?: boolean | null
           resultado?: string | null
+          desfazer?: Json | null
+          desfeito_em?: string | null
           erro?: string | null
           custo_centavos?: number | null
           latencia_ms?: number | null

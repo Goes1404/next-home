@@ -192,8 +192,9 @@ describe("proposta e sim (com uma ação de teste; nenhuma real existe na onda 0
     consultas: {},
     acoes: {
       cadastrar_lead: {
-        resumir: (a) => `Cadastrar ${String(a.nome)}`,
-        executar: async (_c, a) => (gravados.push(a), { ok: true, texto: `${String(a.nome)} cadastrado.` }),
+        preparar: async (_c, a) => ({ tipo: "proposta", resumo: `Cadastrar ${String(a.nome)}`, dados: { nome: a.nome } }),
+        executar: async (_c, d) => (gravados.push(d), { ok: true, texto: `${String(d.nome)} cadastrado.`, desfazer: { leadId: "l1" } }),
+        desfazer: async () => ({ ok: true, texto: "Cadastro desfeito." }),
       },
     },
   };
@@ -212,7 +213,10 @@ describe("proposta e sim (com uma ação de teste; nenhuma real existe na onda 0
     expect(feito).toBe("João cadastrado.");
     expect(gravados).toEqual([{ nome: "João" }]);
     expect(cena.estado().proposta).toBeNull();
-    expect(cena.espioes.comandos.at(-1)).toMatchObject({ confirmado: true });
+    expect(cena.espioes.comandos.at(-1)).toMatchObject({
+      confirmado: true,
+      desfazer: [{ ferramenta: "cadastrar_lead", resumo: "Cadastrar João", desfazer: { leadId: "l1" } }],
+    });
   });
 
   it("não cancela, e passada 1 hora o sim não vale", async () => {

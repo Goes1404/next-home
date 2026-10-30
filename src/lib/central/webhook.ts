@@ -170,6 +170,7 @@ function dependenciasReais(instanceName: string, payload: Payload): Dependencias
         proposta: comoJson(r.proposta),
         confirmado: r.confirmado,
         resultado: r.resultado,
+        desfazer: r.desfazer ? comoJson(r.desfazer) : null,
         erro: r.erro,
         custo_centavos: r.custoCentavos,
         latencia_ms: r.latenciaMs,

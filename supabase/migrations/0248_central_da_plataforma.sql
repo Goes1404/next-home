@@ -123,6 +123,11 @@ create table if not exists public.central_comandos (
   proposta jsonb,
   confirmado boolean,
   resultado text,
+  -- O que o "desfaz" precisa (spec 4.6, até 24 h): [{ ferramenta, resumo,
+  -- desfazer }] dos itens confirmados que têm volta. `desfeito_em` marca o
+  -- que já voltou, para não desfazer duas vezes.
+  desfazer jsonb,
+  desfeito_em timestamptz,
   erro text,
   custo_centavos integer,
   latencia_ms integer,
@@ -137,6 +142,8 @@ comment on column public.central_comandos.texto is
 
 create index if not exists central_comandos_grupo_criado_idx
   on public.central_comandos (grupo_id, created_at desc);
+create index if not exists central_comandos_desfazer_idx
+  on public.central_comandos (corretor_id, created_at desc) where desfazer is not null and desfeito_em is null;
 create index if not exists central_comandos_texto_antigo_idx
   on public.central_comandos (created_at) where texto is not null;
 

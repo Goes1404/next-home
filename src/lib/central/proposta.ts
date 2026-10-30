@@ -16,7 +16,16 @@ import { lerRespostaCurta } from "@/lib/agenda/comandos/respostasCurtas";
 
 export const VALIDADE_DA_PROPOSTA_MS = 60 * 60 * 1000;
 
-export type ItemDaProposta = { ferramenta: string; argumentos: Record<string, unknown>; resumo: string };
+/**
+ * `argumentos`: o que o cérebro pediu (texto, para o registro). `dados`: o
+ * que `preparar` resolveu (ids), e é só isso que o "sim" executa.
+ */
+export type ItemDaProposta = {
+  ferramenta: string;
+  argumentos: Record<string, unknown>;
+  resumo: string;
+  dados: Record<string, unknown>;
+};
 export type Proposta = { itens: ItemDaProposta[]; criadaEm: string; expiraEm: string };
 
 export function criarProposta(itens: ItemDaProposta[], agora: Date): Proposta {

@@ -13,12 +13,16 @@ function tratadoresDeTeste() {
     consultas: {},
     acoes: {
       cadastrar_lead: {
-        resumir: (a) => `Cadastrar ${String(a.nome)}`,
-        executar: async (_ctx, a) => (gravados.push(a), { ok: true, texto: `${String(a.nome)} cadastrado.` }),
+        preparar: async (_ctx, a) => ({ tipo: "proposta", resumo: `Cadastrar ${String(a.nome)}`, dados: { nome: a.nome } }),
+        executar: async (_ctx, d) => (gravados.push(d), { ok: true, texto: `${String(d.nome)} cadastrado.`, desfazer: { leadId: "l1" } }),
+        desfazer: async () => ({ ok: true, texto: "Cadastro desfeito." }),
       },
       visita: {
-        resumir: (a) => `Marcar visita com ${String(a.lead)} ${String(a.quando)}`,
-        executar: async (_ctx, a) => (gravados.push(a), { ok: true, texto: "Visita marcada." }),
+        preparar: async (_ctx, a) =>
+          a.lead === "Ana"
+            ? { tipo: "resposta", resultado: { pergunta: "Qual Ana?" } }
+            : { tipo: "proposta", resumo: `Marcar visita com ${String(a.lead)} ${String(a.quando)}`, dados: { leadId: "id-do-joao", quando: a.quando } },
+        executar: async (_ctx, d) => (gravados.push(d), { ok: true, texto: "Visita marcada." }),
       },
     },
   };
@@ -45,13 +49,24 @@ describe("ação vira proposta, nunca grava direto", () => {
     );
     expect(lerRespostaAProposta(p, "sim", depois(1))).toEqual({ tipo: "confirmar" });
     const r = await executarProposta(CTX, p.itens, tratadores);
-    expect(r.map((x) => x.texto)).toEqual(["João cadastrado.", "Visita marcada."]);
-    expect(gravados).toHaveLength(2);
+    expect(r.resultados.map((x) => x.texto)).toEqual(["João cadastrado.", "Visita marcada."]);
+    // O "sim" roda os dados resolvidos no preparar, nunca o texto do cérebro.
+    expect(gravados).toEqual([{ nome: "João" }, { leadId: "id-do-joao", quando: "amanhã 10h" }]);
+    // Só o que tem volta (cadastro com `desfazer`) entra no desfaz.
+    expect(r.desfaziveis).toEqual([{ ferramenta: "cadastrar_lead", resumo: "Cadastrar João", desfazer: { leadId: "l1" } }]);
+  });
+
+  it("preparar que responde (lead incerto) não vira proposta", async () => {
+    const { tratadores, gravados } = tratadoresDeTeste();
+    const ex = criarExecutor(CTX, tratadores, 3);
+    expect(await ex.executar("visita", { lead: "Ana", quando: "amanhã" })).toEqual({ pergunta: "Qual Ana?" });
+    expect(ex.itensPropostos).toEqual([]);
+    expect(gravados).toEqual([]);
   });
 });
 
 describe("o sim e o prazo de 1 hora", () => {
-  const p = criarProposta([{ ferramenta: "cadastrar_lead", argumentos: {}, resumo: "Cadastrar João" }], AGORA);
+  const p = criarProposta([{ ferramenta: "cadastrar_lead", argumentos: {}, resumo: "Cadastrar João", dados: {} }], AGORA);
 
   it("sim aos 45 min confirma (a proposta é guardada à parte do histórico de 30 min)", () => {
     expect(lerRespostaAProposta(p, "Sim", depois(45))).toEqual({ tipo: "confirmar" });

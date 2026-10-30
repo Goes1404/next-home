@@ -1,5 +1,6 @@
 import { AINDA_NAO, ONDA_ATUAL, ferramenta, textoDaAjuda } from "./ferramentas";
 import type { ItemDaProposta } from "./proposta";
+import { TRATADORES_DAS_ONDAS } from "./tratadores";
 
 /**
  * Roda o que o cérebro pede (spec 4.3 e 4.4).
@@ -19,17 +20,45 @@ export type ContextoDoCentral = {
 };
 
 export type Consulta = (ctx: ContextoDoCentral, argumentos: Record<string, unknown>) => Promise<unknown>;
+
+/**
+ * O que a ação faz ANTES do "sim" (onda 1). Os argumentos vêm do cérebro,
+ * em texto ("o João"); `preparar` resolve no banco (qual João, de quem) e
+ * devolve:
+ * - `proposta`: o resumo que a pessoa confirma e os `dados` JÁ RESOLVIDOS
+ *   (ids), que são o que `executar` recebe. O "sim" nunca reinterpreta texto;
+ * - `resposta`: nada a gravar agora (ambiguidade "qual João?", lead que não
+ *   é dele, falta o telefone inteiro, ou uma leitura como o resumo da IA do
+ *   cliente). O resultado volta ao cérebro, que conversa com a pessoa.
+ *
+ * Nunca grava. Toda escrita fica em `executar`.
+ */
+export type Preparo =
+  | { tipo: "proposta"; resumo: string; dados: Record<string, unknown> }
+  | { tipo: "resposta"; resultado: unknown };
+
+/**
+ * O que a ação fez. `desfazer` é o que `Acao.desfazer` precisa para voltar
+ * atrás (spec 4.6: até 24 h; lead cadastrado volta arquivado, campos e etapa
+ * voltam ao valor anterior). Sem `desfazer`, a ação não tem volta.
+ */
+export type ResultadoDaAcao = { ok: boolean; texto: string; desfazer?: Record<string, unknown> };
+
 export type Acao = {
-  /** O resumo em português que a pessoa confirma com "sim". */
-  resumir: (argumentos: Record<string, unknown>) => string;
-  executar: (ctx: ContextoDoCentral, argumentos: Record<string, unknown>) => Promise<{ ok: boolean; texto: string }>;
+  preparar: (ctx: ContextoDoCentral, argumentos: Record<string, unknown>) => Promise<Preparo>;
+  executar: (ctx: ContextoDoCentral, dados: Record<string, unknown>) => Promise<ResultadoDaAcao>;
+  desfazer?: (ctx: ContextoDoCentral, desfazer: Record<string, unknown>) => Promise<{ ok: boolean; texto: string }>;
 };
 export type Tratadores = { consultas: Record<string, Consulta>; acoes: Record<string, Acao> };
 
-/** Onda 0: só a ajuda. Nenhuma ação grava nada. */
+/**
+ * Onda 0: só a ajuda. Os tratadores das ondas seguintes moram em
+ * `tratadores/` e já entram aqui: o portão é a `onda` de cada ferramenta
+ * contra `ONDA_ATUAL`, não a presença do tratador.
+ */
 export const TRATADORES: Tratadores = {
-  consultas: { ajuda: async () => ({ texto: textoDaAjuda() }) },
-  acoes: {},
+  consultas: { ajuda: async () => ({ texto: textoDaAjuda() }), ...TRATADORES_DAS_ONDAS.consultas },
+  acoes: { ...TRATADORES_DAS_ONDAS.acoes },
 };
 
 export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = TRATADORES, onda: number = ONDA_ATUAL) {
@@ -46,9 +75,10 @@ export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = T
       }
       const acao = tratadores.acoes[nome];
       if (!acao) return { aindaNao: true, mensagem: AINDA_NAO };
-      const resumo = acao.resumir(argumentos);
-      itensPropostos.push({ ferramenta: nome, argumentos, resumo });
-      return { proposto: true, resumo, aviso: "Nada foi feito ainda: a pessoa confirma com sim." };
+      const preparo = await acao.preparar(ctx, argumentos);
+      if (preparo.tipo === "resposta") return preparo.resultado;
+      itensPropostos.push({ ferramenta: nome, argumentos, resumo: preparo.resumo, dados: preparo.dados });
+      return { proposto: true, resumo: preparo.resumo, aviso: "Nada foi feito ainda: a pessoa confirma com sim." };
     } catch {
       return { erro: "Não consegui fazer isso agora." };
     }
@@ -56,13 +86,17 @@ export function criarExecutor(ctx: ContextoDoCentral, tratadores: Tratadores = T
   return { executar, itensPropostos };
 }
 
-/** Roda os itens de uma proposta confirmada, um por um. */
+/** Um item feito que tem volta: o que o "desfaz" (24 h) precisa. */
+export type FeitoDesfazivel = { ferramenta: string; resumo: string; desfazer: Record<string, unknown> };
+
+/** Roda os itens de uma proposta confirmada, um por um, com os dados resolvidos no `preparar`. */
 export async function executarProposta(
   ctx: ContextoDoCentral,
   itens: ItemDaProposta[],
   tratadores: Tratadores = TRATADORES,
-): Promise<{ ok: boolean; texto: string }[]> {
+): Promise<{ resultados: { ok: boolean; texto: string }[]; desfaziveis: FeitoDesfazivel[] }> {
   const resultados: { ok: boolean; texto: string }[] = [];
+  const desfaziveis: FeitoDesfazivel[] = [];
   for (const item of itens) {
     const acao = tratadores.acoes[item.ferramenta];
     if (!acao) {
@@ -70,10 +104,14 @@ export async function executarProposta(
       continue;
     }
     try {
-      resultados.push(await acao.executar(ctx, item.argumentos));
+      const r = await acao.executar(ctx, item.dados);
+      resultados.push({ ok: r.ok, texto: r.texto });
+      if (r.ok && r.desfazer && acao.desfazer) {
+        desfaziveis.push({ ferramenta: item.ferramenta, resumo: item.resumo, desfazer: r.desfazer });
+      }
     } catch {
       resultados.push({ ok: false, texto: `Não consegui: ${item.resumo}` });
     }
   }
-  return resultados;
+  return { resultados, desfaziveis };
 }

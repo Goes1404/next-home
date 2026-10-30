@@ -1,6 +1,6 @@
 import { CAMBIO_PADRAO_USD_BRL } from "@/lib/planos/custoDaIa";
 import type { ChamadaFeita, EntradaDoCerebro, MensagemDoHistorico, ResultadoDoCerebro } from "./cerebro";
-import { criarExecutor, executarProposta, TRATADORES, type ContextoDoCentral, type Tratadores } from "./executar";
+import { criarExecutor, executarProposta, TRATADORES, type ContextoDoCentral, type FeitoDesfazivel, type Tratadores } from "./executar";
 import { declaracoesPara, EXEMPLOS_POR_ONDA, ONDA_ATUAL } from "./ferramentas";
 import type { OpcaoDeImobiliaria, Remetente } from "./identificar";
 import { criarProposta, lerRespostaAProposta, propostaNoContexto, textoDaProposta, type Proposta } from "./proposta";
@@ -45,6 +45,8 @@ export type RegistroDeComando = {
   proposta: Proposta | null;
   confirmado: boolean | null;
   resultado: string | null;
+  /** O que o "desfaz" precisa, dos itens confirmados que têm volta (24 h). */
+  desfazer: FeitoDesfazivel[] | null;
   erro: string | null;
   custoCentavos: number | null;
   latenciaMs: number;
@@ -178,6 +180,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       proposta: null,
       confirmado: null,
       resultado: null,
+      desfazer: null,
       erro: null,
       custoCentavos: null,
       latenciaMs: deps.agora().getTime() - inicio,
@@ -234,9 +237,11 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
       const proposta = estado.proposta;
       estado.proposta = null;
       let resposta: string;
+      let desfazer: FeitoDesfazivel[] | null = null;
       if (leitura.tipo === "confirmar") {
-        const resultados = await executarProposta(ctx, proposta.itens, tratadores);
-        resposta = resultados.map((r) => r.texto).join("\n");
+        const feito = await executarProposta(ctx, proposta.itens, tratadores);
+        resposta = feito.resultados.map((r) => r.texto).join("\n");
+        desfazer = feito.desfaziveis.length ? feito.desfaziveis : null;
       } else {
         resposta = leitura.tipo === "cancelar" ? TEXTOS.cancelado : TEXTOS.venceu;
       }
@@ -245,7 +250,7 @@ export async function responderNoCentral(m: MensagemRecebida, deps: Dependencias
         agora,
       );
       await deps.salvarEstado(ctx.corretorId, estado);
-      await registro({ proposta, confirmado: leitura.tipo === "confirmar", resultado: resposta }, texto);
+      await registro({ proposta, confirmado: leitura.tipo === "confirmar", resultado: resposta, desfazer }, texto);
       return [...saida, resposta];
     }
   }
