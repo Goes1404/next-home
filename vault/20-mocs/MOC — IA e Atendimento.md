@@ -98,3 +98,4 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[crm-pelo-whatsapp-numero-central-com-ia]] — número central com IA: corretor e gestor operam o CRM pelo WhatsApp; 33 capacidades em ondas; onda 0 (fundação, só a ajuda) construída em 30/10
 - [[ia-no-atendimento-audio-resumo-e-nota]] — áudio em texto, resumo da conversa + próximo passo e nota do lead (0248, 30/10)
 - [[foto-no-numero-central]] — foto vai ao cérebro como imagem (detail high, tipo pelos bytes, 5 MB), nunca ao histórico; cadastrar_lead_da_foto delega ao cadastrar_lead (onda 1, 30/10)
+- [[central-ia-do-cliente-e-desfazer]] — central, onda 1: ligar/desligar/resumo da IA de um cliente (só no número de quem pede) e o "desfaz" de 24 h
