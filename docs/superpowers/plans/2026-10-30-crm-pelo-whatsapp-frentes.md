@@ -77,7 +77,7 @@ dono; tudo fica pronto e desligado.
 | Frente | Onde | O quê | Estado |
 |---|---|---|---|
 | J · Avisos espontâneos | cron + `src/lib/central/` + tela do perfil | Resumo do dia, lead novo, visita na próxima hora e lembrete (gravado pela Frente I) saindo pelo central (4.7), com o horário do resumo e a antecedência do aviso escolhidos por pessoa no painel (padrão 8h e 1 h). Migration provável (preferências): criar com o próximo número livre e NÃO aplicar (o dono roda no SQL Editor). Respeita `central_whatsapp_ativo` e a cota. | juntada (30/10) |
-| K · Central em grupos da equipe | `webhook.ts`/`conversa.ts` do central | Grupo só da equipe (4.1): responde quando mencionado; dado de lead vai no privado de quem pediu; grupo com cliente é ignorado. | em andamento (30/10) |
+| K · Central em grupos da equipe | `webhook.ts`/`conversa.ts` do central | Grupo só da equipe (4.1): responde quando mencionado; dado de lead vai no privado de quem pediu; grupo com cliente é ignorado. | juntada (30/10) |
 
 J e K mexem em `conversa.ts`/`webhook.ts`: lançar J primeiro e K depois de J
 juntada, ou dividir os arquivos antes de lançar as duas juntas.
@@ -86,10 +86,10 @@ juntada, ou dividir os arquivos antes de lançar as duas juntas.
 
 | Frente | Arquivo | Ferramentas | Estado |
 |---|---|---|---|
-| L · Listas | `tratadores/listas.ts` | `montar_lista` (quantos, quantos nunca falaram, quantos cabem hoje no primeiro contato; sai do número de quem pediu; fila de hoje), `acompanhar_lista` (ver, pausar, retomar) | a fazer |
-| M · Arte e vídeo | `tratadores/estudio.ts` | `gerar_arte` (Estúdio), `criar_video` (criador de vídeo); devolver como arquivo exige envio de mídia pelo central | a fazer |
-| N · O que vai ao cliente | `tratadores/cliente.ts` | `mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens` (sai do número do corretor, com as travas anti-bloqueio de hoje) | a fazer |
-| O · Saúde do número | `tratadores/saude.ts` | `saude_do_numero` (conexão e limite atual; níveis 10→15→20 ainda não existem) | a fazer |
+| L · Listas | `tratadores/listas.ts` | `montar_lista` (quantos, quantos nunca falaram, quantos cabem hoje no primeiro contato; sai do número de quem pediu; fila de hoje), `acompanhar_lista` (ver, pausar, retomar) | em andamento (30/10) |
+| M · Arte e vídeo | `tratadores/estudio.ts` | `gerar_arte` (Estúdio), `criar_video` (criador de vídeo); devolver como arquivo exige envio de mídia pelo central | em andamento (30/10) |
+| N · O que vai ao cliente | `tratadores/cliente.ts` | `mandar_material`, `selecao_ou_proposta`, `meu_link_e_mensagens` (sai do número do corretor, com as travas anti-bloqueio de hoje) | em andamento (30/10) |
+| O · Saúde do número | `tratadores/saude.ts` | `saude_do_numero` (conexão e limite atual; níveis 10→15→20 ainda não existem) | em andamento (30/10) |
 
 Como na onda 1 e 2: criar os arquivos vazios e ligá-los em `tratadores/index.ts`
 antes de lançar os agentes. A onda 3 mexe em envio ao cliente e no risco de

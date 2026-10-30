@@ -1,13 +1,17 @@
 import type { Tratadores } from "../executar";
 import { ACOES_AGENDA, CONSULTAS_AGENDA } from "./agenda";
+import { ACOES_CLIENTE, CONSULTAS_CLIENTE } from "./cliente";
 import { ACOES_CONSULTAS, CONSULTAS_CONSULTAS } from "./consultas";
 import { ACOES_CONTROLE, CONSULTAS_CONTROLE } from "./controle";
 import { ACOES_DOCUMENTOS, CONSULTAS_DOCUMENTOS } from "./documentos";
+import { ACOES_ESTUDIO, CONSULTAS_ESTUDIO } from "./estudio";
 import { ACOES_FINANCEIRO, CONSULTAS_FINANCEIRO } from "./financeiro";
 import { ACOES_FOTO, CONSULTAS_FOTO } from "./foto";
 import { ACOES_IMOVEIS, CONSULTAS_IMOVEIS } from "./imoveis";
 import { ACOES_LEADS, CONSULTAS_LEADS } from "./leads";
+import { ACOES_LISTAS, CONSULTAS_LISTAS } from "./listas";
 import { ACOES_RELATORIOS, CONSULTAS_RELATORIOS } from "./relatorios";
+import { ACOES_SAUDE, CONSULTAS_SAUDE } from "./saude";
 
 /**
  * Os tratadores das ondas 1 a 3, um arquivo por frente. Entram todos em
@@ -26,6 +30,10 @@ export const TRATADORES_DAS_ONDAS: Tratadores = {
     ...CONSULTAS_RELATORIOS,
     ...CONSULTAS_FINANCEIRO,
     ...CONSULTAS_DOCUMENTOS,
+    ...CONSULTAS_LISTAS,
+    ...CONSULTAS_ESTUDIO,
+    ...CONSULTAS_CLIENTE,
+    ...CONSULTAS_SAUDE,
   },
   acoes: {
     ...ACOES_CONSULTAS,
@@ -37,5 +45,9 @@ export const TRATADORES_DAS_ONDAS: Tratadores = {
     ...ACOES_RELATORIOS,
     ...ACOES_FINANCEIRO,
     ...ACOES_DOCUMENTOS,
+    ...ACOES_LISTAS,
+    ...ACOES_ESTUDIO,
+    ...ACOES_CLIENTE,
+    ...ACOES_SAUDE,
   },
 };
