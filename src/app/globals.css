@@ -963,7 +963,7 @@
     --aurora-1: 28%;
     --aurora-2: 13%;
     --aurora-3: 10%;
-    --bolhas: 0.24;
+    --bolhas: 0.16;
     --bolha-luz: white 62%;
     --bolha-meio: white 48%;
     --bolha-sombra: white 38%;
@@ -988,7 +988,7 @@
     --aurora-1: 38%;
     --aurora-2: 22%;
     --aurora-3: 16%;
-    --bolhas: 0.28;
+    --bolhas: 0.2;
     --bolha-luz: white 14%;
     --bolha-meio: white 0%;
     --bolha-sombra: black 10%;
@@ -3176,7 +3176,7 @@ main[data-cabecalho="oculto"] {
   top: -12vmax;
   left: -10vmax;
   animation-name: bolha-a;
-  animation-duration: 19s;
+  animation-duration: 38s;
 }
 .painel-bolhas > b:nth-child(2) {
   --cor: color-mix(in oklab, var(--color-acento) 55%, var(--color-realce));
@@ -3185,7 +3185,7 @@ main[data-cabecalho="oculto"] {
   top: 18%;
   right: -9vmax;
   animation-name: bolha-b;
-  animation-duration: 23s;
+  animation-duration: 46s;
 }
 .painel-bolhas > b:nth-child(3) {
   --cor: var(--color-realce);
@@ -3194,7 +3194,7 @@ main[data-cabecalho="oculto"] {
   bottom: -7vmax;
   left: 12%;
   animation-name: bolha-c;
-  animation-duration: 17s;
+  animation-duration: 34s;
 }
 .painel-bolhas > b:nth-child(4) {
   --cor: color-mix(in oklab, var(--color-acento) 70%, white);
@@ -3203,7 +3203,7 @@ main[data-cabecalho="oculto"] {
   bottom: -10vmax;
   right: 8%;
   animation-name: bolha-d;
-  animation-duration: 27s;
+  animation-duration: 54s;
 }
 .painel-bolhas > b:nth-child(5) {
   --cor: color-mix(in oklab, var(--color-acento-hover) 80%, var(--color-realce));
@@ -3212,36 +3212,36 @@ main[data-cabecalho="oculto"] {
   top: 46%;
   left: 38%;
   animation-name: bolha-e;
-  animation-duration: 15s;
+  animation-duration: 30s;
 }
 @keyframes bolha-a {
   to {
-    translate: 14vw 18vh;
-    scale: 1.12;
+    translate: 7vw 9vh;
+    scale: 1.06;
   }
 }
 @keyframes bolha-b {
   to {
-    translate: -22vw 26vh;
-    scale: 0.86;
+    translate: -11vw 13vh;
+    scale: 0.93;
   }
 }
 @keyframes bolha-c {
   to {
-    translate: 26vw -30vh;
-    scale: 1.2;
+    translate: 13vw -15vh;
+    scale: 1.1;
   }
 }
 @keyframes bolha-d {
   to {
-    translate: -18vw -24vh;
-    scale: 0.9;
+    translate: -9vw -12vh;
+    scale: 0.95;
   }
 }
 @keyframes bolha-e {
   to {
-    translate: -24vw 20vh;
-    scale: 1.5;
+    translate: -12vw 10vh;
+    scale: 1.2;
   }
 }
 
@@ -3850,7 +3850,7 @@ html[data-troca-tema]::view-transition-new(root) {
  * O computador segue com tudo: lá sobra GPU e o fundo vivo é parte da
  * identidade do painel.
  * ======================================================================== */
-@media (max-width: 767px) and (hover: none) {
+@media (hover: none), (max-width: 767px) {
   [data-rota="painel"] .painel-bolhas,
   [data-rota="painel"] .painel-grao {
     display: none;

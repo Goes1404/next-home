@@ -45,6 +45,8 @@ const recente = new Date().toISOString();
 
 describe("/api/cron/relatorio-semanal", () => {
   beforeEach(() => {
+    // O e-mail só sai com a chave ligada (30/10/2026).
+    vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "sim");
     enviados.length = 0;
     banco = bancoFalso({
       grupos: [{ id: GRUPO_A }, { id: GRUPO_B }],
@@ -115,6 +117,7 @@ describe("/api/cron/relatorio-semanal no WhatsApp do gestor", () => {
   const diasAtras = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 
   beforeEach(() => {
+    vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "sim");
     enviados.length = 0;
     noWhatsapp.length = 0;
     banco = bancoFalso({
@@ -180,5 +183,16 @@ describe("/api/cron/relatorio-semanal no WhatsApp do gestor", () => {
     for (const tabela of ["corretores", "leads", "visitas", "vendas"]) {
       expect(leiturasSemGrupo(banco, tabela), tabela).toEqual([]);
     }
+  });
+});
+
+describe("/api/cron/relatorio-semanal sem a chave do e-mail", () => {
+  it("não manda e-mail quando RELATORIO_SEMANAL_POR_EMAIL não é sim (padrão desde 03/09)", async () => {
+    vi.stubEnv("RELATORIO_SEMANAL_POR_EMAIL", "");
+    enviados.length = 0;
+    const resp = await GET(new Request("http://x/api/cron/relatorio-semanal", { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }));
+    const corpo = await resp.json();
+    expect(enviados).toHaveLength(0);
+    expect(corpo.enviados ?? 0).toBe(0);
   });
 });

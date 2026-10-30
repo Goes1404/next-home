@@ -190,6 +190,12 @@ export async function GET(req: NextRequest) {
         return 0;
       });
 
+      /*
+       * O e-mail ficou desligado (03/09/2026, pedido do dono: "e-mail não se
+       * mostrou canal eficiente"); o cron voltou em 30/10/2026 por causa do
+       * resumo no WhatsApp. O e-mail só sai com RELATORIO_SEMANAL_POR_EMAIL=sim.
+       */
+      if (process.env.RELATORIO_SEMANAL_POR_EMAIL !== "sim") continue;
       const para = await destinatarios(supabase, grupoId);
       if (para.length === 0) {
         semDestinatario.push(grupoId);

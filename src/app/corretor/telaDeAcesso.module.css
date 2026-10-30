@@ -474,6 +474,40 @@
     animation-delay: 0.16s;
   }
 }
+/* Menos fundo animado (30/10/2026, pedido do dono: "diminua a animação de
+   background no app"). No celular/tablet (toque) o céu fica parado: só a
+   chegada da folha e dos campos anima. No computador, a deriva fica mais
+   lenta e curta. */
+@media (prefers-reduced-motion: no-preference) and (hover: none), (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  .orbita,
+  .nevoa,
+  .nevoa:nth-of-type(n),
+  .ponto,
+  .ponto:nth-of-type(n),
+  .cometa {
+    animation: none;
+  }
+  .cometa {
+    opacity: 0;
+  }
+  .estrelaGrande {
+    animation: acender 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (min-width: 768px) {
+  .nevoa {
+    animation-duration: 30s;
+  }
+  .nevoa:nth-of-type(2) {
+    animation-duration: 38s;
+  }
+  .nevoa:nth-of-type(3) {
+    animation-duration: 46s;
+  }
+  .cometa {
+    animation-duration: 20s;
+  }
+}
 @keyframes item-chega {
   from {
     opacity: 0;
@@ -513,7 +547,7 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
   to {
-    transform: translate3d(3rem, 2.5rem, 0) scale(1.15);
+    transform: translate3d(1.5rem, 1.25rem, 0) scale(1.06);
   }
 }
 @keyframes piscar {
