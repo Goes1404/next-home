@@ -377,8 +377,65 @@ async function leadsQuentes(ctx: ContextoDoCentral, supabase: Supa): Promise<Ite
   }));
 }
 
+/**
+ * `leads_mais_quentes` (30/10/2026, conversa da Bruna: "a ficha do lead
+ * mais quente" virou busca por um nome que não existe). A ordem é a nota do
+ * lead (0–100, `leads.nota_score`, 0248), a mesma do "mais quentes primeiro"
+ * da lista de leads. Corretor: os dele; gestor: os da imobiliária, com o
+ * dono. Só os em andamento, nunca quem pediu para não ser procurado.
+ */
+export const TETO_DOS_MAIS_QUENTES = 10;
+
+export async function leadsMaisQuentes(
+  ctx: ContextoDoCentral,
+  argumentos: Record<string, unknown>,
+  supabase: Supa = createServiceClient(),
+): Promise<unknown> {
+  const pedido = Math.round(numero(argumentos.quantos) ?? 5);
+  const quantos = Math.min(Math.max(pedido, 1), TETO_DOS_MAIS_QUENTES);
+  let consulta = supabase
+    .from("leads")
+    .select("id, nome, telefone, etapa, corretor_id, nota_score, nota_label, nota_motivo")
+    .eq("grupo_id", ctx.grupoId)
+    .is("arquivado_em", null)
+    .is("nao_contatar_em", null)
+    .in("etapa", ETAPAS_ABERTAS)
+    .not("nota_score", "is", null);
+  if (ctx.papel !== "gestor") consulta = consulta.eq("corretor_id", ctx.corretorId);
+  const { data } = await consulta.order("nota_score", { ascending: false }).limit(quantos);
+  const leads = data ?? [];
+  if (leads.length === 0) {
+    return { vazio: "Nenhum cliente em andamento com nota calculada ainda. A nota é refeita a cada conversa e a cada 6 horas." };
+  }
+
+  // O dono só interessa ao gestor, e só quando não é ele mesmo.
+  const donos = new Map<string, string>();
+  if (ctx.papel === "gestor") {
+    const ids = [...new Set(leads.map((l) => l.corretor_id).filter((id): id is string => Boolean(id) && id !== ctx.corretorId))];
+    if (ids.length) {
+      const { data: pessoas } = await supabase.from("corretores").select("id, nome").eq("grupo_id", ctx.grupoId).in("id", ids);
+      for (const p of pessoas ?? []) donos.set(p.id, p.nome);
+    }
+  }
+  return {
+    escopo: ctx.papel === "gestor" ? "clientes da imobiliária" : "seus clientes",
+    leads: leads.map((l) =>
+      semVazios({
+        cliente: nomeParaExibir(l),
+        telefone: l.telefone,
+        etapa: rotuloDaEtapa(l.etapa),
+        nota: l.nota_score,
+        temperatura: l.nota_label,
+        motivo: curto(l.nota_motivo, 160),
+        corretor: l.corretor_id ? donos.get(l.corretor_id) : undefined,
+      }),
+    ),
+  };
+}
+
 export const CONSULTAS_CONSULTAS: Record<string, Consulta> = {
   consultar_lead: (ctx, argumentos) => consultarLead(ctx, argumentos),
   quem_ligar_hoje: (ctx) => quemLigarHoje(ctx),
+  leads_mais_quentes: (ctx, argumentos) => leadsMaisQuentes(ctx, argumentos),
 };
 export const ACOES_CONSULTAS: Record<string, Acao> = {};

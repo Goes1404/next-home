@@ -42,6 +42,8 @@ const objeto = (propriedades: Record<string, unknown>, obrigatorios: string[] = 
 
 const LEAD = texto("O cliente: nome, parte do nome ou telefone, como a pessoa falou.");
 const IMOVEL = texto("O imóvel ou empreendimento, como a pessoa falou (ex.: 'Vitta', '2 dorms do Vitta').");
+/** As 10 etapas do funil (`ETAPA_LABEL`, 0165). */
+const ETAPAS = ["novo", "primeiro_contato", "em_conversa", "qualificado", "visita_agendada", "visitou", "proposta", "documentacao", "fechado", "perdido"];
 const QUANDO = texto("Data e hora como a pessoa falou (ex.: 'amanhã 10h', 'sexta à tarde').");
 
 export const FERRAMENTAS: Ferramenta[] = [
@@ -75,7 +77,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     parametros: objeto(
       {
         lead: LEAD,
-        etapa: opcao(["novo", "primeiro_contato", "visita_agendada", "documentacao", "fechado", "perdido"], "Etapa nova do funil."),
+        etapa: opcao(ETAPAS, "Etapa nova do funil."),
         renda: numero("Renda mensal em reais."),
         orcamento: numero("Orçamento em reais."),
         regiao: texto("Região de interesse."),
@@ -119,6 +121,14 @@ export const FERRAMENTAS: Ferramenta[] = [
       { lead: LEAD, o_que: opcao(["marcar", "remarcar", "cancelar"], "O que fazer."), quando: QUANDO, imovel: IMOVEL },
       ["lead", "o_que"],
     ),
+  },
+  {
+    nome: "leads_mais_quentes",
+    capacidade: 7,
+    tipo: "consulta",
+    onda: 1,
+    descricao: "Os clientes mais quentes agora, pela nota do lead (0 a 100), com o motivo de cada um. Use para 'lead mais quente', 'melhores clientes', 'quem está mais perto de fechar'.",
+    parametros: objeto({ quantos: numero("Quantos (padrão 5, até 10).") }),
   },
   {
     nome: "quem_ligar_hoje",
@@ -287,8 +297,22 @@ export const FERRAMENTAS: Ferramenta[] = [
     capacidade: 14,
     tipo: "acao",
     onda: 3,
-    descricao: "Montar lista de transmissão: para quem mandar (filtro) e o texto.",
-    parametros: objeto({ para_quem: texto("Filtro (ex.: 'quem quer Barueri até 600 mil')."), imovel: IMOVEL, texto: texto("Mensagem.") }, ["para_quem"]),
+    // Conversa da Bruna, 30/10/2026: a IA ofereceu filtros que a lista não
+    // entendia ("quem já respondeu", "quem parou de responder") e todos deram
+    // "ninguém". Os filtros agora são campos; a descrição diz que não há outros.
+    descricao:
+      "Montar lista de transmissão. Filtros que EXISTEM (combine à vontade): região, orçamento máximo, dormitórios, imóvel de interesse, etapa do funil, se o cliente já respondeu alguma mensagem ou nunca respondeu, e parado há N dias (sem conversa). Não ofereça nem invente outro filtro. Sem texto, usa o texto padrão do imóvel.",
+    parametros: objeto({
+      regiao: texto("Região ou bairro de interesse do cliente."),
+      orcamento_max: numero("Orçamento máximo em reais."),
+      dormitorios: numero("Dormitórios."),
+      imovel: IMOVEL,
+      etapas: { type: "array", items: { type: "string", enum: ETAPAS }, description: "Etapas do funil (ex.: em_conversa, qualificado)." },
+      respondeu: opcao(["sim", "nao"], "sim = já respondeu alguma mensagem; nao = nunca respondeu."),
+      parado_ha_dias: numero("Sem conversa há pelo menos N dias."),
+      para_quem: texto("O pedido como a pessoa falou, para o resumo."),
+      texto: texto("Mensagem."),
+    }),
   },
   {
     nome: "acompanhar_lista",
@@ -303,8 +327,16 @@ export const FERRAMENTAS: Ferramenta[] = [
     capacidade: 16,
     tipo: "acao",
     onda: 3,
-    descricao: "Gerar arte de um imóvel para redes sociais.",
-    parametros: objeto({ imovel: IMOVEL, formato: texto("Formato (post, story…).") }, ["imovel"]),
+    // Conversa da Bruna, 30/10/2026: a frase pedida ("Visite e ganhe um
+    // champanhe…") se perdia, e imagem sem imóvel virava "use o Midjourney".
+    descricao:
+      "Gerar arte para redes sociais pelo Estúdio da plataforma: de um imóvel do catálogo e/ou de um pedido livre (ex.: 'prédio futurista flutuante'), com a frase ou oferta que a pessoa pedir escrita na arte.",
+    parametros: objeto({
+      imovel: IMOVEL,
+      formato: texto("Formato (post, story…)."),
+      texto_na_arte: texto("Frase ou oferta para aparecer escrita na arte, exatamente como a pessoa pediu."),
+      pedido: texto("O que a pessoa quer ver na imagem, em palavras dela."),
+    }),
   },
   {
     nome: "criar_video",

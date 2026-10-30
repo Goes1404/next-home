@@ -237,9 +237,9 @@ describe("fuso de São Paulo", () => {
 });
 
 describe("registro no catálogo", () => {
-  it("as duas consultas da frente estão registradas e nenhuma ação", async () => {
+  it("as consultas da frente estão registradas e nenhuma ação", async () => {
     const { ferramenta } = await import("../ferramentas");
-    expect(Object.keys(CONSULTAS_CONSULTAS).sort()).toEqual(["consultar_lead", "quem_ligar_hoje"]);
+    expect(Object.keys(CONSULTAS_CONSULTAS).sort()).toEqual(["consultar_lead", "leads_mais_quentes", "quem_ligar_hoje"]);
     for (const nome of Object.keys(CONSULTAS_CONSULTAS)) expect(ferramenta(nome)).toMatchObject({ tipo: "consulta", onda: 1 });
     expect(ACOES_CONSULTAS).toEqual({});
   });

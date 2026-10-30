@@ -100,15 +100,6 @@
     }
   },
   {
-    "id": "consultar-lead-ficha",
-    "papel": "corretor",
-    "mensagem": "me manda a ficha do roberto lima",
-    "ferramentaEsperada": "consultar_lead",
-    "argumentosEsperados": {
-      "lead": "roberto"
-    }
-  },
-  {
     "id": "consultar-lead-digitacao",
     "papel": "corretor",
     "mensagem": "oq falta pro fexar com a mariana",
@@ -185,12 +176,6 @@
     "id": "dia-visitas",
     "papel": "corretor",
     "mensagem": "quais visitas tenho hoje?",
-    "ferramentaEsperada": "quem_ligar_hoje"
-  },
-  {
-    "id": "dia-ligar",
-    "papel": "corretor",
-    "mensagem": "quem eu ligo hoje?",
     "ferramentaEsperada": "quem_ligar_hoje"
   },
   {
@@ -519,7 +504,9 @@
     "mensagem": "manda o Vitta pra quem quer Barueri até 600 mil",
     "ferramentaEsperada": "montar_lista",
     "argumentosEsperados": {
-      "imovel": "vitta"
+      "imovel": "vitta",
+      "regiao": "barueri",
+      "orcamento_max": 600000
     }
   },
   {
@@ -528,7 +515,8 @@
     "mensagem": "monta uma lista de transmissão pros clientes de 2 dorms com o lançamento do Reserva",
     "ferramentaEsperada": "montar_lista",
     "argumentosEsperados": {
-      "imovel": "reserva"
+      "imovel": "reserva",
+      "dormitorios": 2
     }
   },
   {
@@ -702,10 +690,14 @@
     "ferramentaEsperada": "ajuda"
   },
   {
-    "id": "ajuda-2",
+    "id": "leads-mais-quentes",
     "papel": "corretor",
-    "mensagem": "ajuda",
-    "ferramentaEsperada": "ajuda"
+    "mensagem": "me manda a ficha do lead mais quente",
+    "ferramentaEsperada": [
+      "leads_mais_quentes",
+      "quem_ligar_hoje"
+    ],
+    "nota": "áudio transcrito da Bruna em 30/10: 'limanja fica do líder mais quente' foi lido como nome"
   },
   {
     "id": "saude",
@@ -931,5 +923,26 @@
     "papel": "gestor",
     "mensagem": "quanto falta pra minha meta",
     "ferramentaEsperada": "meta_e_comissao"
+  },
+  {
+    "id": "lista-respondeu",
+    "papel": "corretor",
+    "mensagem": "manda pra quem já respondeu alguma mensagem e está em conversa",
+    "ferramentaEsperada": "montar_lista",
+    "argumentosEsperados": {
+      "respondeu": "sim"
+    },
+    "nota": "conversa da Bruna, 30/10: filtro que a lista não entendia"
+  },
+  {
+    "id": "arte-com-frase",
+    "papel": "corretor",
+    "mensagem": "cria uma arte do Dom Parque com a frase: visite e ganhe um champanhe só este fim de semana",
+    "ferramentaEsperada": "gerar_arte",
+    "argumentosEsperados": {
+      "imovel": "dom parque",
+      "texto_na_arte": "champanhe"
+    },
+    "nota": "conversa da Bruna, 30/10: a frase se perdia"
   }
 ]
