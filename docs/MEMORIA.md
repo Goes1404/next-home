@@ -12581,6 +12581,18 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   ganharam `quem` opcional (padrão `"ia"`, sem mudança). Armadilha: a linha
   `expect(Object.keys(TRATADORES.acoes)).toEqual([])` do `ferramentas.test.ts`
   reprovava toda ação da onda 1 mesmo com `ONDA_ATUAL = 0`; saiu.
+- **Onda 2, frente F (imóveis), 30/10/2026** — [[central-imoveis-do-catalogo]]:
+  `tratadores/imoveis.ts`. Nada de régua nova: imóvel pelo texto com
+  `imoveisCitados` (apelidos da 0136; termo que aponta para dois imóveis
+  vira pergunta), casamento lead × imóvel com `matchDeImoveis` (o da ficha e
+  da tela do imóvel), simulação com `simularFinanciamento` + taxas do grupo
+  (sem renda: SBPE, diz a renda necessária). `atualizar_imovel` (gestor)
+  grava por `imoveis/imovelPeloCentral.ts`: "2 dorms do X" muda o preço da
+  planta; sem dormitórios, o "a partir de", que entra num lote de
+  `historico_precos_*` (a tela de preços vê e o desfaz marca revertido);
+  unidade por `chaveDaUnidade`. O "sim" não grava se o valor mudou desde a
+  proposta. Armadilha: o banco falso devolve a MESMA linha que depois é
+  atualizada; capture o "antes" em valores antes do `update`.
 
 ## Suporte e contato da Astro (29/10/2026)
 
