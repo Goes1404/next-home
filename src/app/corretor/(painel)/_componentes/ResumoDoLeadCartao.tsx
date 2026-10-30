@@ -19,21 +19,33 @@ const quando = new Intl.DateTimeFormat("pt-BR", {
  * perfil aberto de dentro da conversa. Um componente só, para as duas telas
  * nunca contarem histórias diferentes sobre a mesma pessoa.
  */
-export function ResumoDoLeadCartao({ resumo }: { resumo: ResumoDoLead }) {
+export function ResumoDoLeadCartao({
+  resumo,
+  semTemperatura = false,
+}: {
+  resumo: ResumoDoLead;
+  /**
+   * A nota do lead (0248) já está na tela, no cartão do resumo da conversa:
+   * a temperatura do dossiê aqui seria um segundo número para a mesma
+   * pergunta (30/10/2026).
+   */
+  semTemperatura?: boolean;
+}) {
   const linhas = linhasDoResumo(resumo);
+  const temperatura = semTemperatura ? null : resumo.temperatura;
   return (
     <section className="cartao overflow-hidden text-left">
       <div className="border-linha flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className="text-titulo text-sm font-semibold">Resumo do lead</h2>
         <span className="text-tenue text-xs">
-          {resumo.temperatura && (
-            <span className={`font-medium capitalize ${COR_TEMPERATURA[resumo.temperatura.label]}`}>
-              {resumo.temperatura.label} · {resumo.temperatura.score}
+          {temperatura && (
+            <span className={`font-medium capitalize ${COR_TEMPERATURA[temperatura.label]}`}>
+              {temperatura.label} · {temperatura.score}
             </span>
           )}
           {resumo.atualizadoEm && (
             <span>
-              {resumo.temperatura ? " · " : ""}atualizado {quando.format(new Date(resumo.atualizadoEm))}
+              {temperatura ? " · " : ""}atualizado {quando.format(new Date(resumo.atualizadoEm))}
             </span>
           )}
         </span>

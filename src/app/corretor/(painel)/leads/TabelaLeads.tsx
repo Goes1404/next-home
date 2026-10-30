@@ -6,6 +6,7 @@ import { maiuscula } from "@/lib/ramos/ramos";
 import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
 import Link from "next/link";
 import { CampoVisita } from "@/app/corretor/(painel)/_componentes/CampoVisita";
+import { NotaDoLeadChip } from "@/app/corretor/(painel)/_componentes/NotaDoLeadChip";
 import {
   BadgePortal,
   ContagemDeTentativas,
@@ -247,6 +248,7 @@ export function TabelaLeads({
                     </span>
                     <span className="text-fluid-xs text-tenue mt-0.5 flex min-w-0 items-center gap-1.5">
                       <EtiquetaEtapa etapa={lead.etapa} />
+                      <NotaDoLeadChip nota={lead.nota} />
                       <ContagemDeTentativas lead={lead} />
                       <span className="min-w-0 truncate">{dataDoCartao(lead)}</span>
                     </span>
@@ -422,6 +424,7 @@ function FragmentoLinha({
         <td className="px-3 py-2.5">
           <div className="flex flex-wrap items-center gap-1.5">
             <EtiquetaEtapa etapa={lead.etapa} />
+            <NotaDoLeadChip nota={lead.nota} />
             <ContagemDeTentativas lead={lead} />
           </div>
         </td>

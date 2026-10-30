@@ -13,6 +13,7 @@ import { getAgregadoDaEquipe } from "@/lib/admin/agregados";
 import { createClient } from "@/lib/supabase/server";
 import { ETAPAS_FUNIL, ETAPA_LABEL, ORIGEM_ATRIBUICAO_LABEL, type Lead } from "@/lib/types";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
+import { NotaDoLeadChip } from "@/app/corretor/(painel)/_componentes/NotaDoLeadChip";
 
 export const metadata: Metadata = { title: "Leads da equipe" };
 
@@ -201,12 +202,21 @@ export default async function EquipePage() {
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-fluid-sm text-titulo font-medium">Contatos recentes</h2>
-          <Link
-            href="/corretor/leads?corretor=equipe"
-            className="text-fluid-xs text-acento-suave font-medium link-acao"
-          >
-            Ver todos, com busca e filtro →
-          </Link>
+          <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            {/* A nota do lead (0248): o gestor vê primeiro quem está quente na equipe. */}
+            <Link
+              href="/corretor/leads?corretor=equipe&ordem=quentes"
+              className="text-fluid-xs text-acento-suave font-medium link-acao"
+            >
+              Mais quentes da equipe →
+            </Link>
+            <Link
+              href="/corretor/leads?corretor=equipe"
+              className="text-fluid-xs text-acento-suave font-medium link-acao"
+            >
+              Ver todos, com busca e filtro →
+            </Link>
+          </span>
         </div>
         <p className="text-fluid-xs text-apoio mt-1">
           Os {primeiraPagina.leads.length} últimos que chegaram, de {primeiraPagina.total}. Para
@@ -228,6 +238,7 @@ export default async function EquipePage() {
                     {lead.nome}
                   </Link>
                   <EtiquetaEtapa etapa={lead.etapa} />
+                  <NotaDoLeadChip nota={lead.nota} />
                 </div>
                 <p className="text-fluid-xs text-tenue mt-0.5">
                   {dataHora.format(new Date(lead.criadoEm))}

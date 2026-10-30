@@ -4240,6 +4240,13 @@ export type Database = {
       }
       leads: {
         Row: {
+          nota_calculada_em: string | null
+          nota_label: string | null
+          nota_motivo: string | null
+          nota_score: number | null
+          resumo_conversa: Json | null
+          resumo_conversa_ate: string | null
+          resumo_conversa_em: string | null
           grupo_id: string
           anuncio_origem: string | null
           anuncio_pago_por: string | null
@@ -4304,6 +4311,13 @@ export type Database = {
           wbraid: string | null
         }
         Insert: {
+          nota_calculada_em?: string | null
+          nota_label?: string | null
+          nota_motivo?: string | null
+          nota_score?: number | null
+          resumo_conversa?: Json | null
+          resumo_conversa_ate?: string | null
+          resumo_conversa_em?: string | null
           grupo_id?: string
           anuncio_origem?: string | null
           anuncio_pago_por?: string | null
@@ -4368,6 +4382,13 @@ export type Database = {
           wbraid?: string | null
         }
         Update: {
+          nota_calculada_em?: string | null
+          nota_label?: string | null
+          nota_motivo?: string | null
+          nota_score?: number | null
+          resumo_conversa?: Json | null
+          resumo_conversa_ate?: string | null
+          resumo_conversa_em?: string | null
           grupo_id?: string
           anuncio_origem?: string | null
           anuncio_pago_por?: string | null

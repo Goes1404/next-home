@@ -18,6 +18,7 @@ export type FinalidadeDaIa =
   | "dossie"
   | "recusa"
   | "transcricao_audio"
+  | "resumo_conversa"
   | "consultor"
   | "financeiro"
   | "retorno_ligacao"
@@ -38,6 +39,8 @@ export const ROTULO_DA_FINALIDADE: Record<FinalidadeDaIa, string> = {
   dossie: "Ficha do cliente (a cada mensagem)",
   recusa: "Leitura de recusa",
   transcricao_audio: "Transcrição de áudio",
+  // Resumo da conversa + próximo passo, sob demanda na ficha (30/10/2026).
+  resumo_conversa: "Resumo da conversa",
   consultor: "Consultor",
   financeiro: "Assistente do financeiro",
   retorno_ligacao: "Retorno da ligação",

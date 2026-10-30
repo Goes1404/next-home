@@ -92,7 +92,13 @@ import { ehSaudacaoAutomatica, SEGUNDOS_PARA_A_SAUDACAO } from "@/lib/whatsapp/s
 import { decidirPorFalaDoCorretor, palavraDoCorretorNaMensagem } from "@/lib/whatsapp/modoBot";
 import { decidirSeAIaResponde, registroDoSilencio } from "@/lib/whatsapp/quandoAIaResponde";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
-import { lerCotaDaIa } from "@/lib/planos/usoDaIa";
+import { contarUsoDaIaDeHoje, lerCotaDaIa, lerTetoDeTranscricoes } from "@/lib/planos/usoDaIa";
+import {
+  AUDIO_TRANSCREVENDO,
+  decidirTranscricao,
+  textoDoAudioNaoTranscrito,
+} from "@/lib/whatsapp/transcricaoNoGrupo";
+import { recalcularNotaDoLead } from "@/lib/crm/notaDoLeadServidor";
 import { classificarRecusa } from "@/lib/whatsapp/classificarRecusa";
 import { reconhecerConviteDeEntrada, reconhecerMensagemDeAnuncio } from "@/lib/whatsapp/porteiro";
 import { chavesDeContexto, reconhecerAnuncioMeta } from "@/lib/whatsapp/anuncioMeta";
@@ -108,7 +114,12 @@ import { clientePediuLigacao } from "@/lib/whatsapp/pedidoDeLigacao";
 import { iaPrometeuRetorno } from "@/lib/whatsapp/promessaDeRetorno";
 import { getParametrosCredito } from "@/lib/credito/parametros";
 import { itensDoEvento, lerContato, resumirEventoDeContato } from "@/lib/whatsapp/contatosDaAgenda";
-import { candidatosTelefone, marcarSessaoViva, registrarMensagemBarrada } from "@/lib/whatsapp/repositorio";
+import {
+  candidatosTelefone,
+  gravarTranscricaoDoAudio,
+  marcarSessaoViva,
+  registrarMensagemBarrada,
+} from "@/lib/whatsapp/repositorio";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -676,13 +687,30 @@ export async function POST(req: NextRequest) {
       }
       return { base64: baixado.base64, mimeType: audioMsg?.mimetype ?? baixado.mimeType, segundos };
     };
-    if (ehAudio) {
+    /*
+     * Transcreve o áudio e devolve o texto que fica no lugar da fala
+     * (IA no atendimento, 30/10/2026). Com a IA atendendo, sempre: a resposta
+     * depende do texto. Com a IA calada (ou na fala do corretor), só com o
+     * grupo em dia e abaixo do teto do dia (`decidirTranscricao`).
+     */
+    const transcreverEsteAudio = async (iaAtende: boolean): Promise<string> => {
+      const [transcricoesHoje, teto, suspenso] = iaAtende
+        ? [0, null, false]
+        : await Promise.all([
+            contarUsoDaIaDeHoje(instancia.grupoId, "transcricao_audio"),
+            lerTetoDeTranscricoes(instancia.grupoId),
+            grupoSuspenso(instancia.grupoId),
+          ]);
+      const decisao = decidirTranscricao({ iaAtende, transcricoesHoje, teto, grupoSuspenso: suspenso });
+      if (decisao !== "transcrever") {
+        console.info(`[audio] transcrição não feita (${decisao}) no grupo ${instancia.grupoId}`);
+        return textoDoAudioNaoTranscrito(decisao);
+      }
       const resultadoAudio = await transcreverAudioWhatsapp({
         ...(await audioDecifrado()),
         quemPaga: { corretorId: instancia.corretorId, grupoId: instancia.grupoId },
       });
       audioFalhou = !resultadoAudio.sucesso;
-      text = resultadoAudio.textoTranscrito;
       /*
        * A "intenção detectada" que ia anexada aqui SAIU (26/09/2026): era um
        * palpite do modelo gravado como fala do cliente, e a IA respondia ao
@@ -690,7 +718,16 @@ export async function POST(req: NextRequest) {
        * transcrição — ver `instrucaoDoAudio`.
        */
       if (resultadoAudio.sucesso) instrucaoAudio = instrucaoDoAudio(resultadoAudio);
-    }
+      return resultadoAudio.textoTranscrito;
+    };
+    /*
+     * Fala do CORRETOR (do celular dele): transcrita antes, como sempre — ela
+     * nunca é o turno da IA, então passa pelo teto do dia. Fala do CLIENTE:
+     * gravada PRIMEIRO com o marcador e transcrita logo depois da guarda de
+     * reentrega (abaixo) — a gravação não espera a transcrição, e a
+     * reentrega do provedor não paga a mesma transcrição de novo.
+     */
+    if (ehAudio) text = fromMe ? await transcreverEsteAudio(false) : AUDIO_TRANSCREVENDO;
 
     if (!text) {
       return NextResponse.json({ ok: true, ignored: "Mensagem vazia ou sem remetente" });
@@ -861,6 +898,35 @@ export async function POST(req: NextRequest) {
     // novo é mandar a mesma resposta duas vezes para o cliente.
     if (!gravacao.inedita) {
       return NextResponse.json({ ok: true, ignored: "reentrega", sender });
+    }
+
+    /*
+     * O áudio do cliente, já guardado com o marcador: agora a transcrição
+     * (30/10/2026). O texto troca o marcador na linha (idempotente) e segue
+     * para o resto do fluxo — dossiê, recusa, visita combinada e o turno da
+     * IA leem a fala transcrita, como antes.
+     */
+    if (ehAudio) {
+      const iaAtende = Boolean(conversa.leadId) && conversa.botAtivo && !conversa.leadDeOutroCorretor;
+      text = await transcreverEsteAudio(iaAtende);
+      if (gravacao.id) {
+        await gravarTranscricaoDoAudio({
+          mensagemId: gravacao.id,
+          conversaId: conversa.id,
+          texto: text,
+          // Mesma decisão da gravação acima (não é outra gravação de fala).
+          textoLiberado: guardaOTextoDaConversa(conversa, instancia),
+        });
+      }
+    }
+
+    /*
+     * A nota do lead (0248) anda com a fala do cliente: depois da resposta,
+     * sem IA (só a régua de `notaDoLead.ts`). Nunca lança.
+     */
+    if (conversa.leadId) {
+      const leadDaNota = conversa.leadId;
+      after(() => recalcularNotaDoLead(createServiceClient(), leadDaNota).then(() => undefined));
     }
 
     /*

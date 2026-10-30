@@ -5,6 +5,7 @@ import { mapCorretor, SELECT_CORRETOR, type LinhaCorretor } from "@/lib/queries"
 import { createClient } from "@/lib/supabase/server";
 import type { TipoDoGrupo } from "@/lib/grupos/grupo";
 import { lerRamo, limparDescricaoDoRamo, RAMO_PADRAO, type Ramo } from "@/lib/ramos/ramos";
+import { notaDaLinha } from "@/lib/crm/notaDoLead";
 import {
   filtrarContasOcultas,
   filtroForaDasContasOcultas,
@@ -245,6 +246,25 @@ export const SELECT_LEAD = `
   empreendimento:empreendimentos!leads_empreendimento_id_fkey(nome, slug, endereco)
 `;
 
+/**
+ * O mesmo select com a nota do lead (0248, 30/10/2026). Separado porque
+ * antes da migration as colunas não existem (42703) e a lista inteira
+ * cairia: quem lê por aqui tenta com a nota e, nesse erro, repete sem ela
+ * (`comNota`).
+ */
+export const SELECT_LEAD_COM_NOTA = `${SELECT_LEAD}, nota_score, nota_label, nota_motivo`;
+
+/**
+ * Roda a consulta com a nota e, se o banco ainda não tem as colunas da 0248
+ * (42703), de novo sem ela. A lista nunca cai por causa da nota.
+ */
+async function comNota<R extends { error: { code?: string } | null }>(
+  consulta: (select: string) => PromiseLike<R>,
+): Promise<R> {
+  const r = await consulta(SELECT_LEAD_COM_NOTA);
+  return r.error?.code === "42703" ? consulta(SELECT_LEAD) : r;
+}
+
 export type LinhaLead = {
   id: string;
   nome: string;
@@ -263,6 +283,9 @@ export type LinhaLead = {
   visita_agendada_em: string | null;
   tentativas_sem_resposta: number | null;
   nao_contatar_em?: string | null;
+  nota_score?: number | null;
+  nota_label?: string | null;
+  nota_motivo?: string | null;
   corretor: { id: string; nome: string } | null;
   empreendimento: { nome: string; slug: string; endereco: string | null } | null;
 };
@@ -288,6 +311,7 @@ export function mapLead(row: LinhaLead): Lead {
     corretor: row.corretor,
     empreendimento: row.empreendimento,
     tentativasSemResposta: row.tentativas_sem_resposta ?? 0,
+    nota: notaDaLinha(row),
   };
 }
 
@@ -310,10 +334,12 @@ export async function getMeusLeads(): Promise<Lead[]> {
   const dono = await recorteDaVisao();
   // Visão da equipe: conta oculta (0189) fica de fora.
   const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
-  let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
-  if (dono) query = query.eq("corretor_id", dono);
-  else if (foraDasOcultas) query = query.or(foraDasOcultas);
-  const { data, error } = await query.order("created_at", { ascending: false });
+  const { data, error } = await comNota((select) => {
+    let query = supabase.from("leads").select(select).is("arquivado_em", null);
+    if (dono) query = query.eq("corretor_id", dono);
+    else if (foraDasOcultas) query = query.or(foraDasOcultas);
+    return query.order("created_at", { ascending: false });
+  });
 
   if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
 
@@ -385,6 +411,12 @@ export type FiltroLeads = {
   semDono?: boolean;
   /** Sem mudança de etapa há N dias (e ainda em jogo). Mesmo motivo acima. */
   paradoDias?: number;
+  /**
+   * `?ordem=quentes` (30/10/2026): a maior nota do lead primeiro (0248).
+   * Sem nota (nunca calculada) vai para o fim. Sem a migration, a ordem
+   * volta à de chegada.
+   */
+  ordem?: "quentes";
 };
 
 export type PaginaDeLeads = {
@@ -460,50 +492,57 @@ export async function getPaginaDeLeads(
   // Visão da equipe: conta oculta (0189) fica de fora.
   const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
-  let query = supabase.from("leads").select(SELECT_LEAD, { count: "exact" });
-  query = filtro.arquivados
-    ? query.not("arquivado_em", "is", null)
-    : query.is("arquivado_em", null);
-  if (dono) query = query.eq("corretor_id", dono);
-  else if (foraDasOcultas) query = query.or(foraDasOcultas);
-
   const busca = filtro.busca ? sanearBusca(filtro.busca) : "";
-  if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
-  if (filtro.recorte === "hoje") {
-    // Novo sem atendimento OU visita marcada para hoje. Cada `.or()` vira um
-    // grupo próprio no PostgREST e os grupos se combinam por AND — por isso
-    // este não atropela o da busca acima.
-    const dia = diaEmSaoPaulo();
-    query = query.or(
-      `etapa.eq.novo,and(etapa.eq.visita_agendada,visita_agendada_em.gte.${dia}T00:00:00-03:00,visita_agendada_em.lte.${dia}T23:59:59-03:00)`,
-    );
-  }
-  if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
-  if (filtro.empreendimentoId) {
-    // "Chegou por" OU "conversando sobre" — as duas colunas que o lead já
-    // tem. Grupo `.or()` próprio: combina por AND com o da busca acima.
-    query = query.or(
-      `empreendimento_id.eq.${filtro.empreendimentoId},imovel_interesse_id.eq.${filtro.empreendimentoId}`,
-    );
-  }
-  if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
-  if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
-  if (filtro.semDono) query = query.is("corretor_id", null);
-  if (filtro.metaCampanhaId) query = query.eq("meta_campanha_id", filtro.metaCampanhaId);
   const padroes = filtro.canal ? PADROES_DO_CANAL[filtro.canal] : null;
-  if (padroes) query = query.or(padroes.map((p) => `origem.ilike.${p}`).join(","));
-  if (filtro.paradoDias && filtro.paradoDias > 0) {
-    // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
-    // Fechado/perdido parados são só história encerrada.
-    const limite = new Date(Date.now() - filtro.paradoDias * 86_400_000).toISOString();
-    query = query
-      .lt("etapa_alterada_em", limite)
-      .not("etapa", "in", "(fechado,perdido)");
-  }
+  const montar = (select: string, comOrdemDaNota: boolean) => {
+    let query = supabase.from("leads").select(select, { count: "exact" });
+    query = filtro.arquivados
+      ? query.not("arquivado_em", "is", null)
+      : query.is("arquivado_em", null);
+    if (dono) query = query.eq("corretor_id", dono);
+    else if (foraDasOcultas) query = query.or(foraDasOcultas);
 
-  const { data, error, count } = await query
-    .order("created_at", { ascending: false })
-    .range(de, de + LEADS_POR_PAGINA - 1);
+    if (busca) query = query.or(`nome.ilike.%${busca}%,telefone.ilike.%${busca}%`);
+    if (filtro.recorte === "hoje") {
+      // Novo sem atendimento OU visita marcada para hoje. Cada `.or()` vira um
+      // grupo próprio no PostgREST e os grupos se combinam por AND — por isso
+      // este não atropela o da busca acima.
+      const dia = diaEmSaoPaulo();
+      query = query.or(
+        `etapa.eq.novo,and(etapa.eq.visita_agendada,visita_agendada_em.gte.${dia}T00:00:00-03:00,visita_agendada_em.lte.${dia}T23:59:59-03:00)`,
+      );
+    }
+    if (filtro.etapas && filtro.etapas.length > 0) query = query.in("etapa", filtro.etapas);
+    if (filtro.empreendimentoId) {
+      // "Chegou por" OU "conversando sobre" — as duas colunas que o lead já
+      // tem. Grupo `.or()` próprio: combina por AND com o da busca acima.
+      query = query.or(
+        `empreendimento_id.eq.${filtro.empreendimentoId},imovel_interesse_id.eq.${filtro.empreendimentoId}`,
+      );
+    }
+    if (filtro.criadoDe) query = query.gte("created_at", filtro.criadoDe);
+    if (filtro.criadoAte) query = query.lte("created_at", `${filtro.criadoAte}T23:59:59`);
+    if (filtro.semDono) query = query.is("corretor_id", null);
+    if (filtro.metaCampanhaId) query = query.eq("meta_campanha_id", filtro.metaCampanhaId);
+    if (padroes) query = query.or(padroes.map((p) => `origem.ilike.${p}`).join(","));
+    if (filtro.paradoDias && filtro.paradoDias > 0) {
+      // "Parado" = a etapa não muda há N dias E o negócio ainda está em jogo.
+      // Fechado/perdido parados são só história encerrada.
+      const limite = new Date(Date.now() - filtro.paradoDias * 86_400_000).toISOString();
+      query = query
+        .lt("etapa_alterada_em", limite)
+        .not("etapa", "in", "(fechado,perdido)");
+    }
+
+    // "Mais quentes primeiro" (0248): a nota manda; sem nota, no fim.
+    if (comOrdemDaNota) query = query.order("nota_score", { ascending: false, nullsFirst: false });
+    return query.order("created_at", { ascending: false }).range(de, de + LEADS_POR_PAGINA - 1);
+  };
+
+  const quentes = filtro.ordem === "quentes";
+  let resposta = await montar(SELECT_LEAD_COM_NOTA, quentes);
+  if (resposta.error?.code === "42703") resposta = await montar(SELECT_LEAD, false);
+  const { data, error, count } = resposta;
 
   if (error) throw new Error(`Falha ao carregar os leads: ${error.message}`);
 
@@ -567,18 +606,16 @@ export async function getLeadsDoFunil(busca?: string): Promise<Lead[]> {
   // Visão da equipe: conta oculta (0189) fica de fora.
   const foraDasOcultas = dono ? null : await filtroForaDasOcultas();
 
-  let query = supabase.from("leads").select(SELECT_LEAD).is("arquivado_em", null);
-  if (dono) query = query.eq("corretor_id", dono);
-  else if (foraDasOcultas) query = query.or(foraDasOcultas);
-
   // A busca é a MESMA das outras abas — mesmo saneamento, mesmas colunas.
   // Duas buscas com regras diferentes na mesma tela seria pior que nenhuma.
   const termo = busca ? sanearBusca(busca) : "";
-  if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
-
-  const { data, error } = await query
-    .order("etapa_alterada_em", { ascending: false })
-    .limit(TETO_DO_QUADRO);
+  const { data, error } = await comNota((select) => {
+    let query = supabase.from("leads").select(select).is("arquivado_em", null);
+    if (dono) query = query.eq("corretor_id", dono);
+    else if (foraDasOcultas) query = query.or(foraDasOcultas);
+    if (termo) query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`);
+    return query.order("etapa_alterada_em", { ascending: false }).limit(TETO_DO_QUADRO);
+  });
 
   if (error) throw new Error(`Falha ao carregar o funil: ${error.message}`);
 

@@ -31,6 +31,7 @@ import { executarTurnoDeAtendimento } from "@/lib/whatsapp/turnoDeAtendimento";
 import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
 import { TETO_DA_MEMORIA } from "@/lib/whatsapp/memoriaDaConversa";
 import { lerResumoDoLead, type ResumoDoLead } from "@/lib/crm/resumoDoLead";
+import { lerEstadoDoResumo, type EstadoDoResumo } from "@/lib/crm/resumoDaConversaServidor";
 
 export type ResultadoConversa = { erro?: string; ok?: string };
 
@@ -550,6 +551,8 @@ export type FichaDoLead = {
   resumoIA: string | null;
   /** O resumo completo do lead (plano de ativação, 3.1), o mesmo da ficha. */
   resumo: ResumoDoLead | null;
+  /** Resumo da conversa + próximo passo + nota (30/10/2026); `null` antes da 0248. */
+  estadoDoResumo: EstadoDoResumo | null;
 };
 
 /** `numeric` do Postgres chega como STRING no supabase-js — sempre converter. */
@@ -593,10 +596,14 @@ export async function lerFichaDoLead(conversaId: string): Promise<FichaDoLead | 
   ]);
 
   if (!lead) return null;
-  const resumo = await lerResumoDoLead(supabase, conversa.lead_id);
+  const [resumo, estadoDoResumo] = await Promise.all([
+    lerResumoDoLead(supabase, conversa.lead_id),
+    lerEstadoDoResumo(supabase, conversa.lead_id),
+  ]);
 
   return {
     resumo,
+    estadoDoResumo,
     leadId: lead.id,
     nome: lead.nome,
     etapa: lead.etapa,

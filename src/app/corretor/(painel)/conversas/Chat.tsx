@@ -5,6 +5,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ArrowLeft, ExternalLink, NotebookPen, Phone } from "lucide-react";
 import { ResumoDoLeadCartao } from "../_componentes/ResumoDoLeadCartao";
+import { ResumoDaConversaCartao } from "../_componentes/ResumoDaConversaCartao";
+import { ehMarcadorDeAudio } from "@/lib/whatsapp/transcricaoNoGrupo";
 import { cn } from "@/lib/utils";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
@@ -1053,9 +1055,15 @@ function PerfilLead({
 
         {/* O resumo do lead (plano de ativação, 3.1): o mesmo cartão do topo
             da ficha. O bloco antigo fica só para o caso de o resumo não vir. */}
+        {/* Resumo da conversa + próximo passo + nota (30/10/2026). */}
+        {ficha.estadoDoResumo && (
+          <div className="mx-auto mt-6 w-full max-w-lg">
+            <ResumoDaConversaCartao leadId={ficha.leadId} inicial={ficha.estadoDoResumo} />
+          </div>
+        )}
         {ficha.resumo ? (
           <div className="mx-auto mt-6 w-full max-w-lg">
-            <ResumoDoLeadCartao resumo={ficha.resumo} />
+            <ResumoDoLeadCartao resumo={ficha.resumo} semTemperatura={Boolean(ficha.estadoDoResumo?.nota)} />
           </div>
         ) : (
           <>
@@ -1362,7 +1370,9 @@ function Balao({
         )}
         {mensagem.tipo === "audio" && (
           <p className="text-wa-meta text-[10px] font-medium tracking-wide uppercase">
-            🎙 Áudio
+            {/* Todo áudio do cliente é transcrito (30/10/2026): o texto abaixo
+                é a transcrição, salvo quando ainda é o marcador. */}
+            {ehMarcadorDeAudio(mensagem.conteudo) ? "🎙 Áudio" : "🎙 Áudio · transcrição"}
           </p>
         )}
         {audioTocavel(mensagem) && (
