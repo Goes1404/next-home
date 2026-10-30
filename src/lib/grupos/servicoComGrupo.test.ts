@@ -417,6 +417,7 @@ const IMPORTADORES: Record<string, Importador> = {
   "src/lib/marcaDoCrm/doPainel.ts": { validadoPor: "getCorretorLogado", motivo: "a marca é a do grupo do corretor da sessão" },
   "src/app/corretor/(painel)/_componentes/FaixaCobranca.tsx": { validadoPor: "getCorretorLogado", motivo: "faixa da mensalidade do grupo do corretor da sessão" },
   "src/app/corretor/(painel)/_componentes/FaixaCotaDaIa.tsx": { validadoPor: "getCorretorLogado", motivo: "faixa da cota da IA do grupo do corretor da sessão" },
+  "src/app/corretor/(painel)/_componentes/acoesResumoDaConversa.ts": { validadoPor: "getCorretorLogado", motivo: "resumo da conversa (0248, 30/10/2026): uso do dia, cota e cobrança do grupo do corretor da sessão; o lead e a conversa são lidos pela sessão (RLS)" },
   "src/app/corretor/(painel)/conversas/page.tsx": { validadoPor: "getCorretorLogado", motivo: "cota da IA do grupo do corretor da sessão (cabeçalho da conversa)" },
   "src/app/corretor/(painel)/pessoas/page.tsx": { validadoPor: "getCorretorLogado", motivo: "cota da IA do grupo do corretor da sessão (cabeçalho da conversa)" },
   "src/app/corretor/(painel)/consultor/acoes.ts": { validadoPor: "getCorretorLogado", motivo: "corretor da sessão; conversa conferida por conversaDoCorretor" },

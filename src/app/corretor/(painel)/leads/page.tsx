@@ -98,6 +98,8 @@ export default async function LeadsPage({
     semDono: semDono || undefined,
     paradoDias,
     arquivados: verArquivados || undefined,
+    // `?ordem=quentes` (30/10/2026): a maior nota do lead primeiro.
+    ordem: primeiroValor(params.ordem) === "quentes" ? "quentes" : undefined,
   };
 
   /*

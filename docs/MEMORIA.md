@@ -12590,3 +12590,5 @@ CHECK de `admin_eventos` das duas foi unido nos dois arquivos).
 - `sw-painel.js` agora guarda dados por usuário e apaga ao sair/login/401; nunca conversas.
 - Nota: [[multi-ramo-portais-gestor-e-negocio-da-astro]].
 - 30/10/2026: /plataforma no desktop ganhou barra lateral (NavDaPlataforma.tsx); a linha de 8 botões sem flex-wrap vazava.
+- 30/10/2026: `relatorio-semanal` REAGENDADO no pg_cron (segundas 11h UTC) por causa do resumo no WhatsApp (0246); o e-mail do relatório só sai com `RELATORIO_SEMANAL_POR_EMAIL=sim` (segue desligado, decisão de 03/09). Fundo animado: em toque (`hover: none`) o painel e a tela de acesso ficam parados.
+- 30/10/2026 (0248, aplicada): IA no atendimento — áudio transcrito depois de gravar a mensagem (marcador AUDIO_TRANSCREVENDO, teto diário por grupo com IA calada), resumo da conversa + próximo passo em cache no lead (refaz no máx. a cada 10 min, teto 300/dia/grupo), nota do lead 0-100 por regras (`notaDoLead.ts`, quente ≥70, morno ≥40) recalculada no webhook, no cron (100/tique, a cada 6 h) e ao abrir a ficha. Tetos e pesos provisórios, a validar com o dono.

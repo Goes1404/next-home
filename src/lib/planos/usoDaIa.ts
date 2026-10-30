@@ -14,6 +14,8 @@ import {
   type Recurso,
   type SituacaoDoRecurso,
 } from "./limitesDoPlano";
+import type { FinalidadeDaIa } from "./custoDaIa";
+import { inicioDoDiaEmSaoPaulo, tetoDeTranscricoesDoDia } from "@/lib/whatsapp/transcricaoNoGrupo";
 
 /**
  * Quanto da cota de respostas da IA o grupo já usou neste mês (0197).
@@ -155,4 +157,45 @@ export async function conferirLimite(
   const situacao = (await lerLimitesDoGrupo(grupoId, { agora }))[recurso];
   if (cabeNoLimite(situacao, pedido)) return { ok: true, situacao };
   return { ok: false, erro: mensagemDeRecusa(situacao, pedido) ?? "O limite do mês acabou.", situacao };
+}
+
+/**
+ * Quantas chamadas pagas de uma finalidade o grupo fez HOJE (dia de São
+ * Paulo), pelo livro do consumo (0233). É a base dos tetos diários da IA no
+ * atendimento (30/10/2026): transcrição com a IA calada e resumo da conversa.
+ *
+ * Conta LINHAS do livro: a transcrição que passou por dois motores conta
+ * duas — erra para o lado de parar antes, que é o lado barato.
+ *
+ * Falha de leitura devolve 0 (com log), a mesma régua de `lerCotaDaIa`.
+ */
+export async function contarUsoDaIaDeHoje(grupoId: string, finalidade: FinalidadeDaIa, agora: Date = new Date()): Promise<number> {
+  const { count, error } = await createServiceClient()
+    .from("ia_consumo")
+    .select("id", { count: "exact", head: true })
+    .eq("grupo_id", grupoId)
+    .eq("finalidade", finalidade)
+    .gte("criado_em", inicioDoDiaEmSaoPaulo(agora).toISOString());
+  if (error) {
+    console.error(`[uso do dia] grupo ${grupoId} (${finalidade}): leitura falhou, segue liberado: ${error.message}`);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+/**
+ * O teto de transcrições do dia do grupo (plano e assentos, como a cota).
+ * Falha de leitura: sem teto, com log.
+ */
+export async function lerTetoDeTranscricoes(grupoId: string): Promise<number | null> {
+  const servico = createServiceClient();
+  const [grupo, assentos] = await Promise.all([
+    servico.from("grupos").select("plano").eq("id", grupoId).maybeSingle(),
+    servico.from("corretor_whatsapp_instancias").select("id", { count: "exact", head: true }).eq("grupo_id", grupoId),
+  ]);
+  if (grupo.error || !grupo.data) {
+    console.error(`[teto de transcrições] grupo ${grupoId}: leitura falhou, sem teto: ${grupo.error?.message ?? "grupo não encontrado"}`);
+    return null;
+  }
+  return tetoDeTranscricoesDoDia({ plano: grupo.data.plano, assentos: assentos.count ?? 0 });
 }

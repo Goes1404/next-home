@@ -1,4 +1,5 @@
 import type { EstagioDeCompra } from "@/lib/estagioDeCompra";
+import type { NotaDoLead } from "@/lib/crm/notaDoLead";
 
 /**
  * Modelo de domínio dos empreendimentos.
@@ -303,6 +304,12 @@ export type Lead = {
    * quem reabre. Barra o que fala por iniciativa nossa.
    */
   naoContatarEm: string | null;
+  /**
+   * A nota do lead (0–100, quente/morno/frio, motivo), gravada pela régua de
+   * `notaDoLead.ts` (0248, 30/10/2026). Ausente antes da migration ou
+   * enquanto a varredura não passou pelo lead.
+   */
+  nota?: NotaDoLead | null;
 };
 
 export type Empreendimento = {

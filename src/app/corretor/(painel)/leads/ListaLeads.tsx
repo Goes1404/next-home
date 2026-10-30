@@ -104,6 +104,9 @@ export function ListaLeads({
   // termo em vigor, para o rodapé de "nenhum resultado" e o contador de
   // filtros ativos.
   const buscaNaUrl = params.get("busca") ?? "";
+  // "Mais quentes primeiro" (nota do lead, 30/10/2026): ordem, não filtro —
+  // não entra na contagem de filtros ativos.
+  const maisQuentes = params.get("ordem") === "quentes";
 
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   // Segundo andar da barra de seleção: a lista de etapas para mover o lote.
@@ -302,6 +305,19 @@ export function ListaLeads({
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={() => atualizarUrl({ ordem: maisQuentes ? "" : "quentes" })}
+          aria-pressed={maisQuentes}
+          className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors ${
+            maisQuentes
+              ? "border-perigo-linha bg-perigo-lavado text-perigo"
+              : "border-linha-forte text-apoio hover:text-corpo"
+          }`}
+        >
+          <span aria-hidden className="bg-perigo h-2 w-2 shrink-0 rounded-full" />
+          Mais quentes primeiro
+        </button>
       </div>
 
       {mostrarFiltros && (

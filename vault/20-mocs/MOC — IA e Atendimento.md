@@ -96,3 +96,4 @@ summary: Sofia — motor, prompt, comportamento de conversa, WhatsApp.
 - [[botoes-do-site-mandavam-texto-que-o-porteiro-nao-reconhecia]] — visitante novo do site era ignorado pela 0111
 - [[regras-do-corretor-e-horario-preferido]] — regras do corretor no prompt, horário preferido de visita na agenda, lançamento que não é pronto, "apagar meu contato" é parada (0154, 03/10)
 - [[crm-pelo-whatsapp-numero-central-com-ia]] — número central com IA: corretor e gestor operam o CRM pelo WhatsApp; 33 capacidades em ondas; onda 0 (fundação, só a ajuda) construída em 30/10
+- [[ia-no-atendimento-audio-resumo-e-nota]] — áudio em texto, resumo da conversa + próximo passo e nota do lead (0248, 30/10)

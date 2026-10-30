@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useNomeDaCasa } from "@/app/corretor/(painel)/_componentes/NomeDaCasa";
+import { NotaDoLeadChip } from "@/app/corretor/(painel)/_componentes/NotaDoLeadChip";
 import {
   useEffect,
   useMemo,
@@ -707,6 +708,7 @@ function Cartao({
             </svg>
             Dossiê IA
           </button>
+          <NotaDoLeadChip nota={lead.nota} />
           <BadgePortal portal={lead.portalOrigem} origem={lead.origem} />
         </div>
       </div>

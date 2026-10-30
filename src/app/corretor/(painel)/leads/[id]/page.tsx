@@ -35,6 +35,9 @@ import { PedidoDoSite } from "./PedidoDoSite";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { lerResumoDoLead } from "@/lib/crm/resumoDoLead";
 import { ResumoDoLeadCartao } from "@/app/corretor/(painel)/_componentes/ResumoDoLeadCartao";
+import { ResumoDaConversaCartao } from "@/app/corretor/(painel)/_componentes/ResumoDaConversaCartao";
+import { NotaDoLeadChip } from "@/app/corretor/(painel)/_componentes/NotaDoLeadChip";
+import { lerEstadoDoResumo } from "@/lib/crm/resumoDaConversaServidor";
 import { perguntaDoLead } from "@/lib/consultor/perguntaDoLead";
 import { TETO_SEM_RESPOSTA } from "@/lib/crm/higieneDaBase";
 
@@ -81,7 +84,9 @@ export default async function FichaLeadPage({
       // Vendas ligadas (0114). Sem a migration aplicada, lista vazia.
       getVendasDoLead(id),
     ]);
-  const resumo = await lerResumoDoLead(supabase, id);
+  // O resumo da conversa e a nota (IA no atendimento, 30/10/2026): o cache
+  // do lead, sem chamada de IA na pintura. `null` antes da 0248.
+  const [resumo, estadoDoResumo] = await Promise.all([lerResumoDoLead(supabase, id), lerEstadoDoResumo(supabase, id)]);
 
   const whatsapp = linkWhatsappLead(lead, (await marcaDoPainel()).nome);
   const parado = diasParado(lead);
@@ -109,6 +114,7 @@ export default async function FichaLeadPage({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-fluid-xl text-titulo">{lead.nome}</h1>
+            {estadoDoResumo?.nota && <NotaDoLeadChip nota={estadoDoResumo.nota} className="mt-1.5" />}
             <p className="text-fluid-xs mt-1 text-tenue">
               Chegou em {dataHora.format(new Date(lead.criadoEm))}
               {lead.corretor && ` · ${lead.corretor.nome}`}
@@ -232,7 +238,8 @@ export default async function FichaLeadPage({
       {/* O resumo do lead (plano de ativação, 3.1): o que saber para retomar
           a conversa sem ler o histórico. O mesmo cartão do perfil aberto de
           dentro da conversa. */}
-      {resumo && <ResumoDoLeadCartao resumo={resumo} />}
+      {estadoDoResumo && <ResumoDaConversaCartao leadId={lead.id} inicial={estadoDoResumo} />}
+      {resumo && <ResumoDoLeadCartao resumo={resumo} semTemperatura={Boolean(estadoDoResumo?.nota)} />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">

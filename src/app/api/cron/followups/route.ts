@@ -47,6 +47,7 @@ import { avisarLeadsNovos } from "@/lib/notificacoes/leadNovo";
 import { avisarLeadsQueCombinam } from "@/lib/notificacoes/leadsQueCombinam";
 import { lembrarVisitasDaProximaHora } from "@/lib/notificacoes/lembreteDeVisita";
 import { avisarLeadsParados } from "@/lib/notificacoes/leadParado";
+import { recalcularNotasPendentes } from "@/lib/crm/notaDoLeadServidor";
 import { avisarSenhasVencendo } from "@/lib/notificacoes/senhaVencendo";
 import { avisarCobrancasDoDia, avisarRiscosDoDia } from "@/lib/notificacoes/avisosDaPlataforma";
 import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGrupo";
@@ -677,6 +678,15 @@ export async function GET(req: NextRequest) {
     console.error("[match]", e);
     return 0;
   });
+  /*
+   * A nota do lead (0248, 30/10/2026): refaz as vencidas (6h) de até 100
+   * leads por tique. É o que faz o lead que sumiu ESFRIAR sem evento
+   * nenhum. Sem IA (só a régua de `notaDoLead.ts`), nada sai para ninguém.
+   */
+  const notasRefeitas = await recalcularNotasPendentes(supabase).catch((e) => {
+    console.error("[nota do lead]", e);
+    return 0;
+  });
   const senhasVencendo = await avisarSenhasVencendo(supabase).catch((e) => {
     console.error("[senha vencendo]", e);
     return 0;
@@ -732,7 +742,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, lembretesDeTarefa, visitasCobradas, leadsDoGmail, notasRefeitas, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -784,7 +794,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas, notasRefeitas });
   } finally {
     await destravarDisparo("followups", dono);
   }

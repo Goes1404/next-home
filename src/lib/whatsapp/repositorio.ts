@@ -5,6 +5,7 @@ import { alertaLiberado, type MotivoAlerta } from "./brokerNotifier";
 import { ehContaSoWhatsapp } from "./contaSoWhatsapp";
 
 import { conteudoParaGravar, resumoParaGravar, TEXTO_NAO_GUARDADO } from "./privacidadeDaConversa";
+import { AUDIO_TRANSCREVENDO } from "./transcricaoNoGrupo";
 import { mesclarDossie } from "./mesclarDossie";
 import type { SituacaoDaConversa } from "./quandoAIaResponde";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -1039,6 +1040,41 @@ async function tocarConversa(
       ultima_interacao_em: new Date().toISOString(),
     })
     .eq("id", params.conversaId);
+}
+
+/**
+ * Troca o marcador `AUDIO_TRANSCREVENDO` pela transcrição (ou pelo texto de
+ * "não transcrito") na fala do cliente já gravada (30/10/2026).
+ *
+ * IDEMPOTENTE: só troca enquanto o marcador está lá. Conversa sem
+ * atendimento liberado gravou a linha sem texto, e continua sem — o filtro
+ * pelo marcador não casa e nada muda. A prévia da lista de conversas segue a
+ * mesma regra. Nunca lança: a fala já está guardada.
+ */
+export async function gravarTranscricaoDoAudio(params: {
+  mensagemId: string;
+  conversaId: string;
+  texto: string;
+  textoLiberado: boolean;
+}): Promise<boolean> {
+  if (!params.textoLiberado) return false;
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("whatsapp_mensagens")
+    .update({ conteudo: conteudoParaGravar(params.texto, true) })
+    .eq("id", params.mensagemId)
+    .eq("conteudo", AUDIO_TRANSCREVENDO)
+    .select("id");
+  if (error) {
+    console.error("[audio] transcrição não gravada na mensagem:", error.message);
+    return false;
+  }
+  await supabase
+    .from("whatsapp_conversas")
+    .update({ ultima_mensagem: resumoParaGravar(params.texto, true) })
+    .eq("id", params.conversaId)
+    .eq("ultima_mensagem", AUDIO_TRANSCREVENDO);
+  return (data ?? []).length > 0;
 }
 
 const ORDEM_ENTREGA = { enviada: 1, entregue: 2, lida: 3 } as const;
