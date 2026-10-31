@@ -13,7 +13,7 @@ codigo:
   - supabase/migrations/0218_roleta_aviso_no_grupo.sql
   - supabase/migrations/0219_retorno_da_ligacao_pelo_grupo.sql
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-31
 fonte: spec docs/superpowers/specs/2026-10-26-ligacao-primeiro-e-retorno-pelo-grupo-design.md; plano e ledger da execução
 summary: Primeiro contato por ligação (Aretz) — roleta avisa no grupo NOME & ARETZ, o corretor responde por texto/áudio no grupo e a IA atualiza ficha, dossiê, etapa e visita; o gestor recebe às 18h quem está sem retorno.
 ---
@@ -69,3 +69,14 @@ ligação). Três partes:
 
 Ligada a [[roleta-dos-anuncios]], [[leads-distribuidos-nos-grupos-da-aretz]],
 [[audio-do-retorno-na-ficha-e-na-exclusao]].
+
+## O aviso de lead do próprio anúncio que escapou (31/10/2026)
+
+Na Aretz, de 29 a 31/10, 11 avisos entraram na fila: 10 cancelados como "o
+cliente é do próprio corretor (anúncio dele)" e 1 enviado por engano (Denise,
+30/10 18h00, grupo do André), 12 s depois de o lead nascer. O lead do anúncio
+do próprio corretor nasce `whatsapp/organico` e só depois a etiqueta da Meta
+o marca `trazido_por = corretor` (0200); o worker foi mais rápido que a marca.
+Agora o worker só lê aviso com 90 s de fila (`ESPERA_DO_AVISO_MS`,
+`enviosDeLeadParaGrupo.ts`). As duas roletas da Aretz estavam desligadas: nada
+chegou aos grupos pela roleta.

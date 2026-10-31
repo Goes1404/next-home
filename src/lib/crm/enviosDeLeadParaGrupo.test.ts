@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { destinoDoAviso, enviarLeadsDistribuidosParaGrupos, textoDoLeadDistribuido } from "./enviosDeLeadParaGrupo";
+import { destinoDoAviso, enviarLeadsDistribuidosParaGrupos, ESPERA_DO_AVISO_MS, textoDoLeadDistribuido } from "./enviosDeLeadParaGrupo";
 
 const enviarMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/whatsapp/provider", () => ({ enviarMensagemWhatsappParaGrupo: enviarMock }));
@@ -146,5 +146,27 @@ describe("0221: a fila dos avisos tem o isolamento por grupo", () => {
       expect(sql).toContain(`create trigger ${nome}`);
     }
     expect(sql.match(/'lead_id', 'leads', 'id',\s+'corretor_id', 'corretores', 'id'/g)).toHaveLength(3);
+  });
+});
+
+describe("espera antes de mandar (Denise, Aretz, 30/10/2026)", () => {
+  it("só lê da fila aviso com pelo menos 90 s: dá tempo de a etiqueta do anúncio marcar o lead do próprio corretor", async () => {
+    const filtros: [string, string][] = [];
+    const cadeia: Record<string, unknown> = {
+      select: () => cadeia,
+      in: () => cadeia,
+      lt: () => cadeia,
+      order: () => cadeia,
+      lte: (coluna: string, valor: string) => (filtros.push([coluna, valor]), cadeia),
+      limit: () => Promise.resolve({ data: [], error: null }),
+    };
+    const antes = Date.now();
+    await enviarLeadsDistribuidosParaGrupos({ from: () => cadeia } as never);
+    const corte = filtros.find(([c]) => c === "created_at");
+    expect(ESPERA_DO_AVISO_MS).toBeGreaterThanOrEqual(60_000);
+    expect(corte).toBeDefined();
+    const idade = antes - Date.parse(corte![1]);
+    expect(idade).toBeGreaterThanOrEqual(ESPERA_DO_AVISO_MS - 1000);
+    expect(idade).toBeLessThanOrEqual(ESPERA_DO_AVISO_MS + 5000);
   });
 });

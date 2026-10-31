@@ -81,6 +81,17 @@ export function destinoDoAviso(
  * `cancelado`. Falha volta para a fila em cinco minutos; depois de três
  * tentativas ela fica em erro, visível ao gestor, sem reentregar o lead.
  */
+/**
+ * Quanto o aviso espera depois de entrar na fila (31/10/2026). O lead do
+ * anúncio do próprio corretor nasce "conversa no WhatsApp" e só segundos
+ * depois a etiqueta da Meta o marca `trazido_por = corretor` (0200). Na
+ * Aretz, 10 de 11 avisos assim foram cancelados a tempo, mas o da Denise
+ * (30/10, 18h00) saiu 12 s depois de ela chegar, antes da marca, e foi ao
+ * grupo do André como "novo lead distribuído". A espera dá tempo à marca; o
+ * `destinoDoAviso` confere tudo de novo na hora de mandar.
+ */
+export const ESPERA_DO_AVISO_MS = 90_000;
+
 export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite = 20): Promise<number> {
   const agora = new Date();
   const { data: candidatos, error } = await supabase
@@ -88,6 +99,7 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
     .select("id, lead_id, corretor_id, grupo_id, instance_name, grupo_jid, tentativas")
     .in("status", ["pendente", "erro"])
     .lte("proxima_tentativa_em", agora.toISOString())
+    .lte("created_at", new Date(agora.getTime() - ESPERA_DO_AVISO_MS).toISOString())
     .lt("tentativas", 3)
     .order("created_at", { ascending: true })
     .limit(limite);

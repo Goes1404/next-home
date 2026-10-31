@@ -12761,6 +12761,11 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   (`semPedidoDeSimFalso`), filtros reais da lista, frase e foto de base na
   arte, vocabulário no áudio, `leads_mais_quentes`.
 
+- **Aviso de lead no grupo, 31/10:** o worker dos grupos esperava 0 s; o lead
+  do anúncio do próprio corretor nasce orgânico e só segundos depois vira
+  `trazido_por = corretor`. Um aviso (Denise, Aretz) saiu antes da marca.
+  Agora espera 90 s (`ESPERA_DO_AVISO_MS`). Nota: [[retorno-da-ligacao-pelo-grupo]].
+
 ## Suporte e contato da Astro (29/10/2026)
 
 Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)
