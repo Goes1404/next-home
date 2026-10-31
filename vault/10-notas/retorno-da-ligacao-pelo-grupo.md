@@ -80,3 +80,23 @@ o marca `trazido_por = corretor` (0200); o worker foi mais rápido que a marca.
 Agora o worker só lê aviso com 90 s de fila (`ESPERA_DO_AVISO_MS`,
 `enviosDeLeadParaGrupo.ts`). As duas roletas da Aretz estavam desligadas: nada
 chegou aos grupos pela roleta.
+
+## Onde conferir o que o sistema mandou nos grupos (31/10/2026)
+
+Pedido do Bruno (gerente da Aretz): "a IA mandou mensagens desnecessárias no
+grupo". Tudo o que a plataforma posta num grupo de WhatsApp sai por quatro
+caminhos, e cada um deixa rastro no banco (os logs da Vercel, no plano Hobby,
+guardam só a última hora):
+
+| Caminho | Texto no grupo | Onde conferir |
+|---|---|---|
+| Aviso de lead distribuído | "Novo lead distribuído…" | `lead_envios_grupo.status = 'enviado'` |
+| Cliente escreveu de novo | "💬 Fulano mandou mensagem…" | `lead_envios_grupo.ultima_mensagem_avisada_em` |
+| Retorno da ligação | confirmação, "Esse retorno é sobre…", "Não entendi…" | `retornos_de_ligacao` (status ≠ `ignorada`, `confirmacao_mensagem_id`) |
+| Número central em grupo da equipe | resposta à menção | só com `grupos.central_whatsapp_ativo`; silêncio vira `central_tentativas` motivo `grupo` |
+
+Na Aretz, de 28 a 31/10: 1 aviso enviado (Denise, 30/10 18h00, o do anúncio
+do André que escapou; corrigido com a espera de 90 s), 0 avisos de mensagem
+do cliente, 29 mensagens dos corretores no grupo todas `ignorada` (sem
+resposta) e o central desligado na Aretz. Mensagem que não está nessas
+tabelas não saiu da plataforma: pedir o print com grupo e horário.

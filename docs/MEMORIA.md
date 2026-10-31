@@ -12766,6 +12766,12 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   `trazido_por = corretor`. Um aviso (Denise, Aretz) saiu antes da marca.
   Agora espera 90 s (`ESPERA_DO_AVISO_MS`). Nota: [[retorno-da-ligacao-pelo-grupo]].
 
+- **"A IA mandou mensagem desnecessária no grupo" (Bruno, Aretz, 31/10):** o
+  que a plataforma posta em grupo fica em `lead_envios_grupo` (aviso e
+  "mandou mensagem") e `retornos_de_ligacao` (respostas ao relato). Logs da
+  Vercel só guardam 1 h (Hobby). Na Aretz só saiu o aviso da Denise; o resto
+  ficou calado. Tabela dos caminhos na nota [[retorno-da-ligacao-pelo-grupo]].
+
 ## Suporte e contato da Astro (29/10/2026)
 
 Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)
