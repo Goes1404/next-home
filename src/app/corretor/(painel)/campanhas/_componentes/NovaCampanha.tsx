@@ -13,13 +13,16 @@ import {
   ArrowRight,
   BookmarkPlus,
   CalendarClock,
+  Check,
   CheckCheck,
   ImageIcon,
-  Rocket,
   Save,
   Search,
+  Send,
   Shield,
   Sparkles,
+  Split,
+  Sprout,
   UsersRound,
   WifiOff,
   X,
@@ -67,37 +70,32 @@ const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string 
   {
     valor: "parados_15d",
     titulo: "Quem esfriou",
-    descricao:
-      "Leads sem conversa há mais de 15 dias. É a base que mais responde a reativação.",
+    descricao: "Sem conversa há mais de 15 dias. É quem mais responde a reativação.",
   },
   {
     valor: "novos_sem_contato",
     titulo: "Quem acabou de chegar",
-    descricao:
-      "Leads na etapa “Novo lead”, que ainda não receberam seu primeiro contato.",
+    descricao: "Na etapa “Novo lead” e ainda sem o primeiro contato.",
   },
   {
     valor: "sem_resposta",
     titulo: "Abordado e sem resposta",
-    descricao:
-      "Quem já recebeu mensagem nossa e não respondeu — até 2 tentativas. Quem passou disso fica de fora: a terceira não converte e cansa o número.",
+    descricao: "Recebeu até 2 mensagens e não respondeu. A terceira não converte e cansa o número.",
   },
   {
     valor: "todos",
     titulo: "Todos os meus leads",
-    descricao:
-      "A sua carteira inteira. Use com cuidado: mensagem repetida cansa quem já respondeu.",
+    descricao: "A carteira inteira. Com cuidado: mensagem repetida cansa quem já respondeu.",
   },
   {
     valor: "compradores",
     titulo: "Compradores deste imóvel",
-    descricao:
-      "Quem já fechou no imóvel escolhido. Para avisar avanço da obra, vistoria e entrega das chaves — nunca para vender de novo.",
+    descricao: "Quem fechou no imóvel escolhido. Para obra, vistoria e chaves — nunca para vender de novo.",
   },
   {
     valor: "selecionados",
     titulo: "Escolher um por um",
-    descricao: "Você marca exatamente quem recebe — busque pelo nome e monte a lista.",
+    descricao: "Você busca pelo nome ou telefone e marca quem recebe.",
   },
 ];
 
@@ -149,9 +147,12 @@ export function NovaCampanha({
   modelos,
   numeroConectado,
   corretor,
+  aoFechar,
 }: {
   empreendimentos: Empreendimento[];
   aoCriar: (campanha: CampanhaListada, aviso: string) => void;
+  /** Fechar o assistente sem criar (some quando ainda não há lista nenhuma). */
+  aoFechar?: () => void;
   inicial?: InicialDaLista;
   /** Modelos de mensagem do corretor (templates_mensagens). */
   modelos: TemplateMensagem[];
@@ -533,14 +534,91 @@ export function NovaCampanha({
     (v) => imovel || !DO_IMOVEL.has(v.chave),
   );
 
+  const valoresDaPrevia: Record<string, string> = {
+    imovel: imovel?.nome ?? "",
+    bairro: imovel?.bairro ?? "",
+    cidade: imovel?.cidade ?? "",
+    corretor: corretor.nome.trim().split(/\s+/)[0] ?? "",
+  };
+  const quandoComeca =
+    modoEnvio === "agendado" && horarioDeBrasiliaParaIso(agendarPara)
+      ? new Date(horarioDeBrasiliaParaIso(agendarPara)!).toLocaleString("pt-BR", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "America/Sao_Paulo",
+        })
+      : "No próximo horário seguro";
+  const contagem = carregandoPublico
+    ? "Contando…"
+    : totalPrevisto === undefined
+      ? "Não foi possível contar agora"
+      : `${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"}`;
+
+  function avancar() {
+    // No modo manual, seguir sem ninguém marcado geraria uma lista vazia lá
+    // no fim — melhor barrar aqui, com contexto.
+    if (passo === 1 && selecaoManual && escolhidos.size === 0) {
+      falhar("Marque ao menos um lead antes de continuar.");
+      return;
+    }
+    if (passo === 1 && !selecaoManual && previaAtual?.total === 0) {
+      falhar("Não há pessoas disponíveis nesse público agora.");
+      return;
+    }
+    if (passo === 1 && publico === "compradores" && !imovel) {
+      falhar("Escolha o imóvel dos compradores.");
+      return;
+    }
+    setPasso((p) => (p === 1 ? 2 : 3));
+  }
+
+  /*
+   * O assistente remodelado (31/10/2026): passos com nome em cima, o passo
+   * da vez à esquerda e, no computador, o RESUMO fixo à direita — quantas
+   * pessoas, sobre o quê, a mensagem como ela chega no WhatsApp e quando
+   * começa. Antes a contagem ficava escondida abaixo de seis cartões e a
+   * mensagem só aparecia no fim, em texto corrido. No celular o resumo vira
+   * uma linha no topo do passo, e o passo 3 repete a conferência inteira.
+   */
   return (
-    <section className="cartao p-5 sm:p-6">
+    <section aria-labelledby="titulo-nova-lista" className="cartao overflow-hidden">
+      <div className="border-linha flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 id="titulo-nova-lista" className="font-display text-titulo text-xl">
+            {reabrir?.modo === "rascunho" ? "Continuar rascunho" : reabrir ? "Repetir lista" : "Nova lista"}
+          </h2>
+          {reabrir && (
+            <p className="text-fluid-xs text-apoio mt-0.5">
+              {reabrir.modo === "repetir"
+                ? `Mesmo público e mensagem de “${reabrir.titulo}”. O público é recalculado agora: quem recebeu nos últimos 7 dias fica de fora.`
+                : `“${reabrir.titulo}”`}
+            </p>
+          )}
+        </div>
+        {aoFechar && (
+          <button
+            type="button"
+            onClick={aoFechar}
+            aria-label="Fechar o assistente"
+            title="Fechar"
+            className="text-apoio hover:text-titulo flex h-11 w-11 shrink-0 items-center justify-center botao-icone"
+          >
+            <X aria-hidden className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      <PassosDaLista passo={passo} aoVoltarPara={(p) => setPasso(p)} />
+
       {!numeroConectado && (
-        <div className="border-alerta-linha bg-alerta-lavado text-fluid-sm mb-4 flex items-start gap-3 rounded-xl border p-3.5">
+        <div className="border-alerta-linha bg-alerta-lavado text-fluid-sm mx-5 mt-4 flex items-start gap-3 rounded-xl border p-3.5 sm:mx-6">
           <WifiOff aria-hidden className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
           <p className="text-corpo min-w-0">
-            Seu WhatsApp não está conectado, então nenhuma lista consegue sair. Você pode montar e
-            salvar como rascunho.{" "}
+            Seu WhatsApp não está conectado, então nenhuma lista consegue sair. Você pode montar e salvar como
+            rascunho.{" "}
             <Link href="/corretor/whatsapp" className="text-titulo font-semibold underline underline-offset-2">
               Conectar o número
             </Link>
@@ -548,640 +626,608 @@ export function NovaCampanha({
         </div>
       )}
 
-      {reabrir && (
-        <p className="text-fluid-xs text-apoio mb-3">
-          {reabrir.modo === "repetir"
-            ? `Repetindo “${reabrir.titulo}”. O público é recalculado agora: quem recebeu nos últimos 7 dias fica de fora.`
-            : `Continuando o rascunho “${reabrir.titulo}”.`}
-        </p>
-      )}
-
-      <div className="flex items-baseline gap-2.5">
-        <span className="text-tenue text-[11px] font-medium tracking-[0.14em] uppercase tabular-nums">
-          Passo {passo} de 3
-        </span>
-        <h2 className="font-display text-titulo text-lg">
-          {passo === 1 && "Quem vai receber?"}
-          {passo === 2 && "O que você quer dizer?"}
-          {passo === 3 && "Tudo certo?"}
-        </h2>
-      </div>
-
-      {/* ------------------------------------------------ 1. quem recebe */}
-      {passo === 1 && (
-        <div className="mt-4 space-y-3">
-          {PUBLICOS.map((opcao) => (
-            <button
-              key={opcao.valor}
-              type="button"
-              onClick={() => setPublico(opcao.valor)}
-              aria-pressed={publico === opcao.valor}
-              className={`w-full cursor-pointer rounded-xl border p-4 text-left transition-colors ${
-                publico === opcao.valor
-                  ? "border-acento-linha bg-acento-lavado"
-                  : "border-linha hover:border-linha-forte"
-              }`}
-            >
-              <p className="text-fluid-sm text-titulo font-medium">{opcao.titulo}</p>
-              <p className="text-fluid-xs text-apoio mt-1 leading-snug">
-                {opcao.descricao}
-              </p>
-            </button>
-          ))}
-
-          {!selecaoManual && opcoesOrigem && (opcoesOrigem.canais.length > 1 || opcoesOrigem.anuncios.length > 0) && (
-            <div className="border-linha flex flex-col gap-2 rounded-2xl border p-3 sm:flex-row sm:p-4">
-              <label className="min-w-0 flex-1">
-                <span className="text-fluid-xs text-apoio mb-1 block">De onde o lead veio</span>
-                <select
-                  value={canal}
-                  onChange={(e) => setCanal(e.target.value as Canal | "")}
-                  className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
-                >
-                  <option value="">Qualquer origem</option>
-                  {opcoesOrigem.canais.map((c) => (
-                    <option key={c.canal} value={c.canal}>
-                      {c.rotulo} ({c.total})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {opcoesOrigem.anuncios.length > 0 && (
-                <label className="min-w-0 flex-1">
-                  <span className="text-fluid-xs text-apoio mb-1 block">Anúncio</span>
-                  <select
-                    value={anuncio}
-                    onChange={(e) => setAnuncio(e.target.value)}
-                    className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
-                  >
-                    <option value="">Qualquer anúncio</option>
-                    {opcoesOrigem.anuncios.map((a) => (
-                      <option key={a.nome} value={a.nome}>
-                        {a.nome} ({a.total})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </div>
-          )}
-
-          <div className="border-linha bg-elevado flex items-start gap-3 rounded-2xl border p-4 shadow-sm">
-            <span className="bg-acento-lavado text-acento-suave flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-              <UsersRound aria-hidden className="h-5 w-5" />
+      <div className="grid gap-6 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="min-w-0 space-y-5">
+          {/* No celular, a linha do resumo: o que o corretor confere a cada passo. */}
+          <p aria-live="polite" className="bg-vidro text-fluid-sm text-corpo flex items-center gap-2 rounded-xl px-3.5 py-2.5 lg:hidden">
+            <UsersRound aria-hidden className="text-acento-suave h-4 w-4 shrink-0" />
+            <span className="min-w-0 truncate">
+              <span className="text-titulo font-semibold tabular-nums">{selecaoManual ? `${escolhidos.size} escolhido${escolhidos.size === 1 ? "" : "s"}` : contagem}</span>
+              {" · "}
+              {nomeImovel}
             </span>
-            <div className="min-w-0 flex-1">
-              <p aria-live="polite" className="text-fluid-sm text-titulo font-semibold">
-                {carregandoPublico
-                  ? "Conferindo o público…"
-                  : totalPrevisto === undefined
-                    ? "Não foi possível contar agora"
-                    : `${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"} receberá${totalPrevisto === 1 ? "" : "ão"}`}
-              </p>
-              <p className="text-fluid-xs text-apoio mt-0.5 leading-relaxed">
-                {previaAtual && previaAtual.protegidos > 0
-                  ? `${previaAtual.protegidos} contato${previaAtual.protegidos === 1 ? "" : "s"} protegido${previaAtual.protegidos === 1 ? "" : "s"}: ${previaAtual.protegidos === 1 ? "já recebeu lista nos últimos 7 dias ou está em outra lista" : "já receberam lista nos últimos 7 dias ou estão em outra lista"}.`
-                  : "Só leads da sua carteira. A contagem é conferida de novo antes de criar a lista."}
-              </p>
-            </div>
-          </div>
+          </p>
 
-          {selecaoManual && (
-            <div className="border-acento-linha bg-acento-lavado rounded-2xl border p-3 sm:p-4">
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <label className="relative min-w-0 flex-1">
-                  <span className="sr-only">Buscar lead por nome ou telefone</span>
-                  <Search
-                    aria-hidden
-                    className="text-tenue pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2"
-                  />
-                  <input
-                    type="search"
-                    value={buscaLead}
-                    onChange={(e) => setBuscaLead(e.target.value)}
-                    placeholder="Nome ou telefone"
-                    className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-11 w-full rounded-xl border pr-10 pl-10 focus:outline-none"
-                  />
-                  {buscaLead && (
-                    <button
-                      type="button"
-                      onClick={() => setBuscaLead("")}
-                      aria-label="Limpar busca"
-                      className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center botao-icone"
-                    >
-                      <X aria-hidden className="h-4 w-4" />
-                    </button>
-                  )}
-                </label>
-
-                <label>
-                  <span className="sr-only">Filtrar por etapa do funil</span>
-                  <select
-                    value={etapaLead}
-                    onChange={(e) =>
-                      setEtapaLead(e.target.value as EtapaFunil | "todas")
-                    }
-                    className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none sm:w-44"
-                  >
-                    <option value="todas">Todas as etapas</option>
-                    {ETAPAS_FUNIL.filter((etapa) =>
-                      carteira?.some((lead) => lead.etapa === etapa),
-                    ).map((etapa) => (
-                      <option key={etapa} value={etapa}>
-                        {ETAPA_LABEL[etapa]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="border-linha mt-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-                <p aria-live="polite" className="text-fluid-xs text-apoio tabular-nums">
-                  {carteiraFiltrada.length} resultado
-                  {carteiraFiltrada.length === 1 ? "" : "s"} · {escolhidos.size}{" "}
-                  selecionado
-                  {escolhidos.size === 1 ? "" : "s"}
-                </p>
-                {carteiraFiltrada.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={alternarVisiveis}
-                    className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 px-3 font-semibold botao-secundario"
-                  >
-                    <CheckCheck aria-hidden className="h-4 w-4" />
-                    {todosVisiveisEscolhidos
-                      ? "Desmarcar resultados"
-                      : "Selecionar resultados"}
-                  </button>
-                )}
-              </div>
-
-              {/* Teto de altura + rolagem própria: a carteira pode ter 100
-                  nomes e o passo 1 não pode virar uma página infinita. */}
-              <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-                {carteira === null && (
-                  <p className="text-fluid-xs text-apoio px-1 py-3">
-                    Carregando seus leads…
-                  </p>
-                )}
-                {carteira !== null && carteiraFiltrada.length === 0 && (
-                  <p className="text-fluid-xs text-apoio px-1 py-3">
-                    {carteira.length === 0
-                      ? "Nenhum lead com WhatsApp disponível para a lista."
-                      : "Ninguém combina com essa busca e etapa."}
-                  </p>
-                )}
-                {carteiraFiltrada.map((lead) => (
-                  <label
-                    key={lead.id}
-                    className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                      escolhidos.has(lead.id)
-                        ? "border-acento-linha bg-elevado"
-                        : "hover:border-linha hover:bg-vidro border-transparent"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={escolhidos.has(lead.id)}
-                      onChange={() => alternarLead(lead.id)}
-                      className="accent-acento h-4 w-4 shrink-0"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="text-fluid-sm text-titulo block truncate font-medium">
-                        {lead.nome}
-                      </span>
-                      <span className="text-fluid-xs text-apoio block truncate tabular-nums">
-                        {lead.telefone} · {ETAPA_LABEL[lead.etapa]}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              {escolhidosDetalhados.length > 0 && (
-                <div className="border-linha mt-3 border-t pt-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-fluid-xs text-titulo font-semibold">
-                      Quem vai receber
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setEscolhidos(new Set())}
-                      className="text-fluid-xs text-apoio hover:text-perigo min-h-9 transition-colors px-3 botao-secundario"
-                    >
-                      Limpar seleção
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {escolhidosDetalhados.slice(0, 6).map((lead) => (
-                      <button
-                        key={lead.id}
-                        type="button"
-                        onClick={() => alternarLead(lead.id)}
-                        aria-label={`Remover ${lead.nome} da lista`}
-                        className="border-linha bg-elevado text-corpo hover:border-perigo-linha hover:text-perigo flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-xs transition-colors"
+          {/* ------------------------------------------------ 1. quem recebe */}
+          {passo === 1 && (
+            <>
+              <fieldset>
+                <legend className="text-fluid-sm text-titulo mb-2.5 font-semibold">Quem vai receber?</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {PUBLICOS.map((opcao) => {
+                    const marcado = publico === opcao.valor;
+                    return (
+                      <label
+                        key={opcao.valor}
+                        className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
+                          marcado ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
+                        }`}
                       >
-                        <span className="min-w-0 truncate">{lead.nome}</span>
-                        <X aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                        <input
+                          type="radio"
+                          name="publico-da-lista"
+                          value={opcao.valor}
+                          checked={marcado}
+                          onChange={() => setPublico(opcao.valor)}
+                          className="accent-acento mt-1 h-4 w-4 shrink-0"
+                        />
+                        <span className="min-w-0">
+                          <span className="text-fluid-sm text-titulo block font-medium">{opcao.titulo}</span>
+                          <span className="text-fluid-xs text-apoio mt-0.5 block leading-snug">{opcao.descricao}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              {selecaoManual && (
+                <div className="border-linha rounded-2xl border p-3 sm:p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <label className="relative min-w-0 flex-1">
+                      <span className="sr-only">Buscar lead por nome ou telefone</span>
+                      <Search
+                        aria-hidden
+                        className="text-tenue pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2"
+                      />
+                      <input
+                        type="search"
+                        value={buscaLead}
+                        onChange={(e) => setBuscaLead(e.target.value)}
+                        placeholder="Nome ou telefone"
+                        className={`${CAMPO} pr-10 pl-10`}
+                      />
+                      {buscaLead && (
+                        <button
+                          type="button"
+                          onClick={() => setBuscaLead("")}
+                          aria-label="Limpar busca"
+                          className="text-tenue hover:text-titulo absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center botao-icone"
+                        >
+                          <X aria-hidden className="h-4 w-4" />
+                        </button>
+                      )}
+                    </label>
+
+                    <label>
+                      <span className="sr-only">Filtrar por etapa do funil</span>
+                      <select
+                        value={etapaLead}
+                        onChange={(e) => setEtapaLead(e.target.value as EtapaFunil | "todas")}
+                        className={`${CAMPO} sm:w-48`}
+                      >
+                        <option value="todas">Todas as etapas</option>
+                        {ETAPAS_FUNIL.filter((etapa) => carteira?.some((lead) => lead.etapa === etapa)).map((etapa) => (
+                          <option key={etapa} value={etapa}>
+                            {ETAPA_LABEL[etapa]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <p aria-live="polite" className="text-fluid-xs text-apoio tabular-nums">
+                      {carteiraFiltrada.length} resultado{carteiraFiltrada.length === 1 ? "" : "s"} · {escolhidos.size}{" "}
+                      selecionado{escolhidos.size === 1 ? "" : "s"}
+                    </p>
+                    {carteiraFiltrada.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={alternarVisiveis}
+                        className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 px-3 font-semibold botao-secundario"
+                      >
+                        <CheckCheck aria-hidden className="h-4 w-4" />
+                        {todosVisiveisEscolhidos ? "Desmarcar resultados" : "Selecionar resultados"}
                       </button>
-                    ))}
-                    {escolhidosDetalhados.length > 6 && (
-                      <span className="bg-vidro text-apoio flex min-h-9 items-center rounded-full px-3 text-xs">
-                        +{escolhidosDetalhados.length - 6} pessoas
-                      </span>
                     )}
                   </div>
+
+                  {/* Teto de altura + rolagem própria: a carteira pode ter 100
+                      nomes e o passo 1 não pode virar uma página infinita. */}
+                  <div className="border-linha mt-1 max-h-80 divide-y overflow-y-auto rounded-xl border">
+                    {carteira === null && (
+                      <p className="text-fluid-xs text-apoio px-3 py-4">Carregando seus leads…</p>
+                    )}
+                    {carteira !== null && carteiraFiltrada.length === 0 && (
+                      <p className="text-fluid-xs text-apoio px-3 py-4">
+                        {carteira.length === 0
+                          ? "Nenhum lead com WhatsApp disponível para a lista."
+                          : "Ninguém combina com essa busca e etapa."}
+                      </p>
+                    )}
+                    {carteiraFiltrada.map((lead) => (
+                      <label
+                        key={lead.id}
+                        className={`divide-linha flex min-h-14 cursor-pointer items-center gap-3 px-3 py-2 transition-colors ${
+                          escolhidos.has(lead.id) ? "bg-acento-lavado" : "hover:bg-vidro"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={escolhidos.has(lead.id)}
+                          onChange={() => alternarLead(lead.id)}
+                          className="accent-acento h-4 w-4 shrink-0"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="text-fluid-sm text-titulo block truncate font-medium">{lead.nome}</span>
+                          <span className="text-fluid-xs text-apoio block truncate tabular-nums">
+                            {lead.telefone} · {ETAPA_LABEL[lead.etapa]}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {escolhidosDetalhados.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-fluid-xs text-titulo font-semibold">Quem vai receber</p>
+                        <button
+                          type="button"
+                          onClick={() => setEscolhidos(new Set())}
+                          className="text-fluid-xs text-apoio hover:text-perigo min-h-9 px-3 transition-colors botao-secundario"
+                        >
+                          Limpar seleção
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {escolhidosDetalhados.slice(0, 8).map((lead) => (
+                          <button
+                            key={lead.id}
+                            type="button"
+                            onClick={() => alternarLead(lead.id)}
+                            aria-label={`Remover ${lead.nome} da lista`}
+                            className="border-linha bg-elevado text-corpo hover:border-perigo-linha hover:text-perigo flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-xs transition-colors"
+                          >
+                            <span className="min-w-0 truncate">{lead.nome}</span>
+                            <X aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                          </button>
+                        ))}
+                        {escolhidosDetalhados.length > 8 && (
+                          <span className="bg-vidro text-apoio flex min-h-9 items-center rounded-full px-3 text-xs">
+                            +{escolhidosDetalhados.length - 8} pessoas
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="space-y-1.5 pt-2">
-            <label className="text-fluid-xs text-apoio block" htmlFor="imovel-campanha">
-              Sobre qual imóvel?
-            </label>
-            <select
-              id="imovel-campanha"
-              value={imovelSlug}
-              onChange={(e) => trocarImovel(e.target.value)}
-              className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-12 w-full cursor-pointer rounded-xl border px-3.5 focus:outline-none"
-            >
-              {publico !== "compradores" && <option value="">Nenhum imóvel específico</option>}
-              {empreendimentos.map((emp) => (
-                <option key={emp.slug} value={emp.slug}>
-                  {emp.nome} ({emp.bairro})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block sm:col-span-2">
+                  <span className="text-fluid-sm text-titulo mb-1.5 block font-semibold">Sobre qual imóvel?</span>
+                  <select value={imovelSlug} onChange={(e) => trocarImovel(e.target.value)} className={`${CAMPO} min-h-12 cursor-pointer`}>
+                    {publico !== "compradores" && <option value="">Nenhum imóvel específico</option>}
+                    {empreendimentos.map((emp) => (
+                      <option key={emp.slug} value={emp.slug}>
+                        {emp.nome} ({emp.bairro})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-fluid-xs text-apoio mt-1 block">
+                    Com imóvel, a mensagem pode citar bairro, preço e link, e levar fotos dele.
+                  </span>
+                </label>
 
-      {/* -------------------------------------------------- 2. mensagem */}
-      {passo === 2 && (
-        <div className="mt-4 space-y-3">
-          {modelos.length > 0 && (
-            <label className="block">
-              <span className="text-fluid-xs text-apoio mb-1 block">Partir de um modelo</span>
-              <select
-                value={templateId ?? ""}
-                onChange={(e) => usarModelo(e.target.value)}
-                className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none"
-              >
-                <option value="">Escrever do zero</option>
-                {modelos.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.titulo}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <p className="text-fluid-xs text-apoio">
-            Escreva como você falaria.{" "}
-            {testandoDuas
-              ? "A IA reescreve cada mensagem com outras palavras, mantendo a abertura de cada versão para a comparação continuar justa. Nenhuma sai parecida com as que o seu número já mandou."
-              : "A IA reescreve cada mensagem com outras palavras e confere antes de mandar: nenhuma sai parecida com as que o seu número já mandou. Texto repetido em massa é o que faz o WhatsApp restringir números."}
-          </p>
-          <textarea
-            rows={4}
-            value={mensagemBase}
-            onChange={(e) => {
-              setMensagemBase(e.target.value);
-              setExemplos([]);
-            }}
-            aria-label="Mensagem da lista de transmissão"
-            className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento w-full rounded-xl border p-3.5 focus:outline-none"
-          />
-
-          {/* Variáveis do cadastro em um toque (Fase 2). Só aparecem as que
-              têm valor: sem imóvel, nada de {bairro}. {horarios} sempre tem:
-              sem agenda preenchida vale a padrão. */}
-          <div className="flex flex-wrap gap-1.5" aria-label="Inserir variável na mensagem">
-            {variaveisDisponiveis.map((v) => (
-              <button
-                key={v.chave}
-                type="button"
-                onClick={() => inserirVariavel(v.chave)}
-                title={`Vira ${v.descricao}`}
-                className="border-linha bg-elevado text-corpo hover:border-acento-linha min-h-9 rounded-full border px-3 font-mono text-xs transition-colors"
-              >
-                {`{${v.chave}}`}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={sugerirComIA}
-              disabled={sugerindo}
-              className="text-fluid-sm border-acento-linha bg-acento-lavado text-titulo hover:border-acento flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
-            >
-              <Sparkles className="h-4 w-4" />
-              {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
-            </button>
-            {!/\{horarios\}/i.test(mensagemBase) && (
-              <button
-                type="button"
-                onClick={() => setMensagemBase((m) => `${m.trimEnd()}${CONVITE_COM_HORARIOS}`)}
-                className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors"
-              >
-                <CalendarClock className="h-4 w-4" />
-                Convidar com horários da sua agenda
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={salvarComoModelo}
-              className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors"
-            >
-              <BookmarkPlus className="h-4 w-4" />
-              Salvar como modelo
-            </button>
-          </div>
-
-          {/* Fotos e planta do cadastro do imóvel (Fase 2): saem depois do
-              texto, no mesmo contato. Até duas. */}
-          {midiasDoImovel.length > 0 && (
-            <div className="border-linha rounded-xl border p-3">
-              <p className="text-fluid-xs text-titulo flex items-center gap-1.5 font-medium">
-                <ImageIcon aria-hidden className="h-4 w-4" />
-                Mandar fotos junto (até 2) · {midias.length} escolhida{midias.length === 1 ? "" : "s"}
-              </p>
-              <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6">
-                {midiasDoImovel.map((m) => {
-                  const marcada = midias.includes(m.url);
-                  return (
-                    <button
-                      key={m.url}
-                      type="button"
-                      onClick={() => alternarMidia(m.url)}
-                      aria-pressed={marcada}
-                      aria-label={`${m.tipo}: ${m.alt}`}
-                      title={`${m.tipo}: ${m.alt}`}
-                      className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-colors ${
-                        marcada ? "border-acento" : "border-transparent opacity-80 hover:opacity-100"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de escolha, sem otimização */}
-                      <img src={m.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                      {marcada && (
-                        <span className="bg-acento text-sobre-cor absolute top-1 right-1 rounded-full px-1.5 text-[10px] font-bold">
-                          {midias.indexOf(m.url) + 1}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {!selecaoManual && opcoesOrigem && (opcoesOrigem.canais.length > 1 || opcoesOrigem.anuncios.length > 0) && (
+                  <>
+                    <label className="block min-w-0">
+                      <span className="text-fluid-xs text-apoio mb-1 block">De onde o lead veio</span>
+                      <select value={canal} onChange={(e) => setCanal(e.target.value as Canal | "")} className={CAMPO}>
+                        <option value="">Qualquer origem</option>
+                        {opcoesOrigem.canais.map((c) => (
+                          <option key={c.canal} value={c.canal}>
+                            {c.rotulo} ({c.total})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {opcoesOrigem.anuncios.length > 0 && (
+                      <label className="block min-w-0">
+                        <span className="text-fluid-xs text-apoio mb-1 block">Anúncio</span>
+                        <select value={anuncio} onChange={(e) => setAnuncio(e.target.value)} className={CAMPO}>
+                          <option value="">Qualquer anúncio</option>
+                          {opcoesOrigem.anuncios.map((a) => (
+                            <option key={a.nome} value={a.nome}>
+                              {a.nome} ({a.total})
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </>
+                )}
               </div>
-            </div>
+            </>
           )}
 
-          <button
-            type="button"
-            onClick={verExemplos}
-            disabled={gerando}
-            className="text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
-          >
-            <Sparkles className="h-4 w-4" />
-            {gerando ? "Gerando…" : "Ver como vai ficar"}
-          </button>
-
-          {exemplos.length > 0 && (
-            <div className="border-acento-linha bg-acento-lavado space-y-2 rounded-xl border p-4">
-              {exemplos.map((msg, i) => (
-                <p key={i} className="text-fluid-xs text-corpo leading-relaxed break-words">
-                  {testandoDuas && i === 0 && <span className="text-tenue">Versão A · </span>}“{msg}”
-                </p>
-              ))}
-              {exemploB && (
-                <p className="text-fluid-xs text-corpo leading-relaxed break-words">
-                  <span className="text-tenue">Versão B · </span>“{exemploB}”
-                </p>
-              )}
-              {observacaoExemplos && (
-                <p className="text-fluid-xs text-apoio border-acento-linha border-t pt-2 leading-relaxed break-words">
-                  {observacaoExemplos}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/*
-            Testar duas aberturas. Fica atrás de um clique porque o caminho
-            normal é uma mensagem só — e porque a comparação só vale a pena
-            com lista grande o bastante para dar 30 envios de cada lado.
-          */}
-          {!testandoDuas ? (
-            <button
-              type="button"
-              onClick={() => setTestandoDuas(true)}
-              className="text-fluid-xs text-apoio hover:text-titulo min-h-11 underline underline-offset-2 transition-colors"
-            >
-              + Testar duas aberturas e ver qual responde mais
-            </button>
-          ) : (
-            <div className="border-linha space-y-2 rounded-xl border p-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-fluid-sm text-titulo font-medium">Versão B</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTestandoDuas(false);
-                    setMensagemB("");
-                  }}
-                  className="text-fluid-xs text-apoio hover:text-titulo min-h-9 transition-colors px-3 botao-secundario"
-                >
-                  remover
+          {/* -------------------------------------------------- 2. mensagem */}
+          {passo === 2 && (
+            <>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                {modelos.length > 0 && (
+                  <label className="block min-w-0 flex-1">
+                    <span className="text-fluid-xs text-apoio mb-1 block">Partir de um modelo</span>
+                    <select value={templateId ?? ""} onChange={(e) => usarModelo(e.target.value)} className={CAMPO}>
+                      <option value="">Escrever do zero</option>
+                      {modelos.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.titulo}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <button type="button" onClick={sugerirComIA} disabled={sugerindo} className={`${BOTAO_SECUNDARIO} border-acento-linha bg-acento-lavado`}>
+                  <Sparkles aria-hidden className="h-4 w-4" />
+                  {sugerindo ? "Escrevendo duas versões…" : "Sugerir duas aberturas com IA"}
                 </button>
               </div>
-              <p className="text-fluid-xs text-apoio">
-                Metade da lista recebe cada versão, alternadas. Quando cada lado tiver 30 envios e
-                uma responder mais, a plataforma passa a mandar SÓ a vencedora para quem ainda não
-                recebeu — e o histórico mostra quando trocou.
-              </p>
-              <textarea
-                rows={4}
-                value={mensagemB}
-                onChange={(e) => setMensagemB(e.target.value)}
-                placeholder="Escreva a segunda abertura — mude uma coisa só, senão não dá para saber o que funcionou."
-                aria-label="Segunda versão da mensagem"
-                className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento placeholder:text-tenue w-full rounded-xl border p-3.5 focus:outline-none"
-              />
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* -------------------------------------------------- 3. confirmar */}
-      {passo === 3 && (
-        <div className="mt-4 space-y-4">
-          <dl className="text-fluid-sm space-y-2">
-            <div className="flex gap-2">
-              <dt className="text-apoio shrink-0">Para:</dt>
-              <dd className="text-titulo">
-                {rotuloPublico}
-                {totalPrevisto !== undefined && !selecaoManual && ` · ${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"}`}
-              </dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-apoio shrink-0">Sobre:</dt>
-              <dd className="text-titulo">{nomeImovel}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-apoio shrink-0">{testandoDuas ? "Versão A:" : "Diz:"}</dt>
-              <dd className="text-corpo min-w-0 break-words">“{mensagemBase}”</dd>
-            </div>
-            {testandoDuas && mensagemB.trim() && (
-              <div className="flex gap-2">
-                <dt className="text-apoio shrink-0">Versão B:</dt>
-                <dd className="text-corpo min-w-0 break-words">“{mensagemB}”</dd>
-              </div>
-            )}
-            {midias.length > 0 && (
-              <div className="flex gap-2">
-                <dt className="text-apoio shrink-0">Junto:</dt>
-                <dd className="text-titulo">
-                  {midias.length} foto{midias.length === 1 ? "" : "s"} do imóvel
-                </dd>
-              </div>
-            )}
-          </dl>
-
-          {!selecaoManual && (
-            <label
-              className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
-                viva ? "border-acento-linha bg-acento-lavado" : "border-linha hover:border-linha-forte"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={viva}
-                onChange={(e) => setViva(e.target.checked)}
-                className="accent-acento mt-1 h-4 w-4"
-              />
-              <span>
-                <span className="text-fluid-sm text-titulo block font-medium">Manter a lista viva por 30 dias</span>
-                <span className="text-fluid-xs text-apoio mt-0.5 block">
-                  Quem passar a se encaixar em “{publicoEscolhido.titulo}” entra sozinho e recebe a mesma
-                  mensagem. As proteções continuam: ninguém recebe duas vezes nem dentro de 7 dias.
-                </span>
-              </span>
-            </label>
-          )}
-
-          <fieldset className="border-linha rounded-2xl border p-4">
-            <legend className="text-fluid-xs text-apoio px-1">Quando começar?</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <label
-                className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
-                  modoEnvio === "automatico"
-                    ? "border-acento-linha bg-acento-lavado"
-                    : "border-linha hover:border-linha-forte"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="quando-enviar"
-                  checked={modoEnvio === "automatico"}
-                  onChange={() => setModoEnvio("automatico")}
-                  className="accent-acento mt-1 h-4 w-4"
-                />
-                <span>
-                  <span className="text-fluid-sm text-titulo block font-medium">
-                    Próximo horário seguro
-                  </span>
-                  <span className="text-fluid-xs text-apoio mt-0.5 block">
-                    A plataforma escolhe e respeita a fila e o seu expediente.
-                  </span>
-                </span>
-              </label>
-              <label
-                className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
-                  modoEnvio === "agendado"
-                    ? "border-acento-linha bg-acento-lavado"
-                    : "border-linha hover:border-linha-forte"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="quando-enviar"
-                  checked={modoEnvio === "agendado"}
-                  onChange={() => setModoEnvio("agendado")}
-                  className="accent-acento mt-1 h-4 w-4"
-                />
-                <span>
-                  <span className="text-fluid-sm text-titulo flex items-center gap-1.5 font-medium">
-                    <CalendarClock aria-hidden className="h-4 w-4" /> Agendar
-                  </span>
-                  <span className="text-fluid-xs text-apoio mt-0.5 block">
-                    Escolha dia e hora de Brasília.
-                  </span>
-                </span>
-              </label>
-            </div>
-
-            {modoEnvio === "agendado" && (
-              <div className="mt-3">
-                <label
-                  className="text-fluid-xs text-apoio block"
-                  htmlFor="inicio-campanha"
-                >
-                  Início do envio
+              <div>
+                <label htmlFor="mensagem-da-lista" className="text-fluid-sm text-titulo mb-1.5 block font-semibold">
+                  {testandoDuas ? "Versão A" : "Mensagem"}
                 </label>
-                <input
-                  id="inicio-campanha"
-                  type="datetime-local"
-                  step="300"
-                  value={agendarPara}
-                  onChange={(e) => setAgendarPara(e.target.value)}
-                  aria-describedby="janela-segura-campanha"
-                  className="text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento mt-1 min-h-12 w-full rounded-xl border px-3.5 focus:outline-none"
+                <textarea
+                  id="mensagem-da-lista"
+                  rows={5}
+                  value={mensagemBase}
+                  onChange={(e) => {
+                    setMensagemBase(e.target.value);
+                    setExemplos([]);
+                  }}
+                  className={`${CAMPO} min-h-32 py-3 leading-relaxed`}
                 />
-                <p
-                  id="janela-segura-campanha"
-                  className="text-fluid-xs text-apoio mt-1.5"
-                >
-                  Segunda a sábado, entre 9h e 20h59. A pausa de {INTERVALO_EM_PALAVRAS} entre as
-                  mensagens continua valendo.
-                </p>
+                {/* Variáveis do cadastro em um toque (Fase 2). Só aparecem as
+                    que têm valor: sem imóvel, nada de {bairro}. {horarios}
+                    sempre tem: sem agenda preenchida vale a padrão. */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="Inserir variável na mensagem">
+                  <span className="text-fluid-xs text-apoio mr-1">Inserir:</span>
+                  {variaveisDisponiveis.map((v) => (
+                    <button
+                      key={v.chave}
+                      type="button"
+                      onClick={() => inserirVariavel(v.chave)}
+                      title={`Vira ${v.descricao}`}
+                      className="border-linha bg-elevado text-corpo hover:border-acento-linha hover:text-titulo min-h-9 rounded-full border px-3 text-xs transition-colors"
+                    >
+                      {ROTULO_DA_VARIAVEL[v.chave] ?? v.chave}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
-          </fieldset>
 
-          <div className="space-y-1.5">
-            <label className="text-fluid-xs text-apoio block" htmlFor="titulo-campanha">
-              Nome desta lista (opcional — só para você achar depois)
-            </label>
-            <input
-              id="titulo-campanha"
-              type="text"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder={`${rotuloPublico} · ${nomeImovel}`}
-              className="text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento min-h-12 w-full rounded-xl border px-3.5 focus:outline-none"
-            />
-          </div>
+              <p className="text-fluid-xs text-apoio flex items-start gap-2 leading-relaxed">
+                <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Escreva como você falaria.{" "}
+                  {testandoDuas
+                    ? "A IA reescreve cada mensagem com outras palavras, mantendo a abertura de cada versão para a comparação continuar justa. Nenhuma sai parecida com as que o seu número já mandou."
+                    : "A IA reescreve cada mensagem com outras palavras e confere antes de mandar: nenhuma sai parecida com as que o seu número já mandou. Texto repetido em massa é o que faz o WhatsApp restringir números."}
+                </span>
+              </p>
 
-          <p className="text-fluid-xs text-apoio flex items-start gap-2">
-            <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
-            As mensagens saem uma a uma, com {INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial
-            — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
-          </p>
+              <div className="flex flex-wrap gap-2">
+                {!/\{horarios\}/i.test(mensagemBase) && (
+                  <button
+                    type="button"
+                    onClick={() => setMensagemBase((m) => `${m.trimEnd()}${CONVITE_COM_HORARIOS}`)}
+                    className={BOTAO_SECUNDARIO}
+                  >
+                    <CalendarClock aria-hidden className="h-4 w-4" />
+                    Convidar com horários da agenda
+                  </button>
+                )}
+                <button type="button" onClick={salvarComoModelo} className={BOTAO_SECUNDARIO}>
+                  <BookmarkPlus aria-hidden className="h-4 w-4" />
+                  Salvar como modelo
+                </button>
+                <button type="button" onClick={verExemplos} disabled={gerando} className={BOTAO_SECUNDARIO}>
+                  <Sparkles aria-hidden className="h-4 w-4" />
+                  {gerando ? "Gerando…" : "Ver exemplos reescritos"}
+                </button>
+              </div>
+
+              {exemplos.length > 0 && (
+                <div className="border-linha bg-vidro space-y-2.5 rounded-xl border p-4">
+                  <p className="text-fluid-xs text-titulo font-semibold">Assim a IA reescreveu para três pessoas da lista</p>
+                  {exemplos.map((msg, i) => (
+                    <p key={i} className="text-fluid-xs text-corpo leading-relaxed break-words">
+                      {testandoDuas && i === 0 && <span className="text-tenue">Versão A · </span>}“{msg}”
+                    </p>
+                  ))}
+                  {exemploB && (
+                    <p className="text-fluid-xs text-corpo leading-relaxed break-words">
+                      <span className="text-tenue">Versão B · </span>“{exemploB}”
+                    </p>
+                  )}
+                  {observacaoExemplos && (
+                    <p className="text-fluid-xs text-apoio border-linha border-t pt-2 leading-relaxed break-words">
+                      {observacaoExemplos}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Fotos e planta do cadastro do imóvel (Fase 2): saem depois do
+                  texto, no mesmo contato. Até duas. */}
+              {midiasDoImovel.length > 0 && (
+                <fieldset>
+                  <legend className="text-fluid-sm text-titulo mb-2 flex items-center gap-1.5 font-semibold">
+                    <ImageIcon aria-hidden className="h-4 w-4" />
+                    Fotos junto <span className="text-apoio font-normal">(até 2 · {midias.length} escolhida{midias.length === 1 ? "" : "s"})</span>
+                  </legend>
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                    {midiasDoImovel.map((m) => {
+                      const marcada = midias.includes(m.url);
+                      const cheia = !marcada && midias.length >= 2;
+                      return (
+                        <button
+                          key={m.url}
+                          type="button"
+                          onClick={() => alternarMidia(m.url)}
+                          aria-pressed={marcada}
+                          disabled={cheia}
+                          aria-label={`${m.tipo}: ${m.alt}`}
+                          title={cheia ? "Já há duas fotos escolhidas" : `${m.tipo}: ${m.alt}`}
+                          className={`relative aspect-square overflow-hidden rounded-lg border-2 transition ${
+                            marcada ? "border-acento" : "border-transparent hover:opacity-100"
+                          } ${cheia ? "opacity-40" : marcada ? "" : "opacity-85"}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- miniatura de escolha, sem otimização */}
+                          <img src={m.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          {marcada && (
+                            <span className="bg-acento text-sobre-cor absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold">
+                              {midias.indexOf(m.url) + 1}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
+              {/* No celular não há resumo ao lado: o balão vem aqui. */}
+              <div className="lg:hidden">
+                <p className="text-fluid-xs text-apoio mb-1.5">Como chega no WhatsApp</p>
+                <BalaoDaMensagem texto={mensagemBase} valores={valoresDaPrevia} fotos={midias} rotulo={testandoDuas ? "Versão A" : undefined} />
+              </div>
+
+              {/*
+                Testar duas aberturas. Fica atrás de um clique porque o caminho
+                normal é uma mensagem só — e porque a comparação só vale a pena
+                com lista grande o bastante para dar 30 envios de cada lado.
+              */}
+              {!testandoDuas ? (
+                <button
+                  type="button"
+                  onClick={() => setTestandoDuas(true)}
+                  className="text-fluid-sm text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 font-medium transition-colors link-acao"
+                >
+                  <Split aria-hidden className="h-4 w-4" />
+                  Testar duas aberturas e ver qual responde mais
+                </button>
+              ) : (
+                <div className="border-linha space-y-2 rounded-xl border p-4">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <label htmlFor="mensagem-b-da-lista" className="text-fluid-sm text-titulo font-semibold">
+                      Versão B
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTestandoDuas(false);
+                        setMensagemB("");
+                      }}
+                      className="text-fluid-xs text-apoio hover:text-titulo min-h-9 px-3 transition-colors botao-secundario"
+                    >
+                      Remover versão B
+                    </button>
+                  </div>
+                  <p className="text-fluid-xs text-apoio">
+                    Metade da lista recebe cada versão, alternadas. Quando cada lado tiver 30 envios e uma responder mais,
+                    a plataforma passa a mandar SÓ a vencedora para quem ainda não recebeu — e o histórico mostra quando
+                    trocou.
+                  </p>
+                  <textarea
+                    id="mensagem-b-da-lista"
+                    rows={4}
+                    value={mensagemB}
+                    onChange={(e) => setMensagemB(e.target.value)}
+                    placeholder="Mude uma coisa só, senão não dá para saber o que funcionou."
+                    className={`${CAMPO} min-h-28 py-3 leading-relaxed`}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* -------------------------------------------------- 3. confirmar */}
+          {passo === 3 && (
+            <>
+              {/* No computador a conferência está no resumo ao lado. */}
+              <dl className="border-linha text-fluid-sm divide-linha divide-y rounded-xl border lg:hidden">
+                <LinhaDaConferencia rotulo="Para">
+                  {rotuloPublico}
+                  {totalPrevisto !== undefined && !selecaoManual && ` · ${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"}`}
+                </LinhaDaConferencia>
+                <LinhaDaConferencia rotulo="Sobre">{nomeImovel}</LinhaDaConferencia>
+                <LinhaDaConferencia rotulo={testandoDuas ? "Versão A" : "Diz"}>“{mensagemBase}”</LinhaDaConferencia>
+                {testandoDuas && mensagemB.trim() && <LinhaDaConferencia rotulo="Versão B">“{mensagemB}”</LinhaDaConferencia>}
+                {midias.length > 0 && (
+                  <LinhaDaConferencia rotulo="Junto">
+                    {midias.length} foto{midias.length === 1 ? "" : "s"} do imóvel
+                  </LinhaDaConferencia>
+                )}
+              </dl>
+
+              <fieldset>
+                <legend className="text-fluid-sm text-titulo mb-2.5 font-semibold">Quando começar?</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      { valor: "automatico", titulo: "No próximo horário seguro", texto: "A plataforma escolhe, respeitando a fila e o seu expediente." },
+                      { valor: "agendado", titulo: "Agendar", texto: "Você escolhe dia e hora (horário de Brasília)." },
+                    ] as const
+                  ).map((op) => (
+                    <label
+                      key={op.valor}
+                      className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
+                        modoEnvio === op.valor ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="quando-enviar"
+                        checked={modoEnvio === op.valor}
+                        onChange={() => setModoEnvio(op.valor)}
+                        className="accent-acento mt-1 h-4 w-4 shrink-0"
+                      />
+                      <span>
+                        <span className="text-fluid-sm text-titulo block font-medium">{op.titulo}</span>
+                        <span className="text-fluid-xs text-apoio mt-0.5 block">{op.texto}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {modoEnvio === "agendado" && (
+                  <div className="mt-3 max-w-sm">
+                    <label className="text-fluid-xs text-apoio mb-1 block" htmlFor="inicio-campanha">
+                      Início do envio
+                    </label>
+                    <input
+                      id="inicio-campanha"
+                      type="datetime-local"
+                      step="300"
+                      value={agendarPara}
+                      onChange={(e) => setAgendarPara(e.target.value)}
+                      aria-describedby="janela-segura-campanha"
+                      className={`${CAMPO} min-h-12`}
+                    />
+                    <p id="janela-segura-campanha" className="text-fluid-xs text-apoio mt-1.5">
+                      Segunda a sábado, entre 9h e 20h59. A pausa de {INTERVALO_EM_PALAVRAS} entre as mensagens continua
+                      valendo.
+                    </p>
+                  </div>
+                )}
+              </fieldset>
+
+              {!selecaoManual && (
+                <label
+                  className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
+                    viva ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={viva}
+                    onChange={(e) => setViva(e.target.checked)}
+                    className="accent-acento mt-1 h-4 w-4 shrink-0"
+                  />
+                  <span>
+                    <span className="text-fluid-sm text-titulo flex items-center gap-1.5 font-medium">
+                      <Sprout aria-hidden className="h-4 w-4" />
+                      Manter a lista viva por 30 dias
+                    </span>
+                    <span className="text-fluid-xs text-apoio mt-0.5 block">
+                      Quem passar a se encaixar em “{publicoEscolhido.titulo}” entra sozinho e recebe a mesma mensagem.
+                      Ninguém recebe duas vezes nem dentro de 7 dias.
+                    </span>
+                  </span>
+                </label>
+              )}
+
+              <label className="block">
+                <span className="text-fluid-sm text-titulo mb-1.5 block font-semibold">
+                  Nome da lista <span className="text-apoio font-normal">(opcional)</span>
+                </span>
+                <input
+                  type="text"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder={`${rotuloPublico} · ${nomeImovel}`}
+                  className={`${CAMPO} min-h-12`}
+                />
+              </label>
+
+              <p className="text-fluid-xs text-apoio flex items-start gap-2 leading-relaxed">
+                <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
+                As mensagens saem uma a uma, com {INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial — é o
+                que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
+              </p>
+            </>
+          )}
         </div>
-      )}
+
+        {/* ------------------------------------------- resumo (computador) */}
+        <aside aria-label="Resumo da lista" className="hidden lg:block">
+          <div className="border-linha bg-superficie sticky top-24 space-y-4 rounded-2xl border p-4">
+            <div>
+              <p className="text-fluid-xs text-apoio">Recebem</p>
+              <p aria-live="polite" className="text-titulo text-2xl font-semibold tabular-nums">
+                {selecaoManual ? `${escolhidos.size} pessoa${escolhidos.size === 1 ? "" : "s"}` : contagem}
+              </p>
+              <p className="text-fluid-xs text-apoio mt-0.5 leading-snug">
+                {selecaoManual
+                  ? "Escolhidas a dedo."
+                  : previaAtual && previaAtual.protegidos > 0
+                    ? `${publicoEscolhido.titulo}. ${previaAtual.protegidos} contato${previaAtual.protegidos === 1 ? "" : "s"} protegido${previaAtual.protegidos === 1 ? "" : "s"}: já ${previaAtual.protegidos === 1 ? "recebeu" : "receberam"} lista nos últimos 7 dias ou ${previaAtual.protegidos === 1 ? "está" : "estão"} em outra lista.`
+                    : `${publicoEscolhido.titulo}. Só leads da sua carteira; a contagem é conferida de novo ao criar.`}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-fluid-xs text-apoio">Sobre</p>
+              <p className="text-fluid-sm text-titulo font-medium">{nomeImovel}</p>
+            </div>
+
+            <div>
+              <p className="text-fluid-xs text-apoio mb-1.5">Como chega no WhatsApp</p>
+              <BalaoDaMensagem
+                texto={mensagemBase}
+                valores={valoresDaPrevia}
+                fotos={midias}
+                rotulo={testandoDuas ? "Versão A" : undefined}
+              />
+              {testandoDuas && mensagemB.trim() && (
+                <div className="mt-2">
+                  <BalaoDaMensagem texto={mensagemB} valores={valoresDaPrevia} fotos={[]} rotulo="Versão B" />
+                </div>
+              )}
+              <p className="text-fluid-xs text-tenue mt-1.5">Cada pessoa recebe uma versão reescrita pela IA.</p>
+            </div>
+
+            <div>
+              <p className="text-fluid-xs text-apoio">Começa</p>
+              <p className="text-fluid-sm text-titulo font-medium first-letter:uppercase">{quandoComeca}</p>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       {/* Navegação entre os passos, sempre no mesmo lugar. */}
-      <div className="border-linha mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+      <div className="border-linha bg-vidro flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4 sm:px-6">
         {passo > 1 ? (
           <button
             type="button"
             onClick={() => setPasso((p) => (p === 3 ? 2 : 1))}
-            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 transition-colors px-3 botao-secundario"
+            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 px-3 transition-colors botao-secundario"
           >
-            <ArrowLeft className="h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden className="h-4 w-4" /> Voltar
           </button>
         ) : (
           <span />
@@ -1189,40 +1235,15 @@ export function NovaCampanha({
 
         <div className="flex flex-wrap items-center gap-2">
           {passo > 1 && (
-            <button
-              type="button"
-              onClick={guardarRascunho}
-              disabled={salvandoRascunho}
-              className="text-fluid-sm border-linha-forte text-corpo hover:text-titulo flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl border px-4 transition-colors disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
+            <button type="button" onClick={guardarRascunho} disabled={salvandoRascunho} className={`${BOTAO_SECUNDARIO} min-h-12`}>
+              <Save aria-hidden className="h-4 w-4" />
               {salvandoRascunho ? "Salvando…" : rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
             </button>
           )}
 
           {passo < 3 ? (
-            <button
-              type="button"
-              onClick={() => {
-                // No modo manual, seguir sem ninguém marcado geraria uma
-                // lista vazia lá no fim — melhor barrar aqui, com contexto.
-                if (passo === 1 && selecaoManual && escolhidos.size === 0) {
-                  falhar("Marque ao menos um lead antes de continuar.");
-                  return;
-                }
-                if (passo === 1 && !selecaoManual && previaAtual?.total === 0) {
-                  falhar("Não há pessoas disponíveis nesse público agora.");
-                  return;
-                }
-                if (passo === 1 && publico === "compradores" && !imovel) {
-                  falhar("Escolha o imóvel dos compradores.");
-                  return;
-                }
-                setPasso((p) => (p === 1 ? 2 : 3));
-              }}
-              className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors"
-            >
-              Continuar <ArrowRight className="h-4 w-4" />
+            <button type="button" onClick={avancar} className={BOTAO_PRIMARIO}>
+              Continuar <ArrowRight aria-hidden className="h-4 w-4" />
             </button>
           ) : (
             <button
@@ -1230,14 +1251,142 @@ export function NovaCampanha({
               onClick={disparar}
               disabled={criando || !numeroConectado}
               title={numeroConectado ? undefined : "Conecte seu WhatsApp para enviar"}
-              className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors disabled:opacity-60"
+              className={BOTAO_PRIMARIO}
             >
-              <Rocket className="h-4 w-4" />
-              {criando ? "Criando…" : "Começar a enviar"}
+              <Send aria-hidden className="h-4 w-4" />
+              {criando ? "Criando…" : modoEnvio === "agendado" ? "Agendar a lista" : "Começar a enviar"}
             </button>
           )}
         </div>
       </div>
     </section>
+  );
+}
+
+const CAMPO =
+  "text-fluid-sm border-linha-forte bg-campo text-titulo placeholder:text-tenue focus:border-acento focus-visible:ring-acento/25 min-h-11 w-full rounded-xl border px-3.5 focus:outline-none focus-visible:ring-2";
+
+const BOTAO_SECUNDARIO =
+  "text-fluid-sm border-linha-forte text-corpo hover:border-acento-linha hover:text-titulo flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+
+const BOTAO_PRIMARIO =
+  "bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+
+/** Os botões de variável falam a língua do corretor; o `{chave}` é o que entra no texto. */
+const ROTULO_DA_VARIAVEL: Record<string, string> = {
+  nome: "Nome da pessoa",
+  imovel: "Imóvel",
+  bairro: "Bairro",
+  cidade: "Cidade",
+  a_partir_de: "Preço inicial",
+  dormitorios: "Dormitórios",
+  link: "Link do imóvel",
+  corretor: "Seu nome",
+  horarios: "Horários livres",
+};
+
+const NOMES_DOS_PASSOS = ["Quem recebe", "Mensagem", "Envio"] as const;
+
+/** Os três passos com nome. Os já feitos voltam com um toque; os da frente, só pelo Continuar (que confere). */
+function PassosDaLista({ passo, aoVoltarPara }: { passo: 1 | 2 | 3; aoVoltarPara: (p: 1 | 2 | 3) => void }) {
+  return (
+    <ol className="border-linha flex items-center gap-1 border-b px-3 py-2.5 sm:px-4">
+      {NOMES_DOS_PASSOS.map((nome, i) => {
+        const numero = (i + 1) as 1 | 2 | 3;
+        const atual = numero === passo;
+        const feito = numero < passo;
+        const conteudo = (
+          <>
+            <span
+              aria-hidden
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
+                atual ? "bg-acento text-sobre-cor" : feito ? "bg-acento-lavado text-acento-suave" : "border-linha-forte text-apoio border"
+              }`}
+            >
+              {feito ? <Check className="h-3.5 w-3.5" /> : numero}
+            </span>
+            {/* No celular, só o passo da vez diz o nome: os três não cabem. */}
+            <span className={atual ? "text-titulo font-semibold" : `max-sm:sr-only ${feito ? "text-corpo" : "text-apoio"}`}>{nome}</span>
+          </>
+        );
+        return (
+          <li key={nome} className="flex shrink-0 items-center gap-1">
+            {i > 0 && <span aria-hidden className={`mx-1 h-px w-5 sm:w-10 ${feito || atual ? "bg-acento-linha" : "bg-linha-forte"}`} />}
+            {feito ? (
+              <button
+                type="button"
+                onClick={() => aoVoltarPara(numero)}
+                className="text-fluid-sm bg-vidro hover:bg-acento-lavado flex min-h-11 items-center gap-2 rounded-xl px-2.5 transition-colors"
+              >
+                {conteudo}
+                <span className="sr-only">(voltar a este passo)</span>
+              </button>
+            ) : (
+              <span aria-current={atual ? "step" : undefined} className="text-fluid-sm flex min-h-11 items-center gap-2 px-2">
+                {conteudo}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function LinhaDaConferencia({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 px-3.5 py-2.5">
+      <dt className="text-apoio w-16 shrink-0">{rotulo}</dt>
+      <dd className="text-titulo min-w-0 break-words">{children}</dd>
+    </div>
+  );
+}
+
+/**
+ * A mensagem como chega no WhatsApp: o que já se sabe (imóvel, bairro, seu
+ * nome) entra preenchido e destacado; o resto aparece pelo exemplo, também
+ * destacado, para o corretor ver onde cada pessoa recebe o dado dela.
+ */
+function BalaoDaMensagem({
+  texto,
+  valores,
+  fotos,
+  rotulo,
+}: {
+  texto: string;
+  valores: Record<string, string>;
+  fotos: string[];
+  rotulo?: string;
+}) {
+  const exemplos: Record<string, string> = Object.fromEntries(VARIAVEIS_DA_MENSAGEM.map((v) => [v.chave, v.exemplo]));
+  const partes = texto.split(/(\{[a-z_]+\})/gi);
+  return (
+    <div className="bg-acento-lavado border-acento-linha relative rounded-2xl rounded-tl-sm border p-3">
+      {rotulo && <p className="text-acento-suave mb-1 text-[11px] font-semibold">{rotulo}</p>}
+      {fotos.length > 0 && (
+        <div className="mb-2 grid grid-cols-2 gap-1">
+          {fotos.map((url) => (
+            // eslint-disable-next-line @next/next/no-img-element -- miniatura da prévia
+            <img key={url} src={url} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+          ))}
+        </div>
+      )}
+      <p className="text-fluid-sm text-titulo leading-relaxed break-words whitespace-pre-wrap">
+        {texto.trim() === "" ? (
+          <span className="text-apoio">Escreva a mensagem no passo 2.</span>
+        ) : (
+          partes.map((parte, i) => {
+            const chave = /^\{([a-z_]+)\}$/i.exec(parte)?.[1]?.toLowerCase();
+            if (!chave) return <span key={i}>{parte}</span>;
+            const valor = valores[chave] || exemplos[chave] || parte;
+            return (
+              <mark key={i} className="bg-acento/20 text-titulo rounded px-0.5" title={`{${chave}}`}>
+                {valor}
+              </mark>
+            );
+          })
+        )}
+      </p>
+    </div>
   );
 }

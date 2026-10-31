@@ -12772,6 +12772,14 @@ Nota: [[crm-pelo-whatsapp-numero-central-com-ia]]. Desenho:
   Vercel só guardam 1 h (Hobby). Na Aretz só saiu o aviso da Denise; o resto
   ficou calado. Tabela dos caminhos na nota [[retorno-da-ligacao-pelo-grupo]].
 
+- **Tela de listas remodelada (31/10):** assistente fechado por padrão
+  ("Nova lista" = `?nova=1`), resumo fixo com balão de WhatsApp, histórico
+  com filtro e barra. **Prévia de tela sem login:** rota nova fora de
+  `FORA_DO_SITE` (`proxy.ts`) é reescrita para `/s/<host>/…` e dá 404 —
+  pôr a página temporária debaixo de `/auth/`. Skills de front-end ficam em
+  `.claude/skills/` (fora do git, somem com o contêiner). Nota:
+  [[lista-de-transmissao-visivel-e-controlavel]].
+
 ## Suporte e contato da Astro (29/10/2026)
 
 Nota: [[suporte-e-contato-da-astro]]. 0240 (`chamados_de_suporte`, global)

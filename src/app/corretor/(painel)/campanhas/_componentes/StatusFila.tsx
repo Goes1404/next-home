@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { MoreHorizontal, Trash2, WifiOff } from "lucide-react";
 import {
   limparFilaDisparo,
   statusDisparo,
@@ -38,7 +38,7 @@ function horaDeBrasilia(iso: string): string {
  */
 function frasePrincipal(status: StatusDisparo): string {
   if (status.impedimento) return status.impedimento;
-  if (status.pendentes === 0) return "Nenhuma mensagem esperando. Crie uma lista de transmissão abaixo.";
+  if (status.pendentes === 0) return "Nenhuma mensagem esperando para sair.";
 
   const n = status.pendentes;
   const plural = n === 1 ? "" : "s";
@@ -102,93 +102,92 @@ export function StatusFila({
     });
   }
 
+  const conectar = status.impedimentoTipo === "desconectado" || status.impedimentoTipo === "sem_numero";
+  const titulo = parada ? "As mensagens não estão saindo" : status.pendentes > 0 ? "Enviando" : "Fila vazia";
+
+  /*
+   * Faixa de uma linha (31/10/2026): antes era um cartão do tamanho do
+   * assistente para dizer uma frase. O ponto diz o estado de longe; a frase,
+   * quando termina; o porquê do limite fica em letra menor. "Apagar as que
+   * não saíram" continua atrás de uma porta: apaga, e não é rotina.
+   */
   return (
     <section
-      className={`rounded-2xl border p-5 sm:p-6 ${
+      aria-label="Situação dos envios"
+      className={`rounded-2xl border px-4 py-3.5 sm:px-5 ${
         parada ? "border-alerta-linha bg-alerta-lavado" : "border-linha bg-superficie"
       }`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={`h-2 w-2 shrink-0 rounded-full ${
-                parada ? "bg-alerta" : status.pendentes > 0 ? "bg-ok animate-pulse" : "bg-linha-forte"
-              }`}
-            />
-            <h2 className="font-display text-titulo text-lg">
-              {parada ? "As mensagens não estão saindo" : "Suas mensagens"}
-            </h2>
-          </div>
-          <p className="text-fluid-sm text-corpo mt-1.5">{frasePrincipal(status)}</p>
-
-          {!parada && status.pendentes > 0 && (
-            <p className="text-fluid-xs text-tenue mt-1">
-              O espaçamento entre uma mensagem e outra protege seu número de ser bloqueado pelo
-              WhatsApp.
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span
+            aria-hidden
+            className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${
+              parada ? "bg-alerta" : status.pendentes > 0 ? "bg-ok motion-safe:animate-pulse" : "bg-linha-forte"
+            }`}
+          />
+          <div className="min-w-0">
+            <p className="text-fluid-sm text-corpo">
+              <span className="text-titulo font-semibold">{titulo}.</span> {frasePrincipal(status)}
             </p>
-          )}
-
-          {/* O limite de hoje sai do USO da última semana (0158): dizer por
-              que ele é esse evita a surpresa de um número parado voltar baixo. */}
-          {status.explicacaoDoLimite && (status.pendentes > 0 || status.impedimentoTipo === "cota") && (
-            <p className="text-fluid-xs text-tenue mt-1">{status.explicacaoDoLimite}</p>
-          )}
+            {/* O limite de hoje sai do USO da última semana (0158): dizer por
+                que ele é esse evita a surpresa de um número parado voltar baixo. */}
+            {status.explicacaoDoLimite && (status.pendentes > 0 || status.impedimentoTipo === "cota") && (
+              <p className="text-fluid-xs text-apoio mt-0.5">
+                {status.explicacaoDoLimite} O espaçamento de {INTERVALO_EM_PALAVRAS} entre as mensagens protege seu número.
+              </p>
+            )}
+          </div>
         </div>
 
-        {(status.impedimentoTipo === "desconectado" || status.impedimentoTipo === "sem_numero") && (
-          <Link
-            href="/corretor/whatsapp"
-            className="text-fluid-sm border-alerta-linha text-alerta flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-4 hover:opacity-80"
-          >
-            Conectar o número
-          </Link>
-        )}
-
+        <div className="flex shrink-0 items-center gap-1">
+          {conectar && (
+            <Link
+              href="/corretor/whatsapp"
+              className="text-fluid-sm border-alerta-linha text-alerta flex min-h-11 items-center gap-1.5 rounded-xl border px-4 font-medium hover:opacity-80"
+            >
+              <WifiOff aria-hidden className="h-4 w-4" />
+              Conectar o número
+            </Link>
+          )}
+          {status.pendentes > 0 && (
+            <button
+              type="button"
+              onClick={() => setMostrarAvancado((m) => !m)}
+              aria-expanded={mostrarAvancado}
+              aria-label="Mais opções da fila"
+              title="Mais opções da fila"
+              className="text-apoio hover:text-titulo flex h-11 w-11 items-center justify-center botao-icone"
+            >
+              <MoreHorizontal aria-hidden className="h-5 w-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/*
-        O sucesso e o erro saíram daqui para a região de avisos do shell.
-        Este cartão fica no MEIO da tela de campanhas, abaixo do cabeçalho e
-        das abas, e acima do assistente — quem toca "Enviar agora" no rodapé
-        do assistente não via a confirmação que aparecia aqui em cima. E o
-        `setTimeout` que apagava o texto em 8s contrariava a regra do próprio
-        `Avisos`: sucesso some sozinho, erro fica até alguém fechar.
+        O sucesso e o erro vão para a região de avisos do shell: a faixa fica
+        acima do assistente, e quem age no rodapé dele não veria a resposta
+        aqui. "Liberar envios de hoje" saiu na 0155; "Liberar envio agora" e
+        "Enviar agora" saíram em 09/10/2026, a pedido: a fila só anda pelo
+        disparador, no horário.
       */}
-
-      {/* Ferramenta que apaga coisa fica atrás de uma porta: limpar a fila
-          apaga mensagens programadas, e não é rotina. "Liberar envios de
-          hoje" saiu na 0155; "Liberar envio agora" e "Enviar agora" saíram
-          em 09/10/2026, a pedido: a fila só anda pelo disparador, no horário. */}
-      {status.pendentes > 0 && (
-        <>
+      {mostrarAvancado && status.pendentes > 0 && (
+        <div className="border-linha mt-3 flex flex-wrap items-center gap-3 border-t pt-3">
+          <p className="text-fluid-xs text-apoio min-w-0 flex-1">
+            Apagar a fila tira as {status.pendentes} mensagens que ainda não saíram, de todas as listas. As enviadas
+            continuam no histórico.
+          </p>
           <button
             type="button"
-            onClick={() => setMostrarAvancado((m) => !m)}
-            aria-expanded={mostrarAvancado}
-            className="text-fluid-xs text-apoio hover:text-titulo mt-4 min-h-11 px-3 botao-secundario"
+            onClick={limparFila}
+            disabled={limpando}
+            className="text-fluid-xs border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
           >
-            {mostrarAvancado ? "− Ocultar avançado" : "+ Avançado"}
+            <Trash2 aria-hidden className="h-3.5 w-3.5" />
+            {limpando ? "Apagando…" : "Apagar as que não saíram"}
           </button>
-
-          {mostrarAvancado && (
-            <div className="border-linha mt-2 flex flex-wrap gap-2 border-t pt-4">
-              {status.pendentes > 0 && (
-                <button
-                  type="button"
-                  onClick={limparFila}
-                  disabled={limpando}
-                  className="text-fluid-xs border-perigo-linha bg-perigo-lavado text-perigo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-opacity hover:opacity-80 disabled:opacity-60"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {limpando ? "Limpando…" : "Apagar as que não saíram"}
-                </button>
-              )}
-
-            </div>
-          )}
-        </>
+        </div>
       )}
     </section>
   );

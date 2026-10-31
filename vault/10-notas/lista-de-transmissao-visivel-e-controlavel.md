@@ -7,6 +7,9 @@ status: growing
 custou: medio
 codigo:
   - src/app/corretor/(painel)/campanhas/acoes.ts
+  - src/app/corretor/(painel)/campanhas/page.tsx
+  - src/app/corretor/(painel)/campanhas/CampanhasManager.tsx
+  - src/app/corretor/(painel)/campanhas/_componentes/StatusFila.tsx
   - src/app/corretor/(painel)/campanhas/_componentes/DetalheDaLista.tsx
   - src/app/corretor/(painel)/campanhas/_componentes/HistoricoCampanhas.tsx
   - src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx
@@ -19,7 +22,7 @@ codigo:
   - supabase/migrations/0153_lista_de_transmissao_pausar_cancelar.sql
 fonte: roadmap das listas de transmissão em 3 fases (03/10/2026)
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-31
 summary: Cada lista abre uma gaveta com quem recebeu e o motivo de quem não recebeu, pausa/retoma/cancela sozinha, aparece na ficha do lead, vira contexto para a IA quando o cliente responde, não atropela conversa do corretor nas últimas 24h, recorta por canal/anúncio de origem mostra visitas e vendas de quem recebeu, e o envio ativa a IA na conversa.
 ---
 
@@ -134,3 +137,45 @@ view `pessoas_do_corretor` e ela também mostra só quem falou.
 - [[fluxo-de-campanhas]]
 - [[quando-a-ia-responde]]
 - [[graficos-que-decidem]]
+
+## Tela remodelada (31/10/2026)
+
+Pedido do dono: "muito feio e difícil de usar". Feita com as skills de
+front-end baixadas para `.claude/skills/` (fora do git: frontend-design da
+Anthropic, web-design-guidelines e react-best-practices da Vercel,
+ui-ux-pro-max e Impeccable — desta, o modo *Operate* e o `craft-floor`).
+
+- **O assistente abre fechado.** A tela é antes de tudo o acompanhamento.
+  "Nova lista" é a ação primária do `CabecalhoDeTela` (link `?nova=1`);
+  abre sozinho quando a URL traz o que montar (`leads`, `publico`, `imovel`,
+  `repetir`, `rascunho`) ou quando não há lista nenhuma. Fechar e criar
+  fazem `router.replace("/corretor/campanhas")`, senão o recarregar reabre.
+  A `key` do `CampanhasManager` inclui "aberto", para o `?nova=1` remontar.
+- **Listas sugeridas só com o assistente fechado** (vêm como `sugestoes`,
+  ReactNode montado no servidor): são atalhos para montar.
+- **Assistente:** passos com nome (só o atual no celular), público em
+  `radio` de verdade em grade 2×3 com uma linha de descrição, imóvel no
+  passo 1, e um **resumo fixo à direita** (≥ lg) com a contagem, o imóvel, a
+  mensagem num balão de WhatsApp (variáveis preenchidas e destacadas: imóvel,
+  bairro, cidade e seu nome reais; o resto pelo `exemplo` de
+  `VARIAVEIS_DA_MENSAGEM`) e quando começa. No celular o resumo vira uma
+  linha no topo, o balão aparece no passo 2 e o passo 3 repete a conferência.
+  Botões de variável com nome de gente ("Bairro", "Preço inicial"), não
+  `{bairro}`.
+- **Status da fila** virou faixa de uma linha; "Apagar as que não saíram"
+  atrás do botão `⋯`.
+- **Histórico:** um cartão por lista, filtro por situação com contagem,
+  barra de enviadas/total, os cinco números numa grade só, e o placar A/B e
+  a conferência do texto atrás de `<details>`.
+
+Guardas que leem `NovaCampanha.tsx` como texto (`selecaoManual.test.ts`,
+`listas.test.ts`, `aberturaSugerida.test.ts`) continuam valendo: a lógica
+ficou no mesmo arquivo. `botoesComPista.test.ts` pegou dois botões só com
+texto (passos feitos e "Testar duas aberturas"). O e2e do painel agora clica
+em "Nova lista" e acha o público por `radio`.
+
+**Prévia sem login:** o `proxy.ts` reescreve toda rota fora de
+`FORA_DO_SITE` para `/s/<host>/…` — uma página nova em `src/app/previa/`
+dá 404. A prévia com dados falsos tem de morar debaixo de `/auth/` (ou
+outra raiz da lista) e ser apagada antes do commit.
+

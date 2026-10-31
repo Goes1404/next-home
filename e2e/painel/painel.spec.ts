@@ -55,15 +55,17 @@ test("lista de leads: selecionar abre a barra com Mover para… e as seis etapas
 test("campanhas: o público 'Escolher um por um' busca pelo nome", async ({ page }) => {
   await irLogado(page, "/corretor/campanhas");
 
-  const opcao = page.getByRole("button", { name: /Escolher um por um/ });
+  // O assistente abre fechado desde 31/10/2026: "Nova lista" no cabeçalho.
+  await page.getByRole("link", { name: /Nova lista/ }).click();
+  const opcao = page.getByRole("radio", { name: /Escolher um por um/ });
   await expect(opcao).toBeVisible();
   await opcao.click();
 
   // O seletor carrega a carteira e filtra pelo nome digitado. Marcar um
   // checkbox é estado de tela; o teste PARA antes de qualquer "Continuar".
-  const busca = page.getByLabel("Buscar lead pelo nome");
+  const busca = page.getByLabel("Buscar lead por nome ou telefone");
   await expect(busca).toBeVisible();
-  await expect(page.getByText(/Marque quem deve receber|Nenhum lead com WhatsApp/)).toBeVisible({
+  await expect(page.getByText(/resultados? ·|Nenhum lead com WhatsApp/)).toBeVisible({
     timeout: 15_000,
   });
 });

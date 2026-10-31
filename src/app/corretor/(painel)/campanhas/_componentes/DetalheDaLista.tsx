@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
-import { Ban, ChevronRight, Pause, Play, X } from "lucide-react";
+import { Ban, Pause, Play, UsersRound, X } from "lucide-react";
 import { ROTULO_DO_ITEM } from "@/lib/crm/desfechoDaLista";
 import {
   cancelarCampanha,
@@ -79,7 +79,7 @@ export function ControlesDaLista({
           type="button"
           disabled={ocupado}
           onClick={() => rodar(() => pausarCampanha(campanha.id), "Lista pausada. Nada sai até você retomar.")}
-          className="text-fluid-xs border-linha text-corpo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 hover:opacity-80 disabled:opacity-60"
+          className="text-fluid-xs border-linha-forte text-corpo hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 transition-colors disabled:opacity-60"
         >
           <Pause className="h-3.5 w-3.5" />
           Pausar
@@ -165,10 +165,10 @@ export function BotaoDetalheDaLista({ campanha }: { campanha: CampanhaListada })
       <button
         type="button"
         onClick={abrir}
-        className="text-fluid-xs text-acento flex min-h-11 cursor-pointer items-center gap-1 rounded-xl px-2 font-medium link-acao"
+        className="text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl px-2 font-medium link-acao"
       >
+        <UsersRound aria-hidden className="h-3.5 w-3.5" />
         Ver quem recebeu
-        <ChevronRight className="h-3.5 w-3.5" />
       </button>
 
       <dialog
