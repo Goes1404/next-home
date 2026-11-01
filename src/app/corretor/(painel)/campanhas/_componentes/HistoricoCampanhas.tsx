@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronDown, Megaphone, MessagesSquare, Plus, Repeat, Sprout, Trash2 } from "lucide-react";
+import { Ban, CalendarCheck, CheckCircle2, ChevronDown, Clock, FilePen, Handshake, Megaphone, MessageCircleReply, MessagesSquare, Pause, Plus, Repeat, Send, Sprout, Trash2, type LucideIcon } from "lucide-react";
 import {
   descartarRascunho,
   listarCampanhas,
@@ -38,6 +38,32 @@ const CLASSE_STATUS: Record<CampanhaListada["status"], string> = {
   cancelada: "bg-vidro border-linha text-tenue",
 };
 
+const ICONE_STATUS: Record<CampanhaListada["status"], LucideIcon> = {
+  rascunho: FilePen,
+  em_andamento: Send,
+  pausada: Pause,
+  concluida: CheckCircle2,
+  cancelada: Ban,
+};
+
+/** O quadrado do ícone: a situação da lista lida de longe, antes do título. */
+const TOM_STATUS: Record<CampanhaListada["status"], string> = {
+  rascunho: "bg-vidro text-apoio",
+  em_andamento: "bg-acento text-sobre-cor",
+  pausada: "bg-alerta text-sobre-cor",
+  concluida: "bg-ok-lavado text-ok",
+  cancelada: "bg-vidro text-tenue",
+};
+
+function IconeDaSituacao({ status }: { status: CampanhaListada["status"] }) {
+  const I = ICONE_STATUS[status];
+  return (
+    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${TOM_STATUS[status]}`}>
+      <I aria-hidden className="h-5 w-5" />
+    </span>
+  );
+}
+
 type Filtro = "todas" | "andamento" | "rascunho" | "encerradas";
 
 const FILTROS: { valor: Filtro; rotulo: string; casa: (c: CampanhaListada) => boolean }[] = [
@@ -58,14 +84,14 @@ function tempoCurto(minutos: number): string {
   return `${Math.round(minutos / 1440)} dias`;
 }
 
-function Numero({ rotulo, valor, extra, destaque }: { rotulo: string; valor: string; extra?: string; destaque?: boolean }) {
+function Numero({ rotulo, valor, icone: I }: { rotulo: string; valor: string; icone: LucideIcon }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-fluid-xs text-apoio">{rotulo}</dt>
-      <dd className="mt-0.5 tabular-nums">
-        <span className={`text-fluid-base font-semibold ${destaque ? "text-ok" : "text-titulo"}`}>{valor}</span>
-        {extra && <span className="text-fluid-xs text-apoio ml-1">{extra}</span>}
-      </dd>
+    <div className="flex min-w-0 items-center gap-2.5">
+      <I aria-hidden className="text-apoio h-4 w-4 shrink-0" />
+      <div className="min-w-0">
+        <dt className="text-fluid-xs text-apoio leading-tight">{rotulo}</dt>
+        <dd className="text-fluid-sm text-titulo font-semibold tabular-nums">{valor}</dd>
+      </div>
     </div>
   );
 }
@@ -78,23 +104,25 @@ function Selo({ status }: { status: CampanhaListada["status"] }) {
   );
 }
 
+/** Atalhos da lista como botões de verdade: no celular, texto sublinhado some no meio dos números. */
 const LINK_DA_LISTA =
-  "text-fluid-xs text-acento-suave hover:text-titulo flex min-h-11 items-center gap-1.5 rounded-xl px-2 font-medium link-acao";
+  "text-fluid-xs border-linha-forte bg-superficie text-titulo hover:border-acento-linha flex min-h-11 items-center gap-1.5 rounded-xl border px-3 font-medium transition-colors";
 
 function CartaoDoRascunho({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => void }) {
   const [ocupado, iniciar] = useTransition();
   return (
-    <li className="border-linha bg-vidro flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed px-4 py-3.5 sm:px-5">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <Selo status="rascunho" />
-          <p className="text-fluid-sm text-titulo font-medium break-words">{c.titulo}</p>
-        </div>
-        <p className="text-fluid-xs text-apoio mt-1">
+    <li className="border-linha bg-vidro flex flex-col gap-3 rounded-2xl border border-dashed px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <IconeDaSituacao status="rascunho" />
+        <div className="min-w-0">
+        <p className="text-fluid-sm text-titulo font-semibold break-words">{c.titulo}</p>
+        <p className="text-fluid-xs text-apoio mt-0.5">
+          <span className="text-corpo font-medium">Rascunho</span> ·{" "}
           {c.empreendimentoNome ?? "Sem imóvel vinculado"} · salvo em {dataCurta(c.criadoEm)}
         </p>
+        </div>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2 max-sm:[&>*]:flex-1 max-sm:[&>*]:justify-center">
         <button
           type="button"
           disabled={ocupado}
@@ -128,23 +156,26 @@ function CartaoDaLista({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => voi
   return (
     <li className="cartao p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Selo status={c.status} />
-            {c.vivaAte && (
-              <span
-                title="Quem passar a se encaixar no público entra sozinho"
-                className="bg-ok-lavado border-ok-linha text-ok inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
-              >
-                <Sprout aria-hidden className="h-3 w-3" /> Viva até {dataCurta(c.vivaAte)}
-              </span>
-            )}
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <IconeDaSituacao status={c.status} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Selo status={c.status} />
+              {c.vivaAte && (
+                <span
+                  title="Quem passar a se encaixar no público entra sozinho"
+                  className="bg-ok-lavado border-ok-linha text-ok inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+                >
+                  <Sprout aria-hidden className="h-3 w-3" /> Viva até {dataCurta(c.vivaAte)}
+                </span>
+              )}
+            </div>
+            <h3 className="text-fluid-base text-titulo mt-1 font-semibold break-words">{c.titulo}</h3>
+            <p className="text-fluid-xs text-apoio mt-0.5">
+              {c.empreendimentoNome ?? "Sem imóvel vinculado"} · {dataCurta(c.criadoEm)}
+              {c.midias > 0 && ` · ${c.midias} foto${c.midias === 1 ? "" : "s"}`}
+            </p>
           </div>
-          <h3 className="text-fluid-base text-titulo mt-1.5 font-semibold break-words">{c.titulo}</h3>
-          <p className="text-fluid-xs text-apoio mt-0.5">
-            {c.empreendimentoNome ?? "Sem imóvel vinculado"} · criada em {dataCurta(c.criadoEm)}
-            {c.midias > 0 && ` · ${c.midias} foto${c.midias === 1 ? "" : "s"} junto`}
-          </p>
         </div>
         <ControlesDaLista campanha={c} aoMudar={aoMudar} />
       </div>
@@ -172,7 +203,7 @@ function CartaoDaLista({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => voi
           aria-valuemin={0}
           aria-valuemax={c.totalLeads}
           aria-valuenow={c.totalEnviados}
-          className="bg-vidro border-linha h-2 overflow-hidden rounded-full border"
+          className="bg-vidro border-linha h-2.5 overflow-hidden rounded-full border"
         >
           <div
             className={`h-full rounded-full ${c.status === "cancelada" ? "bg-linha-forte" : c.status === "pausada" ? "bg-alerta" : "bg-acento"}`}
@@ -181,19 +212,37 @@ function CartaoDaLista({ c, aoMudar }: { c: CampanhaListada; aoMudar?: () => voi
         </div>
       </div>
 
-      {/* O caminho da lista, da entrega à venda (Fase 1). */}
-      <dl className="border-linha mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-5">
-        <Numero rotulo="Responderam" valor={String(c.totalRespondidos)} extra={`${taxaResposta}%`} destaque={c.totalRespondidos > 0} />
-        <Numero rotulo="Conversaram" valor={String(c.funil.conversaram)} />
-        <Numero
-          rotulo="Respondem em"
-          valor={c.funil.medianaRespostaMin === null ? "—" : tempoCurto(c.funil.medianaRespostaMin)}
-        />
-        <Numero rotulo="Visitas depois" valor={String(c.desfecho.visitas)} />
-        <Numero rotulo="Vendas depois" valor={String(c.desfecho.vendas)} />
-      </dl>
+      {/* O caminho da lista, da entrega à venda (Fase 1). Quem respondeu é
+          o resultado que importa: vem grande, no tom de sucesso. */}
+      <div className="mt-4 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+        <div
+          className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 ${
+            c.totalRespondidos > 0 ? "bg-ok-lavado" : "bg-vidro"
+          }`}
+        >
+          <MessageCircleReply aria-hidden className={`h-6 w-6 shrink-0 ${c.totalRespondidos > 0 ? "text-ok" : "text-apoio"}`} />
+          <p className="tabular-nums">
+            <span className={`text-2xl leading-none font-semibold ${c.totalRespondidos > 0 ? "text-ok" : "text-titulo"}`}>
+              {c.totalRespondidos}
+            </span>
+            <span className="text-fluid-xs text-corpo ml-1.5">
+              {c.totalRespondidos === 1 ? "respondeu" : "responderam"} · {taxaResposta}%
+            </span>
+          </p>
+        </div>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+          <Numero icone={MessagesSquare} rotulo="Conversaram" valor={String(c.funil.conversaram)} />
+          <Numero
+            icone={Clock}
+            rotulo="Respondem em"
+            valor={c.funil.medianaRespostaMin === null ? "—" : tempoCurto(c.funil.medianaRespostaMin)}
+          />
+          <Numero icone={CalendarCheck} rotulo="Visitas depois" valor={String(c.desfecho.visitas)} />
+          <Numero icone={Handshake} rotulo="Vendas depois" valor={String(c.desfecho.vendas)} />
+        </dl>
+      </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-0">
+      <div className="border-linha mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
         <BotaoDetalheDaLista campanha={c} />
         {c.totalRespondidos > 0 && (
           <Link href={`/corretor/conversas?lista=${c.id}`} className={LINK_DA_LISTA}>
@@ -327,7 +376,7 @@ export function HistoricoCampanhas({
         <h2 id="titulo-suas-listas" className="font-display text-titulo text-xl">
           Suas listas
         </h2>
-        <div role="group" aria-label="Mostrar listas" className="bg-vidro border-linha flex flex-wrap gap-1 rounded-xl border p-1">
+        <div role="group" aria-label="Mostrar listas" className="bg-vidro border-linha flex max-w-full flex-wrap gap-1 rounded-xl border p-1">
           {FILTROS.map((f) => {
             const n = todas.filter(f.casa).length;
             if (f.valor !== "todas" && n === 0) return null;
@@ -338,7 +387,7 @@ export function HistoricoCampanhas({
                 type="button"
                 aria-pressed={ativo}
                 onClick={() => setFiltro(f.valor)}
-                className={`text-fluid-xs flex min-h-9 items-center gap-1.5 rounded-lg px-3 font-medium transition-colors ${
+                className={`text-fluid-xs flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 font-medium whitespace-nowrap transition-colors ${
                   ativo ? "bg-superficie text-titulo shadow-sm" : "text-apoio hover:text-titulo"
                 }`}
               >

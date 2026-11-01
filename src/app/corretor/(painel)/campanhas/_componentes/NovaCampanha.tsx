@@ -5,7 +5,7 @@ import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOu
 
 import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
 import type { Canal } from "@/lib/graficos/calculos";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, type ComponentType } from "react";
 import Link from "next/link";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import {
@@ -15,7 +15,14 @@ import {
   CalendarClock,
   Check,
   CheckCheck,
+  Hourglass,
   ImageIcon,
+  KeyRound,
+  ListChecks,
+  ShieldCheck,
+  Snowflake,
+  UserPlus,
+  Users,
   Save,
   Search,
   Send,
@@ -66,34 +73,42 @@ import { listaRecemCriada } from "./listaRecemCriada";
  * e não deixa enviar — quando o número do corretor não está conectado.
  */
 
-const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string }[] = [
+type Icone = ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+
+const PUBLICOS: { valor: FiltroLeadsCampanha; titulo: string; descricao: string; icone: Icone }[] = [
   {
     valor: "parados_15d",
+    icone: Snowflake,
     titulo: "Quem esfriou",
     descricao: "Sem conversa há mais de 15 dias. É quem mais responde a reativação.",
   },
   {
     valor: "novos_sem_contato",
+    icone: UserPlus,
     titulo: "Quem acabou de chegar",
     descricao: "Na etapa “Novo lead” e ainda sem o primeiro contato.",
   },
   {
     valor: "sem_resposta",
+    icone: Hourglass,
     titulo: "Abordado e sem resposta",
     descricao: "Recebeu até 2 mensagens e não respondeu. A terceira não converte e cansa o número.",
   },
   {
     valor: "todos",
+    icone: Users,
     titulo: "Todos os meus leads",
     descricao: "A carteira inteira. Com cuidado: mensagem repetida cansa quem já respondeu.",
   },
   {
     valor: "compradores",
+    icone: KeyRound,
     titulo: "Compradores deste imóvel",
     descricao: "Quem fechou no imóvel escolhido. Para obra, vistoria e chaves — nunca para vender de novo.",
   },
   {
     valor: "selecionados",
+    icone: ListChecks,
     titulo: "Escolher um por um",
     descricao: "Você busca pelo nome ou telefone e marca quem recebe.",
   },
@@ -628,15 +643,24 @@ export function NovaCampanha({
 
       <div className="grid gap-6 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
-          {/* No celular, a linha do resumo: o que o corretor confere a cada passo. */}
-          <p aria-live="polite" className="bg-vidro text-fluid-sm text-corpo flex items-center gap-2 rounded-xl px-3.5 py-2.5 lg:hidden">
-            <UsersRound aria-hidden className="text-acento-suave h-4 w-4 shrink-0" />
-            <span className="min-w-0 truncate">
-              <span className="text-titulo font-semibold tabular-nums">{selecaoManual ? `${escolhidos.size} escolhido${escolhidos.size === 1 ? "" : "s"}` : contagem}</span>
-              {" · "}
-              {nomeImovel}
+          {/* No celular, o placar do resumo: quantos recebem é o que o corretor
+              confere a cada passo, então é o número grande da tela. */}
+          <div aria-live="polite" className="border-acento-linha bg-acento-lavado flex items-center gap-3 rounded-2xl border p-3.5 lg:hidden">
+            <span className="bg-acento text-sobre-cor flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
+              <UsersRound aria-hidden className="h-6 w-6" />
             </span>
-          </p>
+            <div className="min-w-0">
+              <p className="text-titulo text-2xl leading-none font-semibold tabular-nums">
+                {selecaoManual ? escolhidos.size : carregandoPublico ? "…" : (totalPrevisto ?? "—")}
+                <span className="text-fluid-sm text-corpo ml-1.5 font-medium">
+                  {(selecaoManual ? escolhidos.size : totalPrevisto) === 1 ? "pessoa recebe" : "pessoas recebem"}
+                </span>
+              </p>
+              <p className="text-fluid-xs text-apoio mt-1 truncate">
+                {rotuloPublico} · {nomeImovel}
+              </p>
+            </div>
+          </div>
 
           {/* ------------------------------------------------ 1. quem recebe */}
           {passo === 1 && (
@@ -644,30 +668,18 @@ export function NovaCampanha({
               <fieldset>
                 <legend className="text-fluid-sm text-titulo mb-2.5 font-semibold">Quem vai receber?</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {PUBLICOS.map((opcao) => {
-                    const marcado = publico === opcao.valor;
-                    return (
-                      <label
-                        key={opcao.valor}
-                        className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
-                          marcado ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="publico-da-lista"
-                          value={opcao.valor}
-                          checked={marcado}
-                          onChange={() => setPublico(opcao.valor)}
-                          className="accent-acento mt-1 h-4 w-4 shrink-0"
-                        />
-                        <span className="min-w-0">
-                          <span className="text-fluid-sm text-titulo block font-medium">{opcao.titulo}</span>
-                          <span className="text-fluid-xs text-apoio mt-0.5 block leading-snug">{opcao.descricao}</span>
-                        </span>
-                      </label>
-                    );
-                  })}
+                  {PUBLICOS.map((opcao) => (
+                    <Opcao
+                      key={opcao.valor}
+                      tipo="radio"
+                      nome="publico-da-lista"
+                      icone={opcao.icone}
+                      titulo={opcao.titulo}
+                      descricao={opcao.descricao}
+                      marcado={publico === opcao.valor}
+                      aoMarcar={() => setPublico(opcao.valor)}
+                    />
+                  ))}
                 </div>
               </fieldset>
 
@@ -1058,50 +1070,38 @@ export function NovaCampanha({
           {/* -------------------------------------------------- 3. confirmar */}
           {passo === 3 && (
             <>
-              {/* No computador a conferência está no resumo ao lado. */}
-              <dl className="border-linha text-fluid-sm divide-linha divide-y rounded-xl border lg:hidden">
-                <LinhaDaConferencia rotulo="Para">
-                  {rotuloPublico}
-                  {totalPrevisto !== undefined && !selecaoManual && ` · ${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"}`}
-                </LinhaDaConferencia>
-                <LinhaDaConferencia rotulo="Sobre">{nomeImovel}</LinhaDaConferencia>
-                <LinhaDaConferencia rotulo={testandoDuas ? "Versão A" : "Diz"}>“{mensagemBase}”</LinhaDaConferencia>
-                {testandoDuas && mensagemB.trim() && <LinhaDaConferencia rotulo="Versão B">“{mensagemB}”</LinhaDaConferencia>}
-                {midias.length > 0 && (
-                  <LinhaDaConferencia rotulo="Junto">
-                    {midias.length} foto{midias.length === 1 ? "" : "s"} do imóvel
-                  </LinhaDaConferencia>
+              {/* No computador a conferência está no resumo ao lado; no celular
+                  o placar de cima já diz quem e sobre o quê, e aqui vem a
+                  mensagem como ela chega. */}
+              <div className="space-y-2 lg:hidden">
+                <p className="text-fluid-sm text-titulo font-semibold">Como chega no WhatsApp</p>
+                <BalaoDaMensagem texto={mensagemBase} valores={valoresDaPrevia} fotos={midias} rotulo={testandoDuas ? "Versão A" : undefined} />
+                {testandoDuas && mensagemB.trim() && (
+                  <BalaoDaMensagem texto={mensagemB} valores={valoresDaPrevia} fotos={[]} rotulo="Versão B" />
                 )}
-              </dl>
+              </div>
 
               <fieldset>
                 <legend className="text-fluid-sm text-titulo mb-2.5 font-semibold">Quando começar?</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {(
-                    [
-                      { valor: "automatico", titulo: "No próximo horário seguro", texto: "A plataforma escolhe, respeitando a fila e o seu expediente." },
-                      { valor: "agendado", titulo: "Agendar", texto: "Você escolhe dia e hora (horário de Brasília)." },
-                    ] as const
-                  ).map((op) => (
-                    <label
-                      key={op.valor}
-                      className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
-                        modoEnvio === op.valor ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="quando-enviar"
-                        checked={modoEnvio === op.valor}
-                        onChange={() => setModoEnvio(op.valor)}
-                        className="accent-acento mt-1 h-4 w-4 shrink-0"
-                      />
-                      <span>
-                        <span className="text-fluid-sm text-titulo block font-medium">{op.titulo}</span>
-                        <span className="text-fluid-xs text-apoio mt-0.5 block">{op.texto}</span>
-                      </span>
-                    </label>
-                  ))}
+                  <Opcao
+                    tipo="radio"
+                    nome="quando-enviar"
+                    icone={ShieldCheck}
+                    titulo="No próximo horário seguro"
+                    descricao="A plataforma escolhe, respeitando a fila e o seu expediente."
+                    marcado={modoEnvio === "automatico"}
+                    aoMarcar={() => setModoEnvio("automatico")}
+                  />
+                  <Opcao
+                    tipo="radio"
+                    nome="quando-enviar"
+                    icone={CalendarClock}
+                    titulo="Agendar"
+                    descricao="Você escolhe dia e hora (horário de Brasília)."
+                    marcado={modoEnvio === "agendado"}
+                    aoMarcar={() => setModoEnvio("agendado")}
+                  />
                 </div>
 
                 {modoEnvio === "agendado" && (
@@ -1127,28 +1127,14 @@ export function NovaCampanha({
               </fieldset>
 
               {!selecaoManual && (
-                <label
-                  className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
-                    viva ? "border-acento bg-acento-lavado" : "border-linha hover:border-linha-forte hover:bg-vidro"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={viva}
-                    onChange={(e) => setViva(e.target.checked)}
-                    className="accent-acento mt-1 h-4 w-4 shrink-0"
-                  />
-                  <span>
-                    <span className="text-fluid-sm text-titulo flex items-center gap-1.5 font-medium">
-                      <Sprout aria-hidden className="h-4 w-4" />
-                      Manter a lista viva por 30 dias
-                    </span>
-                    <span className="text-fluid-xs text-apoio mt-0.5 block">
-                      Quem passar a se encaixar em “{publicoEscolhido.titulo}” entra sozinho e recebe a mesma mensagem.
-                      Ninguém recebe duas vezes nem dentro de 7 dias.
-                    </span>
-                  </span>
-                </label>
+                <Opcao
+                  tipo="checkbox"
+                  icone={Sprout}
+                  titulo="Manter a lista viva por 30 dias"
+                  descricao={`Quem passar a se encaixar em “${publicoEscolhido.titulo}” entra sozinho e recebe a mesma mensagem. Ninguém recebe duas vezes nem dentro de 7 dias.`}
+                  marcado={viva}
+                  aoMarcar={() => setViva((v) => !v)}
+                />
               )}
 
               <label className="block">
@@ -1219,30 +1205,42 @@ export function NovaCampanha({
         </aside>
       </div>
 
-      {/* Navegação entre os passos, sempre no mesmo lugar. */}
-      <div className="border-linha bg-vidro flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4 sm:px-6">
+      {/* Navegação entre os passos, sempre no mesmo lugar. No celular o
+          Continuar ocupa a linha: é o próximo toque de quem está aqui. */}
+      <div className="border-linha bg-vidro flex items-center gap-2 border-t px-4 py-3.5 sm:justify-between sm:px-6 sm:py-4">
         {passo > 1 ? (
           <button
             type="button"
             onClick={() => setPasso((p) => (p === 3 ? 2 : 1))}
-            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-11 cursor-pointer items-center gap-1.5 px-3 transition-colors botao-secundario"
+            aria-label="Voltar ao passo anterior"
+            className="text-fluid-sm text-apoio hover:text-titulo flex min-h-12 min-w-12 shrink-0 cursor-pointer items-center justify-center gap-1.5 px-3 transition-colors botao-secundario"
           >
-            <ArrowLeft aria-hidden className="h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden className="h-4 w-4" />
+            <span className="max-sm:sr-only">Voltar</span>
           </button>
         ) : (
-          <span />
+          <span className="max-sm:hidden" />
         )}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
           {passo > 1 && (
-            <button type="button" onClick={guardarRascunho} disabled={salvandoRascunho} className={`${BOTAO_SECUNDARIO} min-h-12`}>
+            <button
+              type="button"
+              onClick={guardarRascunho}
+              disabled={salvandoRascunho}
+              aria-label={rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
+              title={rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
+              className={`${BOTAO_SECUNDARIO} min-h-12 shrink-0 max-sm:w-12 max-sm:px-0`}
+            >
               <Save aria-hidden className="h-4 w-4" />
-              {salvandoRascunho ? "Salvando…" : rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
+              <span className="max-sm:sr-only">
+                {salvandoRascunho ? "Salvando…" : rascunhoId ? "Atualizar rascunho" : "Salvar rascunho"}
+              </span>
             </button>
           )}
 
           {passo < 3 ? (
-            <button type="button" onClick={avancar} className={BOTAO_PRIMARIO}>
+            <button type="button" onClick={avancar} className={`${BOTAO_PRIMARIO} max-sm:flex-1 max-sm:justify-center`}>
               Continuar <ArrowRight aria-hidden className="h-4 w-4" />
             </button>
           ) : (
@@ -1251,7 +1249,7 @@ export function NovaCampanha({
               onClick={disparar}
               disabled={criando || !numeroConectado}
               title={numeroConectado ? undefined : "Conecte seu WhatsApp para enviar"}
-              className={BOTAO_PRIMARIO}
+              className={`${BOTAO_PRIMARIO} max-sm:flex-1 max-sm:justify-center`}
             >
               <Send aria-hidden className="h-4 w-4" />
               {criando ? "Criando…" : modoEnvio === "agendado" ? "Agendar a lista" : "Começar a enviar"}
@@ -1290,7 +1288,8 @@ const NOMES_DOS_PASSOS = ["Quem recebe", "Mensagem", "Envio"] as const;
 /** Os três passos com nome. Os já feitos voltam com um toque; os da frente, só pelo Continuar (que confere). */
 function PassosDaLista({ passo, aoVoltarPara }: { passo: 1 | 2 | 3; aoVoltarPara: (p: 1 | 2 | 3) => void }) {
   return (
-    <ol className="border-linha flex items-center gap-1 border-b px-3 py-2.5 sm:px-4">
+    <div className="relative">
+    <ol className="flex items-center gap-1 px-3 py-2.5 sm:px-4">
       {NOMES_DOS_PASSOS.map((nome, i) => {
         const numero = (i + 1) as 1 | 2 | 3;
         const atual = numero === passo;
@@ -1330,14 +1329,10 @@ function PassosDaLista({ passo, aoVoltarPara }: { passo: 1 | 2 | 3; aoVoltarPara
         );
       })}
     </ol>
-  );
-}
-
-function LinhaDaConferencia({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3 px-3.5 py-2.5">
-      <dt className="text-apoio w-16 shrink-0">{rotulo}</dt>
-      <dd className="text-titulo min-w-0 break-words">{children}</dd>
+    {/* O quanto falta, num relance: a barra anda com o passo. */}
+    <div aria-hidden className="bg-linha h-1">
+      <div className="bg-acento h-full transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${(passo / 3) * 100}%` }} />
+    </div>
     </div>
   );
 }
@@ -1388,5 +1383,58 @@ function BalaoDaMensagem({
         )}
       </p>
     </div>
+  );
+}
+
+/**
+ * A opção escolhível do assistente (público, quando começar, lista viva):
+ * ícone em quadrado na cor do módulo, título, uma linha, e a marca à direita.
+ * O input é de verdade (radio/checkbox, só escondido da vista): teclado,
+ * leitor de tela e o `getByRole("radio")` do e2e continuam valendo.
+ */
+function Opcao({
+  tipo,
+  nome,
+  icone: IconeDaOpcao,
+  titulo,
+  descricao,
+  marcado,
+  aoMarcar,
+}: {
+  tipo: "radio" | "checkbox";
+  nome?: string;
+  icone: Icone;
+  titulo: string;
+  descricao: string;
+  marcado: boolean;
+  aoMarcar: () => void;
+}) {
+  return (
+    <label
+      className={`has-focus-visible:ring-acento/40 flex min-h-[4.5rem] cursor-pointer items-center gap-3 rounded-2xl border p-3 transition-colors has-focus-visible:ring-2 ${
+        marcado ? "border-acento bg-acento-lavado" : "border-linha bg-superficie hover:border-linha-forte"
+      }`}
+    >
+      <input type={tipo} name={nome} checked={marcado} onChange={aoMarcar} className="sr-only" />
+      <span
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+          marcado ? "bg-acento text-sobre-cor" : "bg-acento-lavado text-acento-suave"
+        }`}
+      >
+        <IconeDaOpcao aria-hidden className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-fluid-sm text-titulo block font-semibold">{titulo}</span>
+        <span className="text-fluid-xs text-apoio mt-0.5 block leading-snug">{descricao}</span>
+      </span>
+      <span
+        aria-hidden
+        className={`flex h-6 w-6 shrink-0 items-center justify-center border-2 transition-colors ${tipo === "radio" ? "rounded-full" : "rounded-md"} ${
+          marcado ? "border-acento bg-acento text-sobre-cor" : "border-linha-forte"
+        }`}
+      >
+        {marcado && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+      </span>
+    </label>
   );
 }

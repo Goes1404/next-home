@@ -26,6 +26,10 @@ import path from "node:path";
  */
 
 const ROLAGEM_DECLARADA = [
+  // Listas sugeridas (01/11/2026): no celular os cartões correm de lado com
+  // 82% de largura, então o pedaço do próximo fica à vista e diz que há mais.
+  // É conteúdo (cartões com ação), não filtro; do sm para cima vira grade.
+  "(painel)/_componentes/ListasSugeridas.tsx",
   "(painel)/admin/leads/page.tsx",
   "(painel)/admin/precos/PrecosManager.tsx",
   "(painel)/admin/anuncios/ContaDaMeta.tsx",

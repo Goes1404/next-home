@@ -22,7 +22,7 @@ codigo:
   - supabase/migrations/0153_lista_de_transmissao_pausar_cancelar.sql
 fonte: roadmap das listas de transmissão em 3 fases (03/10/2026)
 created: 2026-10-03
-updated: 2026-10-31
+updated: 2026-11-01
 summary: Cada lista abre uma gaveta com quem recebeu e o motivo de quem não recebeu, pausa/retoma/cancela sozinha, aparece na ficha do lead, vira contexto para a IA quando o cliente responde, não atropela conversa do corretor nas últimas 24h, recorta por canal/anúncio de origem mostra visitas e vendas de quem recebeu, e o envio ativa a IA na conversa.
 ---
 
@@ -178,4 +178,26 @@ em "Nova lista" e acha o público por `radio`.
 `FORA_DO_SITE` para `/s/<host>/…` — uma página nova em `src/app/previa/`
 dá 404. A prévia com dados falsos tem de morar debaixo de `/auth/` (ou
 outra raiz da lista) e ser apagada antes do commit.
+
+### Celular com pistas visuais (01/11/2026)
+
+"Poucos gatilhos visuais no celular": a primeira versão era texto sobre
+texto. Agora, com o vocabulário que o painel já tinha (quadrado de ícone na
+cor do módulo, número grande, tons `ok`/`alerta`), sem cor nova:
+
+- **Opções escolhíveis** (público, quando começar, lista viva) são o
+  componente `Opcao`: ícone por opção, marca de escolha à direita, input
+  real escondido (`sr-only`; o e2e acha por `radio`).
+- **Placar** no topo de cada passo: "84 pessoas recebem" grande, com o
+  público e o imóvel embaixo; o passo 3 mostra o balão, não a tabela.
+- **Barra de progresso** sob os passos; no celular, rascunho e voltar viram
+  ícone e o Continuar ocupa a linha.
+- **Status da fila:** quadrado com o número na fila (ou alerta, ou caixa
+  vazia) no lugar do pontinho.
+- **Cartão da lista:** ícone da situação, "N responderam" grande no tom de
+  sucesso, os outros números com ícone, atalhos como botões.
+- **Listas sugeridas** (também no Início): ícone por tipo, número grande,
+  botão cheio e, no celular, carrossel com o próximo cartão à vista —
+  declarado em `naoRolaDeLado.test.ts`. Filtro de listas continua com
+  `flex-wrap` (a guarda proíbe filtro rolando de lado).
 

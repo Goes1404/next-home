@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { INTERVALO_EM_PALAVRAS } from "@/lib/whatsapp/antiBan";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
 import Link from "next/link";
-import { MoreHorizontal, Trash2, WifiOff } from "lucide-react";
+import { CircleAlert, Inbox, MoreHorizontal, Trash2, WifiOff } from "lucide-react";
 import {
   limparFilaDisparo,
   statusDisparo,
@@ -119,13 +119,25 @@ export function StatusFila({
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3.5">
+          {/* O número da fila é o que se lê de longe; parada, o alerta. */}
           <span
-            aria-hidden
-            className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${
-              parada ? "bg-alerta" : status.pendentes > 0 ? "bg-ok motion-safe:animate-pulse" : "bg-linha-forte"
+            className={`relative flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl ${
+              parada ? "bg-alerta text-sobre-cor" : status.pendentes > 0 ? "bg-acento text-sobre-cor" : "bg-vidro text-apoio"
             }`}
-          />
+          >
+            {parada ? (
+              <CircleAlert aria-hidden className="h-6 w-6" />
+            ) : status.pendentes > 0 ? (
+              <>
+                <span className="text-lg leading-none font-semibold tabular-nums">{status.pendentes}</span>
+                <span className="mt-0.5 text-[10px] leading-none font-medium">na fila</span>
+                <span aria-hidden className="bg-ok ring-superficie absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 motion-safe:animate-pulse" />
+              </>
+            ) : (
+              <Inbox aria-hidden className="h-6 w-6" />
+            )}
+          </span>
           <div className="min-w-0">
             <p className="text-fluid-sm text-corpo">
               <span className="text-titulo font-semibold">{titulo}.</span> {frasePrincipal(status)}

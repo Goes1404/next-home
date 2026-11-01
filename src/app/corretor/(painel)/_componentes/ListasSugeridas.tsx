@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { Building2, Megaphone, Snowflake, UserPlus, type LucideIcon } from "lucide-react";
 import { DIAS_DE_PARADO, type DiasDeParado, type ItemSugerido, type ListasSugeridas } from "@/lib/crm/listasSugeridas";
 
 /** Quantos ids viajam na URL do assistente. Lista maior que isso vira várias. */
@@ -31,23 +31,30 @@ function Cartao({
   descricao,
   itens,
   href,
+  icone: Icone,
 }: {
   titulo: string;
   descricao: string;
   itens: ItemSugerido[];
   href: string;
+  icone: LucideIcon;
 }) {
   return (
-    <li className="cartao flex flex-col gap-2 p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-titulo text-sm font-semibold">{titulo}</h3>
-        <span className="text-titulo text-lg font-semibold tabular-nums">{itens.length}</span>
+    // No celular os cartões correm de lado (um e um pedaço à vista, que diz
+    // "tem mais"); do sm para cima, a grade de sempre.
+    <li className="cartao flex w-[82%] shrink-0 snap-start flex-col gap-2.5 p-4 sm:w-auto">
+      <div className="flex items-center gap-3">
+        <span className="bg-acento-lavado text-acento-suave flex h-11 w-11 shrink-0 items-center justify-center rounded-xl">
+          <Icone aria-hidden className="h-5 w-5" />
+        </span>
+        <h3 className="text-titulo min-w-0 flex-1 text-sm font-semibold">{titulo}</h3>
+        <span className="text-titulo text-2xl leading-none font-semibold tabular-nums">{itens.length}</span>
       </div>
       <p className="text-apoio text-fluid-xs leading-snug">{descricao}</p>
       <p className="text-corpo text-fluid-xs break-words">{nomes(itens)}</p>
       <Link
         href={href}
-        className="border-acento-linha bg-acento-lavado text-acento-suave mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-opacity hover:opacity-85"
+        className="bg-acento hover:bg-acento-hover text-sobre-cor mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors"
       >
         <Megaphone aria-hidden className="h-4 w-4" /> Montar a lista
       </Link>
@@ -102,9 +109,10 @@ export function ListasSugeridasBloco({
           conversa há {diasParado} dias.
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
           {listas.novos.length > 0 && (
             <Cartao
+              icone={UserPlus}
               titulo="Novos sem primeiro contato"
               descricao="Chegaram por portal, anúncio, importação ou site e ainda não receberam nenhuma mensagem."
               itens={listas.novos}
@@ -113,6 +121,7 @@ export function ListasSugeridasBloco({
           )}
           {listas.parados.length > 0 && (
             <Cartao
+              icone={Snowflake}
               titulo={`Parados há ${diasParado} dias`}
               descricao="Sem mensagem de nenhum dos lados nesse tempo. Os mais perto de comprar vêm primeiro."
               itens={listas.parados}
@@ -122,6 +131,7 @@ export function ListasSugeridasBloco({
           {listas.porImovel.slice(0, 3).map((g) => (
             <Cartao
               key={g.imovel.slug}
+              icone={Building2}
               titulo={`Parados · ${g.imovel.nome}`}
               descricao={`Tinham interesse no ${g.imovel.nome}. A IA sugere a mensagem citando o imóvel.`}
               itens={g.leads}
