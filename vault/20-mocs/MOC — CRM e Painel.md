@@ -166,3 +166,6 @@ F0–F6.
 - [[relatorios-pelo-numero-central]] ⚠️ relatórios do central (onda 2, frente G): mesma conta das telas, leituras com recorte (`lerVendas`, `lerMeta`, `calcularRitmoDoCorretor`, `resultadosDoMes`); `taxas_da_equipe` e `ranking_vgv` recusam quem não tem sessão (30/10)
 - [[saude-do-numero-pelo-central]] — "meu WhatsApp está conectado?" e "quantos primeiros contatos ainda posso?" pelo central: régua da faixa (`avaliarSaudeDaConexao`), cota de `calcularLimiteDoDia` e vagas do disparador; níveis 10→15→20 ainda não existem (onda 3, frente O, 30/10)
 - [[revisao-geral-de-30-10]] — revisão de 29–30/10: SW no Início, 4,5 MB da Vercel, max_rows 1000, áudio na rajada, Asaas no cancelamento, 0251 (30/10)
+
+## Prospecção da Astro
+- [[prospeccao-da-astro-fase-1]] — lojas prospectadas (tabelas globais, 0253), amostra de site montada do banco em /astro/amostra/<slug>, rastreio de abertura sem IP e funil em /plataforma/prospeccao; o número central não prospecta (02/11)

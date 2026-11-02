@@ -12848,3 +12848,25 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
 - Planetas (03/11): textura procedural 1024×512 (512 serrilha) + `materialDePlaneta` (luz própria, borda escura, névoa só no lado aceso). Halo aditivo de fresnel vira contorno duro em planeta; a luz da cena os deixa chapados. Lua tingida = planeta rochoso (`public/espaco/moon-1k.webp`).
 - 30/10–03/11/2026: 0252 aplicada em produção (03/11); whatsapp_esperando_resposta caiu de ~126 ms para ~79 ms (index only scan).
+
+## Prospecção da Astro, fase 1 (02/11/2026, 0253)
+
+- Aba `/plataforma/prospeccao` (só administrador da plataforma): funil das
+  lojas que a Astro aborda, quem abriu a amostra em destaque ("quente" =
+  abordada e abriu nos últimos 3 dias), ficha com mensagem editável e envio
+  manual por wa.me. Nota: `vault/10-notas/prospeccao-da-astro-fase-1.md`.
+- Tabelas GLOBAIS `prospeccao_leads` e `prospeccao_visitas` (em
+  `TABELAS_GLOBAIS`); funções `registrar_visita_da_amostra` e
+  `atualizar_tempo_da_visita` SEM security definer, execute só para
+  `service_role`.
+- Amostra pública `/astro/amostra/<slug>`: rota que devolve HTML inteiro
+  (`renderizarAmostra` + `molde.ts`, gerado de `molde.html` por
+  `scripts/prospeccao/gerarMolde.mjs`). `?previa=1` não rastreia.
+- **O número central 11 96867-1127 não prospecta**: banimento derrubaria o
+  CRM pelo WhatsApp de todas as imobiliárias. A fase 3 usa outro número, do
+  vendedor, com aquecimento.
+- Variáveis: `PROSPECCAO_WHATSAPP` (botão "Conversar com o Eduardo" da
+  amostra; sem ela o botão some, o número não fica no código porque o repo é
+  público), `PROSPECCAO_VENDEDOR`, `PROSPECCAO_URL_BASE`.
+- A lista das lojas abordadas NÃO fica no repositório (público): o JSON é
+  passado ao `scripts/prospeccao/sqlDasLojas.ts` de fora.
