@@ -12830,3 +12830,25 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Bug antigo: o filtro "com foto" do Marketing sempre passa porque o mapper preenche `capa` com `CAPA_PADRAO`.
 - 0252 (índices: whatsapp_mensagens (conversa_id, created_at desc), ia_interacoes parcial, cliques_whatsapp) — EXPLAIN da view whatsapp_esperando_resposta: 126 ms com incremental sort sobre 6,6 mil linhas.
 - Aberto: conferir se o Supabase assina JWT com chave assimétrica; se for HS256, `getClaims()` cai em `getUser()` (ida à rede) em todo pedido.
+
+## Prospecção da Astro, fase 1 (02/11/2026, 0253)
+
+- Aba `/plataforma/prospeccao` (só administrador da plataforma): funil das
+  lojas que a Astro aborda, quem abriu a amostra em destaque ("quente" =
+  abordada e abriu nos últimos 3 dias), ficha com mensagem editável e envio
+  manual por wa.me. Nota: `vault/10-notas/prospeccao-da-astro-fase-1.md`.
+- Tabelas GLOBAIS `prospeccao_leads` e `prospeccao_visitas` (em
+  `TABELAS_GLOBAIS`); funções `registrar_visita_da_amostra` e
+  `atualizar_tempo_da_visita` SEM security definer, execute só para
+  `service_role`.
+- Amostra pública `/astro/amostra/<slug>`: rota que devolve HTML inteiro
+  (`renderizarAmostra` + `molde.ts`, gerado de `molde.html` por
+  `scripts/prospeccao/gerarMolde.mjs`). `?previa=1` não rastreia.
+- **O número central 11 96867-1127 não prospecta**: banimento derrubaria o
+  CRM pelo WhatsApp de todas as imobiliárias. A fase 3 usa outro número, do
+  vendedor, com aquecimento.
+- Variáveis: `PROSPECCAO_WHATSAPP` (botão "Conversar com o Eduardo" da
+  amostra; sem ela o botão some, o número não fica no código porque o repo é
+  público), `PROSPECCAO_VENDEDOR`, `PROSPECCAO_URL_BASE`.
+- A lista das lojas abordadas NÃO fica no repositório (público): o JSON é
+  passado ao `scripts/prospeccao/sqlDasLojas.ts` de fora.
