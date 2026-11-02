@@ -71,6 +71,12 @@ export const TABELAS_GLOBAIS = [
   // Quem escreveu ao central e não foi atendido (0249): desconhecido não tem
   // grupo. Sem texto; telefone em hash.
   "central_tentativas",
+  // Prospecção da Astro (0253, 02/11/2026): a loja prospectada ainda não é
+  // cliente, não tem grupo. Só a chave de serviço lê e escreve, pela guarda
+  // do administrador da plataforma ou pelo slug da amostra pública.
+  "prospeccao_leads",
+  // Cada abertura da amostra (0253): pertence à loja prospectada.
+  "prospeccao_visitas",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

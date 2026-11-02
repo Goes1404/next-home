@@ -19,6 +19,7 @@ export const ITENS_DA_PLATAFORMA: { href: string; rotulo: string; exato?: boolea
   { href: "/plataforma", rotulo: "Contas", exato: true },
   { href: "/plataforma/pedidos", rotulo: "Pedidos de contratação" },
   { href: "/plataforma/suporte", rotulo: "Suporte e contato" },
+  { href: "/plataforma/prospeccao", rotulo: "Prospecção" },
   { href: "/plataforma/indicacoes", rotulo: "Indicações" },
   { href: "/plataforma/avisos", rotulo: "Avisos aos clientes" },
   { href: "/plataforma/central", rotulo: "Número central" },
