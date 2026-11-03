@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ROTULO_DO_MODELO, ehModelo } from "@/lib/prospeccao/tipos";
 import { proximaAcao } from "@/lib/prospeccao/funil";
@@ -26,7 +27,8 @@ function duracao(segundos: number): string {
  * globais `prospeccao_*`.
  */
 export default async function FichaDaLojaPage({ params }: { params: Promise<{ id: string }> }) {
-  await exigirAdminDaPlataformaNaPagina();
+  const prova = await exigirAdminDaPlataformaNaPagina();
+  await exigirEquipeDaProspeccaoNaPagina(prova);
   const { id } = await params;
   if (!ID.test(id)) notFound();
 

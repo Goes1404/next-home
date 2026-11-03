@@ -10,6 +10,7 @@ import { MarcaAstro } from "@/components/marca/SeloAstro";
 import { FONTES_DA_ASTRO } from "@/lib/fontesDaAstro";
 import { ICONES_ASTROIMOB, MANIFESTO_DA_PLATAFORMA } from "@/lib/marcaDoCrm/icones";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { ehDaEquipeDaProspeccao } from "@/lib/prospeccao/equipe";
 import { DESTINO_SENHA_VENCIDA, senhaDaSessaoVencida } from "@/lib/auth/validadeDaSenhaNoServidor";
 import { redirect } from "next/navigation";
 import { NavFaixaDaPlataforma, NavLateralDaPlataforma } from "./NavDaPlataforma";
@@ -39,9 +40,11 @@ export const viewport: Viewport = { themeColor: COR_DA_BARRA_DO_PAINEL.claro };
  * a navegação dele.
  */
 export default async function PlataformaLayout({ children }: { children: React.ReactNode }) {
-  await exigirAdminDaPlataformaNaPagina();
+  const prova = await exigirAdminDaPlataformaNaPagina();
   // A troca a cada 90 dias vale também para quem administra a plataforma.
   if (await senhaDaSessaoVencida()) redirect(DESTINO_SENHA_VENCIDA);
+  // A aba Prospecção só aparece para a equipe de vendas da Astro (0254).
+  const comProspeccao = await ehDaEquipeDaProspeccao(prova);
 
   return (
     <main data-rota="painel" className={`${FONTES_DA_ASTRO} bg-fundo relative isolate flex min-h-svh flex-1 flex-col`}>
@@ -75,10 +78,10 @@ export default async function PlataformaLayout({ children }: { children: React.R
           lado, usando a largura da tela; celular: faixa de atalhos no topo. */}
       <div className="mx-auto grid w-full max-w-[96rem] flex-1 gap-8 px-4 pt-6 pb-16 md:px-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <NavLateralDaPlataforma />
+          <NavLateralDaPlataforma comProspeccao={comProspeccao} />
         </aside>
         <div className="min-w-0">
-          <NavFaixaDaPlataforma />
+          <NavFaixaDaPlataforma comProspeccao={comProspeccao} />
           <p className="text-fluid-sm text-apoio border-linha mb-6 rounded-xl border px-4 py-3">
             Esta área mostra cadastro e números, nunca conversas nem fichas.
           </p>

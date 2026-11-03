@@ -77,6 +77,9 @@ export const TABELAS_GLOBAIS = [
   "prospeccao_leads",
   // Cada abertura da amostra (0253): pertence à loja prospectada.
   "prospeccao_visitas",
+  // Quem usa a prospecção (0254, 03/11/2026): gente da Astro, acima dos
+  // grupos. Só a chave de serviço lê.
+  "prospeccao_equipe",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];

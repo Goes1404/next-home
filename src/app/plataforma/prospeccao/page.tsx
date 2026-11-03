@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
+import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ETAPAS, ROTULO_DA_ETAPA, ehEtapa } from "@/lib/prospeccao/tipos";
 import { ordenarParaOFunil, proximaAcao, temperatura, type Temperatura } from "@/lib/prospeccao/funil";
@@ -25,7 +26,8 @@ const COR_DA_TEMPERATURA: Record<Temperatura, string> = {
  * globais `prospeccao_*`.
  */
 export default async function ProspeccaoPage({ searchParams }: { searchParams: Promise<{ etapa?: string }> }) {
-  await exigirAdminDaPlataformaNaPagina();
+  const prova = await exigirAdminDaPlataformaNaPagina();
+  await exigirEquipeDaProspeccaoNaPagina(prova);
   const { etapa: filtro } = await searchParams;
   const etapa = ehEtapa(filtro) ? filtro : null;
 

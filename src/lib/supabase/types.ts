@@ -257,6 +257,12 @@ export type Database = {
         }
         Relationships: []
       }
+      prospeccao_equipe: {
+        Row: { user_id: string; nome: string; criado_em: string }
+        Insert: { user_id: string; nome: string; criado_em?: string }
+        Update: { user_id?: string; nome?: string; criado_em?: string }
+        Relationships: []
+      }
       prospeccao_visitas: {
         Row: {
           id: string
