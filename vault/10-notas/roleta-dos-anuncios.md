@@ -13,7 +13,7 @@ codigo:
   - supabase/migrations/0229_textos_da_roleta_e_do_grupo.sql
   - src/lib/whatsapp/avisoNoGrupoTexto.ts
 summary: Lead que nasce pela etiqueta de anúncio da Meta no número de um corretor vai para o próximo da lista dele; o número novo manda a primeira mensagem na hora e o do dono avisa quem vai atender.
-updated: 2026-10-28
+updated: 2026-11-03
 ---
 
 # Roleta dos anúncios
@@ -24,9 +24,12 @@ Pedido do dono (20/10/2026). Desenho:
 - **Gatilho:** etiqueta de anúncio da Meta E lead que nasceu nesta mensagem
   (`obterOuCriarConversa` devolve `leadCriadoAgora`). Cliente antigo que
   clica no anúncio fica com quem já atendia.
-- **Configuração:** Anúncios pagos → "Roleta dos meus anúncios". O corretor
-  configura a do próprio número; o ADM, a de qualquer um do grupo. Lista
-  ordenada, o dono pode estar nela, dois textos editáveis com
+- **Configuração (desde 03/11/2026, só o gestor):** Anúncios pagos → aba
+  Roleta, que o corretor não vê mais (nem o botão "Dividir os leads do
+  anúncio" do Início). Só o gestor grava, e só no número de um gestor; a
+  roleta do webhook (`lerModoDaRoleta`) também não age em número de corretor,
+  nem na linha antiga que o gestor ligou antes da regra. Ver "Só do gestor"
+  abaixo. Lista ordenada, o dono pode estar nela, dois textos editáveis com
   `{corretor}`, `{cliente}`, `{imovel}`, `{imobiliaria}`.
 - **Escolha atômica:** `proximo_da_roleta` (FOR UPDATE) avança a vez e pula
   inativo, outro grupo e número fora do ar. A vez do próprio dono = o lead
@@ -71,6 +74,30 @@ Pedido do dono (20/10/2026). Desenho:
   texto de sempre. Vale para TODO lead distribuído ao grupo, não só roleta.
 - O logado não lê essas colunas (0196 recorta `grupos`; roleta sem grant):
   tudo pela chave de serviço.
+
+
+## Só do gestor (03/11/2026)
+
+Pedido do dono depois do lead final **5344** (Denise, Aretz, 30/10): ela
+chegou pelo anúncio do próprio André e o aviso de "lead distribuído" saiu
+para o grupo ANDRÉ & ARETZ. A causa não foi a roleta (nenhum corretor tinha
+roleta; as 3 que existiam eram de gestor e estavam desligadas): o lead nasce
+"orgânico" e a etiqueta da Meta só o marca `trazido_por = corretor` segundos
+depois; o aviso saiu em 3 s, antes da marca. A espera de 90 s de 31/10
+(`ESPERA_DO_AVISO_MS`, [[retorno-da-ligacao-pelo-grupo]]) resolveu: de 31/10 a
+03/11, todos os avisos de lead de anúncio de corretor foram cancelados.
+
+O dono decidiu, além disso, que **a roleta é da imobiliária**. Três travas:
+
+1. A aba Roleta (`ABAS_DO_GESTOR`) e o botão do Início (`comRoleta`) somem
+   para o corretor; `RoletaDosAnuncios` devolve nada para quem não é gestor.
+2. `salvarRoleta` e `alternarRoleta` recusam o corretor; `salvarRoleta` só
+   grava no número de um gestor.
+3. `lerModoDaRoleta` devolve `desligada` quando o dono do número não é
+   gestor (ou o papel não se lê): a linha antiga de corretor fica no banco,
+   mas não age.
+
+Testes: `roletaSoDoGestor.test.tsx` e `roletaAcoes.test.ts`.
 
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].
 - Tela (28/10, "ficou feio"): os dois textos usam `EditorDeMensagem`

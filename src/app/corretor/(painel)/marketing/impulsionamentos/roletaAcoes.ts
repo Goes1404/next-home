@@ -7,13 +7,18 @@ import { TEXTO_BOAS_VINDAS_PADRAO, TEXTO_PASSAGEM_GRUPO_PADRAO } from "@/lib/wha
 
 export type ModoAviso = "mensagem" | "grupo";
 
+const ERRO_SO_GESTOR = "A roleta é configurada só pelo gestor da imobiliária.";
+const ERRO_NUMERO_DE_CORRETOR = "A roleta vale só no número de um gestor: o lead do anúncio do corretor fica com ele.";
+
 /**
  * Salva a roleta dos anúncios de um corretor (0204).
  *
  * A tabela não dá grant a ninguém: quem grava é o servidor, depois de
- * conferir a sessão. O corretor só mexe na roleta do PRÓPRIO número; o ADM
- * mexe na de qualquer corretor do grupo dele. A lista só aceita corretores
- * ativos do mesmo grupo — o banco confere de novo a cada lead.
+ * conferir a sessão. **Só o gestor** grava, e só no número de um gestor do
+ * grupo (03/11/2026, pedido do dono): a roleta é da imobiliária. O lead do
+ * anúncio do próprio corretor é dele — nem roleta nem aviso no grupo (o caso
+ * da Denise na Aretz, 30/10). A lista só aceita corretores ativos do mesmo
+ * grupo — o banco confere de novo a cada lead.
  *
  * `modoAviso` (0218) diz como o escolhido fica sabendo: "mensagem" (o número
  * dele manda a abertura) ou "grupo" (o número central avisa no grupo dele).
@@ -33,9 +38,7 @@ export async function salvarRoleta(entrada: {
 }): Promise<{ erro?: string }> {
   const quem = await getCorretorLogado();
   if (!quem) return { erro: "Sessão expirada. Entre novamente." };
-  if (entrada.corretorId !== quem.id && quem.papel !== "gestor") {
-    return { erro: "Você só configura a roleta do seu número." };
-  }
+  if (quem.papel !== "gestor") return { erro: ERRO_SO_GESTOR };
 
   if (entrada.modoAviso !== "mensagem" && entrada.modoAviso !== "grupo") return { erro: "Modo de aviso inválido." };
 
@@ -73,13 +76,17 @@ export async function salvarRoleta(entrada: {
   const ids = [...new Set([entrada.corretorId, ...destinos])];
   const { data: validos, error: erroLeitura } = await supabase
     .from("corretores")
-    .select("id")
+    .select("id, papel")
     .eq("grupo_id", quem.grupoId)
     .eq("ativo", true)
     .in("id", ids);
   if (erroLeitura) return { erro: "Não foi possível salvar agora. Tente de novo." };
   const conhecidos = new Set((validos ?? []).map((c) => c.id));
   if (!conhecidos.has(entrada.corretorId)) return { erro: "Corretor não encontrado." };
+  // A roleta liga só no número de gestor: no do corretor, o lead do anúncio é dele.
+  if ((validos ?? []).find((c) => c.id === entrada.corretorId)?.papel !== "gestor") {
+    return { erro: ERRO_NUMERO_DE_CORRETOR };
+  }
   if (destinos.some((d) => !conhecidos.has(d))) return { erro: "Algum corretor da lista não está mais ativo. Recarregue a página." };
 
   const { error } = await supabase.from("roleta_anuncios").upsert(

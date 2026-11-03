@@ -33,15 +33,28 @@ type ModoLigado = Exclude<ModoDaRoleta, "desligada">;
  * Como a roleta deste corretor está agora. `desligada` quando não há linha,
  * quando `ligada = false` e quando a leitura falha: na dúvida a roleta não age
  * e o webhook segue o caminho de sempre. Nunca lança.
+ *
+ * Só no número de GESTOR (03/11/2026, pedido do dono): a roleta é da
+ * imobiliária. No número do corretor, o lead do anúncio que ele pagou fica
+ * com ele — sem roleta e sem aviso no grupo (o caso da Denise na Aretz,
+ * 30/10). Vale também para a linha antiga de corretor que o gestor ligou
+ * antes desta regra: ela fica no banco, mas não age.
  */
 export async function lerModoDaRoleta(corretorId: string): Promise<ModoDaRoleta> {
   try {
-    const { data, error } = await createServiceClient()
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
       .from("roleta_anuncios")
       .select("ligada, modo_aviso")
       .eq("corretor_id", corretorId)
       .maybeSingle();
     if (error || !data?.ligada) return "desligada";
+    const { data: dono, error: erroDono } = await supabase
+      .from("corretores")
+      .select("papel")
+      .eq("id", corretorId)
+      .maybeSingle();
+    if (erroDono || dono?.papel !== "gestor") return "desligada";
     return data.modo_aviso === "grupo" ? "grupo" : "mensagem";
   } catch {
     return "desligada";

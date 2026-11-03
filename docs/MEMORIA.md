@@ -12874,3 +12874,9 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
   linha em `prospeccao_equipe` (Eduardo e Matheus; a conta `adm@` não). Aba
   escondida no menu (`comProspeccao` do layout), páginas dão 404 e ações
   recusam. Falha ao ler a lista = fora da equipe.
+
+## Roleta só do gestor; o lead final 5344 (03/11/2026)
+- Relato: "os leads da campanha de um corretor foram para o grupo — o final 5344". Era a Denise (Aretz, 30/10, 18h00): lead de anúncio do PRÓPRIO André (`meta/ctwa`), aviso de "lead distribuído" no grupo ANDRÉ & ARETZ pelo número central, 3 s depois de nascer. Causa: o lead nasce orgânico e a etiqueta da Meta só o marca `trazido_por = corretor` segundos depois; o gatilho da 0215 olha o INSERT. **Já estava corrigido desde 31/10** (`bf855e42`, espera de 90 s + `destinoDoAviso` confere de novo): de 31/10 a 03/11 todos os avisos de lead de anúncio de corretor foram cancelados (conferido em `lead_envios_grupo`).
+- A roleta não teve papel: nenhuma roleta de corretor; as 3 existentes eram de gestor e estavam desligadas.
+- Pedido do dono: **roleta só para o ADM**. A aba Roleta e o botão "Dividir os leads do anúncio" do Início somem para o corretor; `salvarRoleta`/`alternarRoleta` recusam corretor; `salvarRoleta` só grava no número de gestor; `lerModoDaRoleta` não age em número de corretor. Nota: [[roleta-dos-anuncios]].
+- Publicado em produção em 04/11/2026 (`main` e `claude/modernizar-plataforma-imobiliaria-2tm13q`), sem o canal oficial, que segue só na branch `ccr-7424dca4-4nynlp`.

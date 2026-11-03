@@ -6,6 +6,9 @@ import { TEXTO_BOAS_VINDAS_PADRAO } from "@/lib/whatsapp/roletaTextos";
  * lead (0218): mensagem do número dele ou aviso no grupo, pelo número
  * central. O modo "grupo" só vale se o grupo ligou o envio de leads para os
  * grupos; o parâmetro vem do navegador, então a action confere no banco.
+ *
+ * Desde 03/11/2026 a roleta é só do gestor, e só no número de um gestor: no
+ * número do corretor o lead do anúncio fica com ele (Denise, Aretz, 30/10).
  */
 
 const GRUPO = "00000000-0000-0000-0000-00000000000a";
@@ -73,9 +76,9 @@ function semear(envioAtivo: boolean, roletaSalva?: Linha) {
       { id: OUTRO_GRUPO, envio_grupo_leads_ativo: !envioAtivo },
     ],
     corretores: [
-      { id: "ana", grupo_id: GRUPO, ativo: true },
-      { id: "beto", grupo_id: GRUPO, ativo: true },
-      { id: "caio", grupo_id: OUTRO_GRUPO, ativo: true },
+      { id: "ana", grupo_id: GRUPO, ativo: true, papel: "gestor" },
+      { id: "beto", grupo_id: GRUPO, ativo: true, papel: "corretor" },
+      { id: "caio", grupo_id: OUTRO_GRUPO, ativo: true, papel: "gestor" },
     ],
     roleta_anuncios: roletaSalva ? [roletaSalva] : [],
   };
@@ -85,7 +88,7 @@ describe("salvarRoleta: modo do aviso", () => {
   beforeEach(() => {
     gravacoes = [];
     tabelaComErro = null;
-    sessao = { id: "ana", papel: "corretor", grupoId: GRUPO };
+    sessao = { id: "ana", papel: "gestor", grupoId: GRUPO };
     semear(true);
   });
 
@@ -113,7 +116,7 @@ describe("salvarRoleta: modo do aviso", () => {
   it("a conferência olha o grupo da sessão: com o envio ligado só no grupo da sessão, 'grupo' passa", async () => {
     // semear(false): GRUPO desligado e OUTRO_GRUPO ligado. Sessão no OUTRO_GRUPO.
     semear(false);
-    sessao = { id: "caio", papel: "corretor", grupoId: OUTRO_GRUPO };
+    sessao = { id: "caio", papel: "gestor", grupoId: OUTRO_GRUPO };
     const r = await salvarRoleta({ ...base, corretorId: "caio", destinos: ["caio"], modoAviso: "grupo" });
     expect(r.erro).toBeUndefined();
     expect(gravacoes[0].valores).toMatchObject({ grupo_id: OUTRO_GRUPO, modo_aviso: "grupo" });
@@ -158,29 +161,38 @@ describe("salvarRoleta: modo do aviso", () => {
   });
 });
 
-describe("salvarRoleta: permissão (não mudou)", () => {
+describe("salvarRoleta: só o gestor, e só no número de gestor (03/11/2026)", () => {
   beforeEach(() => {
     gravacoes = [];
     tabelaComErro = null;
     semear(true);
   });
 
-  it("corretor comum só mexe no próprio número", async () => {
+  it("corretor comum não grava roleta nenhuma, nem a do próprio número", async () => {
     sessao = { id: "beto", papel: "corretor", grupoId: GRUPO };
-    const r = await salvarRoleta({ ...base, corretorId: "ana", modoAviso: "grupo" });
-    expect(r.erro).toBe("Você só configura a roleta do seu número.");
+    const proprio = await salvarRoleta({ ...base, corretorId: "beto", destinos: ["ana"], modoAviso: "mensagem" });
+    expect(proprio.erro).toBe("A roleta é configurada só pelo gestor da imobiliária.");
+    const alheio = await salvarRoleta({ ...base, corretorId: "ana", modoAviso: "grupo" });
+    expect(alheio.erro).toBe("A roleta é configurada só pelo gestor da imobiliária.");
     expect(gravacoes).toHaveLength(0);
   });
 
-  it("gestor configura o número de qualquer corretor do grupo", async () => {
-    sessao = { id: "beto", papel: "gestor", grupoId: GRUPO };
+  it("gestor grava a roleta do próprio número", async () => {
+    sessao = { id: "ana", papel: "gestor", grupoId: GRUPO };
     const r = await salvarRoleta({ ...base, corretorId: "ana", modoAviso: "grupo" });
     expect(r.erro).toBeUndefined();
-    expect(gravacoes[0].valores).toMatchObject({ corretor_id: "ana", atualizado_por: "beto" });
+    expect(gravacoes[0].valores).toMatchObject({ corretor_id: "ana", atualizado_por: "ana" });
   });
 
-  it("gestor não alcança corretor de outro grupo", async () => {
-    sessao = { id: "beto", papel: "gestor", grupoId: GRUPO };
+  it("gestor não liga roleta no número de um corretor: o lead do anúncio dele fica com ele", async () => {
+    sessao = { id: "ana", papel: "gestor", grupoId: GRUPO };
+    const r = await salvarRoleta({ ...base, corretorId: "beto", destinos: ["ana"], modoAviso: "grupo" });
+    expect(r.erro).toBe("A roleta vale só no número de um gestor: o lead do anúncio do corretor fica com ele.");
+    expect(gravacoes).toHaveLength(0);
+  });
+
+  it("gestor não alcança número de outro grupo", async () => {
+    sessao = { id: "ana", papel: "gestor", grupoId: GRUPO };
     const r = await salvarRoleta({ ...base, corretorId: "caio", destinos: [], ligada: false, modoAviso: "mensagem" });
     expect(r.erro).toBe("Corretor não encontrado.");
     expect(gravacoes).toHaveLength(0);

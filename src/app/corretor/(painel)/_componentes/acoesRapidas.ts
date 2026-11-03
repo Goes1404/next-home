@@ -44,11 +44,13 @@ export async function pausarIa(pausar: boolean): Promise<Resultado> {
 /**
  * "Dividir leads do anúncio" do Início: liga ou desliga a roleta do próprio
  * número (0204). Ligar sem ninguém na lista não divide nada: devolve erro
- * para a tela levar à configuração.
+ * para a tela levar à configuração. Só o gestor (03/11/2026): o botão some
+ * para o corretor, e esta é a segunda trava.
  */
 export async function alternarRoleta(ligar: boolean): Promise<Resultado> {
   const quem = await getCorretorLogado();
   if (!quem) return { erro: "Sessão expirada. Entre novamente." };
+  if (quem.papel !== "gestor") return { erro: "A roleta é configurada só pelo gestor da imobiliária." };
   const supabase = createServiceClient();
   const { data: roleta, error } = await supabase
     .from("roleta_anuncios")

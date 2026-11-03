@@ -33,7 +33,7 @@ export const ABAS: DefDaAba[] = [
     id: "roleta",
     rotulo: "Roleta",
     titulo: "Roleta e distribuição",
-    descricao: "Para quem vai cada lead novo, quem está na escala e onde o corretor recebe o aviso.",
+    descricao: "Para quem vai cada lead novo, quem está na escala e onde o corretor recebe o aviso. Só o gestor vê.",
     icone: Shuffle,
   },
   {
@@ -52,15 +52,22 @@ export const ABAS: DefDaAba[] = [
   },
 ];
 
+/**
+ * As abas que só o gestor vê. A Roleta entrou em 03/11/2026, a pedido do
+ * dono: a roleta é da imobiliária (o lead do anúncio do corretor é dele, nem
+ * roleta nem aviso no grupo — o caso da Denise na Aretz, 30/10).
+ */
+export const ABAS_DO_GESTOR: ReadonlySet<Aba> = new Set<Aba>(["roleta", "meta"]);
+
 /** A aba pedida no endereço, se existir para quem está vendo; senão o Resumo. */
 export function abaDoEndereco(pedida: string | undefined, gestor: boolean): Aba {
   const achada = ABAS.find((a) => a.id === pedida);
-  if (!achada || (achada.id === "meta" && !gestor)) return "resumo";
+  if (!achada || (ABAS_DO_GESTOR.has(achada.id) && !gestor)) return "resumo";
   return achada.id;
 }
 
 export function AbasDosAnuncios({ atual, gestor }: { atual: Aba; gestor: boolean }) {
-  const abas = ABAS.filter((a) => a.id !== "meta" || gestor);
+  const abas = ABAS.filter((a) => gestor || !ABAS_DO_GESTOR.has(a.id));
   return (
     // A faixa prende no topo só do tablet para cima: no celular ela tem duas
     // ou três linhas, e presa comeria a tela.
