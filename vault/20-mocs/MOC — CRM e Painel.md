@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-27
+updated: 2026-11-03
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -26,6 +26,7 @@ F0–F6.
 - [[login-por-usuario-senha-forte-e-validade]] — login por usuário, senha forte com checklist e troca a cada 90 dias (29/10)
 - [[notificacoes-no-celular-e-poderes-do-adm]] — 4 avisos novos no celular e poderes do ADM da plataforma (29/10)
 - [[contratar-plano-pela-pagina-da-astro]] — clicar no plano leva ao assistente de contratação; pedidos na Plataforma (29/10)
+- [[pagina-de-vendas-no-visual-do-site-da-empresa]] — /astro no visual do site institucional (Anton, céu azul-noite, janelas do produto); armadilhas de acento e contraste (03/11)
 - [[suporte-e-contato-da-astro]] — Fale com a Astro, Suporte da Astro no painel e /plataforma/suporte (29/10)
 - [[painel-de-numeros-visao-de-suporte-e-avisos-aos-clientes]] — KPIs da Astro, visão de suporte registrada, primeiros passos e avisos aos clientes (29/10)
 - [[multi-ramo-portais-gestor-e-negocio-da-astro]] — CRM por ramo (0244), portais/match/vitrine (0245), metas e distribuição por regra (0246), indicação/termo/ajuda/risco (0247), busca ⌘K e offline (29/10)

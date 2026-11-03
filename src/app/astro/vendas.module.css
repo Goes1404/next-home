@@ -1,0 +1,1070 @@
+/*
+ * Página de vendas da Astro (03/11/2026), na linguagem do site institucional
+ * da empresa (astrosolucoes.netlify.app): céu azul-noite, Anton em caixa
+ * alta, Inter Tight, pílulas cobalto e janelas que simulam o produto.
+ *
+ * Cores fixas da marca: a página não segue o tema claro/escuro. As cores são
+ * as do site institucional; o cobalto dos BOTÕES é um degrau mais escuro
+ * (#3a6ccc) para o texto branco passar de 4,5:1 (o #4d84e0 do site dá 3,7:1).
+ *
+ * Só esta página usa este arquivo. Contratar, contato, ajuda e páginas legais
+ * seguem com `astro.module.css`.
+ */
+.pagina {
+  --onyx: #0a0f1e;
+  --graphite: #131b2e;
+  --obsidian: #1b2740;
+  --cobalt: #4d84e0;
+  --cobalt-claro: #7fa6ec;
+  --cobalt-botao: #3a6ccc;
+  --cobalt-botao-hover: #3260b8;
+  --ivory: #f5f7fb;
+  --ash: #b9c2d4;
+  --slate: #8b97b3;
+  --borda: rgb(185 194 212 / 0.12);
+  --saida: cubic-bezier(0.22, 1, 0.36, 1);
+  --altura-do-cabecalho: calc(4.5rem + env(safe-area-inset-top, 0px));
+
+  /* O rodapé (`RodapeLegal`, de astro.module.css) lê estas três. */
+  --linha: var(--borda);
+  --tinta-suave: var(--slate);
+  --azul: var(--cobalt-claro);
+
+  font-family: var(--font-vitrine-texto), system-ui, sans-serif;
+  background: var(--onyx);
+  color: var(--ash);
+  color-scheme: dark;
+  overflow-x: clip;
+}
+
+.pagina :where(h1, h2, h3, h4) {
+  font-family: var(--font-vitrine-texto), system-ui, sans-serif;
+}
+
+.impacto {
+  font-family: var(--font-vitrine-impacto), var(--font-vitrine-texto), sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  color: var(--ivory);
+}
+
+.tituloSecao {
+  font-size: clamp(2.6rem, 6.4vw, 4.2rem);
+  /* Anton tem acento alto: abaixo de ~1.05 o "Ú" encosta na linha de cima. */
+  line-height: 1.06;
+  text-wrap: balance;
+  text-shadow: 0 0 40px rgb(77 132 224 / 0.25);
+}
+
+.paragrafo {
+  margin-top: 1.25rem;
+  font-size: 1.06rem;
+  line-height: 1.65;
+  color: var(--ash);
+  text-wrap: pretty;
+}
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  background: rgb(19 27 46 / 0.6);
+  font-family: var(--font-vitrine-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cobalt-claro);
+}
+
+.rotuloMono {
+  font-family: var(--font-vitrine-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.ancora {
+  scroll-margin-top: calc(var(--altura-do-cabecalho) + 0.5rem);
+}
+
+.secao {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 72rem;
+  padding: 5.5rem 1.5rem;
+}
+@media (min-width: 768px) {
+  .secao {
+    padding: 7.5rem 2.5rem;
+  }
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.cabecalho {
+  position: relative;
+  z-index: 30;
+  height: var(--altura-do-cabecalho);
+  margin-bottom: calc(-1 * var(--altura-do-cabecalho));
+  padding-top: env(safe-area-inset-top, 0px);
+  color: #fff;
+}
+.cabecalhoDentro {
+  margin: 0 auto;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  max-width: 72rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.25rem;
+}
+@media (min-width: 768px) {
+  .cabecalhoDentro {
+    padding: 0 2.5rem;
+  }
+}
+.marca {
+  white-space: nowrap;
+}
+/* Dois seletores: precisa ganhar do `display` do `.botao`, que vem depois. */
+.botao.soNoTablet {
+  display: none;
+}
+@media (min-width: 768px) {
+  .botao.soNoTablet {
+    display: inline-flex;
+  }
+}
+.navegacao {
+  display: none;
+  gap: 1.75rem;
+}
+@media (min-width: 900px) {
+  .navegacao {
+    display: flex;
+  }
+}
+.linkDoTopo {
+  position: relative;
+  padding: 0.4rem 0;
+  font-size: 0.94rem;
+  color: var(--ash);
+  transition: color 160ms;
+}
+.linkDoTopo:hover {
+  color: #fff;
+}
+.linkDoTopo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--cobalt);
+  scale: 0 1;
+  transform-origin: left;
+  transition: scale 260ms var(--saida);
+}
+.linkDoTopo:hover::after,
+.linkDoTopo:focus-visible::after {
+  scale: 1 1;
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  padding: 0 1.6rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition:
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms,
+    translate 220ms var(--saida),
+    scale 160ms var(--saida);
+}
+.botaoPequeno {
+  min-height: 2.5rem;
+  padding: 0 1.1rem;
+  font-size: 0.92rem;
+}
+.botao:focus-visible {
+  outline: 2px solid var(--cobalt-claro);
+  outline-offset: 3px;
+}
+.botaoPrincipal {
+  background: var(--cobalt-botao);
+  color: #fff;
+  box-shadow: 0 10px 40px -12px rgb(77 132 224 / 0.7);
+}
+.botaoPrincipal:hover {
+  background: var(--cobalt-botao-hover);
+}
+.botaoContorno {
+  border: 1px solid rgb(245 247 251 / 0.4);
+  color: var(--ivory);
+  background: rgb(10 15 30 / 0.35);
+}
+.botaoContorno:hover {
+  border-color: var(--ivory);
+}
+.seta {
+  display: inline-block;
+  font-size: 0.95em;
+  transition: translate 260ms var(--saida);
+}
+.botao:hover .seta {
+  translate: 2px -2px;
+}
+
+/* ---------- Topo: o céu ---------- */
+
+.topo {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  --tampa-do-planeta: 6.5rem;
+  padding-top: var(--altura-do-cabecalho);
+  background:
+    radial-gradient(60% 50% at 78% 12%, rgb(77 132 224 / 0.16), transparent 70%),
+    radial-gradient(80% 60% at 10% 0%, rgb(27 39 64 / 0.7), transparent 70%),
+    #060a16;
+  color: #fff;
+}
+
+/* Duas camadas de estrelas (pontos em `radial-gradient` repetido). A de
+   perto cintila; a de longe fica parada. */
+.estrelas,
+.estrelasPerto {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+.estrelas {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 140px 90px, rgb(255 255 255 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 80px 160px, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 190px 200px, rgb(255 255 255 / 0.5), transparent 60%),
+    radial-gradient(1px 1px at 230px 40px, rgb(255 255 255 / 0.3), transparent 60%);
+  background-size: 260px 240px;
+}
+.estrelasPerto {
+  background-image:
+    radial-gradient(1.5px 1.5px at 60px 70px, rgb(255 255 255 / 0.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 310px 220px, rgb(200 220 255 / 0.8), transparent 60%),
+    radial-gradient(2px 2px at 420px 60px, rgb(255 255 255 / 0.9), transparent 60%);
+  background-size: 480px 340px;
+}
+
+/* O clarão de estrela no alto, à direita (o "sol" do site institucional). */
+.clarao {
+  position: absolute;
+  z-index: -1;
+  top: 9%;
+  right: 12%;
+  width: 22rem;
+  height: 22rem;
+  translate: 50% -50%;
+  background:
+    radial-gradient(circle, rgb(255 255 255 / 0.95) 0 1.5px, transparent 3px),
+    radial-gradient(circle, rgb(170 200 255 / 0.35), transparent 40%),
+    linear-gradient(90deg, transparent 20%, rgb(200 220 255 / 0.35) 50%, transparent 80%) center / 100% 1px no-repeat,
+    linear-gradient(0deg, transparent 30%, rgb(200 220 255 / 0.25) 50%, transparent 70%) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
+/* O planeta: um disco enorme cuja borda de cima aparece no pé do topo, com a
+   atmosfera em cobalto. */
+.planeta {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  /* Só a tampa do planeta aparece, sempre da mesma altura, abaixo do texto. */
+  top: calc(100% - var(--tampa-do-planeta));
+  width: max(150vw, 64rem);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(60% 30% at 50% 0%, rgb(120 165 245 / 0.4), transparent 70%),
+    radial-gradient(circle at 50% 0%, #1f4a96 0%, #12306a 10%, #0a1a3c 24%, #060a16 45%);
+  box-shadow:
+    0 -2px 0 0 rgb(170 200 255 / 0.55),
+    0 -20px 60px 0 rgb(77 132 224 / 0.45),
+    0 -60px 160px 20px rgb(77 132 224 / 0.25);
+  pointer-events: none;
+}
+
+
+.topoDentro {
+  margin: 0 auto;
+  display: flex;
+  max-width: 72rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4.5rem 1.5rem 10rem;
+}
+@media (min-width: 768px) {
+  .topo {
+    --tampa-do-planeta: 9rem;
+  }
+  .topoDentro {
+    padding: 7rem 2.5rem 13rem;
+  }
+}
+
+.tituloDoTopo {
+  font-size: clamp(3.3rem, 10.5vw, 7rem);
+  line-height: 1.12;
+  text-shadow: 0 4px 40px rgb(0 0 0 / 0.5);
+}
+.tituloDoTopoLinha {
+  display: block;
+  /* Cor cheia, não degradê no texto: o `background-clip: text` cortava o
+     acento do "JÁ", que sobe além da caixa da linha. */
+  color: #a9c4f5;
+}
+
+.topoDentro .etiqueta {
+  margin-top: 2rem;
+}
+
+.lide {
+  margin-top: 1.4rem;
+  max-width: 33rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ash);
+  text-wrap: pretty;
+}
+
+.acoes {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* O aviso do topo: um "toast" de vidro sobre o planeta. */
+.aviso {
+  margin-top: 3rem;
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid var(--borda);
+  border-radius: 1.1rem;
+  padding: 0.75rem 1.1rem 0.75rem 0.75rem;
+  background: rgb(19 27 46 / 0.72);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8);
+}
+.avisoSelo {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+}
+@media (min-width: 1024px) {
+  .aviso {
+    position: absolute;
+    right: max(2.5rem, calc((100vw - 72rem) / 2 + 2.5rem));
+    bottom: calc(var(--tampa-do-planeta) + 2.5rem);
+    margin: 0;
+    max-width: 22rem;
+  }
+}
+
+.pontoVerde {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgb(74 222 128 / 0.7);
+}
+
+/* ---------- Faixa que corre ---------- */
+
+.faixa {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid var(--borda);
+  background: var(--onyx);
+  padding: 1.15rem 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.faixaTrilho {
+  display: flex;
+  width: max-content;
+}
+.faixaLista {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+.faixaLista li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2rem;
+  padding-right: 2rem;
+  white-space: nowrap;
+  font-size: 0.98rem;
+  color: var(--ash);
+}
+
+/* ---------- Blocos com janela ---------- */
+
+.blocos {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 2rem 1.5rem 0;
+}
+@media (min-width: 768px) {
+  .blocos {
+    padding: 3rem 2.5rem 0;
+  }
+}
+.bloco {
+  display: grid;
+  gap: 2.75rem;
+  align-items: center;
+  padding: 4.5rem 0;
+}
+@media (min-width: 1024px) {
+  .bloco {
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    padding: 6.5rem 0;
+  }
+  .blocoInvertido .blocoTexto {
+    order: 2;
+  }
+}
+.blocoTexto {
+  position: relative;
+}
+/* O halo azul atrás de cada título, como no site institucional. */
+.blocoTexto::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -3rem;
+  left: -4rem;
+  width: 24rem;
+  height: 14rem;
+  background: radial-gradient(closest-side, rgb(77 132 224 / 0.18), transparent);
+  pointer-events: none;
+}
+.marcador {
+  position: relative;
+  margin-top: 1.5rem;
+  padding-left: 1.25rem;
+  font-size: 0.96rem;
+  color: var(--ivory);
+}
+.marcador::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--cobalt);
+  box-shadow: 0 0 10px var(--cobalt);
+}
+.selos {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.selo {
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: var(--graphite);
+  font-size: 0.82rem;
+  color: var(--slate);
+}
+
+/* ---------- Janelas do produto ---------- */
+
+.janela {
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  background: var(--graphite);
+  box-shadow:
+    0 40px 90px -40px rgb(0 0 0 / 0.9),
+    0 0 0 1px rgb(255 255 255 / 0.02) inset;
+}
+.janelaBarra {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--borda);
+  padding: 0.8rem 1rem;
+}
+.janelaBarra span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--obsidian);
+}
+
+.conversaTopo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--borda);
+  padding: 0.85rem 1.1rem;
+}
+.conversa {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.2rem 1.1rem 1rem;
+}
+.msg {
+  max-width: 84%;
+  border-radius: 1rem;
+  padding: 0.6rem 0.85rem 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.42;
+}
+.msgCliente {
+  align-self: flex-start;
+  background: var(--obsidian);
+  color: var(--ivory);
+  border-bottom-left-radius: 0.3rem;
+}
+.msgIa {
+  align-self: flex-end;
+  background: var(--cobalt-botao);
+  color: #fff;
+  border-bottom-right-radius: 0.3rem;
+}
+.hora {
+  display: block;
+  margin-top: 0.15rem;
+  text-align: right;
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+.rodapeDaJanela {
+  margin-top: 0.4rem;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--slate);
+}
+
+.funil {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  padding: 1.1rem;
+}
+.funilColuna {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: rgb(10 15 30 / 0.5);
+  padding: 0.7rem 0.55rem;
+  min-height: 12rem;
+}
+.funilCartao {
+  border: 1px solid var(--borda);
+  border-radius: 0.6rem;
+  background: var(--obsidian);
+  padding: 0.55rem 0.6rem;
+}
+
+.roleta,
+.agenda {
+  padding: 1.2rem 1.1rem 1.3rem;
+}
+.roletaLinha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: 0.75rem;
+  background: rgb(10 15 30 / 0.45);
+  padding: 0.55rem 0.75rem;
+}
+.roletaProximo {
+  border-color: rgb(77 132 224 / 0.6);
+  background: rgb(77 132 224 / 0.12);
+}
+.roletaVez {
+  border-radius: 999px;
+  background: var(--cobalt-botao);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.68rem;
+  color: #fff;
+}
+
+.agendaLinha {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 0.75rem;
+  background: rgb(10 15 30 / 0.45);
+  padding: 0.6rem 0.75rem;
+}
+.agendaHora {
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: var(--obsidian);
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-vitrine-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--cobalt-claro);
+}
+
+/* ---------- Manifesto ---------- */
+
+.manifesto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 7rem 1.5rem;
+  text-align: center;
+}
+.manifestoFundo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(12rem, 42vw, 30rem);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(185 194 212 / 0.22);
+  text-shadow: none;
+  pointer-events: none;
+  user-select: none;
+}
+.manifestoTexto {
+  position: relative;
+  max-width: 46rem;
+  font-size: clamp(1.5rem, 3.6vw, 2.4rem);
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--ivory);
+  text-wrap: balance;
+}
+
+/* ---------- Cartões ---------- */
+
+.cartao {
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgb(27 39 64 / 0.55), rgb(19 27 46 / 0.55));
+  padding: 1.6rem 1.5rem;
+  transition:
+    border-color 220ms,
+    translate 280ms var(--saida);
+}
+@media (hover: hover) {
+  .cartao:hover {
+    border-color: rgb(77 132 224 / 0.45);
+  }
+}
+.numeroDoPasso {
+  font-family: var(--font-vitrine-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  color: var(--cobalt-claro);
+}
+
+.ramoCartao {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  background: var(--graphite);
+  padding: 0.95rem 1rem;
+  transition:
+    border-color 180ms,
+    background-color 180ms;
+}
+@media (min-width: 640px) {
+  .ramoCartao {
+    flex-direction: row;
+    gap: 0.95rem;
+    padding: 1.15rem 1.25rem;
+  }
+}
+@media (hover: hover) {
+  .ramoCartao:hover {
+    border-color: rgb(77 132 224 / 0.5);
+    background: var(--obsidian);
+  }
+}
+.ramoCartao:focus-visible {
+  outline: 2px solid var(--cobalt-claro);
+  outline-offset: 3px;
+}
+.ramoIcone {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: rgb(77 132 224 / 0.14);
+  color: var(--cobalt-claro);
+}
+
+/* ---------- Planos ---------- */
+
+.plano {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--borda);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgb(27 39 64 / 0.6), rgb(19 27 46 / 0.6));
+  padding: 1.9rem 1.75rem;
+  cursor: pointer;
+}
+.planoDestaque {
+  border-color: rgb(77 132 224 / 0.65);
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgb(77 132 224 / 0.22), transparent 70%),
+    linear-gradient(180deg, rgb(27 39 64 / 0.8), rgb(19 27 46 / 0.8));
+  box-shadow: 0 30px 80px -30px rgb(77 132 224 / 0.45);
+}
+.preco {
+  font-size: 2.9rem;
+  line-height: 1;
+}
+.limites {
+  margin: 1.6rem 0 1.9rem;
+  border-top: 1px solid var(--borda);
+  padding-top: 1.2rem;
+  font-size: 0.95rem;
+  color: var(--ash);
+}
+.limites li {
+  position: relative;
+  padding: 0.3rem 0 0.3rem 1.2rem;
+}
+.limites li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.85em;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--cobalt);
+}
+
+/*
+ * O "Contratar <plano>" é o link de verdade; o `::before` dele cobre o cartão
+ * todo (o cartão é `relative`), então o toque em qualquer ponto contrata.
+ * Por isso ele NÃO tem `position` própria.
+ */
+.ctaDoPlano {
+  display: inline-flex;
+  min-height: 3.1rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(245 247 251 / 0.35);
+  border-radius: 999px;
+  padding: 0 1.25rem;
+  font-weight: 500;
+  color: var(--ivory);
+  transition:
+    background-color 160ms,
+    border-color 160ms;
+}
+.ctaDoPlano::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 1.25rem;
+}
+.ctaDoPlanoDestaque {
+  border-color: transparent;
+  background: var(--cobalt-botao);
+  color: #fff;
+}
+.plano:hover .ctaDoPlano {
+  border-color: var(--ivory);
+}
+.plano:hover .ctaDoPlanoDestaque,
+.ctaDoPlanoDestaque:focus-visible {
+  background: var(--cobalt-botao-hover);
+}
+.ctaDoPlano:focus-visible {
+  outline: none;
+}
+.plano:has(.ctaDoPlano:focus-visible) {
+  outline: 2px solid var(--cobalt-claro);
+  outline-offset: 4px;
+}
+.setaDoPlano {
+  display: inline-block;
+}
+
+/* ---------- Fechamento ---------- */
+
+.fechamento {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-top: 1px solid var(--borda);
+  background: #070b17;
+}
+.fechamentoBrilho {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 100%;
+  width: max(120vw, 60rem);
+  aspect-ratio: 1;
+  translate: -50% -14%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 0%, #1f4a96 0%, #0b1d42 22%, #070b17 50%);
+  box-shadow: 0 -20px 80px 0 rgb(77 132 224 / 0.35);
+}
+.fechamentoDentro {
+  margin: 0 auto;
+  display: flex;
+  max-width: 72rem;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 6rem 1.5rem 8rem;
+}
+@media (min-width: 1024px) {
+  .fechamentoDentro {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 8rem 2.5rem 10rem;
+  }
+  .fechamentoDentro .acoes {
+    justify-content: flex-end;
+    max-width: 30rem;
+  }
+}
+
+/* ===========================================================================
+ * Movimento. CSS puro, só `translate`/`scale`/`opacity`; com "menos
+ * movimento" nada anda (a exceção é o fundo do cabeçalho grudado, que é
+ * legibilidade, não enfeite). O título do topo (candidato a LCP) só desliza,
+ * não começa transparente.
+ * ======================================================================== */
+
+@supports (animation-timeline: scroll()) {
+  .cabecalho {
+    position: sticky;
+    top: 0;
+  }
+  .cabecalho::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgb(10 15 30 / 0.85);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    border-bottom: 1px solid var(--borda);
+    opacity: 0;
+    animation: acenderFundo linear both;
+    animation-timeline: scroll();
+    animation-range: 0px 96px;
+  }
+}
+@keyframes acenderFundo {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :global(html):has(.cabecalho) {
+    scroll-behavior: smooth;
+  }
+
+  .chegaTitulo {
+    animation: deslizar 900ms var(--saida) backwards;
+  }
+  .chega {
+    animation: chegar 800ms var(--saida) backwards;
+    animation-delay: calc(120ms + var(--ordem, 0) * 100ms);
+  }
+  .chegaAviso {
+    animation: chegar 900ms var(--saida) 900ms backwards;
+  }
+  .planeta {
+    animation: nascerPlaneta 1600ms var(--saida) backwards;
+  }
+  .estrelasPerto {
+    animation: cintilar 6s ease-in-out infinite;
+  }
+  .clarao {
+    animation: pulsar 7s ease-in-out infinite;
+  }
+
+  .faixaTrilho {
+    animation: correr 38s linear infinite;
+  }
+  @media (hover: hover) {
+    .faixa:hover .faixaTrilho {
+      animation-play-state: paused;
+    }
+  }
+
+  .botaoPrincipal::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+    translate: -110% 0;
+    pointer-events: none;
+  }
+  .brilhoUmaVez::after {
+    animation: varrer 1100ms var(--saida) 1500ms backwards;
+  }
+
+  @media (hover: hover) {
+    .botao:hover {
+      translate: 0 -1px;
+    }
+    .botaoPrincipal::after {
+      transition: translate 700ms var(--saida);
+    }
+    .botaoPrincipal:hover::after {
+      translate: 110% 0;
+    }
+    .cartao:hover {
+      translate: 0 -4px;
+    }
+    .plano {
+      transition: translate 280ms var(--saida);
+    }
+    .plano:hover {
+      translate: 0 -6px;
+    }
+    .setaDoPlano {
+      transition: translate 280ms var(--saida);
+    }
+    .plano:hover .setaDoPlano {
+      translate: 4px 0;
+    }
+  }
+
+  /* Seções que sobem com a rolagem; as mensagens da conversa chegam uma a
+     uma conforme a janela entra na tela. Faixa curta e em pixels. */
+  @supports (animation-timeline: view()) {
+    .surge {
+      animation: surgir linear backwards;
+      animation-timeline: view();
+      animation-range: entry calc(var(--ordem, 0) * 36px) entry calc(160px + var(--ordem, 0) * 36px);
+    }
+    .surgeMsg {
+      animation: surgirMsg linear backwards;
+      animation-timeline: view();
+      animation-range: entry calc(80px + var(--ordem, 0) * 40px) entry calc(160px + var(--ordem, 0) * 40px);
+    }
+  }
+}
+
+@keyframes deslizar {
+  from {
+    translate: 0 18px;
+  }
+}
+@keyframes chegar {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+@keyframes nascerPlaneta {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes cintilar {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes pulsar {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.75;
+    scale: 0.92;
+  }
+}
+@keyframes correr {
+  to {
+    translate: -50% 0;
+  }
+}
+@keyframes varrer {
+  from {
+    translate: -110% 0;
+  }
+  to {
+    translate: 110% 0;
+  }
+}
+@keyframes surgir {
+  from {
+    opacity: 0;
+    translate: 0 32px;
+  }
+}
+@keyframes surgirMsg {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}

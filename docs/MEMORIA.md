@@ -12830,3 +12830,12 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Bug antigo: o filtro "com foto" do Marketing sempre passa porque o mapper preenche `capa` com `CAPA_PADRAO`.
 - 0252 (índices: whatsapp_mensagens (conversa_id, created_at desc), ia_interacoes parcial, cliques_whatsapp) — EXPLAIN da view whatsapp_esperando_resposta: 126 ms com incremental sort sobre 6,6 mil linhas.
 - Aberto: conferir se o Supabase assina JWT com chave assimétrica; se for HS256, `getClaims()` cai em `getUser()` (ida à rede) em todo pedido.
+
+## Página de vendas no visual do site da empresa (03/11/2026)
+- `/astro` segue `astrosolucoes.netlify.app`: Anton caixa alta + Inter Tight + JetBrains Mono (`src/app/astro/fontesDaVitrine.ts`, só nesta página), CSS próprio em `vendas.module.css`. Contratar, contato, ajuda e legais continuam com `astro.module.css`.
+- Botão cobalto é `#3a6ccc` (o `#4d84e0` do site dá 3,7:1 com branco).
+- Anton: `line-height` < ~1,05 faz o acento encostar na linha de cima; `background-clip: text` apaga acento que sai da caixa da linha.
+- `globals.css` põe fonte serifada em `h3`: a página devolve com `.pagina :where(h1…h4)`.
+- `hidden md:inline-flex` perde para o `display` de classe de módulo: esconder com classe do módulo.
+- Fonte nova do `next/font/google` precisa entrar em `test/stubs/next-font-google.ts`, senão o vitest quebra na importação.
+- Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].

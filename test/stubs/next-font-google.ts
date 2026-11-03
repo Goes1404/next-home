@@ -20,4 +20,8 @@ export const Figtree = modulo.Figtree;
 export const Inter = modulo.Inter;
 export const Fraunces = modulo.Fraunces;
 export const IBM_Plex_Mono = modulo.IBM_Plex_Mono;
+// Página de vendas da Astro (03/11/2026, `src/app/astro/fontesDaVitrine.ts`).
+export const Anton = modulo.Anton;
+export const Inter_Tight = modulo.Inter_Tight;
+export const JetBrains_Mono = modulo.JetBrains_Mono;
 export default modulo;

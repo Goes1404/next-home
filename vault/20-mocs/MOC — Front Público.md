@@ -82,3 +82,4 @@ summary: Site público — animação, vídeo, mapas, conteúdo, SEO.
 - [[atalho-da-tela-inicial-guarda-o-icone-antigo]] — atalho guarda o ícone de quando foi criado; manifesto com ícone de 512 px e mascarável, sem start_url e com display "browser" (09/10)
 - [[foto-panoramica-num-quadro-de-retrato]] — no celular o Sobre e as cenas recortavam renders 2:1 em retrato e ampliavam 40%; quadro segue a foto, folga do parallax proporcional, cenas pulam a foto do Sobre; galeria do celular em uma coluna (13/10)
 - [[previa-do-link-do-corretor]] — prévia do link do portfólio: "Portfólio de <nome>" + texto editável em Meu perfil (0188); o redirect do proxy leva a query porque o robô do WhatsApp não guarda cookie; OG_IMAGEM está 404 (19/10)
+- [[pagina-de-vendas-no-visual-do-site-da-empresa]] — página de vendas da Astro no visual do site institucional (03/11)

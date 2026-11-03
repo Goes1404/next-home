@@ -15,7 +15,12 @@ describe("página de vendas: contratar pelo cartão do plano", () => {
   const html = renderToStaticMarkup(<PaginaDaAstro />);
   const links = [...html.matchAll(/<a [^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g)].map((m) => ({
     href: m[1].replaceAll("&amp;", "&"),
-    texto: m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim(),
+    // O texto que o leitor de tela lê: as setas decorativas (aria-hidden) ficam de fora.
+    texto: m[2]
+      .replace(/<span aria-hidden="true"[^>]*>.*?<\/span>/g, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim(),
   }));
 
   it.each(PLANOS_CONTRATAVEIS)("o cartão %s leva ao assistente com o plano marcado", (id) => {
