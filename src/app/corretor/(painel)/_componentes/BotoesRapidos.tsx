@@ -8,10 +8,13 @@ const CONFIGURAR_ROLETA = "/corretor/marketing/impulsionamentos?aba=roleta";
 
 export function BotoesRapidos({
   iaPausada,
+  comRoleta,
   roletaLigada,
   roletaComLista,
 }: {
   iaPausada: boolean;
+  /** Só o gestor vê o botão da roleta (03/11/2026). */
+  comRoleta: boolean;
   roletaLigada: boolean;
   roletaComLista: boolean;
 }) {
@@ -69,7 +72,7 @@ export function BotoesRapidos({
           </span>
         </button>
 
-        {roletaComLista || ligada ? (
+        {!comRoleta ? null : roletaComLista || ligada ? (
           <button
             type="button"
             onClick={tocarRoleta}

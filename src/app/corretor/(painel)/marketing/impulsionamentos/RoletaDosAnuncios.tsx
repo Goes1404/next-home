@@ -8,7 +8,8 @@ import { primeiroNome } from "@/lib/format";
 /**
  * "Roleta dos meus anúncios" (0204). Lida pela chave de serviço porque a
  * tabela não dá grant a ninguém; o recorte é feito aqui: tudo pelo grupo da
- * sessão, e o corretor comum só recebe a roleta dele.
+ * sessão. Desde 03/11/2026 só o gestor abre esta tela (a aba some para o
+ * corretor): o lead do anúncio do corretor é dele.
  *
  * Desde 26/10/2026 a mesma tabela de corretores mostra a ordem da roleta e,
  * para o gestor, a escala geral (pausa) e a regra do WhatsApp conectado. Em
@@ -16,15 +17,15 @@ import { primeiroNome } from "@/lib/format";
  */
 export async function RoletaDosAnuncios() {
   const quem = await getCorretorLogado();
-  if (!quem) return null;
+  // Só o gestor (03/11/2026): a aba some para o corretor, e isto garante que
+  // a roleta não apareça nem se alguém montar a tela por outro caminho.
+  if (!quem || quem.papel !== "gestor") return null;
   const supabase = createServiceClient();
-  const gestor = quem.papel === "gestor";
 
-  let roletas = supabase
+  const roletas = supabase
     .from("roleta_anuncios")
     .select("corretor_id, ligada, modo_aviso, destinos, texto_passagem, texto_abertura, texto_boas_vindas, texto_passagem_grupo")
     .eq("grupo_id", quem.grupoId);
-  if (!gestor) roletas = roletas.eq("corretor_id", quem.id);
 
   const [{ data: corretores }, { data: linhas, error }, { data: instancias }, ocultas, { data: grupo }] = await Promise.all([
     supabase
@@ -90,12 +91,11 @@ export async function RoletaDosAnuncios() {
       configs={configs}
       equipe={equipe}
       meuId={quem.id}
-      gestor={gestor}
+      gestor
       grupoTemEnvio={grupo?.envio_grupo_leads_ativo === true}
       soConectados={regra}
     />
   );
-  if (!gestor) return editor;
 
   // Os cartões-resumo do gestor: o que está salvo agora, não o rascunho.
   const minha = configs.find((c) => c.corretorId === quem.id) ?? configs[0];
