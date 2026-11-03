@@ -64,6 +64,36 @@ mensagem fria sai do número oficial; quem responde vira lead quente, e o
 corretor entra em seguida pelo próprio número, falando com alguém que acabou
 de responder (o que o WhatsApp não trata como envio em massa).
 
+## Ferramentas: os MCPs oficiais da Meta (conferido em 03/11/2026)
+
+A Meta publicou servidores MCP oficiais (remotos, login OAuth com a conta
+de desenvolvedor, **em beta e liberados aos poucos**) que fazem pela conversa
+boa parte do trabalho manual das fases F0 a F2. Nenhum deles está no
+catálogo de conectores do claude.ai: entram como **conector personalizado**
+(claude.ai → Personalizar → Conectores, pelo endereço), e a sessão seguinte
+já os enxerga. A Meta lista Claude Code e Claude Desktop como compatíveis;
+o claude.ai não aparece na lista dela, então o primeiro login é o teste.
+
+| servidor | endereço | ajuda em |
+|---|---|---|
+| **WhatsApp Business Tools** | `https://mcp.facebook.com/whatsapp_business_tools` | F0: estado da verificação da empresa (`verify_business`), número novo (`add_phone_number` → `send_verification_code` → `verify_phone_number` → `register_phone_number`), forma de pagamento (`configure_payments`). F1: apontar o webhook (`configure_webhooks`, `subscribe_webhook`). F2: criar, consultar e corrigir modelos (`create_template`, `get_template`, `update_template`) e mandar um teste (`send_message`, que confirma o destino antes) |
+| **Meta Social Technologies** (antigo Developer Tools) | `https://mcp.facebook.com/devtools` | Busca na documentação oficial (`devtools_discovery`), mudanças da API (`devtools_api_changelog`), criar e configurar o app (`devtools_app_create`, casos de uso), **mandar um payload de teste ao nosso webhook** (`devtools_webhook_test`), App Review e conformidade da F5 (`devtools_app_review`, `devtools_compliance`) |
+| Meta Ads | (ver a página da Meta) | Fora da lista; serve ao `ROADMAP-META-ADS.md` e a anúncios Click-to-WhatsApp, cuja conversa tem 7 dias grátis |
+
+Requisitos para o WhatsApp Business Tools: papel **MANAGE** no portfólio,
+**admin de um app com o WhatsApp** ligado a ele (só admin do negócio não
+basta) e os termos da Cloud API aceitos (sem isso, cadastrar número e
+mandar mensagem ficam bloqueados).
+
+**O que eles NÃO fazem:** status de entrega, qualidade do número e do
+modelo, custo. Isso continua sendo do nosso código (webhook e Graph API).
+E o produto não depende deles: a tela de modelos da F2 fala com a Graph API
+direto; os MCPs são ferramenta de quem constrói e opera.
+
+Cuidado: os dois **escrevem na conta de produção** (criam app, número,
+modelo, mandam mensagem). Usar com confirmação a cada ação, como qualquer
+operação em produção.
+
 ## O que já existe e ajuda
 
 - **`src/lib/whatsapp/provider.ts` é o único ponto que fala com a Evolution**
@@ -251,6 +281,9 @@ que o número separado atrapalha a venda. Antes de qualquer código:
 - Meta, coexistência: <https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users>
 - Meta, Tech Provider: <https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/get-started-for-tech-providers>
 - Meta, Embedded Signup v4: <https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/version-4-public-preview/>
+- Meta, servidores MCP: <https://developers.facebook.com/documentation/mcp>,
+  <https://developers.facebook.com/documentation/mcp/whatsapp-business-tools-mcp>,
+  <https://developers.facebook.com/documentation/mcp/devtools-mcp>
 - Preço de marketing no Brasil (revendedores, conferir na tabela oficial):
   <https://wabaindex.com/learn/whatsapp-api-pricing-brazil>,
   <https://whautomate.com/whatsapp-business-api-pricing-brazil>

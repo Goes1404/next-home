@@ -45,6 +45,18 @@ próprio número.
   com dois vídeos) + Embedded Signup (v2 desativada em 15/10/2026; usar v4
   ou v3). O piloto da própria Next Home não precisa disso.
 
+## MCPs oficiais da Meta
+
+A Meta tem servidores MCP oficiais (beta, liberação gradual, login OAuth):
+**WhatsApp Business Tools** (`https://mcp.facebook.com/whatsapp_business_tools`:
+número, verificação, pagamento, webhook, modelos, envio de teste) e **Meta
+Social Technologies** (`https://mcp.facebook.com/devtools`: busca na
+documentação, changelog, app, teste de webhook, App Review). **Não estão no
+catálogo do claude.ai**: entram como conector personalizado pelo endereço, e
+só a sessão seguinte os enxerga. `claude mcp add` no computador não chega à
+sessão na nuvem. Não leem status de entrega nem qualidade; escrevem em
+produção.
+
 ## O que já ajuda
 
 `provider.ts` é o único ponto que fala com a Evolution; a fila e as travas
