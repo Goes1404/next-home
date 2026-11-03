@@ -71,6 +71,15 @@ export const TABELAS_GLOBAIS = [
   // Quem escreveu ao central e não foi atendido (0249): desconhecido não tem
   // grupo. Sem texto; telefone em hash.
   "central_tentativas",
+  // Prospecção da Astro (0253, 02/11/2026): a loja prospectada ainda não é
+  // cliente, não tem grupo. Só a chave de serviço lê e escreve, pela guarda
+  // do administrador da plataforma ou pelo slug da amostra pública.
+  "prospeccao_leads",
+  // Cada abertura da amostra (0253): pertence à loja prospectada.
+  "prospeccao_visitas",
+  // Quem usa a prospecção (0254, 03/11/2026): gente da Astro, acima dos
+  // grupos. Só a chave de serviço lê.
+  "prospeccao_equipe",
 ] as const;
 
 export type TabelaGlobal = (typeof TABELAS_GLOBAIS)[number];
@@ -112,7 +121,7 @@ export const CHAVES_UNICAS_GLOBAIS = {
   // grupo 1 até a fase 7, que escopa a métrica por grupo.
   leads_meta_lead_id_key: "id do lead na Meta; upsert do webhook (fase 7)",
   meta_ads_metricas_pkey: "dia + id da campanha na Meta (fase 7)",
-  // 0254 (03/11/2026): o id do número na Cloud API. O webhook da Meta chega
+  // 0255 (03/11/2026): o id do número na Cloud API. O webhook da Meta chega
   // sem grupo e é por ele que se acha o grupo; o mesmo número em dois grupos
   // mandaria a resposta de um cliente para a imobiliária errada. Só o
   // servidor grava (tabela sem grant), então nenhum grupo sonda o do outro.

@@ -1,13 +1,13 @@
--- 0254: lista de transmissão pela API oficial da Meta (03/11/2026).
+-- 0255: lista de transmissão pela API oficial da Meta (03/11/2026).
 --
 -- Roadmap: docs/ROADMAP-WHATSAPP-OFICIAL.md. A lista fria passa a poder sair
 -- por um número OFICIAL da imobiliária (WhatsApp Cloud API), com modelo
 -- aprovado pela Meta, em vez do WhatsApp pessoal do corretor na Evolution —
 -- o que restringiu a conta da Bruna em 07/10/2026.
 --
--- Número: a 0253 está ocupada na branch `prospeccao` (conferido em
--- 03/11/2026 em origin/*); esta nasce 0254 e a 0253 fica reservada em
--- `src/lib/migrations.test.ts`.
+-- Número: nasceu 0254 na branch `ccr-7424dca4-4nynlp` e virou 0255 no mesmo
+-- dia, quando a prospecção chegou à main com a 0253 e a 0254
+-- (`0254_equipe_da_prospeccao.sql`). Conferido em origin/* em 03/11/2026.
 --
 -- O que esta migration faz:
 --   1. `whatsapp_numeros_oficiais`: o número oficial de cada grupo (um ativo
@@ -94,7 +94,7 @@ create table if not exists public.whatsapp_numeros_oficiais (
 );
 
 comment on table public.whatsapp_numeros_oficiais is
-  'Número oficial (WhatsApp Cloud API) de um grupo e as decisões do gestor sobre ele (0254). Só o servidor lê e grava.';
+  'Número oficial (WhatsApp Cloud API) de um grupo e as decisões do gestor sobre ele (0255). Só o servidor lê e grava.';
 comment on column public.whatsapp_numeros_oficiais.token_cifrado is
   'Token do cliente (Embedded Signup), cifrado com WHATSAPP_OFICIAL_CHAVE_CIFRA. Nulo no piloto: vale WHATSAPP_OFICIAL_TOKEN.';
 comment on column public.whatsapp_numeros_oficiais.teto_mensal is
@@ -145,7 +145,7 @@ create table if not exists public.whatsapp_modelos_oficiais (
 );
 
 comment on table public.whatsapp_modelos_oficiais is
-  'Modelos (templates) do número oficial, com o estado da aprovação na Meta (0254). Só o servidor lê e grava.';
+  'Modelos (templates) do número oficial, com o estado da aprovação na Meta (0255). Só o servidor lê e grava.';
 
 create index if not exists whatsapp_modelos_oficiais_grupo_estado_idx
   on public.whatsapp_modelos_oficiais (grupo_id, estado);
@@ -165,7 +165,7 @@ alter table public.whatsapp_campanhas
     references public.whatsapp_modelos_oficiais(id) on delete restrict;
 
 comment on column public.whatsapp_campanhas.canal is
-  'Por onde a lista sai: evolution (WhatsApp do corretor) ou oficial (número oficial do grupo, com modelo aprovado). 0254.';
+  'Por onde a lista sai: evolution (WhatsApp do corretor) ou oficial (número oficial do grupo, com modelo aprovado). 0255.';
 
 alter table public.whatsapp_campanhas
   drop constraint if exists whatsapp_campanhas_canal_valido;
@@ -192,7 +192,7 @@ alter table public.whatsapp_campanhas_fila
   add column if not exists cobrada boolean;
 
 comment on column public.whatsapp_campanhas_fila.wamid is
-  'Id da mensagem na Meta (lista pelo número oficial, 0254). É por ele que o status do webhook acha o item.';
+  'Id da mensagem na Meta (lista pelo número oficial, 0255). É por ele que o status do webhook acha o item.';
 
 -- Único dentro do grupo (a régua de `isolamento.db.test.ts`: chave única de
 -- tabela com grupo inclui o grupo). O wamid já é único na Meta inteira.
@@ -230,7 +230,7 @@ create table if not exists public.whatsapp_oficial_conversas (
 );
 
 comment on table public.whatsapp_oficial_conversas is
-  'Conversa de um cliente com o número oficial do grupo (0254). Separada de whatsapp_conversas, que é do número do corretor. Só o servidor lê e grava; a tela mostra só ao dono do lead.';
+  'Conversa de um cliente com o número oficial do grupo (0255). Separada de whatsapp_conversas, que é do número do corretor. Só o servidor lê e grava; a tela mostra só ao dono do lead.';
 
 create index if not exists whatsapp_oficial_conversas_lead_idx
   on public.whatsapp_oficial_conversas (lead_id);
@@ -256,7 +256,7 @@ create table if not exists public.whatsapp_oficial_mensagens (
 );
 
 comment on table public.whatsapp_oficial_mensagens is
-  'Mensagens da conversa no número oficial (0254). Só o servidor lê e grava.';
+  'Mensagens da conversa no número oficial (0255). Só o servidor lê e grava.';
 
 create unique index if not exists whatsapp_oficial_mensagens_wamid_idx
   on public.whatsapp_oficial_mensagens (grupo_id, wamid)
@@ -280,7 +280,7 @@ create table if not exists public.whatsapp_oficial_eventos (
 );
 
 comment on table public.whatsapp_oficial_eventos is
-  'Eventos crus do webhook da API oficial, de número conhecido, para diagnóstico (0254). Apagados depois de 30 dias pelo disparador.';
+  'Eventos crus do webhook da API oficial, de número conhecido, para diagnóstico (0255). Apagados depois de 30 dias pelo disparador.';
 
 create index if not exists whatsapp_oficial_eventos_criado_idx
   on public.whatsapp_oficial_eventos (created_at);
@@ -322,7 +322,7 @@ end
 $$;
 
 comment on function public.registrar_consentimento_marketing_whatsapp(uuid, boolean, text, text) is
-  'Concede ou revoga marketing no WhatsApp (preferência + histórico), 0254. Só a chave de serviço.';
+  'Concede ou revoga marketing no WhatsApp (preferência + histórico), 0255. Só a chave de serviço.';
 
 revoke all on function public.registrar_consentimento_marketing_whatsapp(uuid, boolean, text, text)
   from public, anon, authenticated;
@@ -490,7 +490,7 @@ begin
   if new.grupo_id is null then
     return null;
   end if;
-  -- 0254: mensagem da lista pelo número oficial não conta na cota do plano.
+  -- 0255: mensagem da lista pelo número oficial não conta na cota do plano.
   -- IF aninhado de propósito: num `and` só, o PL/pgSQL monta a expressão
   -- inteira e `new.campanha_id` não existe em `imagens_geradas`/`video_jobs`
   -- ("record new has no field"); o `exception when others` abaixo engoliria
@@ -526,7 +526,7 @@ end
 $$;
 
 comment on function public.contar_uso_de_recurso() is
-  'Gatilhos de imagens_geradas, video_jobs e whatsapp_campanhas_fila (0214): soma (ou, na falha, tira) uma unidade no mês (São Paulo) do grupo da linha em uso_da_ia. Item de lista oficial (0254) não conta.';
+  'Gatilhos de imagens_geradas, video_jobs e whatsapp_campanhas_fila (0214): soma (ou, na falha, tira) uma unidade no mês (São Paulo) do grupo da linha em uso_da_ia. Item de lista oficial (0255) não conta.';
 
 revoke all on function public.contar_uso_de_recurso() from public, anon, authenticated;
 

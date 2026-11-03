@@ -8,7 +8,7 @@ vi.mock("server-only", () => ({}));
 import { listasDoNumeroDoCorretor } from "./listasDoNumero";
 
 /**
- * A lista do número OFICIAL da imobiliária (0254) nunca pode sair pelo
+ * A lista do número OFICIAL da imobiliária (0255) nunca pode sair pelo
  * WhatsApp pessoal do corretor — foi a restrição da conta da Bruna, em
  * 07/10/2026, que fez nascer o canal oficial. E nada do que fala do número do
  * corretor (aviso de queda, saúde, status da fila, "limpar fila") pode contar
@@ -37,7 +37,7 @@ describe("listas do número do corretor", () => {
     expect(todas?.map((l) => l.id).sort()).toEqual(["evolution-andando", "evolution-pausada"]);
   });
 
-  it("antes da 0254 aplicada (sem a coluna `canal`), toda lista é do corretor", async () => {
+  it("antes da 0255 aplicada (sem a coluna `canal`), toda lista é do corretor", async () => {
     const consultas: string[][] = [];
     const cliente = {
       from: () => {

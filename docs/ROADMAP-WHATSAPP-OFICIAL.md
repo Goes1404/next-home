@@ -8,14 +8,14 @@
 ## Estado em 03/11/2026 (fim do dia)
 
 O código das fases F1 a F5 está pronto na branch `ccr-7424dca4-4nynlp`, e a F6
-virou um mapa sem código. **Nada foi para produção**: a 0254 não foi aplicada
+virou um mapa sem código. **Nada foi para produção**: a 0255 não foi aplicada
 no banco de produção, nenhuma variável foi criada na Vercel e nenhuma
 mensagem real saiu. Para ligar, siga `docs/WHATSAPP-OFICIAL-ATIVAR.md`.
 
 | fase | estado | onde |
 |---|---|---|
 | F0 — contas e decisões | **com o dono**: guia passo a passo escrito; as três decisões do fim deste arquivo foram tomadas como recomendado (cartão de cada cliente, um número por imobiliária, IA responde no oficial) | `docs/WHATSAPP-OFICIAL-ATIVAR.md`, `.env.example` |
-| F1 — fundação | pronta, testada | `0254`, `src/lib/whatsapp/oficial/`, `/api/webhooks/whatsapp-oficial` |
+| F1 — fundação | pronta, testada | `0255`, `src/lib/whatsapp/oficial/`, `/api/webhooks/whatsapp-oficial` |
 | F2 — lista pelo número oficial | pronta, testada | Campanhas → "Por onde sai"; Administração → WhatsApp oficial (modelos) |
 | F3 — resposta e passagem | pronta, testada; **um desvio**: quem respondeu ao número oficial continua na régua de primeiro contato do número do corretor, e a passagem é manual ("Assumir pelo meu WhatsApp" na ficha) | `respostaOficial.ts`, ficha do lead `#numero-oficial` |
 | F4 — medição do piloto | tela pronta; o piloto em si depende da F0 | Administração → WhatsApp oficial → Medição do piloto |

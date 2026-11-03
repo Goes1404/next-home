@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
 
   try {
     /*
-     * As listas pelo número OFICIAL (0254) primeiro, com orçamento curto: são
+     * As listas pelo número OFICIAL (0255) primeiro, com orçamento curto: são
      * envios rápidos, sem espaçamento, e não podem esperar atrás de uma
      * chamada da Evolution que segura até 45 s pelo intervalo anti-ban. O
      * resto do orçamento fica para a fila de sempre. Falha aqui não derruba

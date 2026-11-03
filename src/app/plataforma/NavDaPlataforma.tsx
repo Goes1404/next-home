@@ -15,10 +15,11 @@ import { usePathname } from "next/navigation";
  *     do cabeçalho.
  * Mesma lista nos dois; `ITENS_DA_PLATAFORMA` é a fonte única.
  */
-export const ITENS_DA_PLATAFORMA: { href: string; rotulo: string; exato?: boolean }[] = [
+export const ITENS_DA_PLATAFORMA: { href: string; rotulo: string; exato?: boolean; soEquipeDaProspeccao?: boolean }[] = [
   { href: "/plataforma", rotulo: "Contas", exato: true },
   { href: "/plataforma/pedidos", rotulo: "Pedidos de contratação" },
   { href: "/plataforma/suporte", rotulo: "Suporte e contato" },
+  { href: "/plataforma/prospeccao", rotulo: "Prospecção", soEquipeDaProspeccao: true },
   { href: "/plataforma/indicacoes", rotulo: "Indicações" },
   { href: "/plataforma/avisos", rotulo: "Avisos aos clientes" },
   { href: "/plataforma/central", rotulo: "Número central" },
@@ -37,11 +38,16 @@ function classeDoItem(ativo: boolean, lateral: boolean): string {
   return `${base} ${estado} ${lateral ? "w-full" : "shrink-0 whitespace-nowrap border border-linha"}`;
 }
 
-export function NavLateralDaPlataforma() {
+/** Os itens que esta pessoa vê: a Prospecção só para a equipe dela (0254). */
+export function itensVisiveis(comProspeccao: boolean) {
+  return ITENS_DA_PLATAFORMA.filter((item) => comProspeccao || !item.soEquipeDaProspeccao);
+}
+
+export function NavLateralDaPlataforma({ comProspeccao = false }: { comProspeccao?: boolean }) {
   const caminho = usePathname() ?? "/plataforma";
   return (
     <nav aria-label="Áreas da plataforma" className="sticky top-20 flex flex-col gap-1">
-      {ITENS_DA_PLATAFORMA.map((item) => {
+      {itensVisiveis(comProspeccao).map((item) => {
         const ativo = itemAtivo(caminho, item);
         return (
           <Link key={item.href} href={item.href} aria-current={ativo ? "page" : undefined} className={classeDoItem(ativo, true)}>
@@ -67,11 +73,11 @@ export function NavLateralDaPlataforma() {
   );
 }
 
-export function NavFaixaDaPlataforma() {
+export function NavFaixaDaPlataforma({ comProspeccao = false }: { comProspeccao?: boolean }) {
   const caminho = usePathname() ?? "/plataforma";
   return (
     <nav aria-label="Áreas da plataforma" className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
-      {ITENS_DA_PLATAFORMA.map((item) => {
+      {itensVisiveis(comProspeccao).map((item) => {
         const ativo = itemAtivo(caminho, item);
         return (
           <Link key={item.href} href={item.href} aria-current={ativo ? "page" : undefined} className={classeDoItem(ativo, false)}>

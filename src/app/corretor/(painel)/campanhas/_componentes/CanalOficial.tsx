@@ -9,7 +9,7 @@ import { preverListaOficial } from "../acoes";
 
 /**
  * As peças do assistente da lista que só existem quando a imobiliária tem
- * número OFICIAL (0254): a escolha do canal, o modelo aprovado no lugar do
+ * número OFICIAL (0255): a escolha do canal, o modelo aprovado no lugar do
  * texto livre e o resumo com consentimento e custo.
  */
 

@@ -12,7 +12,7 @@ export type NumeroOficial = Database["public"]["Tables"]["whatsapp_numeros_ofici
 /**
  * O número oficial: ler, resolver o token e atualizar o que a Meta informa.
  *
- * Toda leitura tolera a tabela não existir (migration 0254 não aplicada:
+ * Toda leitura tolera a tabela não existir (migration 0255 não aplicada:
  * 42P01) e devolve "sem número". É o que deixa este código subir para
  * produção antes da migration sem quebrar nada: tudo do número oficial
  * simplesmente fica desligado.

@@ -12847,6 +12847,33 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Para fotografar WebGL no Playwright headless: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`.
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
 - Planetas (03/11): textura procedural 1024×512 (512 serrilha) + `materialDePlaneta` (luz própria, borda escura, névoa só no lado aceso). Halo aditivo de fresnel vira contorno duro em planeta; a luz da cena os deixa chapados. Lua tingida = planeta rochoso (`public/espaco/moon-1k.webp`).
+- 30/10–03/11/2026: 0252 aplicada em produção (03/11); whatsapp_esperando_resposta caiu de ~126 ms para ~79 ms (index only scan).
+
+## Prospecção da Astro, fase 1 (02/11/2026, 0253)
+
+- Aba `/plataforma/prospeccao` (só administrador da plataforma): funil das
+  lojas que a Astro aborda, quem abriu a amostra em destaque ("quente" =
+  abordada e abriu nos últimos 3 dias), ficha com mensagem editável e envio
+  manual por wa.me. Nota: `vault/10-notas/prospeccao-da-astro-fase-1.md`.
+- Tabelas GLOBAIS `prospeccao_leads` e `prospeccao_visitas` (em
+  `TABELAS_GLOBAIS`); funções `registrar_visita_da_amostra` e
+  `atualizar_tempo_da_visita` SEM security definer, execute só para
+  `service_role`.
+- Amostra pública `/astro/amostra/<slug>`: rota que devolve HTML inteiro
+  (`renderizarAmostra` + `molde.ts`, gerado de `molde.html` por
+  `scripts/prospeccao/gerarMolde.mjs`). `?previa=1` não rastreia.
+- **O número central 11 96867-1127 não prospecta**: banimento derrubaria o
+  CRM pelo WhatsApp de todas as imobiliárias. A fase 3 usa outro número, do
+  vendedor, com aquecimento.
+- Variáveis: `PROSPECCAO_WHATSAPP` (botão "Conversar com o Eduardo" da
+  amostra; sem ela o botão some, o número não fica no código porque o repo é
+  público), `PROSPECCAO_VENDEDOR`, `PROSPECCAO_URL_BASE`.
+- A lista das lojas abordadas NÃO fica no repositório (público): o JSON é
+  passado ao `scripts/prospeccao/sqlDasLojas.ts` de fora.
+- **0254 (03/11): só a equipe de vendas vê a aba** — admin da plataforma E
+  linha em `prospeccao_equipe` (Eduardo e Matheus; a conta `adm@` não). Aba
+  escondida no menu (`comProspeccao` do layout), páginas dão 404 e ações
+  recusam. Falha ao ler a lista = fora da equipe.
 
 ## Roadmap da lista pela API oficial da Meta (03/11/2026)
 - Roadmap: `docs/ROADMAP-WHATSAPP-OFICIAL.md`. Nota: [[lista-pela-api-oficial-da-meta]].
@@ -12855,13 +12882,14 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - **MCPs oficiais da Meta (beta)**: WhatsApp Business Tools (`https://mcp.facebook.com/whatsapp_business_tools`) e Meta Social Technologies (`https://mcp.facebook.com/devtools`). Não estão no catálogo do claude.ai: conector personalizado pelo endereço, e só a próxima sessão os vê. Requisitos e o que cada um faz em `docs/ROADMAP-WHATSAPP-OFICIAL.md` → "Ferramentas".
 
 ## Lista pela API oficial da Meta: F0–F6 construídas, fora de produção (03/11/2026)
-- Branch `ccr-7424dca4-4nynlp`. **Nada em produção**: 0254 não aplicada, nenhuma variável na Vercel, nenhuma mensagem real. Passo a passo do dono: `docs/WHATSAPP-OFICIAL-ATIVAR.md`; mapa da coexistência (F6): `docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`. Nota: [[lista-pela-api-oficial-da-meta]].
-- Peças: `supabase/migrations/0254_whatsapp_oficial.sql` (0253 é da branch `prospeccao`, reservada no teste), `src/lib/whatsapp/oficial/` (Graph v26.0, envio, webhook puro, status, resposta, disparador, modelos, consentimento, métricas, Embedded Signup), `/api/webhooks/whatsapp-oficial`, Administração → WhatsApp oficial, "Por onde sai" no assistente da lista, painel `#numero-oficial` na ficha do lead (só o dono).
+- Branch `ccr-7424dca4-4nynlp`. **Nada em produção**: 0255 não aplicada, nenhuma variável na Vercel, nenhuma mensagem real. Passo a passo do dono: `docs/WHATSAPP-OFICIAL-ATIVAR.md`; mapa da coexistência (F6): `docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`. Nota: [[lista-pela-api-oficial-da-meta]].
+- Peças: `supabase/migrations/0255_whatsapp_oficial.sql` (nasceu 0255 e virou 0255: a 0253 e a 0255 são da prospecção, na main desde 03/11/2026), `src/lib/whatsapp/oficial/` (Graph v26.0, envio, webhook puro, status, resposta, disparador, modelos, consentimento, métricas, Embedded Signup), `/api/webhooks/whatsapp-oficial`, Administração → WhatsApp oficial, "Por onde sai" no assistente da lista, painel `#numero-oficial` na ficha do lead (só o dono).
 - Decisões no lugar do usuário (revisáveis): cada imobiliária paga a Meta; um número oficial por imobiliária; a IA responde no número oficial. Desvio do roadmap: quem respondeu ao oficial continua na régua de primeiro contato do número do corretor; passagem manual pela ficha.
-- **A lista oficial não é do número do corretor**: `listasDoNumeroDoCorretor` (`src/lib/whatsapp/listasDoNumero.ts`) é a única leitura de "listas do corretor" para disparador da Evolution, aviso de queda, saúde, status/limpar fila; `textosDoNumero.ts` filtra `campanha.canal`; a 0254 §9 tira a lista oficial da cota do plano. Guarda: `listasDoNumero.test.ts`. Nota: [[lista-oficial-nao-e-do-numero-do-corretor]].
+- **A lista oficial não é do número do corretor**: `listasDoNumeroDoCorretor` (`src/lib/whatsapp/listasDoNumero.ts`) é a única leitura de "listas do corretor" para disparador da Evolution, aviso de queda, saúde, status/limpar fila; `textosDoNumero.ts` filtra `campanha.canal`; a 0255 §9 tira a lista oficial da cota do plano. Guarda: `listasDoNumero.test.ts`. Nota: [[lista-oficial-nao-e-do-numero-do-corretor]].
 - **Gatilho compartilhado**: `if tg_table_name = 'x' and exists (... new.campo ...)` quebra nas outras tabelas do mesmo gatilho e o `exception when others` engole — a cota de artes e vídeos pararia calada. IF aninhado. Só a suíte `.db.test` pegou. Nota: [[gatilho-compartilhado-e-campo-de-new]].
 - **Regex do Postgres**: `{m,n}` aceita no máximo 255; `check (nome ~ '^[a-z0-9_]{1,512}$')` aplica e quebra todo insert. Nota: [[regex-do-postgres-repete-no-maximo-255]].
 - **tsc no limite**: HEAD já precisa de mais de 1,85 GB dos ~2 GB padrão. Local estoura com `.next/types` + `.next/dev/types` (validadores de rota, +180 mil tipos): apagar `.next/dev`. Com o canal oficial, o **"Running TypeScript" do `next build` estourou** (ele checa o `tsconfig` inteiro, testes inclusive, + validador): `typescript.tsconfigPath = "tsconfig.build.json"` (sem testes, `test/`, `e2e/`, `scripts/`) passa com 1,7 GB; o CI continua checando os testes com o `tsconfig.json`. O custo é o `select()` analisado no tipo; código novo com tipo de retorno à mão. Nota: [[tsc-do-projeto-no-limite-de-memoria]].
 - **Banco local na nuvem**: o daemon do Docker não sobe sozinho; subir o `dockerd` antes do `npm run db:teste`. Duas falhas da suíte de banco já existiam (4 chaves globais em `isolamento.db.test.ts`; `ramo` da 0244 em `sessaoDoGrupo.db.test.ts`).
 - Guardas que leem o código e pegaram o código novo: `tabelasSeguras` (revoke por extenso, não em laço com `%I`), `servicoComGrupo` (todo arquivo com a chave de serviço no MAPA), `naoCortaTexto` (`whitespace-pre-*` com `break-words`), `naoRolaDeLado` (tabela declarada), `botoesComPista`.
 - Meta, conferido em 03/11/2026 na página de preços: a janela grátis do anúncio Click-to-WhatsApp fica aberta **até 7 dias** a partir da primeira resposta dentro das 24 h (só app Android/iOS). A regra antiga era 72 h.
+- **Colisão de número**: a API oficial nasceu 0254 e outra sessão publicou na `main` a 0253 e a `0254_equipe_da_prospeccao.sql` no mesmo dia. Renumerada para **0255** no merge da `main` na branch (menções trocadas só nos arquivos dela). Conferir `origin/*` de novo antes de cada push de migration. Nota: [[colisao-de-migration-entre-branches]].

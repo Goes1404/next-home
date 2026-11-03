@@ -1115,11 +1115,11 @@ async function processarInstancia(ctx: {
 
 /**
  * As listas em andamento que saem pelo WhatsApp DO CORRETOR (canal
- * `evolution`). As do número oficial da imobiliária (0254) têm disparador
+ * `evolution`). As do número oficial da imobiliária (0255) têm disparador
  * próprio (`oficial/disparoOficial.ts`): por aqui elas sairiam do número
  * pessoal dele, exatamente o que a lista oficial existe para evitar.
  *
- * Antes da 0254 aplicada a coluna `canal` não existe (42703): aí toda lista é
+ * Antes da 0255 aplicada a coluna `canal` não existe (42703): aí toda lista é
  * do corretor, e a leitura volta a ser a de sempre.
  */
 export async function campanhasDoNumeroDoCorretor(

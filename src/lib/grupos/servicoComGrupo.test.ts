@@ -252,7 +252,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/avisoDeQueda.ts": { categoria: "plataforma", motivo: "varre instância a instância; a faixa lê só o corretor da sessão" },
   "src/lib/whatsapp/campaignDispatcher.ts": { categoria: "plataforma", motivo: "disparo item a item, pela instância do corretor dono da lista" },
 
-  // ── Número oficial da imobiliária (Cloud API da Meta, 0254, 03/11/2026) ───
+  // ── Número oficial da imobiliária (Cloud API da Meta, 0255, 03/11/2026) ───
   "src/app/api/webhooks/whatsapp-oficial/route.ts": { categoria: "por-id", validadoPor: "assinaturaValida", motivo: "assinatura X-Hub-Signature-256 do app conferida antes da chave; o grupo de cada evento sai do phone_number_id do número cadastrado" },
   "src/app/corretor/(painel)/admin/whatsapp-oficial/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "gestor da sessão; número, modelos e decisões são os do grupo dele" },
   "src/app/corretor/(painel)/admin/whatsapp-oficial/page.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; a tela lê o número, os modelos, as fotos e a medição do grupo dele (contagens, nunca conversa — 0134)" },
@@ -326,6 +326,12 @@ const MAPA: Record<string, Entrada> = {
   "src/app/plataforma/equipeAcoes.ts": { categoria: "plataforma-admin", motivo: "desativa, reativa e troca o papel de um acesso de UM grupo (sempre .eq(grupo_id) da página); leads só contados; a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/app/plataforma/centralAcoes.ts": { categoria: "plataforma-admin", motivo: "registra o número central (tabela global, 0249) e pede o pareamento; a chave só depois de exigirAdminDaPlataformaNaAcao (30/10/2026)" },
   "src/app/plataforma/central/page.tsx": { categoria: "plataforma-admin", motivo: "estado do número central (tabela global) e contagens agregadas (grupos ligados, pedidos e tentativas em 7 dias); a chave só depois de exigirAdminDaPlataformaNaPagina" },
+  "src/app/plataforma/prospeccao/page.tsx": { categoria: "plataforma-admin", motivo: "funil da prospecção da Astro (0253, 02/11/2026): lista prospeccao_leads (tabela global, lojas que ainda não são clientes); a chave só depois de exigirAdminDaPlataformaNaPagina" },
+  "src/app/plataforma/prospeccao/[id]/page.tsx": { categoria: "plataforma-admin", motivo: "ficha de UMA loja prospectada e as aberturas da amostra (prospeccao_leads e prospeccao_visitas, tabelas globais, 0253); a chave só depois de exigirAdminDaPlataformaNaPagina" },
+  "src/app/plataforma/prospeccao/acoes.ts": { categoria: "plataforma-admin", motivo: "etapa, envio, ficha e cadastro de loja prospectada (prospeccao_leads, tabela global, 0253); a chave só depois de exigirAdminDaPlataformaNaAcao em cada ação" },
+  "src/app/astro/amostra/[slug]/route.ts": { categoria: "plataforma", motivo: "amostra pública da prospecção (0253, 02/11/2026): lê UMA linha de prospeccao_leads (tabela global) pelo slug da URL; não toca tabela de grupo" },
+  "src/app/api/prospeccao/visita/route.ts": { categoria: "plataforma", motivo: "rastreio da amostra (0253): registra a abertura pelo slug e o tempo pela id da visita, só em prospeccao_leads/prospeccao_visitas (tabelas globais), sem IP nem user-agent" },
+  "src/lib/prospeccao/equipe.ts": { categoria: "plataforma-admin", motivo: "quem usa a prospecção (0254, 03/11/2026): lê UMA linha de prospeccao_equipe (tabela global) pelo userId da prova de exigirAdminDaPlataforma*, que todo importador chama antes" },
   "src/app/plataforma/administradoresAcoes.ts": { categoria: "plataforma-admin", motivo: "põe e tira logins de administradores_da_plataforma (tabela global, sem grupo); a chave só depois de exigirAdminDaPlataformaNaAcao (29/10/2026)" },
   "src/lib/plataforma/administradores.ts": { categoria: "plataforma-admin", motivo: "lista administradores_da_plataforma (tabela global) com o e-mail do Auth; recebe a prova de exigirAdminDaPlataforma*" },
   "src/lib/plataforma/pedidos.ts": { categoria: "plataforma-admin", motivo: "lista, conta e lê UM pedido de pedidos_de_contratacao (tabela global, 0238) e nomes de grupos para o vínculo; recebe a prova de exigirAdminDaPlataforma* (29/10/2026)" },

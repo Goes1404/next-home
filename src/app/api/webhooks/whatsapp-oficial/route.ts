@@ -6,7 +6,7 @@ import { guardarEventosCrus, processarEventos, resolvedorComCache } from "@/lib/
 import { lerWebhook } from "@/lib/whatsapp/oficial/webhook";
 
 /**
- * Webhook da API oficial da Meta (WhatsApp Cloud API), 0254.
+ * Webhook da API oficial da Meta (WhatsApp Cloud API), 0255.
  *
  * Separado do webhook da Evolution (`/api/webhooks/whatsapp`) de propósito:
  * os dois formatos não têm nada em comum, e o da Evolution nunca soube ler o

@@ -175,7 +175,7 @@ Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
 a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um
 "Registrar?" no Início, nunca registro automático (0163).
 
-## O webhook do número OFICIAL é outra rota (0254, 03/11/2026, fora de produção)
+## O webhook do número OFICIAL é outra rota (0255, 03/11/2026, fora de produção)
 
 `/api/webhooks/whatsapp-oficial` (Cloud API da Meta) não passa por nada
 acima. GET responde o `hub.challenge` com `WHATSAPP_OFICIAL_VERIFY_TOKEN`;

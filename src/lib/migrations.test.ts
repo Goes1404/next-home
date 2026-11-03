@@ -55,10 +55,6 @@ const RESERVADOS = new Set<number>([
   // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
   // depois dela.
   213,
-  // 03/11/2026: a 0253 é da branch `prospeccao` (0253_prospeccao.sql, ainda
-  // não juntada); a API oficial da Meta nasceu 0254. Sai daqui quando a
-  // prospecção chegar a esta branch.
-  253,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {

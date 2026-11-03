@@ -110,7 +110,7 @@ export async function processarFilaOficial(params?: {
   if (params?.corretorId) consulta = consulta.eq("corretor_id", params.corretorId);
   const { data: listas, error } = await consulta;
   if (error) {
-    // 42703/42P01: a 0254 ainda não foi aplicada; não há lista oficial.
+    // 42703/42P01: a 0255 ainda não foi aplicada; não há lista oficial.
     if (error.code !== "42703" && error.code !== "42P01") console.warn("[oficial] listas não lidas:", error.message);
     return resultado;
   }

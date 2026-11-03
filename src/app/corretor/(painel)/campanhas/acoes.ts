@@ -387,7 +387,7 @@ export type ResultadoCriarCampanha =
       totalLeads: number;
       /** Quantos saíram da lista por não ter WhatsApp (consulta antes da fila). */
       semWhatsapp: number;
-      /** Lista oficial: quantos ficaram de fora por não terem autorizado (0254). */
+      /** Lista oficial: quantos ficaram de fora por não terem autorizado (0255). */
       semConsentimento?: number;
     }
   | { erro: string };
@@ -414,7 +414,7 @@ export type ParametrosDaLista = {
   /** Rascunho que esta lista conclui: some quando a lista nasce. */
   rascunhoId?: string | null;
   /**
-   * Por onde a lista sai (0254): o WhatsApp do corretor (padrão) ou o número
+   * Por onde a lista sai (0255): o WhatsApp do corretor (padrão) ou o número
    * OFICIAL da imobiliária, com um modelo aprovado pela Meta.
    */
   canal?: "evolution" | "oficial";
@@ -451,7 +451,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
     };
   }
 
-  // Pelo número oficial (0254): outro caminho, com outras regras (modelo
+  // Pelo número oficial (0255): outro caminho, com outras regras (modelo
   // aprovado, consentimento, teto do mês). O número do corretor não entra.
   if (params.canal === "oficial") return criarListaOficial(corretor, params, titulo, inicio);
 
@@ -615,7 +615,7 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
 }
 
 // ---------------------------------------------------------------------------
-// Lista pelo número OFICIAL da imobiliária (0254)
+// Lista pelo número OFICIAL da imobiliária (0255)
 // ---------------------------------------------------------------------------
 
 export type CanalOficialNaTela =
@@ -1358,7 +1358,7 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
 
   const supabase = await createClient();
 
-  // A fila do número DELE. A lista do número oficial da imobiliária (0254)
+  // A fila do número DELE. A lista do número oficial da imobiliária (0255)
   // tem fila própria e não some daqui.
   const campanhas = await listasDoNumeroDoCorretor(supabase, corretor.id, { semRascunho: true });
 
@@ -1456,7 +1456,7 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
     .eq("corretor_id", corretor.id)
     .maybeSingle();
 
-  // Só as listas do número DELE: a do número oficial da imobiliária (0254)
+  // Só as listas do número DELE: a do número oficial da imobiliária (0255)
   // não espera pela conexão, pela cota nem pelo expediente dele.
   const campanhas = await listasDoNumeroDoCorretor(supabase, corretor.id, { status: "em_andamento" });
 

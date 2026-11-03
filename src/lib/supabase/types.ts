@@ -143,6 +143,150 @@ export type Database = {
         }
         Relationships: []
       }
+      prospeccao_leads: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          nome: string
+          segmento: string | null
+          modelo: string
+          cidade: string | null
+          bairro: string | null
+          endereco: string | null
+          telefone: string | null
+          whatsapp: string | null
+          instagram: string | null
+          site: string | null
+          place_id: string | null
+          nota_google: number | null
+          avaliacoes: number | null
+          horario: Json | null
+          nota_presenca: number | null
+          lacunas: Json
+          gancho: string | null
+          slug: string
+          amostra: Json
+          mensagem: string | null
+          etapa: string
+          motivo_perda: string | null
+          observacoes: string | null
+          nao_contatar: boolean
+          nao_contatar_em: string | null
+          enviado_em: string | null
+          respondeu_em: string | null
+          visitas: number
+          primeira_visita_em: string | null
+          ultima_visita_em: string | null
+          origem: string
+          rodada: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          nome: string
+          segmento?: string | null
+          modelo?: string
+          cidade?: string | null
+          bairro?: string | null
+          endereco?: string | null
+          telefone?: string | null
+          whatsapp?: string | null
+          instagram?: string | null
+          site?: string | null
+          place_id?: string | null
+          nota_google?: number | null
+          avaliacoes?: number | null
+          horario?: Json | null
+          nota_presenca?: number | null
+          lacunas?: Json
+          gancho?: string | null
+          slug: string
+          amostra?: Json
+          mensagem?: string | null
+          etapa?: string
+          motivo_perda?: string | null
+          observacoes?: string | null
+          nao_contatar?: boolean
+          nao_contatar_em?: string | null
+          enviado_em?: string | null
+          respondeu_em?: string | null
+          visitas?: number
+          primeira_visita_em?: string | null
+          ultima_visita_em?: string | null
+          origem?: string
+          rodada?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          nome?: string
+          segmento?: string | null
+          modelo?: string
+          cidade?: string | null
+          bairro?: string | null
+          endereco?: string | null
+          telefone?: string | null
+          whatsapp?: string | null
+          instagram?: string | null
+          site?: string | null
+          place_id?: string | null
+          nota_google?: number | null
+          avaliacoes?: number | null
+          horario?: Json | null
+          nota_presenca?: number | null
+          lacunas?: Json
+          gancho?: string | null
+          slug?: string
+          amostra?: Json
+          mensagem?: string | null
+          etapa?: string
+          motivo_perda?: string | null
+          observacoes?: string | null
+          nao_contatar?: boolean
+          nao_contatar_em?: string | null
+          enviado_em?: string | null
+          respondeu_em?: string | null
+          visitas?: number
+          primeira_visita_em?: string | null
+          ultima_visita_em?: string | null
+          origem?: string
+          rodada?: string | null
+        }
+        Relationships: []
+      }
+      prospeccao_equipe: {
+        Row: { user_id: string; nome: string; criado_em: string }
+        Insert: { user_id: string; nome: string; criado_em?: string }
+        Update: { user_id?: string; nome?: string; criado_em?: string }
+        Relationships: []
+      }
+      prospeccao_visitas: {
+        Row: {
+          id: string
+          lead_id: string
+          created_at: string
+          dispositivo: string | null
+          segundos: number
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          created_at?: string
+          dispositivo?: string | null
+          segundos?: number
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          created_at?: string
+          dispositivo?: string | null
+          segundos?: number
+        }
+        Relationships: []
+      }
       central_da_plataforma: {
         Row: {
           id: string
@@ -5500,6 +5644,14 @@ export type Database = {
       }
     }
     Functions: {
+      registrar_visita_da_amostra: {
+        Args: { p_slug: string; p_dispositivo: string }
+        Returns: string | null
+      }
+      atualizar_tempo_da_visita: {
+        Args: { p_visita: string; p_segundos: number }
+        Returns: undefined
+      }
       leads_parados_para_aviso: {
         Args: { p_parado_desde: string; p_janela_desde: string; p_dia_inicio: string; p_limite?: number }
         Returns: {

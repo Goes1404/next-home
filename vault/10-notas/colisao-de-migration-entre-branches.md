@@ -6,7 +6,7 @@ status: estavel
 custou: 30min
 codigo: supabase/migrations, src/lib/migrations.test.ts
 summary: Duas branches criaram uma 0101 diferente cada. As duas aplicadas no banco, só o git colidia. A guarda de numeração só enxerga a própria branch.
-updated: 2026-09-10
+updated: 2026-11-03
 ---
 
 # A colisão de migration entre branches
@@ -51,3 +51,19 @@ renumerado com comentário velho é a forma mais barata de mandar o
 diagnóstico para o lugar errado — o defeito recorrente nº 5 deste projeto.
 
 Relacionadas: [[consultor-imobiliario-no-painel]]
+
+## De novo em 03/11/2026: a 0254
+
+A API oficial da Meta nasceu `0254_whatsapp_oficial.sql` na branch
+`ccr-7424dca4-4nynlp`, depois de conferir `origin/*` (só a 0253 da prospecção
+existia, numa branch própria). Horas depois outra sessão publicou na `main`
+a 0253 **e** uma `0254_equipe_da_prospeccao.sql`. Só se viu no CI da `main`,
+pelo título do commit. Resolvido no merge da `main` na branch: a nossa virou
+**0255** (`git mv` + troca das menções só nos arquivos dela — na `main`,
+"0254" continua sendo a da prospecção).
+
+Lição: conferir `origin/*` vale para o momento em que se confere. Antes de
+cada push de migration nova, `git fetch` e conferir de novo; quando duas
+sessões trabalham no mesmo dia, o número só fica firme quando a branch
+recebe a `main`.
+

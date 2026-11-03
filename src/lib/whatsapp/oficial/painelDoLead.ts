@@ -10,7 +10,7 @@ type Supa = ReturnType<typeof createServiceClient>;
  * O que a ficha do lead mostra do número oficial da imobiliária (F3).
  *
  * Só o corretor DONO do lead vê (quem chama confere): o gestor nunca lê
- * conversa (0134), e as tabelas do número oficial são só do servidor (0254),
+ * conversa (0134), e as tabelas do número oficial são só do servidor (0255),
  * por isso a leitura é pela chave de serviço, sempre recortada pelo grupo.
  *
  * Tipos de retorno escritos à mão, como em `telaDoGestor.ts`: o `tsc` do
