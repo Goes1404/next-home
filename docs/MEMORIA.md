@@ -12847,3 +12847,4 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Para fotografar WebGL no Playwright headless: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`.
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
 - Planetas (03/11): textura procedural 1024×512 (512 serrilha) + `materialDePlaneta` (luz própria, borda escura, névoa só no lado aceso). Halo aditivo de fresnel vira contorno duro em planeta; a luz da cena os deixa chapados. Lua tingida = planeta rochoso (`public/espaco/moon-1k.webp`).
+- 30/10–03/11/2026: 0252 aplicada em produção (03/11); whatsapp_esperando_resposta caiu de ~126 ms para ~79 ms (index only scan).
