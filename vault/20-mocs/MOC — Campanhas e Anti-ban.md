@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-27
+updated: 2026-11-03
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -18,6 +18,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[followups-consomem-cota]]
 
 ## Proteções anti-ban
+- [[lista-pela-api-oficial-da-meta]] ⚠️ lista fria segura só pela API oficial; o número que entra nela sai da Evolution (roadmap, 03/11)
 - [[campanha-protege-quem-ja-foi-contatado]]
 - [[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]
 - [[espacamento-anti-ban-so-existia-no-papel]]

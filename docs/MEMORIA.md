@@ -12847,3 +12847,8 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Para fotografar WebGL no Playwright headless: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`.
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
 - Planetas (03/11): textura procedural 1024×512 (512 serrilha) + `materialDePlaneta` (luz própria, borda escura, névoa só no lado aceso). Halo aditivo de fresnel vira contorno duro em planeta; a luz da cena os deixa chapados. Lua tingida = planeta rochoso (`public/espaco/moon-1k.webp`).
+
+## Roadmap da lista pela API oficial da Meta (03/11/2026)
+- Roadmap: `docs/ROADMAP-WHATSAPP-OFICIAL.md`. Nota: [[lista-pela-api-oficial-da-meta]].
+- **Coexistência desconecta todos os aparelhos vinculados — a Evolution inclusive — e não sincroniza grupos.** Levar o número do corretor para a API oficial é trocar recepção, IA e grupos, não só a lista. Recomendado: número oficial só para listas, por imobiliária (chip novo, não o central).
+- Meta em 03/11/2026: marketing BR ≈ R$ 0,32 (revendedores; conferir), utilidade ≈ R$ 0,035; serviço grátis só até 1.000/número/mês desde 01/10/2026; limite 250 → 2.000 com verificação da empresa (portfólio inteiro); limite por pessoa = erro 131049 (esperar 24 h); Embedded Signup v2 desativada em 15/10/2026.
