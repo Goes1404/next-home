@@ -24,7 +24,7 @@ interface Props {
   /** Pré-preenchimento vindo de "leads que combinam", listas sugeridas, repetir ou rascunho. */
   inicial?: InicialDaLista;
   modelos: TemplateMensagem[];
-  corretor: { nome: string; whatsapp: string };
+  corretor: { nome: string; whatsapp: string; gestor?: boolean };
 }
 
 export function CampanhasManager({

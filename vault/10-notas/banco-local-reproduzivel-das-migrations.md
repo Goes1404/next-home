@@ -7,7 +7,7 @@ status: growing
 custou: medio
 codigo: [scripts/banco/dbTeste.mjs, scripts/banco/inventario.sql, supabase/config.toml, supabase/REPRODUCAO.md, supabase/migrations/0043_storage_midia_empreendimento.sql]
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-11-03
 fonte: Task 1 da fase 1 multi-grupo, rodada no Docker local em 19/10/2026
 summary: npm run db:teste derruba, apaga o volume e aplica as 158 migrations do zero (start sozinho, com containers de pé, não aplica migration nova). Aplicaram sem erro na primeira tentativa; o que não reproduzia era silencioso (update de bucket criado pelo painel). Quatro policies do script consolidado de 08/2026 podem existir só em produção. Conferência contra produção pendente.
 ---
@@ -59,3 +59,19 @@ Diferença vira a migration de reconciliação `0159_*`.
 Relacionadas: [[list-migrations-esta-dessincronizado]],
 [[migration-aplicada-fora-da-branch-e-apagada-pela-outra]],
 [[bucket-nao-se-apaga-por-sql]].
+
+## Na sessão da nuvem (03/11/2026)
+
+O contêiner da sessão na nuvem tem Docker, mas o daemon NÃO sobe sozinho:
+`npm run db:teste` falha dizendo que não acha o Docker. Suba o `dockerd` em
+segundo plano, espere `docker info` responder e só então rode o script (as
+254 migrations do zero levam ~2 min). Depois, a suíte de banco:
+`DB_TESTE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npx vitest run .db.test`.
+
+Em 03/11/2026 duas falhas da suíte já existiam antes do canal oficial: o
+`isolamento.db.test.ts` acha quatro chaves únicas globais fora da lista
+(`ia_consumo_pkey`, `pagamentos_do_grupo_asaas_pagamento_id_key`,
+`portais_recebimentos_pkey`, `vitrine_visualizacoes_pkey`) e o
+`sessaoDoGrupo.db.test.ts` não conta com as colunas `ramo`/`ramo_descricao`
+da 0244.
+

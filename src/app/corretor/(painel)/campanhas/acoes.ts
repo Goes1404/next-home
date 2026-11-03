@@ -20,6 +20,7 @@ import type { Empreendimento, EtapaFunil } from "@/lib/types";
 import { acenderCorrenteDeDisparo } from "@/lib/whatsapp/autoDisparo";
 import { exemplosDaLista, montarFilaCampanha, nomesDaPessoa } from "@/lib/whatsapp/campaignQueue";
 import { textosRecentesDoNumero } from "@/lib/whatsapp/textosDoNumero";
+import { listasDoNumeroDoCorretor } from "@/lib/whatsapp/listasDoNumero";
 import {
   AVISO_DE_VERSOES_IGUAIS,
   fatosDaLista,
@@ -47,6 +48,9 @@ import { MAXIMO_DE_MIDIAS_NA_LISTA, type MidiaDaLista } from "@/lib/whatsapp/mid
 import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
 import type { CriterioDaLista } from "@/lib/whatsapp/listasVivas";
+import { canalOficialDoCorretor, consentidosDentre, type ModeloParaLista } from "@/lib/whatsapp/oficial/canalDaLista";
+import { renderizarModelo } from "@/lib/whatsapp/oficial/modelos";
+import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 
 /**
  * Ações do painel de listas de transmissão: criar, listar, diagnosticar e
@@ -383,6 +387,8 @@ export type ResultadoCriarCampanha =
       totalLeads: number;
       /** Quantos saíram da lista por não ter WhatsApp (consulta antes da fila). */
       semWhatsapp: number;
+      /** Lista oficial: quantos ficaram de fora por não terem autorizado (0254). */
+      semConsentimento?: number;
     }
   | { erro: string };
 
@@ -407,6 +413,12 @@ export type ParametrosDaLista = {
   templateId?: string | null;
   /** Rascunho que esta lista conclui: some quando a lista nasce. */
   rascunhoId?: string | null;
+  /**
+   * Por onde a lista sai (0254): o WhatsApp do corretor (padrão) ou o número
+   * OFICIAL da imobiliária, com um modelo aprovado pela Meta.
+   */
+  canal?: "evolution" | "oficial";
+  modeloOficialId?: string | null;
 };
 
 /** O critério que a lista guarda (0155): é o que permite repeti-la e mantê-la viva. */
@@ -438,6 +450,10 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
       erro: "Agende entre 9h e 20h59, de segunda a sábado, no horário de Brasília.",
     };
   }
+
+  // Pelo número oficial (0254): outro caminho, com outras regras (modelo
+  // aprovado, consentimento, teto do mês). O número do corretor não entra.
+  if (params.canal === "oficial") return criarListaOficial(corretor, params, titulo, inicio);
 
   if (!provedorConfigurado()) {
     return {
@@ -596,6 +612,184 @@ export async function criarCampanha(params: ParametrosDaLista): Promise<Resultad
 
   revalidatePath("/corretor/campanhas");
   return { ok: true, campanhaId: campanha.id, totalLeads: elegiveis.length, semWhatsapp };
+}
+
+// ---------------------------------------------------------------------------
+// Lista pelo número OFICIAL da imobiliária (0254)
+// ---------------------------------------------------------------------------
+
+export type CanalOficialNaTela =
+  | {
+      disponivel: true;
+      numero: string | null;
+      nomeExibicao: string | null;
+      modelos: ModeloParaLista[];
+      tarifa: number;
+      tetoRestante: number | null;
+    }
+  | { disponivel: false; motivo: string };
+
+/**
+ * O que o assistente mostra do número oficial. Indisponível é estado
+ * normal (a maioria das imobiliárias não tem), e o assistente nem mostra a
+ * escolha do canal.
+ */
+export async function opcoesDoCanalOficial(): Promise<CanalOficialNaTela> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { disponivel: false, motivo: "Sessão expirada." };
+  try {
+    const canal = await canalOficialDoCorretor(corretor);
+    if (!canal.disponivel) return { disponivel: false, motivo: canal.motivo };
+    return {
+      disponivel: true,
+      numero: canal.numero,
+      nomeExibicao: canal.nomeExibicao,
+      modelos: canal.modelos,
+      tarifa: canal.tarifa,
+      tetoRestante: canal.tetoRestante,
+    };
+  } catch {
+    return { disponivel: false, motivo: "Não foi possível consultar o número oficial agora." };
+  }
+}
+
+/**
+ * Quantos do público escolhido podem receber pelo número oficial: só quem
+ * tem consentimento de marketing no WhatsApp. Informativo; criar a lista
+ * refaz a conta no servidor.
+ */
+export async function preverListaOficial(
+  filtro: FiltroLeadsCampanha,
+  imovelSlug?: string | null,
+  recorte?: RecorteDeOrigem | null,
+  leadIds?: string[],
+): Promise<{ total: number; comConsentimento: number } | { erro: string }> {
+  const corretor = await getCorretorLogado();
+  if (!corretor) return { erro: "Sessão expirada. Entre novamente." };
+  let elegiveis = await listarLeadsElegiveis(filtro, imovelSlug, recorte);
+  if (filtro === "selecionados") elegiveis = recortarPorSelecao(elegiveis, leadIds);
+  const consentidos = await consentidosDentre(
+    elegiveis.map((l) => l.id),
+    corretor.grupoId,
+  );
+  if (!consentidos) return { erro: "Não foi possível conferir os consentimentos agora." };
+  return { total: elegiveis.length, comConsentimento: elegiveis.filter((l) => consentidos.has(l.id)).length };
+}
+
+/**
+ * Cria a lista que sai pelo número oficial. Mesmo público e mesmas proteções
+ * da lista do corretor (carteira dele, 7 dias, outra lista em andamento),
+ * mais o que a Meta exige: modelo aprovado e consentimento de cada pessoa.
+ * O limite do PLANO (mensagens de lista por mês) não conta aqui: cada
+ * mensagem oficial é paga à Meta pela imobiliária; o que vale é o teto do
+ * mês que o gestor definiu para o número.
+ */
+async function criarListaOficial(
+  corretor: NonNullable<Awaited<ReturnType<typeof getCorretorLogado>>>,
+  params: ParametrosDaLista,
+  titulo: string,
+  inicio: Date | null,
+): Promise<ResultadoCriarCampanha> {
+  const canal = await canalOficialDoCorretor(corretor);
+  if (!canal.disponivel) return { erro: canal.motivo };
+  const modelo = canal.modelos.find((m) => m.id === params.modeloOficialId);
+  if (!modelo) return { erro: "Escolha um modelo aprovado pela Meta." };
+
+  const supabase = await createClient();
+  const { imovel, contexto } = await contextoDoImovel(params.empreendimentoId, corretor);
+  let imovelSlug: string | null = null;
+  if (params.filtro === "compradores") {
+    if (!imovel) return { erro: "Escolha o imóvel dos compradores." };
+    imovelSlug = imovel.slug;
+  }
+
+  let elegiveis: LeadElegivel[];
+  try {
+    elegiveis = await listarLeadsElegiveis(params.filtro, imovelSlug, params.recorte);
+  } catch {
+    return { erro: "Não foi possível conferir os contatos recentes agora. Tente de novo." };
+  }
+  if (params.filtro === "selecionados") {
+    elegiveis = recortarPorSelecao(elegiveis, params.leadIds);
+    if (elegiveis.length === 0) return { erro: "Escolha ao menos um lead primeiro." };
+  }
+  if (elegiveis.length === 0) return { erro: "Nenhum lead elegível para este filtro no momento." };
+
+  // Só quem autorizou. Falha de leitura fecha: ninguém entra sem prova.
+  const consentidos = await consentidosDentre(
+    elegiveis.map((l) => l.id),
+    corretor.grupoId,
+  );
+  if (!consentidos) return { erro: "Não foi possível conferir os consentimentos agora. Tente de novo." };
+  const comConsentimento = elegiveis.filter((l) => consentidos.has(l.id));
+  if (comConsentimento.length === 0) {
+    return {
+      erro: "Ninguém deste público autorizou receber ofertas pelo WhatsApp. Registre o consentimento na ficha de quem autorizou e tente de novo.",
+    };
+  }
+  if (canal.tetoRestante !== null && comConsentimento.length > canal.tetoRestante) {
+    return {
+      erro: `O teto do mês do número oficial deixa só mais ${canal.tetoRestante} mensage${canal.tetoRestante === 1 ? "m" : "ns"}, e esta lista tem ${comConsentimento.length}. Recorte o público ou peça ao gestor para aumentar o teto.`,
+    };
+  }
+
+  const nomeDaCasa = (await lerCasaDoGrupo(corretor.grupoId)).nomeDaCasa;
+  const { data: campanha, error: erroCampanha } = await supabase
+    .from("whatsapp_campanhas")
+    .insert({
+      corretor_id: corretor.id,
+      titulo,
+      empreendimento_id: imovel?.id ?? null,
+      mensagem_base: modelo.corpo,
+      total_leads: comConsentimento.length,
+      status: "em_andamento",
+      ignorar_janela: false,
+      criterio: criterioDe(params, imovelSlug),
+      viva: false,
+      midias: midiasValidas(imovel, params.midias),
+      contexto_template: contexto,
+      canal: "oficial",
+      numero_oficial_id: canal.numeroId,
+      modelo_oficial_id: modelo.id,
+    })
+    .select("id")
+    .single();
+  if (erroCampanha || !campanha) return { erro: "Não foi possível criar a lista oficial agora." };
+
+  // Sem espaçamento: o número oficial não precisa dele (o limite da Meta é
+  // por pessoas em 24 h, e o disparador o respeita). O texto da fila é a
+  // prévia; o que sai é o modelo aprovado com as variáveis do envio.
+  const agendadoPara = (inicio ?? new Date()).toISOString();
+  const { error: erroFila } = await supabase.from("whatsapp_campanhas_fila").insert(
+    comConsentimento.map((lead) => ({
+      campanha_id: campanha.id,
+      lead_id: lead.id,
+      telefone: lead.telefone,
+      mensagem_personalizada: renderizarModelo(modelo.corpo, {
+        nome: primeiroNomeUtil(lead.nome),
+        imovel: imovel?.nome ?? null,
+        corretor: corretor.nome.split(/\s+/)[0],
+        casa: nomeDaCasa,
+      }),
+      personalizado_por_ia: false,
+      status: "pendente" as const,
+      agendado_para: agendadoPara,
+    })),
+  );
+  if (erroFila) {
+    await supabase.from("whatsapp_campanhas").delete().eq("id", campanha.id);
+    return { erro: "Não foi possível montar a fila da lista oficial agora." };
+  }
+
+  acenderCorrenteDeDisparo();
+  revalidatePath("/corretor/campanhas");
+  return {
+    ok: true,
+    campanhaId: campanha.id,
+    totalLeads: comConsentimento.length,
+    semWhatsapp: 0,
+    semConsentimento: elegiveis.length - comConsentimento.length,
+  };
 }
 
 /**
@@ -1164,11 +1358,9 @@ export async function limparFilaDisparo(): Promise<ResultadoLimparFila> {
 
   const supabase = await createClient();
 
-  const { data: campanhas } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id")
-    .eq("corretor_id", corretor.id)
-    .neq("status", "rascunho");
+  // A fila do número DELE. A lista do número oficial da imobiliária (0254)
+  // tem fila própria e não some daqui.
+  const campanhas = await listasDoNumeroDoCorretor(supabase, corretor.id, { semRascunho: true });
 
   const ids = (campanhas ?? []).map((c) => c.id);
   if (ids.length === 0) return { ok: true, removidos: 0, campanhasFechadas: 0 };
@@ -1264,11 +1456,9 @@ export async function statusDisparo(): Promise<StatusDisparo | null> {
     .eq("corretor_id", corretor.id)
     .maybeSingle();
 
-  const { data: campanhas } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id")
-    .eq("corretor_id", corretor.id)
-    .eq("status", "em_andamento");
+  // Só as listas do número DELE: a do número oficial da imobiliária (0254)
+  // não espera pela conexão, pela cota nem pelo expediente dele.
+  const campanhas = await listasDoNumeroDoCorretor(supabase, corretor.id, { status: "em_andamento" });
 
   const ids = (campanhas ?? []).map((c) => c.id);
 

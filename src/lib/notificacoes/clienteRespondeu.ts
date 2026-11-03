@@ -35,6 +35,11 @@ export async function avisarClienteRespondeu(
     grupoIdDoNumero: string;
     texto: string | null;
     tipo: string | null;
+    /**
+     * Para onde o toque leva. Padrão: a conversa do número do corretor. A
+     * resposta ao número OFICIAL (0254) não tem conversa ali: vai à ficha.
+     */
+    url?: string;
   },
   agora = new Date(),
 ): Promise<boolean> {
@@ -65,7 +70,7 @@ export async function avisarClienteRespondeu(
 
     const n = await notificarCorretor(supabase, p.corretorIdDoNumero, {
       ...notificacaoDoClienteRespondeu({ lead, texto: p.texto, tipo: p.tipo }),
-      url: `/corretor/conversas?c=${p.conversaId}`,
+      url: p.url ?? `/corretor/conversas?c=${p.conversaId}`,
       tag: `cliente-respondeu-${lead.id}`,
     });
     return n > 0;

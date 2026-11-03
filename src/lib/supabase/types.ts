@@ -4920,6 +4920,36 @@ export type Database = {
         Update: { grupo_id?: string; instancia_id?: string; dia?: string; enviados?: number }
         Relationships: []
       }
+      whatsapp_numeros_oficiais: {
+        Row: { id: string; grupo_id: string; waba_id: string; phone_number_id: string; numero: string | null; nome_exibicao: string | null; estado: "ativo" | "pausado" | "desligado"; motivo_estado: string | null; limite_de_envio: string | null; qualidade: string | null; atualizado_na_meta_em: string | null; liberado_para_corretores: boolean; teto_mensal: number | null; resposta: "ia" | "mensagem_fixa" | "nenhuma"; mensagem_fixa: string | null; token_cifrado: string | null; origem: "manual" | "embedded_signup"; conectado_por: string | null; created_at: string; atualizado_em: string }
+        Insert: { id?: string; grupo_id: string; waba_id: string; phone_number_id: string; numero?: string | null; nome_exibicao?: string | null; estado?: "ativo" | "pausado" | "desligado"; motivo_estado?: string | null; limite_de_envio?: string | null; qualidade?: string | null; atualizado_na_meta_em?: string | null; liberado_para_corretores?: boolean; teto_mensal?: number | null; resposta?: "ia" | "mensagem_fixa" | "nenhuma"; mensagem_fixa?: string | null; token_cifrado?: string | null; origem?: "manual" | "embedded_signup"; conectado_por?: string | null; created_at?: string; atualizado_em?: string }
+        Update: { id?: string; grupo_id?: string; waba_id?: string; phone_number_id?: string; numero?: string | null; nome_exibicao?: string | null; estado?: "ativo" | "pausado" | "desligado"; motivo_estado?: string | null; limite_de_envio?: string | null; qualidade?: string | null; atualizado_na_meta_em?: string | null; liberado_para_corretores?: boolean; teto_mensal?: number | null; resposta?: "ia" | "mensagem_fixa" | "nenhuma"; mensagem_fixa?: string | null; token_cifrado?: string | null; origem?: "manual" | "embedded_signup"; conectado_por?: string | null; created_at?: string; atualizado_em?: string }
+        Relationships: []
+      }
+      whatsapp_modelos_oficiais: {
+        Row: { id: string; grupo_id: string; numero_oficial_id: string; nome: string; idioma: string; categoria: "MARKETING" | "UTILITY"; corpo: string; exemplos: Json; cabecalho: "nenhum" | "imagem" | "texto"; cabecalho_texto: string | null; cabecalho_imagem_url: string | null; rodape: string | null; botoes: Json; meta_id: string | null; estado: "rascunho" | "em_analise" | "aprovado" | "rejeitado" | "pausado" | "desativado" | "erro"; motivo: string | null; qualidade: string | null; criado_por: string | null; enviado_em: string | null; created_at: string; atualizado_em: string }
+        Insert: { id?: string; grupo_id: string; numero_oficial_id: string; nome: string; idioma?: string; categoria?: "MARKETING" | "UTILITY"; corpo: string; exemplos?: Json; cabecalho?: "nenhum" | "imagem" | "texto"; cabecalho_texto?: string | null; cabecalho_imagem_url?: string | null; rodape?: string | null; botoes?: Json; meta_id?: string | null; estado?: "rascunho" | "em_analise" | "aprovado" | "rejeitado" | "pausado" | "desativado" | "erro"; motivo?: string | null; qualidade?: string | null; criado_por?: string | null; enviado_em?: string | null; created_at?: string; atualizado_em?: string }
+        Update: { id?: string; grupo_id?: string; numero_oficial_id?: string; nome?: string; idioma?: string; categoria?: "MARKETING" | "UTILITY"; corpo?: string; exemplos?: Json; cabecalho?: "nenhum" | "imagem" | "texto"; cabecalho_texto?: string | null; cabecalho_imagem_url?: string | null; rodape?: string | null; botoes?: Json; meta_id?: string | null; estado?: "rascunho" | "em_analise" | "aprovado" | "rejeitado" | "pausado" | "desativado" | "erro"; motivo?: string | null; qualidade?: string | null; criado_por?: string | null; enviado_em?: string | null; created_at?: string; atualizado_em?: string }
+        Relationships: []
+      }
+      whatsapp_oficial_conversas: {
+        Row: { id: string; grupo_id: string; numero_oficial_id: string; telefone: string; lead_id: string | null; corretor_id: string | null; nome_cliente: string | null; janela_ate: string | null; ultima_mensagem: string | null; ultima_interacao_em: string; ia_ativa: boolean; assumida_em: string | null; assumida_por: string | null; avisado_em: string | null; created_at: string; atualizado_em: string }
+        Insert: { id?: string; grupo_id?: string; numero_oficial_id: string; telefone: string; lead_id?: string | null; corretor_id?: string | null; nome_cliente?: string | null; janela_ate?: string | null; ultima_mensagem?: string | null; ultima_interacao_em?: string; ia_ativa?: boolean; assumida_em?: string | null; assumida_por?: string | null; avisado_em?: string | null; created_at?: string; atualizado_em?: string }
+        Update: { id?: string; grupo_id?: string; numero_oficial_id?: string; telefone?: string; lead_id?: string | null; corretor_id?: string | null; nome_cliente?: string | null; janela_ate?: string | null; ultima_mensagem?: string | null; ultima_interacao_em?: string; ia_ativa?: boolean; assumida_em?: string | null; assumida_por?: string | null; avisado_em?: string | null; created_at?: string; atualizado_em?: string }
+        Relationships: []
+      }
+      whatsapp_oficial_mensagens: {
+        Row: { id: string; grupo_id: string; conversa_id: string; remetente: "cliente" | "bot" | "corretor" | "sistema"; tipo: "texto" | "modelo" | "imagem" | "audio" | "video" | "documento" | "botao" | "outro"; conteudo: string; wamid: string | null; status_entrega: "enviada" | "entregue" | "lida" | "falhou" | null; erro_codigo: number | null; erro_detalhe: string | null; fila_id: string | null; cobranca_categoria: string | null; cobrada: boolean | null; created_at: string }
+        Insert: { id?: string; grupo_id?: string; conversa_id: string; remetente: "cliente" | "bot" | "corretor" | "sistema"; tipo?: "texto" | "modelo" | "imagem" | "audio" | "video" | "documento" | "botao" | "outro"; conteudo?: string; wamid?: string | null; status_entrega?: "enviada" | "entregue" | "lida" | "falhou" | null; erro_codigo?: number | null; erro_detalhe?: string | null; fila_id?: string | null; cobranca_categoria?: string | null; cobrada?: boolean | null; created_at?: string }
+        Update: { id?: string; grupo_id?: string; conversa_id?: string; remetente?: "cliente" | "bot" | "corretor" | "sistema"; tipo?: "texto" | "modelo" | "imagem" | "audio" | "video" | "documento" | "botao" | "outro"; conteudo?: string; wamid?: string | null; status_entrega?: "enviada" | "entregue" | "lida" | "falhou" | null; erro_codigo?: number | null; erro_detalhe?: string | null; fila_id?: string | null; cobranca_categoria?: string | null; cobrada?: boolean | null; created_at?: string }
+        Relationships: []
+      }
+      whatsapp_oficial_eventos: {
+        Row: { id: string; grupo_id: string; phone_number_id: string | null; campo: string; payload: Json; processado_em: string | null; erro: string | null; created_at: string }
+        Insert: { id?: string; grupo_id: string; phone_number_id?: string | null; campo: string; payload: Json; processado_em?: string | null; erro?: string | null; created_at?: string }
+        Update: { id?: string; grupo_id?: string; phone_number_id?: string | null; campo?: string; payload?: Json; processado_em?: string | null; erro?: string | null; created_at?: string }
+        Relationships: []
+      }
       whatsapp_campanhas: {
         Row: {
           grupo_id: string
@@ -4947,6 +4977,9 @@ export type Database = {
           total_enviados: number
           total_leads: number
           total_respondidos: number
+          canal: "evolution" | "oficial"
+          numero_oficial_id: string | null
+          modelo_oficial_id: string | null
         }
         Insert: {
           grupo_id?: string
@@ -4974,6 +5007,9 @@ export type Database = {
           total_enviados?: number
           total_leads?: number
           total_respondidos?: number
+          canal?: "evolution" | "oficial"
+          numero_oficial_id?: string | null
+          modelo_oficial_id?: string | null
         }
         Update: {
           grupo_id?: string
@@ -5001,6 +5037,9 @@ export type Database = {
           total_enviados?: number
           total_leads?: number
           total_respondidos?: number
+          canal?: "evolution" | "oficial"
+          numero_oficial_id?: string | null
+          modelo_oficial_id?: string | null
         }
         Relationships: [
           {
@@ -5039,6 +5078,12 @@ export type Database = {
           telefone: string
           tentativas: number
           tentativas_texto: number
+          wamid: string | null
+          entregue_em: string | null
+          lido_em: string | null
+          erro_meta_codigo: number | null
+          cobranca_categoria: string | null
+          cobrada: boolean | null
         }
         Insert: {
           grupo_id?: string
@@ -5059,6 +5104,12 @@ export type Database = {
           telefone: string
           tentativas?: number
           tentativas_texto?: number
+          wamid?: string | null
+          entregue_em?: string | null
+          lido_em?: string | null
+          erro_meta_codigo?: number | null
+          cobranca_categoria?: string | null
+          cobrada?: boolean | null
         }
         Update: {
           grupo_id?: string
@@ -5079,6 +5130,12 @@ export type Database = {
           telefone?: string
           tentativas?: number
           tentativas_texto?: number
+          wamid?: string | null
+          entregue_em?: string | null
+          lido_em?: string | null
+          erro_meta_codigo?: number | null
+          cobranca_categoria?: string | null
+          cobrada?: boolean | null
         }
         Relationships: [
           {
@@ -5753,6 +5810,10 @@ export type Database = {
       primeiros_contatos_do_corretor: {
         Args: { p_corretor: string; p_desde: string }
         Returns: number
+      }
+      registrar_consentimento_marketing_whatsapp: {
+        Args: { p_lead_id: string; p_concedido: boolean; p_origem: string; p_versao?: string }
+        Returns: undefined
       }
     }
     Enums: {

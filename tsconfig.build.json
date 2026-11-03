@@ -1,0 +1,15 @@
+// Checagem de tipos do `next build`: o tsconfig.json sem os testes
+// (03/11/2026, ver o comentário em next.config.ts). O CI continua checando os
+// testes com o tsconfig.json completo (`npx tsc --noEmit`).
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "test/**", "e2e/**", "scripts/**"]
+}

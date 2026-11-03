@@ -33,6 +33,7 @@ import { ImoveisQueCombinam } from "./ImoveisQueCombinam";
 import { Documentacao } from "./Documentacao";
 import { Indicacoes } from "./Indicacoes";
 import { PedidoDoSite } from "./PedidoDoSite";
+import { NumeroOficialDoLead } from "./NumeroOficial";
 import { getVendasDoLead } from "@/lib/financeiro/dados";
 import { lerResumoDoLead } from "@/lib/crm/resumoDoLead";
 import { ResumoDoLeadCartao } from "@/app/corretor/(painel)/_componentes/ResumoDoLeadCartao";
@@ -252,6 +253,10 @@ export default async function FichaLeadPage({
           <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} comImoveis={comImoveis} />
           <OrigemJornada touchpoints={touchpoints} />
           <PreferenciasContato leadId={lead.id} preferencias={preferencias} naoContatarEm={lead.naoContatarEm} />
+          {/* O número oficial da imobiliária (0254, F3): a conversa que a lista
+              abriu, o "assumir pelo meu WhatsApp" e o consentimento de ofertas.
+              Só para o corretor DONO: o gestor não lê conversa (0134). */}
+          <NumeroOficialDoLead leadId={lead.id} donoId={lead.corretor?.id ?? null} nome={lead.nome} />
           <Qualificacao
             leadId={lead.id}
             inicial={{

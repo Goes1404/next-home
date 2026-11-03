@@ -5,6 +5,28 @@
 > WhatsApp do próprio corretor, conectado pela Evolution (API não oficial),
 > e é exatamente isso que o WhatsApp pune.
 
+## Estado em 03/11/2026 (fim do dia)
+
+O código das fases F1 a F5 está pronto na branch `ccr-7424dca4-4nynlp`, e a F6
+virou um mapa sem código. **Nada foi para produção**: a 0254 não foi aplicada
+no banco de produção, nenhuma variável foi criada na Vercel e nenhuma
+mensagem real saiu. Para ligar, siga `docs/WHATSAPP-OFICIAL-ATIVAR.md`.
+
+| fase | estado | onde |
+|---|---|---|
+| F0 — contas e decisões | **com o dono**: guia passo a passo escrito; as três decisões do fim deste arquivo foram tomadas como recomendado (cartão de cada cliente, um número por imobiliária, IA responde no oficial) | `docs/WHATSAPP-OFICIAL-ATIVAR.md`, `.env.example` |
+| F1 — fundação | pronta, testada | `0254`, `src/lib/whatsapp/oficial/`, `/api/webhooks/whatsapp-oficial` |
+| F2 — lista pelo número oficial | pronta, testada | Campanhas → "Por onde sai"; Administração → WhatsApp oficial (modelos) |
+| F3 — resposta e passagem | pronta, testada; **um desvio**: quem respondeu ao número oficial continua na régua de primeiro contato do número do corretor, e a passagem é manual ("Assumir pelo meu WhatsApp" na ficha) | `respostaOficial.ts`, ficha do lead `#numero-oficial` |
+| F4 — medição do piloto | tela pronta; o piloto em si depende da F0 | Administração → WhatsApp oficial → Medição do piloto |
+| F5 — clientes da Astro | código do Embedded Signup v4 pronto e escondido; depende de a Astro virar Tech Provider | `ConectarPelaMeta.tsx`, `embeddedSignup.ts` |
+| F6 — coexistência | só o mapa (39 capacidades, 5 quebras caras) | `docs/WHATSAPP-OFICIAL-COEXISTENCIA.md` |
+
+Achados que mudam o que está escrito abaixo: o `provider.ts` não é o único
+adaptador da Evolution (F6, surpresa 1), e a lista oficial precisou de uma
+regra única para não ser contada como "do número do corretor" (aviso de
+queda, saúde, limpar fila, cota do plano — `src/lib/whatsapp/listasDoNumero.ts`).
+
 ## Por que agora
 
 - **A conta da Bruna foi restringida (07/10/2026)** por "mensagens
@@ -96,9 +118,12 @@ operação em produção.
 
 ## O que já existe e ajuda
 
-- **`src/lib/whatsapp/provider.ts` é o único ponto que fala com a Evolution**
-  (30 arquivos passam por ele). A API oficial entra como um segundo
-  adaptador ao lado, sem espalhar `if` pelo sistema.
+- **`src/lib/whatsapp/provider.ts` concentra quase tudo o que fala com a
+  Evolution** (30 arquivos passam por ele). A API oficial entrou como um
+  módulo próprio ao lado (`src/lib/whatsapp/oficial/`), sem espalhar `if`
+  pelo sistema. *Corrigido em 03/11: não é o único — `sonda.ts` chama a
+  Evolution direto e o formato dela é lido em outros arquivos
+  (`docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`, surpresa 1).*
 - **O funil da lista já está pronto** (`campaignQueue.ts` +
   `campaignDispatcher.ts`): fila, janela 9h–20h59, pausa automática, pedido
   de parada, uma vez por telefone, proteção de 7 dias, A/B. O canal oficial

@@ -7,7 +7,7 @@ status: evergreen
 custou: medio
 codigo: [src/app/api/webhooks/whatsapp/route.ts, src/lib/whatsapp/quandoAIaResponde.ts, src/lib/whatsapp/turnoDeAtendimento.ts, src/lib/whatsapp/aiAgent.ts]
 created: 2026-09-05
-updated: 2026-10-30
+updated: 2026-11-03
 fonte: leitura do código + docs/MEMORIA.md
 summary: Autenticação → eventos técnicos → porteiro de lead cadastrado → transcrição/dedup/rajada → turnoDeAtendimento → envio → gravação → telemetria → dossiê → aviso.
 ---
@@ -174,6 +174,26 @@ grupo; a IA não cala por isso. O aviso ao corretor sem imóvel citado diz
 Fala do corretor (IA calada ou ao desligar): "combinado, sábado às 10" ou
 a proposta dele aceita pelo cliente vira `visita_sugerida_para` e um
 "Registrar?" no Início, nunca registro automático (0163).
+
+## O webhook do número OFICIAL é outra rota (0254, 03/11/2026, fora de produção)
+
+`/api/webhooks/whatsapp-oficial` (Cloud API da Meta) não passa por nada
+acima. GET responde o `hub.challenge` com `WHATSAPP_OFICIAL_VERIFY_TOKEN`;
+POST sem segredo do app responde 503 (falha fechada) e com assinatura
+`X-Hub-Signature-256` errada, 401. Guarda o evento cru (só de número
+conhecido, 30 dias), responde 200 e processa em `after()`: status primeiro
+(entrega, leitura, falha, cobrança), depois modelos, qualidade, conta,
+preferência de marketing e, por último, mensagens.
+
+A mensagem do cliente (`oficial/respostaOficial.ts`) mora em
+`whatsapp_oficial_conversas`/`_mensagens`, separada da conversa do corretor
+(que é única por corretor + telefone). "Parar" (botão ou texto) revoga o
+consentimento e tira o lead das listas; o corretor dono é avisado no celular
+(o gestor não lê conversa, 0134); a IA responde (`executarTurnoDeAtendimento`,
+balões juntados numa mensagem só, porque cada balão é cobrado) até alguém
+assumir. A passagem é manual — "Assumir pelo meu WhatsApp" na ficha do lead —
+e o cliente que respondeu ao número oficial continua na régua de primeiro
+contato do número do corretor ([[lista-pela-api-oficial-da-meta]]).
 
 ## Relacionadas
 - [[visao-geral-do-sistema]]

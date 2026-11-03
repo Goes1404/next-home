@@ -2,16 +2,22 @@
 title: Lista pela API oficial da Meta
 tags: [campanhas, decisao]
 type: decisao
-status: seedling
-custou: medio
+status: growing
+custou: alto
 codigo:
   - docs/ROADMAP-WHATSAPP-OFICIAL.md
-  - src/lib/whatsapp/provider.ts
-  - src/lib/whatsapp/campaignDispatcher.ts
+  - docs/WHATSAPP-OFICIAL-ATIVAR.md
+  - docs/WHATSAPP-OFICIAL-COEXISTENCIA.md
+  - supabase/migrations/0254_whatsapp_oficial.sql
+  - src/lib/whatsapp/oficial/
+  - src/app/api/webhooks/whatsapp-oficial/route.ts
+  - src/app/corretor/(painel)/admin/whatsapp-oficial/
+  - src/app/corretor/(painel)/leads/[id]/NumeroOficial.tsx
+  - src/lib/whatsapp/listasDoNumero.ts
 created: 2026-11-03
 updated: 2026-11-03
-fonte: pesquisa na documentação da Meta em 03/11/2026 + roadmap
-summary: Lista fria só é segura pela API oficial; o número que entra nela sai da Evolution (coexistência desconecta aparelhos vinculados), então o caminho recomendado é um número oficial só para listas por imobiliária, com o corretor assumindo quem respondeu.
+fonte: pesquisa na documentação da Meta em 03/11/2026 + roadmap + construção F0–F6 na branch ccr-7424dca4-4nynlp
+summary: Lista fria só é segura pela API oficial; o número que entra nela sai da Evolution (coexistência desconecta aparelhos vinculados), então o caminho é um número oficial só para listas por imobiliária. Construído em 03/11/2026 na branch ccr-7424dca4-4nynlp (0254, nada em produção) — falta o dono ligar as contas da Meta (docs/WHATSAPP-OFICIAL-ATIVAR.md).
 ---
 
 # Lista pela API oficial da Meta
@@ -59,10 +65,47 @@ produção.
 
 ## O que já ajuda
 
-`provider.ts` é o único ponto que fala com a Evolution; a fila e as travas
-da lista são reaproveitáveis; consentimento já tem histórico (0067).
+A fila e as travas da lista são reaproveitáveis; consentimento já tem
+histórico (0067). (`provider.ts` NÃO é o único adaptador da Evolution:
+`docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`, surpresa 1.)
+
+## O que foi construído (03/11/2026 — branch `ccr-7424dca4-4nynlp`, fora de produção)
+
+Nada foi publicado, aplicado no banco de produção ou enviado de verdade. O
+passo a passo do dono está em `docs/WHATSAPP-OFICIAL-ATIVAR.md`.
+
+- **0254**: número oficial por grupo (um ativo; token do cliente cifrado),
+  modelos, `canal` na lista + rastro da Meta na fila (`wamid`, entrega,
+  leitura, cobrança), conversa oficial SEPARADA da do corretor, eventos crus
+  (30 dias), função de consentimento só da chave de serviço, gatilhos de
+  grupo refeitos (lista não aponta para número/modelo de outro grupo) e a
+  lista oficial fora da cota do plano.
+- **F1**: cliente da Graph API (v26.0), webhook próprio
+  (`/api/webhooks/whatsapp-oficial`, assinatura, falha fechada, `after()`).
+- **F2**: modelos (editor + aprovação + sincronia), assistente da lista com
+  "Por onde sai", disparador oficial, consentimento obrigatório.
+- **F3**: resposta do cliente → conversa oficial, "parar" revoga e tira das
+  listas, IA responde até alguém assumir; na ficha do lead (só o dono): a
+  conversa, "Assumir pelo meu WhatsApp", resposta manual nas 24 h e o
+  registro de "autorizou ofertas".
+- **F4**: medição por lista e portão do piloto (Administração → WhatsApp oficial).
+- **F5**: Embedded Signup v4 (botão escondido até as variáveis existirem).
+- **F6**: só mapa (`docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`), nenhum código.
+
+Decisões tomadas pelo usuário ausente (revisáveis): cada imobiliária paga a
+Meta com o próprio cartão; um número oficial por imobiliária; a IA responde
+no número oficial. **Desvio consciente do roadmap**: quem respondeu ao número
+oficial NÃO sai da régua de primeiro contato do número do corretor; a
+passagem é manual (o corretor abre o WhatsApp dele pela ficha).
+
+## Armadilhas que custaram tempo
+- [[lista-oficial-nao-e-do-numero-do-corretor]] — sete leituras "do corretor" que contariam a lista oficial como dele.
+- [[gatilho-compartilhado-e-campo-de-new]] — o desvio da cota parava calado a contagem de artes e vídeos.
+- [[regex-do-postgres-repete-no-maximo-255]] — o `check` do nome do modelo quebraria todo insert.
+- [[tsc-do-projeto-no-limite-de-memoria]] — o `tsc` já vivia a menos de 200 MB do teto.
 
 ## Relacionadas
+- [[lista-oficial-nao-e-do-numero-do-corretor]]
 - [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]]
 - [[primeiro-contato-tem-teto-proprio]]
 - [[fluxo-de-campanhas]]

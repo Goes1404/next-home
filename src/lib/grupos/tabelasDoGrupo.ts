@@ -112,4 +112,9 @@ export const CHAVES_UNICAS_GLOBAIS = {
   // grupo 1 até a fase 7, que escopa a métrica por grupo.
   leads_meta_lead_id_key: "id do lead na Meta; upsert do webhook (fase 7)",
   meta_ads_metricas_pkey: "dia + id da campanha na Meta (fase 7)",
+  // 0254 (03/11/2026): o id do número na Cloud API. O webhook da Meta chega
+  // sem grupo e é por ele que se acha o grupo; o mesmo número em dois grupos
+  // mandaria a resposta de um cliente para a imobiliária errada. Só o
+  // servidor grava (tabela sem grant), então nenhum grupo sonda o do outro.
+  whatsapp_numeros_oficiais_phone_unico: "id do número oficial na Meta; o webhook acha o grupo por ele",
 } as const;

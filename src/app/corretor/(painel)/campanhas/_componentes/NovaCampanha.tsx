@@ -44,6 +44,8 @@ import {
   listarLeadsElegiveis,
   listarOpcoesDeOrigem,
   preverPublicoCampanha,
+  opcoesDoCanalOficial,
+  type CanalOficialNaTela,
   type CampanhaListada,
   type LeadElegivel,
   type ListaParaReabrir,
@@ -51,6 +53,8 @@ import {
   type PreviaPublicoCampanha,
 } from "../acoes";
 import { listaRecemCriada } from "./listaRecemCriada";
+import { EscolhaDoCanal, PassoDoModeloOficial, ResumoOficial } from "./CanalOficial";
+import { renderizarModelo } from "@/lib/whatsapp/oficial/modelos";
 
 /**
  * Criar lista de transmissão em três passos: quem recebe → o que dizer →
@@ -157,7 +161,7 @@ export function NovaCampanha({
   modelos: TemplateMensagem[];
   /** O número do corretor está conectado? Sem isso a lista nasceria parada. */
   numeroConectado: boolean;
-  corretor: { nome: string; whatsapp: string };
+  corretor: { nome: string; whatsapp: string; gestor?: boolean };
 }) {
   const reabrir = inicial?.reabrir;
   const veioMarcado = (inicial?.leadIds.length ?? 0) > 0 || (reabrir?.leadIds.length ?? 0) > 0;
@@ -191,6 +195,28 @@ export function NovaCampanha({
     reabrir?.modo === "rascunho" ? reabrir.id : null,
   );
   const { avisar, falhar } = useAvisos();
+
+  /*
+   * Número OFICIAL da imobiliária (0254). Sem ele (o comum), a escolha do
+   * canal nem aparece e o assistente é o de sempre.
+   */
+  const [canalOficial, setCanalOficial] = useState<CanalOficialNaTela | null>(null);
+  const [canalDeEnvio, setCanalDeEnvio] = useState<"evolution" | "oficial">("evolution");
+  const [modeloOficialId, setModeloOficialId] = useState<string | null>(null);
+  const oficial = canalDeEnvio === "oficial" && canalOficial?.disponivel === true;
+  const modeloOficial = canalOficial?.disponivel ? canalOficial.modelos.find((m) => m.id === modeloOficialId) ?? null : null;
+
+  useEffect(() => {
+    let vivo = true;
+    opcoesDoCanalOficial()
+      .then((c) => {
+        if (vivo) setCanalOficial(c);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   // ---- Seleção manual ("Escolher um por um") -------------------------
   const [carteira, setCarteira] = useState<LeadElegivel[] | null>(null);
@@ -438,9 +464,11 @@ export function NovaCampanha({
       iniciarEm,
       recorte,
       midias,
-      viva: viva && !selecaoManual,
+      viva: viva && !selecaoManual && !oficial,
       templateId,
       rascunhoId,
+      canal: oficial ? "oficial" : "evolution",
+      modeloOficialId: oficial ? modeloOficialId : null,
     };
   }
 
@@ -464,6 +492,7 @@ export function NovaCampanha({
     setViva(false);
     setTemplateId(null);
     setRascunhoId(null);
+    setModeloOficialId(null);
   }
 
   function guardarRascunho() {
@@ -517,8 +546,13 @@ export function NovaCampanha({
           }),
           (modoEnvio === "agendado"
             ? `Lista agendada para ${new Date(iniciarEm!).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}, com ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}.`
-            : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`) +
-            fraseSemWhatsapp(resultado.semWhatsapp),
+            : oficial
+              ? `Lista oficial criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens saem pelo número oficial no próximo horário comercial.`
+              : `Lista de transmissão criada para ${resultado.totalLeads} pessoa${resultado.totalLeads === 1 ? "" : "s"}. As mensagens começam a sair sozinhas no próximo horário seguro.`) +
+            fraseSemWhatsapp(resultado.semWhatsapp) +
+            (resultado.semConsentimento
+              ? ` ${resultado.semConsentimento} ficaram de fora por não terem autorizado receber ofertas pelo WhatsApp.`
+              : ""),
         );
 
         // Volta ao começo para a próxima lista, sem nada da anterior.
@@ -535,7 +569,7 @@ export function NovaCampanha({
 
   return (
     <section className="cartao p-5 sm:p-6">
-      {!numeroConectado && (
+      {!numeroConectado && !oficial && (
         <div className="border-alerta-linha bg-alerta-lavado text-fluid-sm mb-4 flex items-start gap-3 rounded-xl border p-3.5">
           <WifiOff aria-hidden className="text-alerta mt-0.5 h-4 w-4 shrink-0" />
           <p className="text-corpo min-w-0">
@@ -570,6 +604,9 @@ export function NovaCampanha({
       {/* ------------------------------------------------ 1. quem recebe */}
       {passo === 1 && (
         <div className="mt-4 space-y-3">
+          {canalOficial?.disponivel && (
+            <EscolhaDoCanal valor={canalDeEnvio} aoMudar={setCanalDeEnvio} numero={canalOficial.numero} />
+          )}
           {PUBLICOS.map((opcao) => (
             <button
               key={opcao.valor}
@@ -818,7 +855,16 @@ export function NovaCampanha({
       )}
 
       {/* -------------------------------------------------- 2. mensagem */}
-      {passo === 2 && (
+      {passo === 2 && oficial && canalOficial?.disponivel && (
+        <PassoDoModeloOficial
+          modelos={canalOficial.modelos}
+          escolhido={modeloOficialId}
+          aoEscolher={setModeloOficialId}
+          imovel={imovel?.nome ?? null}
+          souGestor={Boolean(corretor.gestor)}
+        />
+      )}
+      {passo === 2 && !oficial && (
         <div className="mt-4 space-y-3">
           {modelos.length > 0 && (
             <label className="block">
@@ -1030,11 +1076,19 @@ export function NovaCampanha({
               <dt className="text-apoio shrink-0">Sobre:</dt>
               <dd className="text-titulo">{nomeImovel}</dd>
             </div>
+            {oficial && (
+              <div className="flex gap-2">
+                <dt className="text-apoio shrink-0">Por:</dt>
+                <dd className="text-titulo">Número oficial da imobiliária</dd>
+              </div>
+            )}
             <div className="flex gap-2">
-              <dt className="text-apoio shrink-0">{testandoDuas ? "Versão A:" : "Diz:"}</dt>
-              <dd className="text-corpo min-w-0 break-words">“{mensagemBase}”</dd>
+              <dt className="text-apoio shrink-0">{testandoDuas && !oficial ? "Versão A:" : "Diz:"}</dt>
+              <dd className="text-corpo min-w-0 break-words">
+                “{oficial && modeloOficial ? renderizarModelo(modeloOficial.corpo, { nome: "Carla", imovel: imovel?.nome }) : mensagemBase}”
+              </dd>
             </div>
-            {testandoDuas && mensagemB.trim() && (
+            {!oficial && testandoDuas && mensagemB.trim() && (
               <div className="flex gap-2">
                 <dt className="text-apoio shrink-0">Versão B:</dt>
                 <dd className="text-corpo min-w-0 break-words">“{mensagemB}”</dd>
@@ -1050,7 +1104,18 @@ export function NovaCampanha({
             )}
           </dl>
 
-          {!selecaoManual && (
+          {oficial && canalOficial?.disponivel && (
+            <ResumoOficial
+              filtro={publico}
+              imovelSlug={publico === "compradores" ? imovelSlug : null}
+              recorte={recorte}
+              leadIds={leadIds}
+              tarifa={canalOficial.tarifa}
+              tetoRestante={canalOficial.tetoRestante}
+            />
+          )}
+
+          {!selecaoManual && !oficial && (
             <label
               className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
                 viva ? "border-acento-linha bg-acento-lavado" : "border-linha hover:border-linha-forte"
@@ -1167,8 +1232,9 @@ export function NovaCampanha({
 
           <p className="text-fluid-xs text-apoio flex items-start gap-2">
             <Shield aria-hidden className="text-ok mt-0.5 h-4 w-4 shrink-0" />
-            As mensagens saem uma a uma, com {INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial
-            — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.
+            {oficial
+              ? "As mensagens saem pelo número oficial, com o modelo aprovado pela Meta e só em horário comercial. Só recebe quem autorizou; quem tocar “Parar de receber” sai na hora. Quem responder aparece na ficha do lead para você assumir."
+              : `As mensagens saem uma a uma, com ${INTERVALO_EM_PALAVRAS} entre elas e só em horário comercial — é o que mantém seu número seguro. Quem pedir para sair no meio do caminho não recebe.`}
           </p>
         </div>
       )}
@@ -1188,7 +1254,7 @@ export function NovaCampanha({
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          {passo > 1 && (
+          {passo > 1 && !oficial && (
             <button
               type="button"
               onClick={guardarRascunho}
@@ -1218,6 +1284,10 @@ export function NovaCampanha({
                   falhar("Escolha o imóvel dos compradores.");
                   return;
                 }
+                if (passo === 2 && oficial && !modeloOficial) {
+                  falhar("Escolha o modelo aprovado que a lista vai usar.");
+                  return;
+                }
                 setPasso((p) => (p === 1 ? 2 : 3));
               }}
               className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors"
@@ -1228,8 +1298,8 @@ export function NovaCampanha({
             <button
               type="button"
               onClick={disparar}
-              disabled={criando || !numeroConectado}
-              title={numeroConectado ? undefined : "Conecte seu WhatsApp para enviar"}
+              disabled={criando || (!numeroConectado && !oficial)}
+              title={numeroConectado || oficial ? undefined : "Conecte seu WhatsApp para enviar"}
               className="bg-acento hover:bg-acento-hover text-fluid-sm text-sobre-cor flex min-h-12 cursor-pointer items-center gap-1.5 rounded-xl px-5 font-medium transition-colors disabled:opacity-60"
             >
               <Rocket className="h-4 w-4" />

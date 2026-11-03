@@ -410,7 +410,9 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // Visão geral; Anúncios foi para Anúncios pagos.
     // 29/10/2026: 9 → 10, "Portais" (captação direta do ZAP, Viva Real e
     // OLX, 0245) em Negócio.
-    expect(subitensDe("/corretor/admin")).toHaveLength(10);
+    // 03/11/2026: 10 → 11, "WhatsApp oficial" (número da Meta para listas,
+    // 0254) em Equipe, ao lado do WhatsApp da equipe.
+    expect(subitensDe("/corretor/admin")).toHaveLength(11);
     expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
       "Equipe",
       "Negócio",
@@ -603,6 +605,7 @@ describe("menu pelo tipo do grupo (corretor independente, fase 2)", () => {
           "/corretor/admin/leads",
           "/corretor/admin/contas",
           "/corretor/admin/whatsapp",
+          "/corretor/admin/whatsapp-oficial",
           "/corretor/admin/construtoras",
           "/corretor/admin/parceiros",
           "/corretor/admin/portais",

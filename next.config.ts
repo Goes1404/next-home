@@ -38,6 +38,19 @@ const nextConfig: NextConfig = {
   },
 
   /*
+   * A checagem de tipos do `next build` sem os arquivos de teste (03/11/2026).
+   * O projeto inteiro mais o validador de rotas (`.next/types/validator.ts`)
+   * passou do limite de memória padrão do Node (~2 GB) na etapa "Running
+   * TypeScript": o `tsc` já vivia a menos de 200 MB do teto. Sem os testes, a
+   * checagem do build passa com 1,7 GB. Os testes NÃO perdem a checagem: o CI
+   * roda `npx tsc --noEmit` com o `tsconfig.json` completo antes do build.
+   * Medição e caminhos: vault/10-notas/tsc-do-projeto-no-limite-de-memoria.md.
+   */
+  typescript: {
+    tsconfigPath: "tsconfig.build.json",
+  },
+
+  /*
    * Inlinado em tempo de build nos DOIS pacotes (cliente e servidor), que e o
    * que a documentacao do `env` garante: o Next substitui a expressao pelo
    * literal. E isso que impede `/api/versao` e a aba de discordarem dentro da

@@ -10,6 +10,7 @@ import { nomesDaPessoa, variarSemRepetir } from "./campaignQueue";
 import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { lerCasaDoGrupo } from "./casaDoGrupo";
 import { textosRecentesDoNumero } from "./textosDoNumero";
+import { listasDoNumeroDoCorretor } from "./listasDoNumero";
 import {
   ajustarSaudacaoAoHorario,
   CICLOS_ATE_PAUSAR,
@@ -407,13 +408,7 @@ async function processarInstancia(ctx: {
     return vazio("aguardando_horario", "Fora do expediente deste número. A fila retoma sozinha no horário dele.");
   }
 
-  const { data: campanhasAtivas } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id")
-    .eq("corretor_id", instancia.corretor_id)
-    .eq("status", "em_andamento");
-
-  const idsCampanhas = (campanhasAtivas ?? []).map((c) => c.id);
+  const idsCampanhas = await campanhasDoNumeroDoCorretor(supabase, instancia.corretor_id);
   if (idsCampanhas.length === 0) return vazio("sem_campanha_ativa");
 
   // Grupo suspenso por cobrança (fase 2C): a lista não dispara. A fila não
@@ -1119,10 +1114,27 @@ async function processarInstancia(ctx: {
 }
 
 /**
+ * As listas em andamento que saem pelo WhatsApp DO CORRETOR (canal
+ * `evolution`). As do número oficial da imobiliária (0254) têm disparador
+ * próprio (`oficial/disparoOficial.ts`): por aqui elas sairiam do número
+ * pessoal dele, exatamente o que a lista oficial existe para evitar.
+ *
+ * Antes da 0254 aplicada a coluna `canal` não existe (42703): aí toda lista é
+ * do corretor, e a leitura volta a ser a de sempre.
+ */
+export async function campanhasDoNumeroDoCorretor(
+  supabase: ReturnType<typeof createServiceClient>,
+  corretorId: string,
+): Promise<string[]> {
+  const listas = await listasDoNumeroDoCorretor(supabase, corretorId, { status: "em_andamento" });
+  return (listas ?? []).map((l) => l.id);
+}
+
+/**
  * O lead como está AGORA, para a conferência antes do envio e para o nome
  * da variação por IA. Null quando o lead foi excluído.
  */
-async function leadParaEnvio(
+export async function leadParaEnvio(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
 ): Promise<(NonNullable<LeadNoEnvio> & { nome: string }) | null> {
@@ -1138,7 +1150,7 @@ async function leadParaEnvio(
  * Os OUTROS cadastros do mesmo corretor com o mesmo telefone. Compara pela
  * coluna gerada `telefone_e164`, que normaliza pontuação e DDI.
  */
-async function cadastrosDoMesmoTelefone(
+export async function cadastrosDoMesmoTelefone(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
 ): Promise<{ id: string; nao_contatar_em: string | null }[]> {
@@ -1158,7 +1170,7 @@ async function cadastrosDoMesmoTelefone(
 }
 
 /** Algum item desta lista, de um desses cadastros, já saiu? */
-async function listaJaSaiuPara(
+export async function listaJaSaiuPara(
   supabase: ReturnType<typeof createServiceClient>,
   campanhaId: string,
   leadIds: string[],
@@ -1173,7 +1185,7 @@ async function listaJaSaiuPara(
 }
 
 /** As mídias da lista que de fato pertencem ao imóvel dela no catálogo. */
-async function midiasDoCatalogo(
+export async function midiasDoCatalogo(
   supabase: ReturnType<typeof createServiceClient>,
   empreendimentoId: string | null,
   midias: MidiaDaLista[],
@@ -1191,7 +1203,7 @@ async function midiasDoCatalogo(
   return midias.filter((m) => validas.has(m.url) && (m.tipo === "foto" || m.tipo === "planta"));
 }
 
-async function contarPendentes(
+export async function contarPendentes(
   supabase: ReturnType<typeof createServiceClient>,
   idsCampanhas: string[],
 ): Promise<{ total: number; proximoAgendadoEm: string | null }> {
@@ -1221,7 +1233,7 @@ async function contarPendentes(
  * rodar em paralelo com `marcarRespostaCampanha` (que só toca
  * `total_respondidos`) e repetível sem risco de contar dobrado.
  */
-async function atualizarProgressoCampanhas(
+export async function atualizarProgressoCampanhas(
   supabase: ReturnType<typeof createServiceClient>,
   idsCampanhas: string[],
 ): Promise<void> {
@@ -1259,7 +1271,7 @@ async function atualizarProgressoCampanhas(
 const ADIADOS_POR_CHAMADA = 25;
 
 /** O corretor mandou mensagem a este lead nas últimas `HORAS_DA_GUARDA_HUMANA`? */
-async function corretorFalouComOLead(
+export async function corretorFalouComOLead(
   supabase: ReturnType<typeof createServiceClient>,
   leadId: string,
   outrosCadastros: string[] = [],

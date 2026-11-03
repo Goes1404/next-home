@@ -112,7 +112,7 @@ export default async function CampanhasPainelPage({
         statusInicial={status}
         inicial={inicial}
         modelos={modelos}
-        corretor={{ nome: corretor?.nome ?? "", whatsapp: corretor?.whatsapp ?? "" }}
+        corretor={{ nome: corretor?.nome ?? "", whatsapp: corretor?.whatsapp ?? "", gestor: corretor?.papel === "gestor" }}
       />
     </div>
   );

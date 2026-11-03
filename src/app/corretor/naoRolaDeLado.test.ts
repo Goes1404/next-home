@@ -38,6 +38,9 @@ const ROLAGEM_DECLARADA = [
   "(painel)/financeiro/resultado/page.tsx",
   // Fiscal (06/10/2026): impostos e RPA em tabelas de valores; no celular rolam.
   "(painel)/financeiro/fiscal/page.tsx",
+  // Medição do piloto do número oficial (03/11/2026): tabela por lista com
+  // seis colunas de números; no celular rola, e os totais estão acima dela.
+  "(painel)/admin/whatsapp-oficial/page.tsx",
   // Faixa de sugestões dentro da simulação de conversa: são atalhos de teste,
   // não navegação, e a caixa imita a janela do WhatsApp de propósito.
   "(painel)/whatsapp/_componentes/PlaygroundIA.tsx",

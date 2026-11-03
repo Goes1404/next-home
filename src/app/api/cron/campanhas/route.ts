@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { after, NextRequest, NextResponse } from "next/server";
 import { processarFilaCampanhas } from "@/lib/whatsapp/campaignDispatcher";
+import { processarFilaOficial } from "@/lib/whatsapp/oficial/disparoOficial";
 
 export const runtime = "nodejs";
 // Envia mensagens reais de verdade (I/O de rede sequencial) e chega a
@@ -111,12 +112,27 @@ export async function GET(req: NextRequest) {
   const dono = url.searchParams.get("dono") || `corrente-${crypto.randomUUID()}`;
 
   try {
-    const resultado = await processarFilaCampanhas({ dono });
+    /*
+     * As listas pelo número OFICIAL (0254) primeiro, com orçamento curto: são
+     * envios rápidos, sem espaçamento, e não podem esperar atrás de uma
+     * chamada da Evolution que segura até 45 s pelo intervalo anti-ban. O
+     * resto do orçamento fica para a fila de sempre. Falha aqui não derruba
+     * a fila da Evolution.
+     */
+    const inicio = Date.now();
+    const oficial = await processarFilaOficial({ dono, orcamentoMs: 12_000 }).catch((erro) => {
+      console.error("Erro ao processar a fila oficial:", erro);
+      return null;
+    });
+    const resultado = await processarFilaCampanhas({
+      dono,
+      orcamentoMs: Math.max(15_000, 45_000 - (Date.now() - inicio)),
+    });
 
-    const continua = resultado.deveContinuar && elo + 1 < MAX_ELOS;
+    const continua = (resultado.deveContinuar || Boolean(oficial?.deveContinuar)) && elo + 1 < MAX_ELOS;
     if (continua) encadearProximoElo(url, elo + 1, dono);
 
-    return NextResponse.json({ ok: true, elo, encadeou: continua, ...resultado });
+    return NextResponse.json({ ok: true, elo, encadeou: continua, ...resultado, oficial });
   } catch (error) {
     console.error("Erro ao processar a fila de campanhas:", error);
     return NextResponse.json(

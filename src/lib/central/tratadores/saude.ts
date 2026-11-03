@@ -16,6 +16,7 @@ import {
 import { contarPrimeirosContatos } from "@/lib/whatsapp/primeiroContatoNoEnvio";
 import { calcularLimiteDoDia } from "@/lib/whatsapp/repositorio";
 import { avaliarSaudeDaConexao, quandoEmSaoPaulo, type FotoDaConexao } from "@/lib/whatsapp/saudeDaConexao";
+import { listasDoNumeroDoCorretor } from "@/lib/whatsapp/listasDoNumero";
 import { MOTIVO_SESSAO_CAIU } from "@/lib/whatsapp/sessaoCaida";
 import type { Acao, Consulta, ContextoDoCentral } from "../executar";
 
@@ -102,12 +103,9 @@ export async function saudeDoNumero(
   }
 
   // As listas do corretor: as em andamento dão o "fica para amanhã"; as
-  // pendências de todas engrossam o texto da conexão, como na faixa.
-  const { data: campanhas } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id, status")
-    .eq("grupo_id", ctx.grupoId)
-    .eq("corretor_id", ctx.corretorId);
+  // pendências de todas engrossam o texto da conexão, como na faixa. As do
+  // número oficial da imobiliária (0254) não passam pelo número dele.
+  const campanhas = await listasDoNumeroDoCorretor(supabase, ctx.corretorId, { grupoId: ctx.grupoId });
   const ids = (campanhas ?? []).map((c) => c.id);
   const emAndamento = new Set((campanhas ?? []).filter((c) => c.status === "em_andamento").map((c) => c.id));
   const { data: fila } =

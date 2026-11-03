@@ -5,9 +5,9 @@ tags: [campanhas, anti-ban, arquitetura]
 type: nota
 status: evergreen
 custou: medio
-codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/listaPeloCentral.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts]
+codigo: [src/app/corretor/(painel)/campanhas/_componentes/NovaCampanha.tsx, src/app/corretor/(painel)/campanhas/acoes.ts, src/lib/whatsapp/listaPeloCentral.ts, src/lib/whatsapp/campaignQueue.ts, src/lib/whatsapp/campaignDispatcher.ts, src/app/api/cron/campanhas/route.ts, src/lib/whatsapp/listasDoNumero.ts, src/lib/whatsapp/oficial/disparoOficial.ts]
 created: 2026-09-05
-updated: 2026-10-30
+updated: 2026-11-03
 fonte: leitura do código + docs/MEMORIA.md
 summary: Criação monta a fila com agendado_para (e guarda o critério); a lista viva inclui gente nova a cada hora; cada envio confere o lead de novo antes da cota; disparo é batido por pg_cron 1/min + botão + corrente; cada envio passa por trava de instância, texto conferido contra as mensagens do número (antes da cota) e cota/espaçamento no banco.
 ---
@@ -78,6 +78,31 @@ Cada envio passa por:
    ([[tentativas-de-contato-sao-duas-contagens]]).
 
 Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
+
+## Dois canais desde a 0254 (03/11/2026, branch `ccr-7424dca4-4nynlp`, fora de produção)
+
+`whatsapp_campanhas.canal`: `evolution` (padrão — o número do corretor, tudo
+acima) ou `oficial` (o número oficial da imobiliária na Cloud API da Meta,
+[[lista-pela-api-oficial-da-meta]]). O banco garante a coerência (oficial tem
+número e modelo; evolution não tem nenhum) e que número e modelo são do
+próprio grupo (gatilhos da 0191 refeitos).
+
+- **Criação oficial** (`criarListaOficial` em `campanhas/acoes.ts`): o
+  assistente ganha "Por onde sai" no passo 1 e o modelo aprovado no passo 2;
+  só entra quem tem consentimento de marketing no WhatsApp (falha fechada); o
+  texto da fila é o modelo renderizado (sem IA, sem A/B, sem lista viva); a
+  cota do plano NÃO conta (0254 §9) e o teto do mês é o do gestor.
+- **Disparo oficial** (`oficial/disparoOficial.ts`), chamado primeiro pelo
+  mesmo `cron/campanhas` (orçamento de 12 s): janela 9h–20h59, trava por
+  número, limite de pessoas novas em 24 h da Meta, teto do mês, modelo
+  aprovado, mesmas recusas de lead da Evolution; erro da Meta decide
+  (131049 tenta uma vez em 24 h; 131050 revoga o consentimento; 132015/132016
+  pausam a lista; 368/131031 pausam o número). Sucesso só com `wamid`.
+- **A regra que separa os canais** ([[lista-oficial-nao-e-do-numero-do-corretor]]):
+  `listasDoNumeroDoCorretor` é a única leitura de "listas do número do
+  corretor" — disparador da Evolution, aviso de queda, saúde pelo central,
+  status e limpar fila, e a comparação de texto (`textosDoNumero.ts`) ignoram
+  a lista oficial. Guarda que lê o código: `listasDoNumero.test.ts`.
 
 ## O tique dos follow-ups (a cada 5 min) — ordem desde 26/09/2026
 

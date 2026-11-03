@@ -4,7 +4,7 @@ tags: [moc, banco, supabase]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-10-19
+updated: 2026-11-03
 summary: Supabase, migrations, policies, grants, colunas geradas, types.
 ---
 # Banco de Dados — Map of Content
@@ -33,12 +33,14 @@ Supabase `Next homee` (`prhhrqyubjcafvucirri`). Migrations em
 - [[regenerar-types-nao-e-so-rodar-o-gerador]]
 - [[numeric-chega-como-string]]
 - [[bucket-nao-se-apaga-por-sql]]
+- [[regex-do-postgres-repete-no-maximo-255]] — `{1,512}` num `check` aplica e quebra todo insert ("invalid repetition count"); tamanho vai em `char_length` (0254, 03/11)
 
 ## Funções no banco (por quê lá)
 - [[espacamento-anti-ban-so-existia-no-papel]] — cota + espaçamento
 - [[travar-disparo-e-por-instancia]]
 - [[tentativas-de-contato-sao-duas-contagens]]
 - [[pg-cron-e-o-relogio-de-verdade]]
+- [[gatilho-compartilhado-e-campo-de-new]] ⚠️ função de gatilho de várias tabelas que cita `new.campo` de uma só quebra nas outras, e o `exception when others` engole: a cota de artes e vídeos pararia calada (0254, 03/11)
 
 - [[fato-e-permissao-moram-em-campos-diferentes]] — coluna nova porque dois conceitos precisam poder discordar
 

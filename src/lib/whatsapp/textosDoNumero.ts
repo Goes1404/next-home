@@ -24,13 +24,22 @@ export async function textosRecentesDoNumero(
   agora: Date = new Date(),
 ): Promise<TextoAnterior[] | null> {
   const desde = new Date(agora.getTime() - DIAS_DE_COMPARACAO * 86_400_000).toISOString();
-  const { data, error } = await supabase
-    .from("whatsapp_campanhas_fila")
-    .select("id, mensagem_personalizada, enviado_em, lead:leads(nome), campanha:whatsapp_campanhas!inner(corretor_id)")
-    .eq("campanha.corretor_id", corretorId)
-    .or(`enviado_em.gte.${desde},and(status.eq.pendente,or(personalizado_por_ia.is.true,semelhanca_max.not.is.null))`)
-    .order("enviado_em", { ascending: false, nullsFirst: true })
-    .limit(TEXTOS_DE_COMPARACAO);
+  // A lista do número OFICIAL da imobiliária (0254) sai de outro número: o
+  // texto dela não é do número do corretor e não entra na comparação. Antes
+  // da 0254 aplicada a coluna não existe (42703) e a leitura é a de sempre.
+  const ler = (semOficial: boolean) => {
+    let consulta = supabase
+      .from("whatsapp_campanhas_fila")
+      .select("id, mensagem_personalizada, enviado_em, lead:leads(nome), campanha:whatsapp_campanhas!inner(corretor_id)")
+      .eq("campanha.corretor_id", corretorId);
+    if (semOficial) consulta = consulta.neq("campanha.canal", "oficial");
+    return consulta
+      .or(`enviado_em.gte.${desde},and(status.eq.pendente,or(personalizado_por_ia.is.true,semelhanca_max.not.is.null))`)
+      .order("enviado_em", { ascending: false, nullsFirst: true })
+      .limit(TEXTOS_DE_COMPARACAO);
+  };
+  let { data, error } = await ler(true);
+  if (error?.code === "42703") ({ data, error } = await ler(false));
   if (error || !data) {
     if (error) console.warn("[campanha] não consegui ler as mensagens recentes do número:", error.message);
     return null;

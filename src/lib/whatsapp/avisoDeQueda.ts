@@ -4,6 +4,7 @@ import { enviarEmail } from "@/lib/email";
 import { avisarPeloCentral, montarWhatsappDeQueda, quedaRecenteParaOCentral } from "@/lib/central/avisoDeQuedaPeloCentral";
 import { enderecoDoPainel } from "@/lib/marcaDoCrm/marca";
 import { createServiceClient } from "@/lib/supabase/service";
+import { listasDoNumeroDoCorretor } from "./listasDoNumero";
 import { MOTIVO_SESSAO_CAIU } from "./sessaoCaida";
 import {
   avaliarSaudeDaConexao,
@@ -75,15 +76,13 @@ function fotoDe(linha: LinhaInstancia, pendentes: number, falhasDeSessao = 0): F
  *
  * A fila não guarda a instância — o vínculo é por campanha. Duas consultas
  * magras (ids das campanhas, depois um `count` com `head`) custam menos que
- * trazer linha de fila para contar na aplicação.
+ * trazer linha de fila para contar na aplicação. Lista do número OFICIAL da
+ * imobiliária (0254) não espera pelo número do corretor e fica de fora.
  */
 async function contarFila(corretorId: string): Promise<{ pendentes: number; falhasDeSessao: number }> {
   const supabase = createServiceClient();
 
-  const { data: campanhas } = await supabase
-    .from("whatsapp_campanhas")
-    .select("id")
-    .eq("corretor_id", corretorId);
+  const campanhas = await listasDoNumeroDoCorretor(supabase, corretorId);
 
   const ids = (campanhas ?? []).map((c) => c.id);
   if (ids.length === 0) return { pendentes: 0, falhasDeSessao: 0 };

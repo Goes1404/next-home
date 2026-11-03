@@ -53,6 +53,8 @@ export const FUNCOES_SEM_GRUPO: Record<string, string> = {
   "devolver_credito_video(uuid, text)": "crédito do corretor resolvido pelo servidor (fila de vídeo); só service_role desde a 0192",
   "registrar_resposta_do_lead(uuid)": "lead já resolvido pelo webhook; só service_role",
   "registrar_tentativa_contato(uuid)": "lead já resolvido pelo disparador; só service_role",
+  "registrar_consentimento_marketing_whatsapp(uuid, boolean, text, text)":
+    "lead já resolvido pelo servidor (painel confere o dono; webhook, o número oficial do grupo); o grupo das linhas vem do lead (0191); só service_role (0254)",
   "reservar_horario_visita(uuid, timestamp with time zone)":
     "lead já resolvido pela conversa; só service_role desde a 0192",
 

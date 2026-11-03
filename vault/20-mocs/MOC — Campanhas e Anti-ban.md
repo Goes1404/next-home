@@ -18,7 +18,8 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[followups-consomem-cota]]
 
 ## Proteções anti-ban
-- [[lista-pela-api-oficial-da-meta]] ⚠️ lista fria segura só pela API oficial; o número que entra nela sai da Evolution (roadmap, 03/11)
+- [[lista-pela-api-oficial-da-meta]] ⚠️ lista fria segura só pela API oficial; o número que entra nela sai da Evolution (roadmap, 03/11); F0–F6 construídas na branch `ccr-7424dca4-4nynlp` (0254), fora de produção
+- [[lista-oficial-nao-e-do-numero-do-corretor]] ⚠️ disparador, aviso de queda, saúde, status/limpar fila, comparação de texto e cota do plano ignoram a lista oficial por uma regra só (`listasDoNumeroDoCorretor`, 03/11)
 - [[campanha-protege-quem-ja-foi-contatado]]
 - [[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]
 - [[espacamento-anti-ban-so-existia-no-papel]]
