@@ -328,7 +328,7 @@
     --tampa-do-planeta: 9rem;
   }
   .topoDentro {
-    padding: 7rem 2.5rem 13rem;
+    padding: 7rem 2.5rem 15rem;
   }
 }
 
@@ -384,14 +384,46 @@
   flex-shrink: 0;
   place-items: center;
 }
-@media (min-width: 1024px) {
-  .aviso {
-    position: absolute;
-    right: max(2.5rem, calc((100vw - 72rem) / 2 + 2.5rem));
-    bottom: calc(var(--tampa-do-planeta) + 2.5rem);
-    margin: 0;
-    max-width: 22rem;
-  }
+/* A cena 3D (CenaDoEspaco): cobre o topo e aparece por cima do céu de CSS
+   quando fica pronta; aí o planeta de CSS se apaga (a Terra 3D toma o lugar). */
+.cena {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--saida);
+}
+.cenaPronta {
+  opacity: 1;
+}
+.planeta {
+  transition: opacity 900ms var(--saida);
+}
+.topo:has(.cenaPronta) .planeta {
+  opacity: 0;
+}
+/* O texto fica legível por cima do foguete (no celular ele passa atrás). */
+.topoDentro {
+  position: relative;
+}
+.lide {
+  text-shadow: 0 1px 16px rgb(6 10 22 / 0.9);
+}
+
+.creditos {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.75rem;
+  color: var(--slate);
+}
+.creditos a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.creditos a:hover {
+  color: var(--ivory);
 }
 
 .pontoVerde {

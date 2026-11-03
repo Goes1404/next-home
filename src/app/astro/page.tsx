@@ -7,6 +7,7 @@ import { hrefDeContratar, NOME_CURTO_NA_VENDA, planoParaORamo } from "@/lib/plat
 import { IconeDoRamo } from "@/lib/ramos/IconeDoRamo";
 import { CONFIG_DOS_RAMOS, RAMOS } from "@/lib/ramos/ramos";
 import { PRECO_ESSENCIAL, PRECO_POR_USUARIO_DA_IMOBILIARIA, PRECO_PROFISSIONAL } from "@/lib/plataforma/tiposDeConta";
+import { CenaDoEspaco } from "./_componentes/CenaDoEspaco";
 import { RodapeLegal } from "./_componentes/PaginaLegal";
 import { FONTES_DA_VITRINE } from "./fontesDaVitrine";
 import v from "./vendas.module.css";
@@ -256,6 +257,9 @@ export default function PaginaDaAstro() {
         <span aria-hidden className={v.estrelasPerto} />
         <span aria-hidden className={v.clarao} />
         <span aria-hidden className={v.planeta} />
+        {/* O foguete e os planetas do site da empresa, em 3D. Carrega depois da
+            página aberta; até lá (ou sem WebGL) fica o céu de CSS acima. */}
+        <CenaDoEspaco className={v.cena} aoFicarPronta={v.cenaPronta} />
 
         <div className={v.topoDentro}>
           <h1 className={`${v.impacto} ${v.tituloDoTopo} ${v.chegaTitulo}`}>
@@ -641,6 +645,23 @@ export default function PaginaDaAstro() {
           </div>
         </div>
       </section>
+
+      {/* O modelo é CC BY 4.0: a licença exige o crédito ao autor. */}
+      <p className={v.creditos}>
+        Modelo 3D do foguete:{" "}
+        <a href="https://sketchfab.com/3d-models/spacex-starship-block-3-6f6c6f88a3eb4b4d822fdca66733fbb2" target="_blank" rel="noopener">
+          “SpaceX Starship Block 3”
+        </a>
+        , de{" "}
+        <a href="https://sketchfab.com/clarence365" target="_blank" rel="noopener">
+          Clarence365
+        </a>
+        , sob{" "}
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">
+          CC BY 4.0
+        </a>
+        .
+      </p>
 
       <RodapeLegal />
     </main>

@@ -3,16 +3,18 @@ title: Página de vendas no visual do site da empresa
 tags: [front, decisao]
 type: decisao
 status: growing
-custou: baixo
+custou: medio
 codigo:
   - src/app/astro/page.tsx
   - src/app/astro/vendas.module.css
   - src/app/astro/fontesDaVitrine.ts
   - test/stubs/next-font-google.ts
+  - src/app/astro/_componentes/CenaDoEspaco.tsx
+  - public/espaco/
 created: 2026-11-03
 updated: 2026-11-03
 fonte: pedido do dono em 03/11/2026 ("estou achando ela muito feia, vamos usar o astrosolucoes.netlify.app como referência")
-summary: /astro passou a seguir o site institucional da Astro Soluções (Anton caixa alta, Inter Tight, céu azul-noite, pílulas cobalto, janelas do produto), com CSS e fontes só dela; contratar, contato, ajuda e legais seguem com astro.module.css.
+summary: /astro passou a seguir o site institucional da Astro Soluções (Anton caixa alta, Inter Tight, céu azul-noite, pílulas cobalto, janelas do produto, e o Starship com a Terra e planetas em three.js), com CSS e fontes só dela; contratar, contato, ajuda e legais seguem com astro.module.css.
 ---
 
 # Página de vendas no visual do site da empresa
@@ -30,8 +32,30 @@ summary: /astro passou a seguir o site institucional da Astro Soluções (Anton 
 - Estrutura: céu com estrelas e planeta no topo, faixa de recursos correndo,
   blocos alternados "título + texto + selos" com uma janela simulando o
   produto, manifesto com palavra gigante vazada, cartões graphite.
-- O planeta é CSS. O site institucional usa uma cena three.js; aqui a página
-  continua Server Component, sem JavaScript.
+- O foguete e os planetas (pedido seguinte, 03/11): cena three.js própria em
+  `CenaDoEspaco.tsx`, com os arquivos do site da empresa copiados para
+  `public/espaco/` (Starship `.glb` com Draco, texturas da Terra, nuvens e
+  Via Láctea; decodificador Draco em `public/espaco/draco/`). A cena de lá
+  (shaders e partículas próprios, 755 KB minificado) não foi portada.
+
+## A cena 3D (CenaDoEspaco)
+
+- O three.js e o modelo (1,1 MB) só baixam quando o navegador fica ocioso,
+  depois da página aberta; até lá, e sem WebGL ou com economia de dados,
+  fica o céu de CSS (que tem o planeta). A cena aparece por cima com
+  `cenaPronta`, e o planeta de CSS se apaga (`.topo:has(.cenaPronta)`).
+- Só desenha com o topo na tela e a aba visível. "Menos movimento" = um
+  quadro parado. Ao rolar, o foguete sobe e a chama cresce.
+- **O modelo é CC BY 4.0** ("SpaceX Starship Block 3", Clarence365,
+  Sketchfab; está nos `extras` do próprio `.glb`): o crédito no fim da
+  página é obrigação da licença, não enfeite. Não tirar.
+- Terra: na esfera do three, `rotation.y = 0` mostra a longitude −90°. Só a
+  parte de cima aparece, então o eixo tomba para trás (`rotation.x ≈ −1,15`)
+  para o Equador subir; com `x` positivo aparecia o Polo Norte.
+- `public/` com ponto no nome não passa pelo `proxy.ts` (matcher exclui
+  `.*\..*`): por isso a pasta é `/espaco/`, servida direto.
+- Headless: WebGL só sai com `--use-gl=angle --use-angle=swiftshader
+  --enable-unsafe-swiftshader` no Chromium do Playwright.
 
 ## Armadilhas que custaram tempo
 

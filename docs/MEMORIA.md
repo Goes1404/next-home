@@ -12839,3 +12839,10 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - `hidden md:inline-flex` perde para o `display` de classe de módulo: esconder com classe do módulo.
 - Fonte nova do `next/font/google` precisa entrar em `test/stubs/next-font-google.ts`, senão o vitest quebra na importação.
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
+
+## Foguete e planetas 3D na página de vendas (03/11/2026)
+- `src/app/astro/_componentes/CenaDoEspaco.tsx`: three.js (0.186) carregado no ocioso, com os arquivos do site da empresa em `public/espaco/` (Starship `.glb` Draco + texturas). Sem WebGL/economia de dados fica o céu de CSS.
+- O `.glb` é CC BY 4.0 (Clarence365): o crédito no fim da página é exigência da licença.
+- Terra no three: `rotation.y = 0` mostra a longitude −90°; para ver a América do Sul no alto da esfera, `rotation.x ≈ −1,15` e `y ≈ −0,6` (x positivo mostra o Polo Norte).
+- Para fotografar WebGL no Playwright headless: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`.
+- Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
