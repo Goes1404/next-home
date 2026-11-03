@@ -4,9 +4,9 @@ tags: [crm, painel, banco, front, decisao, arquitetura]
 type: nota
 status: seedling
 custou: medio
-codigo: [supabase/migrations/0253_prospeccao.sql, src/lib/prospeccao, src/app/astro/amostra, src/app/api/prospeccao/visita, src/app/plataforma/prospeccao, scripts/prospeccao]
+codigo: [supabase/migrations/0253_prospeccao.sql, supabase/migrations/0254_equipe_da_prospeccao.sql, src/lib/prospeccao, src/app/astro/amostra, src/app/api/prospeccao/visita, src/app/plataforma/prospeccao, scripts/prospeccao]
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-03
 fonte: pedido do dono em 02/11/2026 ("vamos unir tudo isso no nosso app da astro"), doc "Plano: módulo de Prospecção no astroimob"
 summary: A Astro prospecta comércios dentro do astroimob — lojas em prospeccao_leads (global), amostra de site em /astro/amostra/<slug> montada do banco, rastreio de abertura sem IP e funil em /plataforma/prospeccao. Envio manual por wa.me na fase 1.
 ---
@@ -31,6 +31,12 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
 | Importar lojas | `scripts/prospeccao/sqlDasLojas.ts` gera o SQL (`on conflict (slug) do nothing`) |
 
 ## Decisões
+
+- **Só a equipe de vendas vê a prospecção (0254, 03/11).** Administrador da
+  plataforma E linha em `prospeccao_equipe` (hoje Eduardo e Matheus); a
+  conta compartilhada `adm@` não vê. A lista fica no banco porque o repo é
+  público. Falha ao ler a lista = fora da equipe (a aba some, a ação recusa).
+  Quem entra: `insert into prospeccao_equipe (user_id, nome)` pelo SQL.
 
 - **O robô da prévia do link não conta como abertura.** O WhatsApp busca a
   URL ao montar a prévia; o registro sai do script da página depois de 3 s

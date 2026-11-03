@@ -12870,3 +12870,7 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
   público), `PROSPECCAO_VENDEDOR`, `PROSPECCAO_URL_BASE`.
 - A lista das lojas abordadas NÃO fica no repositório (público): o JSON é
   passado ao `scripts/prospeccao/sqlDasLojas.ts` de fora.
+- **0254 (03/11): só a equipe de vendas vê a aba** — admin da plataforma E
+  linha em `prospeccao_equipe` (Eduardo e Matheus; a conta `adm@` não). Aba
+  escondida no menu (`comProspeccao` do layout), páginas dão 404 e ações
+  recusam. Falha ao ler a lista = fora da equipe.

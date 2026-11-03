@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
+import { ehDaEquipeDaProspeccao, ERRO_FORA_DA_EQUIPE } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ehEtapa, ehModelo, type Etapa } from "@/lib/prospeccao/tipos";
 import { linkDaAmostra, mensagemPadrao, normalizarWhatsapp, slugDaLoja, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
 
 /**
  * As ações da aba Prospecção (0253, 02/11/2026). Só o administrador da
- * plataforma; a chave de serviço só depois da guarda, em cada ação. As
+ * plataforma que está na equipe da prospecção (0254); a chave de serviço só depois da guarda, em cada ação. As
  * tabelas são globais (`prospeccao_*`): nenhuma ação toca tabela de grupo.
  */
 export type Resultado = { ok: true } | { ok: false; erro: string };
@@ -25,6 +26,7 @@ function revalidar(id?: string) {
 export async function mudarEtapa(id: string, etapa: string, motivo?: string): Promise<Resultado> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
   if (!ID.test(id) || !ehEtapa(etapa)) return { ok: false, erro: "Etapa inválida." };
 
   const agora = new Date().toISOString();
@@ -52,6 +54,7 @@ export async function mudarEtapa(id: string, etapa: string, motivo?: string): Pr
 export async function marcarEnviado(id: string): Promise<Resultado> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
   if (!ID.test(id)) return { ok: false, erro: "Loja inválida." };
 
   const supabase = createServiceClient();
@@ -82,6 +85,7 @@ export type DadosDaFicha = {
 export async function salvarFicha(id: string, dados: DadosDaFicha): Promise<Resultado> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
   if (!ID.test(id)) return { ok: false, erro: "Loja inválida." };
 
   const whatsapp = dados.whatsapp.trim() ? normalizarWhatsapp(dados.whatsapp) : null;
@@ -125,6 +129,7 @@ export type NovaLoja = {
 export async function cadastrarLoja(loja: NovaLoja): Promise<ResultadoComId> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
 
   const nome = loja.nome.trim().slice(0, 160);
   if (!nome) return { ok: false, erro: "Informe o nome da loja." };
