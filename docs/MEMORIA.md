@@ -12846,3 +12846,4 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Terra no three: `rotation.y = 0` mostra a longitude −90°; para ver a América do Sul no alto da esfera, `rotation.x ≈ −1,15` e `y ≈ −0,6` (x positivo mostra o Polo Norte).
 - Para fotografar WebGL no Playwright headless: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`.
 - Nota: [[pagina-de-vendas-no-visual-do-site-da-empresa]].
+- Planetas (03/11): textura procedural 1024×512 (512 serrilha) + `materialDePlaneta` (luz própria, borda escura, névoa só no lado aceso). Halo aditivo de fresnel vira contorno duro em planeta; a luz da cena os deixa chapados. Lua tingida = planeta rochoso (`public/espaco/moon-1k.webp`).

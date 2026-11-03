@@ -54,6 +54,15 @@ summary: /astro passou a seguir o site institucional da Astro Soluções (Anton 
   para o Equador subir; com `x` positivo aparecia o Polo Norte.
 - `public/` com ponto no nome não passa pelo `proxy.ts` (matcher exclui
   `.*\..*`): por isso a pasta é `/espaco/`, servida direto.
+- Planetas (pedido seguinte, "deixe os outros planetas mais bonitos"):
+  gigantes gasosos com textura gerada pixel a pixel (faixas que ondulam,
+  mancha de tempestade; 1024×512, com 512×256 serrilhava), anel com UV
+  refeito por raio e divisões, rochoso com a textura da Lua tingida. Material
+  próprio (`materialDePlaneta`): luz por planeta, borda escurecida e névoa só
+  no lado aceso. **Halo aditivo de fresnel em planeta virava contorno
+  marrom**, e a luz da cena deixava os planetas chapados, acesos de frente.
+- A mancha do gigante só aparece com `rotation.y ≈ −2,95`: o planeta fica
+  meio fora da tela e só a banda esquerda está à vista.
 - Headless: WebGL só sai com `--use-gl=angle --use-angle=swiftshader
   --enable-unsafe-swiftshader` no Chromium do Playwright.
 

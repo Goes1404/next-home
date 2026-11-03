@@ -73,22 +73,230 @@ function temWebGL(): boolean {
   }
 }
 
-/** Textura de canvas com faixas, para os gigantes gasosos (sem baixar imagem). */
-function texturaDeFaixas(THREE: typeof import("three"), cores: [string, string, string], faixas: number) {
+type Rgb = [number, number, number];
+
+function rgb(hex: string): Rgb {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function misturar(a: Rgb, b: Rgb, t: number): Rgb {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+function suave(a: number, b: number, x: number): number {
+  const t = Math.min(Math.max((x - a) / (b - a), 0), 1);
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Gigante gasoso desenhado pixel a pixel (03/11/2026, "deixe os outros
+ * planetas mais bonitos também"): faixas que ondulam e se torcem, filetes
+ * finos dentro delas, polos mais escuros e, se pedido, uma grande mancha de
+ * tempestade. Tudo com senos de período inteiro em x, então a textura fecha
+ * sem costura na volta da esfera. 1024×512 (com 512×256 a textura serrilhava
+ * no planeta grande) leva algumas dezenas de milissegundos, no ocioso.
+ */
+function texturaDeGigante(
+  THREE: typeof import("three"),
+  paleta: { claro: string; escuro: string; meio: string; mancha?: string },
+  { faixas, turbulencia, semente }: { faixas: number; turbulencia: number; semente: number },
+) {
+  const L = 1024;
+  const A = 512;
   const c = document.createElement("canvas");
-  c.width = 16;
-  c.height = 256;
+  c.width = L;
+  c.height = A;
   const g = c.getContext("2d")!;
-  const grad = g.createLinearGradient(0, 0, 0, 256);
-  for (let i = 0; i <= faixas; i++) {
-    const t = i / faixas;
-    grad.addColorStop(t, cores[i % 3]);
+  const img = g.createImageData(L, A);
+  const claro = rgb(paleta.claro);
+  const escuro = rgb(paleta.escuro);
+  const meio = rgb(paleta.meio);
+  const corDaMancha = paleta.mancha ? rgb(paleta.mancha) : null;
+  const fase = (k: number) => Math.sin(semente * 12.9898 + k * 78.233) * 43758.5453 % (Math.PI * 2);
+  const [p1, p2, p3, p4] = [fase(1), fase(2), fase(3), fase(4)];
+  // A mancha: elipse no hemisfério sul, como a do Júpiter.
+  const manchaU = 0.62;
+  const manchaV = 0.64;
+
+  for (let y = 0; y < A; y++) {
+    const lat = y / A;
+    const polo = 0.62 + 0.38 * Math.sin(lat * Math.PI);
+    for (let x = 0; x < L; x++) {
+      const u = (x / L) * Math.PI * 2;
+      // Ondulação das faixas: mais forte perto do Equador, onde o vento é maior.
+      const onda =
+        turbulencia *
+        (0.6 + 0.4 * Math.sin(lat * Math.PI)) *
+        (0.02 * Math.sin(u * 3 + lat * 38 + p1) +
+          0.011 * Math.sin(u * 7 - lat * 85 + p2) +
+          0.006 * Math.sin(u * 11 + lat * 150 + p3) +
+          0.003 * Math.sin(u * 19 - lat * 210 + p4));
+      const v = lat + onda;
+      const larga = 0.5 + 0.5 * Math.sin(v * Math.PI * faixas + 0.8 * Math.sin(v * Math.PI * faixas * 0.37 + p2));
+      const fina = 0.5 + 0.5 * Math.sin(v * Math.PI * faixas * 3.1 + 0.6 * Math.sin(u * 2 + v * 30 + p3));
+      let cor = misturar(claro, escuro, Math.pow(larga, 1.6));
+      cor = misturar(cor, meio, fina * 0.32);
+
+      if (corDaMancha) {
+        let du = x / L - manchaU;
+        du -= Math.round(du);
+        const dx = du / 0.075;
+        const dy = (lat - manchaV) / 0.042;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 1.6) {
+          const anel = Math.sin(d * 9 - Math.atan2(dy, dx) * 1.5) * 0.5 + 0.5;
+          const dentro = 1 - suave(0.55, 1.15, d);
+          cor = misturar(cor, misturar(corDaMancha, meio, anel * 0.35), dentro * 0.9);
+          // Borda clara em volta da tempestade.
+          cor = misturar(cor, claro, (suave(0.95, 1.15, d) - suave(1.15, 1.6, d)) * 0.5);
+        }
+      }
+
+      const i = (y * L + x) * 4;
+      img.data[i] = cor[0] * polo;
+      img.data[i + 1] = cor[1] * polo;
+      img.data[i + 2] = cor[2] * polo;
+      img.data[i + 3] = 255;
+    }
   }
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 16, 256);
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/**
+ * Material dos planetas (não a Terra): luz própria de cada um, sombra suave
+ * no lado de trás, borda escurecida (dá volume) e uma névoa de atmosfera só
+ * no lado iluminado. Com o halo aditivo de antes, a borda virava um contorno
+ * marrom; com a luz da cena, o planeta ficava chapado, todo aceso de frente.
+ */
+function materialDePlaneta(
+  THREE: typeof import("three"),
+  mapa: import("three").Texture,
+  { luz, tinta = "#ffffff", ar = "#ffe2bf", forcaDoAr = 0.35, relevo = 0 }: {
+    luz: [number, number, number];
+    tinta?: string;
+    ar?: string;
+    forcaDoAr?: number;
+    relevo?: number;
+  },
+) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uMapa: { value: mapa },
+      uLuz: { value: new THREE.Vector3(...luz).normalize() },
+      uTinta: { value: new THREE.Color(tinta) },
+      uAr: { value: new THREE.Color(ar) },
+      uForcaDoAr: { value: forcaDoAr },
+      uRelevo: { value: relevo },
+      // As texturas daqui são todas 1024×512 (canvas e a da Lua).
+      uPasso: { value: new THREE.Vector2(1 / 1024, 1 / 512) },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormalW;
+      varying vec3 vVistaW;
+      void main() {
+        vUv = uv;
+        vec4 mundo = modelMatrix * vec4(position, 1.0);
+        vNormalW = normalize(mat3(modelMatrix) * normal);
+        vVistaW = normalize(cameraPosition - mundo.xyz);
+        gl_Position = projectionMatrix * viewMatrix * mundo;
+      }`,
+    fragmentShader: `
+      uniform sampler2D uMapa;
+      uniform vec3 uLuz;
+      uniform vec3 uTinta;
+      uniform vec3 uAr;
+      uniform float uForcaDoAr;
+      uniform float uRelevo;
+      uniform vec2 uPasso;
+      varying vec2 vUv;
+      varying vec3 vNormalW;
+      varying vec3 vVistaW;
+      void main() {
+        vec3 n = normalize(vNormalW);
+        vec3 cor = texture2D(uMapa, vUv).rgb * uTinta;
+        // Relevo barato (crateras): a diferença de brilho entre vizinhos
+        // inclina a luz um pouco.
+        if (uRelevo > 0.0) {
+          float aqui = dot(texture2D(uMapa, vUv).rgb, vec3(0.333));
+          float dx = dot(texture2D(uMapa, vUv + vec2(uPasso.x, 0.0)).rgb, vec3(0.333)) - aqui;
+          float dy = dot(texture2D(uMapa, vUv + vec2(0.0, uPasso.y)).rgb, vec3(0.333)) - aqui;
+          cor *= clamp(1.0 + (dx - dy) * uRelevo, 0.6, 1.4);
+        }
+        float luz = dot(n, uLuz);
+        float dia = smoothstep(-0.18, 0.55, luz);
+        float frente = max(dot(n, vVistaW), 0.0);
+        float borda = pow(frente, 0.35);
+        vec3 final = cor * (0.035 + 0.95 * dia) * borda;
+        // Atmosfera: névoa na borda, só onde bate luz.
+        float neblina = pow(1.0 - frente, 2.5) * smoothstep(-0.1, 0.6, luz);
+        final += uAr * neblina * uForcaDoAr;
+        gl_FragColor = vec4(final, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  });
+}
+
+/**
+ * Anel com faixas de densidade e a divisão escura (a "de Cassini"), em uma
+ * tira radial: u = 0 na borda de dentro, u = 1 na de fora (o UV do anel é
+ * refeito por raio em `anelComTextura`).
+ */
+function texturaDoAnel(THREE: typeof import("three")) {
+  const L = 512;
+  const c = document.createElement("canvas");
+  c.width = L;
+  c.height = 4;
+  const g = c.getContext("2d")!;
+  const img = g.createImageData(L, 4);
+  const creme = rgb("#f6ead0");
+  const areia = rgb("#c8a878");
+  for (let x = 0; x < L; x++) {
+    const r = x / L;
+    const faixas =
+      0.55 + 0.25 * Math.sin(r * 61) + 0.12 * Math.sin(r * 173 + 1.3) + 0.08 * Math.sin(r * 411 + 0.4);
+    let alfa = faixas * suave(0, 0.08, r) * (1 - suave(0.9, 1, r));
+    alfa *= 1 - 0.92 * (suave(0.55, 0.575, r) - suave(0.615, 0.64, r)); // divisão principal
+    alfa *= 1 - 0.6 * (suave(0.83, 0.84, r) - suave(0.85, 0.86, r)); // divisão fina
+    const cor = misturar(areia, creme, 0.5 + 0.5 * Math.sin(r * 23 + 0.7));
+    for (let y = 0; y < 4; y++) {
+      const i = (y * L + x) * 4;
+      img.data[i] = cor[0];
+      img.data[i + 1] = cor[1];
+      img.data[i + 2] = cor[2];
+      img.data[i + 3] = Math.max(0, Math.min(1, alfa * 1.15)) * 245;
+    }
+  }
+  g.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+function anelComTextura(THREE: typeof import("three"), dentro: number, fora: number) {
+  const geometria = new THREE.RingGeometry(dentro, fora, 160, 1);
+  const pos = geometria.attributes.position;
+  const uv = geometria.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    const r = Math.hypot(pos.getX(i), pos.getY(i));
+    uv.setXY(i, (r - dentro) / (fora - dentro), 0.5);
+  }
+  return new THREE.Mesh(
+    geometria,
+    new THREE.MeshStandardMaterial({
+      map: texturaDoAnel(THREE),
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      roughness: 1,
+    }),
+  );
 }
 
 /** Brilho radial (chama do motor, halo dos planetas). */
@@ -216,40 +424,57 @@ async function montarCena(elemento: HTMLDivElement, classePronta?: string): Prom
   cena.add(terra);
 
   // ---------- Planetas ----------
+  const texLua = await textura("/espaco/moon-1k.webp");
+  texLua.colorSpace = THREE.SRGBColorSpace;
+
+  // O gigante gasoso, com a grande mancha e um halo quente e fino na borda.
   const gasoso = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 64, 32),
-    new THREE.MeshStandardMaterial({ map: texturaDeFaixas(THREE, ["#e7caa4", "#874d2d", "#f2e8da"], 11), roughness: 0.9 }),
+    new THREE.SphereGeometry(1, 96, 48),
+    materialDePlaneta(
+      THREE,
+      texturaDeGigante(
+        THREE,
+        { claro: "#f1dcbc", escuro: "#7a3d20", meio: "#c4864f", mancha: "#a8432c" },
+        { faixas: 9, turbulencia: 1, semente: 3 },
+      ),
+      // Luz de cima à esquerda: o lado à vista acende, a sombra cai para a
+      // borda da tela.
+      { luz: [-0.55, 0.45, 0.7], ar: "#ffd2a0", forcaDoAr: 0.4 },
+    ),
   );
-  gasoso.rotation.z = 0.25;
+  gasoso.rotation.z = 0.22;
   const planetaGrande = new THREE.Group();
   planetaGrande.add(gasoso);
   cena.add(planetaGrande);
 
+  // O anelado: corpo pálido de faixas suaves e um anel com divisões.
   const anelado = new THREE.Group();
   const aneladoCorpo = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 48, 24),
-    new THREE.MeshStandardMaterial({ map: texturaDeFaixas(THREE, ["#faf2e0", "#bda87f", "#fdf9ee"], 12), roughness: 0.9 }),
+    new THREE.SphereGeometry(1, 64, 32),
+    materialDePlaneta(
+      THREE,
+      texturaDeGigante(
+        THREE,
+        { claro: "#fbf3e1", escuro: "#c2a477", meio: "#e6d1a8" },
+        { faixas: 7, turbulencia: 0.45, semente: 7 },
+      ),
+      { luz: [0.6, 0.5, 0.6], ar: "#fff0d2", forcaDoAr: 0.35 },
+    ),
   );
-  const anel = new THREE.Mesh(
-    new THREE.RingGeometry(1.35, 2.2, 96),
-    new THREE.MeshStandardMaterial({
-      color: 0xe9dcc0,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.55,
-      roughness: 1,
-    }),
-  );
-  anel.rotation.x = Math.PI / 2.35;
+  const anel = anelComTextura(THREE, 1.3, 2.35);
+  anel.rotation.x = Math.PI / 2.3;
   anelado.add(aneladoCorpo, anel);
-  anelado.rotation.z = -0.35;
+  anelado.rotation.z = -0.38;
   cena.add(anelado);
 
+  // O rochoso: crateras da textura da Lua, tingidas de vermelho como Marte.
   const rochoso = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1, 5),
-    new THREE.MeshStandardMaterial({ map: texturaDeFaixas(THREE, ["#f0b295", "#7c4436", "#c27a5c"], 5), roughness: 1, flatShading: false }),
+    new THREE.SphereGeometry(1, 64, 32),
+    materialDePlaneta(THREE, texLua, { luz: [0.7, 0.4, 0.55], tinta: "#f2a37c", ar: "#ffb48a", forcaDoAr: 0.3, relevo: 6 }),
   );
-  cena.add(rochoso);
+  const rochosoGrupo = new THREE.Group();
+  rochosoGrupo.add(rochoso);
+  cena.add(rochosoGrupo);
 
   // ---------- Starship ----------
   const draco = new DRACOLoader();
@@ -342,9 +567,9 @@ async function montarCena(elemento: HTMLDivElement, classePronta?: string): Prom
     planetaGrande.position.copy(naTela(celular ? 1.05 : 1.02, celular ? 0.62 : 0.42, -8));
     anelado.scale.setScalar(meiaAltura * (celular ? 0.07 : 0.09));
     anelado.position.copy(naTela(celular ? 0.45 : 0.3, celular ? 0.86 : 0.8, -6));
-    rochoso.visible = !celular;
-    rochoso.scale.setScalar(meiaAltura * 0.05);
-    rochoso.position.copy(naTela(0.2, -0.42, -3));
+    rochosoGrupo.visible = !celular;
+    rochosoGrupo.scale.setScalar(meiaAltura * 0.06);
+    rochosoGrupo.position.copy(naTela(0.2, -0.42, -3));
   };
 
   // ---------- Laço ----------
@@ -360,9 +585,10 @@ async function montarCena(elemento: HTMLDivElement, classePronta?: string): Prom
 
     terra.rotation.y = GIRO_DA_TERRA + t * 0.006;
     nuvens.rotation.y = t * 0.004;
-    gasoso.rotation.y = t * 0.03;
+    // −2,95 põe a mancha na parte à vista (o planeta fica meio fora da tela).
+    gasoso.rotation.y = -2.95 + t * 0.03;
     aneladoCorpo.rotation.y = t * 0.05;
-    rochoso.rotation.y = t * 0.09;
+    rochoso.rotation.y = 1.2 + t * 0.06;
 
     // Flutua de leve parado; ao rolar, decola (sobe e a chama cresce).
     const empuxo = 0.55 + subida * 1.2;
