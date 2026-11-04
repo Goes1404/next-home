@@ -12944,3 +12944,4 @@ pelo botão "Respondeu? Mandar a amostra", que também move a loja para
 "Respondeu" (o app não vê o WhatsApp pessoal; o clique é o sinal). O
 follow-up de abordagem curta já leva o link. A captação diária passou a
 gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
+- 04/11/2026: 0259 aplicada (32 índices em chaves estrangeiras). A policy repetida de `lead_observacoes_ia` ficou de fora, porque o `drop policy` pede confirmação no Supabase e ela expirou duas vezes. 0257 e 0258 estão reservadas para outras sessões.

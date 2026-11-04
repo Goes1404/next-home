@@ -1,7 +1,6 @@
 -- 0259 · Índices nas chaves estrangeiras sem índice (04/11/2026)
 --
--- AINDA NÃO APLICADA em produção: aguarda a confirmação do dono (o `drop
--- policy` pede confirmação no Supabase). Fica fora da main até lá.
+-- APLICADA em produção em 04/11/2026 (com o OK do dono).
 --
 -- O advisor de desempenho do Supabase listou 32 chaves estrangeiras sem
 -- índice. Sem ele, todo `delete`/`update` na tabela-mãe (apagar um corretor,
@@ -51,13 +50,9 @@ create index if not exists vitrine_visualizacoes_corretor_id_idx on public.vitri
 create index if not exists vitrine_visualizacoes_empreendimento_id_idx on public.vitrine_visualizacoes (empreendimento_id);
 create index if not exists vitrine_visualizacoes_grupo_id_idx on public.vitrine_visualizacoes (grupo_id);
 
--- `lead_observacoes_ia` tinha DUAS policies que liberam o mesmo SELECT com a
--- MESMA condição: "Corretores atualizam dossie de seus leads" (FOR ALL) já
--- cobre tudo o que "Corretores leem dossie de seus leads" (FOR SELECT)
--- libera, letra a letra. A de leitura sobrava e custava uma avaliação a mais
--- por linha lida. As outras policies repetidas apontadas pelo advisor
--- (whatsapp_campanhas_fila, whatsapp_mensagens e as públicas de catálogo)
--- NÃO são iguais entre si (o gestor, a escrita e o anônimo mudam) e ficam.
-drop policy if exists "Corretores leem dossie de seus leads" on public.lead_observacoes_ia;
+-- A policy repetida de `lead_observacoes_ia` ("Corretores leem dossie de seus
+-- leads", coberta letra a letra pela FOR ALL "Corretores atualizam dossie de
+-- seus leads") NÃO saiu aqui: o `drop policy` pede confirmação no Supabase e
+-- ela não foi respondida. Fica para uma migration própria.
 
 commit;
