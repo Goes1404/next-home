@@ -99,6 +99,9 @@ O dono decidiu, além disso, que **a roleta é da imobiliária**. Três travas:
 
 Testes: `roletaSoDoGestor.test.tsx` e `roletaAcoes.test.ts`.
 
+E o grupo do corretor passou a receber **só** o lead que esta roleta repassou
+(marca `anuncio_pago_por`): ver [[leads-distribuidos-nos-grupos-da-aretz]].
+
 Ligada a [[lead-da-campanha-do-corretor-sem-ia]], [[notificacao-no-celular-do-corretor]].
 - Tela (28/10, "ficou feio"): os dois textos usam `EditorDeMensagem`
   (`_componentes/`): campo à esquerda, prévia em balão de WhatsApp à direita

@@ -112,7 +112,7 @@ export function ConfigurarGruposDeLeads({
           <div className="min-w-0">
             <h3 className="text-fluid-lg font-semibold text-titulo">Grupos de WhatsApp dos corretores</h3>
             <p className="mt-1 max-w-2xl text-fluid-sm text-apoio">
-              Onde o aviso de cada lead chega.{" "}
+              Onde chega o aviso do lead que a roleta dos anúncios passa ao corretor.{" "}
               {nomeDoCentral
                 ? `Os avisos saem do número de ${nomeDoCentral}, que precisa participar de todos os grupos.`
                 : "Os avisos saem do WhatsApp desta conta, que precisa participar de todos os grupos."}
@@ -268,7 +268,7 @@ export function ConfigurarGruposDeLeads({
           <span>
             <span className="block text-fluid-sm font-semibold text-titulo">Relatório que chega no grupo</span>
             <span className="block text-fluid-xs text-apoio">
-              {modeloDoRelatorio ? "Texto da imobiliária" : "Texto padrão"} · mandado a cada lead novo do corretor
+              {modeloDoRelatorio ? "Texto da imobiliária" : "Texto padrão"} · mandado a cada lead que a roleta passa ao corretor
             </span>
           </span>
           <span aria-hidden className="text-fluid-xs font-semibold text-acento group-open:hidden">

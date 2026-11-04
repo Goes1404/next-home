@@ -33,7 +33,8 @@ describe("aviso de lead distribuído no grupo", () => {
 
 describe("para quem o aviso do lead realmente vai", () => {
   const item = { corretor_id: "A", grupo_jid: "1@g.us" };
-  const lead = { corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo" };
+  // Lead que a roleta dos anúncios repassou: `anuncio_pago_por` é o dono do número do anúncio.
+  const lead = { corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo", anuncio_pago_por: "ARETZ" };
   const dono = { id: "B", ativo: true, whatsapp_grupo_leads_jid: "2@g.us" };
 
   it("manda para o grupo do dono atual quando o lead trocou de mão depois de enfileirar", () => {
@@ -78,6 +79,32 @@ describe("para quem o aviso do lead realmente vai", () => {
   });
 });
 
+describe("só o lead da roleta dos anúncios vai para o grupo (03/11/2026, lead 5344)", () => {
+  const item = { corretor_id: "B", grupo_jid: "2@g.us" };
+  const dono = { id: "B", ativo: true, whatsapp_grupo_leads_jid: "2@g.us" };
+  const MOTIVO = "Só o lead repassado pela roleta dos anúncios vai para o grupo.";
+
+  it.each([
+    ["formulário do site distribuído pelo rodízio", "imobiliaria"],
+    ["portal (ZAP, Viva Real, OLX)", "imobiliaria"],
+    ["formulário de anúncio da Meta", "imobiliaria"],
+    ["palavra de entrada no número do corretor (orgânico)", "imobiliaria"],
+  ])("%s: o lead fica com o dono no CRM, mas não sai no grupo", (_porta, trazidoPor) => {
+    const lead = { corretor_id: "B", trazido_por: trazidoPor, etapa: "novo", anuncio_pago_por: null };
+    expect(destinoDoAviso(item, lead, dono)).toEqual({ acao: "cancelar", motivo: MOTIVO });
+  });
+
+  it("repassado pela roleta dos anúncios: sai no grupo do corretor que recebeu", () => {
+    const lead = { corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo", anuncio_pago_por: "ARETZ" };
+    expect(destinoDoAviso(item, lead, dono)).toEqual({ acao: "enviar", corretorId: "B", grupoJid: "2@g.us" });
+  });
+
+  it("o lead do anúncio do próprio corretor continua fora, com o motivo dele", () => {
+    const lead = { corretor_id: "B", trazido_por: "corretor", etapa: "novo", anuncio_pago_por: null };
+    expect(destinoDoAviso(item, lead, dono).acao).toBe("cancelar");
+  });
+});
+
 describe("falha de leitura no worker", () => {
   type Linha = Record<string, unknown>;
   // Cliente falso: cada tabela devolve o que o teste mandar; os updates da
@@ -114,7 +141,7 @@ describe("falha de leitura no worker", () => {
     };
     return { cliente: cliente as never, updates };
   }
-  const leadOk = { nome: "M", telefone: "1", origem: null, anuncio_origem: null, empreendimento_id: null, corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo" };
+  const leadOk = { nome: "M", telefone: "1", origem: null, anuncio_origem: null, empreendimento_id: null, corretor_id: "B", trazido_por: "imobiliaria", etapa: "novo", anuncio_pago_por: "ARETZ" };
 
   it("erro ao ler o lead volta para nova tentativa, não cancela", async () => {
     const { cliente, updates } = clienteFalso({ leads: { data: null, error: { message: "timeout" } }, corretores: { data: null, error: null } });

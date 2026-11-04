@@ -40,7 +40,7 @@ export function textoDoLeadDistribuido(params: {
   });
 }
 
-type LeadDoAviso = { corretor_id: string | null; trazido_por: string; etapa: string };
+type LeadDoAviso = { corretor_id: string | null; trazido_por: string; etapa: string; anuncio_pago_por: string | null };
 type DonoAtual = { id: string; ativo: boolean; whatsapp_grupo_leads_jid: string | null };
 
 export type DestinoDoAviso =
@@ -63,6 +63,18 @@ export function destinoDoAviso(
   if (!lead) return { acao: "cancelar", motivo: "Lead não encontrado." };
   // Impulsionamento do próprio corretor não é lead distribuído: ele já sabe.
   if (lead.trazido_por === "corretor") return { acao: "cancelar", motivo: "O cliente é do próprio corretor (anúncio dele)." };
+  /*
+   * Só o lead que a ROLETA DOS ANÚNCIOS repassou vai para o grupo
+   * (03/11/2026, decisão do dono depois do lead final 5344 na Aretz). A marca
+   * é `anuncio_pago_por`, que só o repasse da roleta grava (0206). Não serve
+   * `origem_atribuicao = 'roleta'`: o rodízio dos leads do site e dos portais
+   * (`distribuir_lead`) grava a mesma palavra. Lead de site, portal,
+   * formulário da Meta, palavra de entrada ou importação continua com o dono
+   * no CRM e com o aviso de lead novo; só não sai no grupo.
+   */
+  if (!lead.anuncio_pago_por) {
+    return { acao: "cancelar", motivo: "Só o lead repassado pela roleta dos anúncios vai para o grupo." };
+  }
   if (lead.etapa === "perdido" || lead.etapa === "fechado") return { acao: "cancelar", motivo: "O lead foi perdido ou fechado." };
   if (!lead.corretor_id || !donoAtual || donoAtual.id !== lead.corretor_id) {
     return { acao: "cancelar", motivo: "O lead está sem corretor responsável." };
@@ -129,7 +141,7 @@ export async function enviarLeadsDistribuidosParaGrupos(supabase: Supa, limite =
     const [{ data: lead, error: erroLead }, { data: instancia }] = await Promise.all([
       supabase
         .from("leads")
-        .select("nome, telefone, origem, anuncio_origem, empreendimento_id, corretor_id, trazido_por, etapa")
+        .select("nome, telefone, origem, anuncio_origem, empreendimento_id, corretor_id, trazido_por, etapa, anuncio_pago_por")
         .eq("id", candidato.lead_id)
         .eq("grupo_id", candidato.grupo_id)
         .maybeSingle(),
