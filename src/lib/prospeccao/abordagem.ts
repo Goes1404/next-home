@@ -74,7 +74,42 @@ export function slugDaLoja(nome: string): string {
   );
 }
 
-/** O único follow-up, para quem foi abordado e não respondeu. */
-export function mensagemDeFollowup(params: { link: string }): string {
+/**
+ * A abordagem CURTA (04/11/2026): sem link, terminando numa pergunta. Nas três
+ * primeiras rodadas (32 lojas) só 4 abriram o link da mensagem longa: link de
+ * número desconhecido parece golpe. Agora o link vai só para quem responde
+ * ("Mandar a amostra" no painel).
+ */
+export function mensagemCurta(params: { nome: string; gancho?: string | null; beneficio?: string | null; vendedor?: string }): string {
+  const vendedor = params.vendedor ?? VENDEDOR_PADRAO;
+  const meio = gancho(params.gancho);
+  const beneficio = (params.beneficio ?? "").trim().replace(/[.!\s]+$/, "") || "pedidos e agendamentos chegando prontos no WhatsApp";
+  return [
+    `Oi, tudo bem? Aqui é o ${vendedor}, da Astro Soluções, aqui da região.`,
+    meio ? `${meio}!` : "",
+    `Montei uma ideia de site para a ${params.nome}, com ${beneficio}. Posso te mandar para dar uma olhada?`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** A mensagem já leva o link da amostra? (as abordagens longas, até 04/11/2026). */
+export function temLinkDaAmostra(mensagem: string | null | undefined): boolean {
+  return /\/astro\/amostra\//.test(mensagem ?? "");
+}
+
+/** Para quem respondeu à abordagem curta: agora vai o link. */
+export function mensagemComAmostra(params: { link: string }): string {
+  return `Que bom! Está aqui, montei com a cara de vocês:\n${params.link}\n\nDá uma olhada com calma. Se fizer sentido, passo aí 15 minutos e mostro funcionando no celular. Qual dia fica melhor?`;
+}
+
+/**
+ * O único follow-up, para quem foi abordado e não respondeu. Se a abordagem
+ * foi a curta (sem link), o follow-up já leva o link.
+ */
+export function mensagemDeFollowup(params: { link: string; abordagemTinhaLink?: boolean }): string {
+  if (params.abordagemTinhaLink === false) {
+    return `Oi, tudo bem? Retomando: deixo aqui a ideia de site que montei para vocês, para olhar quando der:\n${params.link}\n\nSe fizer sentido, passo aí rapidinho e mostro no celular, leva 10 minutos.`;
+  }
   return `Oi, tudo bem? Só passando para saber se conseguiram abrir a amostra que mandei:\n${params.link}\n\nSe preferir, passo aí rapidinho e mostro no celular, leva 10 minutos.`;
 }

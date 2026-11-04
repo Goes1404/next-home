@@ -77,6 +77,18 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
 - **Envio continua manual** (decisão do dono, 04/11): disparo automático
   só com chip separado, depois de medir a taxa de resposta.
 
+## Abordagem curta (04/11/2026)
+
+- Medido: 32 lojas com a mensagem longa + link → 4 abriram, 2 responderam.
+  Link de número desconhecido parece golpe. Daqui em diante a primeira
+  mensagem é curta, sem link, terminando em "Posso te mandar?"
+  (`mensagemCurta`). Quem responde recebe o link pelo botão "Respondeu?
+  Mandar a amostra" (`mensagemComAmostra`, tipo `amostra` em
+  `marcarEnviado`: move para "Respondeu"). O follow-up da curta já leva o
+  link. `temLinkDaAmostra` separa as abordagens antigas das novas.
+- Imobiliárias entram na captação diária (modelo `crm`): produto pronto,
+  ticket maior e prova (Next Home).
+
 ## Próximas fases
 
 2. Captação semanal (tarefa agendada do Claude grava no banco pelo MCP).

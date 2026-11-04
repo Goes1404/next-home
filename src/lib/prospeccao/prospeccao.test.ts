@@ -61,3 +61,18 @@ describe("pedido de visita", () => {
     expect(lerPedidoDeVisita("lixo")).toBeNull();
   });
 });
+
+describe("abordagem curta (04/11/2026)", () => {
+  it("vai sem link e termina numa pergunta", async () => {
+    const { mensagemCurta, temLinkDaAmostra, mensagemComAmostra, mensagemDeFollowup } = await import("./abordagem");
+    const m = mensagemCurta({ nome: "Charada", gancho: "vi que vocês têm nota 5 no Google", beneficio: "agenda online.", vendedor: "Eduardo" });
+    expect(m).toBe(
+      "Oi, tudo bem? Aqui é o Eduardo, da Astro Soluções, aqui da região. Vi que vocês têm nota 5 no Google! Montei uma ideia de site para a Charada, com agenda online. Posso te mandar para dar uma olhada?",
+    );
+    expect(temLinkDaAmostra(m)).toBe(false);
+    expect(temLinkDaAmostra("veja https://x/astro/amostra/charada")).toBe(true);
+    expect(mensagemComAmostra({ link: "https://x/astro/amostra/c" })).toContain("https://x/astro/amostra/c");
+    expect(mensagemDeFollowup({ link: "L", abordagemTinhaLink: false })).toContain("Retomando");
+    expect(mensagemDeFollowup({ link: "L" })).toContain("conseguiram abrir");
+  });
+});
