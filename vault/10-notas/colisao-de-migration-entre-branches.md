@@ -72,12 +72,14 @@ recebe a `main`.
 Um dia depois, a mesma branch perdeu a 0255. Outra sessão, consertando a queda
 do site por limite da Vercel ([[vercel-hobby-pausou-a-conta-inteira]]), criou
 na `main` a `0255_disparo_so_com_campanha_ativa.sql` e já a **aplicou em
-produção** (15:46 UTC). A do número oficial virou **0256**, de novo com
+produção** (15:46 UTC). A do número oficial virou **0256** — e **0257** horas
+depois, quando a correção da `configurar_disparo_automatico` ficou com a 0256
+da `main` —, de novo com
 `git mv` + troca das menções só nos arquivos dela; as frases de história (como
 esta) ficam com o número da época.
 
 As duas não mexem no mesmo objeto: a da `main` só refaz o comando do
-`cron.job` `disparo-campanhas`; a 0256 cria tabelas e colunas. A condição nova
+`cron.job` `disparo-campanhas`; a do número oficial cria tabelas e colunas. A condição nova
 do tique (`fila.status = 'pendente'` em `campanhas.status = 'em_andamento'`)
 também vale para a lista oficial, que usa as mesmas duas tabelas.
 

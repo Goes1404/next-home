@@ -5,7 +5,7 @@ porquê está em `docs/ROADMAP-WHATSAPP-OFICIAL.md`; o que muda no número do
 corretor, em `docs/WHATSAPP-OFICIAL-COEXISTENCIA.md`.
 
 **Nada disto foi feito em produção.** O código está na branch
-`ccr-7424dca4-4nynlp`; a migration 0256 não foi aplicada; nenhuma variável
+`ccr-7424dca4-4nynlp`; a migration 0257 não foi aplicada; nenhuma variável
 foi criada na Vercel; nenhuma mensagem real saiu. Enquanto os passos abaixo
 não forem feitos, o canal oficial fica desligado sozinho (o webhook responde
 503, a tela diz o que falta e as listas continuam saindo só pelo número do
@@ -94,12 +94,13 @@ Todas estão comentadas no `.env.example`:
 
 Variável nova só vale depois de um deploy.
 
-### 8. Migration 0256 no banco de produção
+### 8. Migration 0257 no banco de produção
 Pelo processo de sempre (skill local `aplicar-migration-producao`). Antes,
 confira que a **0253 e a 0254 (prospecção, na main desde 03/11/2026) e a 0255
 (tique das campanhas, aplicada em 04/11/2026) já estão aplicadas** e que nenhuma
-outra branch criou uma 0256 — esta nasceu 0254 e foi renumerada duas vezes por
-colisão (0255 em 03/11, 0256 em 04/11). Ela cria cinco tabelas só do servidor, as colunas
+outra branch criou uma 0257 — esta nasceu 0254 e foi renumerada três vezes por
+colisão (0255 em 03/11; 0256 e 0257 em 04/11). A 0256 da main é a correção da
+`configurar_disparo_automatico`: confira também que ela está aplicada. Ela cria cinco tabelas só do servidor, as colunas
 `canal`/`numero_oficial_id`/`modelo_oficial_id` em `whatsapp_campanhas`, o rastro
 da Meta na fila, a função de consentimento e tira a lista oficial da cota de
 mensagens do plano. É reaplicável. O código no ar sem ela não quebra

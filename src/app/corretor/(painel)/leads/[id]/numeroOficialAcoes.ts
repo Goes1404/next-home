@@ -13,7 +13,7 @@ import { janelaAberta } from "@/lib/whatsapp/oficial/painelDoLead";
  * O que o corretor DONO do lead faz com a conversa do número oficial (F3).
  *
  * Toda ação confere o dono pela sessão antes de tocar em qualquer coisa: as
- * tabelas do número oficial são só do servidor (0256), então quem recorta é
+ * tabelas do número oficial são só do servidor (0257), então quem recorta é
  * este arquivo, não a RLS. O gestor não entra aqui pelo lead de outro
  * corretor — ele não lê conversa (0134).
  *

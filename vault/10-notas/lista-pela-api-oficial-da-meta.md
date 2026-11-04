@@ -8,7 +8,7 @@ codigo:
   - docs/ROADMAP-WHATSAPP-OFICIAL.md
   - docs/WHATSAPP-OFICIAL-ATIVAR.md
   - docs/WHATSAPP-OFICIAL-COEXISTENCIA.md
-  - supabase/migrations/0256_whatsapp_oficial.sql
+  - supabase/migrations/0257_whatsapp_oficial.sql
   - src/lib/whatsapp/oficial/
   - src/app/api/webhooks/whatsapp-oficial/route.ts
   - src/app/corretor/(painel)/admin/whatsapp-oficial/
@@ -17,7 +17,7 @@ codigo:
 created: 2026-11-03
 updated: 2026-11-04
 fonte: pesquisa na documentação da Meta em 03/11/2026 + roadmap + construção F0–F6 na branch ccr-7424dca4-4nynlp
-summary: Lista fria só é segura pela API oficial; o número que entra nela sai da Evolution (coexistência desconecta aparelhos vinculados), então o caminho é um número oficial só para listas por imobiliária. Construído em 03/11/2026 na branch ccr-7424dca4-4nynlp (0256, nada em produção) — falta o dono ligar as contas da Meta (docs/WHATSAPP-OFICIAL-ATIVAR.md).
+summary: Lista fria só é segura pela API oficial; o número que entra nela sai da Evolution (coexistência desconecta aparelhos vinculados), então o caminho é um número oficial só para listas por imobiliária. Construído em 03/11/2026 na branch ccr-7424dca4-4nynlp (0257, nada em produção) — falta o dono ligar as contas da Meta (docs/WHATSAPP-OFICIAL-ATIVAR.md).
 ---
 
 # Lista pela API oficial da Meta
@@ -74,7 +74,7 @@ histórico (0067). (`provider.ts` NÃO é o único adaptador da Evolution:
 Nada foi publicado, aplicado no banco de produção ou enviado de verdade. O
 passo a passo do dono está em `docs/WHATSAPP-OFICIAL-ATIVAR.md`.
 
-- **0256**: número oficial por grupo (um ativo; token do cliente cifrado),
+- **0257**: número oficial por grupo (um ativo; token do cliente cifrado),
   modelos, `canal` na lista + rastro da Meta na fila (`wamid`, entrega,
   leitura, cobrança), conversa oficial SEPARADA da do corretor, eventos crus
   (30 dias), função de consentimento só da chave de serviço, gatilhos de

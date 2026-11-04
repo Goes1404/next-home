@@ -18,7 +18,7 @@ import { enviarModeloParaAprovacao, sincronizarModelos } from "@/lib/whatsapp/of
 import { atualizarNumeroPelaMeta, numeroDoGrupo } from "@/lib/whatsapp/oficial/numeros";
 
 /**
- * As ações da tela do número oficial (0256). Todas: a guarda de gestor pela
+ * As ações da tela do número oficial (0257). Todas: a guarda de gestor pela
  * SESSÃO primeiro (`exigirGestorNaAcao`), a escrita pela chave de serviço
  * depois (as tabelas são só do servidor), sempre com o grupo do gestor como
  * filtro: o id que chega do navegador nunca escolhe o grupo.

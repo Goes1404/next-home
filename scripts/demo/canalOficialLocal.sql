@@ -1,11 +1,11 @@
--- Telas do NÚMERO OFICIAL (0256) com dados de exemplo — SÓ NO BANCO LOCAL.
+-- Telas do NÚMERO OFICIAL (0257) com dados de exemplo — SÓ NO BANCO LOCAL.
 --
 -- Para fotografar ou revisar as telas do canal oficial sem produção
 -- (04/11/2026). Pessoas, telefones e conversas são inventados; a senha das
 -- duas contas é de teste. Passo a passo e armadilhas no vault:
 -- vault/10-notas/painel-local-com-dados-de-exemplo.md
 --
---   npm run db:teste                       (banco do zero, migrations até a 0256)
+--   npm run db:teste                       (banco do zero, migrations até a 0257)
 --   psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
 --     -v ON_ERROR_STOP=1 -f scripts/demo/canalOficialLocal.sql
 --

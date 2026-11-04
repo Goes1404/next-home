@@ -5,7 +5,7 @@ import { PainelDoNumeroOficial } from "./NumeroOficialClient";
 
 /**
  * O número oficial da imobiliária na ficha do lead (F3). Some inteiro quando
- * o grupo não tem número oficial (ou a 0256 ainda não foi aplicada) e para
+ * o grupo não tem número oficial (ou a 0257 ainda não foi aplicada) e para
  * quem não é o corretor DONO do lead: o gestor não lê conversa (0134), nem
  * pela ficha de um lead da equipe.
  */

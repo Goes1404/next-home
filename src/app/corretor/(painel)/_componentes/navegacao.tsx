@@ -327,7 +327,7 @@ export const GRUPOS_NAV: GrupoNav[] = [
           { href: "/corretor/admin/leads", label: "Leads da equipe", icone: IconeDistribuir, secao: "Equipe", equipe: true },
           { href: "/corretor/admin/contas", label: "Contas", icone: IconeCracha, secao: "Equipe", equipe: true },
           { href: "/corretor/admin/whatsapp", label: "WhatsApp da equipe", icone: IconeSmartphone, secao: "Equipe" },
-          // 03/11/2026 (0256): o número oficial da Meta da imobiliária, para listas.
+          // 03/11/2026 (0257): o número oficial da Meta da imobiliária, para listas.
           { href: "/corretor/admin/whatsapp-oficial", label: "WhatsApp oficial", icone: IconeBalaoCheck, secao: "Equipe" },
           { href: "/corretor/admin/construtoras", label: "Construtoras", icone: IconeGuindaste, secao: "Negócio", modulo: "construtoras" },
           { href: "/corretor/admin/parceiros", label: "Parceiros", icone: IconeAdicionarPessoa, secao: "Negócio", modulo: "parceirosDeImoveis" },

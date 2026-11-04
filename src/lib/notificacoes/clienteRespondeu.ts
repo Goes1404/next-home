@@ -37,7 +37,7 @@ export async function avisarClienteRespondeu(
     tipo: string | null;
     /**
      * Para onde o toque leva. Padrão: a conversa do número do corretor. A
-     * resposta ao número OFICIAL (0256) não tem conversa ali: vai à ficha.
+     * resposta ao número OFICIAL (0257) não tem conversa ali: vai à ficha.
      */
     url?: string;
   },
