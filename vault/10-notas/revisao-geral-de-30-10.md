@@ -47,3 +47,4 @@ Ver [[multi-ramo-portais-gestor-e-negocio-da-astro]], [[ia-no-atendimento-audio-
 - Erro em produção: id de conversa com caractere invisível quebrava `lerMensagens` (uuid inválido) → id saneado e validado antes da consulta.
 - Push: só 1 inscrição no banco; o "Ligar avisos" precisa ser testado de novo no celular.
 - **Queda de 04/11:** 402 `DEPLOYMENT_DISABLED` em todos os domínios, porque a conta Hobby da Vercel passou do limite. Só volta com upgrade para Pro ou na virada do ciclo. A 0255 deixou o tique de campanhas condicional (antes eram 1.440 chamadas vazias por dia).
+- **Avisos e cobrança (04/11, tarde):** o "Ligar avisos" tratava a permissão `default` em silêncio. Agora painel e plataforma usam o mesmo `CartaoDeAvisos`, com instruções e diagnóstico em `/api/notificacoes/diagnostico`. O Asaas ficou de fora (pacote fechado pelo WhatsApp) e as contas novas vencem no dia 5.
