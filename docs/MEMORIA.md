@@ -12894,3 +12894,8 @@ lojas tinham sido marcadas (o banco confirmava); quebrou só a tela. Correção:
 de novo no `visibilitychange` quando a pessoa volta, e `src/app/plataforma/error.tsx`
 segura qualquer outro erro dentro do painel. Nesta versão do Next o
 `error.tsx` recebe `unstable_retry` (refaz o fetch), não só `reset`.
+
+## Checagem de saúde de 04/11/2026
+- Evolution responde `rate-overlimit` quando se lista grupos muitas vezes seguidas (tela de impulsionamentos). `listarGruposWhatsapp` agora devolve o cache guardado nesse caso e uma mensagem "tente em 1 minuto".
+- `lerMensagens` recebia id com caractere invisível colado (erro de uuid no Postgres); agora limpa e valida o uuid e devolve lista vazia.
+- Inscrições de push: 1 só (20/10). Enquanto ninguém ligar os avisos de novo, não há prova de que o conserto do SW funcionou.
