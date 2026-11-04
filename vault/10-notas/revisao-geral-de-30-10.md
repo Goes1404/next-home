@@ -14,7 +14,7 @@ codigo:
   - src/app/corretor/(painel)/perfil/SeletorArquivo.tsx
   - supabase/migrations/0251_trava_da_roleta_por_grupo.sql
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-04
 summary: Revisão de tudo que entrou em 29–30/10 achou 36 defeitos (painel, WhatsApp/IA, acesso/cobrança), todos corrigidos; 0251 aplicada (trava da roleta por grupo). Lições: escopo do SW, limite de 4,5 MB da Vercel, max_rows 1000 do PostgREST, áudio na rajada.
 ---
 
@@ -40,3 +40,9 @@ Ver [[multi-ramo-portais-gestor-e-negocio-da-astro]], [[ia-no-atendimento-audio-
 - `staleTimes.dynamic = 30` (voltar a uma seção em 30 s é instantâneo; actions com revalidate limpam).
 - Faixas do layout em Suspense; contadores do menu atrasados 1,2 s; onda da Astro 240 ms.
 - 0252 com índices propostos; conferir chave assimétrica de JWT no Supabase (senão `getClaims` vira `getUser`).
+
+## Checagem "100% funcional" (04/11)
+- Crons ok (relatório semanal saiu a 6 de 6 gestores em 02/11), pg_net 200, nenhum áudio preso.
+- Erro em produção: Evolution `rate-overlimit` ao listar grupos (impulsionamentos) → `listarGruposWhatsapp` devolve a lista guardada e dá aviso amigável.
+- Erro em produção: id de conversa com caractere invisível quebrava `lerMensagens` (uuid inválido) → id saneado e validado antes da consulta.
+- Push: só 1 inscrição no banco; o "Ligar avisos" precisa ser testado de novo no celular.

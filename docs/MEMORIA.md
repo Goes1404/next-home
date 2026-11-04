@@ -12881,3 +12881,8 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Pedido do dono: **roleta só para o ADM**. A aba Roleta e o botão "Dividir os leads do anúncio" do Início somem para o corretor; `salvarRoleta`/`alternarRoleta` recusam corretor; `salvarRoleta` só grava no número de gestor; `lerModoDaRoleta` não age em número de corretor. Nota: [[roleta-dos-anuncios]].
 - **O grupo do corretor recebe só lead da roleta dos anúncios** (pedido do dono, mesmo dia): `destinoDoAviso` cancela o aviso sem `anuncio_pago_por` ("Só o lead repassado pela roleta dos anúncios vai para o grupo."). Site, portal, formulário da Meta, palavra de entrada e importação ficam no CRM, só não saem no grupo. **Não use `origem_atribuicao = 'roleta'` para isso**: o rodízio do site/portais (`distribuir_lead`) grava a mesma palavra. Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
 - Publicado em produção em 04/11/2026 (`main` e `claude/modernizar-plataforma-imobiliaria-2tm13q`), sem o canal oficial, que segue só na branch `ccr-7424dca4-4nynlp`.
+
+## Checagem de saúde de 04/11/2026
+- Evolution responde `rate-overlimit` quando se lista grupos muitas vezes seguidas (tela de impulsionamentos). `listarGruposWhatsapp` agora devolve o cache guardado nesse caso e uma mensagem "tente em 1 minuto".
+- `lerMensagens` recebia id com caractere invisível colado (erro de uuid no Postgres); agora limpa e valida o uuid e devolve lista vazia.
+- Inscrições de push: 1 só (20/10). Enquanto ninguém ligar os avisos de novo, não há prova de que o conserto do SW funcionou.
