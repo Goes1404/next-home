@@ -55,6 +55,10 @@ const RESERVADOS = new Set<number>([
   // migration (tipos de conta da plataforma); a 0214 (limites do plano) vem
   // depois dela.
   213,
+  // 04/11/2026: 0256 e 0257 são da branch do número oficial do WhatsApp
+  // (`ccr-7424dca4-4nynlp`), ainda fora da main; a 0258 (índices) subiu
+  // antes. Quem trouxer a 0256/0257 apaga esta linha.
+  256, 257,
 ]);
 
 function migrations(): { arquivo: string; prefixo: string }[] {
