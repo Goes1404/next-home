@@ -48,6 +48,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[a-casca-estatica-sem-perder-o-tema]] — F2b: 11 das 14 páginas públicas servidas do cache (ISR 1 h); tema por script antes da pintura e cookie gravado no navegador; fundo do corretor como ilha; sem `cacheComponents` (12/10)
 - [[next-home-e-o-espelho-da-versao-geral]] — SUBSTITUÍDA em 18/10: era uma instalação por cliente (26/09)
 - [[o-orcamento-do-dossie-era-menor-que-o-escrito]] — E2E diário contra o site no ar (`e2e.yml`); senhas vazadas só no Supabase Pro (02/10)
+- [[vercel-hobby-pausou-a-conta-inteira]] ⚠️ 04/11: 402 `DEPLOYMENT_DISABLED` em todos os domínios — a Vercel pausou a CONTA Hobby (Active CPU a 300%); motivo só no e-mail, avisos desde 21/10 sem leitura; voltou com o Pro
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]
