@@ -4,6 +4,7 @@ import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
 import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
+import { quantasPessoasRecebem } from "@/lib/crm/contagemDoPublico";
 import type { Canal } from "@/lib/graficos/calculos";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -636,7 +637,7 @@ export function NovaCampanha({
                   ? "Conferindo o público…"
                   : totalPrevisto === undefined
                     ? "Não foi possível contar agora"
-                    : `${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"} receberá${totalPrevisto === 1 ? "" : "ão"}`}
+                    : quantasPessoasRecebem(totalPrevisto)}
               </p>
               <p className="text-fluid-xs text-apoio mt-0.5 leading-relaxed">
                 {previaAtual && previaAtual.protegidos > 0
