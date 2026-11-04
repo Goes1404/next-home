@@ -3,12 +3,8 @@
 import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
-import {
-  quantasPessoasRecebem,
-  type FiltroLeadsCampanha,
-  type OpcoesDeRecorte,
-  type RecorteDeOrigem,
-} from "@/lib/crm/publicoDaCampanha";
+import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
+import { quantasPessoasRecebem } from "@/lib/crm/contagemDoPublico";
 import type { Canal } from "@/lib/graficos/calculos";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";

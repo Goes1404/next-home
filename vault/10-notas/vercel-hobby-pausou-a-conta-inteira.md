@@ -89,10 +89,12 @@ janela.
   Na volta, 2 chamadas do pg_net em 10 min.
 - **Armadilha**: rodar de novo a `configurar_disparo_automatico` (0025), o passo
   de quando se troca o `CRON_SECRET`, recria o job com o comando antigo, sem
-  a condição, e o gasto volta calado. Falta a função gravar o comando novo.
+  a condição, e o gasto volta calado. A migration que faz a função gravar o
+  comando novo foi escrita em 04/11 e espera a confirmação do dono no Supabase
+  (o `apply_migration` pergunta por causa do `delete` no corpo da função).
 - A 0255 como saiu quebrava banco novo (`job_id can not be NULL`, o job só
-  existe em produção) e a guarda `migracoesAtomicas`; a branch
-  `ccr-7424dca4-4nynlp` a corrigiu sem mudar o efeito (ver
+  existe em produção) e a guarda `migracoesAtomicas`: o CI da `main` ficou
+  vermelho. Corrigida e publicada em 04/11 sem mudar o efeito em produção (ver
   `supabase/REPRODUCAO.md`).
 
 ## Relacionadas

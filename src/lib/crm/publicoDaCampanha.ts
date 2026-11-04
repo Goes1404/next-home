@@ -151,12 +151,3 @@ export function opcoesDeRecorte(leads: Pick<Lead, "origem" | "anuncioOrigem">[])
     anuncios: [...anuncios.values()].sort((a, b) => b.total - a.total),
   };
 }
-
-/**
- * A contagem da prévia do público: "1 pessoa receberá", "25 pessoas
- * receberão". O plural montado letra a letra dava "receberáão" na tela de
- * todos os corretores (achado em 04/11/2026).
- */
-export function quantasPessoasRecebem(total: number): string {
-  return total === 1 ? "1 pessoa receberá" : `${total} pessoas receberão`;
-}
