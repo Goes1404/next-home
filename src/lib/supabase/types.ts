@@ -174,6 +174,7 @@ export type Database = {
           nao_contatar: boolean
           nao_contatar_em: string | null
           enviado_em: string | null
+          followup_em: string | null
           respondeu_em: string | null
           visitas: number
           primeira_visita_em: string | null
@@ -211,6 +212,7 @@ export type Database = {
           nao_contatar?: boolean
           nao_contatar_em?: string | null
           enviado_em?: string | null
+          followup_em?: string | null
           respondeu_em?: string | null
           visitas?: number
           primeira_visita_em?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           nao_contatar?: boolean
           nao_contatar_em?: string | null
           enviado_em?: string | null
+          followup_em?: string | null
           respondeu_em?: string | null
           visitas?: number
           primeira_visita_em?: string | null

@@ -60,6 +60,23 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
   hexadecimal e formas/ícones da lista fechada, e o `CFG` que o script do
   molde injeta como HTML perde `< > " ' \` & \`.
 
+## Gestão automática (04/11/2026, 0256)
+
+- **Régua**: abordagem → follow-up (3º dia, ou 1º se abriu a amostra) →
+  4 dias sem resposta depois do follow-up = `perdido` automático
+  ("sem resposta"). `followup_em` (0256) registra o follow-up; o botão do
+  painel vira "Enviar follow-up" só na hora certa (`followupDevido`).
+- **Aviso "abriu a amostra"**: `api/prospeccao/visita` → `after()` →
+  `avisoDeAbertura` → push só para `prospeccao_equipe` ∩ admins
+  (`notificarEquipeDaProspeccao`). Só loja já abordada; 1 aviso por 12 h.
+- **Rotina da manhã**: `/api/cron/prospeccao` (cron da Vercel, 10:40 UTC,
+  seg–sex): encerra as sem resposta e manda o plano do dia
+  (`resumoDoDia`). Push precisa do aparelho ativado na aba Prospecção.
+- **Captação diária** (5 lojas por dia útil): tarefa agendada do Claude,
+  fora do app; grava em `prospeccao_leads` com etapa `novo`.
+- **Envio continua manual** (decisão do dono, 04/11): disparo automático
+  só com chip separado, depois de medir a taxa de resposta.
+
 ## Próximas fases
 
 2. Captação semanal (tarefa agendada do Claude grava no banco pelo MCP).

@@ -12914,3 +12914,16 @@ segura qualquer outro erro dentro do painel. Nesta versão do Next o
 - **Armadilha que desfaz a 0255**: a `configurar_disparo_automatico` (o passo de quando se troca o `CRON_SECRET`) recria o job com o comando ANTIGO, sem o `where exists` — o tique volta a chamar a Vercel 1.440 vezes por dia, calado. A migration que conserta a função (0256) foi escrita e espera a confirmação do dono no Supabase: o `apply_migration` do MCP pergunta (o corpo da função tem `delete from vault.secrets`) e a pergunta expira em 60 s.
 - **"25 pessoas receberáão"** na prévia do público da lista (todos os corretores): plural montado letra a letra. Corrigido com `quantasPessoasRecebem` em `src/lib/crm/contagemDoPublico.ts` — módulo sem import, para não arrastar `publicoDaCampanha` ao pacote do navegador — e teste.
 
+
+## Prospecção: gestão automática do funil (04/11/2026, 0256)
+
+Pedido do dono: automatizar busca, amostra e gestão; envio segue manual (um
+toque por loja) até medir a resposta, por risco de banimento do número
+pessoal. Feito: coluna `followup_em` (0256, aplicada em produção); régua
+abordagem → follow-up no 3º dia → `perdido` automático 4 dias depois sem
+resposta; push "abriu a amostra" (só loja abordada, 1 a cada 12 h, só para a
+equipe da prospecção); cron da Vercel `/api/cron/prospeccao` (seg–sex 10:40
+UTC) com o plano do dia. Push depende de cada um ativar os avisos no aparelho
+(botão na aba Prospecção). A captação de 5 lojas/dia útil é uma tarefa
+agendada do Claude, fora do app. Vercel Hobby: cron diário só; horário com
+folga de até 1 h.

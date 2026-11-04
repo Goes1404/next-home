@@ -4,9 +4,10 @@ import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ETAPAS, ROTULO_DA_ETAPA, ehEtapa } from "@/lib/prospeccao/tipos";
-import { ordenarParaOFunil, proximaAcao, temperatura, type Temperatura } from "@/lib/prospeccao/funil";
+import { followupDevido, ordenarParaOFunil, proximaAcao, temperatura, type Temperatura } from "@/lib/prospeccao/funil";
 import { linkDaAmostra, linkDoWhatsapp, mensagemDeFollowup } from "@/lib/prospeccao/abordagem";
 import { EnviarNoWhatsapp, NovaLoja } from "./Componentes";
+import { AtivarAvisosDaPlataforma } from "../AtivarAvisosDaPlataforma";
 
 export const metadata: Metadata = { title: "Prospecção" };
 
@@ -34,7 +35,7 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("prospeccao_leads")
-    .select("id, nome, segmento, cidade, bairro, etapa, whatsapp, mensagem, slug, nao_contatar, enviado_em, visitas, ultima_visita_em, updated_at")
+    .select("id, nome, segmento, cidade, bairro, etapa, whatsapp, mensagem, slug, nao_contatar, enviado_em, followup_em, visitas, ultima_visita_em, updated_at")
     .order("updated_at", { ascending: false })
     .limit(500);
   const todas = data ?? [];
@@ -90,6 +91,8 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
             {ETAPAS.map((e) => chip(ROTULO_DA_ETAPA[e], `/plataforma/prospeccao?etapa=${e}`, etapa === e, contagem[e]))}
           </nav>
 
+          {/* 04/11/2026: o aviso de "abriu a amostra" e o plano da manhã chegam no celular. */}
+          <AtivarAvisosDaPlataforma />
           <NovaLoja />
 
           {lista.length === 0 ? (
@@ -98,7 +101,7 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
             <ul className="flex flex-col gap-3">
               {lista.map((l) => {
                 const t = temperatura(l, agora);
-                const followup = t === "fria";
+                const followup = followupDevido(l, agora);
                 const texto = followup ? mensagemDeFollowup({ link: linkDaAmostra(l.slug) }) : l.mensagem;
                 const link = l.whatsapp && texto ? linkDoWhatsapp(l.whatsapp, texto) : null;
                 const bloqueado = l.nao_contatar ? "Pediu para não receber mensagens" : null;
@@ -127,8 +130,8 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
                       </span>
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
-                      {l.etapa === "novo" || l.etapa === "aprovado" || t === "fria" ? (
-                        <EnviarNoWhatsapp id={l.id} link={link} bloqueado={bloqueado} rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"} />
+                      {l.etapa === "novo" || l.etapa === "aprovado" || followup ? (
+                        <EnviarNoWhatsapp id={l.id} link={link} bloqueado={bloqueado} followup={followup} rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"} />
                       ) : null}
                       <a
                         href={`/astro/amostra/${l.slug}?previa=1`}

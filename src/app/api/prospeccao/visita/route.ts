@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { lerPedidoDeVisita } from "@/lib/prospeccao/visita";
+import { avisoDeAbertura } from "@/lib/prospeccao/avisos";
+import { notificarEquipeDaProspeccao } from "@/lib/notificacoes/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,5 +33,26 @@ export async function POST(req: Request) {
     p_slug: pedido.slug,
     p_dispositivo: pedido.dispositivo,
   });
+  // 04/11/2026: a loja abriu a amostra → aviso no celular de quem vende,
+  // depois da resposta (a página de quem lê não espera o push).
+  if (id) after(() => avisarAbertura(supabase, pedido.slug, String(id)));
   return NextResponse.json({ id: id ?? null });
+}
+
+async function avisarAbertura(supabase: ReturnType<typeof createServiceClient>, slug: string, visitaId: string) {
+  try {
+    const { data: loja } = await supabase.from("prospeccao_leads").select("id, nome, etapa, nao_contatar").eq("slug", slug).maybeSingle();
+    if (!loja) return;
+    const { data: visitas } = await supabase
+      .from("prospeccao_visitas")
+      .select("id, created_at")
+      .eq("lead_id", loja.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    const anteriores = (visitas ?? []).filter((v) => v.id !== visitaId).map((v) => v.created_at);
+    const aviso = avisoDeAbertura(loja, anteriores);
+    if (aviso) await notificarEquipeDaProspeccao(supabase, aviso);
+  } catch (err) {
+    console.warn("[prospecção] aviso de abertura falhou:", err);
+  }
 }
