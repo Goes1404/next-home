@@ -4,7 +4,7 @@ import { emailConfigurado } from "@/lib/email";
 import { diaEmSP } from "@/lib/crm/resumoDoDia";
 import { validarSlugDoGrupo } from "@/lib/grupos/slugDoGrupo";
 import { avisarAtendimento } from "@/lib/notificacoes/avisosDaPlataforma";
-import { diaDoVencimentoValido, fimDoTesteGratis } from "@/lib/planos/cobranca";
+import { DIA_DO_VENCIMENTO_PADRAO, fimDoTesteGratis } from "@/lib/planos/cobranca";
 import { createServiceClient } from "@/lib/supabase/service";
 import { codigoDeIndicacaoDoVisitante } from "@/lib/indicacoes/cookieDoVisitante";
 import { registrarIndicacaoDoPedido } from "@/lib/indicacoes/indicacao";
@@ -58,7 +58,7 @@ export type ResultadoDoTeste =
 export const MENSAGEM_TESTE_INDISPONIVEL =
   "O teste grátis automático está indisponível agora. Envie o pedido pelo botão \"Falar com a Astro\" e a gente libera para você.";
 export const MENSAGEM_TESTE_JA_USADO =
-  "Já existe um teste grátis para este e-mail, WhatsApp ou CPF/CNPJ. Fale com a Astro para assinar.";
+  "Já existe um teste grátis para este e-mail, WhatsApp ou CPF/CNPJ. Fale com a Astro no WhatsApp para fechar seu pacote.";
 export const MENSAGEM_DOCUMENTO_COM_CONTA = "Este CPF/CNPJ já tem uma conta na Astro. Entre pelo login ou fale com a Astro.";
 export const MENSAGEM_WHATSAPP_COM_CONTA = "Este WhatsApp já é o contato de uma conta na Astro. Fale com a Astro.";
 
@@ -220,8 +220,9 @@ export async function iniciarTesteGratis(
         creci: p.creci,
         creci_tipo: p.creci ? (imobiliaria ? "J" : "F") : null,
         mensalidade: totalMensal(p.plano, p.usuarios),
-        // As faturas seguintes caem no dia do fim do teste (até 28).
-        dia_do_vencimento: diaDoVencimentoValido(Number(fimDoTeste.slice(8, 10))),
+        // O 1º vencimento é o fim do teste; as mensalidades seguintes, dia 5
+        // (decisão do dono, 04/11/2026).
+        dia_do_vencimento: DIA_DO_VENCIMENTO_PADRAO,
         teste_ate: fim.toISOString(),
       },
       agora,

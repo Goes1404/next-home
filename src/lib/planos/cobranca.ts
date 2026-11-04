@@ -71,6 +71,14 @@ function somarDias(dia: string, n: number): string {
   return new Date(Date.UTC(ano, mes - 1, d + n)).toISOString().slice(0, 10);
 }
 
+/**
+ * O dia em que a mensalidade vence nas contas NOVAS (04/11/2026, decisão do
+ * dono: "vence no dia 5 de todo mês"). Contas que já existiam guardam o dia
+ * combinado. O fim do teste grátis continua sendo o 1º vencimento (sem
+ * pacote fechado, os recursos pagos pausam na hora); daí em diante, dia 5.
+ */
+export const DIA_DO_VENCIMENTO_PADRAO = 5;
+
 /** O dia do vencimento aceito: inteiro de 1 a 28 (fevereiro cabe em todos). */
 export function diaDoVencimentoValido(dia: number): number {
   if (!Number.isFinite(dia)) return 1;
@@ -228,7 +236,7 @@ export function avisoDoPainel(
   if (s.estado === "teste" && s.fimDoTeste) {
     return {
       titulo: `Teste grátis: ${diasRestantesComoTexto(s.diasDeTesteRestantes)}`,
-      detalhe: `O teste acaba em ${diaEMes(s.fimDoTeste)}. Assine até lá para a IA, as listas, as artes e os vídeos continuarem funcionando sem pausa.`,
+      detalhe: `O teste acaba em ${diaEMes(s.fimDoTeste)}. Feche seu pacote com a Astro pelo WhatsApp até lá para a IA, as listas, as artes e os vídeos continuarem sem pausa.`,
       suspenso: false,
       teste: true,
     };
@@ -245,7 +253,7 @@ export function avisoDoPainel(
     return {
       titulo: "Seu teste grátis terminou",
       detalhe:
-        "IA, listas, artes e vídeos estão pausados até a assinatura. O site e o painel continuam. Assine para voltar a usar tudo na hora.",
+        "IA, listas, artes e vídeos estão pausados até você fechar seu pacote. O site e o painel continuam. Chame a Astro no WhatsApp para voltar a usar tudo.",
       suspenso: true,
       teste: true,
     };
@@ -254,7 +262,7 @@ export function avisoDoPainel(
     return {
       titulo: "Mensalidade em atraso",
       detalhe:
-        "IA, listas, artes e vídeos estão pausados. O site e o painel continuam. Seus clientes não veem erro: você atende pelas conversas. Fale com a plataforma para regularizar.",
+        "IA, listas, artes e vídeos estão pausados. O site e o painel continuam. Seus clientes não veem erro: você atende pelas conversas. Fale com a Astro no WhatsApp para regularizar.",
       suspenso: true,
       teste: false,
     };

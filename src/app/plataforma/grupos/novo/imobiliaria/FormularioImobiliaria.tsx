@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { lerRamo, vocabularioDoRamo } from "@/lib/ramos/ramos";
+import { DIA_DO_VENCIMENTO_PADRAO } from "@/lib/planos/cobranca";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { mascararCnpj } from "@/lib/plataforma/documentos";
 import {
@@ -24,7 +25,7 @@ const VAZIO: FormularioDaImobiliaria = {
   creciJ: "",
   usuarios: "3",
   mensalidade: mensalidadeComoTexto(mensalidadeDoPlano("imobiliaria", 3)),
-  diaDoVencimento: "10",
+  diaDoVencimento: String(DIA_DO_VENCIMENTO_PADRAO),
   contatoNome: "",
   contatoEmail: "",
   contatoTelefone: "",

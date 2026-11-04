@@ -38,9 +38,14 @@ export async function FaixaCobranca() {
     const assinatura = asaasConfigurado() ? await lerAssinaturaDoGrupo(corretor.grupoId) : null;
     const fatura = assinatura ? await lerFaturaEmAberto(assinatura, 4000) : null;
     if (fatura) botao = { href: fatura.url, texto: aviso.teste ? "Assinar agora" : "Pagar agora" };
-    else if (aviso.teste) {
-      const whatsapp = linkDoWhatsAppDaAstro(undefined, "Olá! Quero assinar a Astro depois do teste grátis.");
-      if (whatsapp) botao = { href: whatsapp, texto: "Assinar agora" };
+    else {
+      // Sem cobrança automática (04/11/2026, decisão do dono: o pacote é
+      // fechado por mensagem): o botão abre o WhatsApp da Astro.
+      const whatsapp = linkDoWhatsAppDaAstro(
+        undefined,
+        aviso.teste ? "Olá! Quero fechar meu pacote da Astro." : "Olá! Quero regularizar a mensalidade da Astro.",
+      );
+      if (whatsapp) botao = { href: whatsapp, texto: aviso.teste ? "Fechar meu pacote" : "Falar com a Astro" };
     }
   }
 
