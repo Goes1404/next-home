@@ -12899,3 +12899,9 @@ segura qualquer outro erro dentro do painel. Nesta versão do Next o
 - Evolution responde `rate-overlimit` quando se lista grupos muitas vezes seguidas (tela de impulsionamentos). `listarGruposWhatsapp` agora devolve o cache guardado nesse caso e uma mensagem "tente em 1 minuto".
 - `lerMensagens` recebia id com caractere invisível colado (erro de uuid no Postgres); agora limpa e valida o uuid e devolve lista vazia.
 - Inscrições de push: 1 só (20/10). Enquanto ninguém ligar os avisos de novo, não há prova de que o conserto do SW funcionou.
+
+## Site fora do ar: limite do plano Hobby da Vercel (04/11/2026)
+- A partir das 14:31 UTC (11:31 em SP), todos os domínios do projeto responderam `402 DEPLOYMENT_DISABLED`. A causa foi a conta Hobby da Vercel ter passado do limite mensal; o código não tinha problema. O pg_net passou a receber 402 em todas as chamadas.
+- Só o dono resolve: fazer o upgrade para Pro em Settings → Billing, ou esperar o ciclo virar. O Hobby também não permite uso comercial.
+- O maior consumo fixo que encontrei foi o pg_cron `disparo-campanhas`: 1.440 chamadas por dia sem nenhuma lista em andamento, e cada uma consultava a Evolution para cada número. A 0255 deixou o tique condicional: só faz o POST se existe item `pendente` em campanha `em_andamento`.
+- Diagnóstico rápido: `select status_code, count(*) from net._http_response where created > now()-interval '1 hour' group by 1` mostra os 402. O `web_fetch_vercel_url` mostra o corpo `DEPLOYMENT_DISABLED`.
