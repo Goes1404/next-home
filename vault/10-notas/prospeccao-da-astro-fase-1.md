@@ -6,7 +6,7 @@ status: seedling
 custou: medio
 codigo: [supabase/migrations/0253_prospeccao.sql, supabase/migrations/0254_equipe_da_prospeccao.sql, src/lib/prospeccao, src/app/astro/amostra, src/app/api/prospeccao/visita, src/app/plataforma/prospeccao, scripts/prospeccao]
 created: 2026-11-02
-updated: 2026-11-03
+updated: 2026-11-04
 fonte: pedido do dono em 02/11/2026 ("vamos unir tudo isso no nosso app da astro"), doc "Plano: módulo de Prospecção no astroimob"
 summary: A Astro prospecta comércios dentro do astroimob — lojas em prospeccao_leads (global), amostra de site em /astro/amostra/<slug> montada do banco, rastreio de abertura sem IP e funil em /plataforma/prospeccao. Envio manual por wa.me na fase 1.
 ---
@@ -48,6 +48,14 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
 - **Envio manual na fase 1**: o botão abre o WhatsApp de quem está no
   painel com a mensagem pronta (`window.open` no clique, antes da ação,
   senão o navegador bloqueia) e marca a loja como abordada.
+- **Ação do painel nunca rejeita para o React (04/11).** No celular, abrir o
+  WhatsApp põe o navegador em segundo plano e corta a requisição; a ação
+  que rejeitava dentro de `startTransition` subia até o erro global do
+  Next ("This page couldn't load", tela preta sem menu). Agora
+  `semDerrubar()` em `Componentes.tsx` vira a falha em mensagem, o
+  "marcar como abordada" tenta de novo no `visibilitychange` ao voltar, e
+  `src/app/plataforma/error.tsx` segura qualquer outro erro dentro do
+  painel (com `unstable_retry`, a API desta versão do Next).
 - **Texto do banco é de terceiros**: a amostra escapa HTML, aceita só cor
   hexadecimal e formas/ícones da lista fechada, e o `CFG` que o script do
   molde injeta como HTML perde `< > " ' \` & \`.

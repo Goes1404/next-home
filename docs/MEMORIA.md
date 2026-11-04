@@ -12881,3 +12881,16 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - Pedido do dono: **roleta só para o ADM**. A aba Roleta e o botão "Dividir os leads do anúncio" do Início somem para o corretor; `salvarRoleta`/`alternarRoleta` recusam corretor; `salvarRoleta` só grava no número de gestor; `lerModoDaRoleta` não age em número de corretor. Nota: [[roleta-dos-anuncios]].
 - **O grupo do corretor recebe só lead da roleta dos anúncios** (pedido do dono, mesmo dia): `destinoDoAviso` cancela o aviso sem `anuncio_pago_por` ("Só o lead repassado pela roleta dos anúncios vai para o grupo."). Site, portal, formulário da Meta, palavra de entrada e importação ficam no CRM, só não saem no grupo. **Não use `origem_atribuicao = 'roleta'` para isso**: o rodízio do site/portais (`distribuir_lead`) grava a mesma palavra. Nota: [[leads-distribuidos-nos-grupos-da-aretz]].
 - Publicado em produção em 04/11/2026 (`main` e `claude/modernizar-plataforma-imobiliaria-2tm13q`), sem o canal oficial, que segue só na branch `ccr-7424dca4-4nynlp`.
+
+## Tela preta "This page couldn't load" ao voltar do WhatsApp (04/11/2026)
+
+No celular, o botão "Enviar no WhatsApp" abre o app do WhatsApp e o navegador
+vai para segundo plano no meio da ação `marcarEnviado`. A requisição cortada
+rejeitava dentro do `startTransition` e, sem `error.tsx` em `/plataforma`,
+subia até o erro global do Next: tela preta, sem menu, só "Reload/Back". As
+lojas tinham sido marcadas (o banco confirmava); quebrou só a tela. Correção:
+`semDerrubar()` em `prospeccao/Componentes.tsx` transforma a falha em mensagem
+(nenhuma ação do painel rejeita para o React), o "marcar como abordada" tenta
+de novo no `visibilitychange` quando a pessoa volta, e `src/app/plataforma/error.tsx`
+segura qualquer outro erro dentro do painel. Nesta versão do Next o
+`error.tsx` recebe `unstable_retry` (refaz o fetch), não só `reset`.
