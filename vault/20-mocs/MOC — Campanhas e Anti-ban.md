@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-11-03
+updated: 2026-11-04
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -19,6 +19,7 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 
 ## Proteções anti-ban
 - [[lista-pela-api-oficial-da-meta]] ⚠️ lista fria segura só pela API oficial; o número que entra nela sai da Evolution (roadmap, 03/11); F0–F6 construídas na branch `ccr-7424dca4-4nynlp` (0255), fora de produção
+- [[previa-do-modelo-sai-da-regra-do-envio]] — a prévia do modelo oficial dizia "nossa imobiliária" e o cliente leria "Next Home"; prévia, fila e disparo saem de `valoresDoEnvio` (04/11)
 - [[lista-oficial-nao-e-do-numero-do-corretor]] ⚠️ disparador, aviso de queda, saúde, status/limpar fila, comparação de texto e cota do plano ignoram a lista oficial por uma regra só (`listasDoNumeroDoCorretor`, 03/11)
 - [[campanha-protege-quem-ja-foi-contatado]]
 - [[quatro-protecoes-anti-ban-defendem-coisas-diferentes]]

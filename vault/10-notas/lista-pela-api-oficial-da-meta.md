@@ -15,7 +15,7 @@ codigo:
   - src/app/corretor/(painel)/leads/[id]/NumeroOficial.tsx
   - src/lib/whatsapp/listasDoNumero.ts
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-04
 fonte: pesquisa na documentação da Meta em 03/11/2026 + roadmap + construção F0–F6 na branch ccr-7424dca4-4nynlp
 summary: Lista fria só é segura pela API oficial; o número que entra nela sai da Evolution (coexistência desconecta aparelhos vinculados), então o caminho é um número oficial só para listas por imobiliária. Construído em 03/11/2026 na branch ccr-7424dca4-4nynlp (0255, nada em produção) — falta o dono ligar as contas da Meta (docs/WHATSAPP-OFICIAL-ATIVAR.md).
 ---
@@ -106,6 +106,8 @@ passagem é manual (o corretor abre o WhatsApp dele pela ficha).
 
 ## Relacionadas
 - [[lista-oficial-nao-e-do-numero-do-corretor]]
+- [[painel-local-com-dados-de-exemplo]] — as telas fotografadas com dados de exemplo (04/11)
+- [[previa-do-modelo-sai-da-regra-do-envio]]
 - [[conta-da-bruna-restringida-e-a-lista-que-para-sozinha]]
 - [[primeiro-contato-tem-teto-proprio]]
 - [[fluxo-de-campanhas]]

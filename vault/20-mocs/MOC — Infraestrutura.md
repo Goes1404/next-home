@@ -4,7 +4,7 @@ tags: [moc, infra]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-11-03
+updated: 2026-11-04
 summary: Vercel, deploy, variáveis de ambiente, sharp, runtime.
 ---
 # Infraestrutura — Map of Content
@@ -18,6 +18,7 @@ Vercel (plano Hobby), deploy e runtime.
 - [[ci-vermelho-quinze-dias-pela-catraca-de-bundle]] — o deploy não espera o CI; vermelho vira paisagem (28/09)
 - [[fonte-do-google-quebra-o-build-as-vezes]] ⚠️ build do Turbopack falha às vezes em 17 s nas fontes Google da página /astro ("queries have exactly one entry"); rodar de novo; saída durável é `next/font/local` (03/11)
 - [[tsc-do-projeto-no-limite-de-memoria]] ⚠️ o `tsc --noEmit` já precisa de mais de 1,85 GB dos ~2 GB padrão do Node; local estoura com `.next/types` + `.next/dev/types`; o CI fica no padrão como alarme do build da Vercel (03/11)
+- [[painel-local-com-dados-de-exemplo]] — painel local contra o banco de teste, com dados de exemplo; sem as variáveis do Supabase local o app cai em PRODUÇÃO (04/11)
 - [[push-na-branch-de-producao-dispara-workflows-de-catalogo]] ⚠️ workflows do Actions com `paths` rodam contra PRODUÇÃO quando o merge muda o script; `publicar-fila` republica rascunho. Desabilitar antes (19/10)
 
 - [[o-hobby-aceita-quatro-crons]] ⚠️ medido em 11/09: quatro crons passam
