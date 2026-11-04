@@ -1,4 +1,4 @@
-// A API oficial no banco (0255), medida no banco local (`npm run db:teste`).
+// A API oficial no banco (0256), medida no banco local (`npm run db:teste`).
 //
 // O que precisa ser verdade NO BANCO, e não só no código:
 //   1. uma lista não aponta para o número ou o modelo oficial de outro grupo,
@@ -64,7 +64,7 @@ async function modeloAprovado(tx: Conexao, grupoId: string, numeroId: string, no
   return id;
 }
 
-describe.skipIf(!process.env.DB_TESTE_URL)("API oficial da Meta no banco (0255)", () => {
+describe.skipIf(!process.env.DB_TESTE_URL)("API oficial da Meta no banco (0256)", () => {
   let sql: Sql;
 
   beforeAll(async () => {

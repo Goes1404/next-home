@@ -252,7 +252,7 @@ const MAPA: Record<string, Entrada> = {
   "src/lib/whatsapp/avisoDeQueda.ts": { categoria: "plataforma", motivo: "varre instância a instância; a faixa lê só o corretor da sessão" },
   "src/lib/whatsapp/campaignDispatcher.ts": { categoria: "plataforma", motivo: "disparo item a item, pela instância do corretor dono da lista" },
 
-  // ── Número oficial da imobiliária (Cloud API da Meta, 0255, 03/11/2026) ───
+  // ── Número oficial da imobiliária (Cloud API da Meta, 0256, 03/11/2026) ───
   "src/app/api/webhooks/whatsapp-oficial/route.ts": { categoria: "por-id", validadoPor: "assinaturaValida", motivo: "assinatura X-Hub-Signature-256 do app conferida antes da chave; o grupo de cada evento sai do phone_number_id do número cadastrado" },
   "src/app/corretor/(painel)/admin/whatsapp-oficial/acoes.ts": { categoria: "por-id", validadoPor: "exigirGestorNaAcao", motivo: "gestor da sessão; número, modelos e decisões são os do grupo dele" },
   "src/app/corretor/(painel)/admin/whatsapp-oficial/page.tsx": { categoria: "por-id", validadoPor: "exigirGestorNaPagina", motivo: "gestor da sessão; a tela lê o número, os modelos, as fotos e a medição do grupo dele (contagens, nunca conversa — 0134)" },

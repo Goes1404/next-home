@@ -411,7 +411,7 @@ describe("a caixa de abas saiu das telas; os subtópicos moram no menu", () => {
     // 29/10/2026: 9 → 10, "Portais" (captação direta do ZAP, Viva Real e
     // OLX, 0245) em Negócio.
     // 03/11/2026: 10 → 11, "WhatsApp oficial" (número da Meta para listas,
-    // 0255) em Equipe, ao lado do WhatsApp da equipe.
+    // 0256) em Equipe, ao lado do WhatsApp da equipe.
     expect(subitensDe("/corretor/admin")).toHaveLength(11);
     expect([...new Set(subitensDe("/corretor/admin").map((s) => s.secao))]).toEqual([
       "Equipe",

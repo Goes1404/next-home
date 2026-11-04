@@ -6,7 +6,7 @@ status: estavel
 custou: 30min
 codigo: supabase/migrations, src/lib/migrations.test.ts
 summary: Duas branches criaram uma 0101 diferente cada. As duas aplicadas no banco, só o git colidia. A guarda de numeração só enxerga a própria branch.
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # A colisão de migration entre branches
@@ -66,4 +66,21 @@ Lição: conferir `origin/*` vale para o momento em que se confere. Antes de
 cada push de migration nova, `git fetch` e conferir de novo; quando duas
 sessões trabalham no mesmo dia, o número só fica firme quando a branch
 recebe a `main`.
+
+## E de novo em 04/11/2026: a 0255
+
+Um dia depois, a mesma branch perdeu a 0255. Outra sessão, consertando a queda
+do site por limite da Vercel ([[vercel-hobby-pausou-a-conta-inteira]]), criou
+na `main` a `0255_disparo_so_com_campanha_ativa.sql` e já a **aplicou em
+produção** (15:46 UTC). A do número oficial virou **0256**, de novo com
+`git mv` + troca das menções só nos arquivos dela; as frases de história (como
+esta) ficam com o número da época.
+
+As duas não mexem no mesmo objeto: a da `main` só refaz o comando do
+`cron.job` `disparo-campanhas`; a 0256 cria tabelas e colunas. A condição nova
+do tique (`fila.status = 'pendente'` em `campanhas.status = 'em_andamento'`)
+também vale para a lista oficial, que usa as mesmas duas tabelas.
+
+Lição que se repete: numa semana com duas sessões publicando, o número de uma
+migration fora de produção é provisório até ela ser aplicada.
 

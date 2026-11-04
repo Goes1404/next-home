@@ -6,11 +6,11 @@ type: armadilha
 status: evergreen
 custou: medio
 codigo:
-  - supabase/migrations/0255_whatsapp_oficial.sql
+  - supabase/migrations/0256_whatsapp_oficial.sql
   - supabase/migrations/0214_limites_do_plano.sql
   - src/lib/planos/limitesDoPlano.db.test.ts
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-04
 fonte: suíte de banco (`npm run db:teste` + `.db.test`) em 03/11/2026
 summary: Numa função de gatilho usada por várias tabelas, `if tg_table_name = 'x' and exists (... new.campo ...)` quebra nas OUTRAS tabelas ("record new has no field"); com `exception when others` no fim, o erro vira warning e o gatilho para de fazer o trabalho calado. Use IF aninhado.
 ---
@@ -18,7 +18,7 @@ summary: Numa função de gatilho usada por várias tabelas, `if tg_table_name =
 # Gatilho compartilhado e campo de NEW
 
 `contar_uso_de_recurso()` (0214) é UMA função para três gatilhos:
-`imagens_geradas`, `video_jobs` e `whatsapp_campanhas_fila`. Na 0255 entrou um
+`imagens_geradas`, `video_jobs` e `whatsapp_campanhas_fila`. Na 0256 entrou um
 desvio para a lista oficial não contar na cota:
 
 ```sql

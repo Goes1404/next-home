@@ -77,7 +77,7 @@ function fotoDe(linha: LinhaInstancia, pendentes: number, falhasDeSessao = 0): F
  * A fila não guarda a instância — o vínculo é por campanha. Duas consultas
  * magras (ids das campanhas, depois um `count` com `head`) custam menos que
  * trazer linha de fila para contar na aplicação. Lista do número OFICIAL da
- * imobiliária (0255) não espera pelo número do corretor e fica de fora.
+ * imobiliária (0256) não espera pelo número do corretor e fica de fora.
  */
 async function contarFila(corretorId: string): Promise<{ pendentes: number; falhasDeSessao: number }> {
   const supabase = createServiceClient();

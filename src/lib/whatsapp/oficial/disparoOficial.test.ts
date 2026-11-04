@@ -1,5 +1,5 @@
 /*
- * Simulação do disparador oficial (0255) com o banco em memória.
+ * Simulação do disparador oficial (0256) com o banco em memória.
  *
  * O envio à Meta, a trava e o funil são falsos; o resto é o código de
  * produção (`processarFilaOficial`), lendo e gravando nas tabelas em memória.

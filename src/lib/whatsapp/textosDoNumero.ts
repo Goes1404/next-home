@@ -24,9 +24,9 @@ export async function textosRecentesDoNumero(
   agora: Date = new Date(),
 ): Promise<TextoAnterior[] | null> {
   const desde = new Date(agora.getTime() - DIAS_DE_COMPARACAO * 86_400_000).toISOString();
-  // A lista do número OFICIAL da imobiliária (0255) sai de outro número: o
+  // A lista do número OFICIAL da imobiliária (0256) sai de outro número: o
   // texto dela não é do número do corretor e não entra na comparação. Antes
-  // da 0255 aplicada a coluna não existe (42703) e a leitura é a de sempre.
+  // da 0256 aplicada a coluna não existe (42703) e a leitura é a de sempre.
   const ler = (semOficial: boolean) => {
     let consulta = supabase
       .from("whatsapp_campanhas_fila")

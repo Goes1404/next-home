@@ -79,7 +79,7 @@ Cada envio passa por:
 
 Follow-ups seguem o mesmo funil de cota ([[followups-consomem-cota]]).
 
-## Dois canais desde a 0255 (03/11/2026, branch `ccr-7424dca4-4nynlp`, fora de produção)
+## Dois canais desde a 0256 (03/11/2026, branch `ccr-7424dca4-4nynlp`, fora de produção)
 
 `whatsapp_campanhas.canal`: `evolution` (padrão — o número do corretor, tudo
 acima) ou `oficial` (o número oficial da imobiliária na Cloud API da Meta,
@@ -91,7 +91,7 @@ próprio grupo (gatilhos da 0191 refeitos).
   assistente ganha "Por onde sai" no passo 1 e o modelo aprovado no passo 2;
   só entra quem tem consentimento de marketing no WhatsApp (falha fechada); o
   texto da fila é o modelo renderizado (sem IA, sem A/B, sem lista viva); a
-  cota do plano NÃO conta (0255 §9) e o teto do mês é o do gestor.
+  cota do plano NÃO conta (0256 §9) e o teto do mês é o do gestor.
 - **Disparo oficial** (`oficial/disparoOficial.ts`), chamado primeiro pelo
   mesmo `cron/campanhas` (orçamento de 12 s): janela 9h–20h59, trava por
   número, limite de pessoas novas em 24 h da Meta, teto do mês, modelo

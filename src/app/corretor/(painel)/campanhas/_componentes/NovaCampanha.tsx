@@ -202,7 +202,7 @@ export function NovaCampanha({
   const { avisar, falhar } = useAvisos();
 
   /*
-   * Número OFICIAL da imobiliária (0255). Sem ele (o comum), a escolha do
+   * Número OFICIAL da imobiliária (0256). Sem ele (o comum), a escolha do
    * canal nem aparece e o assistente é o de sempre.
    */
   const [canalOficial, setCanalOficial] = useState<CanalOficialNaTela | null>(null);
