@@ -1,4 +1,4 @@
--- 0258 · Índices nas chaves estrangeiras sem índice (04/11/2026)
+-- 0259 · Índices nas chaves estrangeiras sem índice (04/11/2026)
 --
 -- AINDA NÃO APLICADA em produção: aguarda a confirmação do dono (o `drop
 -- policy` pede confirmação no Supabase). Fica fora da main até lá.
@@ -11,8 +11,8 @@
 -- índices nascem em segundos. Só índices novos; nada muda de dado, policy,
 -- view ou função.
 --
--- 0256 e 0257 estão reservadas para as migrations da branch do número
--- oficial do WhatsApp (ver RESERVADOS em src/lib/migrations.test.ts).
+-- 0257 e 0258 estão reservadas: a 0257 (configurar_disparo condicional) e a
+-- 0258 do número oficial do WhatsApp (ver RESERVADOS em src/lib/migrations.test.ts).
 --
 -- Transação e lock_timeout pela régua de `migracoesAtomicas.test.ts`.
 begin;
