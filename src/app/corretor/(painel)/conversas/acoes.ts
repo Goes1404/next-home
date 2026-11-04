@@ -121,6 +121,10 @@ export async function lerMensagens(
   limite: number = MENSAGENS_POR_PAGINA,
 ): Promise<MensagemConversa[]> {
   const supabase = await exigirSessao();
+  // 04/11/2026: um link copiado do WhatsApp trouxe o id com um caractere
+  // invisível (U+2063) e o banco recusou o uuid. Fica só o que é de uuid.
+  conversaId = String(conversaId ?? "").toLowerCase().replace(/[^0-9a-f-]/g, "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(conversaId)) return [];
   // Action é endpoint: o número vem do navegador e é contido aqui.
   const quantas = Math.min(100, Math.max(1, Math.floor(Number(limite) || MENSAGENS_POR_PAGINA)));
 

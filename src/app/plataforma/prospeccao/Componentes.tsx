@@ -10,6 +10,22 @@ const CAMPO =
 const BOTAO_PRINCIPAL =
   "text-fluid-sm bg-acento hover:bg-acento-hover text-sobre-cor inline-flex min-h-11 items-center justify-center rounded-full px-4 font-medium disabled:opacity-60";
 
+const SEM_CONEXAO = "Sem conexão com o servidor agora. Confira a internet e tente de novo.";
+
+/**
+ * Chama a ação do servidor sem deixar a falha de rede derrubar a página.
+ * No celular, abrir o WhatsApp põe o navegador em segundo plano e corta a
+ * requisição em andamento; uma ação que rejeita dentro de `startTransition`
+ * sobe até o erro global do Next ("This page couldn't load"), 04/11/2026.
+ */
+async function semDerrubar<T extends { ok: boolean }>(acao: () => Promise<T>): Promise<T | { ok: false; erro: string }> {
+  try {
+    return await acao();
+  } catch {
+    return { ok: false, erro: SEM_CONEXAO };
+  }
+}
+
 function Erro({ texto }: { texto: string | null }) {
   if (!texto) return null;
   return (
@@ -42,13 +58,30 @@ export function EnviarNoWhatsapp({
     return <span className="text-fluid-xs text-apoio">{bloqueado ?? "Sem WhatsApp cadastrado"}</span>;
   }
 
+  function marcar(tentarDeNovoAoVoltar: boolean) {
+    iniciar(async () => {
+      const r = await semDerrubar(() => marcarEnviado(id));
+      if (r.ok) return setErro(null);
+      if (tentarDeNovoAoVoltar && r.erro === SEM_CONEXAO) {
+        // A requisição caiu porque o celular foi para o WhatsApp: tenta de
+        // novo quando a pessoa voltar ao painel.
+        const aoVoltar = () => {
+          if (document.visibilityState !== "visible") return;
+          document.removeEventListener("visibilitychange", aoVoltar);
+          marcar(false);
+        };
+        document.addEventListener("visibilitychange", aoVoltar);
+        if (document.visibilityState === "visible") aoVoltar();
+        return;
+      }
+      setErro(r.erro === SEM_CONEXAO ? "A mensagem abriu, mas não consegui marcar a loja como abordada. Toque de novo para marcar." : r.erro);
+    });
+  }
+
   function enviar() {
     setErro(null);
     window.open(link!, "_blank", "noopener");
-    iniciar(async () => {
-      const r = await marcarEnviado(id);
-      if (!r.ok) setErro(r.erro);
-    });
+    marcar(true);
   }
 
   return (
@@ -75,7 +108,7 @@ export function MudarEtapa({ id, etapa }: { id: string; etapa: string }) {
     }
     setErro(null);
     iniciar(async () => {
-      const r = await mudarEtapa(id, nova, motivo);
+      const r = await semDerrubar(() => mudarEtapa(id, nova, motivo));
       if (!r.ok) setErro(r.erro);
     });
   }
@@ -112,7 +145,7 @@ export function FichaDaLoja({ id, inicial }: { id: string; inicial: DadosDaFicha
     e.preventDefault();
     setErro(null);
     iniciar(async () => {
-      const r = await salvarFicha(id, dados);
+      const r = await semDerrubar(() => salvarFicha(id, dados));
       if (r.ok) setSalvo(true);
       else setErro(r.erro);
     });
@@ -184,8 +217,8 @@ export function NovaLoja() {
     e.preventDefault();
     setErro(null);
     iniciar(async () => {
-      const r = await cadastrarLoja(loja);
-      if (r.ok) router.push(`/plataforma/prospeccao/${r.id}`);
+      const r = await semDerrubar(() => cadastrarLoja(loja));
+      if (r.ok && "id" in r) router.push(`/plataforma/prospeccao/${r.id}`);
       else setErro(r.erro);
     });
   }

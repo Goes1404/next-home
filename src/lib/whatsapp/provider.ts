@@ -977,6 +977,9 @@ export async function listarGruposWhatsapp(
   }
   const r = await lerGruposDaEvolution(instanceName, opcoes.prazoMs ?? PRAZO_DA_LISTA_DE_GRUPOS_MS);
   if (!r.erro) gruposLidos.set(instanceName, { em: Date.now(), grupos: r.grupos });
+  // 04/11/2026: com a Evolution recusando por excesso de pedidos
+  // ("rate-overlimit"), a última lista lida vale mais que uma tela vazia.
+  else if (guardada) return { grupos: guardada.grupos };
   return r;
 }
 
@@ -998,6 +1001,9 @@ async function lerGruposDaEvolution(instanceName: string, prazoMs: number): Prom
     if (!res.ok) {
       const motivo = motivoDaEvolution(await res.text().catch(() => ""));
       console.error("[grupos] a Evolution recusou a lista de grupos", { instanceName, status: res.status, motivo });
+      if (/rate-overlimit/i.test(motivo)) {
+        return { grupos: [], erro: "O WhatsApp pediu uma pausa nas consultas deste número. Tente de novo em 1 minuto." };
+      }
       return { grupos: [], erro: `Não foi possível ler os grupos (HTTP ${res.status})${motivo ? `: ${motivo}` : "."}` };
     }
     const json: unknown = await res.json();

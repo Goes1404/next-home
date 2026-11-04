@@ -12908,3 +12908,27 @@ Nota: [[foto-no-numero-central]]. Frente E da onda 1 (`ONDA_ATUAL` segue 0).
 - **O que rodar o app achou** (testes e `tsc` passavam): (1) a prévia do modelo oficial no assistente da lista mostrava "Aqui é da nossa imobiliária" onde o cliente leria "Aqui é da Next Home" — a prévia montava os valores à parte, sem `{{casa}}`; agora prévia, texto da fila e disparo saem de `valoresDoEnvio` (`modelos.ts`). Nota: [[previa-do-modelo-sai-da-regra-do-envio]]. (2) **"25 pessoas receberáão"** na prévia do público da lista — **está em produção**, na tela de todos os corretores (plural montado letra a letra: `receberá${n === 1 ? "" : "ão"}`); corrigido na branch com `quantasPessoasRecebem` (`publicoDaCampanha.ts`) e teste. (3) a conversa oficial na ficha abria nas mensagens antigas e escondia a última do cliente; agora desce até a mais nova, como as outras conversas do painel. (4) número oficial sem máscara ("5511930000000"), "— de resposta" sem lista comum no período, "Qualidade: GREEN" e "3 do público não autorizou… e fica de fora": formatados/corrigidos.
 - Armadilhas da receita: `telefone_e164` dos leads é coluna gerada (não entra no insert); o id dos imóveis do catálogo muda a cada `npm run db:teste` (buscar pelo slug); quem recebeu lista nos últimos 7 dias fica "protegido" e a prévia dá 0 pessoas; o menu do topo (sticky) e o robô (fixed) entram na foto de bloco alto — esconder antes; o Playwright do projeto (1.62) não acha o Chromium do contêiner (1.63) sem `executablePath: /opt/pw-browsers/chromium`.
 - Também corrigido aqui: a linha da 0255 acima dizia "nasceu 0255 e virou 0255" — a troca global de 0254 → 0255 da renumeração pegou a própria frase que explicava a troca.
+
+## Tela preta "This page couldn't load" ao voltar do WhatsApp (04/11/2026)
+
+No celular, o botão "Enviar no WhatsApp" abre o app do WhatsApp e o navegador
+vai para segundo plano no meio da ação `marcarEnviado`. A requisição cortada
+rejeitava dentro do `startTransition` e, sem `error.tsx` em `/plataforma`,
+subia até o erro global do Next: tela preta, sem menu, só "Reload/Back". As
+lojas tinham sido marcadas (o banco confirmava); quebrou só a tela. Correção:
+`semDerrubar()` em `prospeccao/Componentes.tsx` transforma a falha em mensagem
+(nenhuma ação do painel rejeita para o React), o "marcar como abordada" tenta
+de novo no `visibilitychange` quando a pessoa volta, e `src/app/plataforma/error.tsx`
+segura qualquer outro erro dentro do painel. Nesta versão do Next o
+`error.tsx` recebe `unstable_retry` (refaz o fetch), não só `reset`.
+
+## Checagem de saúde de 04/11/2026
+- Evolution responde `rate-overlimit` quando se lista grupos muitas vezes seguidas (tela de impulsionamentos). `listarGruposWhatsapp` agora devolve o cache guardado nesse caso e uma mensagem "tente em 1 minuto".
+- `lerMensagens` recebia id com caractere invisível colado (erro de uuid no Postgres); agora limpa e valida o uuid e devolve lista vazia.
+- Inscrições de push: 1 só (20/10). Enquanto ninguém ligar os avisos de novo, não há prova de que o conserto do SW funcionou.
+
+## Site fora do ar: limite do plano Hobby da Vercel (04/11/2026)
+- A partir das 14:31 UTC (11:31 em SP), todos os domínios do projeto responderam `402 DEPLOYMENT_DISABLED`. A causa foi a conta Hobby da Vercel ter passado do limite mensal; o código não tinha problema. O pg_net passou a receber 402 em todas as chamadas.
+- Só o dono resolve: fazer o upgrade para Pro em Settings → Billing, ou esperar o ciclo virar. O Hobby também não permite uso comercial.
+- O maior consumo fixo que encontrei foi o pg_cron `disparo-campanhas`: 1.440 chamadas por dia sem nenhuma lista em andamento, e cada uma consultava a Evolution para cada número. A 0255 deixou o tique condicional: só faz o POST se existe item `pendente` em campanha `em_andamento`.
+- Diagnóstico rápido: `select status_code, count(*) from net._http_response where created > now()-interval '1 hour' group by 1` mostra os 402. O `web_fetch_vercel_url` mostra o corpo `DEPLOYMENT_DISABLED`.
