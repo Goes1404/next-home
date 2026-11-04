@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { BadgeCheck, Smartphone } from "lucide-react";
 import type { FiltroLeadsCampanha, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
+import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
 import type { ModeloParaLista } from "@/lib/whatsapp/oficial/canalDaLista";
-import { renderizarModelo } from "@/lib/whatsapp/oficial/modelos";
+import { renderizarModelo, type ValoresDoEnvio } from "@/lib/whatsapp/oficial/modelos";
 import { preverListaOficial } from "../acoes";
 
 /**
@@ -34,7 +35,7 @@ export function EscolhaDoCanal({
     {
       valor: "oficial" as const,
       titulo: "Pelo número oficial da imobiliária",
-      descricao: `${numero ? `${formatarNumero(numero)} · ` : ""}Modelo aprovado pela Meta, só para quem autorizou. Seguro para quem nunca falou com você; cada mensagem é cobrada.`,
+      descricao: `${numero ? `${formatarTelefoneBr(numero)} · ` : ""}Modelo aprovado pela Meta, só para quem autorizou. Seguro para quem nunca falou com você; cada mensagem é cobrada.`,
       icone: BadgeCheck,
     },
   ];
@@ -68,13 +69,14 @@ export function PassoDoModeloOficial({
   modelos,
   escolhido,
   aoEscolher,
-  imovel,
+  valores,
   souGestor,
 }: {
   modelos: ModeloParaLista[];
   escolhido: string | null;
   aoEscolher: (id: string) => void;
-  imovel: string | null;
+  /** Os mesmos valores do disparo, com "Carla" no lugar do nome do cliente. */
+  valores: ValoresDoEnvio;
   souGestor: boolean;
 }) {
   if (modelos.length === 0) {
@@ -113,7 +115,7 @@ export function PassoDoModeloOficial({
           {m.cabecalho === "imagem" && <p className="text-fluid-xs text-apoio mt-1">📷 Com a foto do imóvel no topo</p>}
           {m.cabecalho === "texto" && m.cabecalhoTexto && <p className="text-fluid-sm text-titulo mt-1 font-semibold">{m.cabecalhoTexto}</p>}
           <p className="text-fluid-sm text-corpo mt-1 whitespace-pre-line break-words">
-            {renderizarModelo(m.corpo, { nome: "Carla", imovel: imovel ?? undefined, corretor: "você", casa: undefined })}
+            {renderizarModelo(m.corpo, valores)}
           </p>
           {m.rodape && <p className="text-fluid-xs text-tenue mt-1">{m.rodape}</p>}
           {m.botoes.length > 0 && (
@@ -181,8 +183,10 @@ export function ResumoOficial({
       </p>
       {fora > 0 && (
         <p className="text-fluid-xs text-apoio">
-          {fora} do público não autorizou receber ofertas pelo WhatsApp e fica de fora. O consentimento se registra na
-          ficha do lead.
+          {fora === 1
+            ? "1 pessoa do público não autorizou receber ofertas pelo WhatsApp e fica de fora."
+            : `${fora.toLocaleString("pt-BR")} pessoas do público não autorizaram receber ofertas pelo WhatsApp e ficam de fora.`}{" "}
+          O consentimento se registra na ficha do lead.
         </p>
       )}
       <p className="text-fluid-xs text-apoio">
@@ -191,18 +195,10 @@ export function ResumoOficial({
       </p>
       {tetoRestante !== null && (
         <p className={`text-fluid-xs ${passaDoTeto ? "text-perigo" : "text-apoio"}`}>
-          Teto do mês: cabem mais {tetoRestante} mensage{tetoRestante === 1 ? "m" : "ns"}.
+          Teto do mês: cabem mais {tetoRestante.toLocaleString("pt-BR")} mensage{tetoRestante === 1 ? "m" : "ns"}.
           {passaDoTeto ? " Esta lista passa do teto: recorte o público ou fale com o gestor." : ""}
         </p>
       )}
     </div>
   );
-}
-
-function formatarNumero(n: string): string {
-  const d = n.replace(/\D/g, "");
-  const nacional = d.startsWith("55") ? d.slice(2) : d;
-  if (nacional.length === 11) return `(${nacional.slice(0, 2)}) ${nacional.slice(2, 7)}-${nacional.slice(7)}`;
-  if (nacional.length === 10) return `(${nacional.slice(0, 2)}) ${nacional.slice(2, 6)}-${nacional.slice(6)}`;
-  return n;
 }

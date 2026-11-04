@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useAvisos } from "@/app/corretor/(painel)/_componentes/Avisos";
+import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
 import {
   assumirConversaOficial,
   devolverConversaParaIA,
@@ -53,6 +54,16 @@ export function PainelDoNumeroOficial({ leadId, nome, painel }: { leadId: string
   const { conversa, consentimento, numero } = painel;
   const primeiroNome = nome.split(" ")[0] || nome;
 
+  // A conversa abre na mensagem MAIS NOVA, como as outras do painel
+  // (`ChatBase`): é a que o corretor precisa responder, e com a caixa no topo
+  // ela ficava escondida embaixo das antigas (achado em 04/11/2026).
+  const listaRef = useRef<HTMLOListElement>(null);
+  const ultimaMensagem = conversa?.mensagens.at(-1)?.id;
+  useEffect(() => {
+    const lista = listaRef.current;
+    if (lista) lista.scrollTop = lista.scrollHeight;
+  }, [ultimaMensagem]);
+
   function rodar(acao: () => Promise<{ ok: string; link?: string } | { erro: string }>, aoConseguir?: () => void) {
     iniciar(async () => {
       const r = await acao();
@@ -81,7 +92,7 @@ export function PainelDoNumeroOficial({ leadId, nome, painel }: { leadId: string
             Número oficial da imobiliária
           </h2>
           <p className="text-fluid-xs mt-1 text-tenue">
-            {[numero.nomeExibicao, numero.numero ? `+${numero.numero}` : null, numero.ativo ? null : "pausado"]
+            {[numero.nomeExibicao, numero.numero ? formatarTelefoneBr(numero.numero) : null, numero.ativo ? null : "pausado"]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -152,7 +163,7 @@ export function PainelDoNumeroOficial({ leadId, nome, painel }: { leadId: string
                 : "Ninguém responde por lá sem você."}
           </p>
 
-          <ol className="max-h-80 space-y-2 overflow-y-auto pr-1">
+          <ol ref={listaRef} className="max-h-80 space-y-2 overflow-y-auto pr-1">
             {conversa.mensagens.map((m) => (
               <li
                 key={m.id}

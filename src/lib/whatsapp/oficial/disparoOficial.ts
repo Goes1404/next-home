@@ -2,7 +2,6 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { grupoSuspenso } from "@/lib/planos/cobrancaDoGrupo";
-import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
 import { telefoneCanonico } from "@/lib/central/telefone";
 import { dentroDaJanela } from "@/lib/whatsapp/antiBan";
 import { lerCasaDoGrupo } from "@/lib/whatsapp/casaDoGrupo";
@@ -27,7 +26,7 @@ import {
 import { leadsComConsentimento, registrarConsentimento } from "./consentimento";
 import { enviarModeloOficial, type Remetente } from "./envio";
 import { decidirErroDaMeta } from "./erros";
-import { componentesDoEnvio, renderizarModelo } from "./modelos";
+import { componentesDoEnvio, renderizarModelo, valoresDoEnvio } from "./modelos";
 import { definicaoDe, type ModeloOficial } from "./modelosServidor";
 import { limiteDiario, pausarNumero, tokenDoNumero, type NumeroOficial } from "./numeros";
 
@@ -272,12 +271,12 @@ async function processarNumero(
       // Os valores das variáveis e a foto do cabeçalho.
       const { data: dono } = await supabase.from("corretores").select("nome").eq("id", lista.corretor_id).maybeSingle();
       const imovel = (Array.isArray(lista.empreendimento) ? lista.empreendimento[0] : lista.empreendimento) as { nome: string } | null;
-      const valores = {
-        nome: primeiroNomeUtil(lead?.nome),
-        imovel: imovel?.nome ?? null,
-        corretor: dono?.nome ? dono.nome.split(/\s+/)[0] : null,
-        casa: casa.nomeDaCasa,
-      };
+      const valores = valoresDoEnvio({
+        nomeDoCliente: lead?.nome,
+        imovel: imovel?.nome,
+        nomeDoCorretor: dono?.nome,
+        nomeDaCasa: casa.nomeDaCasa,
+      });
       const definicao = definicaoDe(modelo);
       let imagem: string | null = null;
       if (definicao.cabecalho === "imagem") {

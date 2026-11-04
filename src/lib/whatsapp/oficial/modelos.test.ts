@@ -9,6 +9,7 @@ import {
   pedidoDeCriacao,
   problemasDoModelo,
   renderizarModelo,
+  valoresDoEnvio,
   variaveisDoCorpo,
   type DefinicaoDoModelo,
 } from "./modelos";
@@ -135,5 +136,28 @@ describe("modelos da API oficial", () => {
       { tipo: "interesse", texto: "Sim" },
     ]);
     expect(botoesDoBanco("lixo")).toEqual([]);
+  });
+});
+
+describe("a prévia mostra o que o cliente vai ler (04/11/2026)", () => {
+  const corpo = "Oi, {{nome}}! Aqui é da {{casa}}. O {{imovel}} abriu a tabela. O {{corretor}} te chama.";
+
+  it("prévia e envio saem da mesma regra: só o nome do cliente é de exemplo", () => {
+    const comum = { imovel: "Terrah Alphaville", nomeDoCorretor: "Bruno Lima", nomeDaCasa: "Next Home" };
+    const previa = renderizarModelo(corpo, valoresDoEnvio({ nomeDoCliente: "Carla", ...comum }));
+    const envio = renderizarModelo(corpo, valoresDoEnvio({ nomeDoCliente: "Carla Mendes", ...comum }));
+    expect(previa).toBe("Oi, Carla! Aqui é da Next Home. O Terrah Alphaville abriu a tabela. O Bruno te chama.");
+    expect(envio).toBe(previa);
+  });
+
+  it("o nome da casa entra na prévia (antes saía 'nossa imobiliária')", () => {
+    const v = valoresDoEnvio({ nomeDoCliente: "Carla", imovel: null, nomeDoCorretor: "Bruno", nomeDaCasa: "Next Home" });
+    expect(renderizarModelo("Aqui é da {{casa}}.", v)).toBe("Aqui é da Next Home.");
+  });
+
+  it("sem valor, a variável recebe o substituto neutro, igual no envio", () => {
+    const v = valoresDoEnvio({ nomeDoCliente: null, imovel: undefined, nomeDoCorretor: "  ", nomeDaCasa: null });
+    expect(v).toEqual({ nome: null, imovel: null, corretor: null, casa: null });
+    expect(renderizarModelo("{{casa}}", v)).toBe(renderizarModelo("{{casa}}", {}));
   });
 });

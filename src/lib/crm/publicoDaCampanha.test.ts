@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { elegivel } from "./publicoDaCampanha";
+import { elegivel, quantasPessoasRecebem } from "./publicoDaCampanha";
 import type { Lead } from "@/lib/types";
 
 /**
@@ -154,5 +154,13 @@ describe("recorte por origem (Fase 3, 03/10/2026)", () => {
     const { readFileSync } = await import("node:fs");
     const acoes = readFileSync("src/app/corretor/(painel)/campanhas/acoes.ts", "utf8");
     expect(acoes).toContain("elegivel(lead, filtro, { imovelSlug }) && noRecorte(lead, recorte)");
+  });
+});
+
+describe("a contagem da prévia do público (04/11/2026)", () => {
+  it("plural sem acento dobrado: era 'receberáão'", () => {
+    expect(quantasPessoasRecebem(1)).toBe("1 pessoa receberá");
+    expect(quantasPessoasRecebem(25)).toBe("25 pessoas receberão");
+    expect(quantasPessoasRecebem(0)).toBe("0 pessoas receberão");
   });
 });

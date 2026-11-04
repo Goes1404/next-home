@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { CabecalhoDeTela } from "@/app/corretor/(painel)/_componentes/CabecalhoDeTela";
 import { exigirGestorNaPagina } from "@/lib/guardas";
 import { GRUPO_NEXT_HOME_ID } from "@/lib/grupos/grupo";
+import { formatarTelefoneBr } from "@/lib/inbound/phoneUtils";
 import { createServiceClient } from "@/lib/supabase/service";
 import { pendenciasDaConfiguracao, tokenDoPiloto, versaoGraph } from "@/lib/whatsapp/oficial/configuracao";
 import { portaoDoPiloto } from "@/lib/whatsapp/oficial/metricas";
@@ -114,7 +115,7 @@ export default async function WhatsappOficialPage() {
               <div>
                 <dt className="text-apoio text-fluid-xs">Número</dt>
                 <dd className="text-titulo">
-                  {numero.numero ?? "—"} {numero.nome_exibicao ? `· ${numero.nome_exibicao}` : ""}
+                  {numero.numero ? formatarTelefoneBr(numero.numero) : "—"} {numero.nome_exibicao ? `· ${numero.nome_exibicao}` : ""}
                 </dd>
               </div>
               <div>
@@ -194,7 +195,10 @@ export default async function WhatsappOficialPage() {
               {[
                 ["Enviadas", totais.enviadas.toLocaleString("pt-BR")],
                 ["Responderam", `${totais.respondidas} (${pct(taxaOficial)})`],
-                ["Listas do WhatsApp dos corretores", `${pct(medicao.taxaEvolution)} de resposta`],
+                [
+                  "Listas do WhatsApp dos corretores",
+                  medicao.taxaEvolution === null ? "Sem lista no período" : `${pct(medicao.taxaEvolution)} de resposta`,
+                ],
                 ["Custo", emReais(totais.custo)],
                 ["Custo por resposta", totais.respondidas ? emReais(totais.custo / totais.respondidas) : "—"],
                 ["Visitas marcadas", String(totais.visitas)],

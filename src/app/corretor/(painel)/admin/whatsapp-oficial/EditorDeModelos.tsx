@@ -26,6 +26,14 @@ const ROTULO_DO_ESTADO: Record<string, { texto: string; classe: string }> = {
   erro: { texto: "Erro ao enviar", classe: "border-perigo/40 bg-perigo-lavado text-perigo" },
 };
 
+/** A qualidade que a Meta dá ao modelo (GREEN/YELLOW/RED), em português. */
+const QUALIDADE_DO_MODELO: Record<string, string> = {
+  GREEN: "alta",
+  YELLOW: "média (atenção)",
+  RED: "baixa (risco de a Meta pausar)",
+  UNKNOWN: "ainda sem avaliação",
+};
+
 const campo =
   "text-fluid-sm border-linha-forte bg-campo text-titulo focus:border-acento min-h-11 w-full rounded-xl border px-3 focus:outline-none";
 
@@ -98,7 +106,7 @@ export function EditorDeModelos({
               </div>
               <p className="text-fluid-sm text-corpo mt-1 whitespace-pre-line break-words">{m.corpo}</p>
               {m.motivo && <p className="text-fluid-xs text-perigo mt-1">Motivo da Meta: {m.motivo}</p>}
-              {m.qualidade && m.estado === "aprovado" && <p className="text-fluid-xs text-apoio mt-1">Qualidade: {m.qualidade}</p>}
+              {m.qualidade && m.estado === "aprovado" && <p className="text-fluid-xs text-apoio mt-1">Qualidade: {QUALIDADE_DO_MODELO[m.qualidade] ?? m.qualidade}</p>}
               {["rascunho", "rejeitado", "erro"].includes(m.estado) && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button

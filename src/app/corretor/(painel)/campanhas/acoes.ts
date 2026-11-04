@@ -49,8 +49,7 @@ import { conferirLimite } from "@/lib/planos/usoDaIa";
 import { idsProtegidosDeNovaLista, leadsDoCorretor } from "@/lib/whatsapp/publicoDaLista";
 import type { CriterioDaLista } from "@/lib/whatsapp/listasVivas";
 import { canalOficialDoCorretor, consentidosDentre, type ModeloParaLista } from "@/lib/whatsapp/oficial/canalDaLista";
-import { renderizarModelo } from "@/lib/whatsapp/oficial/modelos";
-import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
+import { renderizarModelo, valoresDoEnvio } from "@/lib/whatsapp/oficial/modelos";
 
 /**
  * Ações do painel de listas de transmissão: criar, listar, diagnosticar e
@@ -623,6 +622,8 @@ export type CanalOficialNaTela =
       disponivel: true;
       numero: string | null;
       nomeExibicao: string | null;
+      /** O {{casa}} da prévia: o mesmo nome que o disparo põe (`lerCasaDoGrupo`). */
+      nomeDaCasa: string | null;
       modelos: ModeloParaLista[];
       tarifa: number;
       tetoRestante: number | null;
@@ -640,10 +641,14 @@ export async function opcoesDoCanalOficial(): Promise<CanalOficialNaTela> {
   try {
     const canal = await canalOficialDoCorretor(corretor);
     if (!canal.disponivel) return { disponivel: false, motivo: canal.motivo };
+    // Sem o nome da casa a prévia usa o substituto ("nossa imobiliária"):
+    // não é motivo para esconder o canal.
+    const casa = await lerCasaDoGrupo(corretor.grupoId).catch(() => null);
     return {
       disponivel: true,
       numero: canal.numero,
       nomeExibicao: canal.nomeExibicao,
+      nomeDaCasa: casa?.nomeDaCasa ?? null,
       modelos: canal.modelos,
       tarifa: canal.tarifa,
       tetoRestante: canal.tetoRestante,
@@ -765,12 +770,10 @@ async function criarListaOficial(
       campanha_id: campanha.id,
       lead_id: lead.id,
       telefone: lead.telefone,
-      mensagem_personalizada: renderizarModelo(modelo.corpo, {
-        nome: primeiroNomeUtil(lead.nome),
-        imovel: imovel?.nome ?? null,
-        corretor: corretor.nome.split(/\s+/)[0],
-        casa: nomeDaCasa,
-      }),
+      mensagem_personalizada: renderizarModelo(
+        modelo.corpo,
+        valoresDoEnvio({ nomeDoCliente: lead.nome, imovel: imovel?.nome, nomeDoCorretor: corretor.nome, nomeDaCasa }),
+      ),
       personalizado_por_ia: false,
       status: "pendente" as const,
       agendado_para: agendadoPara,

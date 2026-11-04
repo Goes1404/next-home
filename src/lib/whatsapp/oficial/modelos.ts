@@ -15,6 +15,8 @@
  * valor de lugar.
  */
 
+import { primeiroNomeUtil } from "@/lib/leads/nomeExibido";
+
 export const VARIAVEIS_DO_MODELO = {
   nome: { rotulo: "Primeiro nome do cliente", exemplo: "Carla" },
   imovel: { rotulo: "Nome do imóvel da lista", exemplo: "Dom Parque" },
@@ -170,6 +172,26 @@ export function pedidoDeCriacao(m: DefinicaoDoModelo, handleDaImagem?: string | 
 }
 
 export type ValoresDoEnvio = Partial<Record<VariavelDoModelo, string | null | undefined>>;
+
+/**
+ * Os valores das variáveis de UM envio. A mesma regra para a prévia do
+ * assistente da lista, o texto da fila e o disparo: a prévia montava os
+ * valores à parte e mostrava "nossa imobiliária" onde o cliente lia "Next
+ * Home" (04/11/2026). Do cliente e do corretor vai só o primeiro nome.
+ */
+export function valoresDoEnvio(p: {
+  nomeDoCliente: string | null | undefined;
+  imovel: string | null | undefined;
+  nomeDoCorretor: string | null | undefined;
+  nomeDaCasa: string | null | undefined;
+}): ValoresDoEnvio {
+  return {
+    nome: primeiroNomeUtil(p.nomeDoCliente),
+    imovel: p.imovel ?? null,
+    corretor: p.nomeDoCorretor?.trim().split(/\s+/)[0] || null,
+    casa: p.nomeDaCasa ?? null,
+  };
+}
 
 /**
  * Os `components` do envio: a foto do cabeçalho, cada variável do texto pelo

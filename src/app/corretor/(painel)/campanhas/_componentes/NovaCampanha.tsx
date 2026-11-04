@@ -3,7 +3,12 @@
 import { fraseSemWhatsapp } from "@/lib/whatsapp/pausaAutomatica";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 
-import type { FiltroLeadsCampanha, OpcoesDeRecorte, RecorteDeOrigem } from "@/lib/crm/publicoDaCampanha";
+import {
+  quantasPessoasRecebem,
+  type FiltroLeadsCampanha,
+  type OpcoesDeRecorte,
+  type RecorteDeOrigem,
+} from "@/lib/crm/publicoDaCampanha";
 import type { Canal } from "@/lib/graficos/calculos";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -54,7 +59,7 @@ import {
 } from "../acoes";
 import { listaRecemCriada } from "./listaRecemCriada";
 import { EscolhaDoCanal, PassoDoModeloOficial, ResumoOficial } from "./CanalOficial";
-import { renderizarModelo } from "@/lib/whatsapp/oficial/modelos";
+import { renderizarModelo, valoresDoEnvio } from "@/lib/whatsapp/oficial/modelos";
 
 /**
  * Criar lista de transmissão em três passos: quem recebe → o que dizer →
@@ -321,6 +326,14 @@ export function NovaCampanha({
   }
 
   const imovel = empreendimentos.find((e) => e.slug === imovelSlug) ?? null;
+  // A prévia do modelo oficial pela MESMA regra do disparo; só o nome do
+  // cliente é de exemplo.
+  const valoresDaPrevia = valoresDoEnvio({
+    nomeDoCliente: "Carla",
+    imovel: imovel?.nome,
+    nomeDoCorretor: corretor.nome,
+    nomeDaCasa: canalOficial?.disponivel ? canalOficial.nomeDaCasa : null,
+  });
   const nomeImovel = imovel?.nome ?? "Sem imóvel específico";
   const publicoEscolhido = PUBLICOS.find((p) => p.valor === publico)!;
   const selecaoManual = publico === "selecionados";
@@ -673,7 +686,7 @@ export function NovaCampanha({
                   ? "Conferindo o público…"
                   : totalPrevisto === undefined
                     ? "Não foi possível contar agora"
-                    : `${totalPrevisto} pessoa${totalPrevisto === 1 ? "" : "s"} receberá${totalPrevisto === 1 ? "" : "ão"}`}
+                    : quantasPessoasRecebem(totalPrevisto)}
               </p>
               <p className="text-fluid-xs text-apoio mt-0.5 leading-relaxed">
                 {previaAtual && previaAtual.protegidos > 0
@@ -860,7 +873,7 @@ export function NovaCampanha({
           modelos={canalOficial.modelos}
           escolhido={modeloOficialId}
           aoEscolher={setModeloOficialId}
-          imovel={imovel?.nome ?? null}
+          valores={valoresDaPrevia}
           souGestor={Boolean(corretor.gestor)}
         />
       )}
@@ -1085,7 +1098,7 @@ export function NovaCampanha({
             <div className="flex gap-2">
               <dt className="text-apoio shrink-0">{testandoDuas && !oficial ? "Versão A:" : "Diz:"}</dt>
               <dd className="text-corpo min-w-0 break-words">
-                “{oficial && modeloOficial ? renderizarModelo(modeloOficial.corpo, { nome: "Carla", imovel: imovel?.nome }) : mensagemBase}”
+                “{oficial && modeloOficial ? renderizarModelo(modeloOficial.corpo, valoresDaPrevia) : mensagemBase}”
               </dd>
             </div>
             {!oficial && testandoDuas && mensagemB.trim() && (
