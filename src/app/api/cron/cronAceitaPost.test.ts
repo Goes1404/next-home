@@ -18,10 +18,11 @@ import path from "node:path";
  * comentário certo — só que o padrão morava no exemplo, não numa guarda.
  *
  * `meta-ads` é a exceção declarada: quem a chama é o cron da VERCEL
- * (`vercel.json`), que usa GET.
+ * (`vercel.json`), que usa GET. Idem `limpar-artes-ia` e `prospeccao`
+ * (04/11/2026, a rotina da manhã da prospecção).
  */
 
-const SO_GET = ["meta-ads", "limpar-artes-ia"];
+const SO_GET = ["meta-ads", "limpar-artes-ia", "prospeccao"];
 const DIR = path.join(process.cwd(), "src/app/api/cron");
 
 function rotasDeCron(): string[] {

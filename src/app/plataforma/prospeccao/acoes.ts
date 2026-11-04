@@ -51,20 +51,23 @@ export async function mudarEtapa(id: string, etapa: string, motivo?: string): Pr
  * passa a "Abordado". Loja marcada como não contatar é recusada aqui também,
  * não só na tela.
  */
-export async function marcarEnviado(id: string): Promise<Resultado> {
+export async function marcarEnviado(id: string, tipo: "abordagem" | "followup" = "abordagem"): Promise<Resultado> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
   if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
   if (!ID.test(id)) return { ok: false, erro: "Loja inválida." };
 
   const supabase = createServiceClient();
-  const { data: lead } = await supabase.from("prospeccao_leads").select("etapa, nao_contatar, enviado_em").eq("id", id).maybeSingle();
+  const { data: lead } = await supabase.from("prospeccao_leads").select("etapa, nao_contatar, enviado_em, followup_em").eq("id", id).maybeSingle();
   if (!lead) return { ok: false, erro: "Loja não encontrada." };
   if (lead.nao_contatar) return { ok: false, erro: "Esta loja pediu para não receber mais mensagens." };
 
-  const mudanca: { etapa?: Etapa; enviado_em?: string } = {};
+  const agora = new Date().toISOString();
+  const mudanca: { etapa?: Etapa; enviado_em?: string; followup_em?: string } = {};
   if (lead.etapa === "novo" || lead.etapa === "aprovado") mudanca.etapa = "enviado";
-  if (!lead.enviado_em) mudanca.enviado_em = new Date().toISOString();
+  if (!lead.enviado_em) mudanca.enviado_em = agora;
+  // 0256: o follow-up fica registrado, para a régua não pedir outro.
+  if (tipo === "followup" && lead.enviado_em && !lead.followup_em) mudanca.followup_em = agora;
   if (Object.keys(mudanca).length) {
     const { error } = await supabase.from("prospeccao_leads").update(mudanca).eq("id", id);
     if (error) return { ok: false, erro: "Não consegui marcar o envio." };

@@ -104,7 +104,7 @@ export async function saudeDoNumero(
 
   // As listas do corretor: as em andamento dão o "fica para amanhã"; as
   // pendências de todas engrossam o texto da conexão, como na faixa. As do
-  // número oficial da imobiliária (0257) não passam pelo número dele.
+  // número oficial da imobiliária (0258) não passam pelo número dele.
   const campanhas = await listasDoNumeroDoCorretor(supabase, ctx.corretorId, { grupoId: ctx.grupoId });
   const ids = (campanhas ?? []).map((c) => c.id);
   const emAndamento = new Set((campanhas ?? []).filter((c) => c.status === "em_andamento").map((c) => c.id));

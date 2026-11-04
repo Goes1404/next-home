@@ -5,8 +5,8 @@ import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
 import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ROTULO_DO_MODELO, ehModelo } from "@/lib/prospeccao/tipos";
-import { proximaAcao } from "@/lib/prospeccao/funil";
-import { linkDaAmostra, linkDoWhatsapp, mensagemPadrao, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
+import { followupDevido, proximaAcao } from "@/lib/prospeccao/funil";
+import { linkDaAmostra, linkDoWhatsapp, mensagemDeFollowup, mensagemPadrao, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
 import { EnviarNoWhatsapp, FichaDaLoja, MudarEtapa } from "../Componentes";
 
 export const metadata: Metadata = { title: "Loja prospectada" };
@@ -41,7 +41,9 @@ export default async function FichaDaLojaPage({ params }: { params: Promise<{ id
 
   const amostra = linkDaAmostra(l.slug);
   const mensagem = l.mensagem ?? mensagemPadrao({ nome: l.nome, gancho: l.gancho, link: amostra, vendedor: vendedorDaProspeccao() });
-  const link = l.whatsapp ? linkDoWhatsapp(l.whatsapp, mensagem) : null;
+  // 0256: na hora do follow-up, o botão manda o follow-up e o registra.
+  const followup = followupDevido(l);
+  const link = l.whatsapp ? linkDoWhatsapp(l.whatsapp, followup ? mensagemDeFollowup({ link: amostra }) : mensagem) : null;
   const lacunas = Array.isArray(l.lacunas) ? l.lacunas.filter((x): x is string => typeof x === "string") : [];
   const tempoTotal = (visitas ?? []).reduce((soma, v) => soma + v.segundos, 0);
 
@@ -77,6 +79,8 @@ export default async function FichaDaLojaPage({ params }: { params: Promise<{ id
               id={l.id}
               link={link}
               bloqueado={l.nao_contatar ? "Pediu para não receber mensagens" : l.whatsapp ? null : "Cadastre o WhatsApp para enviar"}
+              followup={followup}
+              rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"}
             />
           </div>
           <p className="text-fluid-xs text-apoio">A prévia do painel não conta como abertura.</p>

@@ -66,7 +66,7 @@ export async function consentimentoDoLead(
 /**
  * Concede ou revoga. Quem pode decidir é de quem chama (o painel confere o
  * dono do lead pela sessão; o webhook, o número do grupo); aqui só grava, na
- * mesma transação, a preferência e a linha do histórico (0257).
+ * mesma transação, a preferência e a linha do histórico (0258).
  */
 export async function registrarConsentimento(
   supabase: Supa,

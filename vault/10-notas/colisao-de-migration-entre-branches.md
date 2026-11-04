@@ -72,9 +72,10 @@ recebe a `main`.
 Um dia depois, a mesma branch perdeu a 0255. Outra sessão, consertando a queda
 do site por limite da Vercel ([[vercel-hobby-pausou-a-conta-inteira]]), criou
 na `main` a `0255_disparo_so_com_campanha_ativa.sql` e já a **aplicou em
-produção** (15:46 UTC). A do número oficial virou **0256** — e **0257** horas
-depois, quando a correção da `configurar_disparo_automatico` ficou com a 0256
-da `main` —, de novo com
+produção** (15:46 UTC). A do número oficial virou **0256**, depois **0257** e,
+no fim do dia, **0258**: a sessão da prospecção publicou e aplicou a
+`0256_followup_da_prospeccao` (16:50 UTC) e a correção da
+`configurar_disparo_automatico` ficou com a 0257. Sempre de novo com
 `git mv` + troca das menções só nos arquivos dela; as frases de história (como
 esta) ficam com o número da época.
 
@@ -84,5 +85,8 @@ do tique (`fila.status = 'pendente'` em `campanhas.status = 'em_andamento'`)
 também vale para a lista oficial, que usa as mesmas duas tabelas.
 
 Lição que se repete: numa semana com duas sessões publicando, o número de uma
-migration fora de produção é provisório até ela ser aplicada.
+migration fora de produção é provisório até ela ser aplicada. E avisar uma
+sessão não basta: a terceira colisão do dia veio da sessão que não tinha sido
+avisada. Antes de publicar migration, avisar **todas** as sessões que publicam
+na `main` e reservar os números na mensagem.
 

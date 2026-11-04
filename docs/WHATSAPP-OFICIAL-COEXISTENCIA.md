@@ -111,7 +111,7 @@ Legenda do impacto: **segue** (igual), **muda** (tem substituto, dá trabalho),
    (0018), nome `nexthome-<slug>`, leituras `.eq("corretor_id").maybeSingle()`,
    conversa única por `(corretor_id, telefone_cliente)` sem dimensão de número
    ou canal. Por isso a conversa do número oficial mora em tabela própria
-   (`whatsapp_oficial_conversas`, 0257).
+   (`whatsapp_oficial_conversas`, 0258).
 4. **O dia da migração dispara os alarmes de "número caiu".** A coexistência
    desliga os aparelhos vinculados (a Evolution é um deles): CONNECTION_UPDATE
    fecha, a instância vira `desconectado`, e daí saem faixa no painel, e-mail e

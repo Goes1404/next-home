@@ -9,7 +9,7 @@ import { tarifaEmReais } from "./tarifas";
 
 /**
  * O que o assistente da lista precisa saber do número oficial, para o
- * corretor logado. As tabelas do número oficial são só do servidor (0257):
+ * corretor logado. As tabelas do número oficial são só do servidor (0258):
  * quem lê é a chave de serviço, sempre com o grupo do corretor como filtro
  * explícito (a régua de `central-le-sem-sessao-e-sem-rls`). Quem decide se
  * o corretor PODE é a sessão, antes de chamar daqui.

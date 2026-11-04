@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * O webhook da API oficial (0257): falha fechada sem o segredo, assinatura
+ * O webhook da API oficial (0258): falha fechada sem o segredo, assinatura
  * conferida antes de qualquer leitura, desafio do GET pelo token, e o
  * processamento DEPOIS da resposta (a Meta reenvia o que demora).
  */

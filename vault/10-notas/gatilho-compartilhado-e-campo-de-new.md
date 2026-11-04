@@ -6,7 +6,7 @@ type: armadilha
 status: evergreen
 custou: medio
 codigo:
-  - supabase/migrations/0257_whatsapp_oficial.sql
+  - supabase/migrations/0258_whatsapp_oficial.sql
   - supabase/migrations/0214_limites_do_plano.sql
   - src/lib/planos/limitesDoPlano.db.test.ts
 created: 2026-11-03
@@ -18,7 +18,7 @@ summary: Numa função de gatilho usada por várias tabelas, `if tg_table_name =
 # Gatilho compartilhado e campo de NEW
 
 `contar_uso_de_recurso()` (0214) é UMA função para três gatilhos:
-`imagens_geradas`, `video_jobs` e `whatsapp_campanhas_fila`. Na 0257 entrou um
+`imagens_geradas`, `video_jobs` e `whatsapp_campanhas_fila`. Na 0258 entrou um
 desvio para a lista oficial não contar na cota:
 
 ```sql

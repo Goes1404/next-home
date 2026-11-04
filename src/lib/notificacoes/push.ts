@@ -108,48 +108,79 @@ export async function notificarAdminsDaPlataforma(supabase: Supa, n: Notificacao
       if (erroAdmins) console.warn("[notificação] falha ao ler administradores:", erroAdmins.message);
       return 0;
     }
-    const { data: inscricoes, error } = await supabase
-      .from("inscricoes_push_da_plataforma")
-      .select("id, endpoint, p256dh, auth")
-      .in(
-        "user_id",
-        admins.map((a) => a.user_id),
-      );
-    if (error) {
-      console.warn("[notificação] falha ao ler aparelhos da plataforma:", error.message);
-      return 0;
-    }
-    if (!inscricoes?.length) return 0;
-
-    const carga = JSON.stringify({ titulo: n.titulo, corpo: n.corpo.slice(0, 240), url: n.url, tag: n.tag });
-    let entregues = 0;
-    await Promise.all(
-      inscricoes.map(async (i) => {
-        if (!ehEnderecoDePush(i.endpoint)) return;
-        try {
-          await webpush.sendNotification(
-            { endpoint: i.endpoint, keys: { p256dh: i.p256dh, auth: i.auth } },
-            carga,
-            { TTL: 60 * 60 * 12, urgency: "high" },
-          );
-          entregues++;
-          await supabase
-            .from("inscricoes_push_da_plataforma")
-            .update({ ultimo_envio_em: new Date().toISOString() })
-            .eq("id", i.id);
-        } catch (err) {
-          const status = (err as { statusCode?: number }).statusCode;
-          if (status === 404 || status === 410) {
-            await supabase.from("inscricoes_push_da_plataforma").delete().eq("id", i.id);
-          } else {
-            console.warn("[notificação] não saiu (plataforma):", status ?? err);
-          }
-        }
-      }),
+    return await enviarAosAparelhosDaPlataforma(
+      supabase,
+      admins.map((a) => a.user_id),
+      n,
     );
-    return entregues;
   } catch (err) {
     console.warn("[notificação] falhou (plataforma):", err);
     return 0;
   }
+}
+
+/**
+ * Avisos da prospecção (04/11/2026): só para quem é administrador da
+ * plataforma E está em `prospeccao_equipe` (Eduardo e Matheus), a mesma
+ * regra da aba. O aparelho é o mesmo do aviso da plataforma. Nunca lança.
+ */
+export async function notificarEquipeDaProspeccao(supabase: Supa, n: Notificacao): Promise<number> {
+  try {
+    if (!configurar()) return 0;
+    const [{ data: admins, error: e1 }, { data: equipe, error: e2 }] = await Promise.all([
+      supabase.from("administradores_da_plataforma").select("user_id"),
+      supabase.from("prospeccao_equipe").select("user_id"),
+    ]);
+    if (e1 || e2) {
+      console.warn("[notificação] falha ao ler a equipe da prospecção:", (e1 ?? e2)?.message);
+      return 0;
+    }
+    const ehAdmin = new Set((admins ?? []).map((a) => a.user_id));
+    const destino = (equipe ?? []).map((e) => e.user_id).filter((id) => ehAdmin.has(id));
+    if (!destino.length) return 0;
+    return await enviarAosAparelhosDaPlataforma(supabase, destino, n);
+  } catch (err) {
+    console.warn("[notificação] falhou (prospecção):", err);
+    return 0;
+  }
+}
+
+async function enviarAosAparelhosDaPlataforma(supabase: Supa, usuarios: string[], n: Notificacao): Promise<number> {
+  const { data: inscricoes, error } = await supabase
+    .from("inscricoes_push_da_plataforma")
+    .select("id, endpoint, p256dh, auth")
+    .in("user_id", usuarios);
+  if (error) {
+    console.warn("[notificação] falha ao ler aparelhos da plataforma:", error.message);
+    return 0;
+  }
+  if (!inscricoes?.length) return 0;
+
+  const carga = JSON.stringify({ titulo: n.titulo, corpo: n.corpo.slice(0, 240), url: n.url, tag: n.tag });
+  let entregues = 0;
+  await Promise.all(
+    inscricoes.map(async (i) => {
+      if (!ehEnderecoDePush(i.endpoint)) return;
+      try {
+        await webpush.sendNotification(
+          { endpoint: i.endpoint, keys: { p256dh: i.p256dh, auth: i.auth } },
+          carga,
+          { TTL: 60 * 60 * 12, urgency: "high" },
+        );
+        entregues++;
+        await supabase
+          .from("inscricoes_push_da_plataforma")
+          .update({ ultimo_envio_em: new Date().toISOString() })
+          .eq("id", i.id);
+      } catch (err) {
+        const status = (err as { statusCode?: number }).statusCode;
+        if (status === 404 || status === 410) {
+          await supabase.from("inscricoes_push_da_plataforma").delete().eq("id", i.id);
+        } else {
+          console.warn("[notificação] não saiu (plataforma):", status ?? err);
+        }
+      }
+    }),
+  );
+  return entregues;
 }

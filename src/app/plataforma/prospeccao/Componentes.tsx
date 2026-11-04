@@ -44,11 +44,14 @@ export function EnviarNoWhatsapp({
   id,
   link,
   bloqueado,
+  followup = false,
   rotulo = "Enviar no WhatsApp",
 }: {
   id: string;
   link: string | null;
   bloqueado: string | null;
+  /** O envio é o follow-up (0256): grava `followup_em`, não a abordagem. */
+  followup?: boolean;
   rotulo?: string;
 }) {
   const [pendente, iniciar] = useTransition();
@@ -60,7 +63,7 @@ export function EnviarNoWhatsapp({
 
   function marcar(tentarDeNovoAoVoltar: boolean) {
     iniciar(async () => {
-      const r = await semDerrubar(() => marcarEnviado(id));
+      const r = await semDerrubar(() => marcarEnviado(id, followup ? "followup" : "abordagem"));
       if (r.ok) return setErro(null);
       if (tentarDeNovoAoVoltar && r.erro === SEM_CONEXAO) {
         // A requisição caiu porque o celular foi para o WhatsApp: tenta de

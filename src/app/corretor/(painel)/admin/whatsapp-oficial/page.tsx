@@ -18,7 +18,7 @@ import { AcoesDoNumero, CadastroManual, ConfiguracaoDoNumero } from "./PainelDoN
 export const metadata: Metadata = { title: "WhatsApp oficial" };
 
 /**
- * O número OFICIAL da imobiliária (0257): conectar, decidir, criar modelos e
+ * O número OFICIAL da imobiliária (0258): conectar, decidir, criar modelos e
  * medir o piloto. Só o gestor.
  *
  * O gestor não lê conversa (0134): esta tela mostra estado, dinheiro e

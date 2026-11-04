@@ -253,7 +253,7 @@ export default async function FichaLeadPage({
           <VendaDoLead leadId={lead.id} etapa={lead.etapa} vendas={vendas} comImoveis={comImoveis} />
           <OrigemJornada touchpoints={touchpoints} />
           <PreferenciasContato leadId={lead.id} preferencias={preferencias} naoContatarEm={lead.naoContatarEm} />
-          {/* O número oficial da imobiliária (0257, F3): a conversa que a lista
+          {/* O número oficial da imobiliária (0258, F3): a conversa que a lista
               abriu, o "assumir pelo meu WhatsApp" e o consentimento de ofertas.
               Só para o corretor DONO: o gestor não lê conversa (0134). */}
           <NumeroOficialDoLead leadId={lead.id} donoId={lead.corretor?.id ?? null} nome={lead.nome} />

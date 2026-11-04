@@ -1,4 +1,4 @@
--- 0256: a `configurar_disparo_automatico` grava o tique condicional (04/11/2026).
+-- 0257: a `configurar_disparo_automatico` grava o tique condicional (04/11/2026).
 --
 -- A 0255 trocou o comando do job `disparo-campanhas` direto no pg_cron: o tique
 -- só chama a Vercel quando há item pendente numa lista em andamento. Antes eram

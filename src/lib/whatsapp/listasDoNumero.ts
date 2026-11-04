@@ -8,7 +8,7 @@ type StatusDaLista = Database["public"]["Tables"]["whatsapp_campanhas"]["Row"]["
 /**
  * As listas que saem pelo número PESSOAL do corretor (Evolution).
  *
- * Desde a 0257 uma lista pode sair pelo número OFICIAL da imobiliária
+ * Desde a 0258 uma lista pode sair pelo número OFICIAL da imobiliária
  * (`canal = 'oficial'`), com disparador próprio (`oficial/disparoOficial.ts`).
  * Tudo o que fala do número do corretor tem de ignorá-la:
  *   - o disparador da Evolution: por ele, a lista oficial sairia do número
@@ -20,7 +20,7 @@ type StatusDaLista = Database["public"]["Tables"]["whatsapp_campanhas"]["Row"]["
  *
  * Por isso a regra mora AQUI, uma vez, e não em cada consulta.
  *
- * Antes da 0257 aplicada a coluna `canal` não existe (42703): toda lista é do
+ * Antes da 0258 aplicada a coluna `canal` não existe (42703): toda lista é do
  * corretor, e a leitura volta a ser a de sempre. Erro de outro tipo devolve
  * null; quem chama decide (todos tratam como "nenhuma lista", como antes).
  */
@@ -46,10 +46,10 @@ export async function listasDoNumeroDoCorretor(
     console.warn("[campanha] listas do número do corretor não lidas:", comCanal.error.message);
     return null;
   }
-  const antesDa0257 = await ler(false);
-  if (antesDa0257.error) {
-    console.warn("[campanha] listas do número do corretor não lidas:", antesDa0257.error.message);
+  const antesDa0258 = await ler(false);
+  if (antesDa0258.error) {
+    console.warn("[campanha] listas do número do corretor não lidas:", antesDa0258.error.message);
     return null;
   }
-  return antesDa0257.data ?? [];
+  return antesDa0258.data ?? [];
 }
