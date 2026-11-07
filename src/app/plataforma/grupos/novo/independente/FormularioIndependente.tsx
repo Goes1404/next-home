@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { lerRamo, vocabularioDoRamo } from "@/lib/ramos/ramos";
+import { DIA_DO_VENCIMENTO_PADRAO } from "@/lib/planos/cobranca";
 import { avisoDePaginaVelha, ehActionDeOutroBuild } from "@/lib/erros/actionDeOutroBuild";
 import { mascararCpf } from "@/lib/plataforma/documentos";
 import { ROTULO_DO_PLANO } from "@/lib/plataforma/rotulosDoGrupo";
@@ -27,7 +28,7 @@ const VAZIO: FormularioDoIndependente = {
   whatsapp: "",
   plano: "essencial",
   mensalidade: mensalidadeComoTexto(mensalidadeDoPlano("essencial")),
-  diaDoVencimento: "10",
+  diaDoVencimento: String(DIA_DO_VENCIMENTO_PADRAO),
 };
 
 /**

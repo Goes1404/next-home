@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { cadastrarLoja, marcarEnviado, mudarEtapa, salvarFicha, type DadosDaFicha } from "./acoes";
+import { cadastrarLoja, marcarEnviado, mudarEtapa, salvarFicha, type DadosDaFicha, type TipoDeEnvio } from "./acoes";
 import { ETAPAS, MODELOS, ROTULO_DA_ETAPA, ROTULO_DO_MODELO } from "@/lib/prospeccao/tipos";
 
 const CAMPO =
@@ -44,14 +44,14 @@ export function EnviarNoWhatsapp({
   id,
   link,
   bloqueado,
-  followup = false,
+  tipo = "abordagem",
   rotulo = "Enviar no WhatsApp",
 }: {
   id: string;
   link: string | null;
   bloqueado: string | null;
-  /** O envio é o follow-up (0256): grava `followup_em`, não a abordagem. */
-  followup?: boolean;
+  /** O que vai: abordagem, follow-up (0256, grava `followup_em`) ou a amostra para quem respondeu. */
+  tipo?: TipoDeEnvio;
   rotulo?: string;
 }) {
   const [pendente, iniciar] = useTransition();
@@ -63,7 +63,7 @@ export function EnviarNoWhatsapp({
 
   function marcar(tentarDeNovoAoVoltar: boolean) {
     iniciar(async () => {
-      const r = await semDerrubar(() => marcarEnviado(id, followup ? "followup" : "abordagem"));
+      const r = await semDerrubar(() => marcarEnviado(id, tipo));
       if (r.ok) return setErro(null);
       if (tentarDeNovoAoVoltar && r.erro === SEM_CONEXAO) {
         // A requisição caiu porque o celular foi para o WhatsApp: tenta de

@@ -5,7 +5,7 @@ import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ETAPAS, ROTULO_DA_ETAPA, ehEtapa } from "@/lib/prospeccao/tipos";
 import { followupDevido, ordenarParaOFunil, proximaAcao, temperatura, type Temperatura } from "@/lib/prospeccao/funil";
-import { linkDaAmostra, linkDoWhatsapp, mensagemDeFollowup } from "@/lib/prospeccao/abordagem";
+import { linkDaAmostra, linkDoWhatsapp, mensagemComAmostra, mensagemDeFollowup, temLinkDaAmostra } from "@/lib/prospeccao/abordagem";
 import { EnviarNoWhatsapp, NovaLoja } from "./Componentes";
 import { AtivarAvisosDaPlataforma } from "../AtivarAvisosDaPlataforma";
 
@@ -102,8 +102,15 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
               {lista.map((l) => {
                 const t = temperatura(l, agora);
                 const followup = followupDevido(l, agora);
-                const texto = followup ? mensagemDeFollowup({ link: linkDaAmostra(l.slug) }) : l.mensagem;
+                const amostra = linkDaAmostra(l.slug);
+                const curta = !temLinkDaAmostra(l.mensagem);
+                const texto = followup ? mensagemDeFollowup({ link: amostra, abordagemTinhaLink: !curta }) : l.mensagem;
                 const link = l.whatsapp && texto ? linkDoWhatsapp(l.whatsapp, texto) : null;
+                // Abordagem curta (sem link): quem respondeu recebe a amostra por este botão.
+                const linkDaAmostraNoZap =
+                  curta && (l.etapa === "enviado" || l.etapa === "respondeu") && l.whatsapp
+                    ? linkDoWhatsapp(l.whatsapp, mensagemComAmostra({ link: amostra }))
+                    : null;
                 const bloqueado = l.nao_contatar ? "Pediu para não receber mensagens" : null;
                 return (
                   <li key={l.id} className="cartao flex flex-col gap-3 p-4">
@@ -131,7 +138,10 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {l.etapa === "novo" || l.etapa === "aprovado" || followup ? (
-                        <EnviarNoWhatsapp id={l.id} link={link} bloqueado={bloqueado} followup={followup} rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"} />
+                        <EnviarNoWhatsapp id={l.id} link={link} bloqueado={bloqueado} tipo={followup ? "followup" : "abordagem"} rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"} />
+                      ) : null}
+                      {linkDaAmostraNoZap && !l.nao_contatar ? (
+                        <EnviarNoWhatsapp id={l.id} link={linkDaAmostraNoZap} bloqueado={null} tipo="amostra" rotulo="Respondeu? Mandar a amostra" />
                       ) : null}
                       <a
                         href={`/astro/amostra/${l.slug}?previa=1`}

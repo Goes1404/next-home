@@ -6,7 +6,7 @@ import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ROTULO_DO_MODELO, ehModelo } from "@/lib/prospeccao/tipos";
 import { followupDevido, proximaAcao } from "@/lib/prospeccao/funil";
-import { linkDaAmostra, linkDoWhatsapp, mensagemDeFollowup, mensagemPadrao, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
+import { linkDaAmostra, linkDoWhatsapp, mensagemComAmostra, mensagemCurta, mensagemDeFollowup, temLinkDaAmostra, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
 import { EnviarNoWhatsapp, FichaDaLoja, MudarEtapa } from "../Componentes";
 
 export const metadata: Metadata = { title: "Loja prospectada" };
@@ -40,10 +40,15 @@ export default async function FichaDaLojaPage({ params }: { params: Promise<{ id
   if (!l) notFound();
 
   const amostra = linkDaAmostra(l.slug);
-  const mensagem = l.mensagem ?? mensagemPadrao({ nome: l.nome, gancho: l.gancho, link: amostra, vendedor: vendedorDaProspeccao() });
+  const mensagem = l.mensagem ?? mensagemCurta({ nome: l.nome, gancho: l.gancho, vendedor: vendedorDaProspeccao() });
   // 0256: na hora do follow-up, o botão manda o follow-up e o registra.
   const followup = followupDevido(l);
-  const link = l.whatsapp ? linkDoWhatsapp(l.whatsapp, followup ? mensagemDeFollowup({ link: amostra }) : mensagem) : null;
+  const curta = !temLinkDaAmostra(mensagem);
+  const link = l.whatsapp ? linkDoWhatsapp(l.whatsapp, followup ? mensagemDeFollowup({ link: amostra, abordagemTinhaLink: !curta }) : mensagem) : null;
+  const linkDaAmostraNoZap =
+    curta && (l.etapa === "enviado" || l.etapa === "respondeu") && l.whatsapp && !l.nao_contatar
+      ? linkDoWhatsapp(l.whatsapp, mensagemComAmostra({ link: amostra }))
+      : null;
   const lacunas = Array.isArray(l.lacunas) ? l.lacunas.filter((x): x is string => typeof x === "string") : [];
   const tempoTotal = (visitas ?? []).reduce((soma, v) => soma + v.segundos, 0);
 
@@ -79,9 +84,12 @@ export default async function FichaDaLojaPage({ params }: { params: Promise<{ id
               id={l.id}
               link={link}
               bloqueado={l.nao_contatar ? "Pediu para não receber mensagens" : l.whatsapp ? null : "Cadastre o WhatsApp para enviar"}
-              followup={followup}
+              tipo={followup ? "followup" : "abordagem"}
               rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"}
             />
+            {linkDaAmostraNoZap && (
+              <EnviarNoWhatsapp id={l.id} link={linkDaAmostraNoZap} bloqueado={null} tipo="amostra" rotulo="Respondeu? Mandar a amostra" />
+            )}
           </div>
           <p className="text-fluid-xs text-apoio">A prévia do painel não conta como abertura.</p>
         </div>

@@ -5,7 +5,7 @@ import { exigirAdminDaPlataformaNaAcao } from "@/lib/guardas";
 import { ehDaEquipeDaProspeccao, ERRO_FORA_DA_EQUIPE } from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ehEtapa, ehModelo, type Etapa } from "@/lib/prospeccao/tipos";
-import { linkDaAmostra, mensagemPadrao, normalizarWhatsapp, slugDaLoja, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
+import { mensagemCurta, normalizarWhatsapp, slugDaLoja, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
 
 /**
  * As ações da aba Prospecção (0253, 02/11/2026). Só o administrador da
@@ -47,24 +47,34 @@ export async function mudarEtapa(id: string, etapa: string, motivo?: string): Pr
 }
 
 /**
+ * O que o botão mandou: a abordagem, o follow-up (0256) ou a amostra para
+ * quem respondeu à abordagem curta (04/11/2026), que move a loja para
+ * "Respondeu" (o app não vê o WhatsApp; o clique é o sinal da resposta).
+ */
+export type TipoDeEnvio = "abordagem" | "followup" | "amostra";
+
+/**
  * O botão "Enviar no WhatsApp" abriu a conversa com a mensagem pronta: a loja
  * passa a "Abordado". Loja marcada como não contatar é recusada aqui também,
  * não só na tela.
  */
-export async function marcarEnviado(id: string, tipo: "abordagem" | "followup" = "abordagem"): Promise<Resultado> {
+export async function marcarEnviado(id: string, tipo: TipoDeEnvio = "abordagem"): Promise<Resultado> {
   const admin = await exigirAdminDaPlataformaNaAcao();
   if ("erro" in admin) return { ok: false, erro: admin.erro };
   if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
   if (!ID.test(id)) return { ok: false, erro: "Loja inválida." };
 
   const supabase = createServiceClient();
-  const { data: lead } = await supabase.from("prospeccao_leads").select("etapa, nao_contatar, enviado_em, followup_em").eq("id", id).maybeSingle();
+  const { data: lead } = await supabase.from("prospeccao_leads").select("etapa, nao_contatar, enviado_em, followup_em, respondeu_em").eq("id", id).maybeSingle();
   if (!lead) return { ok: false, erro: "Loja não encontrada." };
   if (lead.nao_contatar) return { ok: false, erro: "Esta loja pediu para não receber mais mensagens." };
 
   const agora = new Date().toISOString();
-  const mudanca: { etapa?: Etapa; enviado_em?: string; followup_em?: string } = {};
-  if (lead.etapa === "novo" || lead.etapa === "aprovado") mudanca.etapa = "enviado";
+  const mudanca: { etapa?: Etapa; enviado_em?: string; followup_em?: string; respondeu_em?: string } = {};
+  if (tipo === "amostra") {
+    if (lead.etapa === "enviado") mudanca.etapa = "respondeu";
+    if (!lead.respondeu_em) mudanca.respondeu_em = agora;
+  } else if (lead.etapa === "novo" || lead.etapa === "aprovado") mudanca.etapa = "enviado";
   if (!lead.enviado_em) mudanca.enviado_em = agora;
   // 0256: o follow-up fica registrado, para a régua não pedir outro.
   if (tipo === "followup" && lead.enviado_em && !lead.followup_em) mudanca.followup_em = agora;
@@ -165,7 +175,7 @@ export async function cadastrarLoja(loja: NovaLoja): Promise<ResultadoComId> {
       gancho,
       slug,
       amostra: cor ? { cores: { primaria: cor } } : {},
-      mensagem: mensagemPadrao({ nome, gancho, link: linkDaAmostra(slug), vendedor: vendedorDaProspeccao() }),
+      mensagem: mensagemCurta({ nome, gancho, vendedor: vendedorDaProspeccao() }),
       origem: "manual",
     })
     .select("id")

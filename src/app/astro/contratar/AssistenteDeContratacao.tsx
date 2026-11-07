@@ -764,7 +764,7 @@ function PassoRevisao({
       </h2>
       <p className="mt-1.5 text-[var(--tinta-suave)]">
         Teste grátis por 7 dias, sem cartão: a conta nasce agora e o link para criar a senha chega no seu e-mail. Para
-        continuar depois do teste, é só assinar; sem assinatura, os recursos pagos pausam sozinhos.
+        continuar depois do teste, é só chamar a Astro no WhatsApp e fechar o seu pacote; sem pacote fechado, os recursos pagos pausam sozinhos.
       </p>
 
       <dl className={`${c.resumo} mt-5`}>

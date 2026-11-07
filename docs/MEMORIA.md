@@ -12954,3 +12954,21 @@ UTC) com o plano do dia. Push depende de cada um ativar os avisos no aparelho
 (botão na aba Prospecção). A captação de 5 lojas/dia útil é uma tarefa
 agendada do Claude, fora do app. Vercel Hobby: cron diário só; horário com
 folga de até 1 h.
+
+## Ligar avisos que "não fazia nada" e cobrança sem Asaas (04/11/2026, tarde)
+- **Avisos:** quando o pedido de permissão volta `default` (a pessoa fechou, ou o pedido nem aparece, como no app Android/TWA e no Chrome com o pedido silencioso), o cartão voltava ao normal sem dizer nada. Agora o estado `pedido_fechado` mostra como liberar nas configurações e liga sozinho quando a pessoa volta ao app (`visibilitychange`). O pedido tem teto de 60 s.
+- O painel e a plataforma usam o mesmo `src/components/avisos/CartaoDeAvisos.tsx` (antes eram duas cópias). Ao abrir a tela, a inscrição que já existe no aparelho é regravada na rota: a plataforma dizia "ligados" porque via a inscrição do corretor, que não estava na tabela da plataforma.
+- `/api/notificacoes/diagnostico` registra nos logs da Vercel (`[avisos]`) o passo, a permissão e o aparelho de cada tentativa. Não grava nada no banco.
+- **Cobrança:** o Asaas fica de fora por decisão do dono; quem quer fechar pacote chama a Astro no WhatsApp, e o botão da faixa do painel abre o WhatsApp (teste e atraso). `DIA_DO_VENCIMENTO_PADRAO = 5` vale para contas novas (formulários da plataforma e teste grátis). O fim do teste continua sendo o 1º vencimento, com pausa imediata. Contas existentes (Next Home, Aretz, Exemplo) ficam como estão até o dono decidir.
+
+## Prospecção: abordagem curta, sem link (04/11/2026)
+
+32 lojas com mensagem longa + link da amostra: 4 abriram o link, 2 responderam
+(1 visita marcada). Link vindo de número desconhecido parece golpe. Mudança: a
+primeira mensagem é curta, sem link, termina em "Posso te mandar para dar uma
+olhada?" (`mensagemCurta` em `src/lib/prospeccao/abordagem.ts`); o link vai
+pelo botão "Respondeu? Mandar a amostra", que também move a loja para
+"Respondeu" (o app não vê o WhatsApp pessoal; o clique é o sinal). O
+follow-up de abordagem curta já leva o link. A captação diária passou a
+gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
+- 04/11/2026: 0259 aplicada (32 índices em chaves estrangeiras). A policy repetida de `lead_observacoes_ia` ficou de fora, porque o `drop policy` pede confirmação no Supabase e ela expirou duas vezes. 0257 e 0258 estão reservadas para outras sessões.
