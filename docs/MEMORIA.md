@@ -12945,3 +12945,13 @@ pelo botão "Respondeu? Mandar a amostra", que também move a loja para
 follow-up de abordagem curta já leva o link. A captação diária passou a
 gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 - 04/11/2026: 0259 aplicada (32 índices em chaves estrangeiras). A policy repetida de `lead_observacoes_ia` ficou de fora, porque o `drop policy` pede confirmação no Supabase e ela expirou duas vezes. 0257 e 0258 estão reservadas para outras sessões.
+
+## Aretz: a roleta que o gestor não via e o recado lido como ligação (07/11/2026)
+
+- Nota: [[roleta-do-numero-do-anuncio-para-o-gestor]]. Reclamação do Bruno: "a IA distribui os leads como quer, para corretores fora da roleta"; o caso foi a Priscila (final 6064, 07:18), para o Moisés.
+- Não era a IA. A roleta que age é a do número do anúncio, o da conta oculta "Aretz" (`nexthome-administracao-aretz`), com André, Martines, Moisés e Gediel (em pausa). Foi ligada em 06/11 17:19 por quem entrou como "Aretz" (`roleta_anuncios.atualizado_por`/`atualizado_em`; a tabela não tem `updated_at`).
+- A aba mostrava só a roleta do número de quem está logado (decisão de 28/10). O Bruno é gestor com conta oculta e SEM número: via a própria, vazia e desligada. Agora `numeroDaRoleta` escolhe a roleta da aba: a própria se já tem roleta salva; senão a ligada de outro gestor (primeiro a do número central); senão a própria se tem número; senão a do número central. A tela diz de quem é o número. `salvarRoleta` já aceitava gravar no número de outro gestor do grupo.
+- O aviso "CONFIRME O RECEBIMENTO COM: RECEBIDO" é o modelo da Aretz em `grupos.texto_aviso_grupo_leads` (com "Produto: Alpha Park View" fixo), não o padrão.
+- No mesmo grupo, o Moisés respondeu por áudio ao gestor Fernando ("ela mandou mensagem que atrasou") e o retorno pelo grupo gravou "atendeu" com `exigenciasEspecificas: ["decorado"]` copiado do dossiê, e confirmou no grupo. Prompt: notícia do cliente que não veio de conversa do corretor e recado a gestor ou colega = `resultado: null`; fatos só do relato. Trava em código: `fatosSoDoRelato` (`src/lib/crm/retornoPeloGrupo/ler.ts`) tira exigência, quartos, orçamento, região e pagamento sem palavra no relato. O prompt não foi medido contra o modelo.
+- Diagnóstico rápido desse tipo de queixa: `roleta_anuncios` do grupo (dono, `ligada`, `destinos`, `atualizado_por`), `lead_envios_grupo` (status e motivo de cada aviso) e `retornos_de_ligacao` (texto lido, `leitura`, `confirmacao_mensagem_id`).
+

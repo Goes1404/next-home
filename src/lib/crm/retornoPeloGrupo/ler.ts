@@ -2,6 +2,53 @@ import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
 import type { QuemPagaAIa } from "@/lib/planos/consumoDaIa";
 import { NAO_E_RELATO, normalizarLeituraDoRetorno, type LeituraDoRetorno } from "./leituraDoRetorno";
 
+/** Minúsculo, sem acento, só letras e números separados por um espaço. */
+function semAcento(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+const PALAVRAS_VAZIAS = new Set(["com", "sem", "para", "por", "que", "uma", "dos", "das", "nos", "nas", "tem", "ter", "mais"]);
+
+/** Alguma palavra do item (3+ letras, fora as vazias) aparece no relato já sem acento. */
+function ditoNoRelato(item: string, relato: string): boolean {
+  return semAcento(item)
+    .split(" ")
+    .filter((w) => w.length >= 3 && !PALAVRAS_VAZIAS.has(w))
+    .some((w) => relato.includes(w));
+}
+
+/**
+ * Os fatos que vão para a ficha e para a confirmação no grupo são só os que o
+ * relato traz (07/11/2026). Na Aretz, o Moisés respondeu ao gestor no grupo
+ * "ela mandou mensagem que atrasou, ela tá chegando" e a leitura voltou com
+ * `exigenciasEspecificas: ["decorado"]`, copiada do dossiê: a confirmação saiu
+ * no grupo dizendo o que ninguém falou. A regra no prompt pede isso; aqui é a
+ * trava. Só pesa sobre o que a confirmação mostra (exigências, quartos,
+ * orçamento, região e forma de pagamento): fato sem palavra no relato sai.
+ */
+export function fatosSoDoRelato(leitura: LeituraDoRetorno, relato: string): LeituraDoRetorno {
+  const r = ` ${semAcento(relato)} `;
+  const f = { ...leitura.fatos };
+  if (f.exigenciasEspecificas) {
+    const ditas = f.exigenciasEspecificas.filter((e) => ditoNoRelato(e, r));
+    if (ditas.length > 0) f.exigenciasEspecificas = ditas;
+    else delete f.exigenciasEspecificas;
+  }
+  if (f.dormitoriosMin != null && !/(quart|dorm|suit)/.test(r)) delete f.dormitoriosMin;
+  if ((f.orcamentoMin != null || f.orcamentoMax != null) && !/(\d| mil| milh)/.test(r)) {
+    delete f.orcamentoMin;
+    delete f.orcamentoMax;
+  }
+  if (f.regiaoInteresse && !ditoNoRelato(f.regiaoInteresse, r)) delete f.regiaoInteresse;
+  if (f.formaPagamento && !/(vista|financ|permut|fgts|entrada|parcel|consorc)/.test(r)) delete f.formaPagamento;
+  return { ...leitura, fatos: f };
+}
+
 /*
  * Ninguém espera esta leitura em tela: o corretor mandou o relato no grupo e
  * a confirmação sai quando ficar pronta. 15s dá folga para uma retentativa
@@ -54,9 +101,10 @@ REGRAS:
 - Valores em dinheiro vão como número simples em reais, sem texto ("600 mil" vira 600000, "1,2 milhão" vira 1200000).
 - A etapa só muda se o relato deixa claro. Valores possíveis: "primeiro_contato" (falou com o cliente, mas ainda sem conversa de verdade), "em_conversa" (conversou e segue em andamento), "qualificado" (sabe o que quer, quanto pode pagar e tem condição), "visita_agendada" (marcou data e hora de visita), "perdido" (o cliente desistiu, comprou em outro lugar ou não tem perfil; exige motivoPerda). Qualquer outra situação: null. Nunca use fechado, proposta ou documentação.
 - "resultado": "atendeu" (falou com o cliente), "nao_atendeu" (ligou e ninguém atendeu), "numero_errado" (número não é do cliente ou não existe), "pediu_retorno" (atendeu, mas pediu para ligar depois).
-- O grupo também tem conversa que NÃO conta ligação nenhuma: cumprimento ("bom dia"), "ok", "beleza", emoji, agradecimento, resposta ou recado ao gestor, aviso do que ainda vai fazer ("vou ligar agora", "já já ligo"). Nesses casos responda "resultado": null e todo o resto null ou vazio. Na correção, se o texto depois de "Correção do corretor:" só concorda ou agradece, também é null.
+- O grupo também tem conversa que NÃO conta ligação nenhuma: cumprimento ("bom dia"), "ok", "beleza", emoji, agradecimento, resposta ou recado ao gestor ou a um colega, aviso do que ainda vai fazer ("vou ligar agora", "já já ligo"), e notícia do cliente que não veio de uma conversa do corretor com ele ("ela mandou mensagem que atrasou", "ainda não chegou", "está a caminho"). Nesses casos responda "resultado": null e todo o resto null ou vazio. Na correção, se o texto depois de "Correção do corretor:" só concorda ou agradece, também é null.
 - Se não atendeu ou o número está errado, não há etapa, visita nem fatos.
 - "resumo": junte o que já se sabia do cliente (ficha e dossiê abaixo) com o que o relato acrescenta, em poucas frases. Não repita o que não importa mais.
+- "fatos": SÓ o que o corretor contou NESTE relato. A ficha e o dossiê servem para o resumo; nunca copie deles para "fatos". Nada novo no relato = fatos vazios.
 
 Responda EXCLUSIVAMENTE um objeto JSON válido, sem texto antes ou depois, neste formato:
 {
@@ -148,7 +196,7 @@ export async function lerRetornoDaLigacao(p: {
       latenciaMs: resultado.latenciaMs,
     };
     if (leitura === NAO_E_RELATO) return { ok: true, leitura, custo };
-    return { ok: true, leitura, ...custo };
+    return { ok: true, leitura: fatosSoDoRelato(leitura, relato), ...custo };
   } catch (erro) {
     console.error("Erro inesperado ao ler o retorno da ligação:", erro);
     return { ok: false };

@@ -72,6 +72,7 @@ export function EditorDaRoleta({
   configs,
   equipe,
   meuId,
+  numeroDe = null,
   gestor,
   grupoTemEnvio,
   soConectados,
@@ -79,6 +80,12 @@ export function EditorDaRoleta({
   configs: ConfigDaRoleta[];
   equipe: Membro[];
   meuId: string;
+  /**
+   * Nome do dono do número quando a roleta mostrada NÃO é a do próprio número
+   * (07/11/2026): o gestor sem número vê a do número do anúncio (na Aretz, a
+   * conta "Aretz"). `null` = a do próprio número, como sempre.
+   */
+  numeroDe?: string | null;
   gestor: boolean;
   grupoTemEnvio: boolean;
   /** A regra do grupo: só entrega lead a quem está com o WhatsApp conectado. */
@@ -290,6 +297,12 @@ export function EditorDaRoleta({
               Cliente novo do anúncio de WhatsApp vai para o próximo da lista, um para cada. A IA não responde lead de
               anúncio.
             </p>
+            {numeroDe ? (
+              <p className="mt-2 max-w-2xl text-fluid-sm font-semibold text-titulo">
+                Esta é a roleta do número de {numeroDe}, para onde o anúncio manda o cliente. O que você salvar aqui
+                vale para esse número.
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-linha bg-vidro px-4 py-2.5">
@@ -409,7 +422,7 @@ export function EditorDaRoleta({
                 {mensagensAtivas === 0
                   ? "Desligadas"
                   : `${mensagensAtivas} ${mensagensAtivas === 1 ? "mensagem" : "mensagens"}`}{" "}
-                · saem do seu número quando o lead é passado ao corretor
+                · saem {numeroDe ? `do número de ${numeroDe}` : "do seu número"} quando o lead é passado ao corretor
                 {grupoNoPadrao ? " · texto padrão" : ""}
               </span>
             </span>
@@ -463,7 +476,7 @@ export function EditorDaRoleta({
           </summary>
           <div className="mt-3 grid gap-5 md:grid-cols-2">
             <label className="block space-y-2 text-fluid-sm">
-              <span className="text-apoio">Do seu número ao cliente</span>
+              <span className="text-apoio">{numeroDe ? `Do número de ${numeroDe} ao cliente` : "Do seu número ao cliente"}</span>
               <textarea
                 rows={2}
                 value={c.textoPassagem}
