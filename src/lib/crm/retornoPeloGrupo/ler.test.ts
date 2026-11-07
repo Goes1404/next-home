@@ -6,7 +6,8 @@ vi.mock("@/lib/whatsapp/llm", () => ({
 }));
 
 import { algumProvedorConfigurado, chamarLlmJson } from "@/lib/whatsapp/llm";
-import { PROMPT_RETORNO_DA_LIGACAO, agoraEmSaoPaulo, encurtarRelato, lerRetornoDaLigacao } from "./ler";
+import { PROMPT_RETORNO_DA_LIGACAO, agoraEmSaoPaulo, encurtarRelato, fatosSoDoRelato, lerRetornoDaLigacao } from "./ler";
+import { NAO_E_RELATO, normalizarLeituraDoRetorno } from "./leituraDoRetorno";
 
 const provedor = vi.mocked(algumProvedorConfigurado);
 const llm = vi.mocked(chamarLlmJson);
@@ -163,5 +164,76 @@ describe("encurtarRelato", () => {
     llm.mockResolvedValue(respostaOk({ resultado: "atendeu" }));
     await lerRetornoDaLigacao(pedido({ relato: "x".repeat(6000) + " marquei sábado 10h" }));
     expect(llm.mock.calls[0][0]).toContain("marquei sábado 10h");
+  });
+});
+
+/**
+ * Aretz, 07/11/2026: no grupo do Moisés, o gestor Fernando perguntou por áudio
+ * e o Moisés respondeu, também por áudio (transcrito com "Vianda" no lugar do
+ * nome). A leitura voltou "atendeu" com `exigenciasEspecificas: ["decorado"]`,
+ * copiada do dossiê, e a confirmação saiu no grupo.
+ */
+const RELATO_DO_MOISES = "Vianda, ela mandou mensagem que atrasou, ela tá chegando, ainda não chegou, não.";
+
+describe("recado sobre o cliente não é relato, e fato só vale se foi dito", () => {
+  it("o prompt manda null para notícia do cliente que não veio de conversa do corretor com ele", () => {
+    expect(PROMPT_RETORNO_DA_LIGACAO).toContain("ela mandou mensagem que atrasou");
+    expect(PROMPT_RETORNO_DA_LIGACAO).toContain("resposta ou recado ao gestor ou a um colega");
+  });
+
+  it("o prompt proíbe copiar da ficha e do dossiê para os fatos", () => {
+    expect(PROMPT_RETORNO_DA_LIGACAO).toContain("SÓ o que o corretor contou NESTE relato");
+    expect(PROMPT_RETORNO_DA_LIGACAO).toContain("nunca copie deles");
+  });
+
+  it("o caso do Moisés: o 'decorado' que ninguém falou sai da leitura", async () => {
+    llm.mockResolvedValue(
+      respostaOk({
+        resultado: "atendeu",
+        etapa: "em_conversa",
+        resumo: "Cliente avisou que atrasou para a visita do Alpha Park View.",
+        fatos: { exigenciasEspecificas: ["decorado"], urgenciaMudanca: "imediata", temperaturaLabel: "morno" },
+      }),
+    );
+    const r = await lerRetornoDaLigacao(pedido({ relato: RELATO_DO_MOISES, dossieAtual: "Quer ver o decorado." }));
+    expect(r.ok).toBe(true);
+    if (!r.ok || r.leitura === NAO_E_RELATO) throw new Error("esperava uma leitura");
+    expect(r.leitura.fatos.exigenciasEspecificas).toBeUndefined();
+  });
+
+  it("o que o corretor disse fica: quartos, orçamento, região, pagamento e exigência", () => {
+    const leitura = normalizarLeituraDoRetorno(
+      {
+        resultado: "atendeu",
+        fatos: {
+          dormitoriosMin: 3,
+          orcamentoMax: 600000,
+          regiaoInteresse: "Alphaville",
+          formaPagamento: "financiamento",
+          exigenciasEspecificas: ["usa_fgts", "decorado"],
+        },
+      },
+      AGORA,
+    );
+    if (!leitura || leitura === NAO_E_RELATO) throw new Error("esperava uma leitura");
+    const relato = "Falei com ela: 3 quartos em Alphaville, até 600 mil, vai financiar e usar o FGTS.";
+    const f = fatosSoDoRelato(leitura, relato).fatos;
+    expect(f.dormitoriosMin).toBe(3);
+    expect(f.orcamentoMax).toBe(600000);
+    expect(f.regiaoInteresse).toBe("Alphaville");
+    expect(f.formaPagamento).toBe("financiamento");
+    expect(f.exigenciasEspecificas).toEqual(["usa_fgts"]);
+  });
+
+  it("nada disso no relato: os fatos que a confirmação mostraria saem todos", () => {
+    const leitura = normalizarLeituraDoRetorno(
+      {
+        resultado: "atendeu",
+        fatos: { dormitoriosMin: 2, orcamentoMin: 400000, regiaoInteresse: "Barueri", formaPagamento: "a_vista", exigenciasEspecificas: ["decorado"] },
+      },
+      AGORA,
+    );
+    if (!leitura || leitura === NAO_E_RELATO) throw new Error("esperava uma leitura");
+    expect(fatosSoDoRelato(leitura, RELATO_DO_MOISES).fatos).toEqual({});
   });
 });

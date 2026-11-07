@@ -4,7 +4,7 @@ tags: [moc, campanhas, anti-ban]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-11-04
+updated: 2026-11-07
 summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 ---
 # Campanhas e Anti-ban — Map of Content
@@ -62,3 +62,4 @@ summary: Disparo em massa, fila, cota, espaçamento, follow-ups.
 - [[lista-de-transmissao-visivel-e-controlavel]] — gaveta de quem recebeu, pausar/retomar/cancelar por lista (0153), linha na ficha, contexto da lista para a IA, guarda de 24h de conversa do corretor, recorte por canal/anúncio e visitas/vendas depois (03/10)
 - [[lista-de-transmissao-pelo-numero-central]] — "manda o Vitta pra quem quer Barueri até 600 mil" pelo central: proposta com pessoas, nunca falaram e cabem hoje (contas da tela e do disparador); o "sim" só enfileira, pelo número de quem pediu; desfazer cancela se nada saiu, senão só pausa (onda 3, frente L, 30/10)
 - [[roleta-dos-anuncios]] — lead de anúncio vai para o próximo da lista do dono; o número novo chama o cliente na hora (20/10); **só do gestor e só em número de gestor desde 03/11** (o lead do anúncio do corretor fica com ele; caso 5344)
+- [[roleta-do-numero-do-anuncio-para-o-gestor]] ⚠️ "a IA distribui como quer" era a roleta do número da conta oculta, que o gestor sem número não via; agora a aba mostra a roleta que está valendo, e o recado no grupo não vira mais relato com fato copiado do dossiê (07/11)

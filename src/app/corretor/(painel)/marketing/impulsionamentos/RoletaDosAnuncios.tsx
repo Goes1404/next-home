@@ -2,6 +2,7 @@ import { getCorretorLogado } from "@/lib/corretorSessao";
 import { createServiceClient } from "@/lib/supabase/service";
 import { idsDeContasOcultas } from "@/lib/corretores/contaOculta";
 import { EditorDaRoleta, type ConfigDaRoleta, type Membro } from "./EditorDaRoleta";
+import { numeroDaRoleta } from "./numeroDaRoleta";
 import { TEXTO_ABERTURA_PADRAO, TEXTO_PASSAGEM_PADRAO } from "@/lib/whatsapp/roletaTextos";
 import { primeiroNome } from "@/lib/format";
 
@@ -37,12 +38,12 @@ export async function RoletaDosAnuncios() {
     roletas,
     supabase
       .from("corretor_whatsapp_instancias")
-      .select("corretor_id, status_conexao, sessao_caida_em")
+      .select("corretor_id, instance_name, status_conexao, sessao_caida_em")
       .eq("grupo_id", quem.grupoId),
     idsDeContasOcultas(supabase, quem.grupoId),
     supabase
       .from("grupos")
-      .select("envio_grupo_leads_ativo, pular_corretor_whatsapp_desconectado")
+      .select("envio_grupo_leads_ativo, pular_corretor_whatsapp_desconectado, envio_grupo_leads_instancia")
       .eq("id", quem.grupoId)
       .maybeSingle(),
   ]);
@@ -65,11 +66,23 @@ export async function RoletaDosAnuncios() {
   }));
 
   const porCorretor = new Map((linhas ?? []).map((l) => [l.corretor_id, l]));
-  // A roleta é sempre a do número de quem está logado (28/10/2026), gestor
-  // inclusive: sem seletor de "Roleta do número de". A conta oculta (0189)
-  // fica fora da equipe e da lista de quem recebe, mas a roleta do PRÓPRIO
-  // número dela vale (era o número do anúncio da Aretz).
-  const donos = (corretores ?? []).some((c) => c.id === quem.id) ? [{ id: quem.id }] : [];
+  // De qual número é a roleta da aba (07/11/2026, `numeroDaRoleta`): a do
+  // próprio número quando ela existe; senão, a que está LIGADA no grupo (na
+  // Aretz, a do número da conta oculta "Aretz", para onde o anúncio manda o
+  // cliente). Antes era sempre a do número de quem está logado, e o gestor
+  // sem número via uma roleta vazia enquanto a de verdade distribuía os leads.
+  // A conta oculta (0189) segue fora da equipe e da lista de quem recebe.
+  const donoDoNumeroCentral =
+    (instancias ?? []).find((i) => i.instance_name === grupo?.envio_grupo_leads_instancia)?.corretor_id ?? null;
+  const donoId = numeroDaRoleta({
+    quemId: quem.id,
+    temNumeroProprio: (instancias ?? []).some((i) => i.corretor_id === quem.id),
+    roletas: (linhas ?? []).map((l) => ({ corretorId: l.corretor_id, ligada: l.ligada })),
+    gestores: (corretores ?? []).filter((c) => c.papel === "gestor").map((c) => c.id),
+    donoDoNumeroCentral,
+  });
+  const donoDaRoleta = (corretores ?? []).find((c) => c.id === donoId);
+  const donos = donoDaRoleta ? [{ id: donoDaRoleta.id }] : [];
   const configs: ConfigDaRoleta[] = donos.map((c) => {
     const l = porCorretor.get(c.id);
     return {
@@ -91,6 +104,7 @@ export async function RoletaDosAnuncios() {
       configs={configs}
       equipe={equipe}
       meuId={quem.id}
+      numeroDe={donoDaRoleta && donoDaRoleta.id !== quem.id ? donoDaRoleta.nome : null}
       gestor
       grupoTemEnvio={grupo?.envio_grupo_leads_ativo === true}
       soConectados={regra}
