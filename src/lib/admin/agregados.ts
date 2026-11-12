@@ -21,6 +21,9 @@ import type { EtapaFunil, Lead } from "@/lib/types";
  * Postgres — e o lugar de mexer é este arquivo, não as telas.
  */
 
+/** O PostgREST devolve no máximo 1.000 linhas por pedido. */
+const POR_PAGINA = 1000;
+
 type LinhaMagra = {
   id: string;
   etapa: EtapaFunil;
@@ -47,26 +50,41 @@ export async function getAgregadoDaEquipe(
   agora: Date = new Date(),
 ): Promise<AgregadoDaEquipe> {
   const supabase = await createClient();
-  const { data, error, count } = await supabase
-    .from("leads")
-    .select("id, etapa, etapa_alterada_em, created_at, origem_atribuicao, corretor_id", {
-      count: "exact",
-    })
-    // Lead arquivado sai de TODA conta do gestor: se aparecesse aqui e não
-    // na lista, o número do painel não bateria com o que ele abre ao clicar.
-    .is("arquivado_em", null);
-
-  if (error) throw new Error(`Falha ao carregar os números da equipe: ${error.message}`);
+  /*
+   * Em páginas de 1.000 (12/11/2026): o PostgREST corta cada resposta em
+   * 1.000 linhas, e a Next Home passou disso (1.226 leads). A guarda abaixo
+   * fazia o painel do gestor QUEBRAR em vez de contar menos; agora lê tudo,
+   * página por página, ordenado por id para nenhuma linha pular ou repetir.
+   */
+  const todas: LinhaMagra[] = [];
+  let count: number | null = null;
+  for (let de = 0; ; de += POR_PAGINA) {
+    const { data, error, count: total } = await supabase
+      .from("leads")
+      .select("id, etapa, etapa_alterada_em, created_at, origem_atribuicao, corretor_id", {
+        count: de === 0 ? "exact" : undefined,
+      })
+      // Lead arquivado sai de TODA conta do gestor: se aparecesse aqui e não
+      // na lista, o número do painel não bateria com o que ele abre ao clicar.
+      .is("arquivado_em", null)
+      .order("id")
+      .range(de, de + POR_PAGINA - 1);
+    if (error) throw new Error(`Falha ao carregar os números da equipe: ${error.message}`);
+    if (de === 0) count = total ?? null;
+    todas.push(...((data ?? []) as LinhaMagra[]));
+    if ((data?.length ?? 0) < POR_PAGINA || de > 200_000) break;
+  }
 
   // Conta oculta (0189) não é equipe: os leads dela ficam fora de toda conta
   // do gestor, como ela fica fora da lista que ele vê.
   const ocultas = await idsDeContasOcultas(supabase);
-  const todas = (data ?? []) as LinhaMagra[];
 
   // Defesa contra a falha calada que este arquivo existe para evitar: se o
   // PostgREST truncar a resposta (max-rows), as contas sairiam MENORES sem
   // erro nenhum — um total plausível que ninguém questiona. Melhor quebrar.
-  if (count !== null && count !== todas.length) {
+  // Uma diferença pequena é lead que chegou ou saiu no meio da leitura;
+  // grande é corte do servidor, e aí é melhor quebrar do que contar errado.
+  if (count !== null && Math.abs(count - todas.length) > Math.max(5, count * 0.01)) {
     throw new Error(
       `Os números da equipe seriam parciais (${todas.length} de ${count} leads) — o servidor truncou a consulta.`,
     );

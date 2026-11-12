@@ -12955,3 +12955,7 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 - No mesmo grupo, o Moisés respondeu por áudio ao gestor Fernando ("ela mandou mensagem que atrasou") e o retorno pelo grupo gravou "atendeu" com `exigenciasEspecificas: ["decorado"]` copiado do dossiê, e confirmou no grupo. Prompt: notícia do cliente que não veio de conversa do corretor e recado a gestor ou colega = `resultado: null`; fatos só do relato. Trava em código: `fatosSoDoRelato` (`src/lib/crm/retornoPeloGrupo/ler.ts`) tira exigência, quartos, orçamento, região e pagamento sem palavra no relato. O prompt não foi medido contra o modelo.
 - Diagnóstico rápido desse tipo de queixa: `roleta_anuncios` do grupo (dono, `ligada`, `destinos`, `atualizado_por`), `lead_envios_grupo` (status e motivo de cada aviso) e `retornos_de_ligacao` (texto lido, `leitura`, `confirmacao_mensagem_id`).
 
+
+## Painel do gestor quebrava com mais de 1.000 leads (12/11/2026)
+- `getAgregadoDaEquipe` (`src/lib/admin/agregados.ts`) lia os leads numa consulta só. O PostgREST corta em 1.000 linhas, e a guarda de contagem lançava "seriam parciais (1000 de 1226)". A tela /corretor/admin/leads da Next Home dava erro desde 23/10.
+- Agora a leitura é feita em páginas de 1.000 (`order("id").range`). A guarda só quebra se a diferença passar de 1% (ou 5 leads): diferença pequena é lead entrando no meio da leitura.
