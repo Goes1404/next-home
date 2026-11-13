@@ -107,6 +107,10 @@ export async function enviarEmail(email: Email): Promise<ResultadoEmail> {
       body: JSON.stringify({
         from: process.env.EMAIL_REMETENTE || REMETENTE_PADRAO,
         to: [email.para],
+        // Quem responde o e-mail fala com a Astro (13/11/2026): o remetente
+        // precisa ser de um domínio verificado no Resend, e a caixa da Astro
+        // é um Gmail, que não pode ser verificado.
+        ...(process.env.EMAIL_RESPONDER_PARA ? { reply_to: [process.env.EMAIL_RESPONDER_PARA] } : {}),
         subject: email.assunto,
         html: email.html,
         text: email.texto,
