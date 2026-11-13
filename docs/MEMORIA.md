@@ -12959,3 +12959,9 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 ## Painel do gestor quebrava com mais de 1.000 leads (12/11/2026)
 - `getAgregadoDaEquipe` (`src/lib/admin/agregados.ts`) lia os leads numa consulta só. O PostgREST corta em 1.000 linhas, e a guarda de contagem lançava "seriam parciais (1000 de 1226)". A tela /corretor/admin/leads da Next Home dava erro desde 23/10.
 - Agora a leitura é feita em páginas de 1.000 (`order("id").range`). A guarda só quebra se a diferença passar de 1% (ou 5 leads): diferença pequena é lead entrando no meio da leitura.
+
+## E-mail da Astro pelo Resend (13/11/2026)
+- O Resend só envia de domínio verificado; gmail.com não serve. A Astro ainda não tem domínio próprio.
+- O nexthomeimoveis.com já estava verificado numa conta Resend existente (um domínio só pode estar em uma conta). Decisão do dono: criar uma API key nessa conta (caminho A) em vez de verificar subdomínio novo.
+- Vercel Production: `RESEND_API_KEY`, `EMAIL_REMETENTE=Astro <acesso@nexthomeimoveis.com>`, `EMAIL_RESPONDER_PARA=astrosolucoestech@gmail.com` (vira `reply_to` em `src/lib/email.ts`). Sem a chave, `emailConfigurado()` é falso e o teste grátis automático fica bloqueado.
+- Plano B se perder acesso à conta antiga: verificar `astro.nexthomeimoveis.com` numa conta própria. Quando comprar domínio (astrosolucoes.com.br), trocar só o domínio no Resend e o `EMAIL_REMETENTE`.

@@ -14,7 +14,7 @@ codigo:
   - src/app/corretor/(painel)/perfil/SeletorArquivo.tsx
   - supabase/migrations/0251_trava_da_roleta_por_grupo.sql
 created: 2026-10-30
-updated: 2026-11-04
+updated: 2026-11-13
 summary: Revisão de tudo que entrou em 29–30/10 achou 36 defeitos (painel, WhatsApp/IA, acesso/cobrança), todos corrigidos; 0251 aplicada (trava da roleta por grupo). Lições: escopo do SW, limite de 4,5 MB da Vercel, max_rows 1000 do PostgREST, áudio na rajada.
 ---
 
@@ -48,3 +48,4 @@ Ver [[multi-ramo-portais-gestor-e-negocio-da-astro]], [[ia-no-atendimento-audio-
 - Push: só 1 inscrição no banco; o "Ligar avisos" precisa ser testado de novo no celular.
 - **Queda de 04/11:** 402 `DEPLOYMENT_DISABLED` em todos os domínios, porque a conta Hobby da Vercel passou do limite. Só volta com upgrade para Pro ou na virada do ciclo. A 0255 deixou o tique de campanhas condicional (antes eram 1.440 chamadas vazias por dia).
 - **Avisos e cobrança (04/11, tarde):** o "Ligar avisos" tratava a permissão `default` em silêncio. Agora painel e plataforma usam o mesmo `CartaoDeAvisos`, com instruções e diagnóstico em `/api/notificacoes/diagnostico`. O Asaas ficou de fora (pacote fechado pelo WhatsApp) e as contas novas vencem no dia 5.
+- **E-mail (13/11):** Resend usa a conta que já tinha o nexthomeimoveis.com verificado (nova API key). Remetente "Astro <acesso@nexthomeimoveis.com>", respostas vão para o Gmail da Astro via `EMAIL_RESPONDER_PARA`. Domínio próprio da Astro fica para depois.
