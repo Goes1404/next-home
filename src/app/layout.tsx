@@ -6,6 +6,9 @@ import { GlassSvgDefs } from "@/components/glass/GlassSvgDefs";
 import { AvisoDeVersaoNovaSobDemanda } from "@/components/layout/SobDemanda";
 import { OndaDeTransicao } from "@/components/motion/OndaDeTransicao";
 import { MovimentoDoSite } from "@/components/motion/MovimentoDoSite";
+import { MarcaDaAstro } from "@/components/layout/MarcaDaAstro";
+import { enderecosDoPainel, ROTAS_DE_TOKEN_DO_CLIENTE } from "@/lib/enderecosDoPainel";
+import { scriptDaMarcaDaAstro } from "@/lib/marcaDaAstro";
 import { METADADOS_DO_RAIZ } from "@/lib/sites/metadados";
 import { COR_DA_BARRA, SCRIPT_TEMA_ANTES_DA_PINTURA, TEMA_PADRAO } from "@/lib/tema";
 import "./globals.css";
@@ -126,6 +129,11 @@ export default function RootLayout({
             `<meta name="theme-color">` existe) e nenhum conteúdo foi
             pintado ainda. */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_ANTES_DA_PINTURA }} />
+        {/* Logo depois do tema: o documento da Astro (painel, plataforma,
+            acesso, vendas) não pode pintar nem um quadro no verde da Next
+            Home, nem na barra do Android (ver lib/marcaDaAstro.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: scriptDaMarcaDaAstro(enderecosDoPainel(), ROTAS_DE_TOKEN_DO_CLIENTE) }} />
+        <MarcaDaAstro enderecosDoPainel={enderecosDoPainel()} />
         {/* Primeiro parável do documento: quem navega por teclado pula o
             header fixo e o botão flutuante de WhatsApp direto para o
             conteúdo. Invisível até receber foco. */}

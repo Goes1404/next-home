@@ -7,6 +7,11 @@
  */
 const PADRAO = ["astroimob.vercel.app"];
 
+/** A lista inteira (padrão + `ENDERECOS_DO_PAINEL`), em minúsculas. */
+export function enderecosDoPainel(extra = process.env.ENDERECOS_DO_PAINEL): string[] {
+  return [...PADRAO, ...(extra ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)];
+}
+
 export function ehEnderecoSoDoPainel(host: string | null | undefined, extra = process.env.ENDERECOS_DO_PAINEL): boolean {
   const h = (host ?? "").toLowerCase().split(":")[0].replace(/\.$/, "");
   if (!h) return false;

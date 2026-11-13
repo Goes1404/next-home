@@ -125,6 +125,10 @@ export function OndaDeTransicao() {
   }, [mostrar, daAstro, caminho]);
 
   if (!mostrar) return null;
+  // Fora do painel, mas no documento da Astro (vendas, ajuda, acesso):
+  // a onda comum, nas cores da Astro, nunca no `brand-*` que pode estar
+  // voltando ao verde da Next no meio da troca de layout (13/11/2026).
+  const coresDaAstro = daAstro || document.documentElement.hasAttribute("data-documento-astro");
 
   return createPortal(
     <div aria-hidden className={`pointer-events-none fixed inset-0 ${daAstro ? "onda-da-astro z-[70]" : "z-[45]"}`}>
@@ -138,8 +142,8 @@ export function OndaDeTransicao() {
         A `key` é o caminho: caminho novo, elementos novos, animação do
         começo. Sem isso a segunda navegação não tocaria a animação de novo.
       */}
-      <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter astro={daAstro} />
-      <Camada key={caminho} atraso={daAstro ? "40ms" : "60ms"} opacidade={1} astro={daAstro} aoTerminar={() => setAtiva(false)} />
+      <Camada key={`fundo-${caminho}`} atraso="0ms" opacidade={0.55} inverter astro={coresDaAstro} />
+      <Camada key={caminho} atraso={daAstro ? "40ms" : "60ms"} opacidade={1} astro={coresDaAstro} aoTerminar={() => setAtiva(false)} />
     </div>,
     document.body,
   );

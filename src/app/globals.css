@@ -3640,7 +3640,7 @@ html[data-menu-aberto] body {
  * A cor da barra do Android (`theme-color`) é cuidada à parte, em
  * `CorDaBarraDaAstro` (meta não lê CSS).
  * ======================================================================== */
-:root:has([data-rota="painel"], [data-astro]) {
+:root:is([data-documento-astro], :has([data-rota="painel"], [data-astro])) {
   --color-brand-50: #eef3fb;
   --color-brand-100: #d7e3f5;
   --color-brand-200: #a9c1e0;
@@ -3656,7 +3656,14 @@ html[data-menu-aberto] body {
 }
 /* O fundo atrás de tudo = o fundo do painel (valores de `--color-fundo` do
    painel, em hex). Sem isto o overscroll e o instante entre telas mostravam
-   o sálvia da Next. */
+   o sálvia da Next. O `data-documento-astro` (13/11/2026) vale ANTES de o
+   painel montar e entre telas: é o instante em que o verde ainda aparecia. */
+:root[data-documento-astro] {
+  --color-fundo: #e3e8f1;
+}
+:root[data-documento-astro][data-tema="escuro"] {
+  --color-fundo: #070c16;
+}
 :root:has([data-rota="painel"]) {
   --color-fundo: #e3e8f1;
 }
@@ -3666,7 +3673,7 @@ html[data-menu-aberto] body {
 :root:has([data-astro="acesso"]) {
   --color-fundo: #08132a;
 }
-:root:has([data-rota="painel"], [data-astro]) ::selection {
+:root:is([data-documento-astro], :has([data-rota="painel"], [data-astro])) ::selection {
   background-color: rgb(47 94 168 / 0.3);
   color: inherit;
 }
