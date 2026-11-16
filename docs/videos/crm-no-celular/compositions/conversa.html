@@ -1,0 +1,116 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    .c-bolha {
+      position: absolute;
+      max-width: 540px;
+      padding: 20px 28px 22px;
+      border-radius: 32px;
+      font: 400 29px/1.32 "Inter", sans-serif;
+    }
+    .c-dele {
+      left: 34px;
+      background: #ffffff;
+      border-bottom-left-radius: 10px;
+      color: #0d1b33;
+    }
+    .c-nosso {
+      right: 34px;
+      background: #2f5ea8;
+      border-bottom-right-radius: 10px;
+      color: #ffffff;
+    }
+    .c-audio {
+      display: block;
+      font: 600 26px "Inter", sans-serif;
+      color: #6b7790;
+      margin-bottom: 6px;
+    }
+    #c-digitando {
+      right: 34px;
+      padding: 24px 30px;
+      display: flex;
+      gap: 10px;
+    }
+    #c-digitando i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    #c-campo {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      top: 1180px;
+      height: 92px;
+      border-radius: 46px;
+      background: #ffffff;
+      border: 2px solid #d9e0ea;
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      font: 400 28px "Inter", sans-serif;
+      color: #6b7790;
+    }
+  </style>
+  <div id="root" data-composition-id="conversa" data-width="1080" data-height="1920">
+    <h1 id="c-titulo" class="titulo">
+      <span class="p c-w">A</span><span class="p c-w">IA</span><span class="p c-w">já</span><span class="p c-w">atendeu.</span><br />
+      <span class="p c-w2">Até</span><span class="p c-w2">o</span><span class="p c-w2 d">áudio.</span>
+    </h1>
+
+    <div id="c-celular" class="celular">
+      <div class="tela">
+        <div class="status"><span>8:13</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="c-conteudo">
+          <div class="cab">
+            <span class="voltar">‹</span>
+            <span class="avatar">CM</span>
+            <div><h2>Carla Mendes</h2><small>Anúncio · Apê 2 quartos Barueri</small></div>
+          </div>
+          <div id="c-b1" class="c-bolha c-dele" style="top: 226px">
+            <span class="c-audio">🎙 Áudio · transcrição</span>Oi! O apê de Barueri ainda tem?
+          </div>
+          <div id="c-digitando" class="c-bolha c-nosso" style="top: 372px"><i></i><i></i><i></i></div>
+          <div id="c-b2" class="c-bolha c-nosso" style="top: 372px">Tem sim, Carla! Você procura 2 quartos? Vai financiar?</div>
+          <div id="c-b3" class="c-bolha c-dele" style="top: 506px">Isso, 2 quartos e financiado.</div>
+          <div id="c-b4" class="c-bolha c-nosso" style="top: 600px">Perfeito! A Ana vai te chamar para marcar a visita.</div>
+          <div id="c-campo">Mensagem</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // a tela da conversa nasce do aviso: o conteúdo entra sobre o mesmo fundo
+    tl.fromTo("#c-conteudo", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
+    // título: palavra por palavra, de cinza a marfim, sem mexer de lugar
+    tl.fromTo(".c-w", { opacity: 0, color: "#4a5a78" }, { opacity: 1, color: "#f5f7fb", duration: 0.18, stagger: 0.09, ease: "power1.out" }, 0.15);
+    tl.fromTo(".c-w2", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 1.0);
+    tl.set(".c-w2.d", { color: "#7fa6ec" }, 1.0);
+    // as mensagens
+    const entra = (alvo, t, de) =>
+      tl.fromTo(alvo, { opacity: 0, y: 24, scale: 0.94, transformOrigin: de }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "expo.out" }, t);
+    entra("#c-b1", 0.35, "left bottom");
+    tl.fromTo("#c-digitando", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 0.95);
+    tl.fromTo("#c-digitando i", { y: 0 }, { y: -8, duration: 0.18, stagger: 0.09, ease: "sine.inOut", yoyo: true, repeat: 1 }, 1.0);
+    tl.to("#c-digitando", { opacity: 0, duration: 0.08 }, 1.45);
+    entra("#c-b2", 1.45, "right bottom");
+    entra("#c-b3", 2.6, "left bottom");
+    entra("#c-b4", 3.55, "right bottom");
+    // saída: troca de tela com blur
+    tl.to("#c-conteudo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 5.3);
+    tl.to("#c-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 5.25);
+    window.__timelines["conversa"] = tl;
+  </script>
+</template>

@@ -1,0 +1,173 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #e-tela {
+      background: #e9edf2;
+    }
+    .l-cab {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 204px;
+      padding: 84px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #0f2547;
+      color: #f5f7fb;
+      font: 700 32px "Inter", sans-serif;
+    }
+    .l-cab .bola {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1b3a6b, #0a1830);
+    }
+    .l-cab small {
+      display: block;
+      font: 400 24px "Inter", sans-serif;
+      color: #a9c1e0;
+      margin-top: 4px;
+    }
+    .l-bolha {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 250px;
+      padding: 26px 30px 20px;
+      border-radius: 32px;
+      border-top-left-radius: 10px;
+      background: #ffffff;
+      font: 400 29px/1.4 "Inter", sans-serif;
+      color: #0d1b33;
+    }
+    .l-bolha .link {
+      color: #2f5ea8;
+    }
+    .l-bolha .hora {
+      display: block;
+      text-align: right;
+      font-size: 22px;
+      color: #6b7790;
+      margin-top: 4px;
+    }
+    #e-frase {
+      font-size: 100px;
+    }
+    #e-selo {
+      position: absolute;
+      left: 420px;
+      top: 520px;
+      width: 240px;
+      height: 240px;
+    }
+    #e-marca {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 780px;
+      text-align: center;
+      font-family: "Anton", sans-serif;
+      font-size: 128px;
+      line-height: 1.25;
+      color: #f5f7fb;
+      text-transform: uppercase;
+      clip-path: inset(0% 100% 0% 0%);
+    }
+    #e-marca span {
+      color: #a9c1e0;
+    }
+    #e-cta {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1010px;
+      display: flex;
+      justify-content: center;
+    }
+    #e-cta .botao {
+      min-height: 112px;
+      padding: 0 64px;
+      font: 700 44px "Inter", sans-serif;
+      background: #3a6ccc;
+    }
+    #e-bio {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1170px;
+      text-align: center;
+      font: 700 40px "Inter", sans-serif;
+      color: #b9c2d4;
+      letter-spacing: 0.02em;
+    }
+  </style>
+  <div id="root" data-composition-id="fecho" data-width="1080" data-height="1920">
+    <div id="e-celular" class="celular">
+      <div id="e-tela" class="tela">
+        <div class="l-cab"><span class="bola"></span><div>Número central<small>Astro CRM</small></div></div>
+        <div class="status claro"><span>17:00</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div class="l-bolha">
+          <b>⏰ Lembrete</b><br /><br />
+          Ligar para o Roberto e mandar as fotos do Vitra.<br /><br />
+          👤 Roberto Lima<br />
+          🔗 <span class="link">astroimob.vercel.app/corretor/leads/…</span>
+          <span class="hora">17:00</span>
+        </div>
+      </div>
+    </div>
+
+    <h1 id="e-frase" class="titulo clip" data-start="0.4" data-duration="3.4">
+      <span class="p e-w">O</span><span class="p e-w">CRM</span><span class="p e-w">que</span><span class="p e-w">atende</span><span class="p e-w">seus</span><span class="p e-w">clientes</span><span class="p e-w">no</span><span class="p e-w d">WhatsApp</span><span class="p e-w">enquanto</span><span class="p e-w">você</span><span class="p e-w">vende.</span>
+    </h1>
+
+    <div id="e-fim" class="clip" data-start="3.6" data-duration="3.4">
+      <svg id="e-selo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="e-selo-fundo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1b3a6b" />
+            <stop offset="1" stop-color="#0a1830" />
+          </linearGradient>
+        </defs>
+        <rect id="e-ladrilho" width="64" height="64" rx="14" fill="url(#e-selo-fundo)" />
+        <path id="e-a" d="M18 48 L32 15 L46 48" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="80" stroke-dashoffset="80" />
+        <ellipse id="e-orbita" cx="32" cy="37" rx="24" ry="7.5" transform="rotate(-18 32 37)" fill="none" stroke="#a9c1e0" stroke-width="2.6" stroke-dasharray="110" stroke-dashoffset="110" />
+        <path id="e-estrela" d="M49 15 L50.6 19.4 L55 21 L50.6 22.6 L49 27 L47.4 22.6 L43 21 L47.4 19.4 Z" fill="#fff" />
+      </svg>
+      <div id="e-marca">Astro <span>Soluções</span></div>
+      <div id="e-cta"><div class="botao">Teste grátis por 7 dias</div></div>
+      <div id="e-bio">link na bio</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // o celular recua e desce, abrindo espaço para a frase
+    tl.fromTo("#e-celular", { scale: 1, y: 0, transformOrigin: "50% 0%" }, { scale: 0.62, y: 260, duration: 0.8, ease: "power2.inOut" }, 0.05);
+    // a frase oficial, palavra por palavra de cinza a marfim
+    tl.fromTo(".e-w", { opacity: 0, color: "#4a5a78" }, { opacity: 1, color: "#f5f7fb", duration: 0.18, stagger: 0.07, ease: "power1.out" }, 0.45);
+    tl.set(".e-w.d", { color: "#7fa6ec" }, 1.3);
+    // saem juntos
+    tl.to("#e-celular", { y: 1500, duration: 0.45, ease: "power3.in" }, 3.4);
+    tl.to(".e-w", { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.02, ease: "power2.in" }, 3.4);
+    // o selo se desenha
+    tl.fromTo("#e-ladrilho", { scale: 0.4, opacity: 0, transformOrigin: "50% 50%" }, { scale: 1, opacity: 1, duration: 0.5, ease: "expo.out" }, 3.65);
+    tl.fromTo("#e-a", { strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.45, ease: "power2.inOut" }, 3.85);
+    tl.fromTo("#e-orbita", { strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.inOut" }, 4.05);
+    tl.fromTo("#e-estrela", { scale: 0, transformOrigin: "49px 21px" }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 4.4);
+    // o nome passa por baixo do selo
+    tl.fromTo("#e-marca", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.out" }, 4.35);
+    tl.fromTo("#e-cta .botao", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 4.65);
+    tl.fromTo("#e-bio", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.85);
+    window.__timelines["fecho"] = tl;
+  </script>
+</template>

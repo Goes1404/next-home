@@ -1,0 +1,109 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #l-tela {
+      background: #e9edf2;
+    }
+    .l-cab {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 204px;
+      padding: 84px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #0f2547;
+      color: #f5f7fb;
+      font: 700 32px "Inter", sans-serif;
+    }
+    .l-cab svg {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+    }
+    .l-cab small {
+      display: block;
+      font: 400 24px "Inter", sans-serif;
+      color: #a9c1e0;
+      margin-top: 4px;
+    }
+    .l-bolha {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 250px;
+      padding: 26px 30px 20px;
+      border-radius: 32px;
+      border-top-left-radius: 10px;
+      background: #ffffff;
+      font: 400 29px/1.4 "Inter", sans-serif;
+      color: #0d1b33;
+    }
+    .l-bolha b {
+      font-weight: 700;
+    }
+    .l-bolha .link {
+      color: #2f5ea8;
+    }
+    .l-bolha .hora {
+      display: block;
+      text-align: right;
+      font-size: 22px;
+      color: #6b7790;
+      margin-top: 4px;
+    }
+  </style>
+  <div id="root" data-composition-id="lembrete" data-width="1080" data-height="1920">
+    <h1 id="l-titulo" class="titulo">
+      <span class="p l-w">17h.</span><span class="p l-w">O</span><span class="p l-w">lembrete</span><br />
+      <span class="p l-w">chega</span><span class="p l-w">no</span><span class="p l-w d">WhatsApp.</span>
+    </h1>
+
+    <div id="l-celular" class="celular">
+      <div id="l-tela" class="tela">
+        <div id="l-cab" class="l-cab">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="l-selo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#1b3a6b" />
+                <stop offset="1" stop-color="#0a1830" />
+              </linearGradient>
+            </defs>
+            <rect width="64" height="64" fill="url(#l-selo)" />
+            <path d="M18 48 L32 15 L46 48" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" />
+            <ellipse cx="32" cy="37" rx="24" ry="7.5" transform="rotate(-18 32 37)" fill="none" stroke="#a9c1e0" stroke-width="2.6" />
+          </svg>
+          <div>Número central<small>Astro CRM</small></div>
+        </div>
+        <div class="status claro"><span>17:00</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="l-bolha" class="l-bolha">
+          <b>⏰ Lembrete</b><br /><br />
+          Ligar para o Roberto e mandar as fotos do Vitra.<br /><br />
+          👤 Roberto Lima<br />
+          🔗 <span class="link">astroimob.vercel.app/corretor/leads/…</span>
+          <span class="hora">17:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#l-cab", { y: -204 }, { y: 0, duration: 0.45, ease: "expo.out" }, 0.05);
+    tl.fromTo("#l-bolha", { opacity: 0, y: 30, scale: 0.94, transformOrigin: "left top" }, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "expo.out" }, 0.45);
+    tl.fromTo(".l-w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 0.2);
+    tl.set(".l-w.d", { color: "#7fa6ec" }, 0.2);
+    tl.to("#l-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 3.55);
+    window.__timelines["lembrete"] = tl;
+  </script>
+</template>

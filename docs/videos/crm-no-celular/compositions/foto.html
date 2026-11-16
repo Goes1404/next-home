@@ -1,0 +1,241 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #p-abas {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      top: 236px;
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 40px;
+      background: #dfe6f1;
+    }
+    #p-abas span {
+      flex: auto;
+      text-align: center;
+      padding: 16px 10px;
+      border-radius: 34px;
+      font: 600 28px "Inter", sans-serif;
+      color: #3b4a63;
+      white-space: nowrap;
+    }
+    #p-abas span.ativa {
+      background: #ffffff;
+      color: #0d1b33;
+      box-shadow: 0 2px 6px rgba(13, 27, 51, 0.1);
+    }
+    #p-texto {
+      position: absolute;
+      left: 36px;
+      right: 36px;
+      top: 350px;
+      font: 400 28px/1.4 "Inter", sans-serif;
+      color: #3b4a63;
+    }
+    #p-botoes {
+      position: absolute;
+      left: 36px;
+      right: 36px;
+      top: 590px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    #p-escolher {
+      position: relative;
+    }
+    #p-lendo {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+    }
+    #p-achado {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      top: 590px;
+      padding: 26px 30px;
+      border-radius: 28px;
+      background: #ffffff;
+      border: 2px solid #d9e0ea;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+    }
+    #p-achado .ok {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #2f5ea8;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 700 32px "Inter", sans-serif;
+      flex: none;
+    }
+    #p-achado b {
+      display: block;
+      font: 700 30px "Inter", sans-serif;
+    }
+    #p-achado small {
+      display: block;
+      margin-top: 6px;
+      font: 400 28px "Inter", sans-serif;
+      color: #6b7790;
+    }
+    #p-camera {
+      position: absolute;
+      inset: 0;
+      background: #15171c;
+      z-index: 9;
+      clip-path: circle(0px at 200px 712px);
+    }
+    #p-mesa {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, #6d5a48 0%, #4a3c30 100%);
+    }
+    #p-cartao {
+      position: absolute;
+      left: 92px;
+      top: 300px;
+      width: 560px;
+      padding: 40px 44px;
+      border-radius: 14px;
+      background: #fbfaf7;
+      color: #1d2433;
+      box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+    }
+    #p-cartao b {
+      display: block;
+      font: 700 42px "Inter", sans-serif;
+    }
+    #p-cartao i {
+      display: block;
+      font: 400 28px "Inter", sans-serif;
+      font-style: normal;
+      color: #5a6274;
+      margin-top: 6px;
+    }
+    #p-cartao p {
+      margin-top: 34px;
+      font: 600 32px "Inter", sans-serif;
+    }
+    #p-cartao p + p {
+      margin-top: 6px;
+      font: 400 26px "Inter", sans-serif;
+      color: #5a6274;
+    }
+    #p-obturador {
+      position: absolute;
+      left: 50%;
+      top: 1120px;
+      width: 132px;
+      height: 132px;
+      margin-left: -66px;
+      border-radius: 50%;
+      border: 8px solid #ffffff;
+      background: rgba(255, 255, 255, 0.25);
+    }
+    #p-flash {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      z-index: 10;
+    }
+    #p-inunda {
+      position: absolute;
+      inset: 0;
+      background: #e9edf2;
+      z-index: 11;
+      clip-path: inset(100% 0px 0px 0px);
+    }
+  </style>
+  <div id="root" data-composition-id="foto" data-width="1080" data-height="1920">
+    <h1 id="p-titulo" class="titulo">
+      <span id="p-l1">Um cartão</span><br />
+      <span id="p-l2">virou <span class="d">lead.</span></span>
+    </h1>
+
+    <div id="p-celular" class="celular">
+      <div class="tela">
+        <div class="status"><span>11:40</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="p-conteudo">
+          <div class="cab"><span class="voltar">‹</span><h2>Adicionar leads</h2></div>
+          <div id="p-abas"><span>Colar lista</span><span class="ativa">Foto ou print</span><span>Enviar arquivo</span></div>
+          <div id="p-pagina">
+            <p id="p-texto">Print de conversa do WhatsApp, foto de uma lista escrita à mão, da ficha do plantão ou da tela de outro sistema. A IA lê nome e telefone de cada contato, e você confere antes de importar.</p>
+            <div id="p-botoes">
+              <div id="p-escolher" class="botao"><span id="p-esc-txt">Escolher fotos ou prints</span><span id="p-lendo">Lendo foto 1 de 1…</span></div>
+              <div id="p-tirar" class="botao contorno">Tirar foto agora</div>
+            </div>
+          </div>
+          <div id="p-achado">
+            <span class="ok">✓</span>
+            <div><b>Roberto Lima</b><small>(11) 98765-4321</small></div>
+          </div>
+        </div>
+        <div id="p-camera">
+          <div id="p-mesa"></div>
+          <div id="p-cartao">
+            <b>Roberto Lima</b><i>Engenheiro civil</i>
+            <p>(11) 98765-4321</p>
+            <p>roberto.lima@email.com</p>
+          </div>
+          <div id="p-obturador"></div>
+          <div id="p-flash"></div>
+        </div>
+        <div id="p-inunda"></div>
+      </div>
+    </div>
+    <div id="p-dedo" class="dedo"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // entra pela direita, continuando o chicote
+    tl.fromTo("#p-conteudo", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.fromTo("#p-l1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 0.2);
+    // toque em "Tirar foto agora"
+    tl.fromTo("#p-dedo", { opacity: 0, scale: 1.25, x: 470, y: 1420 }, { opacity: 1, scale: 1, x: 378, y: 1350, duration: 0.35, ease: "power3.out" }, 0.75);
+    tl.to("#p-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 1.12);
+    tl.to("#p-tirar", { scale: 0.96, duration: 0.12, ease: "power2.in" }, 1.12);
+    tl.to("#p-dedo", { opacity: 0, duration: 0.15 }, 1.28);
+    // a câmera abre a partir do toque
+    tl.fromTo("#p-camera", { clipPath: "circle(0px at 200px 732px)" }, { clipPath: "circle(1700px at 200px 732px)", duration: 0.4, ease: "power2.in" }, 1.25);
+    tl.fromTo("#p-cartao", { rotation: -7, scale: 1.08 }, { rotation: -4, scale: 1, duration: 1.1, ease: "power2.out" }, 1.3);
+    // foto
+    tl.to("#p-obturador", { scale: 0.86, duration: 0.1, ease: "power2.in" }, 2.3);
+    tl.to("#p-obturador", { scale: 1, duration: 0.15, ease: "power2.out" }, 2.4);
+    tl.fromTo("#p-flash", { opacity: 0 }, { opacity: 1, duration: 0.06 }, 2.38);
+    tl.to("#p-flash", { opacity: 0, duration: 0.25 }, 2.44);
+    // a câmera fecha; o CRM lê a foto
+    tl.to("#p-camera", { clipPath: "circle(0px at 200px 732px)", duration: 0.3, ease: "power3.in" }, 2.75);
+    tl.set("#p-esc-txt", { opacity: 0 }, 2.9);
+    tl.set("#p-lendo", { opacity: 1 }, 2.9);
+    tl.set("#p-escolher", { opacity: 0.6 }, 2.9);
+    // o contato aparece no lugar dos botões
+    tl.to("#p-botoes", { opacity: 0, y: -20, duration: 0.2, ease: "power2.in" }, 4.0);
+    tl.fromTo("#p-achado", { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out" }, 4.05);
+    tl.fromTo("#p-l2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.1);
+    // saída: a cor do WhatsApp sobe pela tela
+    tl.to("#p-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 4.85);
+    tl.to("#p-inunda", { clipPath: "inset(0% 0px 0px 0px)", duration: 0.35, ease: "power2.inOut" }, 4.82);
+    window.__timelines["foto"] = tl;
+  </script>
+</template>

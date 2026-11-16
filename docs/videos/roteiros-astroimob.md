@@ -1,4 +1,4 @@
-# Roteiros — 5 vídeos verticais da ASTROimob
+# Roteiros — 5 vídeos verticais da Astro Soluções
 
 Público: donos de imobiliária, gestores e corretores.
 Formato: 1080x1920 (Reels, Stories, TikTok, status do WhatsApp), 20 a 25 s cada.
@@ -19,10 +19,10 @@ Sem narração: o texto na tela conta a história, e assim o vídeo funciona sem
 |---|---|---|
 | Gancho | 0–3 s | Uma pergunta ou cena que o dono de imobiliária reconhece |
 | Problema | 3–7 s | A dor, em uma frase |
-| Produto | 7–18 s | A tela da ASTROimob resolvendo, em movimento |
+| Produto | 7–18 s | A tela da Astro Soluções resolvendo, em movimento |
 | Fecho | 18–25 s | Frase de efeito + chamada para ação |
 
-Chamada para ação padrão: **"Teste grátis por 7 dias · link na bio"**, com o logo ASTROimob.
+Chamada para ação padrão: **"Teste grátis por 7 dias · link na bio"**, com o logo Astro Soluções.
 
 ---
 
@@ -64,7 +64,7 @@ Chamada para ação padrão: **"Teste grátis por 7 dias · link na bio"**, com 
 |---|---|---|
 | 0–3 s | Contador de cliques subindo rápido: 1.240 | **SEU ANÚNCIO DÁ CLIQUE.** |
 | 3–6 s | O contador congela e fica cinza | **MAS DÁ VISITA?** |
-| 6–14 s | Painel da ASTROimob: duas campanhas lado a lado com os degraus Conversou → Qualificado → Visitou → Fechou, e o custo de cada degrau | Veja quanto custa cada visita, não cada clique |
+| 6–14 s | Painel da Astro Soluções: duas campanhas lado a lado com os degraus Conversou → Qualificado → Visitou → Fechou, e o custo de cada degrau | Veja quanto custa cada visita, não cada clique |
 | 14–18 s | A campanha melhor ganha o selo **Melhor custo** e sobe para o topo da lista | Saiba qual anúncio colocar mais dinheiro |
 | 18–21 s | O lead do anúncio aparece já no funil, com a campanha de origem | Cada lead chega com a campanha de onde veio |
 | 21–25 s | Logo + chamada | **INVISTA NO ANÚNCIO QUE VENDE.** · Teste grátis por 7 dias |
@@ -81,7 +81,7 @@ pode restringir de qualquer forma, e prometer o contrário é falso.
 |---|---|---|
 | 0–3 s | Barra de envio "300 contatos" correndo rápido; aviso vermelho "Conta restringida" | **DISPAROU PRA 300...** |
 | 3–6 s | Celular apagando | **...E PERDEU O NÚMERO?** |
-| 6–16 s | Lista da ASTROimob, quatro freios aparecendo um por vez, com ícones: ① tira quem não tem WhatsApp antes de enviar ② espaça os envios ③ cada mensagem sai com texto diferente ④ pausa sozinha se o número cair | Quatro freios ligados em toda lista |
+| 6–16 s | Lista da Astro Soluções, quatro freios aparecendo um por vez, com ícones: ① tira quem não tem WhatsApp antes de enviar ② espaça os envios ③ cada mensagem sai com texto diferente ④ pausa sozinha se o número cair | Quatro freios ligados em toda lista |
 | 16–20 s | Gaveta da lista: quem recebeu, quem respondeu; botões Pausar / Retomar | Você vê quem recebeu e para quando quiser |
 | 20–25 s | Logo + chamada | **DIVULGUE SEM QUEIMAR SEU NÚMERO.** · Teste grátis por 7 dias |
 
@@ -89,7 +89,7 @@ pode restringir de qualquer forma, e prometer o contrário é falso.
 
 ## Vídeo 5 — "Sua imobiliária num lugar só" (apresentação da plataforma)
 
-**Ideia:** fecho da série. Mostra rápido tudo o que a ASTROimob reúne. Bom para fixar no perfil.
+**Ideia:** fecho da série. Mostra rápido tudo o que a Astro Soluções reúne. Bom para fixar no perfil.
 
 | Tempo | Tela | Texto na tela |
 |---|---|---|
@@ -109,4 +109,4 @@ pode restringir de qualquer forma, e prometer o contrário é falso.
 1. **Chamada para ação:** "link na bio" ou um endereço na tela? Qual endereço?
 2. **Teste grátis de 7 dias** continua valendo?
 3. **Música:** tem algum arquivo para usar? Sem ele, os vídeos saem sem som.
-4. **Logo ASTROimob:** arquivo oficial (SVG ou PNG transparente), ou monto o nome em Anton.
+4. **Logo Astro Soluções:** arquivo oficial (SVG ou PNG transparente), ou monto o nome em Anton.

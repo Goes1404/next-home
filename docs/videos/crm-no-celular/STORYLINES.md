@@ -1,7 +1,7 @@
 # Vídeo "CRM no celular" — três caminhos
 
 Vertical 1080x1920, 30 fps, 25 a 35 s, sem música e sem narração (o texto na
-tela conta a história). Fecho: logo ASTROimob + "Teste grátis por 7 dias · link na bio".
+tela conta a história). Fecho: logo Astro Soluções + "Teste grátis por 7 dias · link na bio".
 Visual da marca (página `/astro`): céu azul-noite, Anton em caixa alta, azul cobalto
 só no destaque.
 
@@ -19,7 +19,7 @@ Diferenciais que entram, todos confirmados no vault:
 ## A — "O dia da Ana cabe no celular" (recomendado)
 
 **Um momento no dia de alguém + cadeia de objetos.** A corretora Ana passa o dia
-na rua, só com o celular, e a ASTROimob faz o trabalho chato por ela. É o caminho
+na rua, só com o celular, e a Astro Soluções faz o trabalho chato por ela. É o caminho
 que um dono de imobiliária reconhece na hora: é o dia do corretor dele.
 
 - **Primeiros 2 s:** celular na mão, tela acesa com o aviso "Lead novo · Anúncio Barueri";
@@ -45,7 +45,7 @@ metade de cima é engolida e fica só o celular.
 ## C — "Um lead, do anúncio à visita" (o ousado)
 
 **Um objeto atravessa o produto inteiro, num plano só.** Um único cartão de lead
-nasce no anúncio e atravessa a ASTROimob sem corte: a roleta o entrega para a Ana,
+nasce no anúncio e atravessa a Astro Soluções sem corte: a roleta o entrega para a Ana,
 a IA conversa com ele, o consultor acha o imóvel certo, a visita entra na agenda.
 A câmera nunca corta: ela desce pela tela do celular acompanhando o cartão.
 
