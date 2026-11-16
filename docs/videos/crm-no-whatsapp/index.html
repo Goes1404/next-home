@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #060a16;
+      }
+      #ceu {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 0%, #1f4a96 0%, #12306a 10%, #0a1a3c 24%, #060a16 45%);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="40.6" data-width="1080" data-height="1920">
+      <div id="ceu" class="clip" data-start="0" data-duration="40.6" data-track-index="0"></div>
+      <div id="central" data-composition-id="central" data-composition-src="compositions/central.html"
+        data-start="0" data-duration="20" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920"></div>
+      <div id="imovel" data-composition-id="imovel" data-composition-src="compositions/imovel.html"
+        data-start="20" data-duration="8" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920"></div>
+      <div id="conversa" data-composition-id="conversa" data-composition-src="compositions/conversa.html"
+        data-start="28" data-duration="5.6" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920"></div>
+      <div id="fecho" data-composition-id="fecho" data-composition-src="compositions/fecho.html"
+        data-start="33.6" data-duration="7" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920"></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

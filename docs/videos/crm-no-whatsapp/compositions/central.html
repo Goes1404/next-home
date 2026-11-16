@@ -1,0 +1,205 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #z-tela {
+      background: #e9edf2;
+    }
+    .z-cab {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 204px;
+      padding: 84px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #0f2547;
+      color: #f5f7fb;
+      font: 700 32px "Figtree", sans-serif;
+      z-index: 4;
+    }
+    .z-cab svg {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+    }
+    .z-cab small {
+      display: block;
+      font: 400 24px "Figtree", sans-serif;
+      color: #a9c1e0;
+      margin-top: 4px;
+    }
+    #z-janela {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 230px;
+      bottom: 0;
+      overflow: hidden;
+    }
+    #z-lista {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2400px;
+    }
+    .z-b {
+      position: absolute;
+      max-width: 560px;
+      padding: 20px 26px 22px;
+      border-radius: 30px;
+      font: 400 29px/1.35 "Figtree", sans-serif;
+      color: #0d1b33;
+      box-shadow: 0 2px 4px rgba(13, 27, 51, 0.08);
+    }
+    .z-b b {
+      font-weight: 700;
+    }
+    .z-eu {
+      right: 30px;
+      background: #d9fdd3;
+      border-top-right-radius: 8px;
+    }
+    .z-ele {
+      left: 30px;
+      background: #ffffff;
+      border-top-left-radius: 8px;
+    }
+    .z-foto {
+      width: 420px;
+      padding: 30px 32px;
+      border-radius: 12px;
+      background: linear-gradient(160deg, #fbfaf7, #ecebe6);
+      transform: rotate(-3deg);
+      margin: 6px 0;
+    }
+    .z-foto b {
+      display: block;
+      font: 700 34px "Figtree", sans-serif;
+    }
+    .z-foto i {
+      display: block;
+      font: 400 26px "Figtree", sans-serif;
+      font-style: normal;
+      color: #5a6274;
+    }
+    .z-foto p {
+      margin-top: 22px;
+      font: 600 28px "Figtree", sans-serif;
+    }
+    #z-digitando {
+      left: 30px;
+      top: 136px;
+      padding: 24px 30px;
+      display: flex;
+      gap: 10px;
+    }
+    #z-digitando i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #8b97b3;
+    }
+  </style>
+  <div id="root" data-composition-id="central" data-width="1080" data-height="1920">
+    <h1 id="z-t1" class="titulo"><span>Mande no seu CRM</span><br /><span>pelo <span class="d">WhatsApp.</span></span></h1>
+    <h1 id="z-t2" class="titulo"><span>Ele propõe.</span><br /><span>Você diz <span class="d">sim.</span></span></h1>
+    <h1 id="z-t3" class="titulo"><span>Foto do cartão?</span><br /><span>Virou <span class="d">lead.</span></span></h1>
+    <h1 id="z-t4" class="titulo"><span>Pede a lista.</span><br /><span>Ele <span class="d">monta.</span></span></h1>
+
+    <div class="celular">
+      <div id="z-tela" class="tela">
+        <div class="z-cab">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="z-selo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#1b3a6b" />
+                <stop offset="1" stop-color="#0a1830" />
+              </linearGradient>
+            </defs>
+            <rect width="64" height="64" fill="url(#z-selo)" />
+            <path d="M18 48 L32 15 L46 48" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" />
+            <ellipse cx="32" cy="37" rx="24" ry="7.5" transform="rotate(-18 32 37)" fill="none" stroke="#a9c1e0" stroke-width="2.6" />
+            <path d="M49 15 L50.6 19.4 L55 21 L50.6 22.6 L49 27 L47.4 22.6 L43 21 L47.4 19.4 Z" fill="#fff" />
+          </svg>
+          <div>Astro CRM<small>número central</small></div>
+        </div>
+        <div class="status claro"><span>8:12</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="z-janela">
+          <div id="z-lista">
+            <div id="z-m1" class="z-b z-eu" style="top: 0px">marca visita com a Carla sábado às 10h</div>
+            <div id="z-m2" class="z-b z-ele" style="top: 136px">Vou fazer isto:<br>Marcar visita com Carla Mendes, sábado 21/11 às 10h<br><br>Responda <b>sim</b> para confirmar ou <b>não</b> para cancelar.</div>
+            <div id="z-m3" class="z-b z-eu" style="top: 428px">sim</div>
+            <div id="z-m4" class="z-b z-ele" style="top: 525px">Visita com Carla Mendes marcada para sábado 21/11 às 10h. Já está na Agenda.</div>
+            <div id="z-m5" class="z-b z-eu" style="top: 700px"><div class="z-foto"><b>Roberto Lima</b><i>Engenheiro civil</i><p>(11) 98765-4321</p></div></div>
+            <div id="z-m6" class="z-b z-ele" style="top: 1000px">Vou fazer isto:<br>Cadastrar Roberto Lima, (11) 98765-4321<br><br>Responda <b>sim</b> para confirmar ou <b>não</b> para cancelar.</div>
+            <div id="z-m7" class="z-b z-eu" style="top: 1292px">sim</div>
+            <div id="z-m8" class="z-b z-ele" style="top: 1389px">Roberto Lima cadastrado na sua carteira.</div>
+            <div id="z-m9" class="z-b z-eu" style="top: 1525px">manda o Vitra pra quem quer Barueri até 600 mil</div>
+            <div id="z-m10" class="z-b z-ele" style="top: 1661px">Vou fazer isto:<br>Lista de transmissão pelo SEU WhatsApp.<br>Filtros: Barueri, até R$ 600 mil.<br>23 pessoas; 9 nunca falaram com você.<br>Hoje devem sair cerca de 18; o resto fica na fila para os próximos dias, no ritmo seguro do número.<br><br>Responda <b>sim</b> para confirmar ou <b>não</b> para cancelar.</div>
+            <div id="z-digitando" class="z-b z-ele"><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const entra = (alvo, t, de) =>
+      tl.fromTo(alvo, { opacity: 0, y: 24, scale: 0.94, transformOrigin: de }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "expo.out" }, t);
+    tl.fromTo("#z-t1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 0.1);
+    tl.to("#z-t1", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 4.3);
+    tl.fromTo("#z-t2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.5);
+    tl.to("#z-t2", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 9.2);
+    tl.fromTo("#z-t3", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 9.4);
+    tl.to("#z-t3", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 13.6);
+    tl.fromTo("#z-t4", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 13.8);
+    tl.fromTo("#z-digitando", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 1.2);
+    tl.to("#z-digitando", { opacity: 0, duration: 0.08 }, 1.95);
+    tl.set("#z-m1", { opacity: 1 }, 0);
+    entra("#z-m2", 2.0, "left bottom");
+    entra("#z-m3", 4.7, "right bottom");
+    entra("#z-m4", 5.4, "left bottom");
+    entra("#z-m5", 8.2, "right bottom");
+    entra("#z-m6", 9.5, "left bottom");
+    entra("#z-m7", 10.9, "right bottom");
+    entra("#z-m8", 11.5, "left bottom");
+    entra("#z-m9", 14.0, "right bottom");
+    entra("#z-m10", 15.5, "left bottom");
+    tl.to("#z-lista", { y: -130, duration: 0.45, ease: "power2.inOut" }, 4.4);
+    tl.to("#z-lista", { y: -420, duration: 0.45, ease: "power2.inOut" }, 7.7);
+    tl.to("#z-lista", { y: -710, duration: 0.45, ease: "power2.inOut" }, 9.2);
+    tl.to("#z-lista", { y: -940, duration: 0.45, ease: "power2.inOut" }, 10.6);
+    tl.to("#z-lista", { y: -1080, duration: 0.45, ease: "power2.inOut" }, 13.6);
+    tl.to("#z-lista", { y: -1650, duration: 0.45, ease: "power2.inOut" }, 15.1);
+    tl.to("#z-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 19.7);
+    tl.to("#z-t4", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 19.7);
+    window.__timelines["central"] = tl;
+  </script>
+</template>

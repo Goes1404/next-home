@@ -1,0 +1,169 @@
+/* Peças comuns a todas as cenas: o título, o celular e a tela do Astro CRM.
+   O CRM é redesenhado do código (nomes reais de etapas, botões e avisos),
+   a 1,9x do tamanho real. */
+
+.titulo {
+  position: absolute;
+  left: 110px;
+  right: 120px;
+  top: 236px;
+  font-family: "Anton", sans-serif;
+  font-size: 96px;
+  line-height: 1.02;
+  color: #f5f7fb;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+.titulo .p {
+  display: inline-block;
+  margin-right: 0.22em;
+}
+.titulo .d {
+  color: #7fa6ec;
+}
+
+.celular {
+  position: absolute;
+  left: 160px;
+  top: 600px;
+  width: 740px;
+  height: 1560px;
+  border-radius: 100px;
+  background: #0b0f1a;
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 3px #2a3347;
+}
+.tela {
+  position: absolute;
+  inset: 18px;
+  border-radius: 84px;
+  overflow: hidden;
+  background: #eef2f7;
+  font-family: "Figtree", sans-serif;
+  color: #0d1b33;
+}
+.status {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 84px;
+  padding: 26px 64px 0;
+  display: flex;
+  justify-content: space-between;
+  font: 700 28px "Figtree", sans-serif;
+  color: #0d1b33;
+  z-index: 5;
+}
+.status.claro {
+  color: #f5f7fb;
+}
+.status .icones {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.status .icones i {
+  display: block;
+  width: 30px;
+  height: 18px;
+  border-radius: 4px;
+  border: 3px solid currentColor;
+}
+.camera-frontal {
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  border-radius: 50%;
+  background: #05070d;
+  z-index: 6;
+}
+
+/* Cabeçalho de tela do CRM */
+.cab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 84px;
+  height: 120px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: #ffffff;
+  border-bottom: 2px solid #d9e0ea;
+}
+.cab .voltar {
+  font: 400 44px "Figtree", sans-serif;
+  color: #3b4a63;
+}
+.cab h2 {
+  font: 700 34px "Figtree", sans-serif;
+}
+.cab small {
+  display: block;
+  font: 400 26px "Figtree", sans-serif;
+  color: #6b7790;
+  margin-top: 4px;
+}
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #e6eefb;
+  color: #2f5ea8;
+  display: grid;
+  place-items: center;
+  font: 700 28px "Figtree", sans-serif;
+  flex: none;
+}
+
+/* Botões no estilo do CRM (rounded-full, acento) */
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+  padding: 0 44px;
+  border-radius: 999px;
+  font: 600 28px "Figtree", sans-serif;
+  background: #2f5ea8;
+  color: #ffffff;
+}
+.botao.contorno {
+  background: #ffffff;
+  color: #0d1b33;
+  border: 3px solid #b8c3d4;
+}
+
+/* Dedo: um toque */
+.dedo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border-radius: 50%;
+  background: rgba(13, 27, 51, 0.32);
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  z-index: 20;
+  opacity: 0;
+}
+
+/* Print real do CRM, sem a barra do Android (900 px de largura -> 704 px) */
+.print {
+  position: absolute;
+  left: 0;
+  top: 84px;
+  width: 704px;
+  background-size: 704px auto;
+  background-repeat: no-repeat;
+}
+.status.fundo {
+  background: #e9edf3;
+}
