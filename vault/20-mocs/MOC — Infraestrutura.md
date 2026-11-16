@@ -49,4 +49,5 @@ Vercel (plano Hobby), deploy e runtime.
 
 ## Relacionados
 - [[MOC — Banco de Dados]] · [[Home]]
+- [[hyperframes-no-ambiente-de-nuvem]] ⚠️ vídeo HyperFrames pelo Claude Code: conector só lê; skills locais; o ambiente Default bloqueava o CDN do GSAP; usar o ambiente "next-home" (16/11)
 - [[app-android-da-astro]] — app da Play Store como Trusted Web Activity; assetlinks pela variável ANDROID_SHA256 (28/10)
