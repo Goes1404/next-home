@@ -1,2 +1,5 @@
 .hyperframes/
 *.mp4
+.media/
+assets/bgm/
+assets/voice/

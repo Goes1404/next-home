@@ -1,0 +1,15 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "l1", "text": "E se você pudesse mandar no seu CRM pelo WhatsApp?" },
+    { "id": "l2", "text": "Peça a visita: ele mostra o que vai fazer, você diz sim, e já está na agenda." },
+    { "id": "l3", "text": "Mandou a foto de um cartão? Vira lead na sua carteira." },
+    { "id": "l4", "text": "Peça para divulgar um imóvel: ele monta a lista no ritmo seguro do seu número." },
+    { "id": "l5", "text": "Cadastrar imóvel? Cole o link do site da construtora: o Astro lê a página e traz textos, fotos e plantas." },
+    { "id": "l6", "text": "E enquanto isso, a IA atende seus clientes, até por áudio." },
+    { "id": "l7", "text": "O CRM que atende seus clientes no WhatsApp enquanto você vende. Teste grátis por sete dias. Link na bio." }
+  ],
+  "bgm": { "mode": "retrieve", "query": "upbeat modern tech corporate instrumental" }
+}
