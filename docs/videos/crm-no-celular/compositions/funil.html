@@ -2,6 +2,21 @@
   <link rel="stylesheet" href="assets/celular.css" />
   <style>
     @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
       font-family: "Anton";
       src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
     }
@@ -9,118 +24,45 @@
       position: absolute;
       inset: 0;
     }
-    .f-col {
-      position: absolute;
-      top: 234px;
-      width: 312px;
-      font: 700 28px "Inter", sans-serif;
-      color: #3b4a63;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .f-col .n {
-      min-width: 44px;
-      height: 44px;
-      padding: 0 12px;
-      border-radius: 22px;
-      background: #dfe6f1;
-      display: grid;
-      place-items: center;
-      font: 700 26px "Inter", sans-serif;
-      color: #0d1b33;
-    }
-    .f-cartao {
-      position: absolute;
-      width: 312px;
-      padding: 24px 22px 26px;
-      border-radius: 28px;
-      background: #ffffff;
-      border: 2px solid #d9e0ea;
-      box-shadow: 0 6px 16px rgba(13, 27, 51, 0.06);
-    }
-    .f-cartao b {
-      display: block;
-      font: 700 29px "Inter", sans-serif;
-    }
-    .f-cartao > span {
-      display: block;
-      margin-top: 8px;
-      font: 400 26px "Inter", sans-serif;
-      color: #6b7790;
-    }
-    .f-cartao .botao {
-      margin-top: 18px;
-      min-height: 64px;
-      padding: 0 28px;
-      font-size: 28px;
-      position: relative;
-    }
-    #f-acao2 {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      opacity: 0;
+    #f-tela {
+      background: #e9edf3;
     }
   </style>
   <div id="root" data-composition-id="funil" data-width="1080" data-height="1920">
     <h1 id="f-titulo" class="titulo">
-      <span id="f-l1">A IA qualifica.</span><br />
-      <span id="f-l2">Você <span class="d">confirma.</span></span>
+      <span id="f-l1">Um toque.</span><br />
+      <span id="f-l2">O funil <span class="d">anda.</span></span>
     </h1>
 
-    <div id="f-celular" class="celular">
-      <div class="tela">
-        <div class="status"><span>8:20</span><span class="icones"><i></i></span></div>
+    <div class="celular">
+      <div id="f-tela" class="tela">
+        <div class="status fundo"><span>8:20</span><span class="icones"><i></i></span></div>
         <div class="camera-frontal"></div>
-        <div id="f-conteudo">
-          <div class="cab"><h2>Funil</h2></div>
-          <div class="f-col" style="left: 30px">Qualificado <span id="f-n1" class="n">3</span></div>
-          <div class="f-col" style="left: 362px">Visita marcada <span id="f-n2" class="n">2</span></div>
-
-          <div id="f-carla" class="f-cartao" style="left: 30px; top: 306px">
-            <b>Carla Mendes</b><span>Anúncio · Apê Barueri</span>
-            <div class="botao"><span id="f-acao1">Marquei visita</span><span id="f-acao2">Ele visitou</span></div>
-          </div>
-          <div id="f-bruno" class="f-cartao" style="left: 30px; top: 530px"><b>Bruno Alves</b><span>Site</span></div>
-          <div id="f-juliana" class="f-cartao" style="left: 30px; top: 690px"><b>Juliana Rocha</b><span>Indicação</span></div>
-
-          <div id="f-marcos" class="f-cartao" style="left: 362px; top: 306px"><b>Marcos Pinto</b><span>Portal</span></div>
-          <div id="f-paula" class="f-cartao" style="left: 362px; top: 466px"><b>Paula Reis</b><span>WhatsApp</span></div>
-        </div>
+        <div id="f-quadro"><div id="f-img1" class="print" style="height: 1406px; background-image: url('assets/telas/funil-quadro.jpg')"></div></div>
+        <div id="f-agora"><div id="f-img2" class="print" style="height: 1406px; background-image: url('assets/telas/funil-agora.jpg')"></div></div>
       </div>
     </div>
     <div id="f-dedo" class="dedo"></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo("#f-conteudo", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
-    // título: a linha inteira entra com blur; a segunda depois
+    tl.fromTo("#f-quadro", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
+    tl.set("#f-agora", { opacity: 0 }, 0);
     tl.fromTo("#f-l1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 0.15);
-    tl.fromTo("#f-l2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 2.1);
-    // o dedo toca "Marquei visita"
-    tl.fromTo("#f-dedo", { opacity: 0, scale: 1.25, x: 420, y: 1170 }, { opacity: 1, scale: 1, x: 337, y: 1073, duration: 0.35, ease: "power3.out" }, 1.2);
-    tl.to("#f-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 1.6);
-    tl.to("#f-carla .botao", { scale: 0.95, duration: 0.12, ease: "power2.in" }, 1.6);
-    tl.to("#f-carla .botao", { scale: 1, duration: 0.2, ease: "power2.out" }, 1.72);
-    tl.to("#f-dedo", { opacity: 0, duration: 0.15 }, 1.76);
-    // o cartão vai para "Visita marcada"; os outros abrem espaço
-    tl.to("#f-marcos", { y: 236, duration: 0.5, ease: "power2.inOut" }, 1.78);
-    tl.to("#f-paula", { y: 236, duration: 0.5, ease: "power2.inOut" }, 1.82);
-    tl.fromTo("#f-carla", { x: 0, rotation: 0 }, { x: 332, duration: 0.6, ease: "power3.inOut" }, 1.8);
-    tl.to("#f-carla", { rotation: 2.5, duration: 0.3, ease: "power2.out", yoyo: true, repeat: 1 }, 1.8);
-    tl.to("#f-bruno", { y: -224, duration: 0.5, ease: "power2.inOut" }, 2.05);
-    tl.to("#f-juliana", { y: -224, duration: 0.5, ease: "power2.inOut" }, 2.1);
-    tl.set("#f-n1", { textContent: "2" }, 2.1);
-    tl.set("#f-n2", { textContent: "3" }, 2.1);
-    tl.fromTo(["#f-n1", "#f-n2"], { scale: 1.3 }, { scale: 1, duration: 0.35, ease: "expo.out" }, 2.1);
-    // na nova etapa, o botão já mostra o próximo passo real
-    tl.to("#f-acao1", { opacity: 0, duration: 0.15 }, 2.35);
-    tl.to("#f-acao2", { opacity: 1, duration: 0.15 }, 2.4);
+    // rola o quadro até o cartão (o cabeçalho sobe junto, como no app)
+    tl.fromTo("#f-img1", { y: 0 }, { y: -180, duration: 0.8, ease: "power2.inOut" }, 0.35);
+    // toque em "Mandei mensagem", o botão de um toque da etapa
+    tl.fromTo("#f-dedo", { opacity: 0, scale: 1.25, x: 560, y: 1760 }, { opacity: 1, scale: 1, x: 470, y: 1680, duration: 0.35, ease: "power3.out" }, 1.15);
+    tl.to("#f-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 1.55);
+    tl.to("#f-dedo", { opacity: 0, duration: 0.15 }, 1.72);
+    // o funil da tela inicial já conta o passo
+    tl.to("#f-quadro", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 1.85);
+    tl.fromTo("#f-agora", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 2.0);
+    tl.fromTo("#f-img2", { y: 0 }, { y: -150, duration: 2.6, ease: "power1.inOut" }, 2.0);
+    tl.fromTo("#f-l2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 2.05);
     // saída: chicote para a esquerda
-    tl.to("#f-conteudo", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 4.3);
-    tl.to("#f-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 4.3);
+    tl.to("#f-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 4.9);
+    tl.to("#f-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 4.9);
     window.__timelines["funil"] = tl;
   </script>
 </template>

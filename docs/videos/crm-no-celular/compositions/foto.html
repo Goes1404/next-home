@@ -2,12 +2,33 @@
   <link rel="stylesheet" href="assets/celular.css" />
   <style>
     @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
       font-family: "Anton";
       src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
     }
     #root {
       position: absolute;
       inset: 0;
+    }
+    #p-conteudo .botao:not(.contorno) {
+      background: #b1268f;
+    }
+    #p-achado .ok {
+      background: #b1268f !important;
     }
     #p-abas {
       position: absolute;
@@ -25,7 +46,7 @@
       text-align: center;
       padding: 16px 10px;
       border-radius: 34px;
-      font: 600 28px "Inter", sans-serif;
+      font: 600 28px "Figtree", sans-serif;
       color: #3b4a63;
       white-space: nowrap;
     }
@@ -39,7 +60,7 @@
       left: 36px;
       right: 36px;
       top: 350px;
-      font: 400 28px/1.4 "Inter", sans-serif;
+      font: 400 28px/1.4 "Figtree", sans-serif;
       color: #3b4a63;
     }
     #p-botoes {
@@ -84,17 +105,17 @@
       color: #fff;
       display: grid;
       place-items: center;
-      font: 700 32px "Inter", sans-serif;
+      font: 700 32px "Figtree", sans-serif;
       flex: none;
     }
     #p-achado b {
       display: block;
-      font: 700 30px "Inter", sans-serif;
+      font: 700 30px "Figtree", sans-serif;
     }
     #p-achado small {
       display: block;
       margin-top: 6px;
-      font: 400 28px "Inter", sans-serif;
+      font: 400 28px "Figtree", sans-serif;
       color: #6b7790;
     }
     #p-camera {
@@ -122,22 +143,22 @@
     }
     #p-cartao b {
       display: block;
-      font: 700 42px "Inter", sans-serif;
+      font: 700 42px "Figtree", sans-serif;
     }
     #p-cartao i {
       display: block;
-      font: 400 28px "Inter", sans-serif;
+      font: 400 28px "Figtree", sans-serif;
       font-style: normal;
       color: #5a6274;
       margin-top: 6px;
     }
     #p-cartao p {
       margin-top: 34px;
-      font: 600 32px "Inter", sans-serif;
+      font: 600 32px "Figtree", sans-serif;
     }
     #p-cartao p + p {
       margin-top: 6px;
-      font: 400 26px "Inter", sans-serif;
+      font: 400 26px "Figtree", sans-serif;
       color: #5a6274;
     }
     #p-obturador {
@@ -174,8 +195,9 @@
 
     <div id="p-celular" class="celular">
       <div class="tela">
-        <div class="status"><span>11:40</span><span class="icones"><i></i></span></div>
+        <div class="status fundo"><span>11:40</span><span class="icones"><i></i></span></div>
         <div class="camera-frontal"></div>
+        <div id="p-leads"><div class="print" style="height: 1406px; background-image: url('assets/telas/meus-leads.jpg')"></div></div>
         <div id="p-conteudo">
           <div class="cab"><span class="voltar">‹</span><h2>Adicionar leads</h2></div>
           <div id="p-abas"><span>Colar lista</span><span class="ativa">Foto ou print</span><span>Enviar arquivo</span></div>
@@ -204,38 +226,45 @@
         <div id="p-inunda"></div>
       </div>
     </div>
+    <div id="p-dedo0" class="dedo"></div>
     <div id="p-dedo" class="dedo"></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
+    // abertura real: "Meus leads" e o botão "+ Adicionar leads"
+    tl.fromTo("#p-leads", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.fromTo("#p-dedo0", { opacity: 0, scale: 1.25, x: 620, y: 1330 }, { opacity: 1, scale: 1, x: 530, y: 1253, duration: 0.35, ease: "power3.out" }, 0.45);
+    tl.to("#p-dedo0", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 0.85);
+    tl.to("#p-dedo0", { opacity: 0, duration: 0.15 }, 1.0);
+    tl.to("#p-leads", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 1.0);
     // entra pela direita, continuando o chicote
-    tl.fromTo("#p-conteudo", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.fromTo("#p-conteudo", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 1.2);
     tl.fromTo("#p-l1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 0.2);
     // toque em "Tirar foto agora"
-    tl.fromTo("#p-dedo", { opacity: 0, scale: 1.25, x: 470, y: 1420 }, { opacity: 1, scale: 1, x: 378, y: 1350, duration: 0.35, ease: "power3.out" }, 0.75);
-    tl.to("#p-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 1.12);
-    tl.to("#p-tirar", { scale: 0.96, duration: 0.12, ease: "power2.in" }, 1.12);
-    tl.to("#p-dedo", { opacity: 0, duration: 0.15 }, 1.28);
+    tl.fromTo("#p-dedo", { opacity: 0, scale: 1.25, x: 470, y: 1420 }, { opacity: 1, scale: 1, x: 378, y: 1350, duration: 0.35, ease: "power3.out" }, 1.95);
+    tl.to("#p-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 2.32);
+    tl.to("#p-tirar", { scale: 0.96, duration: 0.12, ease: "power2.in" }, 2.32);
+    tl.to("#p-dedo", { opacity: 0, duration: 0.15 }, 2.48);
     // a câmera abre a partir do toque
-    tl.fromTo("#p-camera", { clipPath: "circle(0px at 200px 732px)" }, { clipPath: "circle(1700px at 200px 732px)", duration: 0.4, ease: "power2.in" }, 1.25);
-    tl.fromTo("#p-cartao", { rotation: -7, scale: 1.08 }, { rotation: -4, scale: 1, duration: 1.1, ease: "power2.out" }, 1.3);
+    tl.fromTo("#p-camera", { clipPath: "circle(0px at 200px 732px)" }, { clipPath: "circle(1700px at 200px 732px)", duration: 0.4, ease: "power2.in" }, 2.45);
+    tl.fromTo("#p-cartao", { rotation: -7, scale: 1.08 }, { rotation: -4, scale: 1, duration: 1.1, ease: "power2.out" }, 2.5);
     // foto
-    tl.to("#p-obturador", { scale: 0.86, duration: 0.1, ease: "power2.in" }, 2.3);
-    tl.to("#p-obturador", { scale: 1, duration: 0.15, ease: "power2.out" }, 2.4);
-    tl.fromTo("#p-flash", { opacity: 0 }, { opacity: 1, duration: 0.06 }, 2.38);
-    tl.to("#p-flash", { opacity: 0, duration: 0.25 }, 2.44);
+    tl.to("#p-obturador", { scale: 0.86, duration: 0.1, ease: "power2.in" }, 3.5);
+    tl.to("#p-obturador", { scale: 1, duration: 0.15, ease: "power2.out" }, 3.6);
+    tl.fromTo("#p-flash", { opacity: 0 }, { opacity: 1, duration: 0.06 }, 3.58);
+    tl.to("#p-flash", { opacity: 0, duration: 0.25 }, 3.64);
     // a câmera fecha; o CRM lê a foto
-    tl.to("#p-camera", { clipPath: "circle(0px at 200px 732px)", duration: 0.3, ease: "power3.in" }, 2.75);
-    tl.set("#p-esc-txt", { opacity: 0 }, 2.9);
-    tl.set("#p-lendo", { opacity: 1 }, 2.9);
-    tl.set("#p-escolher", { opacity: 0.6 }, 2.9);
+    tl.to("#p-camera", { clipPath: "circle(0px at 200px 732px)", duration: 0.3, ease: "power3.in" }, 3.95);
+    tl.set("#p-esc-txt", { opacity: 0 }, 4.1);
+    tl.set("#p-lendo", { opacity: 1 }, 4.1);
+    tl.set("#p-escolher", { opacity: 0.6 }, 4.1);
     // o contato aparece no lugar dos botões
-    tl.to("#p-botoes", { opacity: 0, y: -20, duration: 0.2, ease: "power2.in" }, 4.0);
-    tl.fromTo("#p-achado", { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out" }, 4.05);
-    tl.fromTo("#p-l2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.1);
+    tl.to("#p-botoes", { opacity: 0, y: -20, duration: 0.2, ease: "power2.in" }, 5.2);
+    tl.fromTo("#p-achado", { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out" }, 5.25);
+    tl.fromTo("#p-l2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 5.3);
     // saída: a cor do WhatsApp sobe pela tela
-    tl.to("#p-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 4.85);
-    tl.to("#p-inunda", { clipPath: "inset(0% 0px 0px 0px)", duration: 0.35, ease: "power2.inOut" }, 4.82);
+    tl.to("#p-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 6.05);
+    tl.to("#p-inunda", { clipPath: "inset(0% 0px 0px 0px)", duration: 0.35, ease: "power2.inOut" }, 6.02);
     window.__timelines["foto"] = tl;
   </script>
 </template>

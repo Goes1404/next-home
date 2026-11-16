@@ -1,0 +1,61 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #v-tela {
+      background: #e9edf3;
+    }
+  </style>
+  <div id="root" data-composition-id="gestor" data-width="1080" data-height="1920">
+    <h1 id="v-titulo" class="titulo">
+      <span class="p v-w">E</span><span class="p v-w">o</span><span class="p v-w">gestor</span><span class="p v-w">vê</span><br />
+      <span class="p v-w">tudo</span><span class="p v-w">no</span><span class="p v-w d">celular.</span>
+    </h1>
+
+    <div class="celular">
+      <div id="v-tela" class="tela">
+        <div class="status fundo"><span>18:30</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="v-vendas"><div id="v-img1" class="print" style="height: 1406px; background-image: url('assets/telas/vendas.jpg')"></div></div>
+        <div id="v-anuncios"><div id="v-img2" class="print" style="height: 1406px; background-image: url('assets/telas/anuncios.jpg')"></div></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#v-tela", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.set("#v-anuncios", { x: 760 }, 0);
+    tl.fromTo(".v-w", { opacity: 0, color: "#4a5a78" }, { opacity: 1, color: "#f5f7fb", duration: 0.18, stagger: 0.08, ease: "power1.out" }, 0.15);
+    tl.set(".v-w.d", { color: "#7fa6ec" }, 0.75);
+    // Vendas: rola até o VGV e o número de vendas
+    tl.fromTo("#v-img1", { y: 0 }, { y: -180, duration: 0.8, ease: "power2.inOut" }, 0.55);
+    // Anúncios pagos: quanto cada campanha trouxe, roleta, do clique à conversa
+    tl.to("#v-vendas", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 2.2);
+    tl.fromTo("#v-anuncios", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 2.4);
+    tl.fromTo("#v-img2", { y: 0 }, { y: -180, duration: 0.7, ease: "power2.inOut" }, 2.9);
+    tl.to("#v-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 4.4);
+    window.__timelines["gestor"] = tl;
+  </script>
+</template>

@@ -40,7 +40,7 @@
   border-radius: 84px;
   overflow: hidden;
   background: #eef2f7;
-  font-family: "Inter", sans-serif;
+  font-family: "Figtree", sans-serif;
   color: #0d1b33;
 }
 .status {
@@ -52,7 +52,7 @@
   padding: 26px 64px 0;
   display: flex;
   justify-content: space-between;
-  font: 700 28px "Inter", sans-serif;
+  font: 700 28px "Figtree", sans-serif;
   color: #0d1b33;
   z-index: 5;
 }
@@ -98,15 +98,15 @@
   border-bottom: 2px solid #d9e0ea;
 }
 .cab .voltar {
-  font: 400 44px "Inter", sans-serif;
+  font: 400 44px "Figtree", sans-serif;
   color: #3b4a63;
 }
 .cab h2 {
-  font: 700 34px "Inter", sans-serif;
+  font: 700 34px "Figtree", sans-serif;
 }
 .cab small {
   display: block;
-  font: 400 26px "Inter", sans-serif;
+  font: 400 26px "Figtree", sans-serif;
   color: #6b7790;
   margin-top: 4px;
 }
@@ -118,7 +118,7 @@
   color: #2f5ea8;
   display: grid;
   place-items: center;
-  font: 700 28px "Inter", sans-serif;
+  font: 700 28px "Figtree", sans-serif;
   flex: none;
 }
 
@@ -130,7 +130,7 @@
   min-height: 84px;
   padding: 0 44px;
   border-radius: 999px;
-  font: 600 28px "Inter", sans-serif;
+  font: 600 28px "Figtree", sans-serif;
   background: #2f5ea8;
   color: #ffffff;
 }
@@ -153,4 +153,17 @@
   border: 4px solid rgba(255, 255, 255, 0.9);
   z-index: 20;
   opacity: 0;
+}
+
+/* Print real do CRM, sem a barra do Android (900 px de largura -> 704 px) */
+.print {
+  position: absolute;
+  left: 0;
+  top: 84px;
+  width: 704px;
+  background-size: 704px auto;
+  background-repeat: no-repeat;
+}
+.status.fundo {
+  background: #e9edf3;
 }

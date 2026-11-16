@@ -2,6 +2,21 @@
   <link rel="stylesheet" href="assets/celular.css" />
   <style>
     @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
       font-family: "Anton";
       src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
     }
@@ -10,7 +25,7 @@
       inset: 0;
     }
     #e-tela {
-      background: #e9edf2;
+      background: #e9edf3;
     }
     .l-cab {
       position: absolute;
@@ -24,7 +39,7 @@
       gap: 22px;
       background: #0f2547;
       color: #f5f7fb;
-      font: 700 32px "Inter", sans-serif;
+      font: 700 32px "Figtree", sans-serif;
     }
     .l-cab .bola {
       width: 72px;
@@ -34,7 +49,7 @@
     }
     .l-cab small {
       display: block;
-      font: 400 24px "Inter", sans-serif;
+      font: 400 24px "Figtree", sans-serif;
       color: #a9c1e0;
       margin-top: 4px;
     }
@@ -47,7 +62,7 @@
       border-radius: 32px;
       border-top-left-radius: 10px;
       background: #ffffff;
-      font: 400 29px/1.4 "Inter", sans-serif;
+      font: 400 29px/1.4 "Figtree", sans-serif;
       color: #0d1b33;
     }
     .l-bolha .link {
@@ -97,7 +112,7 @@
     #e-cta .botao {
       min-height: 112px;
       padding: 0 64px;
-      font: 700 44px "Inter", sans-serif;
+      font: 700 44px "Figtree", sans-serif;
       background: #3a6ccc;
     }
     #e-bio {
@@ -106,7 +121,7 @@
       right: 0;
       top: 1170px;
       text-align: center;
-      font: 700 40px "Inter", sans-serif;
+      font: 700 40px "Figtree", sans-serif;
       color: #b9c2d4;
       letter-spacing: 0.02em;
     }
@@ -114,16 +129,9 @@
   <div id="root" data-composition-id="fecho" data-width="1080" data-height="1920">
     <div id="e-celular" class="celular">
       <div id="e-tela" class="tela">
-        <div class="l-cab"><span class="bola"></span><div>Número central<small>Astro CRM</small></div></div>
-        <div class="status claro"><span>17:00</span><span class="icones"><i></i></span></div>
+        <div class="status fundo"><span>18:30</span><span class="icones"><i></i></span></div>
         <div class="camera-frontal"></div>
-        <div class="l-bolha">
-          <b>⏰ Lembrete</b><br /><br />
-          Ligar para o Roberto e mandar as fotos do Vitra.<br /><br />
-          👤 Roberto Lima<br />
-          🔗 <span class="link">astroimob.vercel.app/corretor/leads/…</span>
-          <span class="hora">17:00</span>
-        </div>
+        <div class="print" style="transform: translateY(-180px); height: 1406px; background-image: url('assets/telas/anuncios.jpg')"></div>
       </div>
     </div>
 
