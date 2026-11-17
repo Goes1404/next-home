@@ -22,6 +22,7 @@ export const ITENS_DA_PLATAFORMA: { href: string; rotulo: string; exato?: boolea
   { href: "/plataforma/prospeccao", rotulo: "Prospecção", soEquipeDaProspeccao: true },
   { href: "/plataforma/indicacoes", rotulo: "Indicações" },
   { href: "/plataforma/avisos", rotulo: "Avisos aos clientes" },
+  { href: "/plataforma/comunicados", rotulo: "Comunicados" },
   { href: "/plataforma/central", rotulo: "Número central" },
   { href: "/plataforma/acessos", rotulo: "Buscar acesso" },
   { href: "/plataforma/administradores", rotulo: "Administradores" },

@@ -2827,6 +2827,74 @@ export type Database = {
         }
         Relationships: []
       }
+      /** 0260: comunicado da Astro no privado dos corretores, pelo número central. */
+      comunicados: {
+        Row: {
+          id: string
+          criado_em: string
+          criado_por: string | null
+          grupo_id: string
+          texto: string
+          situacao: "enviando" | "pausado" | "concluido"
+          concluido_em: string | null
+        }
+        Insert: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          grupo_id: string
+          texto: string
+          situacao?: "enviando" | "pausado" | "concluido"
+          concluido_em?: string | null
+        }
+        Update: {
+          id?: string
+          criado_em?: string
+          criado_por?: string | null
+          grupo_id?: string
+          texto?: string
+          situacao?: "enviando" | "pausado" | "concluido"
+          concluido_em?: string | null
+        }
+        Relationships: []
+      }
+      /** 0260: um envio por corretor de cada comunicado (a fila do tique). */
+      comunicado_envios: {
+        Row: {
+          id: string
+          comunicado_id: string
+          corretor_id: string
+          nome: string
+          telefone: string
+          ordem: number
+          situacao: "pendente" | "enviado" | "falhou" | "pulado"
+          motivo: string | null
+          enviado_em: string | null
+        }
+        Insert: {
+          id?: string
+          comunicado_id: string
+          corretor_id: string
+          nome: string
+          telefone: string
+          ordem: number
+          situacao?: "pendente" | "enviado" | "falhou" | "pulado"
+          motivo?: string | null
+          enviado_em?: string | null
+        }
+        Update: {
+          id?: string
+          comunicado_id?: string
+          corretor_id?: string
+          nome?: string
+          telefone?: string
+          ordem?: number
+          situacao?: "pendente" | "enviado" | "falhou" | "pulado"
+          motivo?: string | null
+          enviado_em?: string | null
+        }
+        Relationships: []
+      }
       administradores_da_plataforma: {
         Row: {
           criado_em: string

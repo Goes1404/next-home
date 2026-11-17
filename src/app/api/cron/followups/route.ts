@@ -55,6 +55,7 @@ import { enviarLeadsDistribuidosParaGrupos } from "@/lib/crm/enviosDeLeadParaGru
 import { enviarListasSemRetorno } from "@/lib/crm/leadsSemRetorno";
 import { liberarReservasVencidas } from "@/lib/imoveis/reservasVencidas";
 import { entregarVideosPeloCentral } from "@/lib/video/entregaPeloCentral";
+import { processarComunicados } from "@/lib/central/comunicado";
 import { avisarQuemPediuAlerta } from "@/lib/crm/avisoDeNovidade";
 import { lerCaixasDoGmail } from "@/lib/inbound/gmailCaixa";
 import { separarRajada } from "@/lib/whatsapp/rajada";
@@ -783,6 +784,15 @@ export async function GET(req: NextRequest) {
     console.error("[vídeo pelo central]", e);
     return 0;
   });
+  /*
+   * Comunicado da Astro no privado dos corretores, pelo central (0260): no
+   * máximo UMA mensagem por tique, com horário, teto de 10 por dia e
+   * intervalo decididos lá dentro (`comunicadoRegras.ts`).
+   */
+  const comunicadosEnviados = await processarComunicados(supabase).catch((e) => {
+    console.error("[comunicado]", e);
+    return 0;
+  });
 
   /*
    * Lembretes do corretor: os das anotações (0100) e os das tarefas da ficha
@@ -809,7 +819,7 @@ export async function GET(req: NextRequest) {
   // espera a próxima janela, que é o comportamento que o cliente espera
   // de uma mensagem "casual" de vendedora.
   if (!dentroDaJanela(new Date())) {
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, gruposDeLeads, listasSemRetorno, reservasLiberadas, videosPeloCentral, comunicadosEnviados, lembretesDeTarefa, visitasCobradas, leadsDoGmail, motivo: "fora_da_janela" });
   }
 
   const dono = `followups-${crypto.randomUUID()}`;
@@ -861,7 +871,7 @@ export async function GET(req: NextRequest) {
       else if (desfecho === "sugerido") resultado.sugeridos++;
     }
 
-    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, videosPeloCentral, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
+    return NextResponse.json({ ok: true, ...resultado, atrasadas, resumos, relatoriosDasAvaliacoes, semContato, semResposta, leadsNovos, lembretesDeVisita, leadsParados, senhasVencendo, avisosDeMatch, reservasLiberadas, videosPeloCentral, comunicadosEnviados, lembretesDeTarefa, visitasCobradas, avisosDeNovidade, leadsDoGmail, confirmacoesPedidas });
   } finally {
     await destravarDisparo("followups", dono);
   }
