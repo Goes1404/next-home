@@ -446,5 +446,6 @@ def gerar(modo, pasta):
     print(modo, len(cenas), "cenas,", len(aud), "faixas de áudio,", TOTAL, "s")
 
 
-gerar("3d", AQUI)
-gerar("classico", os.path.join(AQUI, "../astro-dores-classico"))
+if __name__ == "__main__":
+    gerar("3d", AQUI)
+    gerar("classico", os.path.join(AQUI, "../astro-dores-classico"))

@@ -69,6 +69,11 @@ rede). O plano Starter do Figma corta as chamadas do MCP no dia (parou em ~25
 imagens): gerar e baixar cada uma logo em seguida. Um gerador só faz o mesmo
 roteiro em 3D e no estilo clássico (`docs/videos/astro-dores/gerar.py`).
 
+**Bonecos 3D em código (17/11).** Sem o Figma, o 3D sai de um canvas
+Three.js desenhado a partir do tempo do vídeo (`hf-seek`), com three@0.149.0
+baixado para `assets/` e câmera por posições-chave; ver
+`docs/videos/astro-site/assets/mundo.js`. Renderiza no container sem GPU.
+
 ## Relacionadas
 - [[MOC — Infraestrutura]]
 - [[arte-e-video-pelo-numero-central]]

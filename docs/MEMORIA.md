@@ -12982,3 +12982,12 @@ Nota: [[hyperframes-no-ambiente-de-nuvem]].
 - Cenas 3D ("animação de cinema") saem do `generate_image` do conector Figma (arquivo "Astro – vídeo de bonecos 3D"). Imagem em tamanho cheio (864x1536): `get_screenshot` com `maxDimension 1536` e `enableBase64Response`; o arquivo fica em `tool-results/` e é copiado para `assets/cenas/`. O host www.figma.com NÃO está liberado (o dono recusou); não pedir de novo.
 - O plano Starter do Figma tem teto de chamadas do MCP: em 17/11 parou depois de ~25 imagens no dia (gerar + baixar contam). Gerar e baixar cada imagem logo em seguida; o que ficou só em miniatura (144x256) não serve.
 - `docs/videos/astro-dores/gerar.py` gera o mesmo roteiro em dois estilos (3D em `astro-dores/`, clássico com celular em `astro-dores-classico/`): só o fundo muda; mensagens, quadro do funil, nota e resumo são os mesmos. Modelo para os próximos vídeos em dois estilos.
+
+## Bonecos 3D feitos em código, sem Figma (17/11/2026)
+
+Nota: [[hyperframes-no-ambiente-de-nuvem]].
+
+- `docs/videos/astro-site/` (site + portfólio + Tour 360°, para dono de imobiliária, 75 s): o fundo é um canvas Three.js (`assets/mundo.js`, three@0.149.0 local, a última versão com `three.min.js` para `<script>` comum) que desenha cidade, bonecos low-poly e câmera a partir de `e.detail.time` no evento `hf-seek`. As fontes do canvas esperam `document.fonts.load` dentro de `window.__hf.buildReady.mundo`.
+- Câmera por posições-chave `[t, posição, alvo]`; repetir a chave com 0,01 s de diferença faz um corte seco entre cenas. Títulos e prints reais ficam em composições por cima, como nos outros vídeos.
+- O render por software (sem GPU) aguentou 1080x1920 com sombras. Sem limite de imagens do Figma, é o caminho para 3D quando o Figma bloquear.
+- Verificado no código para o roteiro: o imóvel importado pelo link entra com `publicado: false` (alguém precisa publicar); o botão de WhatsApp do site só conta o clique (`cliques_whatsapp`); o formulário de contato do site cria o lead com o corretor do portfólio por onde o cliente entrou (cookie de 30 dias).
