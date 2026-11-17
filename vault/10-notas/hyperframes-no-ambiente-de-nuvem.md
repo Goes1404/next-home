@@ -9,9 +9,9 @@ codigo:
   - .claude/skills/hyperframes/scripts/plugin-cli.mjs
   - .claude/settings.local.json
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
 fonte: sessão de 16/11 — doctor e renders de teste no container
-summary: Pelo Claude Code o conector HyperFrames só lê; criar vídeo é com as skills locais. O ambiente Default bloqueava o CDN do GSAP e o render falhava; o ambiente "next-home" libera o CDN e reinstala as skills.
+summary: Pelo Claude Code o conector HyperFrames só lê; criar vídeo é com as skills locais. Voz grátis é heygen-voice-1-turbo-free com NODE_USE_ENV_PROXY=1. O ambiente Default bloqueava o CDN do GSAP e o render falhava; o ambiente "next-home" libera o CDN e reinstala as skills.
 ---
 # HyperFrames no ambiente de nuvem do Claude Code
 
@@ -43,6 +43,24 @@ GPU por software).
 
 Faltam só itens opcionais, sem efeito no render: whisper (transcrição),
 Kokoro (narração), MusicGen (música) e Docker.
+
+**Voz e música pela HeyGen (17/11).** Quatro travas, nesta ordem:
+1. A rede bloqueava a HeyGen: o ambiente "next-home" libera `api.heygen.com`,
+   `api2.heygen.com`, `app.heygen.com`, `hyperframes.heygen.com`,
+   `static.heygen.ai` e `resource2.heygen.ai` (onde ficam os áudios gerados).
+2. O Node não usa o proxy sozinho (`fetch` dá `ENOTFOUND`): rodar a CLI com
+   `NODE_USE_ENV_PROXY=1`. O login é `auth login --device` (o código é aprovado
+   em app.heygen.com/oauth/device); o login comum abre navegador no servidor.
+3. As vozes de catálogo (`/v3/voices/speech`) recusam o plano Free com
+   `hf_subscription_required`. A voz grátis é o modelo
+   `heygen-voice-1-turbo-free` em `POST /v3/models/audio/tts`, chamado com o
+   próprio login da HyperFrames (a CLI `heygen` pede login próprio e só por TTY).
+   Voz usada: Thaís (`a8c7b58e38c44719b3ab36342f080e95`), português.
+4. O token OAuth expira: `auth refresh` antes de gerar de novo.
+A música vem do catálogo (`audio.mjs`, `bgm.mode: retrieve`); para alongar uma
+trilha, `acrossfade` com a MESMA música aberta duas vezes (`-i` duplo), não
+`asplit` (saiu com 24 s). Música e vozes ficam fora do git: o repositório é
+público e o áudio é licenciado para os vídeos.
 
 ## Relacionadas
 - [[MOC — Infraestrutura]]
