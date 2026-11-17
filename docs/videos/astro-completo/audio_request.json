@@ -3,17 +3,57 @@
   "voice": "a8c7b58e38c44719b3ab36342f080e95",
   "lang": "pt",
   "lines": [
-    { "id": "n01", "text": "Imagine um CRM que trabalha por você, direto no seu WhatsApp." },
-    { "id": "n02", "text": "Mande uma mensagem ou um áudio: ele marca a visita, mostra o que vai fazer, e você só diz sim." },
-    { "id": "n03", "text": "Recebeu um cartão? Mande a foto, e o cliente já entra na sua carteira." },
-    { "id": "n04", "text": "Pergunte quem ligar hoje: ele traz as visitas, os clientes mais quentes e quem está sem resposta." },
-    { "id": "n05", "text": "Peça para mandar fotos e planta ao cliente, ou para criar um vídeo do imóvel. Tudo pelo WhatsApp." },
-    { "id": "n06", "text": "Divulgue um imóvel com uma lista de transmissão que protege o seu número." },
-    { "id": "n07", "text": "Enquanto isso, a IA atende seus clientes, entende áudio, qualifica e propõe a visita. E preço, quem fala é você." },
-    { "id": "n08", "text": "Cadastrar imóvel? Cole o link da construtora: ele traz textos, fotos e plantas, e avisa quais clientes combinam." },
-    { "id": "n09", "text": "Lead de anúncio vai para o próximo corretor da fila, que já chama o cliente na hora." },
-    { "id": "n10", "text": "E o gestor vê quanto custou cada cliente e cada visita de cada anúncio." },
-    { "id": "n11", "text": "Lembretes e avisos chegam no celular e no WhatsApp. Nada fica para trás." },
-    { "id": "n12", "text": "Astro Soluções: o CRM que atende seus clientes no WhatsApp enquanto você vende. Teste grátis por sete dias. Link na bio." }
+    {
+      "id": "n01",
+      "text": "Imagine um CRM que trabalha por você, direto no seu WhatsApp."
+    },
+    {
+      "id": "n02",
+      "text": "Mande uma mensagem ou um áudio: ele marca a visita, mostra o que vai fazer, e você só diz sim."
+    },
+    {
+      "id": "n03",
+      "text": "Recebeu um cartão? Mande a foto, e o cliente já entra na sua carteira."
+    },
+    {
+      "id": "n04",
+      "text": "Pergunte quem ligar hoje: ele traz as visitas, os clientes mais quentes e quem está sem resposta."
+    },
+    {
+      "id": "n05",
+      "text": "Peça para mandar fotos e planta ao cliente, ou para criar um vídeo do imóvel. Tudo pelo WhatsApp."
+    },
+    {
+      "id": "n06",
+      "text": "Divulgue um imóvel com uma lista de transmissão que protege o seu número."
+    },
+    {
+      "id": "n07",
+      "text": "Enquanto isso, a IA atende seus clientes, entende áudio, qualifica e propõe a visita. E preço, quem fala é você."
+    },
+    {
+      "id": "n08",
+      "text": "Cadastrar imóvel? Cole o link da construtora: ele traz textos, fotos e plantas, e avisa quais clientes combinam."
+    },
+    {
+      "id": "n08b",
+      "text": "E ele já aparece no site da sua imobiliária e no portfólio de cada corretor. O cliente fala direto com quem mandou o link."
+    },
+    {
+      "id": "n09",
+      "text": "Lead de anúncio vai para o próximo corretor da fila, que já chama o cliente na hora."
+    },
+    {
+      "id": "n10",
+      "text": "E o gestor vê quanto custou cada cliente e cada visita de cada anúncio."
+    },
+    {
+      "id": "n11",
+      "text": "Lembretes e avisos chegam no celular e no WhatsApp. Nada fica para trás."
+    },
+    {
+      "id": "n12",
+      "text": "Astro Soluções: o CRM que atende seus clientes no WhatsApp enquanto você vende. Teste grátis por sete dias. Link na bio."
+    }
   ]
 }

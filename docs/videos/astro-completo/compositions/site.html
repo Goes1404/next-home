@@ -1,0 +1,66 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #s-tela {
+      background: #e6ece4;
+    }
+    #s-tela .status.fundo {
+      background: #e6ece4;
+    }
+  </style>
+  <div id="root" data-composition-id="site" data-width="1080" data-height="1920">
+    <h1 id="s-t1" class="titulo"><span class="p s-w">Seu</span><span class="p s-w">site</span><br /><span class="p s-w d">pronto.</span></h1>
+    <h1 id="s-t2" class="titulo"><span class="p s-w2">E</span><span class="p s-w2">cada</span><span class="p s-w2">corretor</span><br /><span class="p s-w2">com</span><span class="p s-w2">seu</span><span class="p s-w2 d">portfólio.</span></h1>
+    <div id="s-cel" class="celular">
+      <div id="s-tela" class="tela">
+        <div class="status fundo"><span>14:30</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="s-home" class="print" style="height: 1524px; background-image: url('assets/telas/site-home.jpg')"></div>
+        <div id="s-dest" class="print" style="height: 1524px; background-image: url('assets/telas/site-destaques.jpg')"></div>
+        <div id="s-corr" class="print" style="height: 4212px; background-image: url('assets/telas/site-corretora.jpg')"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set(["#s-dest", "#s-corr"], { opacity: 0 }, 0);
+    tl.fromTo("#s-tela", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.fromTo(".s-w", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 0.2);
+    // a vitrine da imobiliária: do topo aos destaques
+    tl.to("#s-home", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 1.7);
+    tl.fromTo("#s-dest", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "power2.out" }, 1.85);
+    tl.fromTo("#s-dest", { y: 0 }, { y: -140, duration: 1.8, ease: "power2.inOut" }, 2.0);
+    tl.to("#s-t1", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 3.7);
+    // o portfólio do corretor
+    tl.to("#s-dest", { x: -760, filter: "blur(14px)", duration: 0.28, ease: "power3.in" }, 3.75);
+    tl.fromTo("#s-corr", { opacity: 1, x: 760, filter: "blur(14px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.32, ease: "power3.out" }, 3.95);
+    tl.fromTo(".s-w2", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 3.9);
+    tl.fromTo("#s-corr", { y: 0 }, { y: -1550, duration: 2.6, ease: "power2.inOut" }, 5.3);
+    tl.to("#s-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 8.1);
+    tl.to("#s-t2", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 8.1);
+    window.__timelines["site"] = tl;
+  </script>
+</template>
