@@ -59,9 +59,19 @@ FECHO_INI, FECHO_DUR = 62.6, 12.0
 TOTAL = round(FECHO_INI + FECHO_DUR, 2)
 
 
-def cena(c):
+IMG = {"s1": ("f1-dono-instagram.png", (0, -30)), "s2": ("f2-dono-site.png", (15, -25)), "s3": ("c08-link.png", (15, -25)),
+       "s4": ("c10-tour.png", (0, -20)), "s5": ("f3-corretores.png", (-10, -25)), "s6": ("c12-roleta.png", (10, -25)),
+       "s7": ("f4-dono-janela.png", (-15, -20))}
+
+
+def cena(c, modo="3d"):
     i = c["id"]
     js, cam = [], ['<div class="sombra"></div>']
+    if modo == "filme":
+        img, (px, py) = IMG[i]
+        cam = [f'<div id="{i}-f" class="fundo" style="background-image: url(\'assets/cenas/{img}\')"></div>', '<div class="sombra"></div>', '<div class="sombra-baixo"></div>']
+        js.append(f'tl.fromTo("#{i}-f", {{ scale: 1.14, x: 0, y: 0, filter: "blur(10px)" }}, {{ scale: 1.04, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }}, 0);')
+        js.append(f'tl.to("#{i}-f", {{ scale: 1.1, x: {px}, y: {py}, duration: {round(c["dur"] - 0.45, 2)}, ease: "none" }}, 0.45);')
     if c.get("slam"):
         cam.append('<div id="s1-g" class="slam">' + "".join(
             f'<span class="p{" r" if w.startswith("Instagram") else ""}" id="s1-g{k}">{w}</span>' for k, (w, t) in enumerate(c["slam"])) + "</div>")
@@ -105,11 +115,12 @@ def cena(c):
 '''
 
 
-def fecho():
+def fecho(modo="3d"):
     fx = open(os.path.join(AQUI, "../astro-completo/compositions/fecho.html")).read()
     a = fx.index('    <div id="e-celular"')
     b = fx.index('    <h1 id="e-frase"')
-    fx = fx[:a] + '    <div id="e-escuro" style="position: absolute; inset: 0; background: rgba(5, 11, 24, 0.55)"></div>\n' + fx[b:]
+    bg = '    <div id="e-foto" style="position: absolute; inset: -40px; background-size: cover; background-position: center; background-image: url(\'assets/cenas/f5-equipe.png\')"></div>\n' if modo == "filme" else ''
+    fx = fx[:a] + bg + '    <div id="e-escuro" style="position: absolute; inset: 0; background: rgba(5, 11, 24, 0.55)"></div>\n' + fx[b:]
     palavras = ["Quer", "ver", "com", "os", "imóveis", "da", "sua", "imobiliária?"]
     frase = "".join(f'<span class="p e-w{" d" if w == "imobiliária?" else ""}">{w}</span>' for w in palavras)
     i0 = fx.index('<h1 id="e-frase"')
@@ -139,14 +150,16 @@ def fecho():
         linhas.append(ln)
     script = "\n".join(linhas).replace("stagger: 0.07", "stagger: 0.16")
     script = script.replace("const tl = gsap.timeline({ paused: true });", 'const tl = gsap.timeline({ paused: true });\n    tl.fromTo("#e-escuro", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0);')
+    if modo == "filme":
+        script = script.replace('tl.fromTo("#e-escuro", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0);', 'tl.fromTo("#e-escuro", { opacity: 0.2 }, { opacity: 0.35, duration: 0.5 }, 0);\n    tl.to("#e-escuro", { opacity: 1, duration: 0.4 }, 2.5);\n    tl.fromTo("#e-foto", { scale: 1.12, filter: "blur(10px)" }, { scale: 1.03, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 0);\n    tl.to("#e-foto", { scale: 1.1, duration: 11, ease: "none" }, 0.5);')
     return fx[:s0] + script
 
 
-def main():
-    os.makedirs(os.path.join(AQUI, "compositions"), exist_ok=True)
+def main(modo="3d", pasta=AQUI):
+    os.makedirs(os.path.join(pasta, "compositions"), exist_ok=True)
     for c in CENAS:
-        open(os.path.join(AQUI, f"compositions/{c['id']}.html"), "w").write(cena(c))
-    open(os.path.join(AQUI, "compositions/fecho.html"), "w").write(fecho())
+        open(os.path.join(pasta, f"compositions/{c['id']}.html"), "w").write(cena(c, modo))
+    open(os.path.join(pasta, "compositions/fecho.html"), "w").write(fecho(modo))
 
     cenas = [(c["id"], c["ini"], c["dur"]) for c in CENAS] + [("fecho", FECHO_INI, FECHO_DUR)]
     hosts = "\n".join(
@@ -155,9 +168,9 @@ def main():
         for n, a, d in cenas)
     falas = {"s01": 0.3, "s02": 5.6, "s03": 12.6, "s04": 24.6, "s05": 33.0, "s06": 43.6, "s07": 53.8, "s08": FECHO_INI + 0.25}
     aud = [f'      <audio id="voz-{k}" src="assets/voice/{k}.wav" data-start="{t}" data-duration="{dur(os.path.join(AQUI, f"assets/voice/{k}.wav")):.2f}" data-volume="1" data-track-index="2"></audio>' for k, t in falas.items()]
-    trilha = os.path.join(AQUI, "assets/bgm/trilha-site.wav")
+    trilha = os.path.join(pasta, "assets/bgm/trilha-site.wav")
     if not os.path.exists(trilha):
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", os.path.join(AQUI, "assets/bgm/trilha.wav"), "-t", str(TOTAL),
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", os.path.join(pasta, "assets/bgm/trilha.wav"), "-t", str(TOTAL),
                         "-af", f"afade=t=out:st={TOTAL - 2.5}:d=2.5", trilha], check=True)
     aud.append(f'      <audio id="trilha" src="assets/bgm/trilha-site.wav" data-start="0" data-duration="{TOTAL}" data-volume="0.2" data-track-index="3"></audio>')
     fx = [("click-soft", t, 0.5) for t in (0.3, 0.6, 1.15, 1.45, 1.8)] + [("impact-bass-1", 2.05, 0.7)]
@@ -166,12 +179,13 @@ def main():
     for c in CENAS:
         for (html, t, tipo, t1) in c["el"]:
             fx.append(({"pop": "pop", "desce": "chime", "sobe": "whoosh-short"}[tipo], round(c["ini"] + t, 2), 0.5))
-    # o que acontece no mundo 3D
-    fx += [("whoosh-short", 6.0, 0.5), ("impact-bass-1", 6.9, 0.45), ("pop", 8.1, 0.5), ("whoosh-short", 13.4, 0.5)]
-    fx += [("click-soft", round(15.7 + k * 0.55 + 0.4, 2), 0.35) for k in range(9)] + [("chime", 21.6, 0.6)]
-    fx += [("whoosh-short", 26.2, 0.45)] + [("pop", round(34.6 + k * 0.9, 2), 0.5) for k in range(3)]
-    fx += [("whoosh", 46.6, 0.45), ("chime", 48.9, 0.6)] + [("pop", round(50.0 + k * 0.25, 2), 0.45) for k in range(3)]
-    fx += [("whoosh-short", round(54.4 + k * 0.6, 2), 0.35) for k in range(4)]
+    # o que acontece no mundo 3D (no modo filme não há mundo 3D)
+    if modo != "filme":
+        fx += [("whoosh-short", 6.0, 0.5), ("impact-bass-1", 6.9, 0.45), ("pop", 8.1, 0.5), ("whoosh-short", 13.4, 0.5)]
+        fx += [("click-soft", round(15.7 + k * 0.55 + 0.4, 2), 0.35) for k in range(9)] + [("chime", 21.6, 0.6)]
+        fx += [("whoosh-short", 26.2, 0.45)] + [("pop", round(34.6 + k * 0.9, 2), 0.5) for k in range(3)]
+        fx += [("whoosh", 46.6, 0.45), ("chime", 48.9, 0.6)] + [("pop", round(50.0 + k * 0.25, 2), 0.45) for k in range(3)]
+        fx += [("whoosh-short", round(54.4 + k * 0.6, 2), 0.35) for k in range(4)]
     fx += [("whoosh", FECHO_INI - 0.25, 0.45), ("impact-bass-1", FECHO_INI + 2.75, 0.6), ("click-soft", FECHO_INI + 3.3, 0.6),
            ("click-soft", FECHO_INI + 3.53, 0.6), ("pop", FECHO_INI + 3.76, 0.7), ("whoosh-short", FECHO_INI + 4.15, 0.5)]
     for k, (f, t, v) in enumerate(sorted(fx, key=lambda x: x[1])):
@@ -206,9 +220,12 @@ def main():
   </body>
 </html>
 '''
-    open(os.path.join(AQUI, "index.html"), "w").write(html)
+    if modo == "filme":
+        html = html.replace('    <script src="assets/three.min.js"></script>\n', "").replace(f'      <canvas id="mundo" width="1080" height="1920" class="clip" data-start="0" data-duration="{TOTAL}" data-track-index="0"></canvas>\n', "").replace('    <script src="assets/mundo.js"></script>\n', "")
+    open(os.path.join(pasta, "index.html"), "w").write(html)
     print(len(cenas), "cenas,", len(aud), "faixas,", TOTAL, "s")
 
 
 if __name__ == "__main__":
     main()
+    main("filme", os.path.join(AQUI, "../astro-site-filme"))

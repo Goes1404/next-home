@@ -1,0 +1,15 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "s01", "text": "Sua imobiliária ainda depende do Instagram para mostrar os imóveis?" },
+    { "id": "s02", "text": "Com a Astro, ela ganha um site próprio, com a sua marca, as suas cores e o seu endereço." },
+    { "id": "s03", "text": "Cadastrar imóvel virou colar um link. Cole a página da construtora ou o PDF, e a Astro preenche fotos e informações. Você revisa e publica." },
+    { "id": "s04", "text": "No site, o cliente faz o tour trezentos e sessenta graus, e passeia pelo apartamento antes da visita." },
+    { "id": "s05", "text": "E cada corretor tem o seu portfólio: foto, CRECI e o WhatsApp dele. Ele compartilha o link, e o contato que chega por ali é dele." },
+    { "id": "s06", "text": "Quando o cliente pede contato no site, vira lead no CRM, já com o corretor certo. E você vê quantos chamaram no WhatsApp de cada um." },
+    { "id": "s07", "text": "Site, portfólio, tour e CRM no mesmo lugar. Sem agência, sem planilha, sem lead perdido." },
+    { "id": "s08", "text": "Quer ver com os imóveis da sua imobiliária? Agende uma demonstração. Link na bio." }
+  ]
+}
