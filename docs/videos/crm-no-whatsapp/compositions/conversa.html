@@ -111,8 +111,8 @@
     tl.fromTo("#c-conteudo", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
     // título: palavra por palavra, de cinza a marfim, sem mexer de lugar
     tl.fromTo(".c-w", { opacity: 0, color: "#4a5a78" }, { opacity: 1, color: "#f5f7fb", duration: 0.18, stagger: 0.09, ease: "power1.out" }, 0.15);
-    tl.fromTo(".c-w2", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 1.0);
-    tl.set(".c-w2.d", { color: "#7fa6ec" }, 1.0);
+    tl.fromTo(".c-w2", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 1.0);
+    tl.set(".c-w2.d", { color: "#ffffff" }, 1.0);
     // as mensagens
     const entra = (alvo, t, de) =>
       tl.fromTo(alvo, { opacity: 0, y: 24, scale: 0.94, transformOrigin: de }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "expo.out" }, t);

@@ -125,14 +125,38 @@
       border-radius: 50%;
       background: #8b97b3;
     }
+    #z-gancho {
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      top: 330px;
+      font-family: "Anton", sans-serif;
+      font-size: 172px;
+      line-height: 0.98;
+      color: #f5f7fb;
+      text-transform: uppercase;
+      text-align: center;
+      transform-origin: 50% 0%;
+      z-index: 6;
+    }
+    #z-gancho .g {
+      display: inline-block;
+      margin: 0 0.12em;
+    }
+    #z-gancho .d {
+      background: #4d84e0;
+      color: #ffffff;
+      padding: 0 0.14em;
+      margin-top: 0.06em;
+    }
   </style>
   <div id="root" data-composition-id="central" data-width="1080" data-height="1920">
-    <h1 id="z-t1" class="titulo"><span>Mande no seu CRM</span><br /><span>pelo <span class="d">WhatsApp.</span></span></h1>
-    <h1 id="z-t2" class="titulo"><span>Ele propõe.</span><br /><span>Você diz <span class="d">sim.</span></span></h1>
-    <h1 id="z-t3" class="titulo"><span>Foto do cartão?</span><br /><span>Virou <span class="d">lead.</span></span></h1>
-    <h1 id="z-t4" class="titulo"><span>Pede a lista.</span><br /><span>Ele <span class="d">monta.</span></span></h1>
+    <div id="z-gancho"><span class="g" id="zg0">E</span><span class="g" id="zg1">se</span><span class="g" id="zg2">o</span><span class="g" id="zg3">seu</span><span class="g" id="zg4">CRM</span><span class="g" id="zg5">respondesse</span><span class="g" id="zg6">no</span><span class="g d" id="zg7">WhatsApp?</span></div>
+    <h1 id="z-t2" class="titulo"><span class="p z-t2-w">Ele</span><span class="p z-t2-w">propõe.</span><br /><span class="p z-t2-w">Você</span><span class="p z-t2-w">diz</span><span class="p z-t2-w d">sim.</span></h1>
+    <h1 id="z-t3" class="titulo"><span class="p z-t3-w">Foto</span><span class="p z-t3-w">do</span><span class="p z-t3-w">cartão?</span><br /><span class="p z-t3-w">Virou</span><span class="p z-t3-w d">lead.</span></h1>
+    <h1 id="z-t4" class="titulo"><span class="p z-t4-w">Pede</span><span class="p z-t4-w">a</span><span class="p z-t4-w">lista.</span><br /><span class="p z-t4-w">Ele</span><span class="p z-t4-w d">monta.</span></h1>
 
-    <div class="celular">
+    <div id="z-celular" class="celular">
       <div id="z-tela" class="tela">
         <div class="z-cab">
           <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -172,32 +196,46 @@
   <script>
     const tl = gsap.timeline({ paused: true });
     const entra = (alvo, t, de) =>
-      tl.fromTo(alvo, { opacity: 0, y: 24, scale: 0.94, transformOrigin: de }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "expo.out" }, t);
-    tl.fromTo("#z-t1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 0.1);
-    tl.to("#z-t1", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 4.3);
-    tl.fromTo("#z-t2", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.5);
-    tl.to("#z-t2", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 9.2);
-    tl.fromTo("#z-t3", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 9.4);
-    tl.to("#z-t3", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 13.6);
-    tl.fromTo("#z-t4", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 13.8);
-    tl.fromTo("#z-digitando", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 1.2);
-    tl.to("#z-digitando", { opacity: 0, duration: 0.08 }, 1.95);
-    tl.set("#z-m1", { opacity: 1 }, 0);
-    entra("#z-m2", 2.0, "left bottom");
-    entra("#z-m3", 4.7, "right bottom");
-    entra("#z-m4", 5.4, "left bottom");
-    entra("#z-m5", 8.2, "right bottom");
-    entra("#z-m6", 9.5, "left bottom");
-    entra("#z-m7", 10.9, "right bottom");
-    entra("#z-m8", 11.5, "left bottom");
+      tl.fromTo(alvo, { opacity: 0, scale: 0.6, transformOrigin: de }, { opacity: 1, scale: 1, duration: 0.42, ease: "back.out(2)" }, t);
+    // abertura: as palavras batem no ritmo da música (129 BPM)
+    tl.fromTo("#zg2", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 0.47);
+    tl.fromTo("#zg3", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 0.47);
+    tl.fromTo("#zg4", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 0.93);
+    tl.fromTo("#zg5", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 1.4);
+    tl.fromTo("#zg6", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 1.86);
+    tl.fromTo("#zg7", { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }, 2.1);
+    // o gancho encolhe e sobe, virando o título; o celular entra de baixo
+    tl.to("#z-gancho", { scale: 0.42, y: -140, duration: 0.42, ease: "power3.inOut" }, 2.45);
+    tl.fromTo("#z-celular", { y: 1400 }, { y: 0, duration: 0.55, ease: "power3.out" }, 2.7);
+    tl.to("#z-gancho", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 4.15);
+    tl.fromTo(".z-t2-w", { opacity: 0, scale: 1.5, filter: "blur(6px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.32, stagger: 0.07, ease: "back.out(2.2)" }, 4.4);
+    tl.to("#z-t2", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 9.4);
+    tl.fromTo(".z-t3-w", { opacity: 0, scale: 1.5, filter: "blur(6px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.32, stagger: 0.07, ease: "back.out(2.2)" }, 9.6);
+    tl.to("#z-t3", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 13.6);
+    tl.fromTo(".z-t4-w", { opacity: 0, scale: 1.5, filter: "blur(6px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.32, stagger: 0.07, ease: "back.out(2.2)" }, 13.8);
+    tl.fromTo("#z-digitando", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 3.6);
+    tl.to("#z-digitando", { opacity: 0, duration: 0.08 }, 4.25);
+    entra("#z-m1", 3.1, "right bottom");
+    entra("#z-m2", 4.3, "left top");
+    entra("#z-m3", 6.9, "right bottom");
+    entra("#z-m4", 7.7, "left top");
+    entra("#z-m5", 9.9, "right bottom");
+    entra("#z-m6", 10.9, "left top");
+    entra("#z-m7", 12.1, "right bottom");
+    entra("#z-m8", 12.6, "left top");
     entra("#z-m9", 14.0, "right bottom");
-    entra("#z-m10", 15.5, "left bottom");
-    tl.to("#z-lista", { y: -130, duration: 0.45, ease: "power2.inOut" }, 4.4);
-    tl.to("#z-lista", { y: -420, duration: 0.45, ease: "power2.inOut" }, 7.7);
-    tl.to("#z-lista", { y: -710, duration: 0.45, ease: "power2.inOut" }, 9.2);
-    tl.to("#z-lista", { y: -940, duration: 0.45, ease: "power2.inOut" }, 10.6);
-    tl.to("#z-lista", { y: -1080, duration: 0.45, ease: "power2.inOut" }, 13.6);
-    tl.to("#z-lista", { y: -1650, duration: 0.45, ease: "power2.inOut" }, 15.1);
+    entra("#z-m10", 15.3, "left top");
+    tl.to("#z-lista", { y: -130, duration: 0.4, ease: "power3.inOut" }, 6.7);
+    tl.to("#z-lista", { y: -420, duration: 0.4, ease: "power3.inOut" }, 9.5);
+    tl.to("#z-lista", { y: -710, duration: 0.4, ease: "power3.inOut" }, 10.6);
+    tl.to("#z-lista", { y: -940, duration: 0.4, ease: "power3.inOut" }, 11.8);
+    tl.to("#z-lista", { y: -1080, duration: 0.4, ease: "power3.inOut" }, 13.6);
+    tl.to("#z-lista", { y: -1650, duration: 0.4, ease: "power3.inOut" }, 15.0);
+    // zoom no celular quando o CRM confirma
+    for (const [t, volta] of [[7.7, 9.3], [12.6, 13.55]]) {
+      tl.to("#z-celular", { scale: 1.07, y: -40, transformOrigin: "50% 30%", duration: 0.35, ease: "power3.out" }, t);
+      tl.to("#z-celular", { scale: 1, y: 0, duration: 0.35, ease: "power2.inOut" }, volta);
+    }
     tl.to("#z-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 19.7);
     tl.to("#z-t4", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 19.7);
     window.__timelines["central"] = tl;
