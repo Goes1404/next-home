@@ -12974,3 +12974,11 @@ Nota: [[modelos-de-video-para-o-corretor]].
 - Decisão: 6–8 modelos HyperFrames prontos (lançamento, pronto para morar, oportunidade da semana, comparativo, portfólio do corretor, simulação, tour 360°, datas e avisos), feitos uma vez por nós com o agente e preenchidos pelo CRM com catálogo e marca do grupo. Começar por lançamento e oportunidade da semana.
 - Reaproveitar `video_jobs`, o worker do GitHub Actions, a entrega pelo WhatsApp e `grupos.teto_*`. Em aberto: voz paga (a grátis da HeyGen é só para teste), licença de música para uso no produto, tempo de render medido no worker.
 - Construção marcada para 17/11/2026 às 20h (lembrete agendado na sessão).
+
+## Vídeos em bonecos 3D com a IA do Figma (17/11/2026)
+
+Nota: [[hyperframes-no-ambiente-de-nuvem]].
+
+- Cenas 3D ("animação de cinema") saem do `generate_image` do conector Figma (arquivo "Astro – vídeo de bonecos 3D"). Imagem em tamanho cheio (864x1536): `get_screenshot` com `maxDimension 1536` e `enableBase64Response`; o arquivo fica em `tool-results/` e é copiado para `assets/cenas/`. O host www.figma.com NÃO está liberado (o dono recusou); não pedir de novo.
+- O plano Starter do Figma tem teto de chamadas do MCP: em 17/11 parou depois de ~25 imagens no dia (gerar + baixar contam). Gerar e baixar cada imagem logo em seguida; o que ficou só em miniatura (144x256) não serve.
+- `docs/videos/astro-dores/gerar.py` gera o mesmo roteiro em dois estilos (3D em `astro-dores/`, clássico com celular em `astro-dores-classico/`): só o fundo muda; mensagens, quadro do funil, nota e resumo são os mesmos. Modelo para os próximos vídeos em dois estilos.

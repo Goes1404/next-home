@@ -11,7 +11,7 @@ codigo:
 created: 2026-11-16
 updated: 2026-11-17
 fonte: sessão de 16/11 — doctor e renders de teste no container
-summary: Pelo Claude Code o conector HyperFrames só lê; criar vídeo é com as skills locais. Voz grátis é heygen-voice-1-turbo-free com NODE_USE_ENV_PROXY=1. O ambiente Default bloqueava o CDN do GSAP e o render falhava; o ambiente "next-home" libera o CDN e reinstala as skills.
+summary: Bonecos 3D vêm do Figma (plano Starter tem teto diário de chamadas). Pelo Claude Code o conector HyperFrames só lê; criar vídeo é com as skills locais. Voz grátis é heygen-voice-1-turbo-free com NODE_USE_ENV_PROXY=1. O ambiente Default bloqueava o CDN do GSAP e o render falhava; o ambiente "next-home" libera o CDN e reinstala as skills.
 ---
 # HyperFrames no ambiente de nuvem do Claude Code
 
@@ -61,6 +61,13 @@ A música vem do catálogo (`audio.mjs`, `bgm.mode: retrieve`); para alongar uma
 trilha, `acrossfade` com a MESMA música aberta duas vezes (`-i` duplo), não
 `asplit` (saiu com 24 s). Música e vozes ficam fora do git: o repositório é
 público e o áudio é licenciado para os vídeos.
+
+**Bonecos 3D pelo Figma (17/11).** As cenas 3D vêm do `generate_image` do
+conector Figma; para ter a imagem em 864x1536, `get_screenshot` com
+`maxDimension 1536` e `enableBase64Response` (www.figma.com não é liberado na
+rede). O plano Starter do Figma corta as chamadas do MCP no dia (parou em ~25
+imagens): gerar e baixar cada uma logo em seguida. Um gerador só faz o mesmo
+roteiro em 3D e no estilo clássico (`docs/videos/astro-dores/gerar.py`).
 
 ## Relacionadas
 - [[MOC — Infraestrutura]]

@@ -1,0 +1,14 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "p01", "text": "Quantos clientes você perdeu essa semana sem perceber?" },
+    { "id": "p02", "text": "O cliente chama às onze da noite. Quem responde primeiro, vende. Com a Astro, a IA atende na hora e marca a visita." },
+    { "id": "p03", "text": "O cliente sumiu? O follow-up automático chama de novo e para assim que ele responde." },
+    { "id": "p04", "text": "No CRM comum, você arrasta cada lead na mão. Na Astro, a IA lê a conversa e atualiza o funil, a nota e o resumo do cliente, sozinha." },
+    { "id": "p05", "text": "Contato em print, papel e planilha? Mande a foto e ele vira lead. Pergunte quem ligar hoje, e ele responde." },
+    { "id": "p06", "text": "Sem tempo para divulgar? Cole o link da construtora: o imóvel entra no seu site e no seu portfólio." },
+    { "id": "p07", "text": "Enquanto você assiste a isso, alguém já respondeu o seu cliente. Teste a Astro grátis por sete dias. Link na bio." }
+  ]
+}
