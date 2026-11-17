@@ -1,0 +1,62 @@
+<template>
+  <style>
+    @font-face { font-family: "Figtree"; src: url("assets/fonts/Figtree-400.woff2") format("woff2"); font-weight: 400; }
+    @font-face { font-family: "Figtree"; src: url("assets/fonts/Figtree-600.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Figtree"; src: url("assets/fonts/Figtree-700.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Anton"; src: url("assets/fonts/Anton-Regular.woff2") format("woff2"); }
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    .fundo { position: absolute; inset: -40px; background-size: cover; background-position: center; }
+    .sombra { position: absolute; left: 0; right: 0; top: 0; height: 760px;
+      background: linear-gradient(180deg, rgba(5, 11, 24, 0.82) 0%, rgba(5, 11, 24, 0.55) 45%, rgba(5, 11, 24, 0) 100%); }
+    .sombra-baixo { position: absolute; left: 0; right: 0; bottom: 0; height: 900px;
+      background: linear-gradient(0deg, rgba(5, 11, 24, 0.6) 0%, rgba(5, 11, 24, 0) 100%); }
+    .titulo { position: absolute; left: 90px; right: 90px; top: 236px; font-family: "Anton", sans-serif; font-size: 100px;
+      line-height: 1.12; color: #f5f7fb; text-transform: uppercase; text-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
+    .titulo .p { display: inline-block; margin-right: 0.22em; }
+    .titulo .d { color: #ffffff; background: #4d84e0; padding: 0 0.12em; text-shadow: none; }
+    .bolha { position: absolute; max-width: 800px; padding: 22px 30px 24px; border-radius: 32px; font: 400 32px/1.34 "Figtree", sans-serif;
+      color: #0d1b33; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35); }
+    .bolha b { font-weight: 700; }
+    .eu { right: 60px; background: #d9fdd3; border-top-right-radius: 8px; }
+    .ele { left: 60px; background: #ffffff; border-top-left-radius: 8px; }
+    .ia { right: 60px; background: #b1268f; color: #ffffff; border-top-right-radius: 8px; }
+    .rotulo { display: block; font: 700 24px "Figtree", sans-serif; color: #6b7790; margin-bottom: 6px; }
+    .ele .rotulo-c { display: flex; align-items: center; gap: 10px; font: 700 24px "Figtree", sans-serif; color: #0f2547; margin-bottom: 8px; }
+    .aviso { position: absolute; left: 70px; right: 70px; padding: 28px 34px 30px; border-radius: 40px; background: rgba(245, 247, 251, 0.97);
+      color: #0d1b33; box-shadow: 0 20px 44px rgba(0, 0, 0, 0.4); font-family: "Figtree", sans-serif; }
+    .aviso .topo { display: flex; align-items: center; gap: 14px; font-size: 24px; color: #6b7790; }
+    .aviso b { display: block; margin-top: 14px; font-size: 32px; }
+    .aviso p { margin-top: 8px; font-size: 29px; line-height: 1.35; color: #3b4a63; }
+    .sep { position: absolute; left: 50%; padding: 10px 26px; border-radius: 22px; background: rgba(223, 230, 241, 0.95);
+      font: 700 26px "Figtree", sans-serif; color: #3b4a63; transform: translateX(-50%); }
+    .mini { position: absolute; width: 380px; height: 780px; border-radius: 56px; background: #0b0f1a; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 0 3px #2a3347; }
+    .mini .tela { position: absolute; inset: 10px; border-radius: 46px; overflow: hidden; background: #e9edf3; }
+    .mini .tela > div { position: absolute; left: 0; top: 0; width: 360px; background-size: 360px auto; background-repeat: no-repeat; }
+    .mini video { position: absolute; left: 0; top: 0; width: 360px; height: 760px; object-fit: cover; }
+  </style>
+  <div id="root" data-composition-id="c13" data-width="1080" data-height="1920">
+    <div id="c13-cena" style="position: absolute; inset: 0">
+    <div id="c13-f" class="fundo" style="background-image: url('assets/cenas/c13-gestor.png')"></div>
+    <div class="sombra"></div>
+    <div class="sombra-baixo"></div>
+    
+    <h1 id="c13-t" class="titulo"><span class="p c13-t-w">Custo</span><span class="p c13-t-w">por</span><span class="p c13-t-w">visita.</span><br /><span class="p c13-t-w">Não</span><span class="p c13-t-w">por</span><span class="p c13-t-w d">clique.</span></h1>
+    <div id="c13-m" class="mini" style="left: 60px; top: 1000px"><div class="tela"><div id="c13-p1" style="height: 719px; background-image: url('assets/telas/vendas.jpg')"></div><div id="c13-p2" style="height: 719px; background-image: url('assets/telas/anuncios.jpg')"></div></div></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#c13-f", { scale: 1.14, x: 0, y: 0, filter: "blur(10px)" }, { scale: 1.04, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 0);
+    tl.to("#c13-f", { scale: 1.1, x: -15, y: -20, duration: 5.55, ease: "none" }, 0.45);
+    tl.fromTo(".c13-t-w", { opacity: 0, scale: 1.5, filter: "blur(6px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.32, stagger: 0.07, ease: "back.out(2.2)" }, 0.25);
+    tl.fromTo("#c13-m", { opacity: 0, y: 900, rotation: 6 }, { opacity: 1, y: 0, rotation: -3, duration: 0.6, ease: "power3.out" }, 0.6);
+    tl.set("#c13-p2", { opacity: 0 }, 0);
+    tl.fromTo("#c13-p1", { y: 0 }, { y: -120, duration: 2, ease: "power2.inOut" }, 1.0);
+    tl.to("#c13-p1", { opacity: 0, duration: 0.2 }, 3.2);
+    tl.fromTo("#c13-p2", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 3.3);
+    tl.fromTo("#c13-p2", { y: 0 }, { y: -110, duration: 2, ease: "power2.inOut" }, 3.5);
+    tl.to("#c13-cena", { opacity: 0, duration: 0.2, ease: "power2.in" }, 5.8);
+    window.__timelines["c13"] = tl;
+  </script>
+</template>
