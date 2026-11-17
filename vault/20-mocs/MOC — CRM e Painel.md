@@ -4,7 +4,7 @@ tags: [moc, crm, painel]
 type: moc
 status: evergreen
 created: 2026-09-05
-updated: 2026-11-03
+updated: 2026-11-17
 summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 ---
 # CRM e Painel — Map of Content
@@ -12,6 +12,9 @@ summary: Leads, funil, fila de trabalho, telas do corretor e do gestor.
 Diretriz de produto: corretor trabalha no CELULAR, mínimo de decisão, ~100
 leads por corretor (gestor vê milhares via RLS). Reforma "Painel de Bolso"
 F0–F6.
+
+## Vídeos para os clientes
+- [[modelos-de-video-para-o-corretor]] — decidido (16/11): 6–8 modelos HyperFrames prontos que o CRM preenche, em vez de agente sob medida por cliente; construção marcada para 17/11 às 20h
 
 ## Escala e consultas
 - [[o-checklist-do-catalogo-e-as-categorias-sem-leitor]] — duas faixas por efeito; quatro campos sem leitor ficaram de fora (16/09)

@@ -12965,3 +12965,12 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 - O nexthomeimoveis.com já estava verificado numa conta Resend existente (um domínio só pode estar em uma conta). Decisão do dono: criar uma API key nessa conta (caminho A) em vez de verificar subdomínio novo.
 - Vercel Production: `RESEND_API_KEY`, `EMAIL_REMETENTE=Astro <acesso@nexthomeimoveis.com>`, `EMAIL_RESPONDER_PARA=astrosolucoestech@gmail.com` (vira `reply_to` em `src/lib/email.ts`). Sem a chave, `emailConfigurado()` é falso e o teste grátis automático fica bloqueado.
 - Plano B se perder acesso à conta antiga: verificar `astro.nexthomeimoveis.com` numa conta própria. Quando comprar domínio (astrosolucoes.com.br), trocar só o domínio no Resend e o `EMAIL_REMETENTE`.
+
+## Modelos de vídeo prontos para o corretor (16/11/2026)
+
+Nota: [[modelos-de-video-para-o-corretor]].
+
+- Os vídeos da Astro (`docs/videos/astro-completo/`, 1:30) foram feitos por agente, cena a cena. Levar isso para cada cliente foi descartado: estimativa de ~US$ 20–35 por cliente/mês (Opus 5.5) ou ~US$ 10–18 (Sonnet 5.5) para 4 vídeos com 2 ajustes, e 10–20 min por vídeo. Estimativa com os preços da API, não medida.
+- Decisão: 6–8 modelos HyperFrames prontos (lançamento, pronto para morar, oportunidade da semana, comparativo, portfólio do corretor, simulação, tour 360°, datas e avisos), feitos uma vez por nós com o agente e preenchidos pelo CRM com catálogo e marca do grupo. Começar por lançamento e oportunidade da semana.
+- Reaproveitar `video_jobs`, o worker do GitHub Actions, a entrega pelo WhatsApp e `grupos.teto_*`. Em aberto: voz paga (a grátis da HeyGen é só para teste), licença de música para uso no produto, tempo de render medido no worker.
+- Construção marcada para 17/11/2026 às 20h (lembrete agendado na sessão).
