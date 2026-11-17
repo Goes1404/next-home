@@ -119,6 +119,8 @@ CENAS = [
              (bolha("g-b2", "ele", central("Lista “Vitra · Barueri” (exemplo): enviando.<br>23 pessoas · 14 enviadas · 5 responderam<br>Ficaram para os próximos dias: 9<br><br>Quem é cada um fica no painel, em Listas → Ver quem recebeu."), 1140), 1.8, "pop", None)]),
 ]
 FECHO_INI, FECHO_DUR = 52.8, 9.5
+FX_GANCHO = [("click-soft", round(0.1 + k * 0.2, 2), 0.35) for k in range(10)] + [("click-soft", 0.8, 0.6), ("click-soft", 1.05, 0.6), ("click-soft", 1.95, 0.6), ("impact-bass-1", 2.25, 0.9), ("click", 4.45, 0.7), ("impact-bass-1", 4.6, 0.7)]
+MUNDO = "mundo-lista.js"
 TOTAL = round(FECHO_INI + FECHO_DUR, 2)
 FALAS = {"l01": 0.5, "l02": 5.9, "l03": 16.5, "l04": 23.1, "l05": 31.3, "l06": 39.5, "l07": 47.5, "l08": FECHO_INI + 0.3}
 
@@ -139,7 +141,7 @@ def cena(c, modo):
         js.append(f'tl.fromTo("#{i}-fone", {{ y: 120, opacity: 0 }}, {{ y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }}, 0);' if i == "a" else
                   f'tl.fromTo("#{i}-fone", {{ scale: 0.97 }}, {{ scale: 1, duration: 0.35, ease: "power2.out" }}, 0);')
     if c.get("slam"):
-        cam.append('<div id="a-g" class="slam">' + "".join(f'<span class="p{" d" if w == "cair." else ""}" id="a-g{k}">{w}</span>' for k, (w, t) in enumerate(c["slam"])) + "</div>")
+        cam.append('<div id="a-g" class="slam">' + "".join(f'<span class="p{" d" if w == c.get("destaque", "cair.") else ""}" id="a-g{k}">{w}</span>' for k, (w, t) in enumerate(c["slam"])) + "</div>")
         for k, (w, t) in enumerate(c["slam"]):
             js.append(f'tl.fromTo("#a-g{k}", {{ opacity: 0, scale: 1.9 }}, {{ opacity: 1, scale: 1, duration: 0.22, ease: "back.out(2.4)" }}, {t});')
     for (tid, a, b, t0, t1, cor) in c["titulos"]:
@@ -235,7 +237,7 @@ def preparar(pasta, modo):
             shutil.copy(os.path.join(AQUI, "../astro-dores/assets/cenas" if c.startswith("d0") else "../astro-bonecos/assets/cenas", c), os.path.join(pasta, "assets/cenas", c))
     if modo == "3d":
         shutil.copy(os.path.join(AQUI, "../astro-site/assets/three.min.js"), os.path.join(pasta, "assets/three.min.js"))
-        shutil.copy(os.path.join(AQUI, "mundo-lista.js"), os.path.join(pasta, "assets/mundo.js"))
+        shutil.copy(os.path.join(AQUI, MUNDO), os.path.join(pasta, "assets/mundo.js"))
     if modo == "classico":
         shutil.copy(os.path.join(AQUI, "../astro-completo/compositions/cidade.html"), os.path.join(pasta, "compositions/cidade.html"))
 
@@ -256,7 +258,7 @@ def gerar(modo, pasta):
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", os.path.join(pasta, "assets/bgm/trilha.wav"), "-t", str(TOTAL),
                         "-af", f"afade=t=out:st={TOTAL - 2.5}:d=2.5", trilha], check=True)
     aud.append(f'      <audio id="trilha" src="assets/bgm/trilha-lista.wav" data-start="0" data-duration="{TOTAL}" data-volume="0.2" data-track-index="3"></audio>')
-    fx = [("click-soft", round(0.1 + k * 0.2, 2), 0.35) for k in range(10)] + [("click-soft", 0.8, 0.6), ("click-soft", 1.05, 0.6), ("click-soft", 1.95, 0.6), ("impact-bass-1", 2.25, 0.9), ("click", 4.45, 0.7), ("impact-bass-1", 4.6, 0.7)]
+    fx = list(FX_GANCHO)
     for c in CENAS[1:]:
         fx.append(("whoosh", round(c["ini"] - 0.25, 2), 0.45))
     for c in CENAS:

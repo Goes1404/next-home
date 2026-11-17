@@ -1,0 +1,22 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "c1", "text": "Quanto custa perder um cliente?" },
+    { "id": "c2", "text": "Uma comissão de cinco mil reais, que esfriou porque você respondeu tarde." },
+    { "id": "c3", "text": "A Astro custa noventa e sete reais por mês. Três reais e vinte e três por dia. Menos que um café." },
+    { "id": "c4", "text": "E atende na hora, faz follow-up sozinha e organiza seus leads pelo WhatsApp." },
+    { "id": "c5", "text": "Uma comissão só paga mais de quatro anos de Astro." },
+    { "id": "c6", "text": "Chama a gente no WhatsApp e comece o teste grátis de sete dias." },
+    { "id": "m1", "text": "Três motivos para você, corretor, usar a Astro." },
+    { "id": "m2", "text": "Um: a IA responde o seu cliente na hora, até de madrugada." },
+    { "id": "m3", "text": "Dois: você controla o CRM inteiro por áudio, no WhatsApp." },
+    { "id": "m4", "text": "Três: o follow-up chama de novo quem sumiu, sozinho." },
+    { "id": "m5", "text": "Noventa e sete reais por mês. Chama a gente no WhatsApp e teste grátis por sete dias." },
+    { "id": "d1", "text": "Olha isso." },
+    { "id": "d2", "text": "Um áudio só." },
+    { "id": "d3", "text": "Ele entende, você confirma, e pronto: cliente cadastrado e visita na agenda." },
+    { "id": "d4", "text": "Astro. Chama a gente no WhatsApp." }
+  ]
+}

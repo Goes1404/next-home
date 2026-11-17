@@ -13011,3 +13011,8 @@ Nota: [[hyperframes-no-ambiente-de-nuvem]].
 - `docs/videos/astro-lista/gerar.py` (3 estilos; 3D em `mundo-lista.js`). Gancho: "Seu número vai cair." com contador de 0 a 200, tremor e flash vermelho.
 - Conferido no código: a proposta real da lista (`src/lib/central/tratadores/listas.ts`) diz "Lista de transmissão pelo SEU WhatsApp", "Primeiro contato tem limite (10 por dia, 30 por semana)", "Cada mensagem é reescrita e conferida antes de sair (não sai texto repetido), primeiro contato vai sem foto, e quem já recebeu lista nesta semana fica de fora." Filtros só: região, orçamento máximo, dormitórios, imóvel, etapas, respondeu, parado há dias.
 - Ritmo (`src/lib/whatsapp/antiBan.ts`): 90–120 s entre mensagens, das 9h às 20h59, sem domingo; teto diário pela idade do número (15 → 30 → 60 → 100 → 150) e +50% sobre o maior dia da semana; sem primeiro contato nos 7 primeiros dias. Recusa ("pare", "sair", "stop") tira a pessoa (`recusaDoCliente.ts`); a IA responde quem retorna sabendo de qual lista e imóvel (`contextoDaCampanha.ts`).
+
+## Anúncios de venda (17/11/2026)
+
+- `docs/videos/astro-vendas/gerar.py` gera 3 anúncios curtos para corretor autônomo ("a conta do preço" 33 s, "3 motivos" 26 s, "demonstração" 17 s), cada um em 3 estilos (pastas `astro-vendas-<id>`, `-classico`, `-3d`), com fecho "Chamar no WhatsApp". Usa `astro-lista/gerar.py` como base (importado; `FX_GANCHO`, `MUNDO` e o `destaque` do gancho viraram parâmetros) e o mundo 3D genérico `mundo-vendas.js`, configurado por `window.__CFG`.
+- Preço usado: Autônomo Essencial R$ 97/mês (`PRECO_ESSENCIAL` em `src/lib/plataforma/tiposDeConta.ts`); Profissional R$ 147; imobiliária R$ 127 por usuário. A comissão de R$ 5.000 do anúncio é exemplo e está marcada na tela.
