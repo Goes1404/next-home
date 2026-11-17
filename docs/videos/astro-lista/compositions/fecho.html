@@ -1,0 +1,234 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #e-tela {
+      background: #e9edf3;
+    }
+    .l-cab {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 204px;
+      padding: 84px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #0f2547;
+      color: #f5f7fb;
+      font: 700 32px "Figtree", sans-serif;
+    }
+    .l-cab .bola {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1b3a6b, #0a1830);
+    }
+    .l-cab small {
+      display: block;
+      font: 400 24px "Figtree", sans-serif;
+      color: #a9c1e0;
+      margin-top: 4px;
+    }
+    .l-bolha {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 250px;
+      padding: 26px 30px 20px;
+      border-radius: 32px;
+      border-top-left-radius: 10px;
+      background: #ffffff;
+      font: 400 29px/1.4 "Figtree", sans-serif;
+      color: #0d1b33;
+    }
+    .l-bolha .link {
+      color: #2f5ea8;
+    }
+    .l-bolha .hora {
+      display: block;
+      text-align: right;
+      font-size: 22px;
+      color: #6b7790;
+      margin-top: 4px;
+    }
+    #e-frase {
+      font-size: 128px;
+    }
+    #e-app {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, #1f4a96 0%, #0f2547 45%, #050b18 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 330px;
+    }
+    .e-app-selo {
+      width: 300px;
+      height: 300px;
+      border-radius: 66px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+    }
+    .e-app-nome {
+      margin-top: 56px;
+      font: 700 76px "Figtree", sans-serif;
+      color: #f5f7fb;
+      letter-spacing: -0.01em;
+    }
+    .e-app-nome span {
+      color: #a9c1e0;
+    }
+    .e-app-frase {
+      margin-top: 14px;
+      font: 400 34px "Figtree", sans-serif;
+      color: #a9c1e0;
+    }
+    #e-selo {
+      position: absolute;
+      left: 450px;
+      top: 300px;
+      width: 180px;
+      height: 180px;
+    }
+    #e-chamada {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 700px;
+      text-align: center;
+      font-family: "Anton", sans-serif;
+      font-size: 178px;
+      line-height: 1.08;
+      color: #f5f7fb;
+      text-transform: uppercase;
+    }
+    #e-chamada .c {
+      display: inline-block;
+      margin: 0 0.1em;
+    }
+    #e-chamada .d {
+      background: #4d84e0;
+      color: #ffffff;
+      padding: 0 0.14em;
+    }
+    #e-marca {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 500px;
+      text-align: center;
+      font-family: "Anton", sans-serif;
+      font-size: 96px;
+      line-height: 1.25;
+      color: #f5f7fb;
+      text-transform: uppercase;
+      clip-path: inset(0% 100% 0% 0%);
+    }
+    #e-marca span {
+      color: #a9c1e0;
+    }
+    #e-cta {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1130px;
+      display: flex;
+      justify-content: center;
+    }
+    #e-cta .botao {
+      min-height: 128px;
+      padding: 0 76px;
+      font: 800 52px "Figtree", sans-serif;
+      background: #ffffff;
+      color: #0f2547;
+      box-shadow: 0 20px 50px rgba(77, 132, 224, 0.45);
+    }
+    #e-bio {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1295px;
+      text-align: center;
+      font: 700 42px "Figtree", sans-serif;
+      color: #b9c2d4;
+      letter-spacing: 0.02em;
+    }
+  </style>
+  <div id="root" data-composition-id="fecho" data-width="1080" data-height="1920">
+    <div id="e-foto" style="position: absolute; inset: -40px; background-size: cover; background-position: center; background-image: url('assets/cenas/c14-chaves.png')"></div>
+    <div id="e-escuro" style="position: absolute; inset: 0; background: rgba(5, 11, 24, 0.72)"></div>
+    <h1 id="e-frase" class="titulo clip" data-start="0.2" data-duration="2.5"><span class="p e-w">Divulgue</span><span class="p e-w">sem</span><span class="p e-w">queimar</span><span class="p e-w">o</span><span class="p e-w">seu</span><span class="p e-w d">número.</span></h1>
+
+    <div id="e-fim" class="clip" data-start="2.6" data-duration="6.9">
+      <svg id="e-selo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="e-selo-fundo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1b3a6b" />
+            <stop offset="1" stop-color="#0a1830" />
+          </linearGradient>
+        </defs>
+        <rect id="e-ladrilho" width="64" height="64" rx="14" fill="url(#e-selo-fundo)" />
+        <path id="e-a" d="M18 48 L32 15 L46 48" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="80" stroke-dashoffset="80" />
+        <ellipse id="e-orbita" cx="32" cy="37" rx="24" ry="7.5" transform="rotate(-18 32 37)" fill="none" stroke="#a9c1e0" stroke-width="2.6" stroke-dasharray="110" stroke-dashoffset="110" />
+        <path id="e-estrela" d="M49 15 L50.6 19.4 L55 21 L50.6 22.6 L49 27 L47.4 22.6 L43 21 L47.4 19.4 Z" fill="#fff" />
+      </svg>
+      <div id="e-marca">Astro <span>Soluções</span></div>
+      <div id="e-chamada"><span class="c" id="ec1">Teste</span><span class="c" id="ec2">grátis</span><br /><span class="c d" id="ec3">por 7 dias</span></div>
+      <div id="e-cta"><div class="botao">Começar agora →</div></div>
+      <div id="e-bio">👆 link na bio</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#e-escuro", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0);
+    tl.fromTo("#e-foto", { scale: 1.12, filter: "blur(10px)" }, { scale: 1.03, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 0);
+    tl.to("#e-foto", { scale: 1.1, duration: 9, ease: "none" }, 0.5);
+    // o celular recua e desce, abrindo espaço para a frase
+    // a frase oficial, palavra por palavra de cinza a marfim
+    tl.fromTo(".e-w", { opacity: 0, color: "#4a5a78" }, { opacity: 1, color: "#f5f7fb", duration: 0.18, stagger: 0.17, ease: "power1.out" }, 0.3);
+    tl.set(".e-w.d", { color: "#ffffff" }, 1.2);
+    // saem juntos
+    tl.to(".e-w", { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.02, ease: "power2.in" }, 2.6);
+    // o selo se desenha
+    tl.fromTo("#e-ladrilho", { scale: 2.4, opacity: 0, transformOrigin: "50% 50%" }, { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(1.8)" }, 2.85);
+    tl.fromTo("#e-a", { strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.3, ease: "power2.inOut" }, 2.92);
+    tl.fromTo("#e-orbita", { strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.35, ease: "power2.inOut" }, 3.02);
+    tl.fromTo("#e-estrela", { scale: 0, transformOrigin: "49px 21px" }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 3.25);
+    // o nome passa por baixo do selo
+    tl.fromTo("#e-marca", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.out" }, 3.15);
+    tl.fromTo("#ec1", { opacity: 0, scale: 1.9 }, { opacity: 1, scale: 1, duration: 0.24, ease: "back.out(2.4)" }, 3.4);
+    tl.fromTo("#ec2", { opacity: 0, scale: 1.9 }, { opacity: 1, scale: 1, duration: 0.24, ease: "back.out(2.4)" }, 3.63);
+    tl.fromTo("#ec3", { opacity: 0, scale: 1.9 }, { opacity: 1, scale: 1, duration: 0.28, ease: "back.out(2.4)" }, 3.86);
+    tl.fromTo("#e-cta .botao", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, 4.25);
+    tl.to("#e-cta .botao", { scale: 1.08, duration: 0.18, ease: "power2.out" }, 5.3);
+    tl.to("#e-cta .botao", { scale: 1, duration: 0.3, ease: "power2.inOut" }, 5.48);
+    tl.to("#e-cta .botao", { scale: 1.08, duration: 0.18, ease: "power2.out" }, 6.5);
+    tl.to("#e-cta .botao", { scale: 1, duration: 0.3, ease: "power2.inOut" }, 6.68);
+    tl.fromTo("#e-bio", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.5);
+    window.__timelines["fecho"] = tl;
+  </script>
+</template>

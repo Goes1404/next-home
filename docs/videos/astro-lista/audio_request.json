@@ -1,0 +1,15 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "l01", "text": "Seu número de WhatsApp vai ser banido. E é você que está apertando o botão." },
+    { "id": "l02", "text": "Mandar o mesmo imóvel para duzentas pessoas de uma vez é o caminho mais curto para o banimento: texto repetido, tudo de uma vez, gente bloqueando." },
+    { "id": "l03", "text": "Na Astro, você só pede pelo WhatsApp: manda o Vitra para quem quer Barueri até seiscentos mil." },
+    { "id": "l04", "text": "Ele separa quem combina com o imóvel, e cada mensagem é reescrita com o nome da pessoa. Nada de texto repetido." },
+    { "id": "l05", "text": "Sai do seu próprio número, uma a cada minuto e meio, em horário comercial. E primeiro contato tem limite por dia." },
+    { "id": "l06", "text": "Quem pediu para sair fica de fora. E quem responde é atendido pela IA, que já sabe de qual imóvel está falando." },
+    { "id": "l07", "text": "Pergunte como está a lista, e veja quem recebeu e quem respondeu." },
+    { "id": "l08", "text": "Divulgue sem queimar o seu número. Teste a Astro grátis por sete dias. Link na bio." }
+  ]
+}
