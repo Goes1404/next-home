@@ -41,7 +41,7 @@ for i, (x, w, h) in enumerate(predios):
   </g>''')
         js.append(f'    tl.fromTo("#gd{i}", {{ opacity: 0 }}, {{ opacity: 1, duration: 0.6 }}, {round(inicio + subida - 0.5, 2)});')
         js.append(f'    tl.fromTo("#gb{i}", {{ rotation: -6, svgOrigin: "{cx} {topo - 150}" }}, {{ rotation: 6, svgOrigin: "{cx} {topo - 150}", duration: 4, ease: "sine.inOut", yoyo: true, repeat: 7 }}, {round(inicio + subida, 2)});')
-        js.append(f'    tl.to("#gd{i}", {{ opacity: 0, duration: 0.8 }}, 78.4);')
+        js.append(f'    tl.to("#gd{i}", {{ opacity: 0, duration: 0.8 }}, 91.7);')
 html = f'''<template>
   <style>
     #root {{
@@ -93,8 +93,8 @@ html = f'''<template>
     const tl = gsap.timeline({{ paused: true }});
 {chr(10).join(js)}
     // a cidade fica pronta: as janelas acendem e o céu ganha brilho
-    tl.to(".j", {{ opacity: 0.85, duration: 0.25, stagger: {{ each: 0.012, from: "random" }} }}, 78.9);
-    tl.to("#brilho", {{ opacity: 1, duration: 3, ease: "power2.out" }}, 79.4);
+    tl.to(".j", {{ opacity: 0.85, duration: 0.25, stagger: {{ each: 0.012, from: "random" }} }}, 92.2);
+    tl.to("#brilho", {{ opacity: 1, duration: 3, ease: "power2.out" }}, 92.7);
     window.__timelines["cidade"] = tl;
   </script>
 </template>

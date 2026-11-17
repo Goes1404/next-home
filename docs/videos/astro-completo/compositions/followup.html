@@ -1,0 +1,126 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    .f-bolha {
+      position: absolute;
+      max-width: 540px;
+      padding: 20px 28px 22px;
+      border-radius: 32px;
+      font: 400 29px/1.32 "Figtree", sans-serif;
+    }
+    .f-dele {
+      left: 34px;
+      background: #ffffff;
+      border-bottom-left-radius: 10px;
+      color: #0d1b33;
+    }
+    .f-nosso {
+      right: 34px;
+      background: #b1268f;
+      border-bottom-right-radius: 10px;
+      color: #ffffff;
+    }
+    .f-audio {
+      display: block;
+      font: 600 26px "Figtree", sans-serif;
+      color: #6b7790;
+      margin-bottom: 6px;
+    }
+    #f-digitando {
+      right: 34px;
+      padding: 24px 30px;
+      display: flex;
+      gap: 10px;
+    }
+    #f-digitando i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    #f-campo {
+      position: absolute;
+      left: 30px;
+      right: 30px;
+      top: 1180px;
+      height: 92px;
+      border-radius: 46px;
+      background: #ffffff;
+      border: 2px solid #d9e0ea;
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      font: 400 28px "Figtree", sans-serif;
+      color: #6b7790;
+    }
+    .f-sep {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 22px;
+      border-radius: 18px;
+      background: #dfe6f1;
+      font: 600 24px "Figtree", sans-serif;
+      color: #3b4a63;
+    }
+  </style>
+  <div id="root" data-composition-id="followup" data-width="1080" data-height="1920">
+    <h1 id="f-titulo" class="titulo"><span class="p f-w">Cliente</span><span class="p f-w">sumiu?</span><br /><span class="p f-w2">Ele</span><span class="p f-w2">chama</span><span class="p f-w2">de</span><span class="p f-w2 d">novo.</span></h1>
+
+    <div id="f-celular" class="celular">
+      <div class="tela">
+        <div class="status"><span>8:13</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="f-conteudo">
+          <div class="cab">
+            <span class="voltar">‹</span>
+            <span class="avatar">CM</span>
+            <div><h2>Carla Mendes</h2><small>Anúncio · Apê 2 quartos Barueri</small></div>
+          </div>
+          <div class="f-sep" style="top: 228px">ontem</div>
+          <div id="f-b1" class="f-bolha f-dele" style="top: 290px">Vou ver com meu marido e te falo.</div>
+          <div id="f-sep2" class="f-sep" style="top: 410px">24 horas depois</div>
+          <div id="f-b2" class="f-bolha f-nosso" style="top: 472px">Oi, Carla! Conseguiu falar com seu marido? Posso te mandar a planta do apê de Barueri?</div>
+          <div id="f-b3" class="f-bolha f-dele" style="top: 660px">Pode mandar! 😊</div>
+          <div id="f-campo">Mensagem</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#f-conteudo", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
+    tl.fromTo(".f-w", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 0.2);
+    tl.fromTo("#f-sep2", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 1.5);
+    tl.fromTo("#f-b2", { opacity: 0, scale: 0.6, transformOrigin: "right bottom" }, { opacity: 1, scale: 1, duration: 0.42, ease: "back.out(2)" }, 2.1);
+    tl.fromTo(".f-w2", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 2.2);
+    tl.fromTo("#f-b3", { opacity: 0, scale: 0.6, transformOrigin: "left bottom" }, { opacity: 1, scale: 1, duration: 0.42, ease: "back.out(2)" }, 4.4);
+    tl.to("#f-celular", { scale: 1.07, y: -40, transformOrigin: "50% 30%", duration: 0.35, ease: "power3.out" }, 4.4);
+    tl.to("#f-conteudo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 6.25);
+    tl.to("#f-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 6.25);
+    window.__timelines["followup"] = tl;
+  </script>
+</template>

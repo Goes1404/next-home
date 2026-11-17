@@ -33,6 +33,7 @@
   </style>
   <div id="root" data-composition-id="site" data-width="1080" data-height="1920">
     <h1 id="s-t1" class="titulo"><span class="p s-w">Seu</span><span class="p s-w">site</span><br /><span class="p s-w d">pronto.</span></h1>
+    <h1 id="s-t3" class="titulo"><span class="p s-w3">Tour</span><span class="p s-w3 d">360°</span><br /><span class="p s-w3">no</span><span class="p s-w3">seu</span><span class="p s-w3">site.</span></h1>
     <h1 id="s-t2" class="titulo"><span class="p s-w2">E</span><span class="p s-w2">cada</span><span class="p s-w2">corretor</span><br /><span class="p s-w2">com</span><span class="p s-w2">seu</span><span class="p s-w2 d">portfólio.</span></h1>
     <div id="s-cel" class="celular">
       <div id="s-tela" class="tela">
@@ -40,6 +41,9 @@
         <div class="camera-frontal"></div>
         <div id="s-home" class="print" style="height: 1524px; background-image: url('assets/telas/site-home.jpg')"></div>
         <div id="s-dest" class="print" style="height: 1524px; background-image: url('assets/telas/site-destaques.jpg')"></div>
+        <div id="s-tourbox" style="position: absolute; left: 0; top: 84px; width: 704px; height: 1440px; overflow: hidden">
+          <video id="s-tour" class="clip" src="assets/telas/tour360.mp4" data-start="8.3" data-duration="6.6" data-playback-rate="0.76" muted playsinline style="width: 704px; height: 1440px; object-fit: cover"></video>
+        </div>
         <div id="s-corr" class="print" style="height: 4212px; background-image: url('assets/telas/site-corretora.jpg')"></div>
       </div>
     </div>
@@ -59,8 +63,14 @@
     tl.fromTo("#s-corr", { opacity: 1, x: 760, filter: "blur(14px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.32, ease: "power3.out" }, 3.95);
     tl.fromTo(".s-w2", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 3.9);
     tl.fromTo("#s-corr", { y: 0 }, { y: -1550, duration: 2.6, ease: "power2.inOut" }, 5.3);
-    tl.to("#s-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 8.1);
-    tl.to("#s-t2", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 8.1);
+    tl.set("#s-tourbox", { opacity: 0 }, 0);
+    tl.to("#s-corr", { x: -760, filter: "blur(14px)", duration: 0.28, ease: "power3.in" }, 8.0);
+    tl.to("#s-t2", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 8.0);
+    tl.fromTo("#s-tourbox", { opacity: 1, x: 760, filter: "blur(14px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.32, ease: "power3.out" }, 8.25);
+    tl.fromTo(".s-w3", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 8.3);
+    tl.to("#s-cel", { scale: 1.06, y: -30, transformOrigin: "50% 30%", duration: 0.5, ease: "power3.out" }, 10.5);
+    tl.to("#s-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 14.9);
+    tl.to("#s-t3", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 14.9);
     window.__timelines["site"] = tl;
   </script>
 </template>
