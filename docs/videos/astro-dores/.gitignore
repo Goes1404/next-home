@@ -7,3 +7,4 @@ assets/sfx/
 assets/cenas/
 work-*/
 .*.hf-transaction-*/
+__pycache__/
