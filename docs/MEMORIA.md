@@ -13016,3 +13016,11 @@ Nota: [[hyperframes-no-ambiente-de-nuvem]].
 
 - `docs/videos/astro-vendas/gerar.py` gera 3 anúncios curtos para corretor autônomo ("a conta do preço" 33 s, "3 motivos" 26 s, "demonstração" 17 s), cada um em 3 estilos (pastas `astro-vendas-<id>`, `-classico`, `-3d`), com fecho "Chamar no WhatsApp". Usa `astro-lista/gerar.py` como base (importado; `FX_GANCHO`, `MUNDO` e o `destaque` do gancho viraram parâmetros) e o mundo 3D genérico `mundo-vendas.js`, configurado por `window.__CFG`.
 - Preço usado: Autônomo Essencial R$ 97/mês (`PRECO_ESSENCIAL` em `src/lib/plataforma/tiposDeConta.ts`); Profissional R$ 147; imobiliária R$ 127 por usuário. A comissão de R$ 5.000 do anúncio é exemplo e está marcada na tela.
+
+## Comunicado pelo número central (0260, 17/11/2026)
+
+Nota: [[comunicado-pelo-numero-central]].
+
+- Pedido do dono: mandar as novidades da Astro no PRIVADO de cada corretor da Aretz, pelo número central, sem derrubar o número. Não existia caminho pronto: o central só falava sozinho nos avisos automáticos, e só com quem já tinha escrito a ele (`canalDoAviso`, regra que nasceu da queda de 30/10).
+- Feito: `/plataforma/comunicados` + tabelas `comunicados`/`comunicado_envios` (0260) + `processarComunicados` no tique dos follow-ups (pg_cron, 5 min). Uma mensagem por tique, 9h–20h59 seg–sáb, até 10/dia, 4 min mínimos, "Oi" variado, pausa após 3 falhas. Vai também a quem nunca falou com o central (decisão do dono), mas NÃO cria `central_estado` para essas pessoas (senão o resumo das 8h passaria a sair pelo central para elas).
+- Desta sessão de nuvem NÃO deu para aplicar a migration nem publicar: o conector do Supabase respondeu "You do not have permission" e o ambiente não tem as chaves da Evolution. Falta: aplicar a 0260, publicar, e confirmar o envio na tela.
