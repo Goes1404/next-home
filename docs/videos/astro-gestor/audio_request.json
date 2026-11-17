@@ -1,0 +1,15 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "g01", "text": "Você sabe quanto custou cada visita que a sua equipe fez este mês?" },
+    { "id": "g02", "text": "Com a Astro, o lead que chega pelo site, pelo formulário do anúncio ou pelo portal entra na roleta, e vai na hora para o próximo corretor da fila." },
+    { "id": "g03", "text": "O corretor recebe o aviso no celular: responda agora, o primeiro contato rápido é o que mais converte." },
+    { "id": "g04", "text": "Um corretor saiu? Os leads são da imobiliária. Você passa a carteira para outro corretor, ou divide pela roleta." },
+    { "id": "g05", "text": "Nos anúncios, chega de olhar só clique. A Astro junta o gasto do Meta com o que aconteceu no CRM: custo por cliente, por visita e por venda." },
+    { "id": "g06", "text": "E de qualquer lugar, pergunte no WhatsApp: como foi a equipe este mês? Vem o ranking, as vendas e quem está com lead parado." },
+    { "id": "g07", "text": "A sua equipe organizada, e você sabendo onde cada real está rendendo." },
+    { "id": "g08", "text": "Teste a Astro grátis por sete dias. Link na bio." }
+  ]
+}
