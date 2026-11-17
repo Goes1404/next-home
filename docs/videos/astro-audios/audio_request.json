@@ -1,0 +1,15 @@
+{
+  "provider": "heygen",
+  "voice": "a8c7b58e38c44719b3ab36342f080e95",
+  "lang": "pt",
+  "lines": [
+    { "id": "a01", "text": "E se o seu CRM inteiro coubesse em três áudios por dia?" },
+    { "id": "a02", "text": "Oito da manhã. Antes do café, a Astro já mandou o seu dia: as visitas, quem está esperando resposta e os leads novos." },
+    { "id": "a03", "text": "Primeiro áudio, no plantão: cadastra o Marcos e marca visita com ele sábado às dez. Dois pedidos, um sim só." },
+    { "id": "a04", "text": "Segundo áudio, no carro: manda as fotos e a planta do Vitra para a Carla, e me lembra de ligar para ela às seis." },
+    { "id": "a05", "text": "Uma hora antes da visita, o aviso chega sozinho. E às seis, o lembrete." },
+    { "id": "a06", "text": "Terceiro áudio, à noite: quem eu ligo amanhã? E ele responde com quem está mais quente." },
+    { "id": "a07", "text": "Sem abrir painel, sem planilha, sem esquecer ninguém. Três áudios, e o seu dia está em ordem." },
+    { "id": "a08", "text": "Teste a Astro grátis por sete dias. Link na bio." }
+  ]
+}
