@@ -63,6 +63,47 @@ IMG = {"s1": ("f1-dono-instagram.png", (0, -30)), "s2": ("f2-dono-site.png", (15
        "s4": ("c10-tour.png", (0, -20)), "s5": ("f3-corretores.png", (-10, -25)), "s6": ("c12-roleta.png", (10, -25)),
        "s7": ("f4-dono-janela.png", (-15, -20))}
 
+CSS_CLASSICO = """    .mini { left: 170px !important; top: 700px !important; width: 740px; height: 1480px; border-radius: 96px; }
+    .mini .tela { inset: 16px; border-radius: 82px; }
+    .mini .tela > div { width: 708px; height: 3200px !important; background-size: 708px auto; }
+    .mini video { width: 708px !important; height: 1448px !important; }
+    .feed { position: absolute; width: 222px; height: 222px; border-radius: 8px; display: grid; place-items: center; font-size: 96px; }
+    .bloco { position: absolute; width: 430px; height: 290px; border-radius: 40px; background: rgba(15, 37, 71, 0.94); border: 3px solid #4d84e0;
+      color: #f5f7fb; font: 700 46px "Figtree", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45); }
+    .bloco span { font-size: 96px; }
+    .campo { margin-top: 14px; padding: 18px 22px; border-radius: 18px; border: 2px solid #cfd8e3; font-size: 30px; color: #0d1b33; }
+    .linha { display: flex; align-items: center; gap: 18px; margin-top: 22px; font: 700 30px "Figtree", sans-serif; color: #0d1b33; }
+    .linha .nome { width: 190px; }
+    .linha .barra { height: 44px; border-radius: 22px; background: #1f9d6b; transform-origin: left center; }
+"""
+CORES_FEED = ["#e9a96b", "#7fb2e5", "#a6d49f", "#e58f9e", "#c9a6e6", "#f2d36b"]
+FEED = ('<div id="s1-fone" class="mini" style="left: 0; top: 0"><div class="tela" style="background: #fff">'
+        '<div style="position: absolute; left: 0; right: 0; top: 0; height: 190px; width: auto; padding: 96px 40px 0; font: 700 40px Figtree, sans-serif; color: #0d1b33">@suaimobiliaria</div>'
+        + "".join(f'<div class="feed s1-q" style="left: {8 + (k % 3) * 232}px; top: {200 + (k // 3) * 232}px; width: 222px; height: 222px; background: {CORES_FEED[k % 6]}">🏠</div>' for k in range(15))
+        + '</div></div>')
+CARTAO_CONTATO = ('<div id="s6-form" class="aviso" style="top: 760px"><div class="topo"><span>suaimobiliaria.com.br · portfólio da Ana Lima</span></div>'
+                  '<b>Quero falar com a Ana</b><div class="campo">Carla Mendes</div><div class="campo">(11) 9 8765-4321</div>'
+                  '<div class="campo" style="background: #1f9d6b; color: #fff; border-color: #1f9d6b; text-align: center; font-weight: 700">Pedir contato</div></div>')
+GRAFICO = ('<div id="s6-graf" class="aviso" style="top: 760px"><div class="topo">' + selo() + '<span>Cliques no WhatsApp · exemplo</span></div>'
+           + "".join(f'<div class="linha"><span class="nome">{n}</span><div id="s6-b{k}" class="barra" style="width: {w}px"></div><span>{v}</span></div>'
+                     for k, (n, w, v) in enumerate([("Ana Lima", 520, 12), ("Bruno Reis", 300, 7), ("Paula Souza", 390, 9)])) + '</div>')
+BLOCOS = "".join(f'<div id="s7-k{k}" class="bloco" style="left: {85 + (k % 2) * 480}px; top: {700 + (k // 2) * 320}px"><span>{e}</span>{n}</div>'
+                 for k, (e, n) in enumerate([("🌐", "Site"), ("👤", "Portfólio"), ("🔄", "Tour 360°"), ("📊", "CRM")]))
+EXTRA = {
+    "s1": ([(FEED, 0.3, "sobe", None)], ['tl.to(".s1-q", { opacity: 0.08, scale: 0.8, duration: 0.25, stagger: { each: 0.07, from: "end" }, ease: "power2.in" }, 2.5);']),
+    "s6": ([(CARTAO_CONTATO, 0.5, "sobe", 5.2), (GRAFICO, 6.3, "pop", None)],
+           [f'tl.fromTo("#s6-b{k}", {{ scaleX: 0 }}, {{ scaleX: 1, duration: 0.6, ease: "power3.out" }}, {6.6 + k * 0.2});' for k in range(3)]),
+    "s7": ([(f'<div id="s7-blocos" style="position: absolute; inset: 0">{BLOCOS}</div>', 0.2, "pop", None)],
+           [f'tl.fromTo("#s7-k{k}", {{ opacity: 0, scale: 0.5 }}, {{ opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }}, {0.4 + k * 0.45});' for k in range(4)]),
+}
+
+
+def elementos(c, modo):
+    if modo != "classico":
+        return c["el"]
+    return c["el"] + EXTRA.get(c["id"], ([], []))[0]
+
 
 def cena(c, modo="3d"):
     i = c["id"]
@@ -83,7 +124,9 @@ def cena(c, modo="3d"):
         js.append(f'tl.fromTo(".{tid}-w", {{ opacity: 0, scale: 1.5, filter: "blur(6px)" }}, {{ opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.3, stagger: 0.07, ease: "back.out(2.2)" }}, {t0});')
         if t1:
             js.append(f'tl.to("#{tid}", {{ opacity: 0, filter: "blur(8px)", duration: 0.14, ease: "power2.in" }}, {t1});')
-    for (html, t, tipo, t1) in c["el"]:
+    for (html, t, tipo, t1) in elementos(c, modo):
+        if modo == "classico" and tipo == "sobe":
+            t = min(t, 0.5)
         cam.append(html)
         eid = html.split('id="')[1].split('"')[0]
         if tipo == "pop":
@@ -91,16 +134,19 @@ def cena(c, modo="3d"):
         elif tipo == "desce":
             js.append(f'tl.fromTo("#{eid}", {{ opacity: 0, y: -160 }}, {{ opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.6)" }}, {t});')
         elif tipo == "sobe":
-            js.append(f'tl.fromTo("#{eid}", {{ opacity: 0, y: 900 }}, {{ opacity: 1, y: 0, rotation: {-3 if "left: 640" in html else 3}, duration: 0.55, ease: "power3.out" }}, {t});')
+            js.append(f'tl.fromTo("#{eid}", {{ opacity: 0, y: 900 }}, {{ opacity: 1, y: 0, rotation: {0 if modo == "classico" else (-3 if "left: 640" in html else 3)}, duration: 0.55, ease: "power3.out" }}, {t});')
         if t1:
             js.append(f'tl.to("#{eid}", {{ opacity: 0, scale: 0.9, duration: 0.15, ease: "power2.in" }}, {t1});')
     js += c.get("js", [])
+    if modo == "classico":
+        js += EXTRA.get(i, ([], []))[1]
+        cam = [x for x in cam if x != '<div class="sombra"></div>']
     js.append(f'tl.to("#{i}-cena", {{ opacity: 0, duration: 0.15, ease: "power2.in" }}, {round(c["dur"] - 0.15, 2)});')
     miolo = "\n    ".join(cam)
     corpo = "\n    ".join(js)
     return f'''<template>
   <style>
-{FACE}{CSS}{CSS_SITE}  </style>
+{FACE}{CSS}{CSS_SITE}{CSS_CLASSICO if modo == 'classico' else ''}  </style>
   <div id="root" data-composition-id="{i}" data-width="{W}" data-height="{H}">
     <div id="{i}-cena" style="position: absolute; inset: 0">
     {miolo}
@@ -177,10 +223,12 @@ def main(modo="3d", pasta=AQUI):
     for c in CENAS[1:]:
         fx.append(("whoosh", round(c["ini"] - 0.25, 2), 0.45))
     for c in CENAS:
-        for (html, t, tipo, t1) in c["el"]:
+        for (html, t, tipo, t1) in elementos(c, modo):
+            if modo == "classico" and tipo == "sobe":
+                t = min(t, 0.5)
             fx.append(({"pop": "pop", "desce": "chime", "sobe": "whoosh-short"}[tipo], round(c["ini"] + t, 2), 0.5))
-    # o que acontece no mundo 3D (no modo filme não há mundo 3D)
-    if modo != "filme":
+    # o que acontece no mundo 3D (só existe no modo 3d)
+    if modo == "3d":
         fx += [("whoosh-short", 6.0, 0.5), ("impact-bass-1", 6.9, 0.45), ("pop", 8.1, 0.5), ("whoosh-short", 13.4, 0.5)]
         fx += [("click-soft", round(15.7 + k * 0.55 + 0.4, 2), 0.35) for k in range(9)] + [("chime", 21.6, 0.6)]
         fx += [("whoosh-short", 26.2, 0.45)] + [("pop", round(34.6 + k * 0.9, 2), 0.5) for k in range(3)]
@@ -220,8 +268,14 @@ def main(modo="3d", pasta=AQUI):
   </body>
 </html>
 '''
-    if modo == "filme":
+    if modo in ("filme", "classico"):
         html = html.replace('    <script src="assets/three.min.js"></script>\n', "").replace(f'      <canvas id="mundo" width="1080" height="1920" class="clip" data-start="0" data-duration="{TOTAL}" data-track-index="0"></canvas>\n', "").replace('    <script src="assets/mundo.js"></script>\n', "")
+    if modo == "classico":
+        ceu = (f'      <div id="ceu" class="clip" data-start="0" data-duration="{TOTAL}" data-track-index="0" style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, #1f4a96 0%, #12306a 10%, #0a1a3c 24%, #060a16 45%)"></div>\n'
+               f'      <div id="cidade" data-composition-id="cidade" data-composition-src="compositions/cidade.html" data-start="0" data-duration="{TOTAL}" data-track-index="8" data-track-kind="graphics" data-width="{W}" data-height="{H}"></div>\n')
+        html = html.replace(hosts, ceu + hosts, 1)
+        import shutil
+        shutil.copy(os.path.join(AQUI, "../astro-completo/compositions/cidade.html"), os.path.join(pasta, "compositions/cidade.html"))
     open(os.path.join(pasta, "index.html"), "w").write(html)
     print(len(cenas), "cenas,", len(aud), "faixas,", TOTAL, "s")
 
@@ -229,3 +283,4 @@ def main(modo="3d", pasta=AQUI):
 if __name__ == "__main__":
     main()
     main("filme", os.path.join(AQUI, "../astro-site-filme"))
+    main("classico", os.path.join(AQUI, "../astro-site-classico"))
