@@ -1,0 +1,53 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #a-tela {
+      background: #e9edf3;
+    }
+  </style>
+  <div id="root" data-composition-id="anuncios" data-width="1080" data-height="1920">
+    <h1 id="a-t" class="titulo"><span class="p a-w">Custo</span><span class="p a-w">por</span><span class="p a-w d">visita.</span><br /><span class="p a-w2">Não</span><span class="p a-w2">por</span><span class="p a-w2">clique.</span></h1>
+    <div id="a-cel" class="celular">
+      <div id="a-tela" class="tela">
+        <div class="status fundo"><span>18:30</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="a-img" class="print" style="height: 1407px; background-image: url('assets/telas/anuncios.jpg')"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#a-tela", { x: 760, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "power3.out" }, 0);
+    tl.fromTo(".a-w", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 0.2);
+    tl.fromTo(".a-w2", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.2)" }, 1.4);
+    tl.fromTo("#a-img", { y: 0 }, { y: -180, duration: 1.0, ease: "power2.inOut" }, 1.2);
+    tl.to("#a-cel", { scale: 1.1, y: 0, transformOrigin: "50% 0%", duration: 0.45, ease: "power3.out" }, 2.8);
+    tl.to("#a-cel", { scale: 1, y: 0, duration: 0.35, ease: "power2.inOut" }, 5.0);
+    tl.to("#a-tela", { x: -760, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 5.7);
+    tl.to("#a-t", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 5.7);
+    window.__timelines["anuncios"] = tl;
+  </script>
+</template>

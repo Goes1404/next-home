@@ -1,0 +1,139 @@
+<template>
+  <link rel="stylesheet" href="assets/celular.css" />
+  <style>
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-400.woff2") format("woff2");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-600.woff2") format("woff2");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Figtree";
+      src: url("assets/fonts/Figtree-700.woff2") format("woff2");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Anton";
+      src: url("assets/fonts/Anton-Regular.woff2") format("woff2");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #l-tela {
+      background: #e9edf2;
+    }
+    #l-inunda {
+      position: absolute;
+      inset: 0;
+      background: #e9edf2;
+      clip-path: inset(100% 0px 0px 0px);
+    }
+    .l-cab {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 204px;
+      padding: 84px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #0f2547;
+      color: #f5f7fb;
+      font: 700 32px "Figtree", sans-serif;
+    }
+    .l-cab svg {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+    }
+    .l-cab small {
+      display: block;
+      font: 400 24px "Figtree", sans-serif;
+      color: #a9c1e0;
+      margin-top: 4px;
+    }
+    .l-bolha {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 250px;
+      padding: 26px 30px 20px;
+      border-radius: 32px;
+      border-top-left-radius: 10px;
+      background: #ffffff;
+      font: 400 29px/1.4 "Figtree", sans-serif;
+      color: #0d1b33;
+    }
+    .l-bolha b {
+      font-weight: 700;
+    }
+    .l-bolha .link {
+      color: #2f5ea8;
+    }
+    .l-bolha .hora {
+      display: block;
+      text-align: right;
+      font-size: 22px;
+      color: #6b7790;
+      margin-top: 4px;
+    }
+  </style>
+  <div id="root" data-composition-id="lembrete" data-width="1080" data-height="1920">
+    <h1 id="l-titulo" class="titulo"><span class="p l-w">Nada</span><span class="p l-w">fica</span><br /><span class="p l-w">para</span><span class="p l-w d">trás.</span></h1>
+
+    <div id="l-celular" class="celular">
+      <div id="l-tela" class="tela">
+        <div id="l-anot"><div id="l-anot-img" class="print" style="height: 1283px; background-image: url('assets/telas/anotacoes.jpg')"></div></div>
+        <div id="l-inunda"></div>
+        <div id="l-cab" class="l-cab">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="l-selo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#1b3a6b" />
+                <stop offset="1" stop-color="#0a1830" />
+              </linearGradient>
+            </defs>
+            <rect width="64" height="64" fill="url(#l-selo)" />
+            <path d="M18 48 L32 15 L46 48" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" />
+            <ellipse cx="32" cy="37" rx="24" ry="7.5" transform="rotate(-18 32 37)" fill="none" stroke="#a9c1e0" stroke-width="2.6" />
+          </svg>
+          <div>Número central<small>Astro CRM</small></div>
+        </div>
+        <div id="l-status" class="status claro"><span>17:00</span><span class="icones"><i></i></span></div>
+        <div class="camera-frontal"></div>
+        <div id="l-bolha" class="l-bolha">
+          <b>⏰ Lembrete</b><br /><br />
+          Ligar para o Roberto e mandar as fotos do Vitra.<br /><br />
+          👤 Roberto Lima<br />
+          🔗 <span class="link">astroimob.vercel.app/corretor/leads/…</span>
+          <span class="hora">17:00</span>
+        </div>
+      </div>
+    </div>
+    <div id="l-dedo" class="dedo"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // abertura real: Anotações, "receba o lembrete no WhatsApp"
+    tl.fromTo("#l-anot", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0);
+    tl.fromTo("#l-anot-img", { y: 0 }, { y: -100, duration: 0.5, ease: "power2.inOut" }, 0.3);
+    tl.fromTo("#l-dedo", { opacity: 0, scale: 1.25, x: 770, y: 1530 }, { opacity: 1, scale: 1, x: 697, y: 1456, duration: 0.3, ease: "power3.out" }, 0.7);
+    tl.to("#l-dedo", { scale: 0.82, duration: 0.12, ease: "power2.in" }, 1.0);
+    tl.to("#l-dedo", { opacity: 0, duration: 0.15 }, 1.15);
+    tl.fromTo("#l-inunda", { clipPath: "inset(100% 0px 0px 0px)" }, { clipPath: "inset(0% 0px 0px 0px)", duration: 0.35, ease: "power2.inOut" }, 1.1);
+    tl.fromTo("#l-status", { color: "#0d1b33", backgroundColor: "rgba(233,237,243,1)" }, { color: "#f5f7fb", backgroundColor: "rgba(233,237,243,0)", duration: 0.2 }, 1.45);
+    tl.fromTo("#l-cab", { y: -204 }, { y: 0, duration: 0.45, ease: "expo.out" }, 1.45);
+    tl.fromTo("#l-bolha", { opacity: 0, y: 30, scale: 0.94, transformOrigin: "left top" }, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "expo.out" }, 1.85);
+    tl.fromTo(".l-w", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.09, ease: "back.out(2.2)" }, 0.2);
+    
+    tl.to("#l-titulo", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 5.75);
+    tl.to("#l-tela", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, 5.75);
+    window.__timelines["lembrete"] = tl;
+  </script>
+</template>
