@@ -12991,3 +12991,10 @@ Nota: [[hyperframes-no-ambiente-de-nuvem]].
 - Câmera por posições-chave `[t, posição, alvo]`; repetir a chave com 0,01 s de diferença faz um corte seco entre cenas. Títulos e prints reais ficam em composições por cima, como nos outros vídeos.
 - O render por software (sem GPU) aguentou 1080x1920 com sombras. Sem limite de imagens do Figma, é o caminho para 3D quando o Figma bloquear.
 - Verificado no código para o roteiro: o imóvel importado pelo link entra com `publicado: false` (alguém precisa publicar); o botão de WhatsApp do site só conta o clique (`cliques_whatsapp`); o formulário de contato do site cria o lead com o corretor do portfólio por onde o cliente entrou (cookie de 30 dias).
+
+## Vídeo "um dia em 3 áudios" e o que o número central faz (17/11/2026)
+
+Nota: [[hyperframes-no-ambiente-de-nuvem]].
+
+- `docs/videos/astro-audios/gerar.py` gera o mesmo roteiro em 3 estilos (cinema com as cenas da Ana, clássico com celular, 3D em código com `mundo-audios.js`). Cada render: cinema e clássico em poucos minutos; o 3D em código levou ~10 min para 69 s.
+- Conferido no código para roteiros: o número central aceita áudio (transcrição em `src/lib/central/conversa.ts`, OpenAI → Groq → Gemini); vários pedidos num áudio viram UMA proposta numerada com um "sim" só (`proposta.ts`, vale 1 h); visita gera aviso automático 1 h antes ("*Visita em 1 hora*", `notificacoes/lembreteDeVisita.ts`); resumo do dia às 8h ("Bom dia, {Nome}! Seu dia:", `src/lib/crm/resumoDoDia.ts`); lembrete confirma "Lembrete marcado para … Está nas suas Anotações do painel, e o aviso chega no seu WhatsApp na hora." A lista completa de ações está em `src/lib/central/ferramentas.ts`.

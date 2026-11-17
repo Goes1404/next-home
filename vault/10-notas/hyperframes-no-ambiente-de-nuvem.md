@@ -74,6 +74,12 @@ Three.js desenhado a partir do tempo do vídeo (`hf-seek`), com three@0.149.0
 baixado para `assets/` e câmera por posições-chave; ver
 `docs/videos/astro-site/assets/mundo.js`. Renderiza no container sem GPU.
 
+**Roteiros com fatos do código (17/11).** Antes de escrever a fala, conferir
+no código o que o CRM faz (textos reais do número central em
+`src/lib/central/tratadores/`, resumo do dia em `src/lib/crm/resumoDoDia.ts`).
+Os geradores em `docs/videos/astro-audios/` e `docs/videos/astro-site/`
+fazem o mesmo roteiro em 3 estilos (cinema, clássico, 3D em código).
+
 ## Relacionadas
 - [[MOC — Infraestrutura]]
 - [[arte-e-video-pelo-numero-central]]
