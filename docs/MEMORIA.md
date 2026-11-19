@@ -12965,3 +12965,7 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 - O nexthomeimoveis.com já estava verificado numa conta Resend existente (um domínio só pode estar em uma conta). Decisão do dono: criar uma API key nessa conta (caminho A) em vez de verificar subdomínio novo.
 - Vercel Production: `RESEND_API_KEY`, `EMAIL_REMETENTE=Astro <acesso@nexthomeimoveis.com>`, `EMAIL_RESPONDER_PARA=astrosolucoestech@gmail.com` (vira `reply_to` em `src/lib/email.ts`). Sem a chave, `emailConfigurado()` é falso e o teste grátis automático fica bloqueado.
 - Plano B se perder acesso à conta antiga: verificar `astro.nexthomeimoveis.com` numa conta própria. Quando comprar domínio (astrosolucoes.com.br), trocar só o domínio no Resend e o `EMAIL_REMETENTE`.
+
+## Prospecção 18/11: 98 imobiliárias + 92 corretores na aba (rodada crm-2026-11-18)
+
+- Gravados direto no banco pelo MCP (voltou a ter permissão de escrita). Corretores com mensagem própria. Detalhes em [[prospeccao-da-astro-fase-1]].

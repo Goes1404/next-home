@@ -100,3 +100,9 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
 - [[crm-pelo-whatsapp-numero-central-com-ia]]
 - [[o-que-vai-ao-cliente-pelo-numero-central]]
 - [[trocar-numero-zera-reputacao]]
+
+## Rodada 18/11: 98 imobiliárias e 92 corretores, já no banco
+
+- Gravados direto em `prospeccao_leads` (rodada `crm-2026-11-18`, `modelo = 'crm'`, `segmento` `imobiliaria` ou `corretor`): o MCP do Supabase voltou a aceitar escrita. A lista de 522 do dia 17 nunca foi importada.
+- Corretor ganha mensagem própria ("enquanto você está em visita, a IA responde seus leads"). Imobiliárias todas com celular; 24 corretores só com fixo (observação pede para confirmar o WhatsApp).
+- Corretor no Google: a busca "corretor de imóveis X" devolve sobretudo imobiliárias; o que separa é o nome (corretor/corretora/CRECI-F/consultor ou nome de pessoa + "Imóveis"). Tirados: CRECISP, centro empresarial, "Next Alphaville" (dúvida se é a Next Home).
