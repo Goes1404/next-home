@@ -300,3 +300,33 @@ export function NovaLoja() {
     </details>
   );
 }
+
+/**
+ * Atalho para o "Convidar para o WhatsApp" (21/11/2026): o número não tem
+ * WhatsApp, então o lead vai para Perdido com esse motivo e sai da fila.
+ */
+export function SemWhatsapp({ id }: { id: string }) {
+  const router = useRouter();
+  const [pendente, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  return (
+    <span className="inline-flex flex-col">
+      <button
+        type="button"
+        disabled={pendente}
+        onClick={() =>
+          iniciar(async () => {
+            const r = await semDerrubar(() => mudarEtapa(id, "perdido", "Sem WhatsApp (apareceu Convidar)"));
+            if (!r.ok) return setErro(r.erro);
+            setErro(null);
+            router.refresh();
+          })
+        }
+        className="text-fluid-xs text-apoio hover:text-titulo inline-flex min-h-11 items-center px-2 underline underline-offset-4 disabled:opacity-60"
+      >
+        {pendente ? "Tirando…" : "Não tem WhatsApp"}
+      </button>
+      <Erro texto={erro} />
+    </span>
+  );
+}

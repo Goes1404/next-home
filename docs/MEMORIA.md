@@ -12974,3 +12974,7 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 
 - A mensagem do WhatsApp é assinada pelo primeiro nome de quem está logado (`prospeccao_equipe.nome`) e, para corretor, cumprimenta pelo nome achado no perfil. Montada na hora (`mensagemParaEnviar`), o banco guarda o texto original.
 - **`error.tsx` não segura erro do `layout.tsx` do mesmo segmento.** A tela preta Reload/Back de 04/11 voltou porque `marcarEnviado` revalidava a página: a resposta da ação recarregava a casca do painel no meio da ida ao WhatsApp. Agora a ação não revalida, existe `src/app/global-error.tsx` (neutro, serve aos sites também) e as duas telas de erro tentam de novo sozinhas ao voltar à aba. Lead do CRM sem amostra nem follow-up com link de amostra. Nota: [[prospeccao-da-astro-fase-1]].
+
+## Prospecção 21/11: conferir quem tem WhatsApp antes de enviar
+
+- Muitos números do Google davam "Convidar para o WhatsApp". A aba Prospecção agora conecta o chip de prospecção numa instância própria (`astro-prospeccao`, nunca o número central) e confere a lista inteira por `POST /chat/whatsappNumbers`; quem não tem vai para Perdido. Atalho manual "Não tem WhatsApp" em cada lead. Nota: [[prospeccao-da-astro-fase-1]].

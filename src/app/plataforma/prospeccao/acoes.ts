@@ -6,6 +6,14 @@ import { ehDaEquipeDaProspeccao, ERRO_FORA_DA_EQUIPE } from "@/lib/prospeccao/eq
 import { createServiceClient } from "@/lib/supabase/service";
 import { ehEtapa, ehModelo, type Etapa } from "@/lib/prospeccao/tipos";
 import { mensagemCurta, normalizarWhatsapp, slugDaLoja, vendedorDaProspeccao } from "@/lib/prospeccao/abordagem";
+import {
+  ETAPAS_A_CONFERIR,
+  INSTANCIA_DA_PROSPECCAO,
+  MOTIVO_SEM_WHATSAPP,
+  resumoDaConferencia,
+  separarConferencia,
+} from "@/lib/prospeccao/whatsappDaProspeccao";
+import { conferirNumerosNoWhatsapp, consultarEstadoConexao, obterQrCodeInstancia, provedorConfigurado } from "@/lib/whatsapp/provider";
 
 /**
  * As ações da aba Prospecção (0253, 02/11/2026). Só o administrador da
@@ -188,4 +196,86 @@ export async function cadastrarLoja(loja: NovaLoja): Promise<ResultadoComId> {
   if (error || !data) return { ok: false, erro: "Não consegui cadastrar a loja." };
   revalidar();
   return { ok: true, id: data.id };
+}
+
+/* ── O WhatsApp da prospecção: conectar o chip e conferir quem tem WhatsApp (21/11/2026) ── */
+
+export type EstadoDoWhatsapp =
+  | { ok: true; configurado: boolean; conectado: boolean; telefone: string | null }
+  | { ok: false; erro: string };
+
+/** O chip da prospecção está conectado? (só leitura) */
+export async function estadoDoWhatsappDaProspeccao(): Promise<EstadoDoWhatsapp> {
+  const admin = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
+  if (!provedorConfigurado()) return { ok: true, configurado: false, conectado: false, telefone: null };
+  const estado = await consultarEstadoConexao(INSTANCIA_DA_PROSPECCAO);
+  // Instância que ainda não existe responde 404: é só "não conectado".
+  if (!estado.ok) return { ok: true, configurado: true, conectado: false, telefone: null };
+  return { ok: true, configurado: true, conectado: estado.conectado, telefone: estado.telefone };
+}
+
+export type Pareamento =
+  | { ok: true; jaConectado: boolean; qrcode: string | null; codigo: string | null }
+  | { ok: false; erro: string };
+
+/**
+ * Pede o QR Code (ou, com o número, o código de 8 letras para digitar no
+ * próprio celular) para conectar o chip da prospecção. Cria a instância na
+ * primeira vez.
+ */
+export async function conectarWhatsappDaProspeccao(telefone?: string): Promise<Pareamento> {
+  const admin = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
+  if (!provedorConfigurado()) return { ok: false, erro: "O WhatsApp do sistema não está configurado neste ambiente." };
+  const r = await obterQrCodeInstancia(INSTANCIA_DA_PROSPECCAO, telefone?.trim() || null);
+  if (!r.ok) return { ok: false, erro: "Não consegui falar com o WhatsApp agora. Tente de novo em um minuto." };
+  if (!r.jaConectado && !r.qrcodeBase64 && !r.codigoPareamento) {
+    return { ok: false, erro: "O WhatsApp não mandou o código. Tente de novo." };
+  }
+  return { ok: true, jaConectado: r.jaConectado, qrcode: r.qrcodeBase64, codigo: r.codigoPareamento };
+}
+
+export type ResultadoDaConferencia = { ok: true; resumo: string; tirados: number } | { ok: false; erro: string };
+
+/**
+ * Confere, pelo chip da prospecção, quem dos leads ainda não abordados tem
+ * WhatsApp. Quem NÃO tem vai para Perdido com o motivo, e some da fila de
+ * envio. Só consulta: nenhuma mensagem sai.
+ */
+export async function conferirWhatsappDosLeads(): Promise<ResultadoDaConferencia> {
+  const admin = await exigirAdminDaPlataformaNaAcao();
+  if ("erro" in admin) return { ok: false, erro: admin.erro };
+  if (!(await ehDaEquipeDaProspeccao(admin))) return { ok: false, erro: ERRO_FORA_DA_EQUIPE };
+  const estado = await consultarEstadoConexao(INSTANCIA_DA_PROSPECCAO);
+  if (!estado.ok || !estado.conectado) return { ok: false, erro: "Conecte o chip da prospecção primeiro." };
+
+  const supabase = createServiceClient();
+  const { data: leads, error } = await supabase
+    .from("prospeccao_leads")
+    .select("id, whatsapp")
+    .in("etapa", [...ETAPAS_A_CONFERIR])
+    .eq("nao_contatar", false)
+    .not("whatsapp", "is", null)
+    .limit(1000);
+  if (error) return { ok: false, erro: "Não consegui ler a lista." };
+  if (!leads || leads.length === 0) return { ok: true, resumo: "Não há número novo para conferir.", tirados: 0 };
+
+  const respostas = await conferirNumerosNoWhatsapp({
+    instanceName: INSTANCIA_DA_PROSPECCAO,
+    telefones: leads.map((l) => l.whatsapp as string),
+  });
+  const c = separarConferencia(leads, respostas);
+  if (c.semWhatsapp.length > 0) {
+    const { error: e2 } = await supabase
+      .from("prospeccao_leads")
+      .update({ etapa: "perdido", motivo_perda: MOTIVO_SEM_WHATSAPP })
+      .in("id", c.semWhatsapp)
+      .in("etapa", [...ETAPAS_A_CONFERIR]);
+    if (e2) return { ok: false, erro: "Conferi, mas não consegui tirar da lista quem não tem WhatsApp." };
+  }
+  revalidar();
+  return { ok: true, resumo: resumoDaConferencia(c), tirados: c.semWhatsapp.length };
 }

@@ -23,7 +23,8 @@ import {
   mensagemParaEnviar,
   temLinkDaAmostra,
 } from "@/lib/prospeccao/abordagem";
-import { EnviarNoWhatsapp, NovaLoja } from "./Componentes";
+import { EnviarNoWhatsapp, NovaLoja, SemWhatsapp } from "./Componentes";
+import { WhatsappDaProspeccao } from "./WhatsappDaProspeccao";
 import { AtivarAvisosDaPlataforma } from "../AtivarAvisosDaPlataforma";
 
 export const metadata: Metadata = { title: "Prospecção" };
@@ -140,6 +141,7 @@ export default async function ProspeccaoPage({
 
           {/* 04/11/2026: o aviso de "abriu a amostra" e o plano da manhã chegam no celular. */}
           <AtivarAvisosDaPlataforma />
+          <WhatsappDaProspeccao />
           <NovaLoja />
 
           {lista.length === 0 ? (
@@ -231,6 +233,7 @@ export default async function ProspeccaoPage({
                           rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"}
                         />
                       ) : null}
+                      {(l.etapa === "novo" || l.etapa === "aprovado") && l.whatsapp && !l.nao_contatar ? <SemWhatsapp id={l.id} /> : null}
                       {linkDaAmostraNoZap && !l.nao_contatar ? (
                         <EnviarNoWhatsapp
                           id={l.id}

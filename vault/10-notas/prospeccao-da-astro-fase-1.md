@@ -6,7 +6,7 @@ status: seedling
 custou: medio
 codigo: [supabase/migrations/0253_prospeccao.sql, supabase/migrations/0254_equipe_da_prospeccao.sql, src/lib/prospeccao, src/app/astro/amostra, src/app/api/prospeccao/visita, src/app/plataforma/prospeccao, scripts/prospeccao]
 created: 2026-11-02
-updated: 2026-11-04
+updated: 2026-11-21
 fonte: pedido do dono em 02/11/2026 ("vamos unir tudo isso no nosso app da astro"), doc "Plano: módulo de Prospecção no astroimob"
 summary: A Astro prospecta comércios dentro do astroimob — lojas em prospeccao_leads (global), amostra de site em /astro/amostra/<slug> montada do banco, rastreio de abertura sem IP e funil em /plataforma/prospeccao. Envio manual por wa.me na fase 1.
 ---
@@ -112,3 +112,10 @@ tabelas GLOBAIS (a loja ainda não é cliente, não tem grupo).
 - A mensagem que sai no WhatsApp é montada na hora por `mensagemParaEnviar()` (`abordagem.ts`): troca o "Aqui é o Eduardo" gravado pelo primeiro nome da pessoa logada (`prospeccao_equipe.nome`, via `nomeNaEquipeDaProspeccao`), sem artigo ("Aqui é Matheus"), e, para `segmento = 'corretor'`, põe o nome do corretor no "Oi" quando o perfil do Google tem um nome conhecido (`nomeDoCorretor`). O texto gravado no banco não muda.
 - Lead `modelo = 'crm'` não tem amostra: some "Ver amostra", "Quem abriu a amostra" e "Mandar a amostra", e o follow-up é `mensagemDeFollowupDoCrm()` (teste grátis, sem link de amostra, que daria 404).
 - **A tela preta "This page couldn't load" (Reload/Back) voltou mesmo com o `error.tsx` de 04/11.** Causa: `marcarEnviado` chamava `revalidatePath`, e a resposta da ação trazia a página inteira de novo justo enquanto o celular estava no WhatsApp; cortada, a recarga quebra o layout de `/plataforma`, que o `error.tsx` do mesmo segmento não cobre (só o `global-error` cobre). Correção: `marcarEnviado` não revalida mais (o botão vira "✓ Abordado"), e `src/app/global-error.tsx` substitui a tela preta e, como `plataforma/error.tsx`, tenta de novo sozinho ao voltar à aba (`useTentarDeNovoAoVoltar`, até 2 vezes a cada 30 s por endereço).
+
+## Quem tem WhatsApp: o chip da prospecção conectado só para conferir (21/11)
+
+- Sintoma: muitos números do Google abriam "Convidar para o WhatsApp" (número sem conta). O Google mostra o telefone da empresa, não diz se tem WhatsApp.
+- Correção: a aba Prospecção conecta o **chip de prospecção** numa instância própria da Evolution, `astro-prospeccao` (fora de `corretor_whatsapp_instancias`; o webhook recusa as mensagens dela com 404 "não cadastrada", o que é o esperado). O botão "Conferir quem tem WhatsApp" pergunta à Evolution (`conferirNumerosNoWhatsapp`, lotes de 50) sobre os leads em `novo`/`aprovado`; quem volta `exists: false` vai para `perdido` com `motivo_perda = 'Sem WhatsApp (conferido pelo sistema)'`. Só consulta, não envia. Resposta ausente fica ("não sei"), a mesma regra conservadora da lista de transmissão.
+- Atalho manual em cada lead: "Não tem WhatsApp" (Perdido, motivo "apareceu Convidar").
+- Em 21/11 nenhum número da equipe estava conectado ao sistema (Matheus e Eduardo não têm `corretores`), por isso a conferência ganhou instância própria em vez de usar número de corretor de cliente.
