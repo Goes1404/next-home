@@ -12969,3 +12969,8 @@ gravar a mensagem curta e a incluir imobiliárias (modelo `crm`).
 ## Prospecção 18/11: 98 imobiliárias + 92 corretores na aba (rodada crm-2026-11-18)
 
 - Gravados direto no banco pelo MCP (voltou a ter permissão de escrita). Corretores com mensagem própria. Detalhes em [[prospeccao-da-astro-fase-1]].
+
+## Prospecção 20/11: assinatura de quem está logado e a tela preta ao voltar do WhatsApp
+
+- A mensagem do WhatsApp é assinada pelo primeiro nome de quem está logado (`prospeccao_equipe.nome`) e, para corretor, cumprimenta pelo nome achado no perfil. Montada na hora (`mensagemParaEnviar`), o banco guarda o texto original.
+- **`error.tsx` não segura erro do `layout.tsx` do mesmo segmento.** A tela preta Reload/Back de 04/11 voltou porque `marcarEnviado` revalidava a página: a resposta da ação recarregava a casca do painel no meio da ida ao WhatsApp. Agora a ação não revalida, existe `src/app/global-error.tsx` (neutro, serve aos sites também) e as duas telas de erro tentam de novo sozinhas ao voltar à aba. Lead do CRM sem amostra nem follow-up com link de amostra. Nota: [[prospeccao-da-astro-fase-1]].

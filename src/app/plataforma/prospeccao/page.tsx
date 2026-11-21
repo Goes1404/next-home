@@ -1,17 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { exigirAdminDaPlataformaNaPagina } from "@/lib/guardas";
-import { exigirEquipeDaProspeccaoNaPagina } from "@/lib/prospeccao/equipe";
+import {
+  exigirEquipeDaProspeccaoNaPagina,
+  nomeNaEquipeDaProspeccao,
+} from "@/lib/prospeccao/equipe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ETAPAS, ROTULO_DA_ETAPA, ehEtapa } from "@/lib/prospeccao/tipos";
-import { followupDevido, ordenarParaOFunil, proximaAcao, temperatura, type Temperatura } from "@/lib/prospeccao/funil";
-import { linkDaAmostra, linkDoWhatsapp, mensagemComAmostra, mensagemDeFollowup, temLinkDaAmostra } from "@/lib/prospeccao/abordagem";
+import {
+  followupDevido,
+  ordenarParaOFunil,
+  proximaAcao,
+  temperatura,
+  type Temperatura,
+} from "@/lib/prospeccao/funil";
+import {
+  linkDaAmostra,
+  linkDoWhatsapp,
+  mensagemComAmostra,
+  mensagemDeFollowup,
+  mensagemDeFollowupDoCrm,
+  mensagemParaEnviar,
+  temLinkDaAmostra,
+} from "@/lib/prospeccao/abordagem";
 import { EnviarNoWhatsapp, NovaLoja } from "./Componentes";
 import { AtivarAvisosDaPlataforma } from "../AtivarAvisosDaPlataforma";
 
 export const metadata: Metadata = { title: "Prospecção" };
 
-const DATA_E_HORA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+const DATA_E_HORA = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  dateStyle: "short",
+  timeStyle: "short",
+});
 
 const COR_DA_TEMPERATURA: Record<Temperatura, string> = {
   quente: "bg-ok-lavado text-ok border-ok-linha",
@@ -26,22 +47,36 @@ const COR_DA_TEMPERATURA: Record<Temperatura, string> = {
  * plataforma; a chave de serviço só depois da guarda, e só nas tabelas
  * globais `prospeccao_*`.
  */
-export default async function ProspeccaoPage({ searchParams }: { searchParams: Promise<{ etapa?: string }> }) {
+export default async function ProspeccaoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ etapa?: string }>;
+}) {
   const prova = await exigirAdminDaPlataformaNaPagina();
   await exigirEquipeDaProspeccaoNaPagina(prova);
   const { etapa: filtro } = await searchParams;
   const etapa = ehEtapa(filtro) ? filtro : null;
 
   const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("prospeccao_leads")
-    .select("id, nome, segmento, cidade, bairro, etapa, whatsapp, mensagem, slug, nao_contatar, enviado_em, followup_em, visitas, ultima_visita_em, updated_at")
-    .order("updated_at", { ascending: false })
-    .limit(500);
+  const [{ data, error }, nomeDeQuemEnvia] = await Promise.all([
+    supabase
+      .from("prospeccao_leads")
+      .select(
+        "id, nome, segmento, modelo, cidade, bairro, etapa, whatsapp, mensagem, slug, nao_contatar, enviado_em, followup_em, visitas, ultima_visita_em, updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(500),
+    nomeNaEquipeDaProspeccao(prova),
+  ]);
   const todas = data ?? [];
-  const contagem = Object.fromEntries(ETAPAS.map((e) => [e, todas.filter((l) => l.etapa === e).length])) as Record<string, number>;
+  const contagem = Object.fromEntries(
+    ETAPAS.map((e) => [e, todas.filter((l) => l.etapa === e).length]),
+  ) as Record<string, number>;
   const agora = new Date();
-  const lista = ordenarParaOFunil(etapa ? todas.filter((l) => l.etapa === etapa) : todas, agora);
+  const lista = ordenarParaOFunil(
+    etapa ? todas.filter((l) => l.etapa === etapa) : todas,
+    agora,
+  );
   const quentes = todas.filter((l) => temperatura(l, agora) === "quente").length;
   const abordadas = todas.filter((l) => l.enviado_em).length;
   const abriram = todas.filter((l) => l.enviado_em && l.visitas > 0).length;
@@ -61,15 +96,20 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
   return (
     <section className="flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="font-display text-fluid-2xl text-titulo font-semibold">Prospecção</h1>
+        <h1 className="font-display text-fluid-2xl text-titulo font-semibold">
+          Prospecção
+        </h1>
         <p className="text-fluid-sm text-apoio mt-1 text-pretty">
-          As lojas abordadas pela Astro, cada uma com a amostra de site dela. Quem abriu a amostra e ainda não respondeu
-          aparece primeiro: é o melhor momento do follow-up.
+          As lojas abordadas pela Astro, cada uma com a amostra de site dela. Quem abriu
+          a amostra e ainda não respondeu aparece primeiro: é o melhor momento do
+          follow-up.
         </p>
       </div>
 
       {error ? (
-        <p className="cartao text-fluid-sm text-perigo p-5">Não consegui ler as lojas. A migration 0253 foi aplicada?</p>
+        <p className="cartao text-fluid-sm text-perigo p-5">
+          Não consegui ler as lojas. A migration 0253 foi aplicada?
+        </p>
       ) : (
         <>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -88,7 +128,14 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
 
           <nav aria-label="Etapas do funil" className="flex gap-2 overflow-x-auto pb-1">
             {chip("Todas", "/plataforma/prospeccao", !etapa, todas.length)}
-            {ETAPAS.map((e) => chip(ROTULO_DA_ETAPA[e], `/plataforma/prospeccao?etapa=${e}`, etapa === e, contagem[e]))}
+            {ETAPAS.map((e) =>
+              chip(
+                ROTULO_DA_ETAPA[e],
+                `/plataforma/prospeccao?etapa=${e}`,
+                etapa === e,
+                contagem[e],
+              ),
+            )}
           </nav>
 
           {/* 04/11/2026: o aviso de "abriu a amostra" e o plano da manhã chegam no celular. */}
@@ -96,31 +143,59 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
           <NovaLoja />
 
           {lista.length === 0 ? (
-            <p className="cartao text-fluid-sm text-apoio p-5">Nenhuma loja nesta etapa.</p>
+            <p className="cartao text-fluid-sm text-apoio p-5">
+              Nenhuma loja nesta etapa.
+            </p>
           ) : (
             <ul className="flex flex-col gap-3">
               {lista.map((l) => {
                 const t = temperatura(l, agora);
                 const followup = followupDevido(l, agora);
                 const amostra = linkDaAmostra(l.slug);
+                // Lead do CRM (imobiliária, corretor) não tem amostra de site.
+                const doCrm = l.modelo === "crm";
                 const curta = !temLinkDaAmostra(l.mensagem);
-                const texto = followup ? mensagemDeFollowup({ link: amostra, abordagemTinhaLink: !curta }) : l.mensagem;
-                const link = l.whatsapp && texto ? linkDoWhatsapp(l.whatsapp, texto) : null;
+                const texto = followup
+                  ? doCrm
+                    ? mensagemDeFollowupDoCrm()
+                    : mensagemDeFollowup({ link: amostra, abordagemTinhaLink: !curta })
+                  : l.mensagem;
+                const link =
+                  l.whatsapp && texto
+                    ? linkDoWhatsapp(
+                        l.whatsapp,
+                        mensagemParaEnviar(texto, {
+                          nomeDeQuemEnvia,
+                          segmento: l.segmento,
+                          nomeDoLead: l.nome,
+                        }),
+                      )
+                    : null;
                 // Abordagem curta (sem link): quem respondeu recebe a amostra por este botão.
                 const linkDaAmostraNoZap =
-                  curta && (l.etapa === "enviado" || l.etapa === "respondeu") && l.whatsapp
+                  !doCrm &&
+                  curta &&
+                  (l.etapa === "enviado" || l.etapa === "respondeu") &&
+                  l.whatsapp
                     ? linkDoWhatsapp(l.whatsapp, mensagemComAmostra({ link: amostra }))
                     : null;
-                const bloqueado = l.nao_contatar ? "Pediu para não receber mensagens" : null;
+                const bloqueado = l.nao_contatar
+                  ? "Pediu para não receber mensagens"
+                  : null;
                 return (
                   <li key={l.id} className="cartao flex flex-col gap-3 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <Link href={`/plataforma/prospeccao/${l.id}`} className="text-titulo text-fluid-base font-medium underline-offset-4 hover:underline">
+                        <Link
+                          href={`/plataforma/prospeccao/${l.id}`}
+                          className="text-titulo text-fluid-base font-medium underline-offset-4 hover:underline"
+                        >
                           {l.nome}
                         </Link>
                         <p className="text-fluid-xs text-apoio">
-                          {[l.segmento, [l.cidade, l.bairro].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}
+                          {[l.segmento, [l.cidade, l.bairro].filter(Boolean).join(", ")]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </p>
                       </div>
                       <span className="text-fluid-xs border-linha text-corpo shrink-0 rounded-full border px-2.5 py-1">
@@ -128,29 +203,53 @@ export default async function ProspeccaoPage({ searchParams }: { searchParams: P
                       </span>
                     </div>
                     <p className="text-fluid-sm flex flex-wrap items-center gap-2">
-                      <span className={`text-fluid-xs rounded-full border px-2.5 py-1 ${COR_DA_TEMPERATURA[t]}`}>{proximaAcao(l, agora)}</span>
+                      <span
+                        className={`text-fluid-xs rounded-full border px-2.5 py-1 ${COR_DA_TEMPERATURA[t]}`}
+                      >
+                        {proximaAcao(l, agora)}
+                      </span>
                       <span className="text-fluid-xs text-apoio">
                         {l.visitas > 0
                           ? `Abriu ${l.visitas}x · última vez em ${DATA_E_HORA.format(new Date(l.ultima_visita_em!))}`
-                          : "Ainda não abriu a amostra"}
-                        {l.enviado_em ? ` · abordada em ${DATA_E_HORA.format(new Date(l.enviado_em))}` : ""}
+                          : doCrm
+                            ? l.enviado_em
+                              ? "Abordado"
+                              : "Ainda não abordado"
+                            : "Ainda não abriu a amostra"}
+                        {l.enviado_em
+                          ? ` · abordada em ${DATA_E_HORA.format(new Date(l.enviado_em))}`
+                          : ""}
                       </span>
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {l.etapa === "novo" || l.etapa === "aprovado" || followup ? (
-                        <EnviarNoWhatsapp id={l.id} link={link} bloqueado={bloqueado} tipo={followup ? "followup" : "abordagem"} rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"} />
+                        <EnviarNoWhatsapp
+                          id={l.id}
+                          link={link}
+                          bloqueado={bloqueado}
+                          tipo={followup ? "followup" : "abordagem"}
+                          rotulo={followup ? "Enviar follow-up" : "Enviar no WhatsApp"}
+                        />
                       ) : null}
                       {linkDaAmostraNoZap && !l.nao_contatar ? (
-                        <EnviarNoWhatsapp id={l.id} link={linkDaAmostraNoZap} bloqueado={null} tipo="amostra" rotulo="Respondeu? Mandar a amostra" />
+                        <EnviarNoWhatsapp
+                          id={l.id}
+                          link={linkDaAmostraNoZap}
+                          bloqueado={null}
+                          tipo="amostra"
+                          rotulo="Respondeu? Mandar a amostra"
+                        />
                       ) : null}
-                      <a
-                        href={`/astro/amostra/${l.slug}?previa=1`}
-                        target="_blank"
-                        rel="noopener"
-                        className="botao-secundario text-fluid-sm text-titulo inline-flex min-h-11 items-center rounded-full px-4 font-medium"
-                      >
-                        Ver amostra
-                      </a>
+                      {doCrm ? null : (
+                        <a
+                          href={`/astro/amostra/${l.slug}?previa=1`}
+                          target="_blank"
+                          rel="noopener"
+                          className="botao-secundario text-fluid-sm text-titulo inline-flex min-h-11 items-center rounded-full px-4 font-medium"
+                        >
+                          Ver amostra
+                        </a>
+                      )}
                       <Link
                         href={`/plataforma/prospeccao/${l.id}`}
                         className="text-fluid-sm text-apoio hover:text-titulo inline-flex min-h-11 items-center px-2"

@@ -82,7 +82,12 @@ export async function marcarEnviado(id: string, tipo: TipoDeEnvio = "abordagem")
     const { error } = await supabase.from("prospeccao_leads").update(mudanca).eq("id", id);
     if (error) return { ok: false, erro: "Não consegui marcar o envio." };
   }
-  revalidar(id);
+  // SEM `revalidar` (20/11/2026): esta ação roda enquanto o celular está no
+  // WhatsApp, e o `revalidatePath` faz a resposta carregar a página inteira
+  // de novo. Cortada no meio, essa recarga quebrava a casca do painel e caía
+  // na tela preta "This page couldn't load" (Reload/Back), que o `error.tsx`
+  // de `/plataforma` não segura. O botão mostra "Abordado" sozinho, e a lista
+  // vem atualizada na próxima navegação (as páginas são dinâmicas).
   return { ok: true };
 }
 

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
+import { useTentarDeNovoAoVoltar } from "@/components/erro/tentarDeNovoAoVoltar";
 
 /**
  * Tela de erro do painel da plataforma (04/11/2026).
@@ -23,6 +24,8 @@ export default function ErroDaPlataforma({
   useEffect(() => {
     console.error("Erro no painel da plataforma:", error);
   }, [error]);
+  // 20/11/2026: ao voltar do WhatsApp a página já pode ser buscada; tenta sozinha.
+  useTentarDeNovoAoVoltar(unstable_retry);
 
   return (
     <div className="mx-auto max-w-lg py-16 text-center">

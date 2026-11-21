@@ -56,6 +56,8 @@ export function EnviarNoWhatsapp({
 }) {
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
+  // A ação não recarrega a página (ver `marcarEnviado`): quem diz que foi é o botão.
+  const [feito, setFeito] = useState(false);
 
   if (bloqueado || !link) {
     return <span className="text-fluid-xs text-apoio">{bloqueado ?? "Sem WhatsApp cadastrado"}</span>;
@@ -64,7 +66,10 @@ export function EnviarNoWhatsapp({
   function marcar(tentarDeNovoAoVoltar: boolean) {
     iniciar(async () => {
       const r = await semDerrubar(() => marcarEnviado(id, tipo));
-      if (r.ok) return setErro(null);
+      if (r.ok) {
+        setFeito(true);
+        return setErro(null);
+      }
       if (tentarDeNovoAoVoltar && r.erro === SEM_CONEXAO) {
         // A requisição caiu porque o celular foi para o WhatsApp: tenta de
         // novo quando a pessoa voltar ao painel.
@@ -89,9 +94,18 @@ export function EnviarNoWhatsapp({
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <button type="button" onClick={enviar} disabled={pendente} className={BOTAO_PRINCIPAL}>
-        {pendente ? "Marcando…" : rotulo}
-      </button>
+      {feito ? (
+        <span className="text-fluid-sm text-ok inline-flex min-h-11 items-center gap-2">
+          ✓ {tipo === "amostra" ? "Amostra enviada" : "Abordado"}
+          <button type="button" onClick={enviar} className="text-fluid-xs text-apoio hover:text-titulo underline underline-offset-4">
+            abrir de novo
+          </button>
+        </span>
+      ) : (
+        <button type="button" onClick={enviar} disabled={pendente} className={BOTAO_PRINCIPAL}>
+          {pendente ? "Marcando…" : rotulo}
+        </button>
+      )}
       <Erro texto={erro} />
     </div>
   );
